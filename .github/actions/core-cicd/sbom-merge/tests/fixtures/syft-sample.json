@@ -1,0 +1,2168 @@
+{
+  "bomFormat": "CycloneDX",
+  "specVersion": "1.6",
+  "serialNumber": "urn:uuid:15ddab48-674b-49cd-87a7-76e885a6d362",
+  "version": 1,
+  "metadata": {
+    "timestamp": "2026-07-14T14:23:18Z",
+    "tools": {
+      "components": [
+        {
+          "type": "application",
+          "author": "anchore",
+          "name": "syft",
+          "version": "1.18.1"
+        }
+      ]
+    },
+    "component": {
+      "bom-ref": "107e2a3fcddfaad3",
+      "type": "container",
+      "name": "dotcms/dotcms",
+      "version": "25.07.10_lts_v15"
+    }
+  },
+  "components": [
+    {
+      "bom-ref": "pkg:npm/dijit@1.17.2?package-id=d09f739c3736bf66",
+      "type": "library",
+      "name": "dijit",
+      "version": "1.17.2",
+      "description": "Dijit provides a complete collection of user interface controls based on Dojo, giving you the power to create web applications that are highly optimized for usability, performance, internationalization, accessibility, but above all deliver an incredible user experience.",
+      "licenses": [
+        {
+          "expression": "BSD-3-Clause OR AFL-2.1"
+        }
+      ],
+      "cpe": "cpe:2.3:a:dijit:dijit:1.17.2:*:*:*:*:*:*:*",
+      "purl": "pkg:npm/dijit@1.17.2",
+      "externalReferences": [
+        {
+          "url": "https://github.com/dojo/dijit.git",
+          "type": "distribution"
+        },
+        {
+          "url": "http://dojotoolkit.org/",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "javascript-package-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "javascript"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "npm"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "javascript-npm-package"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:dojo:dijit:1.17.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:f24fcab6cdfe78ceadb48f75caddfcfa13fe1d221886610c0d6d2dc6e9ce07de"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/html/js/dojo/custom-build/dijit/package.json"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/dojo@1.17.2?package-id=f28ac5a8cbb8b258",
+      "type": "library",
+      "name": "dojo",
+      "version": "1.17.2",
+      "description": "Dojo core is a powerful, lightweight library that makes common tasks quicker and easier. Animate elements, manipulate the DOM, and query with easy CSS syntax, all without sacrificing performance.",
+      "licenses": [
+        {
+          "expression": "BSD-3-Clause OR AFL-2.1"
+        }
+      ],
+      "cpe": "cpe:2.3:a:linuxfoundation:dojo:1.17.2:*:*:*:*:node.js:*:*",
+      "purl": "pkg:npm/dojo@1.17.2",
+      "externalReferences": [
+        {
+          "url": "https://github.com/dojo/dojo.git",
+          "type": "distribution"
+        },
+        {
+          "url": "http://dojotoolkit.org/",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "javascript-package-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "javascript"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "npm"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "javascript-npm-package"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:f24fcab6cdfe78ceadb48f75caddfcfa13fe1d221886610c0d6d2dc6e9ce07de"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/html/js/dojo/custom-build/dojo/package.json"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/dojox@1.17.2?package-id=18e6147e21eef016",
+      "type": "library",
+      "name": "dojox",
+      "version": "1.17.2",
+      "description": "Dojo eXtensions, a rollup of many useful sub-projects and varying states of maturity – from very stable and robust, to alpha and experimental. See individual projects contain README files for details.",
+      "licenses": [
+        {
+          "expression": "BSD-3-Clause OR AFL-2.1"
+        }
+      ],
+      "cpe": "cpe:2.3:a:linuxfoundation:dojox:1.17.2:*:*:*:*:node.js:*:*",
+      "purl": "pkg:npm/dojox@1.17.2",
+      "externalReferences": [
+        {
+          "url": "https://github.com/dojo/dojox.git",
+          "type": "distribution"
+        },
+        {
+          "url": "http://dojotoolkit.org/",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "javascript-package-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "javascript"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "npm"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "javascript-npm-package"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:f24fcab6cdfe78ceadb48f75caddfcfa13fe1d221886610c0d6d2dc6e9ce07de"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/html/js/dojo/custom-build/dojox/package.json"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/edit-content-bridge@1.0.0?package-id=9a36947a6b799c63",
+      "type": "library",
+      "name": "edit-content-bridge",
+      "version": "1.0.0",
+      "cpe": "cpe:2.3:a:edit-content-bridge:edit-content-bridge:1.0.0:*:*:*:*:*:*:*",
+      "purl": "pkg:npm/edit-content-bridge@1.0.0",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "javascript-package-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "javascript"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "npm"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "javascript-npm-package"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:edit-content-bridge:edit_content_bridge:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:edit_content_bridge:edit-content-bridge:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:edit_content_bridge:edit_content_bridge:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:edit-content:edit-content-bridge:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:edit-content:edit_content_bridge:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:edit_content:edit-content-bridge:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:edit_content:edit_content_bridge:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:edit:edit-content-bridge:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:edit:edit_content_bridge:1.0.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:f24fcab6cdfe78ceadb48f75caddfcfa13fe1d221886610c0d6d2dc6e9ce07de"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/html/js/legacy_custom_field_bridge/package.json"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/monaco-editor@0.33.0?package-id=e84901af94ab04fd",
+      "type": "library",
+      "author": "Microsoft Corporation",
+      "name": "monaco-editor",
+      "version": "0.33.0",
+      "description": "A browser based code editor",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:monaco-editor:monaco-editor:0.33.0:*:*:*:*:*:*:*",
+      "purl": "pkg:npm/monaco-editor@0.33.0",
+      "externalReferences": [
+        {
+          "url": "https://github.com/microsoft/monaco-editor",
+          "type": "distribution"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "javascript-package-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "javascript"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "npm"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "javascript-npm-package"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:monaco-editor:monaco_editor:0.33.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:monaco_editor:monaco-editor:0.33.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:monaco_editor:monaco_editor:0.33.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:microsoft:monaco-editor:0.33.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:microsoft:monaco_editor:0.33.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:monaco:monaco-editor:0.33.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:monaco:monaco_editor:0.33.0:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:f24fcab6cdfe78ceadb48f75caddfcfa13fe1d221886610c0d6d2dc6e9ce07de"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/dotAdmin/assets/monaco-editor/package.json"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/tinymce@6.8.6?package-id=972424e2764a9669",
+      "type": "library",
+      "author": "Ephox Corporation DBA Tiny Technologies, Inc",
+      "name": "tinymce",
+      "version": "6.8.6",
+      "description": "Web based JavaScript HTML WYSIWYG editor control.",
+      "licenses": [
+        {
+          "license": {
+            "id": "MIT"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:tinymce:tinymce:6.8.6:*:*:*:*:*:*:*",
+      "purl": "pkg:npm/tinymce@6.8.6",
+      "externalReferences": [
+        {
+          "url": "https://github.com/tinymce/tinymce.git",
+          "type": "distribution"
+        },
+        {
+          "url": "https://www.tiny.cloud/",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "javascript-package-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "javascript"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "npm"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "javascript-npm-package"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:f24fcab6cdfe78ceadb48f75caddfcfa13fe1d221886610c0d6d2dc6e9ce07de"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/dotAdmin/tinymce/package.json"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:npm/tinymce@7.2.1?package-id=c334a06cffc945f2",
+      "type": "library",
+      "author": "Ephox Corporation DBA Tiny Technologies, Inc",
+      "name": "tinymce",
+      "version": "7.2.1",
+      "description": "Web based JavaScript HTML WYSIWYG editor control.",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:tinymce:tinymce:7.2.1:*:*:*:*:*:*:*",
+      "purl": "pkg:npm/tinymce@7.2.1",
+      "externalReferences": [
+        {
+          "url": "https://github.com/tinymce/tinymce.git",
+          "type": "distribution"
+        },
+        {
+          "url": "https://www.tiny.cloud/",
+          "type": "website"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "javascript-package-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "javascript"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "npm"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "javascript-npm-package"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:f24fcab6cdfe78ceadb48f75caddfcfa13fe1d221886610c0d6d2dc6e9ce07de"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/ext/tinymcev7/package.json"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/com.dotcms.core.plugins/com.dotcms.tika-api@25.07.10_lts_v15?package-id=ea5f0ac2f40af8bb",
+      "type": "library",
+      "group": "com.dotcms.core.plugins",
+      "name": "com.dotcms.tika-api",
+      "version": "25.07.10_lts_v15",
+      "licenses": [
+        {
+          "license": {
+            "name": "GNU GENERAL PUBLIC LICENSE Version 3",
+            "url": "https://www.gnu.org/licenses/gpl-3.0.en.html"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:com.dotcms.core.plugins:com.dotcms.tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*",
+      "purl": "pkg:maven/com.dotcms.core.plugins/com.dotcms.tika-api@25.07.10_lts_v15",
+      "externalReferences": [
+        {
+          "url": "",
+          "hashes": [
+            {
+              "alg": "SHA-1",
+              "content": "8c2893540c7a5a6d0010c2181206a59d6e13e673"
+            }
+          ],
+          "type": "build-meta"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "java-archive-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "java"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "java-archive"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "java-archive"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.core.plugins:com.dotcms.tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika-api:com.dotcms.tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika-api:com.dotcms.tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika_api:com.dotcms.tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika_api:com.dotcms.tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika:com.dotcms.tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika:com.dotcms.tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.core.plugins:tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.core.plugins:tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.core.plugins:core:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika-api:tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika-api:tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika_api:tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika_api:tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika-api:com.dotcms.tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika-api:com.dotcms.tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika_api:com.dotcms.tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika_api:com.dotcms.tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:dotcms:com.dotcms.tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:dotcms:com.dotcms.tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika-api:core:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika:tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika:tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika_api:core:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:core:com.dotcms.tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:core:com.dotcms.tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika:com.dotcms.tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika:com.dotcms.tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika:core:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika-api:tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika-api:tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika_api:tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika_api:tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:dotcms:tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:dotcms:tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:core:tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:core:tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika-api:core:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika:tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika:tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika_api:core:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:dotcms:core:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:core:core:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika:core:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:f24fcab6cdfe78ceadb48f75caddfcfa13fe1d221886610c0d6d2dc6e9ce07de"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/WEB-INF/felix-system/bundle/com.dotcms.tika-25.07.10_lts_v15.jar"
+        },
+        {
+          "name": "syft:metadata:-:artifactID",
+          "value": "com.dotcms.tika-api"
+        },
+        {
+          "name": "syft:metadata:-:groupID",
+          "value": "com.dotcms.core.plugins"
+        },
+        {
+          "name": "syft:metadata:virtualPath",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/WEB-INF/felix-system/bundle/com.dotcms.tika-25.07.10_lts_v15.jar:lib/com.dotcms.tika-api-25.07.10_lts_v15.jar"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/com.dotcms.core.plugins/com.dotcms.tika-api@25.07.10_lts_v15?package-id=26b25b785cf1e7a6",
+      "type": "library",
+      "group": "com.dotcms.core.plugins",
+      "name": "com.dotcms.tika-api",
+      "version": "25.07.10_lts_v15",
+      "licenses": [
+        {
+          "license": {
+            "name": "GNU GENERAL PUBLIC LICENSE Version 3",
+            "url": "https://www.gnu.org/licenses/gpl-3.0.en.html"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:com.dotcms.core.plugins:com.dotcms.tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*",
+      "purl": "pkg:maven/com.dotcms.core.plugins/com.dotcms.tika-api@25.07.10_lts_v15",
+      "externalReferences": [
+        {
+          "url": "",
+          "hashes": [
+            {
+              "alg": "SHA-1",
+              "content": "8c2893540c7a5a6d0010c2181206a59d6e13e673"
+            }
+          ],
+          "type": "build-meta"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "java-archive-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "java"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "java-archive"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "java-archive"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.core.plugins:com.dotcms.tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika-api:com.dotcms.tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika-api:com.dotcms.tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika_api:com.dotcms.tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika_api:com.dotcms.tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika:com.dotcms.tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika:com.dotcms.tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.core.plugins:tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.core.plugins:tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.core.plugins:core:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika-api:tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika-api:tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika_api:tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika_api:tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika-api:com.dotcms.tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika-api:com.dotcms.tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika_api:com.dotcms.tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika_api:com.dotcms.tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:dotcms:com.dotcms.tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:dotcms:com.dotcms.tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika-api:core:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika:tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika:tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika_api:core:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:core:com.dotcms.tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:core:com.dotcms.tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika:com.dotcms.tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika:com.dotcms.tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.tika:core:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika-api:tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika-api:tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika_api:tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika_api:tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:dotcms:tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:dotcms:tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:core:tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:core:tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika-api:core:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika:tika-api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika:tika_api:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika_api:core:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:dotcms:core:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:core:core:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:tika:core:25.07.10_lts_v15:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:f24fcab6cdfe78ceadb48f75caddfcfa13fe1d221886610c0d6d2dc6e9ce07de"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/WEB-INF/lib/com.dotcms.tika-api-25.07.10_lts_v15.jar"
+        },
+        {
+          "name": "syft:metadata:-:artifactID",
+          "value": "com.dotcms.tika-api"
+        },
+        {
+          "name": "syft:metadata:-:groupID",
+          "value": "com.dotcms.core.plugins"
+        },
+        {
+          "name": "syft:metadata:virtualPath",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/WEB-INF/lib/com.dotcms.tika-api-25.07.10_lts_v15.jar"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/org.hdrhistogram/HdrHistogram@2.1.9?package-id=bd8f480bc31795cd",
+      "type": "library",
+      "group": "org.hdrhistogram",
+      "name": "HdrHistogram",
+      "version": "2.1.9",
+      "licenses": [
+        {
+          "license": {
+            "name": "http://creativecommons.org/publicdomain/zero/1.0/"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:org.hdrhistogram.HdrHistogram:HdrHistogram:2.1.9:*:*:*:*:*:*:*",
+      "purl": "pkg:maven/org.hdrhistogram/HdrHistogram@2.1.9",
+      "externalReferences": [
+        {
+          "url": "",
+          "hashes": [
+            {
+              "alg": "SHA-1",
+              "content": "e4631ce165eb400edecfa32e03d3f1be53dee754"
+            }
+          ],
+          "type": "build-meta"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "java-archive-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "java"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "java-archive"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "java-archive"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:org.hdrhistogram:HdrHistogram:2.1.9:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:HdrHistogram:HdrHistogram:2.1.9:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:hdrhistogram:HdrHistogram:2.1.9:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:f24fcab6cdfe78ceadb48f75caddfcfa13fe1d221886610c0d6d2dc6e9ce07de"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/WEB-INF/lib/HdrHistogram-2.1.9.jar"
+        },
+        {
+          "name": "syft:metadata:-:artifactID",
+          "value": "HdrHistogram"
+        },
+        {
+          "name": "syft:metadata:-:groupID",
+          "value": "org.hdrhistogram"
+        },
+        {
+          "name": "syft:metadata:virtualPath",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/WEB-INF/lib/HdrHistogram-2.1.9.jar"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/com.zaxxer/HikariCP@3.4.2?package-id=48747c407197eb6d",
+      "type": "library",
+      "group": "com.zaxxer",
+      "name": "HikariCP",
+      "version": "3.4.2",
+      "licenses": [
+        {
+          "license": {
+            "name": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:com.zaxxer.HikariCP:HikariCP:3.4.2:*:*:*:*:*:*:*",
+      "purl": "pkg:maven/com.zaxxer/HikariCP@3.4.2",
+      "externalReferences": [
+        {
+          "url": "",
+          "hashes": [
+            {
+              "alg": "SHA-1",
+              "content": "057128550e21a83cd1dbf7e82d343b8fbe1f435b"
+            }
+          ],
+          "type": "build-meta"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "java-archive-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "java"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "java-archive"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "java-archive"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.zaxxer:HikariCP:3.4.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:HikariCP:HikariCP:3.4.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:zaxxer:HikariCP:3.4.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:f24fcab6cdfe78ceadb48f75caddfcfa13fe1d221886610c0d6d2dc6e9ce07de"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/WEB-INF/lib/HikariCP-3.4.2.jar"
+        },
+        {
+          "name": "syft:metadata:-:artifactID",
+          "value": "HikariCP"
+        },
+        {
+          "name": "syft:metadata:-:groupID",
+          "value": "com.zaxxer"
+        },
+        {
+          "name": "syft:metadata:virtualPath",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/WEB-INF/lib/HikariCP-3.4.2.jar"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/com.zaxxer/SparseBitSet@1.3?package-id=83c7f848439d76c7",
+      "type": "library",
+      "group": "com.zaxxer",
+      "name": "SparseBitSet",
+      "version": "1.3",
+      "licenses": [
+        {
+          "license": {
+            "name": "The Apache Software License, Version 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:com.zaxxer.sparsebitset:SparseBitSet:1.3:*:*:*:*:*:*:*",
+      "purl": "pkg:maven/com.zaxxer/SparseBitSet@1.3",
+      "externalReferences": [
+        {
+          "url": "",
+          "hashes": [
+            {
+              "alg": "SHA-1",
+              "content": "533eac055afe3d5f614ea95e333afd6c2bde8f26"
+            }
+          ],
+          "type": "build-meta"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "java-archive-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "java"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "java-archive"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "java-archive"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:SparseBitSet:SparseBitSet:1.3:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:sparsebitset:SparseBitSet:1.3:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.zaxxer:SparseBitSet:1.3:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:zaxxer:SparseBitSet:1.3:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:f24fcab6cdfe78ceadb48f75caddfcfa13fe1d221886610c0d6d2dc6e9ce07de"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/WEB-INF/felix-system/bundle/com.dotcms.tika-25.07.10_lts_v15.jar"
+        },
+        {
+          "name": "syft:metadata:-:artifactID",
+          "value": "SparseBitSet"
+        },
+        {
+          "name": "syft:metadata:-:groupID",
+          "value": "com.zaxxer"
+        },
+        {
+          "name": "syft:metadata:virtualPath",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/WEB-INF/felix-system/bundle/com.dotcms.tika-25.07.10_lts_v15.jar:lib/SparseBitSet-1.3.jar"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/Tidy-ukv/Tidy-ukv@2?package-id=4b68f069a33fa2ad",
+      "type": "library",
+      "name": "Tidy-ukv",
+      "version": "2",
+      "cpe": "cpe:2.3:a:Tidy-ukv:Tidy-ukv:2:*:*:*:*:*:*:*",
+      "purl": "pkg:maven/Tidy-ukv/Tidy-ukv@2",
+      "externalReferences": [
+        {
+          "url": "",
+          "hashes": [
+            {
+              "alg": "SHA-1",
+              "content": "a55b7b37626805c3c407113b2ac9b21381208e61"
+            }
+          ],
+          "type": "build-meta"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "java-archive-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "java"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "java-archive"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "java-archive"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:Tidy-ukv:Tidy_ukv:2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:Tidy_ukv:Tidy-ukv:2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:Tidy_ukv:Tidy_ukv:2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:Tidy:Tidy-ukv:2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:Tidy:Tidy_ukv:2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:f24fcab6cdfe78ceadb48f75caddfcfa13fe1d221886610c0d6d2dc6e9ce07de"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/WEB-INF/lib/dot.Tidy-ukv_2.jar"
+        },
+        {
+          "name": "syft:metadata:virtualPath",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/WEB-INF/lib/dot.Tidy-ukv_2.jar"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/eu.bitwalker/UserAgentUtils@1.19?package-id=3d504246b1dad304",
+      "type": "library",
+      "group": "eu.bitwalker",
+      "name": "UserAgentUtils",
+      "version": "1.19",
+      "licenses": [
+        {
+          "license": {
+            "name": "New BSD License",
+            "url": "http://user-agent-utils.googlecode.com/svn/trunk/UserAgentUtils/LICENSE.txt"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:UserAgentUtils:UserAgentUtils:1.19:*:*:*:*:*:*:*",
+      "purl": "pkg:maven/eu.bitwalker/UserAgentUtils@1.19",
+      "externalReferences": [
+        {
+          "url": "",
+          "hashes": [
+            {
+              "alg": "SHA-1",
+              "content": "29366f4f49e2c83cceba8c12b9de55b29ceaacba"
+            }
+          ],
+          "type": "build-meta"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "java-archive-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "java"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "java-archive"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "java-archive"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:f24fcab6cdfe78ceadb48f75caddfcfa13fe1d221886610c0d6d2dc6e9ce07de"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/WEB-INF/lib/UserAgentUtils-1.19.jar"
+        },
+        {
+          "name": "syft:metadata:-:artifactID",
+          "value": "UserAgentUtils"
+        },
+        {
+          "name": "syft:metadata:-:groupID",
+          "value": "eu.bitwalker"
+        },
+        {
+          "name": "syft:metadata:virtualPath",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/WEB-INF/lib/UserAgentUtils-1.19.jar"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/net.minidev/accessors-smart@2.4.9?package-id=9074c98267e1e9a5",
+      "type": "library",
+      "group": "net.minidev",
+      "name": "accessors-smart",
+      "version": "2.4.9",
+      "licenses": [
+        {
+          "license": {
+            "name": "http://www.apache.org/licenses/LICENSE-2.0.txt"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:net.minidev.accessors-smart:accessors-smart:2.4.9:*:*:*:*:*:*:*",
+      "purl": "pkg:maven/net.minidev/accessors-smart@2.4.9",
+      "externalReferences": [
+        {
+          "url": "",
+          "hashes": [
+            {
+              "alg": "SHA-1",
+              "content": "32e540749224c22c9b17de8137e916aae9057e22"
+            }
+          ],
+          "type": "build-meta"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "java-archive-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "java"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "java-archive"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "java-archive"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:net.minidev.accessors-smart:accessors_smart:2.4.9:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:accessors-smart:accessors-smart:2.4.9:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:accessors-smart:accessors_smart:2.4.9:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:accessors_smart:accessors-smart:2.4.9:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:accessors_smart:accessors_smart:2.4.9:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:net.minidev:accessors-smart:2.4.9:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:net.minidev:accessors_smart:2.4.9:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:accessors:accessors-smart:2.4.9:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:accessors:accessors_smart:2.4.9:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:minidev:accessors-smart:2.4.9:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:minidev:accessors_smart:2.4.9:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:f24fcab6cdfe78ceadb48f75caddfcfa13fe1d221886610c0d6d2dc6e9ce07de"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/WEB-INF/lib/accessors-smart-2.4.9.jar"
+        },
+        {
+          "name": "syft:metadata:-:artifactID",
+          "value": "accessors-smart"
+        },
+        {
+          "name": "syft:metadata:-:groupID",
+          "value": "net.minidev"
+        },
+        {
+          "name": "syft:metadata:virtualPath",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/WEB-INF/lib/accessors-smart-2.4.9.jar"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:maven/com.dotcms.actionlet/actionlet@0.2?package-id=15e00024666326a3",
+      "type": "library",
+      "name": "actionlet",
+      "version": "0.2",
+      "cpe": "cpe:2.3:a:com.dotmarketing.osgi.actionlet.Activator:Activator:0.2:*:*:*:*:*:*:*",
+      "purl": "pkg:maven/com.dotcms.actionlet/actionlet@0.2",
+      "externalReferences": [
+        {
+          "url": "",
+          "hashes": [
+            {
+              "alg": "SHA-1",
+              "content": "d9efeef01f3254cbfb82f5910bd0b50a7435ce74"
+            }
+          ],
+          "type": "build-meta"
+        }
+      ],
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "java-archive-cataloger"
+        },
+        {
+          "name": "syft:package:language",
+          "value": "java"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "java-archive"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "java-archive"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotmarketing.osgi.actionlet.Activator:actionlet:0.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotmarketing.osgi.actionlet.Activator:osgi:0.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.actionlet:Activator:0.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.actionlet:actionlet:0.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:com.dotcms.actionlet:osgi:0.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:dotmarketing:Activator:0.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:dotmarketing:actionlet:0.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:Activator:Activator:0.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:Activator:actionlet:0.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:actionlet:Activator:0.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:actionlet:actionlet:0.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:dotmarketing:osgi:0.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:dotcms:Activator:0.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:dotcms:actionlet:0.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:Activator:osgi:0.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:actionlet:osgi:0.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:osgi:Activator:0.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:osgi:actionlet:0.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:dotcms:osgi:0.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:osgi:osgi:0.2:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:f24fcab6cdfe78ceadb48f75caddfcfa13fe1d221886610c0d6d2dc6e9ce07de"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/WEB-INF/classes/osgi-bundle/com.dotcms.actionlet-0.2.jar"
+        },
+        {
+          "name": "syft:metadata:virtualPath",
+          "value": "/srv/dotserver/tomcat-9.0.118/webapps/ROOT/WEB-INF/classes/osgi-bundle/com.dotcms.actionlet-0.2.jar"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/ubuntu/adduser@3.137ubuntu1?arch=all&distro=ubuntu-24.04&package-id=ca5a171a41bf9f76",
+      "type": "library",
+      "publisher": "Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>",
+      "name": "adduser",
+      "version": "3.137ubuntu1",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:adduser:adduser:3.137ubuntu1:*:*:*:*:*:*:*",
+      "purl": "pkg:deb/ubuntu/adduser@3.137ubuntu1?arch=all&distro=ubuntu-24.04",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "dpkg-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "deb"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "dpkg-db-entry"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:e2717a848c90604c475488372f9f901d7bc1c8e87fdd5f4ac5f1284291e7cd5f"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/usr/share/doc/adduser/copyright"
+        },
+        {
+          "name": "syft:location:1:layerID",
+          "value": "sha256:e2717a848c90604c475488372f9f901d7bc1c8e87fdd5f4ac5f1284291e7cd5f"
+        },
+        {
+          "name": "syft:location:1:path",
+          "value": "/var/lib/dpkg/info/adduser.conffiles"
+        },
+        {
+          "name": "syft:location:2:layerID",
+          "value": "sha256:e2717a848c90604c475488372f9f901d7bc1c8e87fdd5f4ac5f1284291e7cd5f"
+        },
+        {
+          "name": "syft:location:2:path",
+          "value": "/var/lib/dpkg/info/adduser.list"
+        },
+        {
+          "name": "syft:location:3:layerID",
+          "value": "sha256:e2717a848c90604c475488372f9f901d7bc1c8e87fdd5f4ac5f1284291e7cd5f"
+        },
+        {
+          "name": "syft:location:3:path",
+          "value": "/var/lib/dpkg/info/adduser.md5sums"
+        },
+        {
+          "name": "syft:location:4:layerID",
+          "value": "sha256:e2717a848c90604c475488372f9f901d7bc1c8e87fdd5f4ac5f1284291e7cd5f"
+        },
+        {
+          "name": "syft:location:4:path",
+          "value": "/var/lib/dpkg/info/adduser.postrm"
+        },
+        {
+          "name": "syft:location:5:layerID",
+          "value": "sha256:e2717a848c90604c475488372f9f901d7bc1c8e87fdd5f4ac5f1284291e7cd5f"
+        },
+        {
+          "name": "syft:location:5:path",
+          "value": "/var/lib/dpkg/info/adduser.preinst"
+        },
+        {
+          "name": "syft:location:6:layerID",
+          "value": "sha256:3fa3d42674c9da53e11d9ce6e9ab352be3ee4957dc279f894015ed659d0389c8"
+        },
+        {
+          "name": "syft:location:6:path",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "452"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/ubuntu/apt@2.8.3?arch=amd64&distro=ubuntu-24.04&package-id=d7b579ad029aa8b2",
+      "type": "library",
+      "publisher": "Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>",
+      "name": "apt",
+      "version": "2.8.3",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-3-Clause"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "name": "Expat"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:apt:apt:2.8.3:*:*:*:*:*:*:*",
+      "purl": "pkg:deb/ubuntu/apt@2.8.3?arch=amd64&distro=ubuntu-24.04",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "dpkg-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "deb"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "dpkg-db-entry"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/usr/share/doc/apt/copyright"
+        },
+        {
+          "name": "syft:location:10:layerID",
+          "value": "sha256:3fa3d42674c9da53e11d9ce6e9ab352be3ee4957dc279f894015ed659d0389c8"
+        },
+        {
+          "name": "syft:location:10:path",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "syft:location:1:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:1:path",
+          "value": "/var/lib/dpkg/info/apt.conffiles"
+        },
+        {
+          "name": "syft:location:2:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:2:path",
+          "value": "/var/lib/dpkg/info/apt.list"
+        },
+        {
+          "name": "syft:location:3:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:3:path",
+          "value": "/var/lib/dpkg/info/apt.md5sums"
+        },
+        {
+          "name": "syft:location:4:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:4:path",
+          "value": "/var/lib/dpkg/info/apt.postinst"
+        },
+        {
+          "name": "syft:location:5:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:5:path",
+          "value": "/var/lib/dpkg/info/apt.postrm"
+        },
+        {
+          "name": "syft:location:6:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:6:path",
+          "value": "/var/lib/dpkg/info/apt.preinst"
+        },
+        {
+          "name": "syft:location:7:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:7:path",
+          "value": "/var/lib/dpkg/info/apt.prerm"
+        },
+        {
+          "name": "syft:location:8:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:8:path",
+          "value": "/var/lib/dpkg/info/apt.shlibs"
+        },
+        {
+          "name": "syft:location:9:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:9:path",
+          "value": "/var/lib/dpkg/info/apt.triggers"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "4108"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/ubuntu/base-files@13ubuntu10.4?arch=amd64&distro=ubuntu-24.04&package-id=b7c6232fa8329e7c",
+      "type": "library",
+      "publisher": "Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>",
+      "name": "base-files",
+      "version": "13ubuntu10.4",
+      "licenses": [
+        {
+          "license": {
+            "name": "GPL"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:base-files:base-files:13ubuntu10.4:*:*:*:*:*:*:*",
+      "purl": "pkg:deb/ubuntu/base-files@13ubuntu10.4?arch=amd64&distro=ubuntu-24.04",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "dpkg-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "deb"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "dpkg-db-entry"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:base-files:base_files:13ubuntu10.4:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:base_files:base-files:13ubuntu10.4:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:base_files:base_files:13ubuntu10.4:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:base:base-files:13ubuntu10.4:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:base:base_files:13ubuntu10.4:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/usr/share/doc/base-files/copyright"
+        },
+        {
+          "name": "syft:location:1:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:1:path",
+          "value": "/var/lib/dpkg/info/base-files.conffiles"
+        },
+        {
+          "name": "syft:location:2:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:2:path",
+          "value": "/var/lib/dpkg/info/base-files.list"
+        },
+        {
+          "name": "syft:location:3:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:3:path",
+          "value": "/var/lib/dpkg/info/base-files.md5sums"
+        },
+        {
+          "name": "syft:location:4:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:4:path",
+          "value": "/var/lib/dpkg/info/base-files.postinst"
+        },
+        {
+          "name": "syft:location:5:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:5:path",
+          "value": "/var/lib/dpkg/info/base-files.postrm"
+        },
+        {
+          "name": "syft:location:6:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:6:path",
+          "value": "/var/lib/dpkg/info/base-files.preinst"
+        },
+        {
+          "name": "syft:location:7:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:7:path",
+          "value": "/var/lib/dpkg/info/base-files.prerm"
+        },
+        {
+          "name": "syft:location:8:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:8:path",
+          "value": "/var/lib/dpkg/info/base-files.triggers"
+        },
+        {
+          "name": "syft:location:9:layerID",
+          "value": "sha256:3fa3d42674c9da53e11d9ce6e9ab352be3ee4957dc279f894015ed659d0389c8"
+        },
+        {
+          "name": "syft:location:9:path",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "426"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/ubuntu/base-passwd@3.6.3build1?arch=amd64&distro=ubuntu-24.04&package-id=0efb79380a8e7129",
+      "type": "library",
+      "publisher": "Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>",
+      "name": "base-passwd",
+      "version": "3.6.3build1",
+      "licenses": [
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        },
+        {
+          "license": {
+            "name": "public-domain"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:base-passwd:base-passwd:3.6.3build1:*:*:*:*:*:*:*",
+      "purl": "pkg:deb/ubuntu/base-passwd@3.6.3build1?arch=amd64&distro=ubuntu-24.04",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "dpkg-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "deb"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "dpkg-db-entry"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:base-passwd:base_passwd:3.6.3build1:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:base_passwd:base-passwd:3.6.3build1:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:base_passwd:base_passwd:3.6.3build1:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:base:base-passwd:3.6.3build1:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:cpe23",
+          "value": "cpe:2.3:a:base:base_passwd:3.6.3build1:*:*:*:*:*:*:*"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/usr/share/doc/base-passwd/copyright"
+        },
+        {
+          "name": "syft:location:1:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:1:path",
+          "value": "/var/lib/dpkg/info/base-passwd.list"
+        },
+        {
+          "name": "syft:location:2:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:2:path",
+          "value": "/var/lib/dpkg/info/base-passwd.md5sums"
+        },
+        {
+          "name": "syft:location:3:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:3:path",
+          "value": "/var/lib/dpkg/info/base-passwd.postinst"
+        },
+        {
+          "name": "syft:location:4:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:4:path",
+          "value": "/var/lib/dpkg/info/base-passwd.postrm"
+        },
+        {
+          "name": "syft:location:5:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:5:path",
+          "value": "/var/lib/dpkg/info/base-passwd.preinst"
+        },
+        {
+          "name": "syft:location:6:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:6:path",
+          "value": "/var/lib/dpkg/info/base-passwd.templates"
+        },
+        {
+          "name": "syft:location:7:layerID",
+          "value": "sha256:3fa3d42674c9da53e11d9ce6e9ab352be3ee4957dc279f894015ed659d0389c8"
+        },
+        {
+          "name": "syft:location:7:path",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "254"
+        }
+      ]
+    },
+    {
+      "bom-ref": "pkg:deb/ubuntu/bash@5.2.21-2ubuntu4?arch=amd64&distro=ubuntu-24.04&package-id=4f666039edf2e296",
+      "type": "library",
+      "publisher": "Ubuntu Developers <ubuntu-devel-discuss@lists.ubuntu.com>",
+      "name": "bash",
+      "version": "5.2.21-2ubuntu4",
+      "licenses": [
+        {
+          "license": {
+            "id": "BSD-4-Clause-UC"
+          }
+        },
+        {
+          "license": {
+            "id": "GFDL-1.3-only"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-2.0-only"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-2.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-3.0-only"
+          }
+        },
+        {
+          "license": {
+            "id": "GPL-3.0-or-later"
+          }
+        },
+        {
+          "license": {
+            "id": "Latex2e"
+          }
+        },
+        {
+          "license": {
+            "name": "GFDL-NIV-1.3"
+          }
+        },
+        {
+          "license": {
+            "name": "MIT-like"
+          }
+        },
+        {
+          "license": {
+            "name": "permissive"
+          }
+        }
+      ],
+      "cpe": "cpe:2.3:a:bash:bash:5.2.21-2ubuntu4:*:*:*:*:*:*:*",
+      "purl": "pkg:deb/ubuntu/bash@5.2.21-2ubuntu4?arch=amd64&distro=ubuntu-24.04",
+      "properties": [
+        {
+          "name": "syft:package:foundBy",
+          "value": "dpkg-db-cataloger"
+        },
+        {
+          "name": "syft:package:type",
+          "value": "deb"
+        },
+        {
+          "name": "syft:package:metadataType",
+          "value": "dpkg-db-entry"
+        },
+        {
+          "name": "syft:location:0:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:0:path",
+          "value": "/usr/share/doc/bash/copyright"
+        },
+        {
+          "name": "syft:location:1:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:1:path",
+          "value": "/var/lib/dpkg/info/bash.conffiles"
+        },
+        {
+          "name": "syft:location:2:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:2:path",
+          "value": "/var/lib/dpkg/info/bash.list"
+        },
+        {
+          "name": "syft:location:3:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:3:path",
+          "value": "/var/lib/dpkg/info/bash.md5sums"
+        },
+        {
+          "name": "syft:location:4:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:4:path",
+          "value": "/var/lib/dpkg/info/bash.postinst"
+        },
+        {
+          "name": "syft:location:5:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:5:path",
+          "value": "/var/lib/dpkg/info/bash.postrm"
+        },
+        {
+          "name": "syft:location:6:layerID",
+          "value": "sha256:f103cd120fdd6cbc7f3d0e1d5bfb3e16290c32ead7b822d15c34460ecdf64b29"
+        },
+        {
+          "name": "syft:location:6:path",
+          "value": "/var/lib/dpkg/info/bash.prerm"
+        },
+        {
+          "name": "syft:location:7:layerID",
+          "value": "sha256:3fa3d42674c9da53e11d9ce6e9ab352be3ee4957dc279f894015ed659d0389c8"
+        },
+        {
+          "name": "syft:location:7:path",
+          "value": "/var/lib/dpkg/status"
+        },
+        {
+          "name": "syft:metadata:installedSize",
+          "value": "1900"
+        }
+      ]
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 import { expect, type Frame, type Page } from '@playwright/test';
 import { clickAddNewContentFromList, goToContentList } from '@utils/contentListingNavigation';
+import { getLegacyFrame } from '@utils/iframe';
 
 const LEGACY_EDIT_FRAME_URL_PATTERN = /edit_contentlet/i;
 
@@ -47,5 +48,22 @@ export class LegacyEditContentFormPage {
             timeout: 20000
         });
         await frame.getByTestId('dropzone').first().waitFor({ state: 'visible', timeout: 15000 });
+    }
+
+    /**
+     * Opens an existing contentlet in the legacy editor (Dojo listing -> first result row).
+     *
+     * Waits only for the edit_contentlet iframe, not for any field inside it, so that a field
+     * failing to hydrate surfaces as an assertion in the test rather than a navigation timeout
+     * here.
+     */
+    async goToLegacyEdit(contentTypeVariable: string) {
+        await goToContentList(this.page, contentTypeVariable);
+
+        const resultsTable = getLegacyFrame(this.page).locator('#results_table');
+        await expect(resultsTable).toBeVisible({ timeout: 20000 });
+        await resultsTable.locator('tr').nth(1).getByRole('link').first().click();
+
+        await this.getLegacyContentFrame();
     }
 }

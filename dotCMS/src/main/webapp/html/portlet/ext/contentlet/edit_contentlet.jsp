@@ -145,13 +145,7 @@
 	}
 </script>
 
-<script language="javascript">
-	require(["vs/editor/editor.main"], function() {
-		// Hack to avoid MonacoEditorLoaderService to load the editor again
-		// That service not works in `dojo` environment Dojo amdLoader. See docs: [https://dojotoolkit.org/reference-guide/1.7/loader/amd.html?highlight=packages%20location%20name%20main]
-		window.monacoEditorAlreadyInitialized = !!window.monaco;
-	});
-</script>
+<script src="/html/js/dotcms-monaco-loader.js"></script>
 
 <%
 	PermissionAPI conPerAPI = APILocator.getPermissionAPI();

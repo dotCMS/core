@@ -45,6 +45,7 @@ const buildVariant = (id: string, promoted = false): Variant => ({
 const buildExperiment = (experiment: Partial<DotExperiment> = {}): DotExperiment => ({
     id: EXPERIMENT_ID,
     pageId: 'page-1',
+    createdBy: 'dotcms.org.1',
     name: 'Alpha campaign',
     description: 'Checkout funnel rework',
     status: DotExperimentStatus.RUNNING,

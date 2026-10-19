@@ -131,7 +131,9 @@ jobs:
   # specifier (latest/next/*) regressing into an SDK lib's peerDependencies, a sibling
   # SDK dependency reappearing in the wrong field, or an example app pinning a floating
   # tag anywhere it isn't allowed (main's examples are the one deliberate exception for
-  # "latest" - see specs/37399-sdk-packaging-version-fix/spec.md).
+  # "latest" - see specs/37399-sdk-packaging-version-fix/spec.md). Also builds
+  # @dotcms/angular and fails if its Angular peer range admits a version older than the
+  # built artifact needs (#37680).
   validate-sdk-package-shapes:
     name: Validate SDK package.json shapes
     needs: [ initialize ]
@@ -141,7 +143,8 @@ jobs:
        fromJSON(needs.initialize.outputs.filters).examples == 'true' ||
        fromJSON(needs.initialize.outputs.filters).sdk_package_shapes == 'true')
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    timeout-minutes: 10
+    # 20, not 10: the Angular peer-range check installs core-web and builds sdk-angular.
+    timeout-minutes: 20
     permissions:
       contents: read
     steps:
@@ -156,6 +159,7 @@ jobs:
           cache-dependency-path: |
             .github/scripts/validate-sdk-package-shapes/package-lock.json
             .github/scripts/resolve-sdk-pin/package-lock.json
+            core-web/libs/sdk/angular/toolchain/package-lock.json
 
       - name: 'Build and test validator'
         working-directory: .github/scripts/validate-sdk-package-shapes
@@ -201,6 +205,46 @@ jobs:
           done < <(find ../../../examples -maxdepth 2 -name package.json)
 
           exit $FAIL
+        shell: bash
+
+      # The Angular peer-range check (#37680) reads the BUILT @dotcms/angular, so unlike the
+      # manifest checks above it needs core-web installed and the lib compiled. The build uses
+      # the Angular pinned in core-web/libs/sdk/angular/toolchain (the SDK's supported floor),
+      # not core-web's, so it also fails if SDK code uses an API newer than that floor.
+      # Skipped on examples-only changes: nothing that moves the floor lives there.
+      - name: 'Set up pnpm'
+        if: >-
+          fromJSON(needs.initialize.outputs.filters).sdk_libs == 'true' ||
+          fromJSON(needs.initialize.outputs.filters).sdk_package_shapes == 'true'
+        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+        with:
+          working-directory: core-web
+          install: false
+          cache: true
+
+      - name: 'Build @dotcms/angular'
+        if: >-
+          fromJSON(needs.initialize.outputs.filters).sdk_libs == 'true' ||
+          fromJSON(needs.initialize.outputs.filters).sdk_package_shapes == 'true'
+        working-directory: core-web
+        run: |
+          set -euo pipefail
+          pnpm install --frozen-lockfile
+          # production: the configuration deploy-javascript-sdk publishes.
+          pnpm exec nx build sdk-angular --configuration=production --skip-nx-cache
+        shell: bash
+
+      - name: 'Check Angular peer range against the built artifact'
+        if: >-
+          fromJSON(needs.initialize.outputs.filters).sdk_libs == 'true' ||
+          fromJSON(needs.initialize.outputs.filters).sdk_package_shapes == 'true'
+        working-directory: .github/scripts/validate-sdk-package-shapes
+        run: |
+          # Fails if core-web/libs/sdk/angular/package.json lets npm install @dotcms/angular
+          # next to an Angular older than the one its partial-compilation output needs.
+          node dist/check-angular-peer-floor.js \
+            ../../../core-web/libs/sdk/angular/package.json \
+            ../../../core-web/dist/libs/sdk/angular/fesm2022
         shell: bash
 
   # Finalize job - aggregates results from previous jobs

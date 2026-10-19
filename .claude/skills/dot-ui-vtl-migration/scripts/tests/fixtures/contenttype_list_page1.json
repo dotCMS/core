@@ -1,0 +1,8 @@
+{
+  "entity": [
+    { "id": "ct-blog", "variable": "Blog" },
+    { "id": "ct-event", "variable": "Event" },
+    { "id": "ct-banner", "variable": "Banner" },
+    { "id": "ct-page", "variable": "Page" }
+  ]
+}

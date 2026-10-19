@@ -12,6 +12,7 @@ import com.dotcms.experiments.business.ExperimentAPIImpIntegrationTest;
 import com.dotcms.experiments.business.ExperimentResultsQueryFactoryIntegrationTest;
 import com.dotcms.rest.api.v1.experiments.ExperimentsResourceIntegrationTest;
 import com.dotcms.experiments.business.ExperimentUrlPatternCalculatorIntegrationTest;
+import com.dotcms.experiments.business.ExperimentVariantEditIntegrationTest;
 import com.dotcms.experiments.business.web.ExperimentWebAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
 import com.dotcms.integritycheckers.ContentFileAssetIntegrityCheckerTest;
@@ -60,6 +61,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ExperimentResultsQueryFactoryIntegrationTest.class,
         ExperimentsResourceIntegrationTest.class,
         ExperimentWebAPIImplIntegrationTest.class,
+        ExperimentVariantEditIntegrationTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
         DependencyBundlerTest.class, // moved to top because of failures on GHA
         SiteAndFolderResolverImplTest.class, //Moved up to avoid conflicts with CT deletion

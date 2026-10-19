@@ -22,6 +22,7 @@ import java.sql.SQLException;
 import java.sql.Savepoint;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
@@ -1061,6 +1062,36 @@ public class HibernateUtil {
         } else {
             listener.run();
         }
+    }
+
+    /**
+     * Returns the synchronous commit listener registered under {@code tag} in the current
+     * transaction, creating and registering it first when there is none yet.
+     * <p>
+     * Use it when every call in one transaction should add to a single listener instead of
+     * registering one listener per call. {@link #addCommitListener(String, Runnable)} cannot do
+     * that: it replaces whatever is already registered under the tag, so only the last call's
+     * work would run. The listener lives in this class's own per-thread state, so a commit, a
+     * rollback, {@link #closeSession()} or a new {@link #startTransaction()} discards it with
+     * every other listener.
+     *
+     * @param tag     identifies the listener within the transaction
+     * @param factory creates the listener the first time it is asked for in a transaction
+     * @param <T>     the listener's type
+     * @return the transaction's listener; empty when no transaction is open or listeners are
+     * disabled for this thread, in which case the caller should do the work at once, as
+     * {@link #addCommitListener(String, Runnable)} would
+     */
+    @SuppressWarnings("unchecked")
+    public static <T extends Runnable> Optional<T> getOrAddSyncCommitListener(final String tag,
+            final Supplier<T> factory) {
+        if (!DbConnectionFactory.inTransaction()
+                || getTransactionListenersStatus() == TransactionListenerStatus.DISABLED) {
+            return Optional.empty();
+        }
+        final Runnable registered = syncCommitListeners.get()
+                .computeIfAbsent(tag, key -> new DotSyncRunnable(factory.get()));
+        return Optional.of((T) ((DotSyncRunnable) registered).getRunnable());
     }
 
     public static void addRollbackListener(Runnable listener) {

@@ -184,6 +184,20 @@ public class LayoutFactoryImpl extends LayoutFactory {
 	}
 
 	@Override
+	protected void setTabOrders(final Map<String, Integer> tabOrderByLayoutId) throws DotDataException {
+		for (final Map.Entry<String, Integer> entry : tabOrderByLayoutId.entrySet()) {
+			new DotConnect()
+					.setSQL("UPDATE cms_layout SET tab_order = ? WHERE id = ?")
+					.addParam(entry.getValue())
+					.addParam(entry.getKey())
+					.loadResult();
+			final Layout cached = new Layout();
+			cached.setId(entry.getKey());
+			lc.remove(cached);
+		}
+	}
+
+	@Override
 	protected Layout findLayoutByName(String name) throws DotDataException {
 
 		HibernateUtil hu = new HibernateUtil(Layout.class);

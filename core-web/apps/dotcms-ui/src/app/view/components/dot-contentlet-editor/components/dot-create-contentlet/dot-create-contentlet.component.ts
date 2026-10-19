@@ -14,7 +14,6 @@ import { ActivatedRoute } from '@angular/router';
 import { filter, map } from 'rxjs/operators';
 
 import { DotRouterService, DotIframeService } from '@dotcms/data-access';
-import { mapParamsFromEditContentlet } from '@dotcms/utils';
 
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 import { DotContentletWrapperComponent } from '../dot-contentlet-wrapper/dot-contentlet-wrapper.component';
@@ -56,32 +55,17 @@ export class DotCreateContentletComponent implements OnInit {
     }
 
     /**
-     * Handle close event
-     * @param {unknown} event
-     * @memberof DotCreateContentletComponent
+     * Closes the full-page legacy create screen and returns to where it was opened from: the
+     * content listing for a content create, Pages for a page create.
+     *
+     * It no longer sends anyone back to Content Drive: Content Drive creates in its own side panel,
+     * so nobody reaches this screen from it (#37759, FR-026).
+     *
+     * @param event The close event, passed on to the opener.
      */
     onClose(event: unknown): void {
-        // Assumes the legacy create editor is always routed under `/c/content/new/` (the path
-        // DotContentDriveNavigationService.createContent navigates to). If that prefix ever
-        // changes, the Content Drive back-navigation below is skipped and we fall back to the
-        // content listing — keep the two in sync.
         if (this.dotRouterService.currentSavedURL.includes('/c/content/new/')) {
-            // If opened from Content Drive, the URL carries CD_-prefixed params (filters/path).
-            // Return there with the filters preserved — same behavior as editing a contentlet
-            // (DotContentletWrapperComponent.onClose). Otherwise fall back to the content listing.
-            // Parse the query string directly — avoids depending on window.location (SSR/tests).
-            const searchParams = new URLSearchParams(
-                this.dotRouterService.currentPortlet.url?.split('?')[1] ?? ''
-            );
-            const contentDriveParams = mapParamsFromEditContentlet(searchParams);
-
-            if (Object.keys(contentDriveParams).length) {
-                this.dotRouterService.gotoPortlet('content-drive', {
-                    queryParams: contentDriveParams
-                });
-            } else {
-                this.dotRouterService.goToContent();
-            }
+            this.dotRouterService.goToContent();
         }
 
         if (this.dotRouterService.currentSavedURL.includes('/pages/new/')) {

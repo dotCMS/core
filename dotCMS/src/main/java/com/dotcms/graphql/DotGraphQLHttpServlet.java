@@ -7,6 +7,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import graphql.kickstart.servlet.AbstractGraphQLHttpServlet;
+import graphql.kickstart.execution.GraphQLQueryInvoker;
 import graphql.kickstart.servlet.GraphQLConfiguration;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
@@ -43,6 +44,11 @@ public class DotGraphQLHttpServlet extends AbstractGraphQLHttpServlet {
                 .with(new DotGraphQLSchemaProvider())
                 .with(List.of(new DotGraphQLServletListener()))
                 .with(new DotGraphQLContextBuilder())
+                // Reports narrowing clauses that matched nothing, through the response's
+                // `extensions`. A client that ignores extensions is unaffected. See #34540.
+                .with(GraphQLQueryInvoker.newBuilder()
+                        .withInstrumentation(new UnmatchedTypeConditionInstrumentation())
+                        .build())
                 .build();
     }
 

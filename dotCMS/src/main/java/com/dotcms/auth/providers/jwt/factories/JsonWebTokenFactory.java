@@ -10,7 +10,9 @@ import com.dotcms.util.ReflectionUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.jsonwebtoken.*;
 
@@ -35,6 +37,26 @@ import static com.dotcms.auth.providers.jwt.JsonWebTokenUtils.CLAIM_UPDATED_AT;
  * @since June 14, 2016
  */
 public class JsonWebTokenFactory implements Serializable {
+
+    /**
+     * When true (default), an API token JWT is accepted only if its {@code iat} and {@code exp}
+     * claims equal the issue and expiry dates stored for the token.
+     */
+    public static final String API_TOKEN_JWT_REQUIRE_RECORD_MATCH = "API_TOKEN_JWT_REQUIRE_RECORD_MATCH";
+
+    /**
+     * Returns whether the JWT's issue and expiry claims match the stored token record. JWT dates
+     * have one-second precision, so the comparison is made in whole seconds.
+     */
+    @VisibleForTesting
+    static boolean claimsMatchRecord(final Claims body, final ApiToken apiToken) {
+        return sameSecond(body.getIssuedAt(), apiToken.issueDate)
+                && sameSecond(body.getExpiration(), apiToken.expiresDate);
+    }
+
+    private static boolean sameSecond(final Date claim, final Date stored) {
+        return claim != null && stored != null && claim.getTime() / 1000 == stored.getTime() / 1000;
+    }
 
     /**
      * Used to keep the instance of the JWT Service.
@@ -288,6 +310,20 @@ public class JsonWebTokenFactory implements Serializable {
                 claimException.setClaimValue(apiToken.revoked);
                 throw claimException;
                 
+            }
+            // An API token JWT is always issued with the stored token's issue and expiry dates, so a
+            // JWT whose dates differ was not issued by this server for that token (for example, one
+            // signed with a leaked key). Reject it.
+            if (Config.getBooleanProperty(API_TOKEN_JWT_REQUIRE_RECORD_MATCH, true)
+                    && !claimsMatchRecord(body, apiToken)) {
+                SecurityLogger.logInfo(JsonWebTokenFactory.class, "Rejected API token JWT whose claims do not match "
+                        + "the stored record for token " + apiToken.id + " (iat " + body.getIssuedAt() + ", exp "
+                        + body.getExpiration() + ") from ip " + requestingIp);
+                final IncorrectClaimException claimException = new IncorrectClaimException(jws.getHeader(), body,
+                        "JWT claims do not match API token: " + apiToken.id);
+                claimException.setClaimName(Claims.ISSUED_AT);
+                claimException.setClaimValue(body.getIssuedAt());
+                throw claimException;
             }
             if(apiToken.isNotBeforeDate()) {
                 IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token Not Before:" + apiToken.issueDate);

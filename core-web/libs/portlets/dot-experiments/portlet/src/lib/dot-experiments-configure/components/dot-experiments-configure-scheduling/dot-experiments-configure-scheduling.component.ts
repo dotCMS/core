@@ -5,6 +5,7 @@ import { FieldTree, FormField } from '@angular/forms/signals';
 import { BlockUIModule } from 'primeng/blockui';
 import { ButtonModule } from 'primeng/button';
 import { DatePickerModule } from 'primeng/datepicker';
+import { MessageModule } from 'primeng/message';
 import { PanelModule } from 'primeng/panel';
 
 import { DotMessagePipe } from '@dotcms/ui';
@@ -40,6 +41,7 @@ const STARTED_NOTE_KEY = 'experiments.configure.scheduling.note.started';
     imports: [
         DatePipe,
         BlockUIModule,
+        MessageModule,
         PanelModule,
         FormField,
         ButtonModule,
@@ -60,6 +62,12 @@ export class DotExperimentsConfigureSchedulingComponent {
      * anywhere to be written to. Owned by the shell, which knows whether the experiment is new.
      */
     readonly $gated = input<boolean>(false, { alias: 'gated' });
+
+    /**
+     * When true, the whole scheduling section is blocked — scheduling is not allowed in limited
+     * mode because only immediate-start experiments are permitted.
+     */
+    readonly $limitedMode = input<boolean>(false, { alias: 'limitedMode' });
 
     readonly DATE_PICKER_STEP_MINUTE = DATE_PICKER_STEP_MINUTE;
 

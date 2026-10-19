@@ -411,8 +411,9 @@ export class DotUveActionsHandlerService {
         // The Block Editor inline flow arrives as a postMessage rather than a
         // DOM event, so the owning contentlet is resolved from the payload's
         // inode inside the iframe document. Same gate, same visible refusal as
-        // the WYSIWYG path.
-        if (!canEditContentletByInode(contentWindow?.document, data?.inode)) {
+        // the WYSIWYG path. The window is passed rather than its document:
+        // reading `document` throws on cross-origin (headless) iframes.
+        if (!canEditContentletByInode(contentWindow, data?.inode)) {
             notifyNoEditPermission(this.messageService, this.dotMessageService);
 
             return;

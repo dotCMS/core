@@ -9,6 +9,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
@@ -474,6 +475,25 @@ public class AppsUtil {
     }
 
     /**
+     * Tells whether a value can be parsed as a JSON document. Used for params of type
+     * {@link Type#JSON}.
+     *
+     * @param value the raw value to check
+     * @return {@code true} when the value is a well-formed JSON document
+     */
+    public static boolean isValidJson(final String value) {
+        if (isNotSet(value)) {
+            return false;
+        }
+        return Try.of(() -> DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
+                        .reader()
+                        .with(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+                        .readTree(value))
+                .map(node -> node != null && !node.isMissingNode())
+                .getOrElse(false);
+    }
+
+    /**
      * Validate the incoming params and match them with the params described by the respective appDescriptor yml.
      * This method takes a Map of Optional<char[]> As this is a middle ground object representation
      * that can be mapped from a saved  AppSecrets or an incoming SecretForm
@@ -533,6 +553,16 @@ public class AppsUtil {
                             )
                     );
                 }
+            }
+
+            if (Type.JSON.equals(descriptorParam.getValue().getType()) && UtilMethods
+                    .isSet(input) && !isValidJson(new String(input))) {
+                throw new IllegalArgumentException(
+                        String.format(
+                                "Param `%s` is of type JSON but its value is not valid JSON.",
+                                describedParamName
+                        )
+                );
             }
 
             if (Type.SELECT.equals(descriptorParam.getValue().getType()) && UtilMethods
@@ -663,6 +693,20 @@ public class AppsUtil {
     }
 
     /**
+     * Returns the type a secret is persisted with. {@link Type#JSON} is stored as
+     * {@link Type#STRING}: the value is a plain string either way, the descriptor still reports
+     * JSON at read time (see {@code SecretView}), and a release that predates {@code Type.JSON}
+     * could not deserialize a stored {@code "type":"JSON"}, so a rollback would leave the secrets
+     * of that site unreadable.
+     *
+     * @param type the type declared by the param descriptor
+     * @return the type to persist
+     */
+    static Type storedType(final Type type) {
+        return Type.JSON.equals(type) ? Type.STRING : type;
+    }
+
+    /**
      * Creates a secret based on a given {@link ParamDescriptor}.
      *
      * @param key the key of the App
@@ -679,7 +723,7 @@ public class AppsUtil {
                 .map(pd -> Secret.builder()
                         .withValue(value)
                         .withHidden(pd.isHidden())
-                        .withType(pd.getType())
+                        .withType(storedType(pd.getType()))
                         .withEnvVar(pd.getEnvVar())
                         .withEnvShow(pd.getEnvShow())
                         .withEnvValue(discoverEnvVarValue(key, paramName, pd.getEnvVar()))

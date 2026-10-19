@@ -80,6 +80,25 @@ does not release a hold that already points at it.
 
 Full procedure, rules, and exit path: [RUNBOOK → `force`](RUNBOOK.md#force--holding-onto-a-tainted-version).
 
+## Site sync
+
+`state` and `release-title` are read-only helpers for the corpsites mirror:
+
+    uv run evergreen-tracks state --repo dotcms/dotcms --out hub-state.json
+    uv run evergreen-tracks release-title --action taint --title "Release 26.08.31-01"
+
+- `state` writes a Hub snapshot (current version per track, sorted tainted list) to `--out`;
+  exit `1` (Hub read failed or incomplete) writes nothing. Optional `--as-if-action`,
+  `--as-if-version`, `--as-if-track` preview an admin action on the snapshot (dry-run only).
+- `release-title` prints the GitHub Release title with `⚠️ TAINTED ` added (taint) or removed
+  (untaint). No network.
+
+After every registry mutation (promote, admin, release), the reusable workflow
+`cicd_comp_evergreen-site-sync.yml` runs `state` then `changelog-publisher sync-site` so the
+`EvergreenState` record matches Docker Hub. It runs as a separate job outside the
+`evergreen-tracks-registry` lock, never blocks the caller, and posts to #dot-releases only on
+failure or drift. See [changelog-publisher](../changelog-publisher/README.md#site-sync-sync-site).
+
 ## Operator procedures
 
 See [RUNBOOK.md](RUNBOOK.md) for tainting a release, holding a track, and holding a single

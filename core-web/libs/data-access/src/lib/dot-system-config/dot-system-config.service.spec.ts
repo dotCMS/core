@@ -83,6 +83,41 @@ describe('DotSystemConfigService', () => {
                 req.flush(mockResponse);
             }));
 
+        it('should carry the ceilings the server advertises for bulk work', () => {
+            // Read from the same configuration load upload's ceiling already comes from, so the
+            // folder actions can check a selection before submitting it (#37062).
+            const ceilings = {
+                bulkUpload: { maxFiles: 100, maxTotalBytes: 1024 },
+                folderBulkDelete: { maxPaths: 50 },
+                folderBulkDuplicate: { maxPaths: 25 }
+            };
+            let config: DotSystemConfig | undefined;
+
+            spectator.service.getSystemConfig().subscribe((value) => (config = value));
+            // `flush` emits synchronously, so the value is already here and nothing waits on a
+            // timeout; an emission that never comes fails the assertion instead of passing.
+            spectator
+                .expectOne('/api/v1/appconfiguration', HttpMethod.GET)
+                .flush({ entity: { config: ceilings } });
+
+            expect(config).toEqual(expect.objectContaining(ceilings));
+        });
+
+        it('should carry the time zones the server accepts', () => {
+            const timezones = [
+                { id: 'America/New_York', label: 'Eastern Standard Time', offset: -18000000 },
+                { id: 'UTC', label: 'Coordinated Universal Time', offset: 0 }
+            ];
+            let config: DotSystemConfig | undefined;
+
+            spectator.service.getSystemConfig().subscribe((value) => (config = value));
+            spectator
+                .expectOne('/api/v1/appconfiguration', HttpMethod.GET)
+                .flush({ entity: { config: { timezones } } });
+
+            expect(config?.timezones).toEqual(timezones);
+        });
+
         it('should handle errors when fetching system configuration', () => {
             spectator.service.getSystemConfig().subscribe(
                 () => expect.fail('Expected an error, but received a response'),

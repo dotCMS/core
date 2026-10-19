@@ -1,5 +1,5 @@
 import { signalMethod } from '@ngrx/signals';
-import { of, SubscriptionLike } from 'rxjs';
+import { forkJoin, Observable, of, SubscriptionLike } from 'rxjs';
 
 import { Location, NgTemplateOutlet } from '@angular/common';
 import { HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
@@ -15,26 +15,31 @@ import {
     untracked,
     viewChild
 } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { MessageService, SortEvent } from 'primeng/api';
+import { MessageService, SortEvent, ToastMessageOptions } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
 import { Popover, PopoverModule } from 'primeng/popover';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
-import { catchError } from 'rxjs/operators';
+import { catchError, filter, take } from 'rxjs/operators';
 
 import {
     AddToBundleService,
     DotCurrentUserService,
+    DotFolderBulkDeleteRefusalKind,
+    DotFolderBulkDuplicateRefusalKind,
     DotFolderService,
     DotUploadFileService,
     DotWorkflowsActionsService,
     DotMessageService,
-    DotWorkflowActionsFireService
+    DotRouterService,
+    DotWorkflowActionsFireService,
+    DotHttpErrorManagerService,
+    DotPermissionsService
 } from '@dotcms/data-access';
 import {
     ContextMenuData,
@@ -47,9 +52,12 @@ import {
     DotContentDriveBrowseItem,
     DotContentDriveItem,
     DotContentDrivePaginateEvent,
-    isActionableBrowseItem
+    DotFolderBean,
+    DotSite,
+    isActionableBrowseItem,
+    DotCMSContentlet
 } from '@dotcms/dotcms-models';
-import { DotEditContentSidePanelComponent, DotSidePanelNavController } from '@dotcms/edit-content';
+import { loadDotEditContentSidePanel, loadDotSourceEditorSidePanel } from '@dotcms/edit-content';
 import {
     DotContentDriveUploadFiles,
     DotFolderTreeNodeData,
@@ -71,19 +79,28 @@ import {
     DotToastComponent,
     DotUploadDropzoneComponent,
     DotUploadTypeSelectorComponent,
-    STATUS_TOAST_KEY
+    STATUS_TOAST_KEY,
+    DotJspIframeDialogComponent,
+    DotSidePanelHandle,
+    DotSidePanelService,
+    injectSidePanel
 } from '@dotcms/ui';
 
 import { DotContentDriveActionCenterComponent } from '../components/dialogs/dot-content-drive-action-center/dot-content-drive-action-center.component';
 import { DotContentDriveDialogContentTypeSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-content-type-selector/dot-content-drive-dialog-content-type-selector.component';
 import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
+import { DotContentDriveGridCardComponent } from '../components/dot-content-drive-grid-card/dot-content-drive-grid-card.component';
 import { DotContentDriveScopeBarComponent } from '../components/dot-content-drive-scope-bar/dot-content-drive-scope-bar.component';
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
+import { DotLegacyEditorSidePanelComponent } from '../components/dot-legacy-editor-side-panel/dot-legacy-editor-side-panel.component';
 import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
-    ACTION_CENTER_DIALOG_STYLE,
+    ACTION_CENTER_DIALOG_CLASS,
+    CONTENT_DRIVE_EDIT_CODE_PARAM,
+    CONTENT_DRIVE_URL_PARAM,
+    CONTENT_DRIVE_VIEW_PARAM,
     DIALOG_TYPE,
     SORT_ORDER,
     SUCCESS_MESSAGE_LIFE,
@@ -91,38 +108,71 @@ import {
     ERROR_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
     UPLOAD_BATCH_OPERATION,
-    NEW_CONTENT_MARKER,
-    ROOT_PATH
+    ROOT_PATH,
+    SYSTEM_HOST
 } from '../shared/constants';
+import { DotLegacyEditorPageRequest, DotLegacyEditorSaved } from '../shared/legacy-editor.models';
 import {
+    DotContentDriveActionExecutionResult,
     DotContentDriveContentTypeSelectorPayload,
     DotContentDriveDialog,
+    DotContentDriveOutcomeKind,
+    DotContentDriveOutcomeReading,
     DotContentDriveSortOrder,
     DotContentDriveStatus,
     DotContentDriveUploadBaseType,
     DotContentDriveUploadSelection,
-    DotContentDriveUploadSelectorPayload
+    DotContentDriveUploadSelectorPayload,
+    OUTCOME_KIND,
+    DotContentDriveFolderPermissionsPayload,
+    DOT_CONTENT_DRIVE_VIEW_TYPE
 } from '../shared/models';
-import { DotContentDriveNavigationService } from '../shared/services';
+import {
+    DotContentDriveNavigationService,
+    provideContentDriveNavigationOverride
+} from '../shared/services';
 import { provideContentDriveFieldFilterHost } from '../store/content-drive-field-filter-host';
 import { provideContentDriveFilterFacade } from '../store/content-drive-filter-facade';
 import { provideContentDriveRelationshipPicker } from '../store/content-drive-relationship-picker';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
+import { describeFolderDeleteOutcome } from '../utils/folder-delete-outcome';
+import { describeFolderDuplicateOutcome } from '../utils/folder-duplicate-outcome';
+import { folderPermissionsDialogConfig } from '../utils/folder-permissions-dialog';
 import {
     canAddChildrenTo,
     encodeFilters,
     isFolder,
     browsedFolderRef,
     normalizeFolderRef,
+    panelParamOf,
+    resolveContentDriveUrlIntent,
     toFolderRef,
-    uploadIndicatorKey
+    uploadIndicatorKey,
+    folderDialogParamOf,
+    toActionableFolder
 } from '../utils/functions';
 import { refuseOverCeiling } from '../utils/upload-ceilings';
-import { describeUploadFailures } from '../utils/upload-failures';
+import { describeUploadFailures, DotUploadFailureGroup } from '../utils/upload-failures';
+
+/**
+ * Whether the store holds the admin's real site. Until the site loads, `initContentDrive` stores
+ * `SYSTEM_HOST` in its place, the same placeholder `loadItems` skips the search for.
+ *
+ * @param site The store's current site.
+ * @returns Whether it is a loaded site.
+ */
+function isLoadedSite(site: DotSite | undefined): site is DotSite {
+    return !!site && site.identifier !== SYSTEM_HOST.identifier;
+}
+
+/** What the user may do to a folder, as `DotPermissionsService.getUserAccess` answers it. */
+type DotFolderUserAccess = { canEdit: boolean; canEditPermissions: boolean };
+
 @Component({
     selector: 'dot-content-drive-shell',
     imports: [
         DotFolderListViewComponent,
+        DotContentDriveGridCardComponent,
         DotContentDriveToolbarComponent,
         DotFolderListViewContextMenuComponent,
         DotAddToBundleComponent,
@@ -138,11 +188,9 @@ import { describeUploadFailures } from '../utils/upload-failures';
         DotUploadDropzoneComponent,
         DotStatusToastComponent,
         DotToastComponent,
-        DotEditContentSidePanelComponent,
-        ProgressSpinnerModule,
-        ButtonModule,
         DotContentDriveActionCenterComponent,
-        DotContentDriveScopeBarComponent
+        DotContentDriveScopeBarComponent,
+        ButtonModule
     ],
     providers: [
         DotContentDriveStore,
@@ -159,8 +207,13 @@ import { describeUploadFailures } from '../utils/upload-failures';
         DialogService,
         provideContentDriveRelationshipPicker(),
         // Component-scoped (not `root`) so it can inject the shell's DotContentDriveStore to read
-        // the side-panel feature flag; shared with the child components in this shell's subtree.
+        // the list's language filter and default language; shared with the child components in
+        // this shell's subtree.
         DotContentDriveNavigationService,
+        // Lets the new-editor side panel's "switch to the old editor" and load error stay in
+        // Content Drive. Only this shell provides it (#37759, FR-028, FR-029).
+        // Remove with the legacy editor.
+        provideContentDriveNavigationOverride(),
         DotWorkflowsActionsService,
         MessageService,
         DotFolderService,
@@ -202,13 +255,168 @@ export class DotContentDriveShellComponent implements OnDestroy {
     readonly #messageService = inject(MessageService);
     readonly #fileService = inject(DotUploadFileService);
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
-    readonly #sidePanelNav = inject(DotSidePanelNavController);
+    readonly #sidePanels = inject(DotSidePanelService);
+    readonly #dotRouterService = inject(DotRouterService);
+    readonly #dialogService = inject(DialogService);
+    readonly #folderService = inject(DotFolderService);
+    readonly #permissionsService = inject(DotPermissionsService);
+    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
 
-    /** Edit Content side panel request, driven by the navigation service; read by the template. */
+    /**
+     * The admin's current site, once it has loaded. Built here because `toObservable` needs the
+     * injection context; read through {@link #currentSite$}.
+     */
+    readonly #siteLoaded$ = toObservable(this.#store.currentSite).pipe(
+        filter(isLoadedSite),
+        take(1)
+    );
+
+    /** The open Edit Permissions dialog, which the shell opens itself (see {@link #syncDialog}). */
+    #permissionsDialogRef: DynamicDialogRef | null = null;
+
+    /** Whether the last URL write named an open folder dialog; drives push vs replace. */
+    #folderDialogUrlWasSet = false;
+
+    /**
+     * A `createFolder` link asked for New Folder, until it has opened (#37759, FR-031). Waits for
+     * the tree, like a `createContent` link, so the folder `path` names is the one it opens on.
+     */
+    readonly #pendingNewFolder = signal(false);
+
+    // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects; the field only holds the EffectRef
+    #openPendingNewFolderEffect = effect(() => {
+        if (!this.#pendingNewFolder()) {
+            return;
+        }
+
+        if (this.#store.folders().length === 0 || this.#store.sidebarLoading()) {
+            return;
+        }
+
+        untracked(() => {
+            this.#pendingNewFolder.set(false);
+
+            // Same gate as the toolbar's New Folder entry: where it is not offered, nothing opens
+            // and the link says why (US8/AC5).
+            if (!this.#store.$canAddChildren()) {
+                this.#reportForbidden();
+
+                return;
+            }
+
+            this.#store.setDialog({
+                type: DIALOG_TYPE.FOLDER,
+                header: this.#dotMessageService.get('content-drive.dialog.folder.header')
+            });
+        });
+    });
+
+    /**
+     * The content type a `createContent` link asked to create, until its form has opened. Read from
+     * the URL once, on load (#37759, FR-024).
+     */
+    readonly #pendingCreate = signal<string | null>(null);
+
+    /**
+     * Opens the create form a `createContent` link asked for, once Content Drive knows where and in
+     * which language: after the folder tree's first load (so the folder `path` names is resolved)
+     * and after the default language (which a create starts in without a language filter). Waiting
+     * on the tree rather than on a selected folder matters: whole-site content has no tree row, so
+     * a link with no `path` never gets one.
+     */
+    // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects; the field only holds the EffectRef
+    #openPendingCreateEffect = effect(() => {
+        const contentType = this.#pendingCreate();
+
+        // Checked first, so nothing else is tracked once the link has been handled (or never was).
+        if (!contentType) {
+            return;
+        }
+
+        const ready =
+            this.#store.folders().length > 0 &&
+            !this.#store.sidebarLoading() &&
+            this.#store.defaultLanguageLoaded();
+
+        if (!ready) {
+            return;
+        }
+
+        untracked(() => {
+            this.#pendingCreate.set(null);
+            this.#navigationService.createContent(contentType);
+        });
+    });
+
+    /** Edit Content side panel request, driven by the navigation service. */
     protected readonly $editPanelRequest = this.#navigationService.$editPanelRequest;
 
     /**
-     * Whether the last `editContent` URL write reflected an open panel. Lets the effect push when
+     * Legacy-editor side panel request, driven by the navigation service. Remove with the legacy
+     * editor.
+     */
+    protected readonly $legacyPanelRequest = this.#navigationService.$legacyPanelRequest;
+
+    /**
+     * The new editor's side panel, open while the navigation service names content to edit or
+     * create in it. Loaded on its first open, so the editor and its Block Editor dependency chain
+     * stay out of this portlet's chunk.
+     */
+    readonly #editPanel = injectSidePanel(this.$editPanelRequest, {
+        component: loadDotEditContentSidePanel,
+        heading: (request) => request.title ?? '',
+        inputs: (request) => ({ data: request }),
+        outputs: {
+            saved: (contentlet: DotCMSContentlet) => this.onEditPanelSaved(contentlet),
+            languageChanged: (languageId: number) => this.onEditPanelLanguage(languageId)
+        },
+        closed: () => this.onEditPanelClosed()
+    });
+
+    /**
+     * The legacy (JSP) editor's side panel, for content types that have not opted into the new
+     * editor (#37759). Remove with the legacy editor.
+     */
+    readonly #legacyPanel = injectSidePanel(this.$legacyPanelRequest, {
+        component: () => DotLegacyEditorSidePanelComponent,
+        heading: (request) => request.title,
+        inputs: (request) => ({ request }),
+        outputs: {
+            saved: (saved: DotLegacyEditorSaved) => this.onLegacyPanelSaved(saved),
+            pageEditorRequested: (page: DotLegacyEditorPageRequest) =>
+                this.onLegacyPanelPageEditor(page),
+            versionRestored: () => this.onLegacyPanelRestored(),
+            languageChanged: (languageId: number) => this.onLegacyPanelLanguage(languageId)
+        },
+        closed: () => this.onLegacyPanelClosed()
+    });
+
+    /** The file open in the Edit Code panel, from the store. */
+    protected readonly $sourceEditorRequest = this.#store.sourceEditor;
+
+    /**
+     * The Edit Code panel: a file's source in Monaco, open while the store names a file. Loaded on
+     * its first open, so Monaco stays out of this portlet's chunk. Kept so browser Back can route
+     * its close through the panel's unsaved-changes prompt.
+     */
+    readonly #sourceEditorPanel = injectSidePanel(this.$sourceEditorRequest, {
+        component: loadDotSourceEditorSidePanel,
+        heading: (request) => request.title,
+        inputs: (request) => ({ request }),
+        outputs: { saved: () => this.onSourceEditorSaved() },
+        closed: () => this.onSourceEditorClosed()
+    });
+
+    /** Whether any side panel is open. */
+    readonly #anyPanelOpen = computed(
+        () =>
+            !!this.$editPanelRequest() ||
+            !!this.$legacyPanelRequest() ||
+            !!this.$sourceEditorRequest()
+    );
+
+    /**
+     * Whether the last URL write named an open side panel. Lets the effect push when
      * opening (so Back can pop the panel) but replace when closing — a push on close would leave a
      * phantom entry whose Back puts the just-removed param back with no panel rendered.
      */
@@ -221,16 +429,18 @@ export class DotContentDriveShellComponent implements OnDestroy {
     #lastWrittenPath: string | undefined = undefined;
 
     /**
-     * The rendered side panel, so browser Back can route its close through the panel's guard.
-     * Queried by template ref var (`#sidePanelRef`), not the class token: passing the class itself
-     * would be a runtime reference to it outside the `@defer` block below, which disqualifies it
-     * from Angular's automatic deferred-import bundling (the `<T>` here is a type-only generic,
-     * erased at compile time — it leaves no runtime reference).
+     * The open side panel, whichever editor it hosts, so browser Back can route its close through
+     * that panel's unsaved-changes guard.
+     *
+     * @returns The open panel, or `undefined` when none is open.
      */
-    protected readonly $sidePanel = viewChild<DotEditContentSidePanelComponent>('sidePanelRef');
+    #activePanel(): DotSidePanelHandle | undefined {
+        return [this.#legacyPanel, this.#editPanel, this.#sourceEditorPanel].find((panel) =>
+            panel.isOpen()
+        );
+    }
 
     readonly $items = this.#store.items;
-    readonly $status = this.#store.status;
 
     /**
      * The tree's VISUAL expanded state (drives width/animation). Combines the user's real
@@ -285,7 +495,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
     }
 
     /** Inodes any in-flight run is acting on, so the grid can mark those rows. */
-    readonly $busyRows = this.#store.busyRows;
+    readonly $busyRows = this.#store.allBusyRows;
 
     /**
      * Forces the folder tree visually collapsed while the Edit Content side panel is open on a
@@ -298,10 +508,10 @@ export class DotContentDriveShellComponent implements OnDestroy {
      */
     // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects; the field only holds the EffectRef
     #forceCollapseTreeWithPanelEffect = effect(() => {
-        const panelOpen = !!this.$editPanelRequest();
+        const panelOpen = this.#anyPanelOpen();
 
         untracked(() => {
-            this.#store.setTreeForceCollapsed(panelOpen && this.#sidePanelNav.shouldCollapse());
+            this.#store.setTreeForceCollapsed(panelOpen && this.#sidePanels.collapsesNavigation());
         });
     });
 
@@ -384,12 +594,10 @@ export class DotContentDriveShellComponent implements OnDestroy {
     });
 
     /**
-     * @see ACTION_CENTER_DIALOG_STYLE
+     * @see ACTION_CENTER_DIALOG_CLASS
      */
-    readonly $dialogStyle = computed(() =>
-        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER
-            ? ACTION_CENTER_DIALOG_STYLE
-            : undefined
+    readonly $dialogRootClass = computed(() =>
+        this.$activeDialog()?.type === DIALOG_TYPE.ACTION_CENTER ? ACTION_CENTER_DIALOG_CLASS : ''
     );
 
     /**
@@ -441,6 +649,20 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * `signalMethod` only tracks its input, so the writes here need no manual `untracked`.
      */
     readonly #syncDialog = signalMethod<DotContentDriveDialog | undefined>((dialog) => {
+        // Edit Permissions is the legacy permissions JSP in a dialog of its own, not this shell's
+        // `p-dialog` (#37759, FR-030).
+        if (dialog?.type === DIALOG_TYPE.FOLDER_PERMISSIONS) {
+            this.#openPermissionsDialog(dialog);
+
+            return;
+        }
+
+        if (this.#permissionsDialogRef) {
+            const ref = this.#permissionsDialogRef;
+            this.#permissionsDialogRef = null;
+            ref.close();
+        }
+
         if (dialog) {
             this.$activeDialog.set(dialog);
             this.$dialogVisible.set(true);
@@ -455,54 +677,83 @@ export class DotContentDriveShellComponent implements OnDestroy {
         this.#registerShortcuts();
 
         this.#syncDialog(this.#store.dialog);
+        // Each of these reacts to its one signal only; whatever else it reads is a snapshot.
+        this.#reportActionExecutionResult(this.#store.actionExecutionResult);
+        this.#reportFolderDeleteRefusal(this.#store.folderDeleteRefusal);
+        this.#reportFolderDuplicateRefusal(this.#store.folderDuplicateRefusal);
 
-        // Shareable deep-link: `?editContent=<identifier>` reopens the edit panel on load. Read
+        // Shareable deep-link: a panel or folder-dialog param reopens what it names on load. Read
         // once from the snapshot (the portlet is not re-created on in-session query-param changes).
-        // The `new`-mode marker is ignored — creating is not shareable, so only real identifiers
-        // are resolved.
-        const editContent = this.#route.snapshot.queryParams['editContent'];
-        if (editContent && editContent !== NEW_CONTENT_MARKER) {
-            // `editContentLang` names the exact version to reopen: an identifier has one version per
-            // language, so without it the resolver can only guess. Absent on a link written before it
-            // was recorded, which the resolver still handles.
-            const languageId = Number(this.#route.snapshot.queryParams['editContentLang']);
-            this.#navigationService.openEditByIdentifier(
-                editContent,
-                Number.isFinite(languageId) && languageId > 0 ? languageId : undefined
+        // `editContentLang` names the exact version to reopen: an identifier has one version per
+        // language, so without it the resolver can only guess.
+        const intent = resolveContentDriveUrlIntent(this.#route.snapshot.queryParams);
+        if (intent.kind === 'edit') {
+            this.#navigationService.openEditByIdentifier(intent.identifier, intent.languageId);
+        } else if (intent.kind === 'create') {
+            this.#pendingCreate.set(intent.contentType);
+        } else if (intent.kind === 'createFolder') {
+            this.#pendingNewFolder.set(true);
+        } else if (intent.kind === 'editFolder') {
+            this.#openFolderSettingsFromUrl(intent.identifier);
+        } else if (intent.kind === 'folderPermissions') {
+            this.#openFolderPermissionsFromUrl(intent.identifier);
+        } else if (intent.kind === 'conflict') {
+            // Params that can't hold together: Content Drive can't tell which one the author meant,
+            // so it opens nothing and removes all of them, keeping the rest of the URL (FR-023).
+            const cleared = Object.fromEntries(
+                Object.values(CONTENT_DRIVE_URL_PARAM).map((param) => [param, null])
+            );
+            this.#location.replaceState(
+                this.#router
+                    .createUrlTree([], { queryParams: cleared, queryParamsHandling: 'merge' })
+                    .toString()
             );
         }
 
-        // Browser Back/Forward: the open panel's `editContent` param is written via `Location.go`
-        // (no router navigation), so nothing else reacts to popstate. When Back removes or changes
-        // that param while a panel is open (edit OR new), route the close through the panel's
-        // unsaved-changes guard — a direct `closeEditPanel()` would tear the editor down and discard
-        // unsaved edits silently.
+        // Browser Back/Forward: the open panel's params are written via `Location.go` (no router
+        // navigation), so nothing else reacts to popstate. When Back removes or changes the param
+        // that names the open panel (an edit, a create, or Edit Code's file), route the close
+        // through the panel's unsaved-changes guard — a direct `closeEditPanel()` would tear the
+        // editor down and discard unsaved edits silently.
         const locationSubscription = this.#location.subscribe((event) => {
             const params = new URLSearchParams(event.url?.split('?')[1] ?? '');
-            const editContentParam = params.get('editContent');
-            const request = this.#navigationService.$editPanelRequest();
-            if (!request) {
+
+            // An open folder dialog closes when Back drops its param, the same way its own close
+            // does (#37759, FR-032). It has no unsaved-changes guard to go through.
+            const folderParam = folderDialogParamOf(this.#store.dialog());
+            if (folderParam) {
+                if (params.get(folderParam.key) !== folderParam.value) {
+                    this.#closeFolderDialog();
+                }
+
                 return;
             }
 
-            // The param the URL should carry for the currently-open panel: the identifier for edit,
-            // the marker for new. If Back changed it away from that, the panel should close.
-            const expected =
-                request.mode === 'edit' ? (request.identifier ?? null) : NEW_CONTENT_MARKER;
+            const sourceEditor = this.#store.sourceEditor();
+            const location = this.#navigationService.$panelLocation();
+            const panelParam = sourceEditor
+                ? { key: CONTENT_DRIVE_EDIT_CODE_PARAM, value: sourceEditor.inode }
+                : location && panelParamOf(location);
 
-            if (expected !== editContentParam) {
+            if (!panelParam) {
+                return;
+            }
+
+            const { key, value } = panelParam;
+
+            if (params.get(key) !== value) {
                 // Restore the param so the URL matches the still-open panel while the guard decides.
                 // `replaceState` (not `go`) avoids piling up history entries. Discard → the panel
-                // emits `closed` → onEditPanelClosed → closeEditPanel clears the param; Keep editing
-                // → the panel stays open and the URL is already back in sync.
+                // closes → onEditPanelClosed → closeEditPanel clears the param; Keep editing → the
+                // panel stays open and the URL is already back in sync.
                 const restoredUrl = this.#router
                     .createUrlTree([], {
-                        queryParams: { editContent: expected },
+                        queryParams: { [key]: value },
                         queryParamsHandling: 'merge'
                     })
                     .toString();
                 this.#location.replaceState(restoredUrl);
-                this.$sidePanel()?.requestClose();
+                this.#activePanel()?.requestClose();
             }
         });
         this.#locationSubscription = locationSubscription;
@@ -513,6 +764,25 @@ export class DotContentDriveShellComponent implements OnDestroy {
     });
 
     readonly $loading = computed(() => this.#store.status() === DotContentDriveStatus.LOADING);
+
+    /** Whether the grid of cards is showing instead of the table (#37930). */
+    protected readonly $isGridView = computed(
+        () => this.#store.viewType() === DOT_CONTENT_DRIVE_VIEW_TYPE.CARD
+    );
+
+    /**
+     * Results per page, as the store holds them. The listing rebuilds its table when the layout
+     * switches back to it, and the rebuilt table must page by what the user picked.
+     */
+    protected readonly $rows = computed(() => this.#store.pagination().limit);
+
+    /** The sort the store holds, for the same reason: a rebuilt table shows it. */
+    protected readonly $sort = computed(() => this.#store.sort());
+
+    /** The sort direction in the table's terms: `1` ascending, `-1` descending. */
+    protected readonly $sortOrder = computed(() =>
+        this.$sort().order === DotContentDriveSortOrder.ASC ? 1 : -1
+    );
 
     /**
      * Whether the last search failed to run, as opposed to running and matching nothing.
@@ -666,8 +936,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * PrimeNG's close animation and so still reports a dialog that is already gone.
      */
     protected readonly $authorIsMidTask = computed(
-        () =>
-            this.$dialogVisible() || this.$selectedItems().length > 0 || !!this.$editPanelRequest()
+        () => this.$dialogVisible() || this.$selectedItems().length > 0 || this.#anyPanelOpen()
     );
 
     /**
@@ -697,6 +966,9 @@ export class DotContentDriveShellComponent implements OnDestroy {
      */
     readonly #currentFolderIsAffected = (affectedFolders?: string[]): boolean =>
         !affectedFolders?.length ||
+        // All site content lists what is inside folders, so a run anywhere on the site can
+        // change it.
+        this.#store.$allSiteContentSelected() ||
         affectedFolders
             .map(normalizeFolderRef)
             .includes(browsedFolderRef(this.#store.currentSite()?.hostname, this.#store.path()));
@@ -831,229 +1103,492 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * Reports a finished workflow action as a toast, refreshes the grid, and closes the dialog if it
      * is still open.
      *
-     * Lives in the shell rather than in the Action Center because the run outlives that dialog: the
-     * user may close it mid-flight and the result still has to be reported. The shell owns
-     * `<p-toast>` and is never destroyed while the portlet is open, so it is the only place that can
-     * present a result whose originating dialog may already be gone. It also keeps the store data-only.
+     * Lives in the shell because the run outlives the Action Center: the user may close it
+     * mid-flight and the result still has to be reported, and the shell owns `<p-toast>` for the
+     * portlet's whole life. The reload lands here too because `loadItems` belongs to the base store's
+     * `withMethods`, which `withActionExecution` cannot reach from inside the composition.
      *
-     * The reload lands here for the same reason, plus a mechanical one: `loadItems` belongs to the
-     * base store's `withMethods`, which `withActionExecution` cannot reach from inside the
-     * composition. `loadItems` clears the selection and sets `LOADING` itself, so this one call is the
-     * whole post-run refresh.
-     *
-     * `failedCount` downgrades the toast to a warning. Partial failure is a normal outcome for these
-     * endpoints (a lock held by somebody else, a per-contentlet permission), and reporting it as an
-     * unqualified success would be the one thing the user cannot recover from — the grid has already
-     * reloaded and the selection is gone.
+     * A `signalMethod` fed only the result, like {@link #syncDialog}: the site, path and tree
+     * selection it reads to word the toast are snapshots, so changing any of them does not re-enter
+     * the outcome path.
      */
-    readonly actionExecutionResultEffect = effect(() => {
-        const result = this.#store.actionExecutionResult();
-
+    readonly #reportActionExecutionResult = signalMethod<
+        DotContentDriveActionExecutionResult | undefined
+    >((result) => {
         if (!result) {
             return;
         }
 
-        const {
+        const outcome = this.#readOutcome(result);
+
+        if (outcome.isFolderOutcome) {
+            // The listing and the tree load separately, and a tree still offering a folder the
+            // listing dropped is how an author navigates into nothing (FR-036). A duplication adds
+            // folders, so the tree needs them as much as a delete needs them gone (FR-030). An
+            // upload changes contents, not the hierarchy, so it skips this.
+            this.#store.loadFolders();
+        }
+
+        // Silent on a clean success, because the listing already shows it. A shortfall is not
+        // visible anywhere; `confirmSuccess` marks operations whose success shows nowhere (Add to
+        // Bundle, Push Publish); a backgrounded outcome arrived after the author moved on. Only the
+        // toast is suppressed: the reload and the dialog close below still happen.
+        if (outcome.isPartial || result.confirmSuccess || result.backgrounded) {
+            this.#announceOutcome(outcome);
+        }
+
+        this.#reloadAfterOutcome(result.backgrounded, result.affectedFolders);
+
+        if (!result.backgrounded) {
+            // A no-op when the user already closed the dialog. Never for a backgrounded result: it
+            // can land while the user is configuring a different action, and closing throws that away.
+            this.#store.closeDialog();
+        }
+
+        this.#store.clearActionExecutionResult();
+    });
+
+    /** Resolves a message key, in the shape the failure describers take. */
+    readonly #resolveMessage = (key: string, ...args: string[]): string =>
+        this.#dotMessageService.get(key, ...args);
+
+    /**
+     * The summary key for a failure group that was not cancelled, by outcome kind and severity.
+     * An outcome with no kind is an upload.
+     */
+    readonly #failureSummaryKeys: Record<
+        DotContentDriveOutcomeKind,
+        Record<DotUploadFailureGroup['severity'], string>
+    > = {
+        [OUTCOME_KIND.UPLOAD]: {
+            error: 'content-drive.upload.toast.failed',
+            warn: 'content-drive.upload.toast.incomplete'
+        },
+        [OUTCOME_KIND.FOLDER_DELETE]: {
+            error: 'content-drive.delete.toast.failed',
+            warn: 'content-drive.delete.toast.incomplete'
+        },
+        [OUTCOME_KIND.FOLDER_DUPLICATE]: {
+            error: 'content-drive.duplicate.toast.failed',
+            warn: 'content-drive.duplicate.toast.incomplete'
+        }
+    };
+
+    /**
+     * Derives the counts that decide how an outcome is worded.
+     *
+     * A folder skipped because a selected parent already covered it is not a shortfall: the author
+     * got the child once, inside the parent (FR-021a). A recognised resubmission is not one either,
+     * whatever its counts say: a retry that worked collides on every file, and calling that a failure
+     * sends the author to re-upload files that are already there.
+     */
+    #readOutcome(result: DotContentDriveActionExecutionResult): DotContentDriveOutcomeReading {
+        const isFolderOutcome =
+            OUTCOME_KIND.FOLDER_DELETE === result.outcomeKind ||
+            OUTCOME_KIND.FOLDER_DUPLICATE === result.outcomeKind;
+        const coveredCount = isFolderOutcome
+            ? (result.failures ?? []).filter(
+                  (item) => 'SKIPPED' === item.status && 'COVERED_BY_PARENT' === item.reason
+              ).length
+            : 0;
+        const isPartial =
+            !result.duplicateSubmission &&
+            (result.failedCount > 0 || result.skippedCount - coveredCount > 0);
+
+        return { result, isFolderOutcome, coveredCount, isPartial };
+    }
+
+    /**
+     * Shows the outcome's toasts: one per failure group, or a single counts-only one when there is
+     * no per-item detail. The counts ride only on the first, since they belong to the batch.
+     */
+    #announceOutcome(outcome: DotContentDriveOutcomeReading): void {
+        const detail = this.#outcomeDetail(outcome);
+        const groups = this.#failureGroups(outcome);
+        const messages = groups.length
+            ? this.#failureGroupMessages(outcome, groups, detail)
+            : [this.#countsOnlyMessage(outcome, detail)];
+
+        messages.forEach((message) => this.#messageService.add(message));
+    }
+
+    /**
+     * The counts sentence. Anything short of a clean run states success, failed and skipped each
+     * next to its own cause, because skips and failures can happen in the same run and naming only
+     * one blames it for the whole shortfall.
+     */
+    #outcomeDetail({ result, coveredCount, isPartial }: DotContentDriveOutcomeReading): string {
+        const { actionName, successCount, failedCount, skippedCount } = result;
+
+        // A stopped run says so whatever its counts, or one stopped after only successes would read
+        // as clean. Only the folders the stop left out count as skipped: a covered one went with
+        // its parent.
+        if (result.cancelled) {
+            return this.#dotMessageService.get(
+                this.#cancelledKeys(result.outcomeKind).detail,
+                actionName,
+                String(successCount),
+                String(failedCount),
+                String(skippedCount - coveredCount)
+            );
+        }
+
+        // A resubmission means opposite things by base type (FR-040b): a file batch collided and
+        // nothing was duplicated, a dotAsset batch ran again and every file now exists twice.
+        if (result.duplicateSubmission) {
+            return this.#dotMessageService.get(
+                'DOTASSET' === result.baseType
+                    ? 'content-drive.upload.toast.already-uploaded-again'
+                    : 'content-drive.upload.toast.already-uploaded',
+                String(failedCount + successCount)
+            );
+        }
+
+        if (isPartial) {
+            // Actions whose shortfalls mean something other than permissions, locks and workflow
+            // steps bring their own sentence (`partialDetailKey`).
+            return this.#dotMessageService.get(
+                result.partialDetailKey ?? 'content-drive.action-center.toast.executed-partial',
+                actionName,
+                String(successCount),
+                String(failedCount),
+                String(skippedCount)
+            );
+        }
+
+        return this.#dotMessageService.get(
+            'content-drive.action-center.toast.executed-detail',
             actionName,
-            successCount,
-            skippedCount,
-            failedCount,
-            partialDetailKey,
-            backgrounded,
-            confirmSuccess,
-            affectedFolders,
-            failures,
-            duplicateSubmission,
-            baseType
-        } = result;
+            String(successCount)
+        );
+    }
 
-        // Skips and failures are not mutually exclusive: one bulk fire over a mixed-type selection
-        // can skip items whose scheme does not own the action *and* be refused on items that are
-        // locked. The ladder this replaces reported whichever it checked first, so a mixed result
-        // showed the failure copy alone and blamed permissions or locks for the entire shortfall —
-        // sending the user off to unlock content that was never the problem.
-        //
-        // So anything short of a clean run reports all three numbers, each next to its own cause.
-        // Both counts are always passed, meaning a fails-only run renders "0 skipped"; naming the
-        // cause and its number is what keeps the message honest.
-        // A recognised resubmission is not a shortfall, whatever its counts say. Under the
-        // collision branch a retry that worked collides on every file, so by the numbers it is a
-        // total failure — and reporting it that way sends the author to delete and re-upload files
-        // that were already correctly there, which is worse than offering no retry at all.
-        const isPartial = !duplicateSubmission && (failedCount > 0 || skippedCount > 0);
+    /**
+     * The named items and their reasons, one line per reason. The counts say how many; only this
+     * says which and why. Empty for a recognised resubmission, whose "failures" are files already
+     * correctly in place.
+     */
+    #failureGroups(outcome: DotContentDriveOutcomeReading): DotUploadFailureGroup[] {
+        const { result } = outcome;
 
-        // Silent on a clean success, unless the operation leaves no visible trace.
-        //
-        // For most operations the listing already shows the outcome — the row published, moved,
-        // unlocked or disappeared — so a notification repeats what the author can see, which is the
-        // noise this feature set out to remove. A shortfall is different: the numbers and their
-        // causes are not visible anywhere, and it is the case the author has to act on.
-        //
-        // `confirmSuccess` is for the operations whose success genuinely shows nowhere, such as Add
-        // to Bundle and Push Publish.
-        //
-        // Only the *notification* is suppressed. The grid still reloads and the dialog still closes:
-        // those are how the author sees the outcome, so skipping them would replace a redundant
-        // message with no feedback at all.
-        // `backgrounded` too: that outcome arrived unprompted, minutes after the author moved on, so
-        // by definition nothing on screen reflects it — and with a dialog open the grid does not
-        // even reload. Staying silent there would mean a run finished and the author never learned.
-        const announce = isPartial || confirmSuccess || backgrounded;
+        if (outcome.isFolderOutcome) {
+            return this.#folderFailureGroups(outcome);
+        }
 
-        // A resubmission means opposite things by base type, so the copy cannot be one sentence
-        // (FR-040b). For a file asset the unique index refuses the second writer, so the batch
-        // collided and nothing was duplicated — the case this copy was written for. For a dotAsset
-        // the index can never contend, so the batch ran again and every file now exists twice;
-        // saying "nothing was duplicated" there points the author away from a folder they need to
-        // look at.
-        const detail = duplicateSubmission
-            ? this.#dotMessageService.get(
-                  'DOTASSET' === baseType
-                      ? 'content-drive.upload.toast.already-uploaded-again'
-                      : 'content-drive.upload.toast.already-uploaded',
-                  String(failedCount + successCount)
-              )
-            : isPartial
-              ? this.#dotMessageService.get(
-                    // Actions whose failures and skips mean something other than permissions, locks and
-                    // workflow steps say so themselves — see `partialDetailKey`.
-                    partialDetailKey ?? 'content-drive.action-center.toast.executed-partial',
-                    actionName,
-                    String(successCount),
-                    String(failedCount),
-                    String(skippedCount)
-                )
-              : this.#dotMessageService.get(
-                    'content-drive.action-center.toast.executed-detail',
-                    actionName,
-                    String(successCount)
-                );
+        if (result.duplicateSubmission) {
+            return [];
+        }
 
-        // Named files and their reasons, grouped one line per reason, appended to the counts.
-        // The counts say how many; only this says which and why, and that is the part the author
-        // can act on. Empty for a clean run, so a success never grows a list.
-        // Nothing to list for a recognised retry: its "failures" are the files already in place,
-        // and naming them would be telling the author to fix what is correctly there.
-        // What a folder itself refuses is not on the wire: a failure carries the file name and the
-        // reason, never the mask that refused it. So the sentence that names what the folder *does*
-        // accept is available only while the batch's target is the folder on screen, and the
-        // generic one stands for every other case.
-        //
-        // Strictly one affected folder, and strictly the selected one. A result for somewhere else
-        // — or a run spanning several folders — would otherwise explain this folder's rule to an
-        // author who was refused by another's, which is worse than saying nothing about the rule.
+        return describeUploadFailures(result.failures, this.#resolveMessage, {
+            folderFilter: this.#onScreenFolderFilter(result.affectedFolders)
+        });
+    }
+
+    /**
+     * A folder operation's lines as a single group: every line already reads as "this folder
+     * survived, here is why", so upload's warn/error split would divide one list. Red only when
+     * something failed, and nothing to list when the only entries are covered folders.
+     *
+     * Each vocabulary has its own describer because the reason sets barely overlap: a delete's
+     * `IN_USE` resolved through upload's mapping would fall back to the unclassified copy.
+     */
+    #folderFailureGroups({
+        result,
+        isPartial
+    }: DotContentDriveOutcomeReading): DotUploadFailureGroup[] {
+        const { failures, failedCount, cancelled, outcomeKind } = result;
+
+        if (!failures?.length || !(isPartial || cancelled)) {
+            return [];
+        }
+
+        const describeLines =
+            OUTCOME_KIND.FOLDER_DUPLICATE === outcomeKind
+                ? describeFolderDuplicateOutcome
+                : describeFolderDeleteOutcome;
+
+        return [
+            {
+                severity: failedCount > 0 ? 'error' : 'warn',
+                lines: describeLines(failures, this.#resolveMessage)
+            }
+        ];
+    }
+
+    /**
+     * The on-screen folder's file filter, when the batch targeted exactly that folder.
+     *
+     * A failure never carries the mask that refused it, so the sentence naming what a folder
+     * accepts is only honest for the folder on screen. For any other folder, or a run spanning
+     * several, it would explain the wrong folder's rule.
+     */
+    #onScreenFolderFilter(affectedFolders: string[] | undefined): string | undefined {
         const affectedRefs = (affectedFolders ?? []).map(normalizeFolderRef);
         const refusingFolderIsOnScreen =
             affectedRefs.length === 1 &&
             affectedRefs[0] ===
                 browsedFolderRef(this.#store.currentSite()?.hostname, this.#store.path());
 
-        // Narrowed the same way the upload itself narrows the selection: the tree's load-more row
-        // is a node without a folder behind it, so it carries no filter to name.
+        return refusingFolderIsOnScreen ? this.#selectedTreeFolder()?.filesMasks : undefined;
+    }
+
+    /**
+     * The folder selected in the tree, skipping the load-more row, which has no folder behind it.
+     */
+    #selectedTreeFolder(): DotFolderTreeNodeContentData | undefined {
         const selectedNodeData = this.#store.selectedNode()?.data;
-        const selectedFolder =
-            selectedNodeData && selectedNodeData.type !== LOAD_MORE_NODE_TYPE
-                ? (selectedNodeData as DotFolderTreeNodeContentData)
-                : undefined;
 
-        const failureGroups = duplicateSubmission
-            ? []
-            : describeUploadFailures(
-                  failures,
-                  (key, ...args) => this.#dotMessageService.get(key, ...args),
-                  {
-                      folderFilter: refusingFolderIsOnScreen
-                          ? selectedFolder?.filesMasks
-                          : undefined
-                  }
-              );
+        return selectedNodeData && selectedNodeData.type !== LOAD_MORE_NODE_TYPE
+            ? (selectedNodeData as DotFolderTreeNodeContentData)
+            : undefined;
+    }
 
-        if (announce) {
-            // One message per severity (developer's call), and the counts ride with the first of
-            // them. Two reasons for the split: an author reading "2 failed" wants to know which of
-            // those they can go and fix, and a wall they cannot pass should not arrive wearing the
-            // same colour as a file that needs renaming.
-            //
-            // A run with no per-file detail still gets exactly one message, because the counts
-            // alone are an outcome — the groups are what varies, never whether anything is said.
-            const messages = failureGroups.length
-                ? failureGroups.map((group, index) => ({
-                      severity: group.severity,
-                      summary: this.#dotMessageService.get(
-                          'error' === group.severity
-                              ? 'content-drive.upload.toast.failed'
-                              : 'content-drive.upload.toast.incomplete'
-                      ),
-                      // The counts belong to the batch, not to a severity, so they are stated once
-                      // and in the message the author reads first.
-                      detail: [...(index === 0 ? [detail] : []), ...group.lines].join('<br>'),
-                      life: WARNING_MESSAGE_LIFE
-                  }))
-                : [
-                      {
-                          // A skip is a shortfall too — those items did not get the action — so it
-                          // warns rather than reporting green, which is what it used to do.
-                          //
-                          // A recognised resubmission takes its level from whether anything is
-                          // left for the author to do, which splits by base type exactly where the
-                          // wording does (FR-040b). A file batch was refused its second copy, so
-                          // the folder already holds what they wanted and there is nothing to act
-                          // on. A dotAsset batch ran again and the folder now holds two of
-                          // everything, so someone has to delete the copies — and `info` is
-                          // precisely the level that says they need not look.
-                          severity: duplicateSubmission
-                              ? 'DOTASSET' === baseType
-                                  ? 'warn'
-                                  : 'info'
-                              : isPartial
-                                ? 'warn'
-                                : 'success',
-                          summary: this.#dotMessageService.get(
-                              isPartial || duplicateSubmission
-                                  ? 'content-drive.upload.toast.incomplete'
-                                  : 'content-drive.action-center.toast.executed'
-                          ),
-                          detail,
-                          life:
-                              isPartial || duplicateSubmission
-                                  ? WARNING_MESSAGE_LIFE
-                                  : SUCCESS_MESSAGE_LIFE
-                      }
-                  ];
+    /**
+     * One toast per failure group, so a wall the author cannot pass does not arrive in the same
+     * colour as a file that needs renaming. The counts go in the first one only.
+     */
+    #failureGroupMessages(
+        { result }: DotContentDriveOutcomeReading,
+        groups: DotUploadFailureGroup[],
+        detail: string
+    ): ToastMessageOptions[] {
+        return groups.map((group, index) => ({
+            severity: group.severity,
+            summary: this.#dotMessageService.get(
+                this.#failureGroupSummaryKey(result, group.severity)
+            ),
+            detail: [...(index === 0 ? [detail] : []), ...group.lines].join('<br>'),
+            life: WARNING_MESSAGE_LIFE
+        }));
+    }
 
-            messages.forEach((message) => this.#messageService.add(message));
+    /** The summary key for one failure group. */
+    #failureGroupSummaryKey(
+        result: DotContentDriveActionExecutionResult,
+        severity: DotUploadFailureGroup['severity']
+    ): string {
+        if (result.cancelled) {
+            return this.#cancelledKeys(result.outcomeKind).summary;
         }
 
-        untracked(() => {
-            // A backgrounded outcome arrives unprompted, so it must not disturb whatever the user is
-            // doing when it lands. Every other result settles a request they are waiting on, so it
-            // reloads straight away — holding it would read as the action having done nothing.
-            if (!backgrounded || !this.$authorIsMidTask()) {
-                // Contentlets have moved step, so the grid is stale; `loadItems` also drops the
-                // selection the run consumed.
-                //
-                // Quiet: the run marked its rows, so a skeleton here would be a second load
-                // right after the first and would read as a jump.
-                if (this.#currentFolderIsAffected(affectedFolders)) {
-                    this.#store.loadItems({ quiet: true });
-                }
-            } else {
-                // Held, not dropped (FR-043). Dropping it left the grid stale for as long as the
-                // author stayed in the portlet: the run settled, the rows changed, and nothing
-                // would ever fetch them again. `#flushHeldReload` runs it at the next boundary.
-                this.#reloadHeld.set({ affectedFolders });
-            }
+        return this.#failureSummaryKeys[result.outcomeKind ?? OUTCOME_KIND.UPLOAD][severity];
+    }
 
-            if (!backgrounded) {
-                // A no-op when the user already closed the dialog, which is the common path now that
-                // firing hands off to the toolbar. Never done for a backgrounded result: it can land
-                // minutes later, while the user is mid-way through configuring a different action,
-                // and closing the dialog throws that input away.
-                this.#store.closeDialog();
-            }
+    /**
+     * The single toast for an outcome with no per-item detail: the counts alone are still an outcome.
+     */
+    #countsOnlyMessage(
+        outcome: DotContentDriveOutcomeReading,
+        detail: string
+    ): ToastMessageOptions {
+        const { result, isPartial } = outcome;
+        const isShortfall = !!result.cancelled || isPartial || !!result.duplicateSubmission;
 
-            this.#store.clearActionExecutionResult();
+        return {
+            severity: this.#countsOnlySeverity(outcome),
+            summary: this.#dotMessageService.get(this.#countsOnlySummaryKey(outcome)),
+            detail,
+            life: isShortfall ? WARNING_MESSAGE_LIFE : SUCCESS_MESSAGE_LIFE
+        };
+    }
+
+    /**
+     * The level of a counts-only toast. A skip is a shortfall, so it warns. A resubmission warns
+     * only when something is left to do (FR-040b): a dotAsset batch left two of everything, while a
+     * file batch was refused its second copy, and `info` says there is nothing to look at.
+     */
+    #countsOnlySeverity({
+        result,
+        isPartial
+    }: DotContentDriveOutcomeReading): 'success' | 'info' | 'warn' {
+        if (result.cancelled) {
+            return 'warn';
+        }
+
+        if (result.duplicateSubmission) {
+            return 'DOTASSET' === result.baseType ? 'warn' : 'info';
+        }
+
+        return isPartial ? 'warn' : 'success';
+    }
+
+    /** The summary key of a counts-only toast. */
+    #countsOnlySummaryKey({ result, isPartial }: DotContentDriveOutcomeReading): string {
+        if (result.cancelled) {
+            return this.#cancelledKeys(result.outcomeKind).summary;
+        }
+
+        return isPartial || result.duplicateSubmission
+            ? 'content-drive.upload.toast.incomplete'
+            : 'content-drive.action-center.toast.executed';
+    }
+
+    /** The summary and detail keys for a stopped run. Anything but a delete reads as a duplication. */
+    #cancelledKeys(outcomeKind: DotContentDriveOutcomeKind | undefined): {
+        summary: string;
+        detail: string;
+    } {
+        return OUTCOME_KIND.FOLDER_DELETE === outcomeKind
+            ? {
+                  summary: 'content-drive.delete.toast.cancelled',
+                  detail: 'content-drive.delete.toast.cancelled-detail'
+              }
+            : {
+                  summary: 'content-drive.duplicate.toast.cancelled',
+                  detail: 'content-drive.duplicate.toast.cancelled-detail'
+              };
+    }
+
+    /**
+     * Reloads the grid after an outcome, or holds the reload while the author is mid-task.
+     *
+     * A backgrounded outcome arrives unprompted, so it must not disturb what the author is doing.
+     * Every other result settles a request they are waiting on, so holding it would read as the
+     * action having done nothing.
+     */
+    #reloadAfterOutcome(backgrounded: boolean | undefined, affectedFolders?: string[]): void {
+        if (backgrounded && this.$authorIsMidTask()) {
+            this.#holdReload(affectedFolders);
+
+            return;
+        }
+
+        // Quiet: the run already marked its rows, so a skeleton here would read as a jump.
+        // `loadItems` also drops the selection the run consumed.
+        if (this.#currentFolderIsAffected(affectedFolders)) {
+            this.#store.loadItems({ quiet: true });
+        }
+    }
+
+    /**
+     * Holds a reload for {@link flushHeldReloadEffect} to run at the next boundary (FR-043).
+     * Dropping it would leave the grid stale for as long as the author stayed.
+     *
+     * Merged into what is already held, so a later outcome for another folder does not drop this
+     * one's reload. No folders named means reload regardless, and that wins.
+     */
+    #holdReload(affectedFolders?: string[]): void {
+        const held = this.#reloadHeld();
+        const reloadRegardless =
+            !affectedFolders?.length || (!!held && !held.affectedFolders?.length);
+
+        this.#reloadHeld.set({
+            affectedFolders: reloadRegardless
+                ? undefined
+                : [...new Set([...(held?.affectedFolders ?? []), ...affectedFolders])]
         });
+    }
+
+    /**
+     * The words for each refusal the delete endpoint reasoned about.
+     *
+     * Here rather than in the store for the same reason {@link #describeSubmissionRefusal} is: the
+     * store carries the kind, the component decides what an author reads. `UNCLASSIFIED` is a
+     * transport failure or a body with no code, said in the product's words rather than the
+     * server's (FR-024).
+     *
+     * None of them names a number or a folder. The ceiling is in the server's prose, which is not
+     * localised and so is not rendered, and the overlap body carries no structured field naming the
+     * folder it collided on — a shortfall against FR-040 recorded in the contract rather than
+     * papered over by parsing a sentence.
+     */
+    readonly #folderDeleteRefusalKeys: Record<DotFolderBulkDeleteRefusalKind, string> = {
+        EMPTY_SELECTION: 'content-drive.delete.refused.empty-selection',
+        OVER_MAX_PATHS: 'content-drive.delete.refused.over-max-paths',
+        NOT_ENTITLED: 'content-drive.delete.refused.not-entitled',
+        OVERLAPPING_RUN: 'content-drive.delete.refused.overlapping-run',
+        UNCLASSIFIED: 'content-drive.delete.refused.unclassified'
+    };
+
+    /**
+     * Says why a bulk folder delete never became a run, and consumes the refusal.
+     *
+     * Its own effect rather than a branch of the outcome drain: a refusal is not an outcome. Nothing
+     * ran, so there are no counts to report, nothing to reload, and no dialog state to settle — the
+     * only thing owed to the author is the sentence (FR-041).
+     */
+    readonly #reportFolderDeleteRefusal = signalMethod<DotFolderBulkDeleteRefusalKind | undefined>(
+        (kind) => {
+            if (!kind) {
+                return;
+            }
+
+            this.#messageService.add({
+                severity: 'error',
+                summary: this.#dotMessageService.get('content-drive.delete.refused.title'),
+                detail: this.#refusalDetail(
+                    kind,
+                    this.#folderDeleteRefusalKeys[kind],
+                    'content-drive.delete.refused.over-max-paths-limit',
+                    this.#store.folderDeleteMaxPaths()
+                ),
+                life: ERROR_MESSAGE_LIFE
+            });
+
+            this.#store.clearFolderDeleteRefusal();
+        }
+    );
+
+    /**
+     * The sentence for each way the server can refuse a folder duplication before any run exists
+     * (#37062). Delete's kinds minus the overlap one, which duplication cannot produce.
+     * `UNCLASSIFIED` is a transport failure or a body with no code, said in the product's words.
+     */
+    readonly #folderDuplicateRefusalKeys: Record<DotFolderBulkDuplicateRefusalKind, string> = {
+        EMPTY_SELECTION: 'content-drive.duplicate.refused.empty-selection',
+        OVER_MAX_PATHS: 'content-drive.duplicate.refused.over-max-paths',
+        NOT_ENTITLED: 'content-drive.duplicate.refused.not-entitled',
+        UNCLASSIFIED: 'content-drive.duplicate.refused.unclassified'
+    };
+
+    /**
+     * The sentence for a refusal, naming the ceiling when it was one and the server advertises it.
+     *
+     * The Action Center already sends at most the advertised ceiling, so this is reached only when
+     * the limit was not known to the client, or changed under it. Naming the number then still tells the
+     * author how far to narrow the selection, which "fewer" does not.
+     *
+     * @param kind the refusal
+     * @param key the refusal's own sentence
+     * @param limitKey the sentence naming the ceiling, for `OVER_MAX_PATHS`
+     * @param maxPaths the advertised ceiling, or `null` when none is
+     */
+    #refusalDetail(
+        kind: DotFolderBulkDeleteRefusalKind | DotFolderBulkDuplicateRefusalKind,
+        key: string,
+        limitKey: string,
+        maxPaths: number | null
+    ): string {
+        return kind === 'OVER_MAX_PATHS' && maxPaths !== null
+            ? this.#dotMessageService.get(limitKey, String(maxPaths))
+            : this.#dotMessageService.get(key);
+    }
+
+    /**
+     * Says why a folder duplication never became a run, and consumes the refusal. Mirrors
+     * {@link #reportFolderDeleteRefusal}: a refusal is not an outcome, so there are no counts and
+     * nothing to reload.
+     */
+    readonly #reportFolderDuplicateRefusal = signalMethod<
+        DotFolderBulkDuplicateRefusalKind | undefined
+    >((kind) => {
+        if (!kind) {
+            return;
+        }
+
+        this.#messageService.add({
+            severity: 'error',
+            summary: this.#dotMessageService.get('content-drive.duplicate.refused.title'),
+            detail: this.#refusalDetail(
+                kind,
+                this.#folderDuplicateRefusalKeys[kind],
+                'content-drive.duplicate.refused.over-max-paths-limit',
+                this.#store.folderDuplicateMaxPaths()
+            ),
+            life: ERROR_MESSAGE_LIFE
+        });
+
+        this.#store.clearFolderDuplicateRefusal();
     });
 
     /**
@@ -1090,6 +1625,10 @@ export class DotContentDriveShellComponent implements OnDestroy {
         const queryParams: Record<string, string | null> = {};
 
         queryParams['isTreeExpanded'] = isTreeExpanded.toString();
+        // Always written, so a copied link opens in the view it was copied from, whatever the
+        // person opening it remembered (#37930, US4 #2). A view switch replaces the entry; only
+        // panel opens and folder moves push one, below.
+        queryParams[CONTENT_DRIVE_VIEW_PARAM.VIEW_TYPE] = this.#store.viewType();
 
         if (path && path.length) {
             queryParams['path'] = path;
@@ -1103,22 +1642,37 @@ export class DotContentDriveShellComponent implements OnDestroy {
             queryParams['filters'] = null;
         }
 
-        // Reflect the open panel in the `editContent` param: the shareable identifier for edit, or
-        // a non-shareable marker for new (so browser Back has an entry to pop). Cleared when the
-        // panel is closed. Written via Location.go/replaceState so it triggers no navigation/reload.
-        const editRequest = this.$editPanelRequest();
-        const editContent = editRequest
-            ? editRequest.mode === 'edit'
-                ? (editRequest.identifier ?? null)
-                : NEW_CONTENT_MARKER
+        // Reflect the open panel, in either editor: `editContent` + `editContentLang` for an edit
+        // (the language, so the link reopens the very version that is open), `createContent` for a
+        // create (#37759, FR-020). Every one is `null` (removed) unless it describes the open panel,
+        // so none lingers after a close or a switch. Written via Location.go/replaceState so it
+        // triggers no navigation/reload.
+        const panelLocation = this.#navigationService.$panelLocation();
+        const isEdit = panelLocation?.kind === 'edit';
+        queryParams[CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT] = isEdit
+            ? panelLocation.editContent
             : null;
-        queryParams['editContent'] = editContent;
-        // Written alongside so the link reopens the very version that is open, not just the content.
-        // `null` removes it, so it never lingers once the panel is closed or a `new` panel is open.
-        queryParams['editContentLang'] =
-            editRequest?.mode === 'edit' && editRequest.languageId
-                ? String(editRequest.languageId)
-                : null;
+        queryParams[CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT_LANG] =
+            isEdit && panelLocation.editContentLang ? String(panelLocation.editContentLang) : null;
+        queryParams[CONTENT_DRIVE_URL_PARAM.CREATE_CONTENT] =
+            panelLocation?.kind === 'create' ? panelLocation.createContent : null;
+        // Edit Code names its file the same way, so Back pops the panel through its prompt
+        // instead of leaving Content Drive. Only for Back: a URL carrying it opens nothing, and
+        // this write removes it.
+        const sourceEditor = this.#store.sourceEditor();
+        queryParams[CONTENT_DRIVE_EDIT_CODE_PARAM] = sourceEditor?.inode ?? null;
+        const panelOpen = panelLocation !== null || sourceEditor !== null;
+
+        // The open folder dialog, the same way (#37759, FR-030).
+        const folderParam = folderDialogParamOf(this.#store.dialog());
+        for (const key of [
+            CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER,
+            CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER,
+            CONTENT_DRIVE_URL_PARAM.FOLDER_PERMISSIONS
+        ]) {
+            queryParams[key] = folderParam?.key === key ? folderParam.value : null;
+        }
+        const folderDialogOpen = folderParam !== null;
 
         const urlTree = this.#router.createUrlTree([], {
             queryParams,
@@ -1140,9 +1694,20 @@ export class DotContentDriveShellComponent implements OnDestroy {
             //
             // The first write never pushes: `#lastWrittenPath` is undefined until then, so the URL the
             // portlet opens with replaces rather than stacking on top of the referring page.
-            const isOpeningPanel = editContent !== null && !this.#editPanelUrlWasSet;
+            const isOpeningPanel =
+                (panelOpen && !this.#editPanelUrlWasSet) ||
+                (folderDialogOpen && !this.#folderDialogUrlWasSet);
+            //
+            // A folder the URL already names is not navigation: Back put it there. The write that
+            // follows only corrects `viewType`, which Back leaves as the user last picked it
+            // (#37930); pushing it would cut off Forward.
+            const urlPath = new URLSearchParams(this.#location.path(true).split('?')[1] ?? '').get(
+                'path'
+            );
             const isFolderNavigation =
-                this.#lastWrittenPath !== undefined && path !== this.#lastWrittenPath;
+                this.#lastWrittenPath !== undefined &&
+                path !== this.#lastWrittenPath &&
+                (path || null) !== urlPath;
 
             if (isOpeningPanel || isFolderNavigation) {
                 this.#location.go(newUrl);
@@ -1151,8 +1716,163 @@ export class DotContentDriveShellComponent implements OnDestroy {
             }
             this.#lastWrittenPath = path;
         }
-        this.#editPanelUrlWasSet = editContent !== null;
+        this.#editPanelUrlWasSet = panelOpen;
+        this.#folderDialogUrlWasSet = folderDialogOpen;
     });
+
+    /**
+     * Opens Edit Permissions for the folder the store dialog names, and clears the store dialog
+     * when it closes, so the URL follows (#37759, FR-030).
+     *
+     * @param dialog The `FOLDER_PERMISSIONS` dialog the store holds.
+     */
+    #openPermissionsDialog(dialog: DotContentDriveDialog): void {
+        if (this.#permissionsDialogRef) {
+            return;
+        }
+
+        const { identifier } = dialog.payload as DotContentDriveFolderPermissionsPayload;
+        const ref = this.#dialogService.open(
+            DotJspIframeDialogComponent,
+            folderPermissionsDialogConfig(identifier, dialog.header)
+        );
+
+        this.#permissionsDialogRef = ref;
+        ref?.onClose.pipe(take(1)).subscribe(() => {
+            if (this.#permissionsDialogRef === ref) {
+                this.#permissionsDialogRef = null;
+                this.#store.closeDialog();
+            }
+        });
+    }
+
+    /** Closes the open folder dialog the way its own close does. */
+    #closeFolderDialog(): void {
+        if (this.#permissionsDialogRef) {
+            // Its `onClose` clears the store dialog.
+            this.#permissionsDialogRef.close();
+
+            return;
+        }
+
+        this.#store.closeDialog();
+    }
+
+    /**
+     * Opens Folder Settings for a folder an `editFolder` link names (#37759, FR-031). The link only
+     * carries the identifier, so the folder and the user's access to it are resolved first, and the
+     * same rule as the context menu applies: the user must be able to edit the folder (FR-033).
+     *
+     * @param identifier The folder's identifier.
+     */
+    #openFolderSettingsFromUrl(identifier: string): void {
+        this.#openFolderDialogFromUrl(
+            identifier,
+            (access) => access.canEdit,
+            (folder, access) => ({
+                type: DIALOG_TYPE.FOLDER,
+                header: this.#dotMessageService.get('content-drive.dialog.folder.header.edit'),
+                payload: toActionableFolder(folder, access)
+            })
+        );
+    }
+
+    /**
+     * Opens Edit Permissions for a folder a `folderPermissions` link names (#37759, FR-031), when
+     * the user may edit that folder's permissions, the same rule as the context menu (FR-033).
+     *
+     * @param identifier The folder's identifier.
+     */
+    #openFolderPermissionsFromUrl(identifier: string): void {
+        this.#openFolderDialogFromUrl(
+            identifier,
+            (access) => access.canEditPermissions,
+            () => ({
+                type: DIALOG_TYPE.FOLDER_PERMISSIONS,
+                header: this.#dotMessageService.get('Edit-Permissions'),
+                payload: { identifier }
+            })
+        );
+    }
+
+    /**
+     * Opens the dialog a folder link names, under the same rules for every folder dialog: the folder
+     * and the user's access to it are resolved first, a folder in another site is refused as not
+     * found, and a user without the access the dialog needs gets the standard permission error.
+     *
+     * @param identifier The folder's identifier.
+     * @param allowed Whether the user's access lets them open this dialog.
+     * @param dialogFor The dialog to open for the resolved folder.
+     */
+    #openFolderDialogFromUrl(
+        identifier: string,
+        allowed: (access: DotFolderUserAccess) => boolean,
+        dialogFor: (folder: DotFolderBean, access: DotFolderUserAccess) => DotContentDriveDialog
+    ): void {
+        forkJoin({
+            folder: this.#folderService.getFolderById(identifier),
+            access: this.#permissionsService.getUserAccess(identifier),
+            site: this.#currentSite$()
+        })
+            .pipe(take(1))
+            .subscribe({
+                next: ({ folder, access, site }) => {
+                    if (this.#refuseIfInAnotherSite(folder, site)) {
+                        return;
+                    }
+
+                    if (!allowed(access)) {
+                        this.#reportForbidden();
+
+                        return;
+                    }
+
+                    this.#store.setDialog(dialogFor(folder, access));
+                },
+                error: (error: HttpErrorResponse) => this.#httpErrorManager.handle(error)
+            });
+    }
+
+    /**
+     * A folder link names a folder in another site, which is out of reach from this one: its dialog
+     * would act on it under the wrong site (#37759, edge case "folder … moved to another site").
+     * Reported as not found, as for a folder that is gone.
+     *
+     * @param folder The folder the link resolved to.
+     * @param site The admin's current site, from {@link #currentSite$}.
+     * @returns Whether the folder was refused, and the error shown.
+     */
+    #refuseIfInAnotherSite(folder: DotFolderBean, site: DotSite): boolean {
+        if (folder.hostId === site.identifier) {
+            return false;
+        }
+
+        this.#httpErrorManager.handle(new HttpErrorResponse({ status: 404 }));
+
+        return true;
+    }
+
+    /**
+     * The admin's current site, waiting for it if it hasn't loaded yet. A folder link is read in
+     * the constructor, and on a cold load the folder lookups can answer before the site does.
+     * Until then the store holds `SYSTEM_HOST`, which no real folder matches, so comparing against
+     * it would refuse a folder in the author's own site.
+     *
+     * @returns The current site, emitted once.
+     */
+    #currentSite$(): Observable<DotSite> {
+        const site = this.#store.currentSite();
+
+        return isLoadedSite(site) ? of(site) : this.#siteLoaded$;
+    }
+
+    /**
+     * The user may not open what the link names. The standard permission message, the same one a
+     * refused request shows, rather than a message of this portlet's own.
+     */
+    #reportForbidden(): void {
+        this.#httpErrorManager.handle(new HttpErrorResponse({ status: 403 }));
+    }
 
     /**
      * Effect that sets the path when a node is selected
@@ -1378,9 +2098,94 @@ export class DotContentDriveShellComponent implements OnDestroy {
         this.#navigationService.closeEditPanel();
     }
 
-    /** A save in the side panel can create or change an item, so refresh the list. */
-    protected onEditPanelSaved() {
+    /**
+     * A save in the new-editor side panel can create or change an item, so refresh the list. The
+     * first save of a create also switches the URL to the saved content (#37759, FR-025).
+     *
+     * @param contentlet The saved content.
+     */
+    protected onEditPanelSaved(contentlet: DotCMSContentlet) {
         this.#store.reloadContentDrive();
+        this.#navigationService.panelSaved({
+            identifier: contentlet.identifier,
+            languageId: contentlet.languageId
+        });
+    }
+
+    /**
+     * A save in the legacy panel, including a workflow action: refresh the list quietly and keep
+     * the panel open (#37759, FR-013). Remove with the legacy editor.
+     */
+    protected onLegacyPanelSaved({ identifier, languageId }: DotLegacyEditorSaved) {
+        this.#store.reloadContentDrive({ quiet: true });
+        // The first save of a create switches the URL to the saved content (FR-025).
+        this.#navigationService.panelSaved({ identifier, languageId });
+    }
+
+    /**
+     * The author switched language inside the legacy editor: the URL follows (#37759, FR-020).
+     * Remove with the legacy editor.
+     *
+     * @param languageId The language the editor now shows.
+     */
+    protected onLegacyPanelLanguage(languageId: number) {
+        this.#navigationService.panelLanguageChanged(languageId);
+    }
+
+    /**
+     * The author switched language inside the new-editor panel, which reloads in place. The URL
+     * follows, as for the legacy panel, so a refresh or a switch to the old editor (a page reload)
+     * reopens that language (#37759, FR-020, FR-028).
+     *
+     * @param languageId The language the editor now shows.
+     */
+    protected onEditPanelLanguage(languageId: number) {
+        this.#navigationService.panelLanguageChanged(languageId);
+    }
+
+    /**
+     * The legacy panel closed, for any reason. Refresh the list quietly every time: a close after a
+     * delete looks exactly like a cancel, and a move or a language switch sends no event at all, so
+     * one extra list request is cheaper than missing a change (#37759, FR-014, FR-015).
+     * Remove with the legacy editor.
+     */
+    protected onLegacyPanelClosed() {
+        this.#navigationService.closeEditPanel();
+        this.#store.reloadContentDrive({ quiet: true });
+    }
+
+    /**
+     * Bring Back restored an older version in the legacy panel. The editor reloads with it and
+     * sends no save, so refresh the list quietly here (#37759, US6). Remove with the legacy editor.
+     */
+    protected onLegacyPanelRestored() {
+        this.#store.reloadContentDrive({ quiet: true });
+    }
+
+    /**
+     * The first save of a new page in the legacy panel: close it, refresh the list, and open the
+     * page in the page editor in the language the editor named, as Content Search does (#37759,
+     * FR-008). Remove with the legacy editor.
+     *
+     * @param request The page to open and its language.
+     */
+    protected onLegacyPanelPageEditor({ url, languageId }: DotLegacyEditorPageRequest) {
+        this.#navigationService.closeEditPanel();
+        this.#store.reloadContentDrive({ quiet: true });
+        this.#dotRouterService.goToEditPage({ url, language_id: languageId });
+    }
+
+    /**
+     * A save in the Edit Code panel changed the file's version and modification date: refresh the
+     * list quietly. The panel closes itself right after.
+     */
+    protected onSourceEditorSaved() {
+        this.#store.reloadContentDrive({ quiet: true });
+    }
+
+    /** The Edit Code panel closed itself: clear its request. */
+    protected onSourceEditorClosed() {
+        this.#store.closeSourceEditor();
     }
 
     /**

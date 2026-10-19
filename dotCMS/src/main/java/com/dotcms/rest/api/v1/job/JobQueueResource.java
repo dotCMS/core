@@ -101,7 +101,7 @@ public class JobQueueResource {
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad Request: Invalid parameters, malformed multipart payload, or file issues."),
                     @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
-                    @ApiResponse(responseCode = "403", description = "Forbidden: User lacks permission to enqueue jobs in the specified queue."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User lacks permission to enqueue jobs in the specified queue, or the queue has a dedicated endpoint (the message names it) and does not accept jobs through this one."),
                     @ApiResponse(responseCode = "404", description = "Not Found: Queue with the specified name does not exist."),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while creating the job.")
             }
@@ -126,6 +126,8 @@ public class JobQueueResource {
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
+
+        helper.assertGenericEntry(queueName);
 
         try {
             final String jobId = helper.createJob(
@@ -189,7 +191,7 @@ public class JobQueueResource {
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad Request: Invalid parameters or malformed JSON."),
                     @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
-                    @ApiResponse(responseCode = "403", description = "Forbidden: User lacks permission to enqueue jobs in the specified queue."),
+                    @ApiResponse(responseCode = "403", description = "Forbidden: User lacks permission to enqueue jobs in the specified queue, or the queue has a dedicated endpoint (the message names it) and does not accept jobs through this one."),
                     @ApiResponse(responseCode = "404", description = "Not Found: Queue with the specified name does not exist."),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while creating the job.")
             }
@@ -217,6 +219,8 @@ public class JobQueueResource {
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .init();
+
+        helper.assertGenericEntry(queueName);
 
         try {
             final String jobId = helper.createJob(

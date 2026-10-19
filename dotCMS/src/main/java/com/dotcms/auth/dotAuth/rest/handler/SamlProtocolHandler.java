@@ -2,6 +2,7 @@ package com.dotcms.auth.dotAuth.rest.handler;
 
 import com.dotcms.auth.dotAuth.DotAuthConstants;
 import com.dotcms.auth.dotAuth.rest.DotAuthProtocol;
+import com.dotcms.saml.DotIdentityProviderConfigurationImpl;
 import com.dotcms.saml.DotSamlProxyFactory;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotmarketing.util.UtilMethods;
@@ -9,6 +10,7 @@ import com.dotcms.security.apps.Secret;
 import io.vavr.control.Try;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -39,6 +41,8 @@ public final class SamlProtocolHandler implements ProtocolHandler {
     public static final String REGENERATE_KEYPAIR_KEY = "regenerateKeypair";
 
     private static final Set<String> BOOLEAN_KEYS = Set.of("enable");
+
+    private static final String SIGNATURE_VALIDATION_TYPE_KEY = "signatureValidationType";
 
     /**
      * Extra-key names must be identifier-shaped. Bars whitespace tricks like
@@ -117,6 +121,8 @@ public final class SamlProtocolHandler implements ProtocolHandler {
             if (raw == null) continue;
             if (BOOLEAN_KEYS.contains(key)) {
                 builder.withSecret(key, Boolean.parseBoolean(String.valueOf(raw)));
+            } else if (SIGNATURE_VALIDATION_TYPE_KEY.equals(key)) {
+                builder.withSecret(key, validSignatureValidationType(String.valueOf(raw)));
             } else {
                 builder.withSecret(key, String.valueOf(raw));
                 if ("publicCert".equals(key) && UtilMethods.isSet(String.valueOf(raw))) {
@@ -174,5 +180,18 @@ public final class SamlProtocolHandler implements ProtocolHandler {
             builder.withSecret(key, str);
         }
         return builder.build();
+    }
+
+    /**
+     * Only "response", "assertion" and "responseandassertion" can be stored: SAML responses
+     * are never accepted without an IdP signature.
+     */
+    private static String validSignatureValidationType(final String value) {
+        final String normalized = value.trim().toLowerCase(Locale.ROOT);
+        if (!normalized.equals(DotIdentityProviderConfigurationImpl.resolveSignatureValidationType(normalized))) {
+            throw new BadRequestException(SIGNATURE_VALIDATION_TYPE_KEY
+                    + " must be one of response, assertion or responseandassertion");
+        }
+        return normalized;
     }
 }

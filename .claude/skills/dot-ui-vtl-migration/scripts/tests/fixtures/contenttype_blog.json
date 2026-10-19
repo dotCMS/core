@@ -1,0 +1,20 @@
+{
+  "entity": {
+    "id": "ct-blog",
+    "variable": "Blog",
+    "fields": [
+      {
+        "id": "field-blog-author",
+        "variable": "author",
+        "clazz": "com.dotcms.contenttype.model.field.ImmutableCustomField",
+        "values": "#dotParse(\"/dA/asset-shared-001\")"
+      },
+      {
+        "id": "field-blog-title",
+        "variable": "title",
+        "clazz": "com.dotcms.contenttype.model.field.ImmutableTextField",
+        "values": null
+      }
+    ]
+  }
+}

@@ -124,6 +124,7 @@ describe('DotContentDriveSidebarComponent', () => {
             }),
             mockProvider(DotContentDriveStore, {
                 initContentDrive: vi.fn(),
+                allBusyRows: vi.fn().mockReturnValue(['inode-a', 'id-a']),
                 systemHostCanAddChildren: systemHostCanAddChildren,
                 systemHostCanRead: systemHostCanRead,
                 currentSite: vi.fn().mockReturnValue(mockSiteDetails),
@@ -1242,6 +1243,23 @@ describe('DotContentDriveSidebarComponent', () => {
             });
         });
 
+        it('should not scroll on load when the selection is the site root', () => {
+            // The site row is the tree's first row, so there is nothing to bring into view. The
+            // reveal centred it anyway, and in Firefox-based browsers that left the tree scrolled
+            // to its middle with the selected root out of sight.
+            contentDriveStore.selectedNode.mockReturnValue({
+                key: 'site-root',
+                label: 'demo.dotcms.com',
+                data: { id: 'site-id', hostname: 'demo.dotcms.com', path: '', type: 'folder' },
+                leaf: false
+            });
+
+            spectator.component.revealSelectedNodeOnLoad(false);
+            spectator.detectChanges();
+
+            expect(scrollIntoView).not.toHaveBeenCalled();
+        });
+
         it('should not scroll while the tree is still loading', () => {
             contentDriveStore.selectedNode.mockReturnValue(targetNode);
 
@@ -1282,6 +1300,135 @@ describe('DotContentDriveSidebarComponent', () => {
     });
 
     describe('handleSelectedNodeFromTable', () => {
+        /** The mock tree with `/documents/images/` loaded under `/documents/`. */
+        const treeWithImagesLoaded = (): DotFolderTreeNodeItem[] =>
+            mockTreeNodes.map((node) =>
+                node.data?.path === '/documents/'
+                    ? {
+                          ...node,
+                          children: [
+                              {
+                                  key: 'images-node',
+                                  label: '/documents/images/',
+                                  data: {
+                                      id: 'images-node',
+                                      hostname: 'demo.dotcms.com',
+                                      path: '/documents/images/',
+                                      type: 'folder'
+                                  },
+                                  leaf: true
+                              }
+                          ]
+                      }
+                    : node
+            );
+
+        it('should leave loading the branch to the store when the folder is not in the tree yet', () => {
+            // The store loads the missing levels into the tree on screen. Walking them here too
+            // fetched the same levels twice, and whichever answer landed last dropped the other.
+            const recursiveExpandSpy = vi.spyOn(spectator.component, 'recursiveExpandOneNode');
+            contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+
+            spectator.component.handleSelectedNodeFromTable({
+                key: 'table-node',
+                label: '/documents/images/',
+                data: {
+                    id: 'table-node',
+                    hostname: 'demo.dotcms.com',
+                    path: '/documents/images/',
+                    type: 'folder',
+                    fromTable: true
+                },
+                leaf: false
+            });
+
+            expect(recursiveExpandSpy).not.toHaveBeenCalled();
+            expect(contentDriveStore.loadChildFolders).not.toHaveBeenCalled();
+        });
+
+        describe('once the store has loaded the branch of a folder opened from the table', () => {
+            const standIn: DotFolderTreeNodeItem = {
+                key: 'table-node',
+                label: '/documents/images/',
+                data: {
+                    id: 'table-node',
+                    hostname: 'demo.dotcms.com',
+                    path: '/documents/images/',
+                    type: 'folder',
+                    fromTable: true
+                },
+                leaf: false
+            };
+
+            const spyOnScroll = () => {
+                const scrollIntoView = vi.fn();
+                const nativeElement =
+                    spectator.query(DotTreeFolderComponent)?.elementRef.nativeElement;
+                vi.spyOn(nativeElement, 'querySelector').mockReturnValue({
+                    scrollIntoView
+                } as unknown as HTMLElement);
+
+                return scrollIntoView;
+            };
+
+            it('should scroll the tree to it once the tree holds it', () => {
+                // Its row does not exist while the branch loads, so the scroll waits for the tree
+                // to gain the folder's node. The selection does not change when that happens: the
+                // stand-in the table selected stays selected.
+                const scrollIntoView = spyOnScroll();
+                contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+
+                spectator.component.handleSelectedNodeFromTable(standIn);
+                spectator.component.revealLoadedFolder(treeWithImagesLoaded());
+                spectator.detectChanges();
+
+                expect(scrollIntoView).toHaveBeenCalledWith({
+                    behavior: 'smooth',
+                    block: 'center'
+                });
+            });
+
+            it('should scroll only once, not every time the tree changes afterwards', () => {
+                const scrollIntoView = spyOnScroll();
+                contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+
+                spectator.component.handleSelectedNodeFromTable(standIn);
+                spectator.component.revealLoadedFolder(treeWithImagesLoaded());
+                spectator.detectChanges();
+                spectator.component.revealLoadedFolder(treeWithImagesLoaded());
+                spectator.detectChanges();
+
+                expect(scrollIntoView).toHaveBeenCalledTimes(1);
+            });
+
+            it('should not scroll once the author has selected another folder in the tree', () => {
+                // Its branch can arrive after the author has moved on; pulling the tree back to
+                // it then would undo the choice they just made.
+                const scrollIntoView = spyOnScroll();
+                contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+
+                spectator.component.handleSelectedNodeFromTable(standIn);
+                spectator.triggerEventHandler(DotTreeFolderComponent, 'onNodeSelect', {
+                    originalEvent: new Event('click'),
+                    node: mockTreeNodes[1]
+                });
+                spectator.component.revealLoadedFolder(treeWithImagesLoaded());
+                spectator.detectChanges();
+
+                expect(scrollIntoView).not.toHaveBeenCalled();
+            });
+
+            it('should not scroll when no folder was opened from the table', () => {
+                // A tree click is already under the pointer.
+                const scrollIntoView = spyOnScroll();
+
+                spectator.component.revealLoadedFolder(treeWithImagesLoaded());
+                spectator.detectChanges();
+
+                expect(scrollIntoView).not.toHaveBeenCalled();
+            });
+        });
+
         it('should handle selectedNode with fromTable flag', () => {
             const mockScrollIntoView = vi.fn();
             // Create a proper mock element that extends HTMLElement
@@ -1312,10 +1459,9 @@ describe('DotContentDriveSidebarComponent', () => {
                 leaf: false
             };
 
-            // Setup folders - mockTreeNodes already includes a node with path '/documents/' (folder-1)
-            // The path '/documents/images/' split and filtered gives ['documents', 'images']
-            // slice(0, -1) removes the last segment, so it becomes ['documents']
-            contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+            // The folder is already in the tree, under `/documents/`, so only its ancestors need
+            // opening. The path '/documents/images/' gives the ancestor segments ['documents'].
+            contentDriveStore.folders.mockReturnValue(treeWithImagesLoaded());
             contentDriveStore.loadChildFolders.mockReturnValue(
                 of({ folders: [], totalEntries: 0 })
             );
@@ -1361,7 +1507,7 @@ describe('DotContentDriveSidebarComponent', () => {
             // Spy on the recursiveExpandOneNode method
             const recursiveExpandSpy = vi.spyOn(spectator.component, 'recursiveExpandOneNode');
 
-            contentDriveStore.folders.mockReturnValue(mockTreeNodes);
+            contentDriveStore.folders.mockReturnValue(treeWithImagesLoaded());
             contentDriveStore.loadChildFolders.mockReturnValue(
                 of({ folders: [], totalEntries: 0 })
             );
@@ -1654,6 +1800,24 @@ describe('DotContentDriveSidebarComponent', () => {
             expect(contentDriveStore.patchContextMenu).toHaveBeenCalledWith(
                 expect.objectContaining({ triggeredEvent: event })
             );
+        });
+    });
+
+    /**
+     * In-flight folders reach the tree from the SAME store signal the grid marks rows from
+     * (#37063 US2, T024).
+     *
+     * Two sources would drift, and the drift shows as a folder inert in one surface and usable in
+     * the other — which is worse than marking neither, because it teaches the author that the
+     * marking cannot be trusted.
+     */
+    describe('in-flight folders (#37063)', () => {
+        it('should hand the store’s merged busy rows to the tree', () => {
+            spectator.detectChanges();
+
+            const tree = spectator.query(DotTreeFolderComponent);
+
+            expect(tree?.$inFlightKeys()).toEqual(['inode-a', 'id-a']);
         });
     });
 });

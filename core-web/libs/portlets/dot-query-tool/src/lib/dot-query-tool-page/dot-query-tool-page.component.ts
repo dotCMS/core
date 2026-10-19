@@ -27,7 +27,6 @@ import { Menu, MenuModule } from 'primeng/menu';
 import { MessageModule } from 'primeng/message';
 import { PanelModule } from 'primeng/panel';
 import { Popover, PopoverModule } from 'primeng/popover';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { SkeletonModule } from 'primeng/skeleton';
 import { SplitterModule } from 'primeng/splitter';
 import { TableModule } from 'primeng/table';
@@ -44,14 +43,18 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotEditContentSidePanelComponent, EditContentDialogData } from '@dotcms/edit-content';
+import { EditContentDialogData, loadDotEditContentSidePanel } from '@dotcms/edit-content';
 import {
     DOT_MONACO_BASE_OPTIONS,
     DOT_MONACO_RAW_OPTIONS,
     DotClipboardUtil,
     DotEmptyContainerComponent,
     DotMessagePipe,
-    PrincipalConfiguration
+    DotMonacoRunShortcutEditor,
+    getDotMonacoRunShortcutLabel,
+    injectSidePanel,
+    PrincipalConfiguration,
+    registerDotMonacoRunShortcut
 } from '@dotcms/ui';
 import { buildCurlSnippet, buildFetchSnippet, getDownloadLink } from '@dotcms/utils';
 
@@ -91,9 +94,7 @@ const QUERY_EDITOR_OPTIONS = {
         MenuModule,
         PopoverModule,
         DotEmptyContainerComponent,
-        DotMessagePipe,
-        DotEditContentSidePanelComponent,
-        ProgressSpinnerModule
+        DotMessagePipe
     ],
     // MessageService: the Edit Content side panel's editor injects PrimeNG's MessageService for
     // inline toasts; provide it here (as Content Drive's shell does) so the panel works in-page.
@@ -116,16 +117,10 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly #destroyRef = inject(DestroyRef);
     readonly #injector = inject(Injector);
 
-    #lastSyncedUrl: string | null = null;
+    /** Keyboard shortcut shown in the Run button tooltip (`⌘ + Enter` / `Ctrl + Enter`). */
+    readonly runShortcutLabel = getDotMonacoRunShortcutLabel(this.#document.defaultView?.navigator);
 
-    /**
-     * The rendered side panel, so browser Back can route its close through the panel's guard.
-     * Queried by template ref var (`#sidePanelRef`), not the class token: passing the class itself
-     * would be a runtime reference to it outside the `@defer` block below, which disqualifies it
-     * from Angular's automatic deferred-import bundling (the `<T>` here is a type-only generic,
-     * erased at compile time — it leaves no runtime reference).
-     */
-    readonly $sidePanel = viewChild<DotEditContentSidePanelComponent>('sidePanelRef');
+    #lastSyncedUrl: string | null = null;
 
     /**
      * Feature flag gating the side panel. When off, editing a result opens the editor in a new
@@ -140,6 +135,19 @@ export class DotQueryToolPageComponent implements OnInit {
 
     /** Content shown in the Edit Content side panel, or `null` when it is closed. */
     readonly $editPanelRequest = signal<EditContentDialogData | null>(null);
+
+    /**
+     * The Edit Content side panel, open while {@link $editPanelRequest} is set (new-editor results,
+     * with the feature flag on; legacy and page results still open in a new tab). Reloads the
+     * results on save. Loaded on its first open, so the editor stays out of this portlet's chunk.
+     */
+    readonly #editPanel = injectSidePanel(this.$editPanelRequest, {
+        component: loadDotEditContentSidePanel,
+        heading: (data) => data.title ?? '',
+        inputs: (data) => ({ data }),
+        outputs: { saved: () => this.onEditPanelSaved() },
+        closed: () => this.onEditPanelClosed()
+    });
 
     /**
      * Whether the last `editContent` URL write reflected an open panel — so a close writes with
@@ -263,12 +271,23 @@ export class DotQueryToolPageComponent implements OnInit {
         const sort = params.get('sort') ?? '';
         const userId = params.get('userId') ?? '';
 
-        this.store.setQuery(query);
+        // Only write `query` when the URL actually carries `q`. The store's `withPersistedQuery`
+        // restored the user's last query in its own onInit, which runs before this — writing the
+        // absent param's '' over it is what made Query Tool lose the query on every return to the
+        // portlet while ES Search and Velocity Playground kept theirs (neither reads URL params).
+        // `has` rather than a truthiness check, so an explicit `?q=` in a shared link still clears
+        // the editor instead of silently resurrecting the previous query.
+        if (params.has('q')) {
+            this.store.setQuery(query);
+        }
+
         this.store.setOffset(offset);
         this.store.setLimit(limit);
         this.store.setSort(sort);
         this.store.setUserId(userId);
 
+        // Auto-run only for a deep link. A restored query is left in the editor unexecuted, as in
+        // the sibling dev tools — returning to the portlet should not fire a search by itself.
         if (query.trim()) {
             this.store.runSearch();
         }
@@ -300,7 +319,7 @@ export class DotQueryToolPageComponent implements OnInit {
                     })
                     .toString();
                 this.#location.replaceState(restored);
-                this.$sidePanel()?.requestClose();
+                this.#editPanel.requestClose();
             }
         });
         this.#destroyRef.onDestroy(() => locationSubscription.unsubscribe());
@@ -320,6 +339,20 @@ export class DotQueryToolPageComponent implements OnInit {
         if (!this.store.query().trim()) return;
         this.store.resetOffset();
         this.store.runSearch();
+    }
+
+    /**
+     * Binds `Cmd/Ctrl + Enter` inside the query editor to the same action as the Run button.
+     * The shortcut is ignored while a search is already in flight, where the Run button is
+     * disabled too.
+     *
+     * @param editor the Monaco editor instance emitted by `ngx-monaco-editor`
+     */
+    onQueryEditorInit(editor: DotMonacoRunShortcutEditor): void {
+        registerDotMonacoRunShortcut(editor, () => this.onRun(), {
+            label: this.#messageService.get('queryTool.action.run'),
+            canRun: () => !this.store.isLoading()
+        });
     }
 
     onResultClick(contentlet: DotCMSContentlet, event: MouseEvent): void {

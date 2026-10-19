@@ -70,7 +70,8 @@ function writeExpandedPreference(expanded: boolean): void {
  * problem Edit Content already solved — at that point both consumers need the same non-trivial
  * behaviour and the seam is real. What moves then is the chrome only: the drawer config, the
  * expand/collapse pair, the two arbitration rules, and a `closeRequested` output each consumer can
- * veto. `DotSidePanelNavController` is the piece that makes it more than a file move.
+ * veto. Edit Content's side now opens through `DotSidePanelService` (`@dotcms/ui`), which owns the
+ * panel stack and the navigation collapse; that is where this panel lands.
  *
  * ## Where it differs, and why
  *

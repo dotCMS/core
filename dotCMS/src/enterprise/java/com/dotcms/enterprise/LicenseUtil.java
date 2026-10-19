@@ -35,7 +35,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Date;
 import java.util.List;
@@ -465,12 +464,19 @@ public class LicenseUtil {
 		}
 	}
 
+	/**
+	 * Returns the text of the license shipped with this build ({@code WEB-INF/LICENSE}). If the
+	 * file can't be located or read for any reason, returns a sentence pointing to the license
+	 * published in the dotCMS repository instead of failing.
+	 *
+	 * @return the license text, or the fallback sentence
+	 */
 	public static String getLicenseText() {
 
-		Path path = Paths.get(Config.CONTEXT.getRealPath("/WEB-INF/LICENSE"));
-		try (InputStream fis = Files.newInputStream(path)) {
+		try (InputStream fis = Files.newInputStream(
+				Paths.get(Config.CONTEXT.getRealPath("/WEB-INF/LICENSE")))) {
 			return IOUtils.toString(fis, StandardCharsets.UTF_8);
-		} catch (IOException e) {
+		} catch (Exception e) {
 			Logger.error(LicenseUtil.class, "Error reading LICENSE file", e);
 			return "Please see the LICENSE file in the root directory of the dotCMS git hub repo: https://github.com/dotCMS/core/blob/main/LICENSE";
 		}

@@ -1,6 +1,7 @@
 package com.dotcms;
 
 import com.dotcms.analytics.ContentAnalyticsPersistenceModeIT;
+import com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyResourceIntegrationTest;
 import com.dotcms.business.interceptor.InterceptorHandlerTest;
 import com.dotcms.enterprise.publishing.remote.handler.FolderHandlerTest;
 import com.dotcms.inference.rest.ChatCompletionsStreamingTest;
@@ -102,7 +103,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.AuditPublishingResourceTest.class,
         MaintenanceResourceIntegrationTest.class,
         FolderHandlerTest.class,
-        ContentAnalyticsPersistenceModeIT.class
+        ContentAnalyticsPersistenceModeIT.class,
+        EventAnalyticsProxyResourceIntegrationTest.class
 })
 public class MainSuite2a {
 

@@ -30,3 +30,28 @@
         opacity: 0;
     }
 }
+
+/*
+ * A folder an operation is running on takes no clicks at all.
+ *
+ * The TypeScript guards in `onSelect`/`onExpand` drop the events, but they run too late to be the
+ * whole answer: PrimeNG's Tree commits its own selection first and emits afterwards
+ * (`this.selection.set([...base, node])` then `onNodeSelect.emit(...)`). Dropping the output
+ * therefore left the busy folder painted as the active row while the app stayed where it was, and
+ * clicking it again just repeated that — the row looked selected and nothing ever opened.
+ *
+ * `[selection]` is bound one way into a model signal, so the parent cannot push the stale value
+ * back either: `selectedNode` never changed, so Angular has nothing new to write.
+ *
+ * Stopping the pointer at the row is what keeps PrimeNG's view and the store's agreeing. The
+ * listing already marks a busy row this way (`pointer-events-none` in
+ * `dot-folder-list-view.component.html`), so the two surfaces stay consistent. The guards stay as
+ * well — CSS is one layer, and a keyboard selection never goes near it.
+ *
+ * `:has()` rather than a class on the row: the label is the only part of the node this component
+ * renders, so `aria-busy` is the one hook available, and it is the same attribute assistive
+ * technology reads.
+ */
+:host ::ng-deep .p-tree-node-content:has([aria-busy="true"]) {
+    pointer-events: none;
+}

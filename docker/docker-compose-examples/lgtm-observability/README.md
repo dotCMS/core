@@ -74,7 +74,7 @@ This setup integrates dotCMS with the [Grafana LGTM Stack](https://github.com/gr
 - **Base Image**: `dotcms/dotcms-test:1.0.0-SNAPSHOT`
 - **Management Port**: 8090 (health checks, metrics)
 - **Application Ports**: 8082 (HTTP), 8443 (HTTPS)
-- **Agents**: OpenTelemetry, Pyroscope via init container
+- **Agents**: OpenTelemetry and Pyroscope, bundled in the image and switched on with `OTEL_JAVAAGENT_ENABLED` / `PYROSCOPE_AGENT_ENABLED`
 
 #### Observability Instrumentation
 
@@ -93,6 +93,7 @@ METRICS_TOMCAT_ENABLED: 'true'
 
 **2. OpenTelemetry Java Agent**
 ```yaml
+OTEL_JAVAAGENT_ENABLED: 'true'   # attach the agent bundled in the image
 OTEL_SERVICE_NAME: 'dotcms'
 OTEL_EXPORTER_OTLP_ENDPOINT: 'http://lgtm:4318'  # HTTP protocol
 OTEL_EXPORTER_OTLP_PROTOCOL: 'http/protobuf'
@@ -104,6 +105,7 @@ OTEL_RESOURCE_ATTRIBUTES: 'service.name=dotcms,service.version=latest,deployment
 
 **3. Pyroscope Continuous Profiling**
 ```yaml
+PYROSCOPE_AGENT_ENABLED: 'true'  # attach the agent bundled in the image
 PYROSCOPE_SERVER_ADDRESS: 'http://lgtm:4040'
 PYROSCOPE_APPLICATION_NAME: 'dotcms'
 PYROSCOPE_FORMAT: 'jfr'

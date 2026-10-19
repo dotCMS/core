@@ -10,9 +10,11 @@ import { Mock, vi } from 'vitest';
 import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
+import { ContextMenu } from 'primeng/contextmenu';
 import { DialogService } from 'primeng/dynamicdialog';
+import { TreeNodeContextMenuSelectEvent } from 'primeng/types/tree';
 
-import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotRolesTreeComponent } from './dot-roles-tree.component';
@@ -23,6 +25,8 @@ const MESSAGES = {
     'roles.panel.title': 'ROLES',
     'roles.filter.placeholder': 'Filter roles',
     'roles.action.new': 'New',
+    'roles.action.edit': 'Edit',
+    'roles.action.delete': 'Delete',
     'roles.action.add-child': 'Add child',
     'roles.tree.empty': 'No roles',
     loading: 'Loading',
@@ -56,8 +60,7 @@ describe('DotRolesTreeComponent', () => {
                 requireConfirmation$: EMPTY,
                 accept: EMPTY,
                 reject: EMPTY
-            }),
-            mockProvider(DotAlertConfirmService, { alert: vi.fn() })
+            })
         ],
         providers: [{ provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }]
     });
@@ -71,6 +74,73 @@ describe('DotRolesTreeComponent', () => {
 
         expect(spectator.query(byTestId('new-role-btn'))).toBeTruthy();
         expect(spectator.query(byTestId('filter-input'))).toBeTruthy();
+    });
+
+    it('should render New as a filled primary button', () => {
+        spectator.detectChanges();
+
+        const newBtn = spectator.query(byTestId('new-role-btn'));
+        expect(newBtn?.classList).not.toContain('p-button-outlined');
+    });
+
+    describe('context menu', () => {
+        const rightClick = (data: object): void => {
+            const event = { node: { key: 'r-1', label: 'Eco', data } };
+            spectator.component['onNodeContextMenu'](
+                event as unknown as TreeNodeContextMenuSelectEvent
+            );
+            spectator.detectChanges();
+        };
+
+        const menuItems = () => spectator.query(ContextMenu)?.model ?? [];
+
+        it('should read Edit and Delete, without the "Role" suffix', () => {
+            spectator.detectChanges();
+
+            expect(menuItems().map((item) => item.label ?? 'separator')).toEqual([
+                'Edit',
+                'separator',
+                'Delete'
+            ]);
+        });
+
+        it('should confirm, then delete the right-clicked role', () => {
+            const store = spectator.inject(DotRolesStore, true);
+            const confirmation = spectator.inject(ConfirmationService, true);
+            spectator.detectChanges();
+            rightClick({ id: 'r-1', name: 'Eco' });
+
+            menuItems()[2].command?.({});
+
+            // The mocked confirm accepts straight away.
+            expect(confirmation.confirm).toHaveBeenCalledWith(
+                expect.objectContaining({ acceptLabel: 'Delete', defaultFocus: 'reject' })
+            );
+            expect(store.deleteRole).toHaveBeenCalledWith('r-1');
+        });
+
+        it('should not delete when the admin cancels the confirmation', () => {
+            const store = spectator.inject(DotRolesStore, true);
+            const confirmation = spectator.inject(ConfirmationService, true);
+            (confirmation.confirm as Mock).mockImplementationOnce((cfg) => cfg.reject?.());
+            // Shared factory mocks: an earlier test's delete would otherwise still be counted.
+            (store.deleteRole as Mock).mockClear();
+            spectator.detectChanges();
+            rightClick({ id: 'r-1', name: 'Eco' });
+
+            menuItems()[2].command?.({});
+
+            expect(confirmation.confirm).toHaveBeenCalled();
+            expect(store.deleteRole).not.toHaveBeenCalled();
+        });
+
+        it('should disable Edit and Delete on a system role', () => {
+            spectator.detectChanges();
+            rightClick({ id: 'r-cms', name: 'CMS Admin', system: true });
+
+            expect(menuItems()[0].disabled).toBe(true);
+            expect(menuItems()[2].disabled).toBe(true);
+        });
     });
 
     it('should render the empty state when no roles match', () => {

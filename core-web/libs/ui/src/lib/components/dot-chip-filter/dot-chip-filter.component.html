@@ -10,7 +10,17 @@
          surrounding indentation as leading and trailing spaces inside the span, which is how
          "Locale: English" once became "Locale : English". -->
     <span class="font-semibold" data-testid="chip-title">{{ titleLabel() }}</span>
-    @if (title() && active() && !isToggle()) {
+    @if (loading() && !isToggle()) {
+        <!-- Ahead of the value branch deliberately: while the labels are still being resolved
+             there is nothing truthful to render after the title, and the raw values would be an
+             identifier the user never chose. -->
+        <i
+            class="material-symbols-outlined ml-1 animate-spin text-sm leading-none"
+            aria-hidden="true"
+            data-testid="chip-loading">
+            progress_activity
+        </i>
+    } @else if (title() && active() && !isToggle()) {
         <span data-testid="chip-values">: {{ valuesLabel() }}</span>
     } @else if (!isToggle() && emptyLabel()) {
         <!-- `!isToggle()` guards the fall-through, not the label itself. A toggle never satisfies the

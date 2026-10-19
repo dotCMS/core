@@ -42,6 +42,7 @@ import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VanityUrlDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.mock.response.MockHttpStatusAndHeadersResponse;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
@@ -107,6 +108,7 @@ import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.common.settings.Settings;
 import org.jetbrains.annotations.NotNull;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -203,6 +205,15 @@ public class ESContentletAPIImplTest extends IntegrationTestBase {
         } catch (DotDataException e) {
             throw new RuntimeException(e);
         }
+
+        // Enable experiments so start() runs in full mode and skips the limited-mode free-slot
+        // check — ENDED experiments from earlier tests in the suite would otherwise block start().
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(true);
+    }
+
+    @AfterClass
+    public static void tearDown() {
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(false);
     }
 
     @Test

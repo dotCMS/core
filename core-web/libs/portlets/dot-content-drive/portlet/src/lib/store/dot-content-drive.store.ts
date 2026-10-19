@@ -6,10 +6,11 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
-import { EMPTY, SubscriptionLike } from 'rxjs';
+import { EMPTY, forkJoin, of, SubscriptionLike } from 'rxjs';
 
 import { Location } from '@angular/common';
-import { computed, effect, EffectRef, inject, untracked } from '@angular/core';
+import { computed, DestroyRef, effect, EffectRef, inject, untracked } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
 import { catchError, take } from 'rxjs/operators';
@@ -17,32 +18,44 @@ import { catchError, take } from 'rxjs/operators';
 import {
     DotContentDriveService,
     DotCurrentUserService,
-    DotLanguagesService
+    DotFolderBulkDeleteService,
+    DotFolderBulkDuplicateService,
+    DotLanguagesService,
+    DotRouterService,
+    DotSessionStorageService,
+    DotUploadFileService
 } from '@dotcms/data-access';
 import {
+    DotBulkUploadActiveRun,
     DotCMSContentTypeField,
     DotContentDriveItem,
     DotContentDriveSearchRequest,
-    FeaturedFlags,
+    DotFolderDeleteActiveRun,
+    DotFolderDuplicateActiveRun,
+    LOAD_MORE_NODE_TYPE,
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
-import { GlobalStore, withFlags } from '@dotcms/store';
+import { GlobalStore } from '@dotcms/store';
 
 import { withActionExecution } from './features/action-execution/withActionExecution';
 import { withContextMenu } from './features/context-menu/withContextMenu';
 import { withDialog } from './features/dialog/withDialog';
 import { withDragging } from './features/dragging/withDragging';
+import { withFolderDeleteRuns } from './features/folder-delete-runs/with-folder-delete-runs';
 import { withPushPublishEnvironments } from './features/push-publish-environments/withPushPublishEnvironments';
 import { withSidebar } from './features/sidebar/withSidebar';
 import { withSitePermissions } from './features/site-permissions/withSitePermissions';
+import { withSourceEditor } from './features/source-editor/withSourceEditor';
 
 import {
+    CONTENT_DRIVE_VIEW_PARAM,
     DEFAULT_PAGE,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
     DEFAULT_SEARCH_SCOPE,
     DEFAULT_SORT,
     DEFAULT_TREE_EXPANDED,
+    DEFAULT_VIEW_TYPE,
     MAP_NUMBERS_TO_BASE_TYPES,
     SEARCH_SCOPE_FILTER_KEY,
     SHARED_ASSETS_DISABLED_VALUE,
@@ -58,7 +71,8 @@ import {
     DotContentDriveSearchScope,
     DotContentDriveSort,
     DotContentDriveState,
-    DotContentDriveStatus
+    DotContentDriveStatus,
+    DotContentDriveViewType
 } from '../shared/models';
 import {
     buildUserSearchablePayload,
@@ -66,10 +80,18 @@ import {
     getUserSearchableActive,
     listsFolders,
     parseWorkflowFilter,
+    resolveContentDriveUrlIntent,
     sortedEncodedFilters,
     toRequestLocation,
     withFilterDefaults
 } from '../utils/functions';
+import {
+    browserStorage,
+    readStoredViewType,
+    resolveViewType,
+    viewTypeStorageKey,
+    writeStoredViewType
+} from '../utils/view-type';
 
 const initialState: DotContentDriveState = {
     currentSite: undefined, // So we have the actual site selected on start
@@ -92,15 +114,13 @@ const initialState: DotContentDriveState = {
     defaultLanguageLoaded: false,
     // Pessimistic default: until `getCurrentUser` answers, the user is treated as a non-admin. See
     // `DotContentDriveState.currentUserIsAdmin` for why over-warning is the right way to fail here.
-    currentUserIsAdmin: false
+    currentUserIsAdmin: false,
+    viewType: DEFAULT_VIEW_TYPE,
+    viewTypeStorageKey: viewTypeStorageKey('')
 };
 
 export const DotContentDriveStore = signalStore(
     withState<DotContentDriveState>(initialState),
-    // Side-panel feature flag, fetched once on init and exposed as `flags()`. `as const` narrows the
-    // typing to exactly this flag. Consumed by DotContentDriveNavigationService to decide side panel
-    // vs full-screen editor.
-    withFlags([FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] as const),
     withComputed(
         ({
             path,
@@ -148,16 +168,20 @@ export const DotContentDriveStore = signalStore(
                             filters: {
                                 text: filters()?.title || '',
                                 filterFolders: true,
-                                // Sent only when a term is present and the scope is not the
-                                // default. The server rejects a scope without text as the contract
-                                // error it is, and an omitted scope is processed exactly as it was
-                                // before this field existed — which is what leaves the AssetPicker,
-                                // the one other caller of this endpoint, untouched.
-                                ...(filters()?.title && filters()?.[SEARCH_SCOPE_FILTER_KEY]
+                                // Sent whenever a term is present, as the effective scope: the
+                                // stored one, or the default when none is stored. The default is
+                                // Title and the server's is All Fields, so omitting it would search
+                                // every field while the box says Title. Never sent without a term:
+                                // the server rejects a scope without text as the contract error it
+                                // is. The filters and the address still store the scope only when
+                                // it differs from the default.
+                                ...(filters()?.title
                                     ? {
-                                          searchScope: filters()?.[
-                                              SEARCH_SCOPE_FILTER_KEY
-                                          ] as DotContentDriveSearchScope
+                                          searchScope:
+                                              (filters()?.[
+                                                  SEARCH_SCOPE_FILTER_KEY
+                                              ] as DotContentDriveSearchScope) ??
+                                              DEFAULT_SEARCH_SCOPE
                                       }
                                     : {})
                             },
@@ -363,6 +387,21 @@ export const DotContentDriveStore = signalStore(
             },
             setIsTreeExpanded(isTreeExpanded: boolean) {
                 patchState(store, { isTreeExpanded });
+            },
+            /**
+             * Shows the table or the grid.
+             *
+             * @param viewType The listing to show.
+             * @param options `remember: true` when the user picked it with the view switcher, so the
+             * choice is also kept for this screen's next visit. Every other source (the URL, a tool's
+             * default) only shows the view and leaves what is remembered alone.
+             */
+            setViewType(viewType: DotContentDriveViewType, options?: { remember?: boolean }) {
+                patchState(store, { viewType });
+
+                if (options?.remember) {
+                    writeStoredViewType(browserStorage(), store.viewTypeStorageKey(), viewType);
+                }
             },
             /**
              * Sets the side panel's transient tree-collapse override (see `isTreeVisuallyExpanded`).
@@ -632,6 +671,8 @@ export const DotContentDriveStore = signalStore(
         const route = inject(ActivatedRoute);
         const globalStore = inject(GlobalStore);
         const location = inject(Location);
+        const dotSessionStorageService = inject(DotSessionStorageService);
+        const dotRouterService = inject(DotRouterService);
         let initEffect: EffectRef;
         let searchEffect: EffectRef;
         let locationSub: SubscriptionLike;
@@ -648,20 +689,61 @@ export const DotContentDriveStore = signalStore(
                 // first search DOES wait on this — see the gate in `loadItems`.
                 store.loadDefaultLanguage();
 
+                // The content type last opened in the Content Types editor (#37903). Read once per
+                // Drive entry and forgotten right away, whether or not it ends up applied.
+                let rememberedContentType = dotSessionStorageService.consumeLastContentType();
+
+                // Which listing opens (#37930). Decided once per Drive open, outside the init
+                // effect: that one re-runs when the site changes, and switching site must not undo
+                // a view the user picked since.
+                const openingParams = route.snapshot.queryParams;
+                const storageKey = viewTypeStorageKey(dotRouterService.currentPortlet?.id ?? '');
+                patchState(store, {
+                    viewTypeStorageKey: storageKey,
+                    viewType: resolveViewType({
+                        urlViewType: openingParams[CONTENT_DRIVE_VIEW_PARAM.VIEW_TYPE],
+                        storedViewType: readStoredViewType(browserStorage(), storageKey),
+                        defaultViewType: openingParams[CONTENT_DRIVE_VIEW_PARAM.DEFAULT_VIEW_TYPE]
+                    })
+                });
+
                 initEffect = effect(() => {
                     const queryParams = route.snapshot.queryParams;
                     const currentSite = globalStore.siteDetails();
                     const path = queryParams['path'] || DEFAULT_PATH;
-                    const filters = decodeFilters(queryParams['filters'] || '');
+                    const urlFilters = decodeFilters(queryParams['filters'] || '');
+                    // A URL that already says what to show (valid filters, or an item or folder
+                    // dialog the shell will open) wins; the remembered type is only for opening the
+                    // Drive directly. Both are judged after parsing, so a URL whose filters decode
+                    // to nothing or whose dialog params open nothing doesn't count.
+                    const urlHasInstructions =
+                        Object.keys(urlFilters).length > 0 ||
+                        resolveContentDriveUrlIntent(queryParams).kind !== 'none';
+                    const filters =
+                        rememberedContentType && currentSite && !urlHasInstructions
+                            ? { contentType: [rememberedContentType] }
+                            : urlFilters;
+                    // Used on the first run that has a site only. A run before the site has loaded
+                    // would be followed by one that re-reads the opening URL and loses it; a later
+                    // site change must not bring it back (FR-005).
+                    if (currentSite) {
+                        rememberedContentType = null;
+                    }
                     const queryTreeExpanded =
                         queryParams['isTreeExpanded'] ?? DEFAULT_TREE_EXPANDED.toString();
 
-                    store.initContentDrive({
-                        currentSite,
-                        path,
-                        filters,
-                        isTreeExpanded: queryTreeExpanded == 'true'
-                    });
+                    // Untracked: `initContentDrive` reads `defaultLanguageId`, and tracking it would
+                    // re-run the init when the default language lands, re-reading the page's
+                    // original URL over any filter changed in between. `loadDefaultLanguage` seeds
+                    // the language into the current filters itself, so only the site re-runs this.
+                    untracked(() =>
+                        store.initContentDrive({
+                            currentSite: currentSite ?? SYSTEM_HOST,
+                            path,
+                            filters,
+                            isTreeExpanded: queryTreeExpanded == 'true'
+                        })
+                    );
                 });
 
                 /**
@@ -675,6 +757,8 @@ export const DotContentDriveStore = signalStore(
                  * turns into a fresh load.
                  */
                 locationSub = location.subscribe((event) => {
+                    // `viewType` is not read here: the view is a preference, so Back and Forward
+                    // keep the one showing rather than the one the entry was saved with (#37930).
                     const params = new URLSearchParams(event.url?.split('?')[1] ?? '');
                     const path = params.get('path') || DEFAULT_PATH;
                     const filtersRaw = params.get('filters') || '';
@@ -733,67 +817,24 @@ export const DotContentDriveStore = signalStore(
     }),
     withContextMenu(),
     withDialog(),
+    withSourceEditor(),
     withSidebar(),
     withDragging(),
     withActionExecution(),
+    withFolderDeleteRuns(),
     withPushPublishEnvironments(),
     withSitePermissions(),
-    // Sharing one `withComputed` with the sidebar selection below, rather than standing alone:
-    // `signalStore` takes at most sixteen features, and this store is at that ceiling.
-    withComputed(({ path }) => {
-        const globalStore = inject(GlobalStore);
-
-        return {
-            /**
-             * The bulk-upload ceilings the server advertises, or `null` when it advertises none.
-             *
-             * Read through the store rather than injected into the shell so the component keeps to
-             * rendering: the ceilings are data, and every other piece of server state this portlet
-             * shows arrives the same way. Null covers both a configuration that has not loaded and
-             * an instance older than the field, which callers must treat alike — no readable
-             * ceiling, so the refusing is left to the server.
-             */
-            uploadCeilings: computed(() => globalStore.systemBulkUpload()),
-
-            /**
-             * Whether the sidebar's first entry, all site content, is the selected one.
-             *
-             * Derived from the location rather than stored beside it: an absent location *is* what
-             * all site content means, so a second piece of state saying so could only ever
-             * disagree.
-             */
-            $allSiteContentSelected: computed(() => !path()),
-
-            /** Whether the sidebar's last entry, System Host, is the selected one. */
-            $systemHostSelected: computed(() => path() === SYSTEM_HOST_PATH)
-        };
-    }),
-    // Both destinations in one feature, for the sixteen-feature ceiling noted above. They read
-    // the same selection signals and neither depends on the other.
+    // One `withComputed` for all of it, rather than the two or three these concerns would
+    // naturally be: `signalStore`'s typings overload to fifteen features, and this store is at
+    // that ceiling. Split it again and every `store.x` in the file silently degrades to `object`.
     withComputed(
-        ({
-            currentSite,
-            selectedNode,
-            siteCanAddChildren,
-            systemHostCanAddChildren,
-            $allSiteContentSelected,
-            $systemHostSelected
-        }) => ({
-            /**
-             * The host that would receive new content here.
-             *
-             * Three paths ask this and used to answer it separately: the upload button, a drag and
-             * drop, and the New menu. Each fell back to the current site when no folder was
-             * selected, which is right everywhere except System Host, where the current site is
-             * context rather than the destination. The New menu was worse than wrong — it built
-             * its target by pasting the location onto the hostname, which with a reserved word
-             * yields `demo.dotcms.comSYSTEM_HOST` and resolves to nothing.
-             *
-             * A folder, when one is selected, is still more specific than this and wins.
-             */
-            $newContentHostId: computed(() =>
-                $systemHostSelected() ? SYSTEM_HOST.identifier : currentSite()?.identifier
-            ),
+        ({ path, currentSite, selectedNode, siteCanAddChildren, systemHostCanAddChildren }) => {
+            const globalStore = inject(GlobalStore);
+
+            // Named locally as well as returned, because the two below read them. A sibling computed
+            // is not on the object yet while that object is being built.
+            const $allSiteContentSelected = computed(() => !path());
+            const $systemHostSelected = computed(() => path() === SYSTEM_HOST_PATH);
 
             /**
              * Whether the browsed folder accepts new children.
@@ -813,7 +854,7 @@ export const DotContentDriveStore = signalStore(
              * in flight, and an instance too old to report the field. Starting disabled would flicker
              * the affordances off and on for the common case, and the server refuses the write anyway.
              */
-            $canAddChildren: computed(() => {
+            const $canAddChildren = computed(() => {
                 // System Host is a real destination, so this is a permission answer — but about
                 // System Host, not about whichever site the switcher happens to show.
                 if ($systemHostSelected()) {
@@ -829,19 +870,93 @@ export const DotContentDriveStore = signalStore(
                     return siteCanAddChildren() !== false;
                 }
 
-                const permissions = (selectedNode()?.data as { permissions?: string[] } | undefined)
-                    ?.permissions;
+                // A load-more row carries no rights; only a folder or site node does.
+                const data = selectedNode()?.data;
+                const permissions =
+                    data && data.type !== LOAD_MORE_NODE_TYPE ? data.permissions : undefined;
 
                 if (!permissions?.length) {
                     return siteCanAddChildren() !== false;
                 }
 
                 return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
-            })
-        })
+            });
+
+            return {
+                /**
+                 * The bulk-upload ceilings the server advertises, or `null` when it advertises none.
+                 *
+                 * Read through the store rather than injected into the shell so the component keeps to
+                 * rendering: the ceilings are data, and every other piece of server state this portlet
+                 * shows arrives the same way. Null covers both a configuration that has not loaded and
+                 * an instance older than the field, which callers must treat alike — no readable
+                 * ceiling, so the refusing is left to the server.
+                 */
+                uploadCeilings: computed(() => globalStore.systemBulkUpload()),
+
+                /**
+                 * How many folders one duplicate may carry, or `null` when the server advertises no
+                 * ceiling (#37062). Read like {@link uploadCeilings}: null means the server does
+                 * the refusing.
+                 */
+                folderDuplicateMaxPaths: computed(
+                    () => globalStore.systemFolderBulkDuplicate()?.maxPaths ?? null
+                ),
+
+                /** How many folders one delete may carry, or `null`. Same reading as above. */
+                folderDeleteMaxPaths: computed(
+                    () => globalStore.systemFolderBulkDelete()?.maxPaths ?? null
+                ),
+
+                /**
+                 * Whether the sidebar's first entry, all site content, is the selected one.
+                 *
+                 * Derived from the location rather than stored beside it: an absent location *is* what
+                 * all site content means, so a second piece of state saying so could only ever
+                 * disagree.
+                 */
+                $allSiteContentSelected,
+
+                /** Whether the sidebar's last entry, System Host, is the selected one. */
+                $systemHostSelected,
+
+                /**
+                 * The host that would receive new content here.
+                 *
+                 * Three paths ask this and used to answer it separately: the upload button, a drag and
+                 * drop, and the New menu. Each fell back to the current site when no folder was
+                 * selected, which is right everywhere except System Host, where the current site is
+                 * context rather than the destination. The New menu was worse than wrong — it built
+                 * its target by pasting the location onto the hostname, which with a reserved word
+                 * yields `demo.dotcms.comSYSTEM_HOST` and resolves to nothing.
+                 *
+                 * A folder, when one is selected, is still more specific than this and wins.
+                 */
+                $newContentHostId: computed(() =>
+                    $systemHostSelected() ? SYSTEM_HOST.identifier : currentSite()?.identifier
+                ),
+
+                $canAddChildren,
+
+                /**
+                 * Whether Duplicate may be offered where the author is browsing (#37062).
+                 *
+                 * The browsed folder's own answer, except in all site content. The listing spans
+                 * every folder there, a search included, so each duplicate lands in its own parent
+                 * rather than the site root and there is no single folder to gate against
+                 * (FR-005b, US6 acceptance scenario 4). The server refuses per folder instead.
+                 */
+                $canDuplicateHere: computed(() => $allSiteContentSelected() || $canAddChildren())
+            };
+        }
     ),
     withHooks((store) => {
         let systemHostGate: EffectRef | undefined;
+        const destroyRef = inject(DestroyRef);
+        const folderBulkDeleteService = inject(DotFolderBulkDeleteService);
+        const folderBulkDuplicateService = inject(DotFolderBulkDuplicateService);
+        const uploadFileService = inject(DotUploadFileService);
+        const currentUserService = inject(DotCurrentUserService);
 
         return {
             onInit() {
@@ -851,6 +966,54 @@ export const DotContentDriveStore = signalStore(
                 store.loadSitePermissions(store.currentSite);
                 // Once, not per site: System Host belongs to none of them.
                 store.loadSystemHostPermissions();
+                // Runs still going from before this page loaded, read from each queue and routed to
+                // whichever part of the store owns them (#37062, FR-015 as amended).
+                //
+                // Fire-and-forget on purpose: the listing renders unmarked and marks and statuses
+                // appear when this answers. Nothing here is awaited, and a failure leaves the
+                // portlet exactly as it is today (FR-022, FR-023).
+                //
+                // Every read already answers `[]` on failure. Each is still caught here, because
+                // a join fails as a whole: one read that throws anyway must cost only its own runs.
+                //
+                // Only the author's own duplicates and uploads come back. The listings are not
+                // scoped to the reader, and only the submitter is sent the completion that ends a
+                // run, so anyone else's restored status would never go away. Delete marks every
+                // author's runs, as it always has: the folders are in use either way.
+                //
+                // Delete is applied from its own read, not the join. A folder the delete leaves
+                // while a slower read is still out is announced then, and marking it only after
+                // every read answered would mark it again, busy until reload.
+                folderBulkDeleteService
+                    .readActiveRuns()
+                    .pipe(
+                        catchError(() => of([] as DotFolderDeleteActiveRun[])),
+                        take(1),
+                        takeUntilDestroyed(destroyRef)
+                    )
+                    .subscribe((deletes) => store.applyInFlightFolders(deletes));
+
+                forkJoin({
+                    duplicates: folderBulkDuplicateService
+                        .readActiveRuns()
+                        .pipe(catchError(() => of([] as DotFolderDuplicateActiveRun[]))),
+                    uploads: uploadFileService
+                        .readActiveUploads()
+                        .pipe(catchError(() => of([] as DotBulkUploadActiveRun[]))),
+                    user: currentUserService.getCurrentUser().pipe(catchError(() => of(null)))
+                })
+                    .pipe(take(1), takeUntilDestroyed(destroyRef))
+                    .subscribe(({ duplicates, uploads, user }) => {
+                        // With no author, no run can be told apart as theirs, so none is restored.
+                        // The upload restore still runs, with nothing: it is what stops holding
+                        // completions for a claim that would otherwise never come.
+                        const userId = user?.userId;
+                        const isAuthors = (run: { userId?: string }) =>
+                            !!userId && run.userId === userId;
+
+                        store.restoreDuplicateRuns(duplicates.filter(isAuthors));
+                        store.restoreUploadRuns(uploads.filter(isAuthors));
+                    });
 
                 /**
                  * Sends a user who cannot read System Host back to all site content.

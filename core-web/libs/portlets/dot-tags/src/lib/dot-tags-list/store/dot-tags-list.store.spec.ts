@@ -10,7 +10,7 @@ vi.mock('@dotcms/utils', async () => ({
 }));
 
 import { DotHttpErrorManagerService, DotTagsService } from '@dotcms/data-access';
-import { DotTag } from '@dotcms/dotcms-models';
+import { DotTag, DotTagsCreateResult } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { getDownloadLink } from '@dotcms/utils';
 
@@ -27,6 +27,10 @@ const MOCK_API_RESPONSE_BASE = {
     permissions: [],
     i18nMessagesMap: {}
 };
+
+function createResponse(entity: DotTagsCreateResult) {
+    return { ...MOCK_API_RESPONSE_BASE, entity };
+}
 
 const MOCK_PAGINATED_RESPONSE = {
     ...MOCK_API_RESPONSE_BASE,
@@ -46,7 +50,9 @@ describe('DotTagsListStore', () => {
                 getTagsPaginated: vi.fn().mockReturnValue(of(MOCK_PAGINATED_RESPONSE)),
                 createTag: vi
                     .fn()
-                    .mockReturnValue(of({ ...MOCK_API_RESPONSE_BASE, entity: MOCK_TAGS })),
+                    .mockReturnValue(
+                        of(createResponse({ created: [MOCK_TAGS[0]], duplicates: [] }))
+                    ),
                 updateTag: vi
                     .fn()
                     .mockReturnValue(of({ ...MOCK_API_RESPONSE_BASE, entity: MOCK_TAGS[0] })),
@@ -234,13 +240,39 @@ describe('DotTagsListStore', () => {
             ]);
         });
 
-        it('should handle create error', () => {
+        it('should handle create error without calling onCreated', () => {
+            const onCreated = vi.fn();
             tagsService.createTag.mockReturnValue(throwError(() => new Error('create fail')));
 
-            store.createTag({ name: 'new-tag', siteId: 'site1' });
+            store.createTag({ name: 'new-tag', siteId: 'site1' }, onCreated);
 
             expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalled();
+            expect(onCreated).not.toHaveBeenCalled();
             expect(store.status()).toBe('loaded');
+        });
+
+        it('should pass the created tags to onCreated', () => {
+            const onCreated = vi.fn();
+            tagsService.createTag.mockReturnValue(
+                of(createResponse({ created: [MOCK_TAGS[0]], duplicates: [] }))
+            );
+
+            store.createTag({ name: 'tag1', siteId: 'site1' }, onCreated);
+
+            expect(onCreated).toHaveBeenCalledWith({ created: [MOCK_TAGS[0]], duplicates: [] });
+        });
+
+        it('should pass already-existing tags to onCreated and still reload', () => {
+            const onCreated = vi.fn();
+            tagsService.getTagsPaginated.mockClear();
+            tagsService.createTag.mockReturnValue(
+                of(createResponse({ created: [], duplicates: [MOCK_TAGS[0]] }))
+            );
+
+            store.createTag({ name: 'tag1', siteId: 'site1' }, onCreated);
+
+            expect(onCreated).toHaveBeenCalledWith({ created: [], duplicates: [MOCK_TAGS[0]] });
+            expect(tagsService.getTagsPaginated).toHaveBeenCalled();
         });
     });
 

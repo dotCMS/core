@@ -7,10 +7,12 @@ import { CHIP_FILTER_SCROLL_HEIGHT, SYSTEM_HOST_ID } from '@dotcms/ui';
 
 import {
     DOT_CONTENT_DRIVE_SEARCH_SCOPE,
+    DOT_CONTENT_DRIVE_VIEW_TYPE,
     DotContentDrivePage,
     DotContentDrivePagination,
     DotContentDriveSearchScope,
-    DotContentDriveSortOrder
+    DotContentDriveSortOrder,
+    DotContentDriveViewType
 } from './models';
 
 // We only need the host and the identifier from this, the other properties are mostly to comply with SiteEntity interface
@@ -55,12 +57,15 @@ export const FOLDER_TREE_HIERARCHY_PAGE_SIZE = 200;
 export const FOLDER_NAME_FILTER_MIN_LENGTH = 2;
 
 /**
- * The search scope a drive starts on. All Fields is the no-regression choice: a user who does
- * nothing keeps exactly the results they got before the control existed, and the narrower, cheaper
- * path is opt-in.
+ * The search scope a drive starts on. Title, from feedback: an author typing into the box is
+ * usually looking for an item by its name, and matching every field buried the item under
+ * everything that mentioned the word. It is also the cheaper search. All Fields stays one click away.
+ *
+ * The server's own default is still All Fields, so the request names the scope whenever there is a
+ * term (see the store's `$request`), rather than leaving Title to be read as "nothing chosen".
  */
 export const DEFAULT_SEARCH_SCOPE: DotContentDriveSearchScope =
-    DOT_CONTENT_DRIVE_SEARCH_SCOPE.ALL_FIELDS;
+    DOT_CONTENT_DRIVE_SEARCH_SCOPE.TITLE;
 
 /** The key the search scope travels under, in the filter state and in the address. */
 export const SEARCH_SCOPE_FILTER_KEY = 'searchScope';
@@ -78,6 +83,15 @@ export const SORT_ORDER: Record<number, DotContentDriveSortOrder> = {
 
 // Default tree expanded
 export const DEFAULT_TREE_EXPANDED = true;
+
+/** The listing the Drive opens in when nothing says otherwise (FR-020). */
+export const DEFAULT_VIEW_TYPE: DotContentDriveViewType = DOT_CONTENT_DRIVE_VIEW_TYPE.LIST;
+
+/**
+ * Browser storage key prefix for the remembered view. The portlet's id is appended, so each screen
+ * that hosts the Drive (the Drive itself, and later each custom tool, #37931) remembers its own.
+ */
+export const VIEW_TYPE_STORAGE_KEY_PREFIX = 'dotcms.content-drive.view-type.';
 
 // Default path, it needs to be undefined to show the root folder
 export const DEFAULT_PATH = undefined;
@@ -194,27 +208,38 @@ export const PANEL_SCROLL_HEIGHT = CHIP_FILTER_SCROLL_HEIGHT;
 export const DIALOG_TYPE = {
     FOLDER: 'FOLDER',
     CONTENT_TYPE_SELECTOR: 'CONTENT_TYPE_SELECTOR',
-    ACTION_CENTER: 'ACTION_CENTER'
+    ACTION_CENTER: 'ACTION_CENTER',
+    /**
+     * Edit Permissions for a folder. Opened through the store like the other folder dialogs, so
+     * the URL can name it while it is open (#37759, FR-030); the shell renders it as the JSP
+     * permissions dialog rather than in its own `p-dialog`.
+     */
+    FOLDER_PERMISSIONS: 'FOLDER_PERMISSIONS'
 } as const;
 
 /**
- * Root styles for the Action Center dialog.
+ * Root sizing for the Action Center dialog, as classes rather than inline styles.
  *
  * Fixed height so the content box has something to flex against — without it the column sizes to
- * content and the body never scrolls. `display: flex` / `flex-direction: column` / `overflow: hidden`
- * are required: the theme gives `.p-dialog-content` `flex-grow: 1` and the header/footer
- * `flex-shrink: 0`, but `.p-dialog` itself is not a flex container — without that, `height: 80vh`
- * does not constrain the content and the whole dialog (footer included) grows past the viewport.
+ * content and the body never scrolls.
+ *
+ * **Classes, not `[style]`, and that is the whole point.** One `p-dialog` serves every dialog type
+ * in this portlet, so whatever styles a type applies have to come back off when the next type opens.
+ * PrimeNG's dialog root carries `[style]="sx('root')"` *and* `[ngStyle]="style"` on the same
+ * element; NgStyle's additions land, but its removals are overwritten by the template's own style
+ * map on the next change detection. The result was that the Action Center's `width`/`height` stayed
+ * on the root for the rest of the session — open the workflow center once and Folder Settings was
+ * sized wrong from then on. `[styleClass]` feeds `[class]`, an ordinary Angular class binding that
+ * reconciles properly. The content box is unaffected: it has `[ngStyle]` alone, nothing competing.
+ *
+ * `display: flex` and `flex-direction: column` are deliberately absent — `sx('root')` already sets
+ * both inline, which no class could override anyway.
+ *
+ * `max-h-[80vh]!` is the one that needs `!`: the theme puts `max-height: 90%` on `.p-dialog`, and
+ * a bare utility only ties with it on specificity.
  */
-export const ACTION_CENTER_DIALOG_STYLE = {
-    width: '42rem',
-    maxWidth: '92vw',
-    height: '80vh',
-    maxHeight: '80vh',
-    display: 'flex',
-    'flex-direction': 'column',
-    overflow: 'hidden'
-} as const;
+export const ACTION_CENTER_DIALOG_CLASS =
+    'w-168 max-w-[92vw] h-[80vh] max-h-[80vh]! overflow-hidden';
 
 /**
  * Content-box styles for the Action Center dialog — the dialog's only scroll container.
@@ -231,27 +256,6 @@ export const ACTION_CENTER_DIALOG_CONTENT_STYLE = {
     'min-height': '0',
     overflow: 'hidden',
     padding: '0'
-} as const;
-
-/**
- * Pass-through styling for the Action Center's "these folders can only be bundled" notice, which
- * spans the dialog edge to edge instead of sitting inset like the sections around it.
- *
- * `-mx-6` cancels the dialog body's `px-6`. Because that inset is *padding*, the notice grows into
- * the container's padding box rather than past its border box, so the body's `overflow-y-auto`
- * does not turn into a horizontal scrollbar. The dialog's own content box is `padding: 0` (see
- * {@link ACTION_CENTER_DIALOG_CONTENT_STYLE}), so `px-6` is the only inset to cancel.
- *
- * Both `!` flags are required rather than defensive. `.p-message` sets `border-radius` and
- * `.p-message-content` sets a `padding` shorthand; PrimeNG injects that stylesheet at runtime, so
- * at equal specificity it lands after Tailwind's and wins.
- *
- * The content keeps 24px of its own horizontal padding so the text stays on the same left edge as
- * the dialog header and the sections below it.
- */
-export const ACTION_CENTER_FOLDER_NOTICE_PT = {
-    root: { class: '-mx-6 rounded-none!' },
-    content: { class: 'px-6!' }
 } as const;
 
 export const DEFAULT_FILE_ASSET_TYPES = [{ id: 'FileAsset', name: 'File' }];
@@ -314,11 +318,46 @@ export const ERROR_MESSAGE_LIFE = 4500;
 export const MOVE_TO_FOLDER_WORKFLOW_ACTION_ID = 'dd4c4b7c-e9d3-4dc0-8fbf-36102f9c6324';
 
 /**
- * `editContent` value written for a `new`-mode panel: a non-shareable marker (creating has no
- * identifier) whose only job is to give browser Back a history entry to pop, so Back closes the
- * create panel too (AC8). The deep-link reader ignores it; only real identifiers are resolved.
+ * The Content Drive URL params that say which side panel or folder dialog is open (#37759). They are
+ * a supported entry point: Part 1's redirects build the panel ones, other screens may link to them,
+ * and at most one of them is in the URL at a time (FR-023).
  */
-export const NEW_CONTENT_MARKER = 'new';
+export const CONTENT_DRIVE_URL_PARAM = {
+    /** Identifier of the content open for edit, in either editor. */
+    EDIT_CONTENT: 'editContent',
+    /** Language of the version open for edit. Read only together with `editContent`. */
+    EDIT_CONTENT_LANG: 'editContentLang',
+    /** Variable of the content type being created, in either editor. */
+    CREATE_CONTENT: 'createContent',
+    /** `true` while New Folder is open; its parent is the folder in `path`. */
+    CREATE_FOLDER: 'createFolder',
+    /** Identifier of the folder whose Folder Settings are open. */
+    EDIT_FOLDER: 'editFolder',
+    /** Identifier of the folder whose Edit Permissions dialog is open. */
+    FOLDER_PERMISSIONS: 'folderPermissions'
+} as const;
+
+/**
+ * Inode of the file open in Edit Code (#37965). Unlike {@link CONTENT_DRIVE_URL_PARAM}, not an
+ * entry point: it is written so that browser Back pops the panel through its unsaved-changes prompt
+ * instead of leaving Content Drive, and a URL that carries it opens nothing.
+ */
+export const CONTENT_DRIVE_EDIT_CODE_PARAM = 'editCode';
+
+/**
+ * URL params that choose the listing (#37930). Kept apart from {@link CONTENT_DRIVE_URL_PARAM}: those
+ * name something to open and are all cleared together when they conflict, and the view must survive
+ * that.
+ */
+export const CONTENT_DRIVE_VIEW_PARAM = {
+    /** The view asked for explicitly (`list` or `card`). Wins over everything, and is written back. */
+    VIEW_TYPE: 'viewType',
+    /**
+     * A custom tool's default view (#37931). Read only; loses to the view the user remembered for
+     * this screen, which is why it is not sent as `viewType`.
+     */
+    DEFAULT_VIEW_TYPE: 'defaultViewType'
+} as const;
 
 /**
  * Operation key for the upload's own phase, the window before the server answers a handle.
@@ -328,3 +367,27 @@ export const NEW_CONTENT_MARKER = 'new';
  * leaving. Keying them apart is what lets the indicator hand off from one to the other.
  */
 export const UPLOAD_BATCH_OPERATION = 'CONTENT_DRIVE_UPLOAD_BATCH';
+
+/**
+ * How many folder names a line prints before it counts them instead.
+ *
+ * Past this the line leads with the number and names none. Naming the first eight of fifty reads as
+ * "eight folders failed", which is worse than saying nothing.
+ *
+ * **What is lost, stated honestly:** the names past this point are not in the notification. They are
+ * in the run's durable record, which the author reaches by following the count (FR-027a) — so this
+ * is a readability trade, not information the client threw away.
+ */
+export const MAX_FOLDER_NAMES = 8;
+
+/**
+ * The operation keys bulk folder delete and duplicate runs are registered under.
+ *
+ * Paired with the run's targets it forms the repeat guard — *this operation over these folders* —
+ * so a delete running for minutes never blocks an unrelated action, nor a delete of different
+ * folders (FR-018). Kept here rather than imported from the quick-action registry: the store's
+ * guard key is its own concern, and tying it to a UI constant would make a rename of one silently
+ * change the other.
+ */
+export const DELETE_FOLDER_OPERATION = 'DELETE_FOLDER';
+export const DUPLICATE_FOLDER_OPERATION = 'DUPLICATE_FOLDER';

@@ -4,13 +4,20 @@ import { TestBed } from '@angular/core/testing';
 
 import {
     DotCMSContentType,
+    DotCMSContentTypeField,
     DotCopyContentTypeDialogFormFields,
     StructureTypeView,
     DotPagination,
     DotCMSClazz,
     DotContentTypePaginationOptions
 } from '@dotcms/dotcms-models';
-import { dotcmsContentTypeBasicMock, mockDotContentlet } from '@dotcms/utils-testing';
+import {
+    createFakeColumnField,
+    createFakeRowField,
+    createFakeTextField,
+    dotcmsContentTypeBasicMock,
+    mockDotContentlet
+} from '@dotcms/utils-testing';
 
 import { DotContentTypeService } from './dot-content-type.service';
 
@@ -52,6 +59,58 @@ describe('DotContentletService', () => {
         });
         dotContentTypeService = TestBed.inject(DotContentTypeService);
         httpMock = TestBed.inject(HttpTestingController);
+    });
+
+    /**
+     * FR-013 (issue #37670). A content type's fields arrive inside `layout`, so this is the
+     * second place the frontend asserts backend JSON into the closed field-type union. The
+     * backend's set is open — customer plugins contribute field types — so the assertion can be
+     * false here, and the requirement is that it degrades instead of breaking.
+     */
+    describe('an unmodelled field type in the layout (FR-013)', () => {
+        it('does not throw, and leaves the rest of the content type intact', () => {
+            const contentTypeWithAPluginField = {
+                ...dotcmsContentTypeBasicMock,
+                id: 'a-content-type',
+                layout: [
+                    {
+                        divider: createFakeRowField(),
+                        columns: [
+                            {
+                                columnDivider: createFakeColumnField(),
+                                fields: [
+                                    createFakeTextField({ variable: 'title' }),
+                                    {
+                                        fieldType: 'Com.acme.SignaturePad',
+                                        variable: 'signature'
+                                    } as unknown as DotCMSContentTypeField
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            } as DotCMSContentType;
+
+            let received: DotCMSContentType | undefined;
+            let errored: unknown;
+
+            dotContentTypeService.getContentType('a-content-type').subscribe({
+                next: (contentType) => (received = contentType),
+                error: (e) => (errored = e)
+            });
+
+            httpMock
+                .expectOne('/api/v1/contenttype/id/a-content-type')
+                .flush({ entity: contentTypeWithAPluginField });
+
+            expect(errored).toBeUndefined();
+
+            const fields = received?.layout[0].columns?.[0].fields ?? [];
+            expect(fields).toHaveLength(2);
+            // The known field survives alongside the one the model cannot describe.
+            expect(fields[0].variable).toBe('title');
+            expect(fields[1].fieldType).toBe('Com.acme.SignaturePad');
+        });
     });
 
     it('should call the BE with correct endpoint url and method for getContentTypes()', () =>
@@ -280,6 +339,20 @@ describe('DotContentletService', () => {
             expect(req.request.method).toBe('GET');
             req.flush({ entity: contentTypeExpected });
         }));
+
+    // The id or variable can come from a URL (Content Drive's `createContent`), so it is encoded
+    // into the path rather than allowed to rewrite it (Constitution III, #37759 T111).
+    it('should encode the id or variable into the path', () => {
+        dotContentTypeService.getContentType('a/b c').subscribe();
+
+        // Collected and flushed whatever their URL, so a wrong one fails only this test.
+        const requests = httpMock.match(() => true);
+        requests.forEach((request) => request.flush({ entity: {} }));
+
+        expect(requests.map(({ request }) => request.url)).toEqual([
+            '/api/v1/contenttype/id/a%2Fb%20c'
+        ]);
+    });
 
     describe('getContentTypeWithRender', () => {
         it('should get content type with render by id', () =>

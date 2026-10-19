@@ -104,6 +104,15 @@ export default defineConfig(() => ({
         environment: 'jsdom',
         environmentOptions: { jsdom: { url: 'http://localhost/' } },
         include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+        // Type-level tests. See TYPECHECK in tools/generate-vite-configs.mjs for why this is
+        // per project and why source errors are ignored.
+        typecheck: {
+            enabled: true,
+            only: false,
+            ignoreSourceErrors: true,
+            tsconfig: './tsconfig.spec.json',
+            include: ['{src,tests}/**/*.test-d.{ts,mts,cts,tsx}']
+        },
         server: {
             deps: {
                 inline: [

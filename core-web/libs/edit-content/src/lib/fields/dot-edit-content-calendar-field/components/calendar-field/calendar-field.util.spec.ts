@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { DotSystemTimezone } from '@dotcms/dotcms-models';
+import { DotCMSFieldTypes, DotSystemTimezone } from '@dotcms/dotcms-models';
 import {
     createFakeDateField,
     createFakeDateTimeField,
@@ -20,8 +20,6 @@ import {
     processExistingValue,
     processFieldDefaultValue
 } from './calendar-field.util';
-
-import { FIELD_TYPES } from '../../../../models/dot-edit-content-field.enum';
 
 // Mock de timezone del servidor - formato real que viene del backend
 const SERVER_TIMEZONE_MOCKS = {
@@ -54,13 +52,13 @@ describe('DotEditContentCalendarFieldUtil - TDD Approach', () => {
     describe('CALENDAR_OPTIONS_PER_TYPE - Basic Configuration', () => {
         it('should exist and have configuration for all field types', () => {
             expect(CALENDAR_OPTIONS_PER_TYPE).toBeDefined();
-            expect(CALENDAR_OPTIONS_PER_TYPE[FIELD_TYPES.DATE]).toBeDefined();
-            expect(CALENDAR_OPTIONS_PER_TYPE[FIELD_TYPES.DATE_AND_TIME]).toBeDefined();
-            expect(CALENDAR_OPTIONS_PER_TYPE[FIELD_TYPES.TIME]).toBeDefined();
+            expect(CALENDAR_OPTIONS_PER_TYPE[DotCMSFieldTypes.DATE]).toBeDefined();
+            expect(CALENDAR_OPTIONS_PER_TYPE[DotCMSFieldTypes.DATE_AND_TIME]).toBeDefined();
+            expect(CALENDAR_OPTIONS_PER_TYPE[DotCMSFieldTypes.TIME]).toBeDefined();
         });
 
         it('should have correct basic structure for DATE field', () => {
-            const dateConfig = CALENDAR_OPTIONS_PER_TYPE[FIELD_TYPES.DATE];
+            const dateConfig = CALENDAR_OPTIONS_PER_TYPE[DotCMSFieldTypes.DATE];
             expect(dateConfig).toHaveProperty('showTime');
             expect(dateConfig).toHaveProperty('timeOnly');
             expect(dateConfig).toHaveProperty('icon');
@@ -434,7 +432,7 @@ describe('DotEditContentCalendarFieldUtil - TDD Approach', () => {
             const result = parseFieldDefaultValue(
                 'now',
                 SERVER_TIMEZONE_MOCKS.GULF,
-                FIELD_TYPES.DATE_AND_TIME
+                DotCMSFieldTypes.DATE_AND_TIME
             );
 
             // Then: Should return current time in server timezone
@@ -447,7 +445,7 @@ describe('DotEditContentCalendarFieldUtil - TDD Approach', () => {
             const result = parseFieldDefaultValue(
                 'now',
                 SERVER_TIMEZONE_MOCKS.GULF,
-                FIELD_TYPES.TIME
+                DotCMSFieldTypes.TIME
             );
 
             // Then: Should return current time components applied to today
@@ -589,7 +587,7 @@ describe('DotEditContentCalendarFieldUtil - TDD Approach', () => {
             const field = createFakeDateField({
                 defaultValue: 'now',
                 variable: 'testField',
-                fieldType: FIELD_TYPES.DATE
+                fieldType: DotCMSFieldTypes.DATE
             });
 
             // When: Processing default value
@@ -651,7 +649,7 @@ describe('DotEditContentCalendarFieldUtil - TDD Approach', () => {
             // And then processing as existing value (like processExistingValue for TIME field)
             const backToDisplay = processExistingValue(
                 utcForStorage,
-                FIELD_TYPES.TIME,
+                DotCMSFieldTypes.TIME,
                 SERVER_TIMEZONE_MOCKS.GULF
             );
 
@@ -686,7 +684,7 @@ describe('DotEditContentCalendarFieldUtil - TDD Approach', () => {
             // And then processing as existing value
             const backToDisplay = processExistingValue(
                 utcForStorage,
-                FIELD_TYPES.TIME,
+                DotCMSFieldTypes.TIME,
                 SERVER_TIMEZONE_MOCKS.GULF
             );
 
@@ -712,7 +710,7 @@ describe('DotEditContentCalendarFieldUtil - TDD Approach', () => {
             const utcForStorage = convertServerTimeToUtc(timeInServerTz, SERVER_TIMEZONE_MOCKS.EST);
             const backToDisplay = processExistingValue(
                 utcForStorage,
-                FIELD_TYPES.TIME,
+                DotCMSFieldTypes.TIME,
                 SERVER_TIMEZONE_MOCKS.EST
             );
 
@@ -730,7 +728,7 @@ describe('DotEditContentCalendarFieldUtil - TDD Approach', () => {
             );
 
             // When: Save and load cycle without timezone
-            const backToDisplay = processExistingValue(timeSelection, FIELD_TYPES.TIME, null);
+            const backToDisplay = processExistingValue(timeSelection, DotCMSFieldTypes.TIME, null);
 
             // Then: Should maintain the same time
             expect(backToDisplay).toBeTruthy();

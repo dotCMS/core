@@ -283,6 +283,19 @@ public interface BrowserAPI {
     PaginatedContents getPaginatedContents(final BrowserQuery browserQuery)
             throws DotSecurityException, DotDataException;
 
+    /**
+     * Tells whether the index query this request would send leaves room, within the index's
+     * maximum query-string length, for a useful batch of candidate inodes. A search term or filter
+     * values long enough to leave no room cannot be served, and callers should reject the request
+     * as bad input before running it. Requests that do not go through the index always fit.
+     *
+     * @param browserQuery The request to check.
+     * @return {@code true} when the request can be served.
+     */
+    default boolean esQueryLeavesRoomForInodes(final BrowserQuery browserQuery) {
+        return true;
+    }
+
 	/**
 	 * Returns a collection of contentlets that live inside the parent(browserQuery.directParent)
 	 * @param browserQuery {@link BrowserQuery}

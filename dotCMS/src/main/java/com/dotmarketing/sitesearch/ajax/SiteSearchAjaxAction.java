@@ -1,10 +1,10 @@
 package com.dotmarketing.sitesearch.ajax;
 
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
+import com.dotcms.content.index.IndexTimestamp;
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -13,7 +13,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.content.elasticsearch.business.DotIndexException;
-import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
@@ -114,7 +113,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 			Logger.warn(this, e.getMessage(), e);
 		}
 
-		String indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + ContentletIndexAPIImpl.timestampFormatter.format(new Date());
+		String indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_" + IndexTimestamp.now();
 		APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, alias, shards);
 
 		if(def)

@@ -78,8 +78,10 @@ public interface AbstractCompanyConfigView {
     String backgroundColor();
 
     @Schema(
-            description = "Background image path (dotAsset path starting with /dA)",
-            example = "/dA/abc123/background.png"
+            description = "Stored login background: a /dA path, a bundled background "
+                    + CompanyBasicInfoForm.BACKGROUND_PRESETS_TEXT + ", or a legacy URL; "
+                    + "null when none is set",
+            example = "/html/images/backgrounds/bg-11.jpg"
     )
     @Nullable
     String backgroundImage();

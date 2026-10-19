@@ -706,6 +706,11 @@ public class RoleAjax {
 		//Validate if this logged in user has the required permissions to access the roles portlet
 		validateRolesPortletPermissions(getLoggedInUser());
 
+		// Getting Started is the product's onboarding section: users switch it on and off, so it must always exist
+		if (LayoutAPI.GETTING_STARTED_LAYOUT_ID.equals(layoutId)) {
+			throw new DotStateException("The Getting Started section cannot be deleted");
+		}
+
 		User user = getAdminUser();
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		Layout layout = layoutAPI.loadLayout(layoutId);

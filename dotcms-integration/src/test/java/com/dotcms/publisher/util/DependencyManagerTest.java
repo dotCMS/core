@@ -40,6 +40,7 @@ import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Map;
 import org.junit.BeforeClass;
@@ -546,6 +547,214 @@ public class DependencyManagerTest {
         final FilterDescriptor filterDescriptor =
                 new FilterDescriptor("ShallowPush.yml","Only Selected Items",filtersMap,false,"DOTCMS_BACK_END_USER");
         APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
+    }
+
+    /**
+     * Registers the 'SecondLevelRelationships.yml' filter (relationshipsSecondLevel = true) used
+     * by the second-level-relationship tests below.
+     */
+    private static void createSecondLevelRelationshipsFilter(){
+        final Map<String,Object> filtersMap =
+                ImmutableMap.of("dependencies",true,"relationships",true,"forcePush",false,
+                        "relationshipsSecondLevel",true);
+        final FilterDescriptor filterDescriptor =
+                new FilterDescriptor("SecondLevelRelationships.yml",
+                        "Everything, Dependencies and Second-Level Relationships",filtersMap,false,
+                        "DOTCMS_BACK_END_USER");
+        APILocator.getPublisherAPI().addFilterDescriptor(filterDescriptor);
+    }
+
+    /**
+     * Holds a persisted A-&gt;B-&gt;C relationship chain (Content Types and Contentlets) built by
+     * {@link #createABCRelationshipChain()}, used by the second-level-relationship tests below.
+     */
+    private static final class RelationshipChain {
+        final Host host;
+        final ContentType typeA;
+        final ContentType typeB;
+        final ContentType typeC;
+        final Contentlet a1;
+        final Contentlet b1;
+        final Contentlet c1;
+
+        RelationshipChain(final Host host, final ContentType typeA, final ContentType typeB,
+                final ContentType typeC, final Contentlet a1, final Contentlet b1, final Contentlet c1) {
+            this.host = host;
+            this.typeA = typeA;
+            this.typeB = typeB;
+            this.typeC = typeC;
+            this.a1 = a1;
+            this.b1 = b1;
+            this.c1 = c1;
+        }
+    }
+
+    /**
+     * Builds the A-&gt;B-&gt;C relationship chain from issue #31400's reproduction steps: Content
+     * Type C (title only), Content Type B (title + relationship to C), Content Type A (title +
+     * relationship to B), and Contentlets c1, b1 (related to c1), a1 (related to b1).
+     */
+    private RelationshipChain createABCRelationshipChain() throws DotSecurityException, DotDataException {
+        final Host host = new SiteDataGen().nextPersisted();
+
+        final ContentType typeC = new ContentTypeDataGen().host(host)
+                .field(new FieldDataGen().name("title").next()).nextPersisted();
+
+        ContentType typeB = new ContentTypeDataGen().host(host)
+                .field(new FieldDataGen().name("title").next()).nextPersisted();
+
+        final Relationship relationshipBtoC = new FieldRelationshipDataGen()
+                .child(typeC).parent(typeB).nextPersisted();
+        typeB = APILocator.getContentTypeAPI(APILocator.systemUser()).find(typeB.variable());
+
+        ContentType typeA = new ContentTypeDataGen().host(host)
+                .field(new FieldDataGen().name("title").next()).nextPersisted();
+
+        final Relationship relationshipAtoB = new FieldRelationshipDataGen()
+                .child(typeB).parent(typeA).nextPersisted();
+        typeA = APILocator.getContentTypeAPI(APILocator.systemUser()).find(typeA.variable());
+
+        final Contentlet c1 = new ContentletDataGen(typeC).setProperty("title", "c1").nextPersisted();
+        final Contentlet b1 = new ContentletDataGen(typeB)
+                .setProperty(relationshipBtoC.getChildRelationName(), Arrays.asList(c1))
+                .setProperty("title", "b1").nextPersisted();
+        final Contentlet a1 = new ContentletDataGen(typeA)
+                .setProperty(relationshipAtoB.getChildRelationName(), Arrays.asList(b1))
+                .setProperty("title", "a1").nextPersisted();
+
+        return new RelationshipChain(host, typeA, typeB, typeC, a1, b1, c1);
+    }
+
+    /**
+     * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
+     * <b>Given Scenario:</b> The A-&gt;B-&gt;C chain is pushed (just a1) using the new
+     * 'SecondLevelRelationships.yml' filter (relationshipsSecondLevel = true). <p>
+     * <b>ExpectedResult:</b> The second-level related content (c1) is included as a dependency —
+     * covers AC-001 from the #31400 spec.
+     */
+    @Test
+    public void test_PP_should_include_second_level_related_content_when_filter_set()
+            throws DotDataException, DotBundleException, DotSecurityException {
+
+        final RelationshipChain chain = createABCRelationshipChain();
+
+        final String filterKey = "SecondLevelRelationships.yml";
+        if (!APILocator.getPublisherAPI().existsFilterDescriptor(filterKey)) {
+            createSecondLevelRelationshipsFilter();
+        }
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+        createBundle(config, chain.a1, filterKey);
+
+        final DependencyManager dependencyManager = new DependencyManager(user, config);
+        dependencyManager.setDependencies();
+
+        assertTrue("Second level related content (c1) should be included when relationshipsSecondLevel is true",
+                dependencyManager.getContents().contains(chain.c1.getIdentifier()));
+    }
+
+    /**
+     * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
+     * <b>Given Scenario:</b> The same A-&gt;B-&gt;C chain is pushed using the pre-existing default
+     * filter ('filterKey.yml', registered by {@link #createFilter()}), which never sets
+     * relationshipsSecondLevel. <p>
+     * <b>ExpectedResult:</b> b1 (first level) is still included, but c1 (second level) is NOT —
+     * covers AC-002, the regression guard for the #31036 -&gt; PR #31412 round-trip.
+     */
+    @Test
+    public void test_PP_should_not_include_second_level_related_content_by_default()
+            throws DotDataException, DotBundleException, DotSecurityException {
+
+        final RelationshipChain chain = createABCRelationshipChain();
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+        createBundle(config, chain.a1, "filterKey.yml");
+
+        final DependencyManager dependencyManager = new DependencyManager(user, config);
+        dependencyManager.setDependencies();
+
+        assertTrue("First level related content (b1) should still be included",
+                dependencyManager.getContents().contains(chain.b1.getIdentifier()));
+        assertFalse("Second level related content (c1) must NOT be included by default (issue #31400)",
+                dependencyManager.getContents().contains(chain.c1.getIdentifier()));
+    }
+
+    /**
+     * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
+     * <b>Given Scenario:</b> The A-&gt;B-&gt;C chain is extended with a fourth Content Type D
+     * (c1 related to d1), then a1 is pushed using the 'SecondLevelRelationships.yml' filter. <p>
+     * <b>ExpectedResult:</b> c1 (second level) is included, but d1 (third level) is NOT — covers
+     * AC-003, proving the cap stops at exactly two levels rather than recursing unbounded like
+     * PR #31054's original (reverted) implementation did.
+     */
+    @Test
+    public void test_PP_should_not_include_third_level_related_content_even_with_filter_set()
+            throws DotDataException, DotBundleException, DotSecurityException {
+
+        final RelationshipChain chain = createABCRelationshipChain();
+
+        final ContentType typeD = new ContentTypeDataGen().host(chain.host)
+                .field(new FieldDataGen().name("title").next()).nextPersisted();
+        final Relationship relationshipCtoD = new FieldRelationshipDataGen()
+                .child(typeD).parent(chain.typeC).nextPersisted();
+
+        final Contentlet d1 = new ContentletDataGen(typeD).setProperty("title", "d1").nextPersisted();
+
+        final Contentlet checkoutC1 = ContentletDataGen.checkout(chain.c1);
+        checkoutC1.setProperty(relationshipCtoD.getChildRelationName(), Arrays.asList(d1));
+        ContentletDataGen.checkin(checkoutC1);
+
+        final String filterKey = "SecondLevelRelationships.yml";
+        if (!APILocator.getPublisherAPI().existsFilterDescriptor(filterKey)) {
+            createSecondLevelRelationshipsFilter();
+        }
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+        createBundle(config, chain.a1, filterKey);
+
+        final DependencyManager dependencyManager = new DependencyManager(user, config);
+        dependencyManager.setDependencies();
+
+        assertTrue("Second level related content (c1) should be included",
+                dependencyManager.getContents().contains(chain.c1.getIdentifier()));
+        assertFalse("Third level related content (d1) must NOT be included — the cap stops at exactly two levels",
+                dependencyManager.getContents().contains(d1.getIdentifier()));
+    }
+
+    /**
+     * <b>Method to test:</b> {@link DependencyManager#setDependencies()} <p>
+     * <b>Given Scenario:</b> The A-&gt;B-&gt;C chain is made circular by relating c1 back to a1
+     * (C-&gt;A), then a1 is pushed using the 'SecondLevelRelationships.yml' filter. <p>
+     * <b>ExpectedResult:</b> setDependencies() completes without an OutOfMemory error or infinite
+     * loop, and c1 is still included — covers AC-004, mirroring PR #31054's original
+     * cyclic-reference coverage under the new depth-capped logic.
+     */
+    @Test
+    public void test_PP_deep_relationship_filter_handles_circular_reference()
+            throws DotDataException, DotBundleException, DotSecurityException {
+
+        final RelationshipChain chain = createABCRelationshipChain();
+
+        final Relationship relationshipCtoA = new FieldRelationshipDataGen()
+                .child(chain.typeA).parent(chain.typeC).nextPersisted();
+
+        final Contentlet checkoutC1 = ContentletDataGen.checkout(chain.c1);
+        checkoutC1.setProperty(relationshipCtoA.getChildRelationName(), Arrays.asList(chain.a1));
+        ContentletDataGen.checkin(checkoutC1);
+
+        final String filterKey = "SecondLevelRelationships.yml";
+        if (!APILocator.getPublisherAPI().existsFilterDescriptor(filterKey)) {
+            createSecondLevelRelationshipsFilter();
+        }
+
+        final PushPublisherConfig config = new PushPublisherConfig();
+        createBundle(config, chain.a1, filterKey);
+
+        final DependencyManager dependencyManager = new DependencyManager(user, config);
+        dependencyManager.setDependencies();
+
+        assertTrue("Second level related content (c1) should still be included despite the cycle",
+                dependencyManager.getContents().contains(chain.c1.getIdentifier()));
     }
 
     /**

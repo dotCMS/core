@@ -8,6 +8,7 @@ import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplMigration
 import com.dotcms.content.elasticsearch.business.OsBootstrapForbiddenIndexTest;
 import com.dotcms.content.index.opensearch.ContentFactoryIndexOperationsOSIntegrationTest;
 import com.dotcms.content.index.opensearch.ContentletIndexOperationsOSIntegrationTest;
+import com.dotcms.content.index.opensearch.OSIndexBulkProcessorByteLimitTest;
 import com.dotcms.content.index.opensearch.OSCreateContentIndexIntegrationTest;
 import com.dotcms.content.index.opensearch.OSMappingAPIImplIntegrationTest;
 import com.dotcms.content.index.VersionedIndicesAPITest;
@@ -46,6 +47,7 @@ import org.junit.runners.Suite.SuiteClasses;
         OSIndexAPIImplWaitReadyIT.class,
         OSMappingAPIImplIntegrationTest.class,
         ContentletIndexOperationsOSIntegrationTest.class,
+        OSIndexBulkProcessorByteLimitTest.class,
         OSCreateContentIndexIntegrationTest.class,
         ContentFactoryIndexOperationsOSIntegrationTest.class,
         OSClientProviderIntegrationTest.class,

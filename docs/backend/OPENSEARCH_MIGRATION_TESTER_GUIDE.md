@@ -208,6 +208,23 @@ The default phase in this stack is **Phase 1** (`DOT_FEATURE_FLAG_OPEN_SEARCH_PH
 different phase, edit that value in `docker-compose.yml` and restart dotCMS
 (`docker compose up -d dotcms`).
 
+> **Following the customer-facing migration guide against this lab?** Two things do not line up, and
+> both cost time before you spot them.
+>
+> **This lab starts at phase 1, not phase 0.** The customer guide's Steps 1 and 2 open with *"position 0
+> throughout — the switch is not touched"* and *"at position 0 dotCMS never contacts it."* Here the
+> compose file ships `DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE: '1'`, so dual-write is already running and
+> the OpenSearch 3 indexes already exist. You will spend Step 2 configuring what is configured, while
+> believing nothing is being written to the target. Drop to `0` first if you want to follow that guide
+> from its own starting point.
+>
+> **The engines are separated by port here, not by host.** The customer guide says
+> `https://<new-host>:9200`, which is right in production: two servers, each with its own 9200.
+> In this lab both run on localhost, so the *target* is `https://localhost:9201` and `9200` is the
+> **source**. Substituting `localhost` and keeping 9200 queries the wrong engine, which then reports
+> `1.3.20` where the guide says to expect `3.x` — and reads like a documentation error rather than a
+> substitution one.
+
 > **If you need the source engine to be real Elasticsearch.** There is no second stack for that — the
 > lab has always been OpenSearch 1.x → 3.x. It exercises the same code path: dotCMS reaches both
 > Elasticsearch 7.x and OpenSearch 1.x through the same legacy client, and it is the *target* engine

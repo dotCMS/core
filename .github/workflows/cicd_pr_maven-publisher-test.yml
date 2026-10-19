@@ -1,0 +1,36 @@
+name: 'Maven Publisher — Regression Tests'
+
+on:
+  pull_request:
+    paths:
+      - '.github/scripts/publish-to-s3/**'
+      - '.github/actions/core-cicd/deployment/deploy-bunny-maven-s3/**'
+      - '.github/workflows/cicd_pr_maven-publisher-test.yml'
+  push:
+    branches: [main]
+    paths:
+      - '.github/scripts/publish-to-s3/**'
+      - '.github/actions/core-cicd/deployment/deploy-bunny-maven-s3/**'
+      - '.github/workflows/cicd_pr_maven-publisher-test.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: maven-publisher-test-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Offline Maven publisher tests
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check shell syntax
+        run: bash -n .github/scripts/publish-to-s3/publish.sh
+
+      - name: Run offline regression tests
+        run: python3 -m unittest discover -s .github/scripts/publish-to-s3/tests -v

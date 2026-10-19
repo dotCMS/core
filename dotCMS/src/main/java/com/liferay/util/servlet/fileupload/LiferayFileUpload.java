@@ -23,17 +23,14 @@
 package com.liferay.util.servlet.fileupload;
 
 import java.util.List;
-import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 
-import com.liferay.util.Validator;
 
 /**
  * <a href="LiferayFileUpload.java.html"><b><i>View Source</i></b></a>
@@ -69,20 +66,6 @@ public class LiferayFileUpload extends ServletFileUpload {
 		return super.parseRequest(req);
 	}
 
-	protected FileItem createItem(Map headers, boolean formField)
-		throws FileUploadException {
-
-		LiferayFileItem item =
-			(LiferayFileItem)super.createItem(headers, formField);
-
-		String fileName = item.getFileName();
-
-		if (Validator.isNotNull(fileName)) {
-			_ses.setAttribute(LiferayFileUpload.FILE_NAME, fileName);
-		}
-
-		return item;
-	}
 
 	private HttpServletRequest _req;
 	private HttpSession _ses;

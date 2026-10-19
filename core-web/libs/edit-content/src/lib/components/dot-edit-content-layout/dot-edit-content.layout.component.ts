@@ -388,6 +388,12 @@ export class DotEditContentLayoutComponent {
                 inode: request.inode,
                 depth: DotContentletDepths.TWO
             });
+
+            // Only now does the editor move to that language: a "keep editing" never gets here,
+            // so the opener never names a language the editor isn't showing (#37759, FR-020).
+            if (request.languageId) {
+                this.#host.reportLanguage?.(request.languageId);
+            }
         };
 
         if (this.hasUnsavedChanges()) {

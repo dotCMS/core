@@ -25,6 +25,25 @@ name: Autodoc — Epic Documentation Audit
 on:
   issues:
     types: [closed]
+  # Manual runs. Declared here first, on its own, so that the follow-up fix
+  # can be dry-run from its PR branch before it merges: GitHub only offers
+  # "Run workflow" for a workflow whose default-branch copy declares
+  # workflow_dispatch. This copy of the workflow does not act on dispatch
+  # events (preflight's condition only matches closed issues), so merging
+  # this change alone is inert.
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: 'Issue number to assess'
+        required: true
+      dry_run:
+        description: 'Dry run: build the report but do not comment or write to dotCMS'
+        type: boolean
+        default: true
+      ignore_epic_parent:
+        description: 'Assess the issue even if it is a sub-issue of an Epic (normally skipped)'
+        type: boolean
+        default: false
 
 jobs:
   preflight:

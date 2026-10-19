@@ -1,0 +1,57 @@
+<p-popover (onShow)="onShow()" data-testid="user-picker-popover">
+    @if (popover().overlayVisible) {
+        <!-- Gated on the popover actually being open: the virtual scroller inside measures its
+             viewport on creation, and created while hidden it measures zero and renders an empty
+             list that never recovers. -->
+        <dot-lazy-multiselect
+            [loadPage]="loadPage"
+            [multiple]="$multiple()"
+            [itemTemplate]="$customItem() ? customItemBridge : defaultItem"
+            [itemSize]="$itemSize()"
+            [searchPlaceholderKey]="$searchPlaceholderKey()"
+            [debounceMs]="DEBOUNCE_MS"
+            [emptyKey]="$emptyKey()"
+            [errorKey]="$errorKey()"
+            (selectionChange)="onSelectionChange($event)"
+            (loadFailed)="loadFailed.emit($event)"
+            data-testid="user-picker-options" />
+
+        @if ($multiple()) {
+            <div class="flex justify-end border-t border-surface-200 px-3 py-2">
+                <p-button
+                    size="small"
+                    [label]="$confirmLabelKey() | dm"
+                    [disabled]="$pending().length === 0"
+                    (onClick)="onConfirm()"
+                    data-testid="user-picker-confirm" />
+            </div>
+        }
+    }
+</p-popover>
+
+<!-- Default row: avatar, name and email. The fixed `h-9` is what DOT_USER_PICKER_ITEM_HEIGHT
+     is measured from; a taller or shorter row must change both. -->
+<ng-template #defaultItem let-option>
+    @let user = rowOf(option);
+    <div class="flex h-9 min-w-0 items-center gap-3" data-testid="user-picker-option">
+        <p-avatar
+            [label]="initialsFor(user)"
+            shape="circle"
+            styleClass="shrink-0 bg-primary-100 text-primary-800 font-semibold" />
+        <div class="flex min-w-0 flex-col">
+            <span class="truncate text-sm font-semibold">{{ option.label }}</span>
+            @if (user.emailAddress) {
+                <span class="text-color-secondary truncate text-xs">{{ user.emailAddress }}</span>
+            }
+        </div>
+    </div>
+</ng-template>
+
+<!-- Hands the consumer's `#item` template the directory row rather than the list's option. -->
+<ng-template #customItemBridge let-option>
+    @if ($customItem(); as customItem) {
+        <ng-container
+            [ngTemplateOutlet]="customItem"
+            [ngTemplateOutletContext]="{ $implicit: rowOf(option) }" />
+    }
+</ng-template>

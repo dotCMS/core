@@ -8,6 +8,7 @@ import {
 import { RouterOutlet } from '@angular/router';
 
 import { DotContentCompareDialogComponent } from '@dotcms/portlets/dot-ema/ui';
+import { DotSidePanelOutletComponent } from '@dotcms/ui';
 
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogComponent } from '../_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
@@ -37,7 +38,8 @@ import { DotToolbarComponent } from '../dot-toolbar/dot-toolbar.component';
         DotDownloadBundleDialogComponent,
         DotWizardComponent,
         DotGenerateSecurePasswordComponent,
-        DotContentCompareDialogComponent
+        DotContentCompareDialogComponent,
+        DotSidePanelOutletComponent
     ]
 })
 export class MainComponentLegacyComponent implements OnInit {

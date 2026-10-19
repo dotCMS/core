@@ -15,14 +15,11 @@ import { DotFormFileEditorComponent } from './dot-form-file-editor.component';
 
 import { DotFileFieldUploadService } from '../../services/upload-file/upload-file.service';
 
-// monacoMock doesn't expose `getLanguages`, which getInfoByLang / the velocity
-// registration call. Provide a no-op so the component's Monaco hooks don't throw.
-// It also doesn't expose `MarkerSeverity`, which #hasErrorSeverityMarker relies on to
+// monacoMock doesn't expose `MarkerSeverity`, which #hasErrorSeverityMarker relies on to
 // tell a real syntax error apart from an informational hint/warning marker.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 (global as any).monaco = {
     ...monacoMock,
-    languages: { ...monacoMock.languages, getLanguages: () => [] },
     MarkerSeverity: { Hint: 1, Info: 2, Warning: 4, Error: 8 }
 };
 

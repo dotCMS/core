@@ -4,18 +4,21 @@ import {
     mockProvider,
     SpyObject
 } from '@openng/spectator/vitest';
-import { NEVER, of, Subject, throwError } from 'rxjs';
+import { NEVER, Observable, of, Subject, throwError } from 'rxjs';
 import { Mock, Mocked, describe, expect, vi } from 'vitest';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { fakeAsync, tick } from '@angular/core/testing';
+import { signal, WritableSignal } from '@angular/core';
+import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
 import {
     AddToBundleService,
     DotBulkRefreshService,
+    DotFolderBulkDeleteService,
+    DotFolderBulkDuplicateService,
     DotEventsSocket,
     DotMessageService,
     PushPublishService,
@@ -25,18 +28,24 @@ import {
     DotFolderService,
     DotHttpErrorManagerService,
     DotPropertiesService,
+    DotRouterService,
+    DotSessionStorageService,
+    DotUploadFileService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
     DotAjaxActionResponseView,
     DotBulkRefreshCompletedEvent,
+    DotBulkUploadCompletedEvent,
     DotContentDriveItem,
     DotContentDriveSearchResponse,
     DotCurrentUser,
     DotFireDefaultActionResult,
+    DotFolderDeleteActiveRun,
     DotLanguage,
     DotSite,
-    DotWorkflowPushPublishValue
+    DotWorkflowPushPublishValue,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { createFakeTagField, createFakeTextField, mockLocales } from '@dotcms/utils-testing';
@@ -44,6 +53,7 @@ import { createFakeTagField, createFakeTextField, mockLocales } from '@dotcms/ut
 import { DotContentDriveStore } from './dot-content-drive.store';
 
 import {
+    CONTENT_DRIVE_URL_PARAM,
     DEFAULT_PAGINATION,
     DEFAULT_PATH,
     DEFAULT_SORT,
@@ -89,7 +99,9 @@ describe('DotContentDriveStore', () => {
                 siteDetails: vi.fn().mockReturnValue(SYSTEM_HOST),
                 // Nothing advertised by default, which is what an instance older than the field
                 // reports and what a configuration still in flight reads as.
-                systemBulkUpload: vi.fn().mockReturnValue(null)
+                systemBulkUpload: vi.fn().mockReturnValue(null),
+                systemFolderBulkDelete: vi.fn().mockReturnValue(null),
+                systemFolderBulkDuplicate: vi.fn().mockReturnValue(null)
             }),
             mockProvider(DotContentDriveService),
             // Fetched once on init to resolve the CMS Administrator role. Answers through a subject
@@ -109,6 +121,11 @@ describe('DotContentDriveStore', () => {
             // init, and an unstubbed `mockProvider` returns undefined for the observable.
             mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => of([]))
+            }),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -156,6 +173,19 @@ describe('DotContentDriveStore', () => {
         });
     });
 
+    // Content Drive stopped reading the side-panel flag: both editors always open in a panel
+    // (#37759, FR-006). The flag keeps working outside Content Drive; this store just never asks.
+    describe('side-panel flag', () => {
+        it('does not fetch the side-panel flag', () => {
+            const properties = spectator.inject(DotPropertiesService);
+            const askedFor = (properties.getFeatureFlags as Mock).mock.calls.flatMap(
+                ([keys]) => keys ?? []
+            );
+
+            expect(askedFor).not.toContain(FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL);
+        });
+    });
+
     describe('uploadCeilings', () => {
         it('should pass through the ceilings the server advertises', () => {
             const globalStore = spectator.inject(GlobalStore);
@@ -179,6 +209,39 @@ describe('DotContentDriveStore', () => {
             // instance too old to carry the field. Both mean the server does the refusing.
             expect(store.uploadCeilings()).toBeNull();
         });
+    });
+
+    /**
+     * How many folders one duplicate or delete may carry, as the server advertises it (#37062), so
+     * the Action Center can cap the run, and its row's count, at the ceiling.
+     */
+    describe('folder ceilings', () => {
+        it.each([
+            ['folderDuplicateMaxPaths', 'systemFolderBulkDuplicate'],
+            ['folderDeleteMaxPaths', 'systemFolderBulkDelete']
+        ] as const)('%s should read the maximum the server advertises', (signal, source) => {
+            const globalStore = spectator.inject(GlobalStore);
+
+            (globalStore[source] as unknown as Mock).mockReturnValue({ maxPaths: 25 });
+
+            expect(store[signal]()).toBe(25);
+        });
+
+        it.each([
+            ['folderDuplicateMaxPaths', 'systemFolderBulkDuplicate'],
+            ['folderDeleteMaxPaths', 'systemFolderBulkDelete']
+        ] as const)(
+            '%s should read as no ceiling when the server advertises none',
+            (signal, source) => {
+                // A configuration still loading, or an instance too old to carry the field: either
+                // way the server does the refusing.
+                const globalStore = spectator.inject(GlobalStore);
+
+                (globalStore[source] as unknown as Mock).mockReturnValue(null);
+
+                expect(store[signal]()).toBeNull();
+            }
+        );
     });
 
     describe('currentUserIsAdmin', () => {
@@ -1031,8 +1094,8 @@ describe('DotContentDriveStore', () => {
 
             it('should drop the search scope when the term is cleared', () => {
                 store.setGlobalSearch('pricing');
-                store.setSearchScope('TITLE');
-                expect(store.filters()['searchScope']).toBe('TITLE');
+                store.setSearchScope('ALL_FIELDS');
+                expect(store.filters()['searchScope']).toBe('ALL_FIELDS');
 
                 store.setGlobalSearch('');
 
@@ -1043,11 +1106,11 @@ describe('DotContentDriveStore', () => {
 
             it('should keep the scope when the term is replaced, not cleared', () => {
                 store.setGlobalSearch('pricing');
-                store.setSearchScope('TITLE');
+                store.setSearchScope('ALL_FIELDS');
 
                 store.setGlobalSearch('contracts');
 
-                expect(store.filters()['searchScope']).toBe('TITLE');
+                expect(store.filters()['searchScope']).toBe('ALL_FIELDS');
                 expect(store.filters()['title']).toBe('contracts');
             });
 
@@ -1070,25 +1133,25 @@ describe('DotContentDriveStore', () => {
 
         describe('setSearchScope', () => {
             it('should record a non-default scope as filter state', () => {
-                store.setSearchScope('TITLE');
+                store.setSearchScope('ALL_FIELDS');
 
                 expect(store.filters()).toEqual(
-                    withSeeded({ languageId: ['1'], searchScope: 'TITLE' })
+                    withSeeded({ languageId: ['1'], searchScope: 'ALL_FIELDS' })
                 );
             });
 
             it('should remove the key when the scope returns to the default', () => {
-                store.setSearchScope('TITLE');
-
                 store.setSearchScope('ALL_FIELDS');
 
-                // Removed, not set to 'ALL_FIELDS'. A present key counts as a non-default filter,
+                store.setSearchScope('TITLE');
+
+                // Removed, not set to 'TITLE'. A present key counts as a non-default filter,
                 // so storing the default would offer "Clear all" on an unfiltered drive.
                 expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
             });
 
             it('should never store the default, even when set first', () => {
-                store.setSearchScope('ALL_FIELDS');
+                store.setSearchScope('TITLE');
 
                 expect(Object.hasOwn(store.filters(), 'searchScope')).toBe(false);
             });
@@ -1097,39 +1160,39 @@ describe('DotContentDriveStore', () => {
                 store.setGlobalSearch('pricing');
                 store.patchFilters({ contentType: ['Blog'] });
 
-                store.setSearchScope('TITLE');
+                store.setSearchScope('ALL_FIELDS');
 
                 expect(store.filters()).toEqual(
                     withSeeded({
                         languageId: ['1'],
                         contentType: ['Blog'],
                         title: 'pricing',
-                        searchScope: 'TITLE'
+                        searchScope: 'ALL_FIELDS'
                     })
                 );
             });
 
             it('should keep the scope and the term under separate keys', () => {
                 store.setGlobalSearch('pricing');
-                store.setSearchScope('TITLE');
+                store.setSearchScope('ALL_FIELDS');
 
-                // `title` holds the TERM; `searchScope` holds the mode. A scope whose value is
-                // 'TITLE' beside a filter key named `title` is a collision waiting to happen.
+                // `title` holds the TERM; `searchScope` holds the mode. Title is the default and is
+                // never stored, so only All fields ever sits beside the term.
                 expect(store.filters()['title']).toBe('pricing');
-                expect(store.filters()['searchScope']).toBe('TITLE');
+                expect(store.filters()['searchScope']).toBe('ALL_FIELDS');
             });
 
-            it('should reset pagination so the narrowed results start at page 1', () => {
+            it('should reset pagination so the widened results start at page 1', () => {
                 store.setPagination({ offset: 40, limit: 20, page: 3 });
 
-                store.setSearchScope('TITLE');
+                store.setSearchScope('ALL_FIELDS');
 
                 expect(store.pagination().page).toBe(1);
                 expect(store.pagination().offset).toBe(0);
             });
 
             it('should drop the scope when all filters are cleared', () => {
-                store.setSearchScope('TITLE');
+                store.setSearchScope('ALL_FIELDS');
 
                 store.clearFilters();
 
@@ -1386,6 +1449,11 @@ describe('DotContentDriveStore - onInit', () => {
             // init, and an unstubbed `mockProvider` returns undefined for the observable.
             mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => of([]))
+            }),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -1426,6 +1494,377 @@ describe('DotContentDriveStore - onInit', () => {
     });
 });
 
+/** Everything the store needs except session storage, which each block decides. */
+/** An identifier in the shape the Drive accepts from its URL. */
+const A_URL_IDENTIFIER = '6f2f0f56-6c7e-4c11-9f3a-0c7c1a7f2b11';
+
+const rememberedContentTypeProviders = (
+    routeSnapshot: { queryParams: Record<string, string> },
+    siteDetails: WritableSignal<DotSite | null>
+) => [
+    mockProvider(ActivatedRoute, { snapshot: routeSnapshot }),
+    mockProvider(GlobalStore, { siteDetails }),
+    mockProvider(DotCurrentUserService, {
+        getCurrentUser: vi.fn().mockReturnValue(of({ admin: false } as DotCurrentUser))
+    }),
+    mockProvider(DotContentDriveService, {
+        search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+    }),
+    mockProvider(DotFolderService, {
+        getFolders: vi.fn().mockReturnValue(of([]))
+    }),
+    mockProvider(DotWorkflowActionsFireService),
+    mockProvider(AddToBundleService),
+    mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
+    mockProvider(DotBulkRefreshService),
+    mockProvider(DotFolderBulkDeleteService, {
+        readActiveRuns: vi.fn(() => of([]))
+    }),
+    mockProvider(DotHttpErrorManagerService),
+    mockProvider(Location, {
+        subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+    }),
+    mockProvider(DotPropertiesService, {
+        getFeatureFlags: vi.fn().mockReturnValue(of({}))
+    }),
+    mockProvider(DotLanguagesService, {
+        get: vi.fn().mockReturnValue(of(mockLocales))
+    }),
+    provideHttpClient()
+];
+
+/**
+ * The content type last opened in the Content Types editor, handed to Content Drive once through
+ * session storage (#37903).
+ */
+describe('DotContentDriveStore - remembered content type', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+
+    /** Mutated per test before the store is built: `onInit` reads it straight away. */
+    const routeSnapshot: { queryParams: Record<string, string> } = { queryParams: {} };
+    const consumeLastContentType = vi.fn();
+    /** A real signal, so a test can switch site and re-run the store's init effect. */
+    const siteDetails = signal<DotSite | null>(MOCK_SITES[2]);
+
+    const sharedProviders = rememberedContentTypeProviders(routeSnapshot, siteDetails);
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            ...sharedProviders,
+            mockProvider(DotSessionStorageService, { consumeLastContentType })
+        ]
+    });
+
+    const buildStore = (
+        queryParams: Record<string, string>,
+        remembered: string | null,
+        site: DotSite | null = MOCK_SITES[2]
+    ) => {
+        routeSnapshot.queryParams = queryParams;
+        siteDetails.set(site);
+        consumeLastContentType.mockReset();
+        consumeLastContentType.mockReturnValue(remembered);
+        spectator = createService();
+        store = spectator.service;
+        spectator.flushEffects();
+    };
+
+    it('should filter by the remembered content type when the Drive opens with no instructions', () => {
+        buildStore({}, 'anyContentType');
+
+        expect(store.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+    });
+
+    it('should keep the folder from the URL and still filter by the remembered content type', () => {
+        buildStore({ path: '/a/folder/' }, 'anyContentType');
+
+        expect(store.path()).toBe('/a/folder/');
+        expect(store.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+    });
+
+    it('should filter by the remembered content type when the URL filters decode to nothing', () => {
+        buildStore({ filters: 'status:BOGUS' }, 'anyContentType');
+
+        expect(store.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+    });
+
+    it('should keep the remembered content type when the site loads after the Drive', () => {
+        buildStore({}, 'anyContentType', null);
+
+        siteDetails.set(MOCK_SITES[2]);
+        spectator.flushEffects();
+
+        expect(store.currentSite()).toBe(MOCK_SITES[2]);
+        expect(store.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+        expect(consumeLastContentType).toHaveBeenCalledTimes(1);
+    });
+
+    it.each([
+        ['the retired create marker', { [CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT]: 'new' }],
+        ['a folder dialog switched off', { [CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER]: 'false' }],
+        ['a malformed folder id', { [CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER]: 'not-an-id' }],
+        ['a language with no item', { [CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT_LANG]: '1' }]
+    ])(
+        'should filter by the remembered content type when the URL asks for nothing (%s)',
+        (_case, queryParams) => {
+            buildStore(queryParams, 'anyContentType');
+
+            expect(store.filters()).toEqual(
+                withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+            );
+        }
+    );
+
+    it('should open as today when no content type is remembered', () => {
+        buildStore({}, null);
+
+        expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+    });
+
+    it('should read the remembered content type once per Drive open', () => {
+        buildStore({}, 'anyContentType');
+
+        expect(consumeLastContentType).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not apply the remembered content type again when the site changes', () => {
+        buildStore({}, 'anyContentType');
+
+        siteDetails.set(MOCK_SITES[1]);
+        spectator.flushEffects();
+
+        expect(store.currentSite()).toBe(MOCK_SITES[1]);
+        expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+        expect(consumeLastContentType).toHaveBeenCalledTimes(1);
+    });
+
+    describe('when the Drive opens with its own instructions', () => {
+        it('should apply only the filters from the URL', () => {
+            buildStore({ filters: 'baseType:4' }, 'anyContentType');
+
+            expect(store.filters()).toEqual(withSeeded({ baseType: ['4'], languageId: ['1'] }));
+            expect(consumeLastContentType).toHaveBeenCalledTimes(1);
+        });
+
+        it.each([
+            [CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT, A_URL_IDENTIFIER],
+            [CONTENT_DRIVE_URL_PARAM.CREATE_CONTENT, 'aContentType'],
+            [CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER, 'true'],
+            [CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER, A_URL_IDENTIFIER],
+            [CONTENT_DRIVE_URL_PARAM.FOLDER_PERMISSIONS, A_URL_IDENTIFIER]
+        ])('should not apply the remembered content type with %s in the URL', (param, value) => {
+            buildStore({ [param]: value }, 'anyContentType');
+
+            expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+            expect(consumeLastContentType).toHaveBeenCalledTimes(1);
+        });
+    });
+});
+
+/**
+ * The same handoff with the real session storage: the first Drive visit empties it, so the next
+ * visit finds nothing to apply (#37903, User Story 2).
+ */
+describe('DotContentDriveStore - remembered content type, next visit', () => {
+    const routeSnapshot: { queryParams: Record<string, string> } = { queryParams: {} };
+    const siteDetails = signal<DotSite | null>(MOCK_SITES[2]);
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: rememberedContentTypeProviders(routeSnapshot, siteDetails)
+    });
+
+    beforeEach(() => sessionStorage.clear());
+
+    it('should not filter the next Drive visit, because the first one emptied session storage', () => {
+        TestBed.inject(DotSessionStorageService).setLastContentType('anyContentType');
+
+        const firstVisit = createService();
+        firstVisit.flushEffects();
+
+        expect(firstVisit.service.filters()).toEqual(
+            withSeeded({ contentType: ['anyContentType'], languageId: ['1'] })
+        );
+
+        const nextVisit = TestBed.runInInjectionContext(() => new DotContentDriveStore());
+        TestBed.tick();
+
+        expect(nextVisit.filters()).toEqual(withSeeded({ languageId: ['1'] }));
+        expect(sessionStorage.length).toBe(0);
+    });
+});
+
+/**
+ * Runs still going when Content Drive opens (developer decision, 2026-09-28: FR-015 amended). One
+ * read of every queue's active listing, routed to whichever part of the store owns each: delete
+ * marks the folders it covers, duplicate and upload put their status back.
+ */
+describe('DotContentDriveStore - runs in progress on load', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+    let currentUser$: Observable<DotCurrentUser>;
+    let activeDeletes$: Observable<DotFolderDeleteActiveRun[]>;
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            mockProvider(ActivatedRoute, {
+                snapshot: {
+                    queryParams: {
+                        path: '/initial/test/path',
+                        filters: 'contentType:InitialTestContentType',
+                        isTreeExpanded: 'true'
+                    }
+                }
+            }),
+            mockProvider(GlobalStore, {
+                siteDetails: vi.fn().mockReturnValue(MOCK_SITES[2])
+            }),
+            // The store resolves the CMS Administrator role on init; stub it so no real HTTP fires.
+            mockProvider(DotCurrentUserService, {
+                getCurrentUser: vi.fn(() => currentUser$)
+            }),
+            mockProvider(DotContentDriveService, {
+                search: vi.fn().mockReturnValue(of(MOCK_SEARCH_RESPONSE))
+            }),
+            mockProvider(DotFolderService, {
+                getFolders: vi.fn().mockReturnValue(of([]))
+            }),
+            // Required by `withActionExecution`, which fires workflow actions from the store.
+            mockProvider(DotWorkflowActionsFireService),
+            // Also required by `withActionExecution`, which fires Add to Bundle from the store.
+            mockProvider(AddToBundleService),
+            // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
+            // init, and an unstubbed `mockProvider` returns undefined for the observable.
+            mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
+            mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => activeDeletes$)
+            }),
+            mockProvider(DotFolderBulkDuplicateService, {
+                readActiveRuns: vi.fn(() =>
+                    of([
+                        { id: 'mine', userId: 'me', assetPaths: ['//demo.com/a/'] },
+                        { id: 'theirs', userId: 'someone-else', assetPaths: ['//demo.com/b/'] }
+                    ])
+                )
+            }),
+            mockProvider(DotUploadFileService, {
+                readActiveUploads: vi.fn(() =>
+                    of([
+                        { id: 'upload-mine', userId: 'me', fileCount: 2 },
+                        { id: 'upload-theirs', userId: 'someone-else', fileCount: 1 }
+                    ])
+                )
+            }),
+            mockProvider(DotHttpErrorManagerService),
+            // The store subscribes to Location (popstate re-hydration); capture the handler here.
+            mockProvider(Location, {
+                subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
+            }),
+            // withFlags fetches feature flags on init; stub so no real HTTP fires.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
+            }),
+            // The store resolves the environment's default language on init and seeds it into the
+            // `languageId` filter. Answering synchronously keeps every pre-existing test realistic:
+            // the seed is already in place by the time they assert. Blocks that need to control the
+            // timing override this provider with a Subject.
+            mockProvider(DotLanguagesService, {
+                get: vi.fn().mockReturnValue(of(mockLocales))
+            }),
+            provideHttpClient()
+        ]
+    });
+
+    const build = () => {
+        spectator = createService();
+        store = spectator.service;
+        spectator.flushEffects();
+    };
+
+    beforeEach(() => {
+        currentUser$ = of({ userId: 'me', admin: false } as DotCurrentUser);
+        activeDeletes$ = of([{ id: 'delete-1', state: 'RUNNING', paths: ['//demo.com/gone/'] }]);
+    });
+
+    it("should restore the author's own duplicates and uploads, and no one else's", () => {
+        // The listings are not scoped to the reader, and only the submitter is sent the completion
+        // that ends a run: another author's restored status would never go away.
+        build();
+
+        expect(Object.keys(store.duplicateJobs())).toEqual(['mine']);
+        expect(Object.keys(store.uploadJobs())).toEqual(['upload-mine']);
+        expect(store.toolbarRunCount()).toBe(2);
+    });
+
+    it('should mark the folders a delete is working on from the same read', () => {
+        // Unlike the others, delete marks every author's runs: the folders are in use either way.
+        build();
+
+        expect(Object.keys(store.folderDeleteRuns())).toEqual(['delete-1']);
+    });
+
+    it('should still restore the other runs when one read throws', () => {
+        // Each read answers `[]` on failure, but one that throws anyway, from a mapping bug say,
+        // must cost only its own runs: the reads are joined, and a join fails as a whole.
+        activeDeletes$ = throwError(() => new Error('boom'));
+        build();
+
+        expect(Object.keys(store.folderDeleteRuns())).toEqual([]);
+        expect(Object.keys(store.duplicateJobs())).toEqual(['mine']);
+        expect(Object.keys(store.uploadJobs())).toEqual(['upload-mine']);
+    });
+
+    it("should mark a delete's folders without waiting for the other reads", () => {
+        // A folder the delete leaves while a slower read is still out is announced then; marked
+        // only after every read answered, it would be marked again and stay busy until reload.
+        currentUser$ = NEVER;
+        build();
+
+        expect(Object.keys(store.folderDeleteRuns())).toEqual(['delete-1']);
+    });
+
+    it('should restore no status when it cannot tell who the author is', () => {
+        currentUser$ = throwError(() => new Error('boom'));
+        build();
+
+        expect(store.toolbarRunCount()).toBe(0);
+        expect(Object.keys(store.folderDeleteRuns())).toEqual(['delete-1']);
+    });
+
+    it('should hold no upload completion for a restore that cannot happen without an author', () => {
+        // With no author nothing is ever restored to claim a held completion, so holding one would
+        // keep it for the portlet's lifetime.
+        currentUser$ = throwError(() => new Error('boom'));
+        build();
+
+        store.reportUploadCompleted('Upload', {
+            jobId: 'other-tab',
+            state: 'SUCCESS',
+            total: 1,
+            processed: 1,
+            successCount: 1,
+            failedCount: 0,
+            skippedCount: 0
+        } as DotBulkUploadCompletedEvent);
+
+        expect(store.unclaimedUploadCompletions()).toEqual({});
+    });
+});
+
 describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', () => {
     let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
     let store: InstanceType<typeof DotContentDriveStore>;
@@ -1458,6 +1897,11 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
             // init, and an unstubbed `mockProvider` returns undefined for the observable.
             mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => of([]))
+            }),
             mockProvider(DotHttpErrorManagerService),
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
             mockProvider(DotPropertiesService, {
@@ -1665,6 +2109,18 @@ describe('DotContentDriveStore - default language resolution', () => {
         expect(contentDriveService.search).toHaveBeenCalledTimes(1);
     });
 
+    it('should keep a filter changed before the default language resolves', () => {
+        // The init effect used to re-run when the default language landed, re-reading the page's
+        // original URL and wiping any filter a chip had already corrected in between.
+        spectator.flushEffects();
+        store.patchFilters({ contentType: ['Blog'] });
+
+        languages$.next(mockLocales);
+        spectator.flushEffects();
+
+        expect(store.filters()).toEqual(withSeeded({ contentType: ['Blog'], languageId: ['1'] }));
+    });
+
     it('should expose the environment languages for the Locale filter to render', () => {
         spectator.flushEffects();
         languages$.next(mockLocales);
@@ -1707,6 +2163,11 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             // init, and an unstubbed `mockProvider` returns undefined for the observable.
             mockProvider(PushPublishService, { getEnvironments: vi.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
+            // Registered on the store, so it is read on init. Answering `[]` keeps every spec here
+            // about what it is actually testing rather than about folders nobody is deleting.
+            mockProvider(DotFolderBulkDeleteService, {
+                readActiveRuns: vi.fn(() => of([]))
+            }),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -1905,6 +2366,48 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
                 })
             })
         );
+    });
+
+    /**
+     * The request always names the scope when there is a term (search box cleanup on #37062). The
+     * server's own default is All fields, so leaving Title out of the request would search every
+     * field while the box says Title.
+     */
+    describe('search scope in the request', () => {
+        it('should send Title when a term is present and no scope is stored', () => {
+            store.patchFilters({ title: 'test' });
+
+            spectator.service.loadItems();
+
+            expect(contentDriveService.search).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    filters: expect.objectContaining({ text: 'test', searchScope: 'TITLE' })
+                })
+            );
+        });
+
+        it('should send All fields when that is the stored scope', () => {
+            store.patchFilters({ title: 'test' });
+            store.setSearchScope('ALL_FIELDS');
+
+            spectator.service.loadItems();
+
+            expect(contentDriveService.search).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    filters: expect.objectContaining({ text: 'test', searchScope: 'ALL_FIELDS' })
+                })
+            );
+        });
+
+        it('should send no scope without a term, which the server would reject', () => {
+            spectator.service.loadItems();
+
+            expect(contentDriveService.search).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    filters: expect.not.objectContaining({ searchScope: expect.anything() })
+                })
+            );
+        });
     });
 
     it('should handle pagination', () => {
@@ -2935,5 +3438,177 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             expect(store.actionExecutionResult()).toBeUndefined();
         });
+    });
+});
+
+/**
+ * Which view opens (#37930, US4): `viewType` in the URL, then the view remembered for this screen,
+ * then a custom tool's `defaultViewType`, then the table.
+ */
+describe('DotContentDriveStore - view type', () => {
+    let spectator: SpectatorService<InstanceType<typeof DotContentDriveStore>>;
+    let store: InstanceType<typeof DotContentDriveStore>;
+
+    const routeSnapshot: { queryParams: Record<string, string> } = { queryParams: {} };
+    const siteDetails = signal<DotSite | null>(MOCK_SITES[2]);
+    const portlet = { id: 'content-drive' };
+    const DRIVE_KEY = 'dotcms.content-drive.view-type.content-drive';
+
+    const createService = createServiceFactory({
+        service: DotContentDriveStore,
+        providers: [
+            ...rememberedContentTypeProviders(routeSnapshot, siteDetails),
+            mockProvider(DotSessionStorageService, {
+                consumeLastContentType: vi.fn().mockReturnValue(null)
+            }),
+            {
+                provide: DotRouterService,
+                useValue: {
+                    get currentPortlet() {
+                        return { id: portlet.id, url: '', parentMenuId: '' };
+                    }
+                }
+            }
+        ]
+    });
+
+    const buildStore = (queryParams: Record<string, string> = {}, portletId = 'content-drive') => {
+        routeSnapshot.queryParams = queryParams;
+        portlet.id = portletId;
+        spectator = createService();
+        store = spectator.service;
+        spectator.flushEffects();
+    };
+
+    const popstate = (url: string) => {
+        const subscribe = spectator.inject(Location).subscribe as Mock;
+        const handler = subscribe.mock.lastCall?.[0] as (event: { url: string }) => void;
+        handler({ url });
+    };
+
+    beforeEach(() => localStorage.clear());
+
+    it('should open the table when nothing says otherwise (US4 #6)', () => {
+        buildStore();
+
+        expect(store.viewType()).toBe('list');
+    });
+
+    it('should open the view remembered for this screen (US4 #1)', () => {
+        localStorage.setItem(DRIVE_KEY, 'card');
+
+        buildStore();
+
+        expect(store.viewType()).toBe('card');
+    });
+
+    it('should let the URL win over the remembered view (US4 #3)', () => {
+        localStorage.setItem(DRIVE_KEY, 'card');
+
+        buildStore({ viewType: 'List' });
+
+        expect(store.viewType()).toBe('list');
+    });
+
+    it('should not remember a view that came from the URL (US4 #3)', () => {
+        buildStore({ viewType: 'card' });
+
+        expect(localStorage.getItem(DRIVE_KEY)).toBeNull();
+    });
+
+    it('should use the tool default when this screen remembers nothing (US4 #5)', () => {
+        buildStore({ defaultViewType: 'card' });
+
+        expect(store.viewType()).toBe('card');
+    });
+
+    it('should let the remembered view win over the tool default (US4 #5)', () => {
+        localStorage.setItem(DRIVE_KEY, 'list');
+
+        buildStore({ defaultViewType: 'card' });
+
+        expect(store.viewType()).toBe('list');
+    });
+
+    it('should not use a view remembered for another screen (US4 #4)', () => {
+        localStorage.setItem('dotcms.content-drive.view-type.c_blogs', 'card');
+
+        buildStore({}, 'content-drive');
+
+        expect(store.viewType()).toBe('list');
+    });
+
+    it('should open the table when the remembered value is unreadable (US4 #8)', () => {
+        localStorage.setItem(DRIVE_KEY, 'mosaic');
+
+        buildStore();
+
+        expect(store.viewType()).toBe('list');
+    });
+
+    it('should show and remember a view picked with the switcher (FR-019)', () => {
+        buildStore();
+
+        store.setViewType('card', { remember: true });
+
+        expect(store.viewType()).toBe('card');
+        expect(localStorage.getItem(DRIVE_KEY)).toBe('card');
+    });
+
+    it('should remember it for this screen only', () => {
+        buildStore({}, 'c_blogs');
+
+        store.setViewType('card', { remember: true });
+
+        expect(localStorage.getItem('dotcms.content-drive.view-type.c_blogs')).toBe('card');
+        expect(localStorage.getItem(DRIVE_KEY)).toBeNull();
+    });
+
+    it('should show a view without remembering it when not asked to', () => {
+        buildStore();
+
+        store.setViewType('card');
+
+        expect(store.viewType()).toBe('card');
+        expect(localStorage.getItem(DRIVE_KEY)).toBeNull();
+    });
+
+    it('should still switch when the browser refuses to store the choice (US4 #7)', () => {
+        buildStore();
+        const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+            throw new Error('QuotaExceededError');
+        });
+
+        expect(() => store.setViewType('card', { remember: true })).not.toThrow();
+        expect(store.viewType()).toBe('card');
+
+        setItem.mockRestore();
+    });
+
+    it('should keep remembering under the screen the Drive opened on', () => {
+        buildStore({}, 'c_blogs');
+        portlet.id = 'c_news';
+
+        store.setViewType('card', { remember: true });
+
+        expect(localStorage.getItem('dotcms.content-drive.view-type.c_blogs')).toBe('card');
+        expect(localStorage.getItem('dotcms.content-drive.view-type.c_news')).toBeNull();
+    });
+
+    it('should keep the current view on Back and Forward, as the view is a preference (FR-020)', () => {
+        buildStore();
+
+        popstate('/c/content-drive?viewType=card');
+
+        expect(store.viewType()).toBe('list');
+    });
+
+    it('should not reload the results when Back only changes the view', () => {
+        buildStore();
+        const status = store.status();
+
+        popstate('/c/content-drive?viewType=card');
+
+        expect(store.status()).toBe(status);
     });
 });

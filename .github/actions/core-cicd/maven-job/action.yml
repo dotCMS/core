@@ -34,6 +34,21 @@ inputs:
     description: 'Generate docker artifact'
     required: true
     default: 'false'
+  # generate-docker covers two unrelated outputs: the deployment context
+  # (dotCMS/target/docker-build.tar) that deploy-docker consumes, and a throwaway
+  # test image that is built, `docker save`d (~1GB) and uploaded as the
+  # docker-image artifact. Only test phases consume the image; release downloads
+  # the context and never looks at it. These two flags split them apart so a
+  # caller can keep the context and skip the image. Both default to today's
+  # behaviour so existing callers are unaffected.
+  generate-test-image:
+    description: 'Build, save and upload the throwaway test image. Only test phases consume it.'
+    required: false
+    default: 'true'
+  generate-build-classes:
+    description: 'Upload per-module build classes (build-classes artifact). Only test phases consume them.'
+    required: false
+    default: 'true'
   needs-history:
     description: 'The runner needs the full git history'
     required: true
@@ -96,8 +111,33 @@ inputs:
   maven-compiler-release:
     description: 'Override Maven compiler release version (e.g., 21). Preferred over source/target.'
     required: false
+  release-build:
+    description: |
+      Build the Maven coordinates the release phase will publish. On a release
+      branch .mvn/maven.config pins -Drevision=<version> and -Dchangelist=, so a
+      primary release already installs <version>. A Java variant needs
+      -Dchangelist=-<javaNN> applied to THIS build, because the release phase no
+      longer runs a second reactor install to create the suffixed coordinates.
+      A CLI -D overrides .mvn/maven.config, so this wins.
+
+      Two consequences, both intended but worth knowing:
+      - The changelist applies to the whole reactor, not only the published
+        coordinates, so a Java variant Docker image is now built from a
+        <version>-javaNN reactor (MANIFEST Implementation-Version, OSGi bundle
+        versions, resolved war coordinates). The image and its Maven coordinates
+        finally agree; the shipped variant image does change.
+      - Do NOT combine with a downstream test phase. cicd_comp_test-phase runs
+        mvnw without -Dchangelist and would look for <version> coordinates that
+        the maven-repo artifact no longer contains.
+
+      Fails if .mvn/maven.config has no -Drevision=: the CI-friendly version
+      would collapse to the parent default (1.0.0), which is not a *-SNAPSHOT,
+      so it would escape delete-built-artifacts-from-cache and be written into
+      the shared Maven cache as a bogus release coordinate.
+    required: false
+    default: 'false'
   artifact-suffix:
-    description: 'Artifact suffix without leading separator (e.g., java25, java25-ms). Dash prefix added automatically for Maven artifacts. Computed from java-version if not provided.'
+    description: 'Artifact suffix without leading separator (e.g., java-25, java-25-ms). Dash prefix added automatically for Maven artifacts. Computed from java-version if not provided.'
     required: false
   docker-io-username:
     description: 'Docker Hub username for authenticated pulls (avoids rate limiting)'
@@ -107,6 +147,13 @@ inputs:
     description: 'Docker Hub token for authenticated pulls (avoids rate limiting)'
     required: false
     default: ''
+outputs:
+  # Consumed by the release phase so build, deployment and publication all agree
+  # on one suffix instead of each deriving it (which is how the deployment phase
+  # came to derive '-java-25' where the build derived '-java25').
+  artifact-suffix:
+    description: 'Resolved artifact suffix without leading separator (e.g. java-25). Empty for the primary build.'
+    value: ${{ steps.artifact-suffix.outputs.raw_suffix }}
 runs:
   using: 'composite'
   steps:
@@ -124,21 +171,26 @@ runs:
       shell: bash
       run: |
         # Naming Convention for Java Variants:
-        # - User input: suffix without leading separator (e.g., "java25" or "java25-ms")
-        # - Maven artifacts: use dash separator (e.g., "-java25")
-        # - Docker tags: use underscore separator (e.g., "_java25")
+        # - User input: suffix without leading separator (e.g., "java-25" or "java-25-ms")
+        # - Maven artifacts: use dash separator (e.g., "-java-25")
+        # - Docker tags: use underscore separator (e.g., "_java-25")
         #
         # Note: Underscore in Docker tags is non-standard but follows existing dotCMS convention.
         # Docker typically uses dash or no separator, but we use underscore to distinguish from
-        # version dashes (e.g., "25.02.16-01_java25_abc123" vs "25.02.16-01-java25-abc123").
+        # version dashes (e.g., "25.02.16-01_java-25_abc123" vs "25.02.16-01-java-25-abc123").
         # This convention may be revisited in future.
+        #
+        # The derived form is "java-<major>" to match RELEASE_JAVA_VARIANT_SUFFIX
+        # (java-25 in the repo variables) and cicd_comp_deployment-phase. Deriving
+        # "java<major>" here made the build publish maven-repo-java25 while the
+        # deployment phase asked for maven-repo-java-25.
 
         # Use provided artifact-suffix if set, otherwise compute from java-version
         if [ -n "${{ inputs.artifact-suffix }}" ]; then
           RAW_SUFFIX="${{ inputs.artifact-suffix }}"
         elif [ -n "${{ inputs.java-version }}" ]; then
           JAVA_MAJOR=$(echo "${{ inputs.java-version }}" | grep -oE '^[0-9]+')
-          RAW_SUFFIX="java${JAVA_MAJOR}"
+          RAW_SUFFIX="java-${JAVA_MAJOR}"
         else
           RAW_SUFFIX=""
         fi
@@ -154,6 +206,8 @@ runs:
         fi
 
         echo "suffix=${ARTIFACT_SUFFIX}" >> "$GITHUB_OUTPUT"
+        # Separator-free form, published as the action output for downstream jobs.
+        echo "raw_suffix=${RAW_SUFFIX}" >> "$GITHUB_OUTPUT"
         echo "Artifact suffix: '${ARTIFACT_SUFFIX}'"
 
     - id: setup-license
@@ -336,6 +390,28 @@ runs:
           DEFAULT_ARGS="$DEFAULT_ARGS -Pnative"
         fi
 
+        # Release builds: install the coordinates the release phase will publish.
+        # Set explicitly (even when empty) so the result does not depend on
+        # .mvn/maven.config, which release-prepare writes on the release branch.
+        # Verified: a CLI -Dchangelist overrides the -Dchangelist= in that file.
+        if [[ "${{ inputs.release-build }}" == "true" ]]; then
+          # Guardrail: without -Drevision the version collapses to the parent
+          # default (1.0.0). That is not a *-SNAPSHOT, so it would survive
+          # delete-built-artifacts-from-cache below and be saved into the shared
+          # Maven cache as a release-looking coordinate. release-prepare writes
+          # -Drevision= onto the release branch; require it.
+          #
+          # Require a non-empty value: a bare '-Drevision=' sets the CI-friendly
+          # revision to the empty string, which collapses the version just as
+          # surely, so matching the bare prefix would pass the guard on exactly
+          # the case it exists for.
+          if [[ ! -f .mvn/maven.config ]] || ! grep -qE -- '-Drevision=[^[:space:]]' .mvn/maven.config; then
+            echo "::error::release-build=true requires a non-empty -Drevision= in .mvn/maven.config (written by the release-prepare phase). Refusing to build release-looking 1.0.0 coordinates." >&2
+            exit 1
+          fi
+          DEFAULT_ARGS="$DEFAULT_ARGS -Dchangelist=${{ steps.artifact-suffix.outputs.suffix }}"
+        fi
+
         # Add Maven compiler release override flag for core modules
         # Priority: explicit maven-compiler-release > default from java-version major > project defaults
         # Note: Core modules use dotcms.core.compiler.release (default 11), CLI uses dotcms.cli.compiler.release (default 11) for Quarkus/GraalVM compatibility
@@ -383,7 +459,7 @@ runs:
 
     - id: get-sdkman-version
       name: Get SDKMAN Java Version
-      if: ${{ inputs.generate-docker == 'true' }}
+      if: ${{ inputs.generate-docker == 'true' && inputs.generate-test-image == 'true' }}
       shell: bash
       run: |
         # Use provided java-version if set, otherwise read from .sdkmanrc
@@ -404,7 +480,7 @@ runs:
 
     - id: build-docker-image-from-archive
       name: Build Docker Image from Archive
-      if: ${{ inputs.generate-docker == 'true' }}
+      if: ${{ inputs.generate-docker == 'true' && inputs.generate-test-image == 'true' }}
       shell: bash
       run: |
         # Extract the build context from the tar archive
@@ -419,21 +495,21 @@ runs:
 
     - id: save-docker-image
       name: Save Docker Image to Tar File
-      if: ${{ inputs.generate-docker == 'true' }}
+      if: ${{ inputs.generate-docker == 'true' && inputs.generate-test-image == 'true' }}
       shell: bash
       run: docker save dotcms/dotcms-test:${{ inputs.version }} > /tmp/image.tar
 
     - id: upload-docker-image
       name: Upload Docker Image as Artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-      if: ${{ inputs.generate-docker == 'true' }}
+      if: ${{ inputs.generate-docker == 'true' && inputs.generate-test-image == 'true' }}
       with:
         name: docker-image${{ steps.artifact-suffix.outputs.suffix }}
         path: /tmp/image.tar
 
     - id: persist-build-classes
       name: Persist Build Classes
-      if: ${{ inputs.generate-artifacts == 'true' }}
+      if: ${{ inputs.generate-artifacts == 'true' && inputs.generate-build-classes == 'true' }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: build-classes${{ steps.artifact-suffix.outputs.suffix }}

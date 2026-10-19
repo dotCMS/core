@@ -156,7 +156,13 @@ myFeatureTab: {
 
 - **Session storage**: The store persists `breadcrumbs` to `sessionStorage` on every change and restores them on init via `loadBreadcrumbs()`.  
 - **Router**: On `NavigationEnd`, the store runs `_processUrl(url)` to sync the trail (menu match, special routes, or truncate when navigating back to an existing URL).  
-- **Special routes**: Handlers in `breadcrumb.utils.ts` (e.g. templates edit, content filter) can set or append breadcrumbs; see `ROUTE_HANDLERS` and `processSpecialRoute`.  
+- **Special routes**: Handlers in `breadcrumb.utils.ts` (e.g. templates edit, content filter) can set or append breadcrumbs; see `ROUTE_HANDLERS` and `processSpecialRoute`.
+  A URL with query params but no `mId` never matches a menu item, so a portlet reached that way needs a handler. Content Drive has one (`contentDrive`). It handles three cases:
+  - a new tab: the trail starts from Content Drive's place in the menu;
+  - a redirect from another portlet (Part 1 of #37759 sends Content Search and Site Browser links there): Content Drive is appended to that portlet's trail;
+  - a trail that already ends on Content Drive: the trail is left alone.
+
+  The crumb links back to the same folder, filters and tree, without the params that open a panel or a folder dialog. Otherwise, once another crumb followed it, a click on it would reopen the content, or start another create, the link named.  
 - **Reload with pending tab crumbs**: If a child component calls `addNewBreadcrumb` with a tab `id` before the menu finishes loading (common on hard reload), the store detects those crumbs (items with `id` but no `url`) and re-appends them after the menu effect resets the base trail. No extra work is needed in components — just always provide a stable `id`.
 
 ## Summary

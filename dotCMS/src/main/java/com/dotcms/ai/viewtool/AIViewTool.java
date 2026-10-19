@@ -1,6 +1,5 @@
 package com.dotcms.ai.viewtool;
 
-import com.dotcms.ai.AiKeys;
 import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.api.ChatAPI;
@@ -21,6 +20,13 @@ import java.util.function.Function;
 
 /**
  * AIViewTool is a view tool that provides access to the OpenAI API services.
+ *
+ * <p>Output is HTML-escaped by default (#37153): {@code generateText} and {@code generateImage}
+ * return a copy of the provider payload with every string encoded, and the {@code completions} and
+ * {@code search} sub-tools escape by source (see {@link CompletionsTool} / {@link SearchTool}).
+ * Templates that need the unescaped payload go through {@link #getUnsafe() $ai.unsafe}, which is the
+ * same tool with escaping turned off and behaves exactly as {@code $ai} did before #37153, for every
+ * method.
  */
 public class AIViewTool implements ViewTool {
 
@@ -29,6 +35,25 @@ public class AIViewTool implements ViewTool {
     private ChatAPI chatService;
     private ImageAPI imageService;
     private User user;
+    private final boolean escapeOutput;
+
+    public AIViewTool() {
+        this.escapeOutput = true;
+    }
+
+    /**
+     * Copy constructor for {@link #getUnsafe()}: reuses the fields already resolved by
+     * {@link #init(Object)} on {@code source} (so overridden factory methods keep their effect) and
+     * turns escaping off. The copy is never {@code init()}ed again by Velocity.
+     */
+    private AIViewTool(final AIViewTool source) {
+        this.context = source.context;
+        this.config = source.config;
+        this.user = source.user;
+        this.chatService = source.chatService;
+        this.imageService = source.imageService;
+        this.escapeOutput = false;
+    }
 
     @Override
     public void init(final Object obj) {
@@ -37,6 +62,17 @@ public class AIViewTool implements ViewTool {
         user = user();
         chatService = chatService();
         imageService = imageService();
+    }
+
+    /**
+     * The explicit opt-in for unescaped output: {@code $ai.unsafe}. Returns this tool with escaping
+     * turned off; every method behaves exactly as it did before #37153. Calling it on an already
+     * unsafe tool returns the same instance.
+     *
+     * @return the unescaped variant of this tool
+     */
+    public AIViewTool getUnsafe() {
+        return escapeOutput ? new AIViewTool(this) : this;
     }
 
     /**
@@ -55,7 +91,7 @@ public class AIViewTool implements ViewTool {
      * @return JSONObject instance
      */
     public JSONObject generateText(final String prompt) {
-        return justGenerate(prompt, chatService::sendTextPrompt);
+        return escape(justGenerate(prompt, chatService::sendTextPrompt));
     }
 
     /**
@@ -65,7 +101,7 @@ public class AIViewTool implements ViewTool {
      * @return prompt map representation of the JSON object
      */
     public JSONObject generateText(final Map<String, Object> prompt) {
-        return justGenerate(prompt, p -> chatService.sendRawRequest(new JSONObject(p)));
+        return escape(justGenerate(prompt, p -> chatService.sendRawRequest(new JSONObject(p))));
     }
 
     /**
@@ -76,7 +112,7 @@ public class AIViewTool implements ViewTool {
      * @return JSONObject instance
      */
     public JSONObject generateImage(final String prompt) {
-        return generateHandled(prompt, imageService::sendTextPrompt);
+        return escape(generateHandled(prompt, imageService::sendTextPrompt));
     }
 
     /**
@@ -86,7 +122,7 @@ public class AIViewTool implements ViewTool {
      * @return JSONObject instance
      */
     public JSONObject generateImage(final Map<String, Object> prompt) {
-        return generateHandled(prompt, p -> imageService.sendRequest(new JSONObject(p)));
+        return escape(generateHandled(prompt, p -> imageService.sendRequest(new JSONObject(p))));
     }
 
     /**
@@ -104,7 +140,7 @@ public class AIViewTool implements ViewTool {
      * @return {@link SearchTool} instance
      */
     public SearchTool getSearch() {
-        return new SearchTool(context);
+        return new SearchTool(context, escapeOutput);
     }
 
     /**
@@ -113,7 +149,7 @@ public class AIViewTool implements ViewTool {
      * @return {@link CompletionsTool} instance
      */
     public CompletionsTool getCompletions() {
-        return new CompletionsTool(context);
+        return new CompletionsTool(context, escapeOutput);
     }
 
     @VisibleForTesting
@@ -148,10 +184,18 @@ public class AIViewTool implements ViewTool {
         return generate(prompt, serviceCall).getOrElseGet(this::handleException);
     }
 
+    /** Whole-payload escaping (provider output and error payloads), or pass-through when unsafe. */
+    private JSONObject escape(final JSONObject payload) {
+        return escapeOutput ? AIViewToolOutputEscaper.deepEscape(payload) : payload;
+    }
+
+    /**
+     * Failure payload for the handled generation paths ({@code generateImage}). Delegates to
+     * {@link AIViewToolErrorHandler} so the template receives the fixed generic message and the
+     * exception, with its trace, goes to the server log (#37154).
+     */
     private JSONObject handleException(final Throwable e) {
-        final JSONObject jsonResponse = new JSONObject();
-        jsonResponse.put(AiKeys.ERROR, e.getMessage());
-        return jsonResponse;
+        return AIViewToolErrorHandler.handle(AIViewTool.class, e);
     }
 
 }

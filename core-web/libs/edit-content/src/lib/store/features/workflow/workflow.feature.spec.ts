@@ -26,6 +26,7 @@ import { GlobalStore } from '@dotcms/store';
 
 import { withWorkflow } from './workflow.feature';
 
+import { CurrentContentActionsWithScheme } from '../../../models/dot-edit-content-field.type';
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import {
@@ -37,6 +38,8 @@ import {
 import { parseCurrentActions } from '../../../utils/workflows.utils';
 import { initialRootState } from '../../edit-content.store';
 import { withContent } from '../content/content.feature';
+
+type DeleteFlags = { hasDeleteActionlet?: boolean; hasDestroyActionlet?: boolean };
 
 describe('WorkflowFeature', () => {
     let spectator: SpectatorService<any>;
@@ -53,6 +56,7 @@ describe('WorkflowFeature', () => {
         setContentTitle: vi.fn(),
         addBreadcrumb: vi.fn(),
         goToSavedContent: vi.fn(),
+        leaveDeletedContent: vi.fn(),
         goToRestoredVersion: vi.fn()
     };
 
@@ -71,8 +75,13 @@ describe('WorkflowFeature', () => {
             withContent(),
             withWorkflow(),
             withMethods((store) => ({
-                updateContent: (content) => {
+                updateContent: (content: DotCMSContentlet) => {
                     patchState(store, { contentlet: content });
+                },
+                setCurrentContentActions: (
+                    currentContentActions: CurrentContentActionsWithScheme
+                ) => {
+                    patchState(store, { currentContentActions });
                 }
             }))
         ),
@@ -184,6 +193,82 @@ describe('WorkflowFeature', () => {
                     })
                 );
             }));
+
+            describe('when the action deletes the content', () => {
+                const deletedContentlet = { ...MOCK_CONTENTLET_1_TAB, inode: '123' };
+
+                const withDeletingAction = (flags: DeleteFlags) => {
+                    store.updateContent(deletedContentlet);
+                    store.setCurrentContentActions({
+                        'scheme-1': [{ ...MOCK_WORKFLOW_ACTIONS_NEW_ITEMNTTYPE_1_TAB[0], ...flags }]
+                    });
+                    // Reset calls made by the contentlet-change effect.
+                    workflowActionService.getByInode.mockClear();
+                    dotEditContentService.getContentById.mockClear();
+                    dotWorkflowService.getWorkflowStatus.mockClear();
+                };
+
+                it.each([
+                    ['Delete', { hasDeleteActionlet: true }],
+                    ['Destroy', { hasDestroyActionlet: true }]
+                ])(
+                    'should leave the editor without reloading the content after %s',
+                    fakeAsync((_name: string, flags: DeleteFlags) => {
+                        withDeletingAction(flags);
+                        workflowActionsFireService.fireTo.mockReturnValue(
+                            of({} as DotCMSContentlet)
+                        );
+
+                        store.fireWorkflowAction(mockOptions);
+                        tick();
+                        flush();
+
+                        expect(mockHost.leaveDeletedContent).toHaveBeenCalledWith(
+                            deletedContentlet.contentType
+                        );
+                        expect(mockHost.goToSavedContent).not.toHaveBeenCalled();
+                        expect(dotEditContentService.getContentById).not.toHaveBeenCalled();
+                        expect(workflowActionService.getByInode).not.toHaveBeenCalled();
+                        expect(dotWorkflowService.getWorkflowStatus).not.toHaveBeenCalled();
+                        expect(store.state()).toBe(ComponentStatus.LOADED);
+                        expect(store.workflowActionSuccess()).toEqual(deletedContentlet);
+                        expect(messageService.add).toHaveBeenCalledWith(
+                            expect.objectContaining({ severity: 'success' })
+                        );
+                    })
+                );
+
+                it('should keep the error handling and stay on the content when the delete fails', fakeAsync(() => {
+                    withDeletingAction({ hasDeleteActionlet: true });
+                    const mockError = new HttpErrorResponse({ status: 500 });
+                    workflowActionsFireService.fireTo.mockReturnValue(throwError(() => mockError));
+
+                    store.fireWorkflowAction(mockOptions);
+                    tick();
+
+                    expect(
+                        spectator.inject(DotHttpErrorManagerService).handle
+                    ).toHaveBeenCalledWith(mockError);
+                    expect(store.error()).toBe('Error firing workflow action');
+                    expect(mockHost.leaveDeletedContent).not.toHaveBeenCalled();
+                }));
+
+                it('should keep the reload path for actions that do not delete the content', fakeAsync(() => {
+                    withDeletingAction({ hasDeleteActionlet: false, hasDestroyActionlet: false });
+                    const savedContentlet = { ...deletedContentlet, inode: '456' };
+                    workflowActionsFireService.fireTo.mockReturnValue(of(savedContentlet));
+                    dotEditContentService.getContentById.mockReturnValue(of(savedContentlet));
+                    dotWorkflowService.getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
+
+                    store.fireWorkflowAction(mockOptions);
+                    tick();
+                    flush();
+
+                    expect(dotEditContentService.getContentById).toHaveBeenCalled();
+                    expect(mockHost.goToSavedContent).toHaveBeenCalled();
+                    expect(mockHost.leaveDeletedContent).not.toHaveBeenCalled();
+                }));
+            });
         });
 
         describe('setSelectedWorkflow', () => {

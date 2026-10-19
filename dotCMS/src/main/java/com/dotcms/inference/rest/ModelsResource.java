@@ -35,8 +35,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -58,6 +59,12 @@ import java.util.Optional;
  *     that endpoint refuses.</li>
  * </ul>
  *
+ * <p>Chat, embedding and image models share the one list, so each entry carries a {@code type}
+ * — {@code chat}, {@code embedding} or {@code image} — naming the operation that accepts it. It is
+ * read from the {@code providerConfig} section the model is configured in, and added alongside the
+ * four standard fields rather than replacing any, so a standard client still deserializes the
+ * listing into its own type.</p>
+ *
  * <p>A site with no dotAI configuration — and on an instance with none at the system level either
  * — gets an empty list with a 200. Falling back to whichever site happens to be configured would
  * hand a caller model names their own site will refuse, and would disclose that some other site
@@ -73,22 +80,31 @@ import java.util.Optional;
 @NoCors
 public class ModelsResource {
 
-    /** Section of the site's {@code providerConfig} JSON the listed models come from. */
-    private static final String CHAT_SECTION = "chat";
-    private static final String EMBEDDINGS_SECTION = "embeddings";
-    private static final String IMAGE_SECTION = "image";
+    /**
+     * One section of the site's {@code providerConfig} JSON the listed models come from, and the
+     * {@code type} its models are reported with.
+     *
+     * @param name the section's key in {@code providerConfig}
+     * @param type the value each of its models reports as {@code type}
+     */
+    private record ListedSection(String name, String type) { }
 
     /**
      * The sections this listing draws from, chat first.
      *
      * <p>Order decides behaviour here, it is not presentation. There is no implicit default
      * model, and the documented way to ask for "whatever this site runs" is to read this list
-     * and take the first
-     * entry — so the first entry has to remain the site's primary chat model, as it was when this
-     * listed nothing else.</p>
+     * and take the first entry — so the first entry has to remain the site's primary chat model,
+     * as it was when this listed nothing else. The same order decides the {@code type} of a name
+     * configured in more than one section.</p>
+     *
+     * <p>{@code embeddings} reports {@code embedding}, singular: the section is named for what it
+     * configures, the type for what one model is.</p>
      */
-    private static final List<String> LISTED_SECTIONS =
-            List.of(CHAT_SECTION, EMBEDDINGS_SECTION, IMAGE_SECTION);
+    private static final List<ListedSection> LISTED_SECTIONS = List.of(
+            new ListedSection("chat", ModelListView.ModelView.TYPE_CHAT),
+            new ListedSection("embeddings", ModelListView.ModelView.TYPE_EMBEDDING),
+            new ListedSection("image", ModelListView.ModelView.TYPE_IMAGE));
 
     /**
      * Header form of the site override. Server-side callers routinely sit behind a proxy that
@@ -110,10 +126,14 @@ public class ModelsResource {
     @Operation(
             operationId = "listInferenceModels",
             summary = "List the models this site has configured",
-            description = "Returns the models the resolved site has configured for chat, including "
-                    + "every entry of a fallback chain, in configured order — the first is the "
-                    + "site's primary model. The list is exactly the set of values the chat "
-                    + "completions endpoint accepts as \"model\": there is no implicit default and "
+            description = "Returns the models the resolved site has configured for chat, "
+                    + "embeddings and image generation, including every entry of a chat fallback "
+                    + "chain, in configured order with chat first — the first entry is the site's "
+                    + "primary chat model. Each entry reports in \"type\" which operation accepts "
+                    + "it: \"chat\", \"embedding\" or \"image\". A name configured for more than one "
+                    + "operation is listed once, with the type of the first of those in that "
+                    + "order. The list is exactly the set of values this family accepts as "
+                    + "\"model\": there is no implicit default and "
                     + "no reserved alias, and nothing synthetic is added. No model provider is "
                     + "contacted. A site with no AI configuration, on an instance with none at the "
                     + "system level either, returns an empty data array rather than another site's "
@@ -206,35 +226,32 @@ public class ModelsResource {
     }
 
     /**
-     * Collects the model names this site has configured, across every capability it serves.
+     * Collects the model names this site has configured, across every capability it serves, each
+     * with the type of the section it came from.
      *
-     * <p>All of them, not just chat. The adopted format has one flat model list and its model
-     * object carries no field for what a model is for — no type, no mode, no modality — so the
-     * reference implementation returns chat, embedding and image models together and leaves a
-     * client to know which is which. Listing only chat would be the narrower, tidier answer and
+     * <p>All of them, not just chat. Listing only chat would be the narrower, tidier answer and
      * was what shipped first, but it leaves the embeddings and image operations with no discovery
      * at all: both require an exact model name, and this is the only place a caller could learn
-     * one.</p>
+     * one. Mixing them in one list is only usable because each entry says which operation accepts
+     * it; without that, a caller would have to keep its own table of model names to avoid a 404.</p>
      *
-     * <p>The alternative — adding a capability field to each entry — was rejected after looking at
-     * what other gateways do. Nobody extends the standard model object that way: implementations
-     * either keep this endpoint's shape and expose capability on a separate, non-standard one, or
-     * publish an entirely different object of their own. Inventing a field inside the standard
-     * shape is the one thing none of them does, and it is exactly what the no-adapter promise of
-     * this family exists to avoid.</p>
-     *
-     * <p>A name configured in more than one section is listed once. Duplicates would be harmless
-     * to a client but would misrepresent the site as running two things.</p>
+     * <p>A name configured in more than one section is listed once, because clients key models by
+     * id and duplicates would misrepresent the site as running two things. Its type is the type of
+     * the first section it appears in, in {@link #LISTED_SECTIONS} order — chat, then embeddings,
+     * then image — so a later section never relabels a name an earlier one already listed.</p>
      *
      * @param context the resolved site and its configuration
-     * @return the configured names, chat first, in configured order, without repeats
+     * @return each configured name mapped to its type, chat first, in configured order
      */
-    private static List<String> configuredModels(final ResolvedAiContext context) {
-        final LinkedHashSet<String> names = new LinkedHashSet<>();
-        for (final String section : LISTED_SECTIONS) {
-            names.addAll(LangChain4jAIClient.get().configuredModels(context.config(), section));
+    private static Map<String, String> configuredModels(final ResolvedAiContext context) {
+        final Map<String, String> types = new LinkedHashMap<>();
+        for (final ListedSection section : LISTED_SECTIONS) {
+            for (final String name : LangChain4jAIClient.get()
+                    .configuredModels(context.config(), section.name())) {
+                types.putIfAbsent(name, section.type());
+            }
         }
-        return List.copyOf(names);
+        return types;
     }
 
     /**
@@ -245,18 +262,19 @@ public class ModelsResource {
      * inventing a plausible per-model date would be indistinguishable from a real one to anyone
      * who trusted it.</p>
      *
-     * @param modelNames the configured names, in fallback order
+     * @param modelTypes each configured name mapped to its type, in listing order
      * @return the listing
      */
-    private static ModelListView toView(final List<String> modelNames) {
+    private static ModelListView toView(final Map<String, String> modelTypes) {
         final long created = Instant.now().getEpochSecond();
-        final List<ModelListView.ModelView> models = new ArrayList<>(modelNames.size());
-        for (final String modelName : modelNames) {
+        final List<ModelListView.ModelView> models = new ArrayList<>(modelTypes.size());
+        for (final Map.Entry<String, String> model : modelTypes.entrySet()) {
             models.add(new ModelListView.ModelView(
-                    modelName,
+                    model.getKey(),
                     ModelListView.ModelView.OBJECT,
                     created,
-                    ModelListView.ModelView.OWNED_BY));
+                    ModelListView.ModelView.OWNED_BY,
+                    model.getValue()));
         }
         return new ModelListView(ModelListView.OBJECT, List.copyOf(models));
     }

@@ -13,6 +13,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.Portlet;
@@ -309,5 +310,89 @@ public class PortletAPIImplTest {
                 portletApi.deletePortlet(portlet.getPortletId());
             }
         }
+    }
+
+    // ==================== isCustomContentPortlet (#37574) ====================
+
+    /**
+     * Builds an in-memory portlet carrying the {@code portletSource=db} marker that
+     * {@link PortletAPI#savePortlet} writes for every custom content tool. Nothing is persisted.
+     */
+    private static Portlet dbRegisteredPortlet(final String portletId) {
+        final Map<String, String> initParams = new java.util.HashMap<>();
+        initParams.put("portletSource", "db");
+        initParams.put("name", "QA " + portletId);
+        initParams.put("dataViewMode", "list");
+        return new Portlet(portletId, StrutsPortlet.class.getName(), initParams);
+    }
+
+    /**
+     * Method to test: {@link PortletAPI#isCustomContentPortlet(Portlet)}
+     * Given Scenario: a tool defined in portlet.xml.
+     * ExpectedResult: not custom, because it carries no database registration marker.
+     */
+    @Test
+    public void test_isCustomContentPortlet_xmlPortlet_false() {
+        final Portlet roles = portletApi.findPortlet(PortletID.ROLES.toString());
+        Assert.assertNotNull(roles);
+        Assert.assertFalse(portletApi.isCustomContentPortlet(roles));
+    }
+
+    /**
+     * Method to test: {@link PortletAPI#isCustomContentPortlet(Portlet)}
+     * Given Scenario: a database-registered tool whose id the product does not declare.
+     * ExpectedResult: custom.
+     */
+    @Test
+    public void test_isCustomContentPortlet_dbMarkerUndeclared_true() {
+        Assert.assertTrue(portletApi.isCustomContentPortlet(
+                dbRegisteredPortlet("c_qa" + System.nanoTime())));
+    }
+
+    /**
+     * Method to test: {@link PortletAPI#isCustomContentPortlet(Portlet)}
+     * Given Scenario: a database-registered tool whose id lacks the conventional {@code c_} prefix.
+     * ExpectedResult: still custom; the flag comes from the registration, not the id spelling.
+     */
+    @Test
+    public void test_isCustomContentPortlet_dbMarkerWithoutPrefix_true() {
+        Assert.assertTrue(portletApi.isCustomContentPortlet(
+                dbRegisteredPortlet("qa-no-prefix" + System.nanoTime())));
+    }
+
+    /**
+     * Method to test: {@link PortletAPI#isCustomContentPortlet(Portlet)}
+     * Given Scenario: Language Variables, a product tool stored as a database row with the
+     * {@code db} marker.
+     * ExpectedResult: not custom, because the product declares its id in {@link PortletID}.
+     */
+    @Test
+    public void test_isCustomContentPortlet_languageVariables_false() {
+        Assert.assertFalse(portletApi.isCustomContentPortlet(
+                dbRegisteredPortlet(PortletID.LANGUAGE_VARIABLES.toString())));
+    }
+
+    /**
+     * Method to test: {@link PortletAPI#isCustomContentPortlet(Portlet)}
+     * Given Scenario: a portlet with a {@code c_} id but no registration marker, the shape an
+     * OSGi plugin portlet stored in the database has.
+     * ExpectedResult: not custom.
+     */
+    @Test
+    public void test_isCustomContentPortlet_noMarker_false() {
+        final Map<String, String> initParams = new java.util.HashMap<>();
+        initParams.put("name", "Looks custom");
+        Assert.assertFalse(portletApi.isCustomContentPortlet(
+                new Portlet("c_looks-custom", StrutsPortlet.class.getName(), initParams)));
+    }
+
+    /**
+     * Method to test: {@link PortletAPI#isCustomContentPortlet(Portlet)}
+     * Given Scenario: a null portlet.
+     * ExpectedResult: not custom, no exception.
+     */
+    @Test
+    public void test_isCustomContentPortlet_null_false() {
+        Assert.assertFalse(portletApi.isCustomContentPortlet(null));
     }
 }

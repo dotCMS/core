@@ -1,25 +1,30 @@
 
 # dotCMS Test Suite Index
 
-This repository contains test cases for various features in dotCMS. Each feature listed below has a corresponding test suite to ensure quality and functionality across our platform. If a requested feature is not listed, please refer to the process outlined below.
+Manual QA test cases for dotCMS features, one CSV per feature, in this directory. Each row below
+links to its file. If a feature you need is not listed, follow the process at the bottom.
+
+These are the manual cases QA executes by hand. For automated coverage see
+[Integration Tests](../testing/INTEGRATION_TESTS.md), [E2E Tests](../testing/E2E_TESTS.md) and
+[API Testing](../testing/API_TESTING.md).
 
 ## Test Suite Index
 
-| Feature           | Test Suite Available |
-|-------------------|----------------------|
-| Advanced Templates | ✅ |
-| Apps Portlet       | ✅ |
-| Binary Field       | ✅ |
-| Categories         | ✅ |
-| Containers         | ✅ |
-| Design Templates   | ✅ |
-| Experiments        | ✅ |
-| Forms              | ✅ |
-| Information Panel  | ✅ |
-| Pages Portlet      | ✅ |
-| Rules Engine       | ✅ |
-| UVE                | ✅ |
-| WYSIWYG            | ✅ |
+| Feature | Test cases |
+|---|---|
+| Advanced Templates | [Advance_Templates.csv](Advance_Templates.csv) |
+| Apps Portlet | [Apps_Portlet.csv](Apps_Portlet.csv) |
+| Binary Field | [BinaryField.csv](BinaryField.csv) |
+| Categories | [Categories.csv](Categories.csv) |
+| Containers | [Containers.csv](Containers.csv) |
+| Design Templates | [Design_Templates.csv](Design_Templates.csv) |
+| Experiments | [Experiments.csv](Experiments.csv) |
+| Forms | [Forms.csv](Forms.csv) |
+| Information Panel | [Information_Panel.csv](Information_Panel.csv) |
+| Pages Portlet | [Pages_Portlet.csv](Pages_Portlet.csv) |
+| Rules Engine | [Rules_Engine.csv](Rules_Engine.csv) |
+| UVE | [UVE.csv](UVE.csv) |
+| WYSIWYG | [WYSIWYG.csv](WYSIWYG.csv) |
 
 ## Process for Missing Features
 

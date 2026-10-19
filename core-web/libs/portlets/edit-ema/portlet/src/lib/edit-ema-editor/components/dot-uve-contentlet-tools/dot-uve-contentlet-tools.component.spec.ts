@@ -272,6 +272,88 @@ describe('DotUveContentletToolsComponent', () => {
             expect(editVtlButton).toBeFalsy();
         });
 
+        it('should order the toolbar: Edit, Styles, Full Editor, Code, then Remove', () => {
+            spectator.setInput('showStyleEditorOption', true);
+            spectator.detectChanges();
+
+            const toolbar = spectator.query(byTestId('hover-actions')) as HTMLElement;
+            const order = Array.from(toolbar.querySelectorAll(':scope > p-button')).map((button) =>
+                button.getAttribute('data-testid')
+            );
+
+            expect(order).toEqual([
+                'hover-quick-edit-button',
+                'hover-palette-button',
+                'hover-edit-button',
+                'hover-edit-vtl-button',
+                'hover-delete-button'
+            ]);
+        });
+
+        it.each([
+            ['hover-quick-edit-button', 'edit', 'uve.tooltip.edit.quick'],
+            ['hover-palette-button', 'palette', 'uve.tooltip.edit.style'],
+            ['hover-edit-button', 'edit_note', 'uve.tooltip.edit.full'],
+            ['hover-edit-vtl-button', 'code', 'uve.tooltip.edit.vtl'],
+            ['hover-delete-button', 'close', 'uve.tooltip.remove'],
+            ['hover-drag-button', 'open_with', 'uve.tooltip.move'],
+            ['hover-add-top-button', 'add', 'uve.contentlet.tools.add'],
+            ['hover-add-bottom-button', 'add', 'uve.contentlet.tools.add'],
+            ['hover-actions-collapsed-button', 'more_vert', 'uve.contentlet.tools.more']
+        ])(
+            'should show %s as the Material Symbol "%s", named for screen readers',
+            (testId, symbol, name) => {
+                spectator.setInput('showStyleEditorOption', true);
+                spectator.detectChanges();
+
+                const button = spectator.query(byTestId(testId)) as HTMLElement;
+                const icon = button.querySelector('.material-symbols-outlined');
+
+                expect(icon?.textContent?.trim()).toBe(symbol);
+                expect(icon?.getAttribute('aria-hidden')).toBe('true');
+                expect(button.querySelector('button')?.getAttribute('aria-label')).toBe(name);
+            }
+        );
+
+        it('should give the collapsed menu the same icons as the toolbar', () => {
+            spectator.setInput('showStyleEditorOption', true);
+            spectator.detectChanges();
+
+            const items = spectator.component.actionsMenuItems();
+
+            expect(items.map((item) => item.symbol)).toEqual([
+                'edit',
+                'palette',
+                'edit_note',
+                'code',
+                'close'
+            ]);
+            expect(items.some((item) => item.icon)).toBe(false);
+        });
+
+        it('should render no PrimeIcons, only Material Symbols', () => {
+            spectator.setInput('showStyleEditorOption', true);
+            spectator.detectChanges();
+
+            expect(spectator.element.querySelectorAll('.pi')).toHaveLength(0);
+            expect(
+                spectator.element.querySelectorAll('.material-symbols-outlined').length
+            ).toBeGreaterThan(0);
+        });
+
+        it('should order the collapsed menu the same way as the toolbar', () => {
+            spectator.setInput('showStyleEditorOption', true);
+            spectator.detectChanges();
+
+            expect(spectator.component.actionsMenuItems().map((item) => item.label)).toEqual([
+                'uve.tooltip.edit.quick',
+                'uve.tooltip.edit.style',
+                'uve.tooltip.edit.full',
+                'uve.tooltip.edit.vtl',
+                'uve.tooltip.remove'
+            ]);
+        });
+
         it('should render drag button', () => {
             const dragButton = spectator.query(byTestId('hover-drag-button'));
             expect(dragButton).toBeTruthy();
@@ -979,7 +1061,7 @@ describe('DotUveContentletToolsComponent', () => {
 
         describe('collapsed overflow menu', () => {
             const editMenuItem = () =>
-                spectator.component.actionsMenuItems().find((item) => item.icon === 'pi pi-pencil');
+                spectator.component.actionsMenuItems().find((item) => item.symbol === 'edit_note');
 
             it('should disable the Edit entry when canEdit is false', () => {
                 setPermission(false);
@@ -994,7 +1076,7 @@ describe('DotUveContentletToolsComponent', () => {
             });
 
             const quickEditMenuItem = () =>
-                spectator.component.actionsMenuItems().find((item) => item.icon === 'pi pi-bolt');
+                spectator.component.actionsMenuItems().find((item) => item.symbol === 'edit');
 
             it('should disable the Quick Edit entry when canEdit is false', () => {
                 setPermission(false);
@@ -1039,7 +1121,7 @@ describe('DotUveContentletToolsComponent', () => {
 
                 const styleItem = spectator.component
                     .actionsMenuItems()
-                    .find((item) => item.icon === 'pi pi-palette');
+                    .find((item) => item.symbol === 'palette');
 
                 expect(styleItem?.disabled).toBe(true);
             });
@@ -1160,7 +1242,7 @@ describe('DotUveContentletToolsComponent', () => {
 
             const vtlEntry = spectator.component
                 .actionsMenuItems()
-                .find((item) => item.icon === 'pi pi-code');
+                .find((item) => item.symbol === 'code');
 
             expect(vtlEntry?.items).toEqual(spectator.component.vtlMenuItems());
         });

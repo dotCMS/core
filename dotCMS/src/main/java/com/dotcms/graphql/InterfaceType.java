@@ -29,7 +29,9 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.graphql.business.ContentAPIGraphQLTypesProvider;
 import com.dotcms.graphql.resolver.ContentResolver;
 import com.dotmarketing.util.Logger;
+import com.dotcms.graphql.util.TypeUtil;
 import graphql.schema.GraphQLInterfaceType;
+import graphql.schema.GraphQLObjectType;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -69,7 +71,45 @@ public enum InterfaceType {
     public static final String FORM_INTERFACE_NAME = "FormBaseType";
     public static final String DOTASSET_INTERFACE_NAME = "DotAssetBaseType";
 
+    /**
+     * Describes the content an Image or File field points at, by whatever content type it actually
+     * is. Unlike the interfaces above it is not tied to a single base type: an asset-pointing field
+     * can hold either DOTASSET- or FILEASSET-based content — an Image field resolves a FileAsset
+     * perfectly well today — so neither {@link #DOTASSET_INTERFACE_NAME} nor
+     * {@link #FILE_INTERFACE_NAME} alone can describe what such a field may return.
+     *
+     * <p><b>It deliberately keeps the name the flat object type used to carry.</b> That name is
+     * what clients already write in {@code ... on DotFileasset} clauses, and a fragment on the
+     * position's own interface always matches — so those clauses keep working and keep returning
+     * data. Introducing a new name instead would have left every such clause invalid. The kind
+     * does change, from object to interface, which query text does not notice but client code
+     * generators do: anyone with generated types must regenerate them. See #34540.
+     */
+    public static final String ASSET_INTERFACE_NAME = "DotFileasset";
+
+    /**
+     * What an asset of a DOTASSET-derived type resolves as through Image and File fields when its
+     * type holds a field that clashes with a flat asset property -- same name, different type. Such
+     * a type cannot implement the asset interfaces, so it is left out of them alone, and this type
+     * stands in for it there with the flat properties, instead of the property disappearing for
+     * every asset type. See #34540.
+     */
+    public static final String DOTASSET_PROPERTY_CLASH_TYPE_NAME = "DotAssetPropertyClash";
+
+    /** The FILEASSET counterpart of {@link #DOTASSET_PROPERTY_CLASH_TYPE_NAME}. */
+    public static final String FILEASSET_PROPERTY_CLASH_TYPE_NAME = "FileAssetPropertyClash";
+
     public static final String DOT_CONTENTLET = "DotContentlet";
+
+    /** Content fields plus the fixed fields of each base type, before the flat properties. */
+    private static final Map<String, TypeFetcher> fileAssetBaseFields = new HashMap<>();
+    private static final Map<String, TypeFetcher> dotAssetBaseFields = new HashMap<>();
+    private static final Map<String, TypeFetcher> assetContentBaseFields = new HashMap<>();
+
+    // Declared before the static block on purpose: static initializers run in textual order.
+    private static AssetInterfaces defaultAssetInterfaces;
+    private static GraphQLObjectType dotAssetPropertyClashType;
+    private static GraphQLObjectType fileAssetPropertyClashType;
 
     static {
 
@@ -84,10 +124,9 @@ public enum InterfaceType {
 
         interfaceTypes.put("CONTENT", createInterfaceType(CONTENT_INTERFACE_NAME, contentFields, new ContentResolver()));
 
-        final Map<String, TypeFetcher> fileAssetFields = new HashMap<>(contentFields);
-        addBaseTypeFields(fileAssetFields, ImmutableFileAssetContentType.builder().name("dummy")
+        fileAssetBaseFields.putAll(contentFields);
+        addBaseTypeFields(fileAssetBaseFields, ImmutableFileAssetContentType.builder().name("dummy")
                 .build().requiredFields());
-        interfaceTypes.put("FILEASSET", createInterfaceType(FILE_INTERFACE_NAME, fileAssetFields, new ContentResolver()));
 
         final Map<String, TypeFetcher> pageAssetFields = new HashMap<>(contentFields);
         addBaseTypeFields(pageAssetFields, ImmutablePageContentType.builder().name("dummy")
@@ -121,10 +160,137 @@ public enum InterfaceType {
         interfaceTypes.put("FORM", createInterfaceType(FORM_INTERFACE_NAME, formFields,
                 new ContentResolver()));
 
-        final Map<String, TypeFetcher> dotAssetFields = new HashMap<>(contentFields);
-        addBaseTypeFields(dotAssetFields, ImmutableDotAssetContentType.builder().name("dummy")
+        dotAssetBaseFields.putAll(contentFields);
+        addBaseTypeFields(dotAssetBaseFields, ImmutableDotAssetContentType.builder().name("dummy")
                 .build().requiredFields());
-        interfaceTypes.put("DOTASSET", createInterfaceType(DOTASSET_INTERFACE_NAME, dotAssetFields, new ContentResolver()));
+
+        assetContentBaseFields.putAll(contentFields);
+
+        final AssetInterfaces defaults = buildAssetInterfaces();
+        interfaceTypes.put("FILEASSET", defaults.fileBaseType());
+        interfaceTypes.put("DOTASSET", defaults.dotAssetBaseType());
+        defaultAssetInterfaces = defaults;
+
+        dotAssetPropertyClashType = propertyClashType(DOTASSET_PROPERTY_CLASH_TYPE_NAME,
+                withFlatFields(dotAssetBaseFields), defaults.dotAssetBaseType(), defaults,
+                contentletInterface);
+        fileAssetPropertyClashType = propertyClashType(FILEASSET_PROPERTY_CLASH_TYPE_NAME,
+                withFlatFields(fileAssetBaseFields), defaults.fileBaseType(), defaults,
+                contentletInterface);
+    }
+
+    /**
+     * The three interfaces that carry the flat asset properties, built together so that a schema
+     * always uses one consistent set of them.
+     */
+    public record AssetInterfaces(GraphQLInterfaceType fileBaseType,
+                                  GraphQLInterfaceType dotAssetBaseType,
+                                  GraphQLInterfaceType assetContent) {
+
+        /** @return the base-type interface for an asset base type, or null for any other. */
+        public GraphQLInterfaceType forBaseType(final BaseContentType baseContentType) {
+            if (BaseContentType.FILEASSET == baseContentType) {
+                return fileBaseType;
+            }
+            if (BaseContentType.DOTASSET == baseContentType) {
+                return dotAssetBaseType;
+            }
+            return null;
+        }
+    }
+
+    /**
+     * @return the three interfaces that carry the flat asset properties. They always carry all of
+     * them: a content type whose own field clashes with one of them is left out of the interfaces
+     * instead (see {@link #getPropertyClashType}), so one type can no longer take a property away
+     * from every other asset type. See #34540.
+     */
+    public static AssetInterfaces getAssetInterfaces() {
+        return defaultAssetInterfaces;
+    }
+
+    /**
+     * The object type that stands in, behind Image and File fields, for an asset whose content
+     * type is left out of the asset interfaces.
+     *
+     * <p>A content type whose own field has the name of a flat asset property but a different
+     * GraphQL type cannot implement the asset interfaces: graphql-java requires an interface and
+     * every type implementing it to agree on each shared field. Such a type is therefore left out
+     * of them alone, and its assets resolve as this type through asset fields, answering the flat
+     * properties the way the asset field always has. The type itself stays in the schema, whole,
+     * for its own queries. See #34540.
+     *
+     * @param baseContentType the asset base type the content type derives from
+     * @return the stand-in type for that base, or null for a base type that is not an asset one
+     */
+    public static GraphQLObjectType getPropertyClashType(final BaseContentType baseContentType) {
+        if (BaseContentType.FILEASSET == baseContentType) {
+            return fileAssetPropertyClashType;
+        }
+        if (BaseContentType.DOTASSET == baseContentType) {
+            return dotAssetPropertyClashType;
+        }
+        return null;
+    }
+
+    private static AssetInterfaces buildAssetInterfaces() {
+        // Every possible type of these interfaces carries the same flat properties the asset
+        // interface does, so that `fileName` is selectable the same way whichever clause a client
+        // narrows through. DOTASSET content has no stored file name, but every DOTASSET-derived
+        // type carries the synthesized one. The asset interface spans both base types and carries
+        // the common content fields plus the flat properties an asset-pointing field has always
+        // exposed, so that retyping such a field to it leaves those selections working.
+        final Map<String, TypeFetcher> assetContentFields = withFlatFields(assetContentBaseFields);
+        return new AssetInterfaces(
+                createInterfaceType(FILE_INTERFACE_NAME, withFlatFields(fileAssetBaseFields),
+                        new ContentResolver()),
+                createInterfaceType(DOTASSET_INTERFACE_NAME, withFlatFields(dotAssetBaseFields),
+                        new ContentResolver()),
+                createInterfaceType(ASSET_INTERFACE_NAME, assetContentFields,
+                        new ContentResolver()));
+    }
+
+    private static Map<String, TypeFetcher> withFlatFields(final Map<String, TypeFetcher> base) {
+        final Map<String, TypeFetcher> fields = new HashMap<>(base);
+        fields.putAll(CustomFieldType.getAssetFlatFields());
+        return fields;
+    }
+
+    /**
+     * Builds a stand-in object type implementing the base-type interface, the asset interface and
+     * the contentlet interface, with exactly the fields of the base-type interface -- which is a
+     * superset of the other two -- so it satisfies all three.
+     */
+    private static GraphQLObjectType propertyClashType(final String name,
+            final Map<String, TypeFetcher> fields, final GraphQLInterfaceType baseTypeInterface,
+            final AssetInterfaces assetInterfaces, final GraphQLInterfaceType contentletInterface) {
+        return GraphQLObjectType.newObject()
+                .name(name)
+                .description("An asset reached through an Image or File field whose content type "
+                        + "has a field clashing with one of these properties; its own fields are "
+                        + "reachable through the content type's own queries.")
+                .fields(TypeUtil.getGraphQLFieldDefinitionsFromMap(fields))
+                .withInterface(baseTypeInterface)
+                .withInterface(assetInterfaces.assetContent())
+                .withInterface(contentletInterface)
+                .build();
+    }
+
+    /**
+     * @return the interface describing what an asset-pointing field returns, implemented by every
+     * content type derived from either asset base type, as built when nothing collides.
+     */
+    public static GraphQLInterfaceType getAssetContentInterface() {
+        return defaultAssetInterfaces.assetContent();
+    }
+
+    /**
+     * @return whether content of this base type can sit behind an Image or File field, and must
+     * therefore implement {@link #getAssetContentInterface()}.
+     */
+    public static boolean isAssetBaseType(final BaseContentType baseContentType) {
+        return BaseContentType.DOTASSET == baseContentType
+                || BaseContentType.FILEASSET == baseContentType;
     }
 
     /**

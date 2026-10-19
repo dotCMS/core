@@ -94,6 +94,16 @@ export class DotChipFilterComponent {
     emptyLabel = input<string>('');
 
     /**
+     * Whether the chip is still working out what its selection says.
+     *
+     * Opt-in and off by default, so every existing consumer renders exactly as before. It exists
+     * for a chip whose labels are not in the selection itself: the Experiments Created By filter
+     * holds user ids and has to resolve them into names, and rendering the ids in the meantime
+     * would flash an identifier the user never chose (#37307 FR-009e).
+     */
+    loading = input<boolean>(false);
+
+    /**
      * Emits the originating DOM event so consumers can pass it to overlays
      * (e.g. p-popover) that need positioning info from `currentTarget`.
      */

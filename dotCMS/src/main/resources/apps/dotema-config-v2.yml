@@ -6,31 +6,36 @@ params:
     configuration:
         value: ''
         hidden: false
-        type: 'STRING'
+        type: 'JSON'
         label: 'Configuration'
         required: true
         hint: |
-            Allows you to enter a JSON object that specifies how to match multiple URL patterns via RegExes with different 3rd party servers and rendering options, if required. For instance, in the following JSON object:<br/><br/>
-              ```
-              {
-                  "config": [
-                      {
-                          "pattern": "/blogs/(.*)",
-                          "url": "https://myspa.blogs.com:3000",
-                      },
-                      {
-                          "pattern": ".*",
-                          "url": "https://myspa.com:3000",
-                          "options": {
-                              "allowedDevURLs": [
-                                  "http://localhost:3000",
-                                  "http://localhost:3001",
-                                  "https://myspa.dev.com"
-                                ]
-                          }
-                      }
-                  ]
-              }
-              ```
-              <br/><br/>
-              You have a specific configuration for pages that start with '/blogs/' and a generic configuration for all other pages, i.e., '.*'. The 'allowedDevURLs' option allows you to specify a list of URLs that are allowed to access the UVE through the clientHost query parameter.
+            A JSON object that maps page URLs to the 3rd party server that renders them. Each entry in `config` is checked in order, and the first `pattern` (a RegEx) that matches the page path wins.
+
+            - `pattern`: RegEx matched against the page path.
+            - `url`: base URL of the server that renders the matching pages.
+            - `options.allowedDevURLs` (optional): extra URLs allowed to load the UVE through the `clientHost` query parameter, e.g. local dev servers.
+
+            Example: pages under `/blogs/` go to one server, and every other page (`.*`) goes to another.
+
+            ```json
+            {
+                "config": [
+                    {
+                        "pattern": "/blogs/(.*)",
+                        "url": "https://myspa.blogs.com:3000"
+                    },
+                    {
+                        "pattern": ".*",
+                        "url": "https://myspa.com:3000",
+                        "options": {
+                            "allowedDevURLs": [
+                                "http://localhost:3000",
+                                "http://localhost:3001",
+                                "https://myspa.dev.com"
+                            ]
+                        }
+                    }
+                ]
+            }
+            ```

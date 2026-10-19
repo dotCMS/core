@@ -1,5 +1,5 @@
 import { patchState, signalState } from '@ngrx/signals';
-import { EMPTY, Observable, fromEvent, of } from 'rxjs';
+import { EMPTY, Observable, forkJoin, fromEvent, of } from 'rxjs';
 
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { NgClass, NgStyle } from '@angular/common';
@@ -32,7 +32,6 @@ import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { PopoverModule } from 'primeng/popover';
 import { ProgressBarModule } from 'primeng/progressbar';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TabsModule } from 'primeng/tabs';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
@@ -56,20 +55,24 @@ import {
     DotCMSTempFile,
     DotLanguage,
     DotTreeNode,
+    EXPERIMENT_RETURN_PARAM,
     FeaturedFlags,
     SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import {
     DotEditContentDialogComponent,
-    DotEditContentSidePanelComponent,
-    EditContentDialogData
+    DotSourceEditorRequest,
+    EditContentDialogData,
+    loadDotEditContentSidePanel,
+    loadDotSourceEditorSidePanel,
+    toSourceEditorRequest
 } from '@dotcms/edit-content';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { StyleEditorFormSchema, __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
-import { DotCopyContentModalService, DotMessagePipe } from '@dotcms/ui';
+import { DotCopyContentModalService, DotMessagePipe, injectSidePanel } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
 import { getContentletsInContainer } from '@dotcms/uve/internal';
 
@@ -92,7 +95,7 @@ import { EmaDragItem } from './components/ema-page-dropzone/types';
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
-import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
+import { DotPageApiService, DotPageAssetKeys } from '../services/dot-page-api/dot-page-api.service';
 import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler/dot-uve-actions-handler.service';
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
 import { UveIframeMessengerService } from '../services/iframe-messenger/uve-iframe-messenger.service';
@@ -125,8 +128,11 @@ import {
     getTargetUrl,
     insertContentletInContainer,
     isAssetPath,
+    isNavigableHref,
     isSamePageNavigation,
     measureCanvasAvailableSize,
+    resolveClickedAnchor,
+    scrollIframeToFragment,
     shouldNavigate
 } from '../utils';
 
@@ -179,9 +185,7 @@ const MESSAGE_KEY = {
         PopoverModule,
         TooltipModule,
         DotMessagePipe,
-        DotUveDeviceControlsComponent,
-        DotEditContentSidePanelComponent,
-        ProgressSpinnerModule
+        DotUveDeviceControlsComponent
     ],
     providers: [
         DotPaletteListStore,
@@ -304,9 +308,17 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     /**
      * Drives the Edit Content side panel: the content to open (create/edit) or `null` when closed.
-     * Only used when {@link $sidePanelEnabled} is on; the template renders the panel while set.
+     * Only used when {@link $sidePanelEnabled} is on; the panel is open while it is set (see the
+     * constructor).
      */
     protected readonly $editContentPanel = signal<EditContentDialogData | null>(null);
+
+    /**
+     * Drives the Edit Code side panel: the VTL file whose source is open in Monaco, or `null`
+     * when closed. Set from the contentlet tools' VTL menu (see {@link handleEditVTL}); the panel is
+     * open while it is set (see the constructor).
+     */
+    protected readonly $sourceEditorPanel = signal<DotSourceEditorRequest | null>(null);
 
     /**
      * Feature flag: when on, the editor opens in the side panel; when off, it opens in the centered
@@ -487,7 +499,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
          */
         const { pageType } = this.uveStore.$reloadEditorContent();
         const isClientReady = untracked(() => this.uveStore.isClientReady());
-        const hasClientQuery = untracked(() => !!this.uveStore.requestMetadata());
+        const isGraphQLSourced = untracked(() => this.uveStore.pageAsset()?.source === 'graphql');
 
         untracked(() => {
             this.uveStore.resetEditorProperties();
@@ -498,13 +510,34 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        // Headless pages are driven entirely by the client's own GraphQL
-        // query. Never push a REST-sourced pageAsset into the iframe — it
-        // never carries the relationships that query defines, and the
-        // client already has its own correct render. Skip until a
-        // GraphQL-backed update (requestMetadata set from CLIENT_READY)
-        // is available; this effect re-fires once that happens.
-        if (pageType === PageType.HEADLESS && !hasClientQuery) {
+        // Headless pages are driven entirely by the client's own GraphQL query. Never push a
+        // REST-sourced pageAsset into the iframe — it never carries the relationships that
+        // query defines. Provenance is tracked explicitly on the stored asset (`source`)
+        // rather than inferred from whether a query was merely registered
+        // (`requestMetadata`): a registered-but-unresolved or aborted/failed GraphQL fetch
+        // leaves a stale REST asset in place while `requestMetadata` stays set, which the old
+        // `hasClientQuery` check could not distinguish from the resolved case (dotCMS/core#37097).
+        // Tell the client to reload itself from its own GraphQL source instead of pushing
+        // anything REST-shaped — but only ONCE per non-resolved streak. `$reloadEditorContent`
+        // re-emits on every CLIENT_READY re-announcement (setCustomClient unconditionally
+        // re-patches requestMetadata, which changes pageAsset()'s reference), including the one
+        // the reload we're about to send will itself trigger. Without this guard, a GraphQL
+        // fetch that stays unresolved (slow, aborted, or permanently failing) causes an
+        // uncapped reload → CLIENT_READY → reload loop, driving the client's iframe into
+        // continuous full navigations (regression found in #37097's post-merge QA).
+        if (pageType === PageType.HEADLESS && !isGraphQLSourced) {
+            const alreadyRequested = untracked(() => this.uveStore.pageReloadPending());
+
+            if (!alreadyRequested) {
+                untracked(() => this.uveStore.setPageReloadPending(true));
+                this.sendMessageToIframe(
+                    {
+                        name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
+                    },
+                    this.host
+                );
+            }
+
             return;
         }
 
@@ -577,6 +610,30 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             this.uveStore.viewSetIframeSize({ width, height });
         });
     });
+
+    constructor() {
+        // The Edit Content side panel, open while `$editContentPanel` is set. Post-save work runs
+        // through the request's `onContentSaved`/`onCancel` callbacks; closing clears the request.
+        // Loaded on its first open, so the editor stays out of this portlet's chunk.
+        injectSidePanel(this.$editContentPanel, {
+            component: loadDotEditContentSidePanel,
+            heading: (data) => data.title ?? '',
+            inputs: (data) => ({ data }),
+            closed: () => this.$editContentPanel.set(null)
+        });
+
+        // The Edit Code side panel, open while `$sourceEditorPanel` is set. A save writes the
+        // file's working version, which edit mode renders, so the page reloads to show it; the
+        // panel then closes itself. Loaded on its first open, so Monaco stays out of this
+        // portlet's chunk.
+        injectSidePanel(this.$sourceEditorPanel, {
+            component: loadDotSourceEditorSidePanel,
+            heading: (request) => request.title,
+            inputs: (request) => ({ request }),
+            outputs: { saved: () => this.reloadPage() },
+            closed: () => this.$sourceEditorPanel.set(null)
+        });
+    }
 
     /**
      * Handle right sidebar tab changes
@@ -781,20 +838,24 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * @param e - The MouseEvent object representing the click event.
      */
     handleInternalNav(e: MouseEvent) {
-        const target = e.target as HTMLAnchorElement;
-        const anchor = target.closest('a');
+        const target = e.target as HTMLElement;
+        const anchor = resolveClickedAnchor(target);
         const rawHref = anchor?.getAttribute('href') ?? '';
 
-        // Same-page anchors (#section) are browser-handled scrolls. Bail
-        // before any URL parsing — for traditional VTL pages the iframe
-        // sits at about:blank, so target.href resolves to "about:blank#section",
-        // whose hostname is "" and would incorrectly trip the external-link
-        // branch below.
-        if (rawHref.startsWith('#')) {
+        // Same-page anchors (#section) are browser-handled scrolls, and
+        // `javascript:…` hrefs never navigate at all — both are a page's own
+        // link-shaped UI (toggles, accordions), not a link to follow. Bail
+        // before any URL parsing: for traditional VTL pages the iframe sits
+        // at about:blank, so anchor.href would resolve `#section` to
+        // "about:blank#section" (hostname "", incorrectly tripping the
+        // external-link branch below) and `javascript:…` to itself (hostname
+        // also "", same false trip — previously opened as an "external"
+        // link in a new tab, dotCMS/core#37961's second QA regression).
+        if (!isNavigableHref(rawHref)) {
             return;
         }
 
-        const href = target.href || rawHref;
+        const href = anchor?.href || rawHref;
         const isInlineEditing = this.uveStore.editorState() === EDITOR_STATE.INLINE_EDITING;
 
         // If the link is not valid or we are in inline editing mode, we do nothing
@@ -804,10 +865,15 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
         const url = new URL(href, this.window.location.origin);
         // Get the query parameters from the URL
-        const urlQueryParams = Object.fromEntries(url.searchParams.entries());
+        const urlQueryParams: Record<string, string | undefined> = Object.fromEntries(
+            url.searchParams.entries()
+        );
 
-        if (url.hostname !== this.window.location.hostname) {
-            this.window.open(href, '_blank');
+        if (!this.#isPageSiteHost(url.hostname)) {
+            // Cancel first: without it the anchor also navigates the iframe to the
+            // external site, which usually refuses to be framed and blanks the canvas.
+            e.preventDefault();
+            this.#openInNewTab(url.href);
 
             return;
         }
@@ -826,13 +892,85 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        // Same pathname (any hash/query): let the browser handle it (anchors, query-driven UI)
-        if (isSamePageNavigation(href, this.uveStore.pageParams()?.url)) {
+        // A same-page hash with no query is an in-page anchor. Scroll the iframe
+        // ourselves: left to the browser, the link would load outside the editor
+        // instead of scrolling.
+        const isSamePageAnchor =
+            !!url.hash &&
+            !url.search &&
+            isSamePageNavigation(href, this.uveStore.pageParams()?.url ?? '');
+
+        if (isSamePageAnchor) {
+            e.preventDefault();
+            scrollIframeToFragment(this.contentWindow, url.hash);
+
             return;
+        }
+
+        // Anything else loads through the Page API below. Left to the browser, the
+        // iframe of a traditional page navigates on its own and comes back blank,
+        // and the new query never reaches the page render (#36999, #37327).
+        //
+        // The previous link's query is cleared first, so the link's own query is
+        // the whole query of the next page instead of inheriting the old one through
+        // the `pageLoad` merge. That holds for any link, not only same-path ones:
+        // `/folder/` and `/folder/index` are the same page under two paths, and a
+        // filter must not follow the editor to another page either.
+        for (const key of this.#pageOwnedParamKeys()) {
+            if (!(key in urlQueryParams)) {
+                urlQueryParams[key] = undefined;
+            }
         }
 
         this.uveStore.pageLoad({ url: url.pathname, ...urlQueryParams });
         e.preventDefault();
+    }
+
+    /**
+     * Tells whether a link's hostname points at the site of the page being edited.
+     *
+     * Pages often link to their own site with an absolute URL
+     * (`https://www.site.com/news?year=2025`), and the admin usually runs on a
+     * different host than the site. Those links must load inside the editor like
+     * relative ones, so the site's hostname and aliases count as internal, as
+     * well as the admin host itself.
+     *
+     * @param {string} hostname - Hostname of the clicked link
+     * @return {boolean} `true` when the link belongs to the edited site
+     * @memberof EditEmaEditorComponent
+     */
+    #isPageSiteHost(hostname: string): boolean {
+        const site = this.uveStore.pageAsset()?.site;
+        // Aliases are stored one per line, but commas are accepted too.
+        const aliases = (site?.aliases ?? '').split(/[\s,]+/);
+        const siteHosts = [this.window.location.hostname, site?.hostname, ...aliases];
+
+        return siteHosts.some((host) => !!host && host.toLowerCase() === hostname.toLowerCase());
+    }
+
+    /**
+     * Returns the query params of the current page that the editor does not own,
+     * such as a filter a page link added.
+     *
+     * `pageLoad` merges new params over the current ones, so these would otherwise
+     * survive every later link navigation. Setting them to `undefined` clears
+     * them: `undefined` values are left out of both the Page API request and the
+     * admin URL. Editor params (language, persona, mode, variant, device…) are not
+     * returned, so they still follow the editor.
+     *
+     * @return {string[]} The keys of the page-owned params
+     * @memberof EditEmaEditorComponent
+     */
+    #pageOwnedParamKeys(): string[] {
+        const editorKeys = new Set<string>([
+            ...Object.values(DotPageAssetKeys),
+            EXPERIMENT_RETURN_PARAM,
+            'device',
+            'orientation',
+            'seo'
+        ]);
+
+        return Object.keys(this.uveStore.pageParams() ?? {}).filter((key) => !editorKeys.has(key));
     }
 
     /**
@@ -1596,30 +1734,48 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Handles the edit of a VTL file. `VTLFile` only carries `inode`/`name` (it comes from the
-     * client's postMessage payload), not `contentType`, so `openContentForEdit`'s flag check can't
-     * run on it directly — the full contentlet is resolved by inode first. Falls back to the legacy
-     * dialog if that lookup fails (network/permissions), matching this codebase's established
-     * "swallow the error, keep editing working via the legacy editor" fallback pattern.
+     * Handles the edit of a VTL file: opens its source in Monaco, in the Edit Code side panel.
+     *
+     * `VTLFile` only carries `inode`/`name` (it comes from the client's postMessage payload), so the
+     * full contentlet is resolved by inode first: `toSourceEditorRequest` needs its type, extension
+     * and name to decide whether the source editor handles it. Who may edit the source is decided
+     * before opening, by the same rule as Content Drive's row menu, from the server's lock answer
+     * fetched alongside.
+     *
+     * A file the source editor does not handle, or one the user cannot edit, goes to the content
+     * editor as before, which shows what the user may see. Falls back to the legacy dialog if the
+     * file lookup fails (network/permissions), matching this codebase's established "swallow the
+     * error, keep editing working via the legacy editor" fallback pattern.
      *
      * @param {VTLFile} vtlFile - The VTL file to be edited.
      * @memberof EditEmaEditorComponent
      */
     handleEditVTL(vtlFile: VTLFile) {
-        this.dotContentletService
-            .getContentletByInode(vtlFile.inode)
+        forkJoin({
+            contentlet: this.dotContentletService.getContentletByInode(vtlFile.inode),
+            // A failed lock check is an unknown answer, so it reads as "cannot edit the source".
+            lock: this.dotContentletService.canLock(vtlFile.inode).pipe(catchError(() => of(null)))
+        })
             .pipe(
                 take(1),
                 takeUntilDestroyed(this.destroyRef),
                 catchError(() => of(null))
             )
-            .subscribe((contentlet) => {
-                if (!contentlet) {
+            .subscribe((result) => {
+                if (!result) {
                     this.dialog?.editVTLContentlet(vtlFile);
                     return;
                 }
 
-                this.openContentForEdit(contentlet);
+                const { contentlet, lock } = result;
+                const request = lock ? toSourceEditorRequest(contentlet, lock) : null;
+
+                if (!request) {
+                    this.openContentForEdit(contentlet);
+                    return;
+                }
+
+                this.$sourceEditorPanel.set(request);
             });
     }
 

@@ -814,7 +814,24 @@ describe('DotUveActionsHandlerService – INIT_INLINE_EDITING permission gate (#
         return { document: doc } as unknown as Window;
     };
 
-    const fireBlockEditor = (canEdit?: string) => {
+    /**
+     * A cross-origin iframe's window, as the browser exposes it to the parent:
+     * reading `document` throws a SecurityError instead of returning null.
+     */
+    const buildCrossOriginContentWindow = (): Window =>
+        Object.defineProperty({ postMessage: vi.fn() }, 'document', {
+            get: () => {
+                throw new DOMException(
+                    "Failed to read a named property 'document' from 'Window'",
+                    'SecurityError'
+                );
+            }
+        }) as unknown as Window;
+
+    const fireBlockEditor = (
+        canEdit?: string,
+        contentWindow: Window = buildContentWindow(canEdit)
+    ) => {
         service.handleAction(
             {
                 action: DotCMSUVEAction.INIT_INLINE_EDITING,
@@ -828,7 +845,7 @@ describe('DotUveActionsHandlerService – INIT_INLINE_EDITING permission gate (#
                 dialog: {} as never,
                 blockSidebar: blockSidebar as never,
                 inlineEditingService: inlineEditingService as never,
-                contentWindow: buildContentWindow(canEdit),
+                contentWindow,
                 host: 'http://localhost',
                 onCopyContent: () => of({}) as never
             }
@@ -873,5 +890,15 @@ describe('DotUveActionsHandlerService – INIT_INLINE_EDITING permission gate (#
         fireBlockEditor(undefined);
 
         expect(blockSidebar.open).toHaveBeenCalled();
+    });
+
+    it('should open the block editor sidebar when the iframe is cross-origin (#37820)', () => {
+        // Headless apps are served from another origin, so the iframe document
+        // cannot be read. That must fail open like a missing attribute, not
+        // throw and leave the click doing nothing.
+        expect(() => fireBlockEditor(undefined, buildCrossOriginContentWindow())).not.toThrow();
+
+        expect(blockSidebar.open).toHaveBeenCalled();
+        expect(messageService.add).not.toHaveBeenCalled();
     });
 });

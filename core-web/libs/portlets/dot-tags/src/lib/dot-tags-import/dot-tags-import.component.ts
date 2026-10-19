@@ -45,6 +45,10 @@ export class DotTagsImportComponent {
         this.errorMessage.set(null);
     }
 
+    /**
+     * Uploads the selected CSV. Closes the dialog with the result when no row failed
+     * (the list then shows the toast); otherwise keeps it open with an inline summary.
+     */
     importFile(): void {
         const file = this.selectedFile();
         if (!file) {
@@ -66,21 +70,31 @@ export class DotTagsImportComponent {
             )
             .subscribe((response) => {
                 this.importing.set(false);
+                const result = response.entity;
 
-                if (!response.entity?.success) {
+                // Gate on failureCount rather than `success`: how the backend computes
+                // `success` for duplicate-only imports has changed before, while failed
+                // rows are always counted in failureCount.
+                if (!result || result.failureCount > 0) {
+                    const successCount = result?.successCount ?? 0;
+                    const duplicateCount = result?.duplicateCount ?? 0;
+                    const failureCount = result?.failureCount ?? 0;
+
+                    // Sum the counts: the backend's totalRows includes the CSV header line.
                     this.errorMessage.set(
                         this.#dotMessageService.get(
                             'tags.import.partial-success',
-                            `${response.entity?.successCount ?? 0}`,
-                            `${response.entity?.totalRows ?? 0}`,
-                            `${response.entity?.failureCount ?? 0}`
+                            `${successCount}`,
+                            `${successCount + duplicateCount + failureCount}`,
+                            `${failureCount}`,
+                            `${duplicateCount}`
                         )
                     );
 
                     return;
                 }
 
-                this.#ref.close(response.entity);
+                this.#ref.close(result);
             });
     }
 

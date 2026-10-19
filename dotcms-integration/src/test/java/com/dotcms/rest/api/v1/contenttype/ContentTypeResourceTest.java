@@ -39,6 +39,7 @@ import com.dotcms.util.pagination.ContentTypesPaginator;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import io.vavr.control.Try;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -627,5 +628,40 @@ public class ContentTypeResourceTest {
 
 			return true;
 		}
+	}
+
+	/**
+	 * Method to test: {@link ContentTypeResource#createType}
+	 * Given Scenario: a DOTASSET type is created with its fields in one request, one of them a
+	 * text field named {@code width} explicitly, the name of a whole-number property every asset
+	 * field offers directly. The QA report on #34540 used a whole number, which is accepted.
+	 * ExpectedResult: 400 and nothing is created: the type is saved in one transaction with its
+	 * fields, so refusing the field must not leave the type behind without it.
+	 */
+	@Test
+	public void test_createType_withFieldNamedLikeAnAssetProperty_Return400() throws Exception {
+		final ContentTypeResource resource = new ContentTypeResource();
+		final ContentTypeForm.ContentTypeFormDeserialize deserializer =
+				new ContentTypeForm.ContentTypeFormDeserialize();
+		final String variable = "PropertyCollisionTest" + System.currentTimeMillis();
+		final String json = "{"
+				+ "\"clazz\": \"com.dotcms.contenttype.model.type.ImmutableDotAssetContentType\","
+				+ "\"name\": \"" + variable + "\", \"variable\": \"" + variable + "\","
+				+ "\"host\": \"SYSTEM_HOST\","
+				+ "\"fields\": [{"
+				+ "\"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\","
+				+ "\"name\": \"width\", \"variable\": \"width\", \"dataType\": \"TEXT\"}]}";
+
+		final Response response = resource.createType(getHttpRequest(), new EmptyHttpResponse(),
+				deserializer.buildForm(json));
+
+		assertEquals(Response.Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+		final boolean created = Try.of(() -> APILocator.getContentTypeAPI(APILocator.systemUser())
+				.find(variable)).isSuccess();
+		if (created) {
+			APILocator.getContentTypeAPI(APILocator.systemUser()).delete(
+					APILocator.getContentTypeAPI(APILocator.systemUser()).find(variable));
+		}
+		assertFalse("a refused field must not leave its content type behind", created);
 	}
 }

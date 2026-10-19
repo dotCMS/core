@@ -9,6 +9,7 @@ import {
 import { ActionPayload } from '../../shared/models';
 import { UVEStore } from '../../store/dot-uve.store';
 import { PageSnapshot } from '../../store/features/page/withPage';
+import { PageType } from '../../store/models';
 import { UveIframeMessengerService } from '../iframe-messenger/uve-iframe-messenger.service';
 
 /**
@@ -48,10 +49,18 @@ export class UveOptimisticSaveService {
 
             this.#uveStore.setPageAsset({ pageAsset: updated });
 
-            const clientResponse = this.#uveStore.pageAsset()?.clientResponse;
+            const updatedPage = this.#uveStore.pageAsset();
+            const canPush =
+                this.#uveStore.pageType() === PageType.TRADITIONAL ||
+                updatedPage?.source === 'graphql';
 
-            if (clientResponse) {
-                this.#iframeMessenger.sendPageData(clientResponse);
+            if (canPush && updatedPage?.clientResponse) {
+                this.#iframeMessenger.sendPageData(updatedPage.clientResponse);
+            } else if (!canPush) {
+                // Never push a REST-sourced asset to a headless client — see #37097. Tell it
+                // to reload itself instead, so it re-syncs rather than being left showing a
+                // stale optimistic edit.
+                this.#iframeMessenger.reloadPage();
             }
         } catch (error) {
             console.error('Error updating iframe optimistically:', error);

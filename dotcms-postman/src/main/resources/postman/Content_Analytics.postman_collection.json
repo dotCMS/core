@@ -130,7 +130,7 @@
                     "header": [],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n    \"siteAuth\": {\n        \"hidden\": false,\n        \"value\": \"{{testSiteAuth}}\"\n    },\n    \"persistenceMode\": {\n        \"value\": \"readwrite\"\n    }\n}",
+                      "raw": "{\n    \"siteAuth\": {\n        \"hidden\": false,\n        \"value\": \"{{testSiteAuth}}\"\n    },\n    \"bearerToken\": {\n        \"value\": \"ci-test-bearer-token\"\n    },\n    \"persistenceMode\": {\n        \"value\": \"readwrite\"\n    }\n}",
                       "options": {
                         "raw": {
                           "language": "json"
@@ -444,7 +444,7 @@
                     "header": [],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n    \"siteAuth\": {\n        \"hidden\": false,\n        \"value\": \"{{testSiteAuth}}\"\n    },\n    \"persistenceMode\": {\n        \"value\": \"readonly\"\n    }\n}",
+                      "raw": "{\n    \"siteAuth\": {\n        \"hidden\": false,\n        \"value\": \"{{testSiteAuth}}\"\n    },\n    \"bearerToken\": {\n        \"value\": \"ci-test-bearer-token\"\n    },\n    \"persistenceMode\": {\n        \"value\": \"readonly\"\n    }\n}",
                       "options": {
                         "raw": {
                           "language": "json"
@@ -650,7 +650,7 @@
                     "header": [],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n    \"siteAuth\": {\n        \"hidden\": false,\n        \"value\": \"{{testSiteAuth}}\"\n    },\n    \"persistenceMode\": {\n        \"value\": \"readwrite\"\n    }\n}",
+                      "raw": "{\n    \"siteAuth\": {\n        \"hidden\": false,\n        \"value\": \"{{testSiteAuth}}\"\n    },\n    \"bearerToken\": {\n        \"value\": \"ci-test-bearer-token\"\n    },\n    \"persistenceMode\": {\n        \"value\": \"readwrite\"\n    }\n}",
                       "options": {
                         "raw": {
                           "language": "json"

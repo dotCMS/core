@@ -8,6 +8,10 @@
 
 **Status:** All four phases (0–3) are now testable end-to-end, **including Phase 3**. The dotCMS query/read layer has been migrated, so application-level reads can be validated against OpenSearch in phases 2 and 3 — not only via the dashboards. The migration is close to complete but still under active QA: **expect to find bugs, and file them** against the QA epic [#35476](https://github.com/dotCMS/core/issues/35476). PR #35632 introduced an **automatic migration shutdown**: when OpenSearch is unreachable or reports the wrong version in Phase ≥ 1, dotCMS resets to Phase 0 by itself and keeps serving from ES — it does **not** crash or hang. The visible effects of that shutdown are two `ERROR` lines + one `WARN` line (there is **no** `FATAL` on the startup path — see **Helpers / H5**). This plan is written for a tester who exercises the system from the outside; the test cases live in **Groups 1–16** below.
 
+> **Migrating a real customer instance?** This plan exercises the migration in a lab. The
+> step-by-step operator procedure lives in
+> [`OPENSEARCH_MIGRATION_RUNBOOK.md`](OPENSEARCH_MIGRATION_RUNBOOK.md).
+
 ---
 
 ## Abstract
@@ -34,7 +38,7 @@ services and ports is in **Environment**; the limited-user (non-admin OS) varian
 | `OS_ENDPOINTS` | URL of the OpenSearch (new engine) cluster. Inside the lab network it is `https://opensearch3:9200`; from your machine the same cluster is `https://localhost:9201`. Must be a **separate** instance from ES — pointing it at the ES URL or at the ES address is what the safety guards in Groups 1–2 detect. |
 | `OS_AUTH_TYPE` | Authentication scheme dotCMS uses to talk to OpenSearch (`BASIC` for these cases). |
 | `OS_AUTH_BASIC_USER` / `OS_AUTH_BASIC_PASSWORD` | Credentials dotCMS uses for OpenSearch. The lab stack provisions the restricted `dotcms-es-user` on both engines and connects dotCMS with it by default (Group 16 exercises that path explicitly); its password is the `$ES_USER_PW` value in the compose file. An `admin` account exists too — `admin`/`admin` on the old engine, `$OS_ADMIN_PW` on the new one — but that is the direct-`curl` credential, not what dotCMS authenticates with. |
-| `OS_TLS_ENABLED` | Whether the OpenSearch connection uses TLS (`false` for the open dev stack; the limited-user stack uses HTTPS plus `OS_TLS_TRUST_SELF_SIGNED=true`). |
+| `OS_TLS_ENABLED` | Whether the OpenSearch connection uses TLS. The lab serves HTTPS with a self-signed certificate, so set it to `true` together with `OS_TLS_TRUST_SELF_SIGNED=true`. |
 
 > A phase change is re-read on each routing decision, so the **routing** (which engine gets writes /
 > serves reads) takes effect without a restart; every cluster node must carry the same value. **But the
@@ -158,7 +162,8 @@ OS_ENDPOINTS=https://localhost:9201
 OS_AUTH_TYPE=BASIC
 OS_AUTH_BASIC_USER=dotcms-es-user
 OS_AUTH_BASIC_PASSWORD=<the $ES_USER_PW value from the compose file>
-OS_TLS_ENABLED=false
+OS_TLS_ENABLED=true
+OS_TLS_TRUST_SELF_SIGNED=true
 ```
 
 ### Multi-node setup (Group 3)

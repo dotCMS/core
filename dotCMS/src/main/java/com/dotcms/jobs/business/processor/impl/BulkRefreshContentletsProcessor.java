@@ -61,7 +61,7 @@ import javax.enterprise.context.Dependent;
  * @author dotCMS
  */
 @Dependent
-@Queue("bulkRefreshContentlets")
+@Queue(value = "bulkRefreshContentlets", genericEntry = true)
 @NoRetryPolicy
 public class BulkRefreshContentletsProcessor implements JobProcessor, Validator, Cancellable {
 

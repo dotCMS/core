@@ -1,6 +1,7 @@
 package com.dotmarketing.business;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -331,6 +332,162 @@ public class LayoutAPITest extends IntegrationTestBase {
         final Layout gettingStartedLayout = layoutAPI.findGettingStartedLayout();
         layoutAPI.addLayoutForUser(gettingStartedLayout,null);
     }
-    
 
+    // ==================== #37353: Getting Started lookup resolves by fixed id ====================
+
+    /** Puts the product's Getting Started section back to its defaults. */
+    private static void resetGettingStarted() throws DotDataException {
+        deleteGettingStartedLayout();
+        layoutAPI.findGettingStartedLayout();
+    }
+
+    /**
+     * Method to test: {@link LayoutAPI#findGettingStartedLayout()}
+     * Given: the Getting Started section was renamed, re-iconed and moved
+     * Expected: the lookup returns the section as edited and does not rewrite it
+     */
+    @Test
+    public void findGettingStartedLayout_keepsRenamedIconedMovedSection() throws DotDataException {
+        resetGettingStarted();
+        try {
+            final Layout edited = layoutAPI.findLayout(LayoutAPI.GETTING_STARTED_LAYOUT_ID);
+            edited.setName("Onboarding " + UUIDGenerator.shorty());
+            edited.setDescription("rocket_launch");
+            edited.setTabOrder(777777);
+            layoutAPI.saveLayout(edited);
+
+            final Layout resolved = layoutAPI.findGettingStartedLayout();
+
+            assertEquals(LayoutAPI.GETTING_STARTED_LAYOUT_ID, resolved.getId());
+            assertEquals(edited.getName(), resolved.getName());
+            assertEquals("rocket_launch", resolved.getDescription());
+            assertEquals(777777, resolved.getTabOrder());
+            assertEquals(List.of("starter"), resolved.getPortletIds());
+            final Layout stored = layoutAPI.findLayout(LayoutAPI.GETTING_STARTED_LAYOUT_ID);
+            assertEquals(edited.getName(), stored.getName());
+            assertEquals(777777, stored.getTabOrder());
+        } finally {
+            resetGettingStarted();
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutAPI#findGettingStartedLayout()}
+     * Given: no section has the fixed id, but a section named "Getting Started" exists (an
+     *        install that predates the fixed id)
+     * Expected: that section is adopted as it is and no second section is created
+     */
+    @Test
+    public void findGettingStartedLayout_adoptsSectionByName_whenFixedIdMissing() throws DotDataException {
+        deleteGettingStartedLayout();
+        final Layout legacy = new LayoutDataGen().name(LayoutAPI.GETTING_STARTED_LAYOUT_NAME)
+                .description("legacy-icon").portletIds("starter", "templates").tabOrder(-5).nextPersisted();
+        try {
+            final Layout resolved = layoutAPI.findGettingStartedLayout();
+
+            assertEquals(legacy.getId(), resolved.getId());
+            assertEquals("legacy-icon", resolved.getDescription());
+            assertEquals(List.of("starter", "templates"), resolved.getPortletIds());
+            final Layout fixed = layoutAPI.findLayout(LayoutAPI.GETTING_STARTED_LAYOUT_ID);
+            assertTrue("a second Getting Started was created", fixed == null || !UtilMethods.isSet(fixed.getId()));
+        } finally {
+            layoutAPI.removeLayout(layoutAPI.findLayout(legacy.getId()));
+            resetGettingStarted();
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutAPI#findGettingStartedLayout()}
+     * Given: neither the fixed id nor the name exists
+     * Expected: the section is created with its defaults
+     */
+    @Test
+    public void findGettingStartedLayout_createsDefaults_whenNeitherExists() throws DotDataException {
+        deleteGettingStartedLayout();
+        try {
+            final Layout resolved = layoutAPI.findGettingStartedLayout();
+
+            assertEquals(LayoutAPI.GETTING_STARTED_LAYOUT_ID, resolved.getId());
+            assertEquals(LayoutAPI.GETTING_STARTED_LAYOUT_NAME, resolved.getName());
+            assertEquals("whatshot", resolved.getDescription());
+            assertEquals(-320000, resolved.getTabOrder());
+            assertEquals(List.of("starter"), resolved.getPortletIds());
+        } finally {
+            resetGettingStarted();
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutAPI#findGettingStartedLayout()}
+     * Given: the Getting Started section exists, renamed, but holds no tools
+     * Expected: the welcome tool is restored and nothing else changes
+     */
+    @Test
+    public void findGettingStartedLayout_restoresStarterTool_whenEmpty_andTouchesNothingElse() throws DotDataException {
+        resetGettingStarted();
+        try {
+            final Layout edited = layoutAPI.findLayout(LayoutAPI.GETTING_STARTED_LAYOUT_ID);
+            edited.setName("Empty GS " + UUIDGenerator.shorty());
+            layoutAPI.saveLayout(edited);
+            layoutAPI.setPortletIdsToLayout(edited, List.of());
+            assertTrue(layoutAPI.loadLayout(edited.getId()).getPortletIds().isEmpty());
+
+            final Layout resolved = layoutAPI.findGettingStartedLayout();
+
+            assertEquals(List.of("starter"), resolved.getPortletIds());
+            assertEquals(edited.getName(), resolved.getName());
+            assertEquals(List.of("starter"), layoutAPI.loadLayout(LayoutAPI.GETTING_STARTED_LAYOUT_ID).getPortletIds());
+        } finally {
+            resetGettingStarted();
+        }
+    }
+
+    // ==================== #37353: setTabOrders writes every position in one transaction ====================
+
+    /**
+     * Method to test: {@link LayoutAPI#setTabOrders(Map)}
+     * Given: three sections and a new position for each
+     * Expected: every position is written and the navigation order follows
+     */
+    @Test
+    public void setTabOrders_writesEveryPosition() throws DotDataException {
+        final Layout a = new LayoutDataGen().name("Pos A " + UUIDGenerator.shorty()).tabOrder(910001).nextPersisted();
+        final Layout b = new LayoutDataGen().name("Pos B " + UUIDGenerator.shorty()).tabOrder(910002).nextPersisted();
+        final Layout c = new LayoutDataGen().name("Pos C " + UUIDGenerator.shorty()).tabOrder(910003).nextPersisted();
+        try {
+            layoutAPI.setTabOrders(Map.of(a.getId(), 910003, b.getId(), 910001, c.getId(), 910002));
+
+            assertEquals(910003, layoutAPI.loadLayout(a.getId()).getTabOrder());
+            assertEquals(910001, layoutAPI.loadLayout(b.getId()).getTabOrder());
+            assertEquals(910002, layoutAPI.loadLayout(c.getId()).getTabOrder());
+            final List<String> tail = layoutAPI.findAllLayouts().stream().map(Layout::getId)
+                    .filter(id -> List.of(a.getId(), b.getId(), c.getId()).contains(id)).collect(java.util.stream.Collectors.toList());
+            assertEquals(List.of(b.getId(), c.getId(), a.getId()), tail);
+        } finally {
+            for (final Layout l : List.of(a, b, c)) {
+                layoutAPI.removeLayout(layoutAPI.findLayout(l.getId()));
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link LayoutAPI#setTabOrders(Map)}
+     * Given: a map holding an id no section has
+     * Expected: the call fails and no position changes
+     */
+    @Test
+    public void setTabOrders_unknownId_writesNothing() throws DotDataException {
+        final Layout a = new LayoutDataGen().name("Pos X " + UUIDGenerator.shorty()).tabOrder(910011).nextPersisted();
+        try {
+            try {
+                layoutAPI.setTabOrders(Map.of(a.getId(), 910099, "no-such-" + UUIDGenerator.shorty(), 1));
+                Assert.fail("unknown id accepted");
+            } catch (final DotDataException expected) {
+                // ok
+            }
+            assertEquals(910011, layoutAPI.loadLayout(a.getId()).getTabOrder());
+        } finally {
+            layoutAPI.removeLayout(layoutAPI.findLayout(a.getId()));
+        }
+    }
 }

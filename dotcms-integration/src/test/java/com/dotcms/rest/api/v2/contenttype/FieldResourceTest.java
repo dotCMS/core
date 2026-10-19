@@ -25,6 +25,7 @@ import com.dotcms.contenttype.model.field.HiddenField;
 import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
@@ -40,6 +41,7 @@ import com.dotcms.contenttype.model.field.TimeField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
+import com.dotcms.contenttype.model.type.DotAssetContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -2570,6 +2572,48 @@ public class FieldResourceTest {
             );
         } catch (IOException e) {
             return null;
+        }
+    }
+
+    /**
+     * Method to test: {@link FieldResource#createContentTypeField}
+     * Given Scenario: a new text field is added to an asset type with the explicit variable
+     * {@code width}, the name of a whole-number property every asset field offers directly
+     * ExpectedResult: 400 naming the variable, and the field is not created. A 500 would read as a
+     * server failure, not as a request the caller can correct. See #34540.
+     */
+    @Test
+    public void testCreateFieldNamedLikeAnAssetProperty_Return400() throws Exception {
+        final WebResource webResourceThatReturnsAdminUser = mock(WebResource.class);
+        final InitDataObject dataObject = mock(InitDataObject.class);
+        when(dataObject.getUser()).thenReturn(APILocator.systemUser());
+        when(webResourceThatReturnsAdminUser
+                .init(nullable(String.class), any(HttpServletRequest.class), any(HttpServletResponse.class),
+                        anyBoolean(), nullable(String.class))).thenReturn(dataObject);
+        final FieldResource resource = new FieldResource(webResourceThatReturnsAdminUser,
+                APILocator.getContentTypeFieldAPI());
+
+        final String variable = "assetPropertyTest" + System.currentTimeMillis();
+        final ContentType assetType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(
+                ContentTypeBuilder.builder(DotAssetContentType.class).name(variable)
+                        .variable(variable).build());
+        try {
+            final String jsonField = "{"
+                    + "\"clazz\": \"" + ImmutableTextField.class.getCanonicalName() + "\","
+                    + "\"name\": \"width\", \"variable\": \"width\", \"dataType\": \"TEXT\","
+                    + "\"contentTypeId\": \"" + assetType.id() + "\"}";
+
+            final Response response = resource.createContentTypeField(assetType.id(), jsonField,
+                    getHttpRequest(), new EmptyHttpResponse());
+
+            assertEquals(400, response.getStatus());
+            assertTrue("the error must name the variable: " + response.getEntity(),
+                    response.getEntity().toString().contains("width"));
+            assertFalse("the refused field must not have been created",
+                    APILocator.getContentTypeFieldAPI().byContentTypeId(assetType.id()).stream()
+                            .anyMatch(field -> "width".equals(field.variable())));
+        } finally {
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(assetType);
         }
     }
 

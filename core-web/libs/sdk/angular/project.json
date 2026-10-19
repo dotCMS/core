@@ -7,17 +7,18 @@
     "tags": [],
     "targets": {
         "build": {
-            "executor": "@nx/angular:package",
+            "metadata": {
+                "description": "Builds the published package with the Angular pinned in toolchain/ (the SDK's supported floor), not core-web's. Do not switch back to @nx/angular:package: it compiles with core-web's Angular, which makes the package unusable on older Angular versions. See toolchain/README.md."
+            },
+            "executor": "nx:run-commands",
             "outputs": ["{workspaceRoot}/dist/{projectRoot}"],
             "defaultConfiguration": "production",
             "options": {
-                "project": "libs/sdk/angular/ng-package.json",
-                "tsConfig": "libs/sdk/angular/tsconfig.lib.json"
+                "command": "node libs/sdk/angular/toolchain/build.mjs",
+                "cwd": "{workspaceRoot}"
             },
             "configurations": {
-                "production": {
-                    "tsConfig": "libs/sdk/angular/tsconfig.lib.prod.json"
-                },
+                "production": {},
                 "development": {}
             }
         }

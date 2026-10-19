@@ -68,8 +68,40 @@ export const dotcmsContentTypeBasicMock = {
     metadata: {}
 } as unknown as DotCMSContentType;
 
+/**
+ * A minimal row field, used as the neutral filler in the layout fixtures below.
+ *
+ * It is a ROW rather than "no type in particular": `EMPTY_SYSTEM_FIELD` is a template without
+ * discriminants, and a content type field must be one concrete kind — see issue #37670.
+ */
 export const dotcmsContentTypeFieldBasicMock: DotCMSContentTypeField = {
-    ...EMPTY_SYSTEM_FIELD
+    ...EMPTY_SYSTEM_FIELD,
+    clazz: DotCMSClazzes.ROW,
+    fieldType: DotCMSFieldTypes.ROW
+};
+
+/**
+ * The column divider the layout fixtures below are compared against.
+ *
+ * Deliberately a fixed value rather than `createFakeColumnField()`: `createFakeBaseField` fills
+ * ids, names and dates from faker, so every call returns a different object. `fieldsWithBreakColumn`
+ * is fed to the component and `fieldsBrokenWithColumns` is what the emitted layout is compared to —
+ * two independent faker calls can never be deep-equal, and the column the component *creates* when
+ * it breaks one comes from `FieldUtil`'s own `EMPTY_SYSTEM_FIELD`-based constant, which carries
+ * none of those values. Same shape as that constant, so both sides match.
+ */
+const columnDividerMock: ContentTypeColumnField = {
+    ...EMPTY_SYSTEM_FIELD,
+    clazz: DotCMSClazzes.COLUMN,
+    fieldType: DotCMSFieldTypes.COLUMN
+};
+
+/** Fixed for the same reason as {@link columnDividerMock}. */
+const columnBreakMock: ContentTypeColumnBreakField = {
+    ...EMPTY_SYSTEM_FIELD,
+    clazz: DotCMSClazzes.COLUMN_BREAK,
+    fieldType: DotCMSFieldTypes.COLUMN_BREAK,
+    name: 'Column'
 };
 
 export const fieldsWithBreakColumn: DotCMSContentTypeLayoutRow[] = [
@@ -79,19 +111,12 @@ export const fieldsWithBreakColumn: DotCMSContentTypeLayoutRow[] = [
         },
         columns: [
             {
-                columnDivider: {
-                    ...dotcmsContentTypeFieldBasicMock,
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField'
-                },
+                columnDivider: { ...columnDividerMock },
                 fields: [
                     {
                         ...dotcmsContentTypeFieldBasicMock
                     },
-                    {
-                        ...dotcmsContentTypeFieldBasicMock,
-                        clazz: 'contenttype.column.break',
-                        name: 'Column'
-                    },
+                    { ...columnBreakMock },
                     {
                         ...dotcmsContentTypeFieldBasicMock
                     }
@@ -108,10 +133,7 @@ export const fieldsBrokenWithColumns: DotCMSContentTypeLayoutRow[] = [
         },
         columns: [
             {
-                columnDivider: {
-                    ...dotcmsContentTypeFieldBasicMock,
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField'
-                },
+                columnDivider: { ...columnDividerMock },
                 fields: [
                     {
                         ...dotcmsContentTypeFieldBasicMock
@@ -119,10 +141,7 @@ export const fieldsBrokenWithColumns: DotCMSContentTypeLayoutRow[] = [
                 ]
             },
             {
-                columnDivider: {
-                    ...dotcmsContentTypeFieldBasicMock,
-                    clazz: 'com.dotcms.contenttype.model.field.ImmutableColumnField'
-                },
+                columnDivider: { ...columnDividerMock },
                 fields: [
                     {
                         ...dotcmsContentTypeFieldBasicMock

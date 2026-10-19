@@ -7,14 +7,15 @@ description: |
   The action restores the `maven-repo` artifact produced by the build phase,
   resolves the project version, then delegates to
   `.github/scripts/publish-to-s3/publish.sh maven`, which uploads every
-  com/dotcms module for that version and regenerates maven-metadata.xml.
+  module under com/dotcms (including nested groups) for that version and
+  regenerates maven-metadata.xml.
 
 inputs:
   version:
     description: 'Version of the artifacts to deploy. Defaults to the project version in the checked-out POM.'
     required: false
   modules:
-    description: 'Comma-separated artifactIds to publish. Defaults to every com/dotcms module with a directory for the version.'
+    description: 'Comma-separated artifactIds to publish across all groups under com/dotcms. Defaults to every module with a directory for the version.'
     required: false
   exclude-ext:
     description: 'Comma-separated file extensions to skip.'

@@ -1,0 +1,51 @@
+{
+    "name": "sdk-events",
+    "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/sdk/events/src",
+    "projectType": "library",
+    "tags": [],
+    "implicitDependencies": ["sdk-types"],
+    "targets": {
+        "build": {
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": [
+                "production",
+                "^production",
+                {
+                    "externalDependencies": ["rollup"]
+                }
+            ]
+        },
+        "typecheck": {
+            "dependsOn": ["^build"]
+        },
+        "nx-release-publish": {
+            "options": {
+                "packageRoot": "dist/libs/sdk/events"
+            }
+        },
+        "lint": {
+            "options": {
+                "args": ["**/*.ts"]
+            }
+        },
+        "build:standalone": {
+            "executor": "nx:run-commands",
+            "cache": true,
+            "dependsOn": ["^build"],
+            "inputs": [
+                "production",
+                "^production",
+                {
+                    "externalDependencies": ["vite"]
+                }
+            ],
+            "outputs": ["{workspaceRoot}/dist/libs/sdk/events-standalone"],
+            "options": {
+                "cwd": "libs/sdk/events",
+                "command": "vite build --config vite.standalone.config.mts"
+            }
+        }
+    }
+}

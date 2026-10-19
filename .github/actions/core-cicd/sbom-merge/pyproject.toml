@@ -1,0 +1,28 @@
+[project]
+name = "sbom-merge"
+version = "0.1.0"
+description = "Merge the frontend npm CycloneDX inventory into the Syft image-scan SBOM for a dotCMS release"
+requires-python = ">=3.14"
+dependencies = [
+    "jsonschema==4.26.0",
+    "pyyaml==6.0.3",
+    "referencing==0.37.0",
+]
+
+[project.scripts]
+sbom-merge = "sbom_merge.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sbom_merge"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -27,6 +27,7 @@
                 (data)="formData = $event"
                 (valid)="formValid = $event"
                 [appConfigured]="apps.sites[0].configured"
+                [appKey]="apps.key"
                 [formFields]="formFields" />
             @if (apps.allowExtraParams) {
                 <div>

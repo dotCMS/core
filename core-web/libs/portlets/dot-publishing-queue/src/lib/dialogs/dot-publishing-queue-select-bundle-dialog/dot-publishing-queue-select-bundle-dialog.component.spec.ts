@@ -9,6 +9,7 @@ import { Subject, of, throwError } from 'rxjs';
 import { Mock, MockInstance, Mocked, vi } from 'vitest';
 
 import { ConfirmationService } from 'primeng/api';
+import { Button } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
 /* eslint-disable @nx/enforce-module-boundaries */
@@ -54,6 +55,15 @@ vi.mock('@dotcms/utils', async () => {
         getDownloadLink: vi.fn(() => ({ click: mockAnchorClick }) as unknown as HTMLAnchorElement)
     };
 });
+
+/** The PrimeNG buttons rendered with the given `data-testid`. */
+const buttonsByTestId = (
+    spectator: Spectator<DotPublishingQueueSelectBundleDialogComponent>,
+    testId: string
+): Button[] =>
+    spectator
+        .queryAll(Button)
+        .filter((button) => button.el.nativeElement.dataset.testid === testId);
 
 describe('DotPublishingQueueSelectBundleDialogComponent', () => {
     let spectator: Spectator<DotPublishingQueueSelectBundleDialogComponent>;
@@ -332,6 +342,13 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
     });
 
     describe('remove asset', () => {
+        it('renders the per-row delete icon with the neutral secondary severity, not danger', () => {
+            spectator.detectChanges();
+            const buttons = buttonsByTestId(spectator, 'pq-select-bundle-asset-delete');
+            expect(buttons.length).toBeGreaterThan(0);
+            buttons.forEach((button) => expect(button.severity).toBe('secondary'));
+        });
+
         it('confirms then calls removeAssetsFromBundle and refetches', () => {
             spectator.detectChanges();
             (service.getBundleAssets as Mock).mockClear();
@@ -388,6 +405,13 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
     });
 
     describe('remove bundles (bulk)', () => {
+        it('renders the Remove button without the red danger severity', () => {
+            spectator.detectChanges();
+            const [button] = buttonsByTestId(spectator, 'pq-select-bundle-remove-btn');
+            expect(button).toBeDefined();
+            expect(button.severity).toBeUndefined();
+        });
+
         it('confirms then calls deleteBundles with the checked ids; auto-selects next bundle if active was deleted', () => {
             spectator.detectChanges();
             spectator.component.onCheckedChange([

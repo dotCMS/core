@@ -11,6 +11,48 @@ describe('DotPermissionsService', () => {
         spectator = createHttp();
     });
 
+    // What the calling user may do to a folder opened from a Content Drive link, so its dialog
+    // follows the same rules as the context menu that would have opened it (#37759, FR-033).
+    describe('getUserAccess', () => {
+        it('should read the edit flags from the asset permissions endpoint', () =>
+            new Promise<void>((done) => {
+                spectator.service.getUserAccess('folder-1').subscribe((access) => {
+                    expect(access).toEqual({ canEdit: true, canEditPermissions: false });
+                    done();
+                });
+
+                spectator
+                    .expectOne(`${ASSET_PERMISSIONS_URL}/folder-1`, HttpMethod.GET)
+                    .flush({ entity: { canEdit: true, canEditPermissions: false } });
+            }));
+
+        // The id comes from a Content Drive URL, so it is encoded into the path (Constitution III,
+        // #37759 T110).
+        it('should encode the asset id into the path', () => {
+            spectator.service.getUserAccess('a/b c').subscribe();
+
+            // Collected and flushed whatever their URL, so a wrong one fails only this test.
+            const requests = spectator.controller.match(() => true);
+            requests.forEach((request) => request.flush({ entity: {} }));
+
+            expect(requests.map(({ request }) => request.url)).toEqual([
+                `${ASSET_PERMISSIONS_URL}/a%2Fb%20c`
+            ]);
+        });
+
+        it('should read an absent flag as not allowed', () =>
+            new Promise<void>((done) => {
+                spectator.service.getUserAccess('folder-1').subscribe((access) => {
+                    expect(access).toEqual({ canEdit: false, canEditPermissions: false });
+                    done();
+                });
+
+                spectator
+                    .expectOne(`${ASSET_PERMISSIONS_URL}/folder-1`, HttpMethod.GET)
+                    .flush({ entity: {} });
+            }));
+    });
+
     describe('canAddChildren', () => {
         it('should request the asset permissions endpoint for the given asset', () => {
             spectator.service.canAddChildren('site-123').subscribe();

@@ -70,6 +70,19 @@ public interface IndexAPI {
     Map<String, IndexStats> getIndicesStats();
 
     /**
+     * Same as {@link #getIndicesStats()}, but a failure to read the engine propagates instead of being
+     * answered with an empty map. For callers that must tell "this engine holds no indices" from "this
+     * engine could not be asked" — the migration readiness report, where confusing the two prescribes
+     * a reindex over an outage (issue #37636). Implementations whose {@code getIndicesStats()} already
+     * propagates need not override it.
+     *
+     * @return a map of index names to their statistics
+     */
+    default Map<String, IndexStats> getIndicesStatsOrThrow() {
+        return getIndicesStats();
+    }
+
+    /**
      * Flushes field and filter caches for the specified indices.
      * This operation can take up to a minute to complete.
      *
@@ -115,6 +128,17 @@ public interface IndexAPI {
      * @return set containing all index names
      */
     Set<String> listIndices();
+
+    /**
+     * Same as {@link #listIndices()}, but a failure to read the engine propagates instead of being
+     * answered with an empty set — see {@link #getIndicesStatsOrThrow()} for why that difference
+     * matters.
+     *
+     * @return set containing all index names
+     */
+    default Set<String> listIndicesOrThrow() {
+        return listIndices();
+    }
 
     /**
      * Checks if the specified index is closed.

@@ -74,3 +74,17 @@
         }
     }
 }
+
+// Positioned within the host's box instead of the viewport. PrimeNG sets `position: fixed` as an
+// inline style on the outlet, so only `!important` outranks it; its `left: 50%` and `bottom` then
+// resolve against the host, which is what centres the stack over the caller's content.
+:host(.dot-status-toast--contained) {
+    position: relative;
+    display: block;
+    // The host covers the content it sits over, so it must not take its clicks either.
+    pointer-events: none;
+
+    ::ng-deep .p-toast {
+        position: absolute !important;
+    }
+}

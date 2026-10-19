@@ -258,6 +258,13 @@ export const formatWarnings = (warnings: VelocityWarning[]): string => {
 /**
  * Static catalog of example snippets shown in the help popover. Titles and
  * descriptions are i18n keys resolved with DotMessagePipe at render time.
+ *
+ * Every reference here must resolve against a real dotCMS instance: the VTL
+ * endpoint reports unresolved ones back as NULL_METHOD_RESULT warnings, and an
+ * example that greets the user with a warning banner reads as a broken tool.
+ * Notably, file size lives on the binary field (`$f.fileAsset.fileSize`, a
+ * metadata-backed getter on FileAsset) — `$f.fileSize` is NOT a contentlet
+ * property and resolves to null, unlike `fileName` and `mimeType`.
  */
 export const VELOCITY_HELP_EXAMPLES: VelocityHelpExample[] = [
     {
@@ -278,6 +285,6 @@ export const VELOCITY_HELP_EXAMPLES: VelocityHelpExample[] = [
     {
         title: 'velocityPlayground.help.example.pullFiles',
         description: 'velocityPlayground.help.example.pullFiles.desc',
-        code: '#set($files = $dotcontent.pull("+contentType:FileAsset +live:true +conhost:$host.identifier", 5, "modDate desc"))\n#foreach($f in $files)\n  - $f.fileName  ($f.fileSize bytes, $f.mimeType)\n#end'
+        code: '#set($files = $dotcontent.pull("+contentType:FileAsset +live:true +conhost:$host.identifier", 5, "modDate desc"))\n#foreach($f in $files)\n  - $f.fileName  ($f.fileAsset.fileSize bytes, $f.mimeType)\n#end'
     }
 ];

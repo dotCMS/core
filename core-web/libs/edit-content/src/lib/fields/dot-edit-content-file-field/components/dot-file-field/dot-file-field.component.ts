@@ -30,8 +30,10 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
+    ContentTypeBinaryField,
+    ContentTypeFileField,
+    ContentTypeImageField,
     DotCMSContentlet,
-    DotCMSContentTypeField,
     DotCMSTempFile,
     DotFileMetadata,
     DotGeneratedAIImage,
@@ -69,11 +71,7 @@ import { DotFileFieldUiMessageComponent } from './../dot-file-field-ui-message/d
 import { DotFormFileEditorComponent } from './../dot-form-file-editor/dot-form-file-editor.component';
 import { DotFormImportUrlComponent } from './../dot-form-import-url/dot-form-import-url.component';
 
-import {
-    INPUT_TYPE,
-    INPUT_TYPES,
-    UploadedFile
-} from '../../../../models/dot-edit-content-file.model';
+import { INPUT_TYPES, UploadedFile } from '../../../../models/dot-edit-content-file.model';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 import { IMAGE_EDITOR_LAUNCHER } from '../../../shared/image-editor-launcher';
 
@@ -197,7 +195,14 @@ export class DotFileFieldComponent
      *
      * @memberof DotEditContentFileFieldComponent
      */
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    /**
+     * The three field types this component serves. Narrowing the input here is what lets
+     * `field.fieldType` be passed straight to the store as an INPUT_TYPE, with no assertion:
+     * the arms pin it to exactly 'Binary' | 'File' | 'Image'.
+     */
+    $field = input.required<ContentTypeBinaryField | ContentTypeFileField | ContentTypeImageField>({
+        alias: 'field'
+    });
     /**
      * DotCMS Contentlet
      *
@@ -393,7 +398,7 @@ export class DotFileFieldComponent
 
         this.store.initLoad({
             fieldVariable: field.variable,
-            inputType: field.fieldType as INPUT_TYPE,
+            inputType: field.fieldType,
             systemOptionsOverrides
         });
     }

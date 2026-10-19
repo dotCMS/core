@@ -20,6 +20,15 @@ public final class AuthAccessDeniedUtil {
                 : user.isBackendUser() || user.isAdmin();
     }
 
+    /**
+     * Sends the 403 "no access" page shown when an SSO user signs in but lacks the required access. The page is
+     * flushed before returning, so it is committed as a 403 even when sent from a JAX-RS resource method that
+     * returns {@code void} (the SAML callback), which would otherwise answer an empty 204.
+     *
+     * @param response the response to write the page to
+     * @param user     the user who signed in, shown by email; may be {@code null}
+     * @throws IOException when the page cannot be written
+     */
     public static void sendNoAccessPage(final HttpServletResponse response,
                                         final User user) throws IOException {
         setNoCacheHeaders(response);
@@ -47,6 +56,9 @@ public final class AuthAccessDeniedUtil {
                         + "but this account has not been granted the required permissions. "
                         + "Contact your administrator to request access.</p>"
                         + "</div></body></html>");
+        // Commit the page now: the SAML callback is a JAX-RS resource method returning void, and if the
+        // response is still only buffered when it returns, Jersey answers 204 No Content and drops the page.
+        response.flushBuffer();
     }
 
     public static void setNoCacheHeaders(final HttpServletResponse response) {

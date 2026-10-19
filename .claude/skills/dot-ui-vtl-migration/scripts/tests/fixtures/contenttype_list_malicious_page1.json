@@ -1,0 +1,5 @@
+{
+  "entity": [
+    { "id": "ct-malicious", "variable": "../../evil" }
+  ]
+}

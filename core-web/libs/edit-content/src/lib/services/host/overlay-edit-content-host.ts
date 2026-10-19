@@ -2,7 +2,7 @@ import { Subject } from 'rxjs';
 
 import { Injectable, OnDestroy, computed, inject, signal } from '@angular/core';
 
-import { DynamicDialogConfig } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -41,8 +41,13 @@ import {
 export class OverlayEditContentHost implements EditContentHost, OnDestroy {
     readonly #relatedNav = inject(DotRelatedContentNavigationStore);
     readonly #config = inject(DynamicDialogConfig, { optional: true });
+    readonly #dialogRef = inject(DynamicDialogRef, { optional: true });
     readonly #navigation$ = new Subject<InPlaceNavigationRequest>();
     readonly #saved$ = new Subject<DotCMSContentlet>();
+    readonly #left$ = new Subject<void>();
+
+    /** Set once the edited content is deleted; later save reports would point at content that is gone. */
+    #contentDeleted = false;
 
     /** Per-instance trail; starts empty and never touches the shared root store. */
     readonly #trailInodes = signal<string[]>([]);
@@ -55,27 +60,49 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
     /** Emits each successful save so the dialog can notify its opener. */
     readonly saved$ = this.#saved$.asObservable();
 
+    /**
+     * Emits when the edited content was deleted and the overlay must close. Overlays not opened
+     * through `DialogService` (the side panel) have no `DynamicDialogRef`, so they close on this.
+     */
+    readonly left$ = this.#left$.asObservable();
+
     readonly trail = computed<DotRelatedContentCrumb[]>(() =>
         toRelatedContentCrumbs(this.#trailInodes(), this.#relatedNav.titleCache())
     );
 
+    /**
+     * The content to open, read from the dialog config: an inode to edit, or a content type to
+     * create, with the folder and the language a new content starts in when the opener gave them.
+     */
     resolveIdentity(): EditContentIdentity {
         const data = this.#config?.data as EditContentDialogData | undefined;
 
         return {
             inode: data?.contentletInode,
             contentTypeId: data?.contentTypeId,
-            folderPath: data?.folderPath
+            folderPath: data?.folderPath,
+            languageId: data?.languageId
         };
     }
 
     reportSaved(contentlet: DotCMSContentlet): void {
+        // A delete also flags a successful action; it must not reach the opener as a save.
+        if (this.#contentDeleted) {
+            return;
+        }
+
         this.#saved$.next(contentlet);
     }
 
-    reloadContent(inode: string): void {
-        // Locale switch: reload the content, keep the current trail (no `trail`).
-        this.#navigation$.next({ inode });
+    reloadContent(inode: string, languageId?: number): void {
+        // Locale switch: reload the content, keep the current trail (no `trail`). The language
+        // is only reported once the layout runs the reload (`reportLanguage`).
+        this.#navigation$.next(languageId ? { inode, languageId } : { inode });
+    }
+
+    /** Reports the language on {@link languageChanged$}. */
+    reportLanguage(languageId: number): void {
+        this.#languageChanged$.next(languageId);
     }
 
     setTrail(inodes: string[]): void {
@@ -118,6 +145,22 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
         this.#navigation$.next({ inode });
     }
 
+    readonly #languageChanged$ = new Subject<number>();
+
+    /**
+     * A locale switch loaded another language of the content. The opener can name it in its URL,
+     * so a refresh reopens that language (#37759, FR-020).
+     */
+    readonly languageChanged$ = this.#languageChanged$.asObservable();
+
+    leaveDeletedContent(_contentType: string): void {
+        // The overlay has no listing to return to; just close it. The DialogService dialog closes
+        // through its ref; the side panel (no ref in its injector) closes on `left$`.
+        this.#contentDeleted = true;
+        this.#left$.next();
+        this.#dialogRef?.close();
+    }
+
     goToRelatedContent(current: DotRelatedContentCrumb, target: DotRelatedContentCrumb): void {
         // Compute the next trail from THIS host's current trail but do not commit it
         // yet — the layout commits it (setTrail) only after the dirty check passes.
@@ -132,5 +175,6 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
     ngOnDestroy(): void {
         this.#navigation$.complete();
         this.#saved$.complete();
+        this.#left$.complete();
     }
 }

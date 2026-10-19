@@ -1,0 +1,20 @@
+{
+  "entity": {
+    "contentTook": 1,
+    "jsonObjectView": {
+      "contentlets": [
+        {
+          "contentType": "EvergreenState",
+          "identifier": "evg-1",
+          "title": "evergreen-state",
+          "state": "{\"latest\":\"26.09.17-02\",\"standard\":\"26.09.03-01\",\"trailing\":\"26.08.20-01\",\"tainted\":[\"26.08.28-01\"]}"
+        }
+      ]
+    },
+    "queryTook": 1,
+    "resultsSize": 1
+  },
+  "errors": [],
+  "messages": [],
+  "pagination": null
+}

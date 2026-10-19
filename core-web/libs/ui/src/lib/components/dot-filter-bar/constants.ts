@@ -17,12 +17,22 @@
  * adjacent because both ask where content is in its lifecycle, and `workflow` derives its scheme
  * list from the content-type selection so it must follow `contentType`. `fieldFilters` trails
  * because its chips are dynamic and come and go.
+ *
+ * `goal`, `schedule` and `createdBy` join for the Experiments listing (#37307), which is the first
+ * surface here that is not browsing content. They sit after `status` — which that listing reuses
+ * for an experiment's own lifecycle, the same question the slot already names — and before
+ * `language`, reading as what the experiment measures, when it runs, and who made it. Their
+ * arrival is what turns this list from "the order for browsing content" into "the order for every
+ * surface"; the rule is a subsequence, so no existing toolbar changes.
  */
 export const DOT_CANONICAL_FILTER_ORDER = [
     'sharedAssets',
     'contentType',
     'workflow',
     'status',
+    'goal',
+    'schedule',
+    'createdBy',
     'language',
     'fieldFilters'
 ] as const;

@@ -6,6 +6,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import {
     CanDeactivateGuardService,
+    DotActionUrlService,
     DotAnalyticsTrackerService,
     DotContentletLockerService,
     DotESContentService,
@@ -32,7 +33,6 @@ import {
 import { WINDOW } from '@dotcms/utils';
 
 import { DotEmaShellComponent } from './dot-ema-shell/dot-ema-shell.component';
-import { DotActionUrlService } from './services/dot-action-url/dot-action-url.service';
 import { DotPageApiService } from './services/dot-page-api/dot-page-api.service';
 import { editEmaGuard } from './services/guards/edit-ema.guard';
 import { UVEStore } from './store/dot-uve.store';

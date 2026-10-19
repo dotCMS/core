@@ -7,9 +7,15 @@ import {
     signal
 } from '@angular/core';
 
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
+import {
+    ContentTypeBinaryField,
+    DotCMSClazzes,
+    DotCMSContentlet,
+    DotCMSContentTypeField,
+    DotCMSDataTypes,
+    DotCMSFieldTypes
+} from '@dotcms/dotcms-models';
 
-import { INPUT_TYPES } from '../../../../models/dot-edit-content-file.model';
 import { DotFileFieldComponent } from '../dot-file-field/dot-file-field.component';
 
 /**
@@ -30,13 +36,15 @@ import { DotFileFieldComponent } from '../dot-file-field/dot-file-field.componen
 @Component({
     selector: 'dot-binary-field-ce-bridge',
     template: `
-        <dot-file-field
-            [field]="$field()"
-            [contentlet]="$contentlet()"
-            [hasError]="false"
-            [enableImageEditor]="$imageEditor()"
-            [useLegacyDojoImageEditor]="true"
-            (valueUpdated)="valueUpdated.emit($event)" />
+        @if ($field(); as field) {
+            <dot-file-field
+                [field]="field"
+                [contentlet]="$contentlet()"
+                [hasError]="false"
+                [enableImageEditor]="$imageEditor()"
+                [useLegacyDojoImageEditor]="true"
+                (valueUpdated)="valueUpdated.emit($event)" />
+        }
     `,
     imports: [DotFileFieldComponent],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -45,7 +53,17 @@ export class DotBinaryFieldCeBridgeComponent {
     /** Content type field definition (set imperatively by the legacy JSP). */
     @Input({ required: true })
     set field(value: DotCMSContentTypeField) {
-        this.$field.set({ ...value, fieldType: INPUT_TYPES.Binary });
+        // The bridge exists to render whatever the legacy JSP hands it AS a binary field, so
+        // all three discriminants are forced together — setting `fieldType` alone used to
+        // produce a field whose class said one thing and whose type said another. Inert at
+        // runtime: nothing under `dot-file-field` reads `clazz` or `dataType`, and
+        // `INPUT_TYPES.Binary` and `DotCMSFieldTypes.BINARY` are both `'Binary'`.
+        this.$field.set({
+            ...value,
+            clazz: DotCMSClazzes.BINARY,
+            dataType: DotCMSDataTypes.SYSTEM,
+            fieldType: DotCMSFieldTypes.BINARY
+        });
     }
 
     /** Current contentlet (set imperatively by the legacy JSP). */
@@ -63,7 +81,8 @@ export class DotBinaryFieldCeBridgeComponent {
     /** Emitted as a DOM `valueUpdated` CustomEvent for the legacy editor. */
     @Output() valueUpdated = new EventEmitter<{ value: string; fileName: string }>();
 
-    protected readonly $field = signal<DotCMSContentTypeField>({} as DotCMSContentTypeField);
+    /** Null until the legacy JSP sets it — the template waits rather than rendering a blank field. */
+    protected readonly $field = signal<ContentTypeBinaryField | null>(null);
     protected readonly $contentlet = signal<DotCMSContentlet>({} as DotCMSContentlet);
     protected readonly $imageEditor = signal<boolean>(true);
 }

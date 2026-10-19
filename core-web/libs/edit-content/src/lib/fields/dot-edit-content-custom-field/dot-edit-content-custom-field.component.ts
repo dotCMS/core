@@ -6,8 +6,8 @@ import { DialogModule } from 'primeng/dialog';
 import { InputTextModule } from 'primeng/inputtext';
 
 import {
+    ContentTypeCustomField,
     DotCMSContentlet,
-    DotCMSContentTypeField,
     DotRenderModes,
     NEW_RENDER_MODE_VARIABLE_KEY
 } from '@dotcms/dotcms-models';
@@ -48,11 +48,13 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
     templateUrl: './dot-edit-content-custom-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentCustomFieldComponent extends BaseWrapperField {
+export class DotEditContentCustomFieldComponent extends BaseWrapperField<ContentTypeCustomField> {
     /**
-     * The field to render.
+     * The field to render. Narrowed to the custom-field arm because the native leg hands it to
+     * `dot-native-field`, which only accepts that arm; the dispatcher's `@switch` on `fieldType`
+     * is what guarantees it.
      */
-    $field = input<DotCMSContentTypeField>(null, { alias: 'field' });
+    $field = input.required<ContentTypeCustomField>({ alias: 'field' });
     /**
      * The content type to render the field for.
      */
@@ -63,15 +65,25 @@ export class DotEditContentCustomFieldComponent extends BaseWrapperField {
     $contentlet = input<DotCMSContentlet>(null, { alias: 'contentlet' });
     /**
      * The render mode to use.
+     *
+     * Read the way the backend reads it (trimmed, any case), because the backend decides whether
+     * the field comes with `rendered` HTML at all. Matching only the exact lowercase spelling made
+     * `IFRAME` mount the native component, which then had nothing to show.
      */
     $renderMode = computed(() => {
         const field = this.$field();
         if (!field) return DotRenderModes.IFRAME;
 
-        const renderMode = field.fieldVariables?.find(
-            (variable) => variable.key === NEW_RENDER_MODE_VARIABLE_KEY
-        )?.value;
-        return renderMode || DotRenderModes.IFRAME;
+        const renderMode = field.fieldVariables
+            ?.find((variable) => variable.key === NEW_RENDER_MODE_VARIABLE_KEY)
+            ?.value?.trim()
+            .toLowerCase();
+
+        if (!renderMode || renderMode === DotRenderModes.IFRAME) {
+            return DotRenderModes.IFRAME;
+        }
+
+        return DotRenderModes.COMPONENT;
     });
     /**
      * Whether the render mode is IFRAME.

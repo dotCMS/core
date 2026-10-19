@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.portlet;
 import com.dotcms.exception.ExceptionUtil;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityMapStringStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.WebResource.InitBuilder;
@@ -24,6 +25,12 @@ import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.ws.rs.QueryParam;
 import org.glassfish.jersey.server.JSONP;
@@ -53,8 +60,21 @@ import static com.liferay.portal.model.Portlet.DATA_VIEW_MODE_KEY;
 import static com.liferay.util.StringPool.BLANK;
 
 /**
- * This Resource is for create custom portlets. These kind of custom portlets are to show diff types
- * or content (content types or base types).
+ * REST resource for portlets, the tools of the back-end navigation.
+ * <p>
+ * It manages <b>custom content portlets</b> (tools an admin creates to list the content of
+ * given base types or content types): create, update and delete under {@code /custom}, plus a
+ * single read of one tool's editable configuration under {@code /custom/{portletId}}. Those
+ * operations accept a back-end user who holds the {@code roles}, {@code tools} or
+ * {@code tools-beta} portlet, or a CMS Administrator; the read and the catalog require
+ * {@code tools} or {@code tools-beta}. The delete refuses anything that is not a custom content
+ * tool, so tools shipped with the product cannot be removed through it.
+ * <p>
+ * It also serves the <b>tools catalog</b> ({@code /_catalog}): every portlet that can be placed
+ * in a navigation section, with a localized title and an {@code isCustom} flag, as the Tools
+ * portlet's Available Tools panel shows it. The remaining operations (add a tool to a section
+ * the caller holds, per-role removal, raw portlet lookup, access check, create-content action
+ * URL) keep their original behaviour and gates.
  */
 @Path("/v1/portlet")
 @Tag(name = "Portlets")
@@ -62,6 +82,7 @@ public class PortletResource implements Serializable {
 
     private final WebResource webResource;
     private final PortletAPI portletApi;
+    private final ToolCatalogHelper toolCatalogHelper;
 
     private static final String JSON_RESPONSE_PORTLET_ATTR = "portlet";
 
@@ -75,12 +96,71 @@ public class PortletResource implements Serializable {
 
     @VisibleForTesting
     public PortletResource(WebResource webResource, PortletAPI portletApi) {
+        this(webResource, portletApi, new ToolCatalogHelper(portletApi));
+    }
+
+    @VisibleForTesting
+    public PortletResource(final WebResource webResource, final PortletAPI portletApi,
+                           final ToolCatalogHelper toolCatalogHelper) {
         this.webResource = webResource;
         this.portletApi = portletApi;
+        this.toolCatalogHelper = toolCatalogHelper;
     }
 
     /**
-     * Creates a custom dotCMS Portlet for a given Base Type or Content Type.
+     * Lists every tool that can be placed in a navigation section, for the Tools portlet's
+     * Available Tools panel. Applies the same inclusion rules as the legacy Roles &amp; Tools
+     * picker and sorts by title ignoring letter case. Requires an authenticated back-end user
+     * with access to the {@code tools} or {@code tools-beta} portlet, or the CMS Administrator
+     * role; anyone else gets 401.
+     *
+     * @param request  the current request
+     * @param response the current response
+     * @return the catalog rows wrapped in {@link ResponseEntityToolCatalogView}
+     */
+    @Operation(
+            operationId = "getToolsCatalog",
+            summary = "List the tools that can be placed in a navigation section",
+            description = "Every portlet that can be added to a section, with the same inclusion rules as the "
+                    + "legacy Roles & Tools tool picker: portlets excluded from layouts are omitted, and the old "
+                    + "Languages tool is omitted while FEATURE_FLAG_LOCALES_HIDE_OLD_LANGUAGES_PORTLET is on. "
+                    + "Sorted by title ignoring letter case. Each row carries the id, the localized title and "
+                    + "an isCustom flag that is true only for tools an admin created through New Tool. "
+                    + "Requires an authenticated back-end user with access to the tools or tools-beta portlet, "
+                    + "or the CMS Administrator role."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Catalog retrieved",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityToolCatalogView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - no authenticated back-end user, or the caller holds neither "
+                            + "the tools nor the tools-beta portlet and is not a CMS Administrator",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/_catalog")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response getToolsCatalog(@Context final HttpServletRequest request,
+                                          @Context final HttpServletResponse response) {
+        final User user = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(PortletID.TOOLS.toString(), PortletID.TOOLS_BETA.toString())
+                .init().getUser();
+
+        return Response.ok(new ResponseEntityToolCatalogView(toolCatalogHelper.catalog(user))).build();
+    }
+
+    /**
+     * Creates a custom dotCMS Portlet for a given Base Type or Content Type. Requires an
+     * authenticated back-end user with access to the {@code roles}, {@code tools} or
+     * {@code tools-beta} portlet, or the CMS Administrator role.
      *
      * @param request  The current instance of the {@link HttpServletRequest}.
      * @param formData The {@link CustomPortletForm} containing the information for the new
@@ -88,6 +168,26 @@ public class PortletResource implements Serializable {
      *
      * @return A {@link Response} object with the ID of the new portlet.
      */
+    @Operation(
+            operationId = "saveNew",
+            summary = "Create a custom content tool",
+            description = "Creates a custom content tool that lists the given base types and/or content types. "
+                    + "Requires an authenticated back-end user with access to the roles, tools or tools-beta "
+                    + "portlet, or the CMS Administrator role."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Created; the entity carries the stored portlet id under \"portlet\"",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityMapStringStringView.class))),
+            @ApiResponse(responseCode = "400",
+                    description = "Validation failure (missing name or view mode, unknown content type, ...)",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - no authenticated back-end user, or the caller holds none of the "
+                            + "roles, tools or tools-beta portlets and is not a CMS Administrator",
+                    content = @Content(mediaType = "application/json"))
+    })
     @POST
     @Path("/custom")
     @JSONP
@@ -101,7 +201,7 @@ public class PortletResource implements Serializable {
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
-                .requiredPortlet(PortletID.ROLES.toString())
+                .requiredPortlet(PortletID.ROLES.toString(), PortletID.TOOLS.toString(), PortletID.TOOLS_BETA.toString())
                 .init();
         String portletId = BLANK;
         try {
@@ -136,12 +236,109 @@ public class PortletResource implements Serializable {
     }
 
     /**
-     * Saves a new working version of an existing Portlet.
-     * The formData must contain the identifier of the Portlet.
-     * @param request
-     * @param formData
-     * @return
+     * Reads one custom content tool's editable configuration, for the Tools portlet's Edit
+     * dialog. Answers 404 for an unknown id and for a tool shipped with the product, which has no
+     * custom configuration to edit. Requires an authenticated back-end user with access to the
+     * {@code tools} or {@code tools-beta} portlet, or the CMS Administrator role.
+     *
+     * @param request   the current request
+     * @param response  the current response
+     * @param portletId the stored id of the custom tool
+     * @return the configuration wrapped in {@link ResponseEntityCustomToolView}, or 404
      */
+    @Operation(
+            operationId = "getCustomTool",
+            summary = "Read one custom content tool's configuration",
+            description = "Returns the editable configuration of a custom content tool: id, name, base types, "
+                    + "content types and data view mode. Requires an authenticated back-end user with access to "
+                    + "the tools or tools-beta portlet, or the CMS Administrator role."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Custom tool found",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityCustomToolView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - no authenticated back-end user, or the caller holds neither "
+                            + "the tools nor the tools-beta portlet and is not a CMS Administrator",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404",
+                    description = "No portlet has this id, or it is a tool shipped with the product and has no "
+                            + "custom configuration",
+                    content = @Content(mediaType = "application/json"))
+    })
+    @GET
+    @Path("/custom/{portletId}")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    public final Response getCustomTool(@Context final HttpServletRequest request,
+                                        @Context final HttpServletResponse response,
+                                        @Parameter(description = "Stored id of the custom tool, c_ prefix included", required = true)
+                                        @PathParam("portletId") final String portletId) {
+        final User user = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .requiredPortlet(PortletID.TOOLS.toString(), PortletID.TOOLS_BETA.toString())
+                .init().getUser();
+
+        final Portlet portlet = portletApi.findPortlet(portletId);
+        if (null == portlet || !portletApi.isCustomContentPortlet(portlet)) {
+            return customToolNotFound(request, user, portletId);
+        }
+        return Response.ok(new ResponseEntityCustomToolView(toolCatalogHelper.toCustomToolView(portlet))).build();
+    }
+
+    /**
+     * Builds the 404 answered when an id is unknown or does not belong to a custom content tool:
+     * the standard dotCMS error envelope with one {@code custom.content.portlet.not.found} entry,
+     * exactly as the other not-found answers on this resource are built.
+     *
+     * @param request   the current request
+     * @param user      the caller, whose locale selects the message language
+     * @param portletId the id that was requested
+     * @return a 404 response
+     */
+    private Response customToolNotFound(final HttpServletRequest request, final User user, final String portletId) {
+        return ResponseUtil.INSTANCE.getErrorResponse(request, Status.NOT_FOUND, user.getLocale(),
+                user.getUserId(), "custom.content.portlet.not.found", portletId);
+    }
+
+    /**
+     * Saves a new working version of an existing custom content tool. The form must carry the
+     * identifier of the tool. Only custom content tools can be rewritten: an id that belongs to
+     * a tool shipped with the product (Language Variables included) or to no tool is answered
+     * with 404 and nothing changes. Requires an authenticated back-end user with access to the
+     * {@code roles}, {@code tools} or {@code tools-beta} portlet, or the CMS Administrator role.
+     *
+     * @param request  the current request
+     * @param formData the full definition to store; every field is replaced
+     * @return the stored portlet id
+     */
+    @Operation(
+            operationId = "updatePortlet",
+            summary = "Update a custom content tool",
+            description = "Replaces the name, base types, content types and data view mode of an existing custom "
+                    + "content tool. Refuses, with 404 and no change, an id that is not a custom content tool: "
+                    + "tools shipped with the product cannot be rewritten this way. Requires an authenticated "
+                    + "back-end user with access to the roles, tools or tools-beta portlet, or the CMS "
+                    + "Administrator role."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Updated; the entity carries the stored portlet id under \"portlet\"",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityMapStringStringView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - no authenticated back-end user, or the caller holds none of the "
+                            + "roles, tools or tools-beta portlets and is not a CMS Administrator",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404",
+                    description = "No portlet has the given id, or it is a tool shipped with the product",
+                    content = @Content(mediaType = "application/json"))
+    })
     @PUT
     @Path("/custom")
     @JSONP
@@ -154,15 +351,22 @@ public class PortletResource implements Serializable {
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("roles")
+                .requiredPortlet(PortletID.ROLES.toString(), PortletID.TOOLS.toString(), PortletID.TOOLS_BETA.toString())
                 .init();
 
         Response response = null;
 
         try {
             final String portletId = portletApi.portletIdPrefixCleaner(formData.portletId);
-            if (!UtilMethods.isSet(portletApi.findPortlet(portletId))) {
+            final Portlet existing = portletApi.findPortlet(portletId);
+            if (!UtilMethods.isSet(existing)) {
                 throw new DoesNotExistException("Portlet with Id: " + formData.portletId + " does not exist");
+            }
+            // Only admin-made tools may be rewritten: a shipped tool stored in the database, such as
+            // Language Variables, resolves to the same c_ id but is not a custom content tool.
+            if (!portletApi.isCustomContentPortlet(existing)) {
+                throw new DoesNotExistException("Portlet with Id: " + formData.portletId
+                        + " is not a custom content tool");
             }
             final Portlet contentPortlet = portletApi.findPortlet("content");
 
@@ -274,33 +478,68 @@ public class PortletResource implements Serializable {
     }
 
     /**
-     *  Custom Portlet delete endpoint
-     * @param request
-     * @param portletId
-     * @return
+     * Deletes a custom content tool and removes it from every navigation section that contained
+     * it; open admin sessions are notified. Only custom content tools can be deleted here: an id
+     * that belongs to a tool shipped with the product (Language Variables included) or to no tool
+     * at all is answered with 404 and nothing changes. Requires an authenticated back-end user
+     * with access to the {@code roles}, {@code tools} or {@code tools-beta} portlet, or the CMS
+     * Administrator role.
+     *
+     * @param request   the current request
+     * @param portletId the stored id of the custom tool
+     * @return a confirmation message, or 404
      */
+    @Operation(
+            operationId = "deleteCustomPortlet",
+            summary = "Delete a custom content tool",
+            description = "Removes the custom content tool and takes it out of every navigation section that "
+                    + "contained it. Refuses, with 404 and no change, any id that is not a custom content tool: "
+                    + "tools shipped with the product cannot be removed this way. Requires an authenticated "
+                    + "back-end user with access to the roles, tools or tools-beta portlet, or the CMS "
+                    + "Administrator role."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Deleted; the entity carries a confirmation under \"message\"",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityMapStringStringView.class))),
+            @ApiResponse(responseCode = "401",
+                    description = "Unauthorized - no authenticated back-end user, or the caller holds none of the "
+                            + "roles, tools or tools-beta portlets and is not a CMS Administrator",
+                    content = @Content(mediaType = "application/json")),
+            @ApiResponse(responseCode = "404",
+                    description = "No portlet has this id, or it is a tool shipped with the product",
+                    content = @Content(mediaType = "application/json"))
+    })
     @DELETE
     @Path("/custom/{portletId}")
     @JSONP
     @NoCache
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    public final Response deleteCustomPortlet(@Context final HttpServletRequest request, @PathParam("portletId") final String portletId) {
+    public final Response deleteCustomPortlet(@Context final HttpServletRequest request,
+                                              @Parameter(description = "Stored id of the custom tool, c_ prefix included", required = true)
+                                              @PathParam("portletId") final String portletId) {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, null)
                 .rejectWhenNoUser(true)
-                .requiredPortlet("roles")
+                .requiredPortlet(PortletID.ROLES.toString(), PortletID.TOOLS.toString(), PortletID.TOOLS_BETA.toString())
                 .init();
+        final User user = initData.getUser();
 
         try {
+            final Portlet portlet = portletApi.findPortlet(portletId);
+            if (null == portlet || !portletApi.isCustomContentPortlet(portlet)) {
+                Logger.debug(this, () -> String.format("Refusing to delete '%s': not a custom content tool", portletId));
+                return customToolNotFound(request, user, portletId);
+            }
 
+            portletApi.deletePortlet(portletId);
 
-            APILocator.getPortletAPI().deletePortlet(portletId);
-
-            return Response.ok(new ResponseEntityView(Map.of("message", portletId + " deleted"))).build();
+            return Response.ok(new ResponseEntityView<>(Map.of("message", portletId + " deleted"))).build();
 
         } catch (Exception e) {
             return ResponseUtil.mapExceptionResponse(e);

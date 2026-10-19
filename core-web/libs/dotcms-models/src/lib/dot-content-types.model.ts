@@ -532,43 +532,79 @@ export type CalendarFieldTypes =
     | typeof DotCMSFieldTypes.DATE
     | typeof DotCMSFieldTypes.TIME;
 
-/* Legacy Fields */
+/**
+ * A DotCMS content type field, as a discriminated union over `fieldType`.
+ *
+ * Narrowing on `fieldType` (or equivalently on `clazz` or `dataType`, which each arm pins
+ * together) yields the specific interface for that kind of field, with its own properties
+ * required rather than optional:
+ *
+ * ```ts
+ * if (field.fieldType === DotCMSFieldTypes.CATEGORY) {
+ *     field.categories; // DotCMSContentTypeFieldCategories — required, no cast needed
+ * }
+ * ```
+ *
+ * This replaces the flat interface that preceded it, on which `fieldType` was a bare `string`
+ * and every per-type property was optional — so any code that cared which kind of field it
+ * held had to assert the type by hand. See issue #37670.
+ *
+ * Keep this union in step with {@link DotCMSFieldTypes}: there is exactly one arm per member,
+ * and `dot-content-types.union.spec.ts` fails the build if that stops being true.
+ */
+export type DotCMSContentTypeField =
+    // Layout fields
+    | ContentTypeRowField
+    | ContentTypeColumnField
+    | ContentTypeTabDividerField
+    | ContentTypeColumnBreakField
+    | ContentTypeLineDividerField
+    // Content fields
+    | ContentTypeBinaryField
+    | ContentTypeBlockEditorField
+    | ContentTypeCategoryField
+    | ContentTypeCheckboxField
+    | ContentTypeConstantField
+    | ContentTypeCustomField
+    | ContentTypeDateField
+    | ContentTypeDateTimeField
+    | ContentTypeFileField
+    | ContentTypeHiddenField
+    | ContentTypeImageField
+    | ContentTypeJSONField
+    | ContentTypeKeyValueField
+    | ContentTypeMultiSelectField
+    | ContentTypeRadioField
+    | ContentTypeRelationshipField
+    | ContentTypeSelectField
+    | ContentTypeHostFolderField
+    | ContentTypeTagField
+    | ContentTypeTextField
+    | ContentTypeTextAreaField
+    | ContentTypeTimeField
+    | ContentTypeWYSIWYGField;
 
 /**
- * Legacy interface for DotCMS content type fields
+ * The arm of {@link DotCMSContentTypeField} for a given field type.
+ *
+ * Use it to declare a handler that only accepts one kind of field, so the compiler — rather
+ * than a comment — guarantees what the handler receives:
+ *
+ * ```ts
+ * const resolveJson = (field: FieldOf<typeof DotCMSFieldTypes.JSON>) => field.values;
+ * ```
+ *
+ * It is also what makes a per-field-type map narrow **per entry**. A map declared as
+ * `Record<DotCMSFieldType, (f: DotCMSContentTypeField) => T>` accepts a handler with a
+ * narrowed parameter without checking it, because `libs/edit-content` compiles with
+ * `strict: false` and parameters then compare bivariantly — the narrowing would be
+ * decoration. Mapping over the discriminant instead keeps the guarantee:
+ *
+ * ```ts
+ * type ResolutionMap = { [K in DotCMSFieldType]: (field: FieldOf<K>) => T };
+ * ```
  */
-export interface DotCMSContentTypeField {
-    categories?: DotCMSContentTypeFieldCategories;
-    clazz: DotCMSClazz;
-    contentTypeId: string;
-    dataType: string;
-    defaultValue?: string;
-    fieldType: string;
-    fieldTypeLabel: string;
-    fieldVariables: DotCMSContentTypeFieldVariable[];
-    fixed: boolean;
-    hint?: string;
-    iDate: number;
-    id: string;
-    indexed: boolean;
-    listed: boolean;
-    modDate: number;
-    name: string;
-    readOnly: boolean;
-    regexCheck?: string;
-    relationships?: Relationships;
-    required: boolean;
-    searchable: boolean;
-    sortOrder: number;
-    unique: boolean;
-    values?: string;
-    variable: string;
-    forceIncludeInApi?: boolean;
-    fieldContentTypeProperties?: string[];
-    skipRelationshipCreation?: boolean;
-    metadata?: { [key: string]: string | number | boolean };
-    rendered?: string;
-}
+export type FieldOf<K extends DotCMSFieldType> = Extract<DotCMSContentTypeField, { fieldType: K }>;
 
 export interface DotCMSContentTypeLayoutTab {
     title: string;
@@ -633,17 +669,6 @@ export type DotCopyContentTypeDialogFormFields = {
     host: string;
     icon: string;
 };
-
-/**
- * @private
- * Internal interface for relationship configuration
- * Used internally by the relationship field implementation
- */
-interface Relationships {
-    cardinality: number;
-    isParentField: boolean;
-    velocityVar: string;
-}
 
 /**
  * Interface for pagination parameters when retrieving content types

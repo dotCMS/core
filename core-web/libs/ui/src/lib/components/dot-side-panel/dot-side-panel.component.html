@@ -1,0 +1,76 @@
+<!--
+    maskStyle forces a transparent mask, so the screen behind the panel stays visible. The
+    `!important` is required to override PrimeNG's default dimmed mask background, which the theme
+    and the `pt` API do not otherwise let us clear — it is deliberate, not a leftover.
+
+    The shadow goes on `pt.root.class` rather than in component SCSS because the drawer uses
+    `appendTo="body"` (teleported out of this component's DOM), so component-scoped SCSS /
+    `:host ::ng-deep` cannot reach it.
+
+    `dismissible` is left OFF even though clicking outside DOES close the panel: PrimeNG's own
+    dismissible hides the drawer immediately, bypassing the content's unsaved-changes guard and
+    leaving the panel mounted with nothing on screen. The mask click is handled by the component
+    instead. `closeOnEscape` is off for the same reason: Escape goes through the shared shortcut
+    registry.
+
+    `visible` is always true: the panel is open for as long as it is mounted.
+
+    The header buttons name themselves through PrimeNG's `[ariaLabel]` input, never
+    `[attr.aria-label]`: the latter lands on the non-focusable `<p-button>` host, leaving the real
+    `<button>` — whose only content is an icon glyph — with no accessible name.
+-->
+<p-drawer
+    [visible]="true"
+    [modal]="true"
+    [dismissible]="false"
+    [closeOnEscape]="false"
+    [closable]="false"
+    appendTo="body"
+    [maskStyle]="{ background: 'transparent !important' }"
+    [pt]="{
+        root: {
+            'data-testid': 'side-panel',
+            class: '!shadow-2xl',
+            style: { width: $expanded() ? '100%' : '80%', transition: 'width 250ms ease' }
+        },
+        content: { class: contentStyleClass() }
+    }"
+    position="right">
+    <ng-template #header>
+        <div class="flex w-full items-center justify-between gap-4">
+            <span class="truncate text-2xl font-semibold" data-testid="side-panel-title">
+                {{ heading() }}
+            </span>
+            <div class="flex items-center gap-1">
+                <p-button
+                    [text]="true"
+                    severity="secondary"
+                    [ariaLabel]="
+                        $expanded()
+                            ? ('edit.content.side-panel.collapse' | dm)
+                            : ('edit.content.side-panel.expand' | dm)
+                    "
+                    (onClick)="toggleExpanded()"
+                    data-testid="side-panel-expand">
+                    <ng-template #icon>
+                        <i class="material-symbols-outlined text-xl!">
+                            {{ $expanded() ? 'close_fullscreen' : 'open_in_full' }}
+                        </i>
+                    </ng-template>
+                </p-button>
+                <p-button
+                    [text]="true"
+                    severity="secondary"
+                    [ariaLabel]="'edit.content.side-panel.close' | dm"
+                    (onClick)="closeRequested.emit()"
+                    data-testid="side-panel-close">
+                    <ng-template #icon>
+                        <i class="material-symbols-outlined text-xl!">close</i>
+                    </ng-template>
+                </p-button>
+            </div>
+        </div>
+    </ng-template>
+
+    <ng-content />
+</p-drawer>

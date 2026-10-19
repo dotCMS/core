@@ -3,7 +3,6 @@ import { signalMethod } from '@ngrx/signals';
 import {
     ChangeDetectionStrategy,
     Component,
-    ComponentRef,
     computed,
     DestroyRef,
     forwardRef,
@@ -11,8 +10,7 @@ import {
     Injector,
     input,
     OnInit,
-    untracked,
-    ViewContainerRef
+    untracked
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { AbstractControl, NgControl, NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -28,31 +26,29 @@ import { filter } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
+    ContentTypeRelationshipField,
     DotCMSContentlet,
-    DotCMSContentTypeField,
+    DotCMSFieldTypes,
     DotLanguage,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import {
     DotContentletStatusBadgeComponent,
     DotContentThumbnailComponent,
-    DotMessagePipe
+    DotMessagePipe,
+    DotSidePanelRef,
+    DotSidePanelService
 } from '@dotcms/ui';
 
 import { RelationshipFieldStore } from './../../store/relationship-field.store';
 import { AddRelationshipsComponent } from './../add-relationships/add-relationships.component';
 
+import { loadDotEditContentSidePanel } from '../../../../components/dot-edit-content-side-panel/load-dot-edit-content-side-panel';
 import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
-import { FIELD_TYPES } from '../../../../models/dot-edit-content-field.enum';
 import { LanguagePipe } from '../../../../pipes/language.pipe';
 import { EDIT_CONTENT_HOST } from '../../../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../../../store/edit-content.store';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
-
-// Type-only import: the runtime class is loaded lazily via dynamic import() to avoid a static
-// cycle (side panel → layout → form → field → this component). `import type` is erased at compile
-// time, so it does not create that cycle.
-import type { DotEditContentSidePanelComponent } from '../../../../components/dot-edit-content-side-panel/dot-edit-content-side-panel.component';
 
 @Component({
     selector: 'dot-relationship-field',
@@ -145,8 +141,8 @@ export class DotRelationshipFieldComponent
      */
     readonly #dialogService = inject(DialogService);
 
-    /** Used to create the Edit Content side panel imperatively (see {@link openSidePanel}). */
-    readonly #viewContainerRef = inject(ViewContainerRef);
+    /** Opens the Edit Content side panel (see {@link openSidePanel}). */
+    readonly #sidePanels = inject(DotSidePanelService);
 
     /**
      * Reference to the dynamic dialog. It can be null if no dialog is currently open.
@@ -155,8 +151,8 @@ export class DotRelationshipFieldComponent
      */
     #dialogRef: DynamicDialogRef | null = null;
 
-    /** Reference to the side panel component when open (side-panel mode), or `null`. */
-    #sidePanelRef: ComponentRef<DotEditContentSidePanelComponent> | null = null;
+    /** The side panel this field opened, while it is open (side-panel mode), or `null`. */
+    #sidePanel: DotSidePanelRef | null = null;
 
     /**
      * A signal that holds the menu items for the relationship field.
@@ -191,7 +187,7 @@ export class DotRelationshipFieldComponent
      *
      * @memberof DotEditContentFileFieldComponent
      */
-    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
+    $field = input.required<ContentTypeRelationshipField>({ alias: 'field' });
 
     /**
      * DotCMS Contentlet
@@ -320,7 +316,7 @@ export class DotRelationshipFieldComponent
         // From the full-screen editor, related content opens in a side panel over it instead of
         // navigating away (see {@link opensInSidePanel}).
         if (this.#opensInSidePanel()) {
-            await this.#openSidePanel({
+            this.#openSidePanel({
                 mode: 'edit',
                 contentletInode: item.inode,
                 title: item.title ?? '',
@@ -424,9 +420,12 @@ export class DotRelationshipFieldComponent
         }
 
         const contentType = this.store.contentType();
+        const relationships = this.store.relationships();
 
-        // Don't open dialog if contentType or its ID is null (invalid field data)
-        if (!contentType?.id) {
+        // Don't open dialog if contentType or its ID is null (invalid field data), nor without
+        // the relationship descriptor: `prepareField` publishes both together, so either being
+        // absent means the field never loaded and there is nothing to pick against.
+        if (!contentType?.id || !relationships) {
             return;
         }
 
@@ -471,10 +470,13 @@ export class DotRelationshipFieldComponent
                 // does not return — another locale, a later page, an index that has not caught up
                 // (ADR-0018) — is still related when the editor confirms.
                 selected: this.store.data(),
-                cardinality: this.$field().relationships?.cardinality,
+                // From the store, not the field: `prepareField` is what validated these, and the
+                // guard above means a field whose `relationships` the server left unusable never
+                // gets this far.
+                cardinality: relationships.cardinality,
                 parentContentTypeId: this.$field().contentTypeId,
                 fieldVariable: this.$field().variable,
-                isParentField: this.$field().relationships?.isParentField,
+                isParentField: relationships.isParentField,
                 currentContentIdentifier: contentlet?.identifier ?? null,
                 contentletContext: {
                     languageId:
@@ -537,7 +539,8 @@ export class DotRelationshipFieldComponent
      */
     async showCreateNewContentDialog(): Promise<void> {
         const contentType = this.store.contentType();
-        if (this.$isDisabled() || !contentType) {
+        const relationships = this.store.relationships();
+        if (this.$isDisabled() || !contentType || !relationships) {
             return;
         }
 
@@ -551,7 +554,10 @@ export class DotRelationshipFieldComponent
             relationshipInfo: {
                 parentContentletId: this.$contentlet()?.inode,
                 relationshipName: this.$field()?.variable,
-                isParent: this.$field().relationships?.isParentField ?? true
+                // The descriptor `prepareField` published, which already applied the parent-side
+                // default for a payload that omitted the flag. This used to re-apply `?? true`
+                // over the raw field, in a second place, from data nothing had checked.
+                isParent: relationships.isParentField
             },
             onContentSaved: (contentlet: DotCMSContentlet) => {
                 // Add the created contentlet to the relationship
@@ -569,7 +575,7 @@ export class DotRelationshipFieldComponent
             this.store.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] ?? false;
 
         if (sidePanelEnabled) {
-            await this.#openSidePanel(dialogData);
+            this.#openSidePanel(dialogData);
 
             return;
         }
@@ -597,33 +603,23 @@ export class DotRelationshipFieldComponent
     }
 
     /**
-     * Creates an Edit Content side panel imperatively. The component is loaded via dynamic
-     * `import()` (not a static template import) to avoid a module cycle — see the `import type`
-     * note at the top of this file. The panel fires `dialogData.onContentSaved` (last save) and
-     * `dialogData.onCancel` on close; `(closed)` tears the component down.
+     * Opens the Edit Content side panel over the editor, replacing one this field already has open.
+     * The content is loaded on demand ({@link loadDotEditContentSidePanel}), which also avoids a
+     * static module cycle: side panel → layout → form → field → this component. The panel fires
+     * `dialogData.onContentSaved` (last save) and `dialogData.onCancel` when it closes, and closes
+     * with this field.
      *
      * Shared by both entry points: creating content to relate ({@link showCreateNewContentDialog})
      * and opening an already-related content without leaving the full-screen editor
      * ({@link openRelated}) — in both cases the editor behind the panel stays mounted.
      */
-    async #openSidePanel(dialogData: EditContentDialogData): Promise<void> {
-        const { DotEditContentSidePanelComponent } =
-            await import('../../../../components/dot-edit-content-side-panel/dot-edit-content-side-panel.component');
-
-        this.#closeSidePanel();
-        this.#sidePanelRef = this.#viewContainerRef.createComponent(
-            DotEditContentSidePanelComponent
-        );
-        this.#sidePanelRef.setInput('data', dialogData);
-        // `closed` is an OutputEmitterRef (not an Observable) — subscribe directly. The
-        // subscription is cleaned up when the panel component is destroyed.
-        this.#sidePanelRef.instance.closed.subscribe(() => this.#closeSidePanel());
-    }
-
-    /** Destroys the side panel component if open. */
-    #closeSidePanel(): void {
-        this.#sidePanelRef?.destroy();
-        this.#sidePanelRef = null;
+    #openSidePanel(dialogData: EditContentDialogData): void {
+        this.#sidePanel?.close();
+        this.#sidePanel = this.#sidePanels.open(loadDotEditContentSidePanel(), {
+            heading: dialogData.title ?? '',
+            inputs: { data: dialogData },
+            injector: this.#injector
+        });
     }
 
     /**
@@ -668,7 +664,7 @@ export class DotRelationshipFieldComponent
      * @param contentlet - The contentlet to initialize the store with.
      */
     readonly initialize = signalMethod<{
-        field: DotCMSContentTypeField;
+        field: ContentTypeRelationshipField;
         contentlet: DotCMSContentlet;
         targetLanguageId?: number;
         targetLanguage?: DotLanguage;
@@ -683,6 +679,6 @@ export class DotRelationshipFieldComponent
     readonly #hasHostFolderField = computed(() => {
         const fields = this.#editContentStore.contentType()?.fields ?? [];
 
-        return fields.some((f) => f.fieldType === FIELD_TYPES.HOST_FOLDER);
+        return fields.some((f) => f.fieldType === DotCMSFieldTypes.HOST_FOLDER);
     });
 }

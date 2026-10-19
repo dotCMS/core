@@ -20,15 +20,44 @@ public class PublisherFilterImpl implements PublisherFilter{
     private final Set<String> excludeDependencyQueryAssetIdSet = new HashSet<>();
     private final boolean dependencies;
     private final boolean relationships;
+    private final boolean relationshipsSecondLevel;
 
+    /**
+     * Creates a filter with no key, and second-level relationship traversal disabled.
+     *
+     * @param dependencies  Whether dependencies should be followed.
+     * @param relationships Whether direct relationships should be followed.
+     */
     public PublisherFilterImpl(final boolean dependencies, final boolean relationships) {
-        this(StringPool.BLANK, dependencies, relationships);
+        this(StringPool.BLANK, dependencies, relationships, false);
     }
 
+    /**
+     * Creates a filter with second-level relationship traversal disabled.
+     *
+     * @param key           The YAML filter file name this filter was built from.
+     * @param dependencies  Whether dependencies should be followed.
+     * @param relationships Whether direct relationships should be followed.
+     */
     public PublisherFilterImpl(final String key, final boolean dependencies, final boolean relationships) {
+        this(key, dependencies, relationships, false);
+    }
+
+    /**
+     * Creates a filter with full control over second-level relationship traversal.
+     *
+     * @param key                      The YAML filter file name this filter was built from.
+     * @param dependencies             Whether dependencies should be followed.
+     * @param relationships            Whether direct relationships should be followed.
+     * @param relationshipsSecondLevel Whether related content should also be followed one extra
+     *                                 level beyond the direct relationships above.
+     */
+    public PublisherFilterImpl(final String key, final boolean dependencies, final boolean relationships,
+            final boolean relationshipsSecondLevel) {
         this.key = key;
         this.dependencies = dependencies;
         this.relationships = relationships;
+        this.relationshipsSecondLevel = relationshipsSecondLevel;
     }
 
     @Override
@@ -44,6 +73,11 @@ public class PublisherFilterImpl implements PublisherFilter{
     @Override
     public boolean isRelationships() {
         return relationships;
+    }
+
+    @Override
+    public boolean isRelationshipsSecondLevel() {
+        return relationshipsSecondLevel;
     }
 
     public void addTypeToExcludeDependencyClassesSet(final String type) {
@@ -92,6 +126,7 @@ public class PublisherFilterImpl implements PublisherFilter{
                 ", excludeDependencyQueryAssetIdSet=" + excludeDependencyQueryAssetIdSet +
                 ", dependencies=" + dependencies +
                 ", relationships=" + relationships +
+                ", relationshipsSecondLevel=" + relationshipsSecondLevel +
                 '}';
     }
 

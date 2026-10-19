@@ -41,7 +41,6 @@ import com.dotcms.util.AnnotationUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.google.common.annotations.VisibleForTesting;
@@ -923,7 +922,7 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         if (optional.isPresent()) {
             final JobProcessor processor = optional.get();
 
-            final ProgressTracker progressTracker = new DefaultProgressTracker();
+            final DefaultProgressTracker progressTracker = new DefaultProgressTracker();
             Job runningJob = job.markAsRunning().withProgressTracker(progressTracker);
             updateJobStatus(runningJob);
             // Send the job started events
@@ -936,6 +935,14 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                 ScheduledExecutorService progressUpdater = closeableExecutor.getExecutorService();
                 progressUpdater.scheduleAtFixedRate(() ->
                         {
+                            // Never let an exception escape this runnable: scheduleAtFixedRate
+                            // silently cancels every future execution the moment one run throws
+                            // (ScheduledExecutorService's own documented behavior), with nothing
+                            // logged. A single transient DB error here would otherwise permanently
+                            // kill both progress reporting and the heartbeat below for the rest of
+                            // the job - exactly the false-abandonment risk the heartbeat exists to
+                            // prevent (#37685 review). Logging and continuing lets the next tick,
+                            // three seconds later, simply try again.
                             try {
                                 final var progress = updateJobProgress(
                                         runningJob, progressTracker, currentProgress.get()
@@ -944,7 +951,21 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
                                     currentProgress.set(progress);
                                 }
                             } catch (DotDataException e) {
-                                throw new DotRuntimeException("Error updating job progress", e);
+                                Logger.error(this, "Error updating progress for job "
+                                        + runningJob.id() + ": " + e.getMessage(), e);
+                            }
+
+                            // A heartbeat is independent of the progress-changed branch above: it
+                            // must refresh updated_at even when progress has not (and must not)
+                            // moved, and it must never fire a progress-changed event (#37063, spec
+                            // FR-024a) - see ProgressTracker.heartbeat().
+                            if (progressTracker.consumeHeartbeat()) {
+                                try {
+                                    jobQueue.touchJob(runningJob.id());
+                                } catch (JobQueueDataException e) {
+                                    Logger.error(this, "Error touching job " + runningJob.id()
+                                            + " for heartbeat: " + e.getMessage(), e);
+                                }
                             }
                         }, 0, 3, TimeUnit.SECONDS
                 );

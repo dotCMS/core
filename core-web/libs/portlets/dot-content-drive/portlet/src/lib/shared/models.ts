@@ -6,14 +6,18 @@ import {
     DotContentDriveActionableItem,
     DotContentDriveItem,
     DotFolder,
+    DotFolderBulkDuplicateReason,
+    DotFolderDeleteFailureReason,
     DotLanguage,
     DotSite
 } from '@dotcms/dotcms-models';
+import { EditContentDialogData } from '@dotcms/edit-content';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotUploadBaseType, DotUploadSelection, DotUploadSelectorPayload } from '@dotcms/ui';
 
 import { DIALOG_TYPE } from './constants';
+import { DotLegacyEditorRequest } from './legacy-editor.models';
 
 /**
  * The parameters for the buildTreeFolderNodes function.
@@ -159,8 +163,57 @@ export interface DotContentDriveDialog {
     payload?:
         | DotContentDriveActionableFolder
         | DotContentDriveContentTypeSelectorPayload
-        | DotContentDriveUploadSelectorPayload;
+        | DotContentDriveUploadSelectorPayload
+        | DotContentDriveFolderPermissionsPayload;
 }
+
+/** What Edit Permissions needs: the folder, by identifier only (#37759). */
+export interface DotContentDriveFolderPermissionsPayload {
+    identifier: string;
+}
+
+/**
+ * What Content Drive has asked a side panel to open, and in which editor (#37759). The content
+ * type's editor setting alone picks the editor; each kind has its own panel.
+ */
+export type DotContentDrivePanelRequest =
+    | { editor: 'new'; data: EditContentDialogData }
+    // Remove with the legacy editor.
+    | { editor: 'legacy'; data: DotLegacyEditorRequest };
+
+/**
+ * What the Content Drive URL must say about the open side panel, for either editor (#37759, FR-020).
+ *
+ * Kept apart from the panel request on purpose: the URL has to follow the panel after it opened (a
+ * create's first save, a language switch in the legacy editor) and changing the request instead would
+ * remount the panel and reload the editor under the author.
+ */
+export type DotContentDrivePanelLocation =
+    | {
+          kind: 'edit';
+          /** Identifier of the open content (`editContent`). */
+          editContent: string;
+          /** Language of the open version (`editContentLang`); absent only when it is unknown. */
+          editContentLang?: number;
+      }
+    | {
+          kind: 'create';
+          /** Variable of the content type being created (`createContent`). */
+          createContent: string;
+      };
+
+/**
+ * What a Content Drive URL asks to open when the portlet loads (#37759, FR-023). `conflict` means
+ * the URL combines params that can't hold together, so nothing opens and all of them are removed.
+ */
+export type DotContentDriveUrlIntent =
+    | { kind: 'none' }
+    | { kind: 'edit'; identifier: string; languageId?: number }
+    | { kind: 'create'; contentType: string }
+    | { kind: 'createFolder' }
+    | { kind: 'editFolder'; identifier: string }
+    | { kind: 'folderPermissions'; identifier: string }
+    | { kind: 'conflict' };
 
 /**
  * A workflow action currently being applied to the selection.
@@ -225,6 +278,13 @@ export interface DotContentDriveRun extends DotContentDriveActionExecution {
     operation: string;
     /** The inodes the run is acting on. Drives the guard, and the per-row busy marks. */
     targets: string[];
+    /**
+     * Reported on the status indicator, but locks nothing.
+     *
+     * For work that leaves everything it touches usable while it runs, such as a folder duplicate:
+     * the author is told it is under way without the Action Center being refused meanwhile.
+     */
+    backgrounded?: boolean;
 }
 
 /**
@@ -233,6 +293,20 @@ export interface DotContentDriveRun extends DotContentDriveActionExecution {
  * Counts come from the response, never from the number of items submitted: both endpoints answer 200
  * with per-item failures inside, so an item locked by another user would otherwise read as a success.
  */
+/**
+ * Which vocabulary an outcome's failures speak.
+ *
+ * A named constant rather than the bare strings: the producer in `withActionExecution` and the
+ * consumer in the shell both test it, and two literals that must agree are two chances to typo one.
+ */
+export const OUTCOME_KIND = {
+    UPLOAD: 'upload',
+    FOLDER_DELETE: 'folderDelete',
+    FOLDER_DUPLICATE: 'folderDuplicate'
+} as const;
+
+export type DotContentDriveOutcomeKind = (typeof OUTCOME_KIND)[keyof typeof OUTCOME_KIND];
+
 export interface DotContentDriveActionExecutionResult {
     actionName: string;
     /**
@@ -261,7 +335,19 @@ export interface DotContentDriveActionExecutionResult {
      * reasons are the point of a partial outcome, and the reason codes are what map to product copy
      * rather than the server's diagnostic message, which is never shown.
      */
-    failures?: DotBatchItemResult<DotBulkUploadFailureReason>[];
+    failures?: DotBatchItemResult<
+        DotBulkUploadFailureReason | DotFolderDeleteFailureReason | DotFolderBulkDuplicateReason
+    >[];
+    /**
+     * Which vocabulary {@link failures} speaks, and therefore which describer resolves it to copy.
+     *
+     * The reason sets do not overlap beyond `PERMISSION_DENIED` and `UNCLASSIFIED`, so guessing
+     * from the values would resolve a delete's `IN_USE` through upload's mapping and land on the
+     * unclassified fallback — a reason with copy, rendered as though it had none.
+     *
+     * Absent means upload, which is the only producer that predates this field.
+     */
+    outcomeKind?: DotContentDriveOutcomeKind;
     /**
      * The folders whose contents this run changed, as `//hostname/path` references.
      *
@@ -300,6 +386,13 @@ export interface DotContentDriveActionExecutionResult {
      * different supplies its own copy rather than borrowing that one.
      */
     partialDetailKey?: string;
+    /**
+     * Whether the run was stopped before it finished (#37062).
+     *
+     * Said as cancelled whatever the counts, so a run stopped after every folder it reached had
+     * succeeded does not read as a clean success. The bell says it the same way.
+     */
+    cancelled?: boolean;
     /**
      * Whether a clean success still needs saying.
      *
@@ -429,6 +522,20 @@ export interface DotContentDriveState extends DotContentDriveInit {
      * a non-admin fire with no heads-up at all.
      */
     currentUserIsAdmin: boolean;
+    /**
+     * Which listing is showing: the table (`list`) or the grid of cards (`card`).
+     *
+     * Decided once when the Drive opens (see `resolveViewType`) and changed by the view switcher.
+     * Mirrored into the URL as `viewType`, so a copied link opens in the same view. Back and Forward
+     * leave it alone: it is a preference, not a place.
+     */
+    viewType: DotContentDriveViewType;
+    /**
+     * Where the view picked with the switcher is remembered, keyed by the screen the Drive opened
+     * on. Worked out once when the Drive opens, so the view it opened with and the switches saved
+     * later always use the same key, even once one Drive serves several tools (#37931).
+     */
+    viewTypeStorageKey: string;
 }
 
 /**
@@ -508,3 +615,70 @@ export type FolderTreeHierarchyLevel = {
      */
     nextPage: number;
 };
+
+/** What the outcome path derives from a result before wording it. */
+export interface DotContentDriveOutcomeReading {
+    result: DotContentDriveActionExecutionResult;
+    /** A folder delete or duplication, as opposed to an upload or a workflow action. */
+    isFolderOutcome: boolean;
+    /** Skipped folders a selected parent already covered, which are not a shortfall. */
+    coveredCount: number;
+    /** Whether the run fell short of a clean success. */
+    isPartial: boolean;
+}
+
+/** Resolves a message key with arguments. Narrower than `DotMessageService` on purpose. */
+export type ResolveMessage = (key: string, ...args: string[]) => string;
+
+/**
+ * The words a folder operation's report is written in: one sentence per failure reason, and one
+ * for each of the two kinds of skip.
+ *
+ * The line builder below is shared, so bulk delete and bulk duplication (#37062) read the same way:
+ * the same grouping, the same name threshold, the same count-only overflow. What differs is only
+ * the copy, because an ancestor that *removed* a folder and one whose duplicate *carries* it are
+ * different facts.
+ */
+export interface DotFolderOutcomeVocabulary {
+    /** The message key explaining a failure reason, with its own unclassified fallback. */
+    keyForFailure: (reason: string | undefined) => string;
+    /** A folder an ancestor in the same submission already covered. Not a problem. */
+    skippedByParentKey: string;
+    /** A folder the run never reached, because it was cancelled first. */
+    skippedCancelledKey: string;
+}
+
+/** One page of a level's folders, as the folder search answers it. */
+export interface DotContentDriveFolderPage {
+    folders: DotFolderTreeNodeItem[];
+    totalEntries: number;
+}
+
+/** One level of a path being revealed, and where in the tree it hangs. */
+export interface DotContentDriveRevealLevel {
+    /** The folder this level has to hold. */
+    path: string;
+    /** The folder above it; undefined for the top level, which hangs from the site row. */
+    parentPath: string | undefined;
+    /** The path the level's folders are listed under. */
+    levelPath: string;
+    site: DotSite;
+}
+
+/** What a level's load answered: the page fetched, if any, and the folder to pin, if any. */
+export interface DotContentDriveRevealedLevel {
+    page: DotContentDriveFolderPage | undefined;
+    pinned: DotFolder | undefined;
+}
+
+/**
+ * The two listings Content Drive can show. The values are the ones the URL, the browser storage and
+ * a custom tool's `dataViewMode` all use, so one parser serves every source.
+ */
+export const DOT_CONTENT_DRIVE_VIEW_TYPE = {
+    LIST: 'list',
+    CARD: 'card'
+} as const;
+
+export type DotContentDriveViewType =
+    (typeof DOT_CONTENT_DRIVE_VIEW_TYPE)[keyof typeof DOT_CONTENT_DRIVE_VIEW_TYPE];

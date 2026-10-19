@@ -4,8 +4,7 @@ import {
     DotCMSContentlet,
     DotContainerMap,
     DotDevice,
-    DotExperiment,
-    DotExperimentStatus
+    DotExperiment
 } from '@dotcms/dotcms-models';
 import {
     DotCMSPage,
@@ -122,6 +121,65 @@ export function getHrefFromClickTarget(target: EventTarget | null): string | nul
     }
 
     return maybeTarget.closest?.('a')?.href ?? null;
+}
+
+/**
+ * Resolves the anchor a click is meant for, even when the hit-tested
+ * `target` isn't the anchor itself.
+ *
+ * Checks ancestors first (`target.closest('a')`), same as a normal click. If
+ * that finds nothing, falls back to a descendant anchor — but only when
+ * there's exactly one inside `target`, AND that anchor has
+ * `pointer-events: none`. This covers a real pattern: an anchor styled that
+ * way, wrapped in a container a page's own script makes clickable instead
+ * (e.g. a "clickable card"). Hit-testing a `pointer-events: none` element
+ * always resolves to whatever is behind it — here, its own containing
+ * wrapper — so `target.closest('a')` can never find it no matter how
+ * precisely the click lands; `pointer-events: none` is also the only reason
+ * hit-testing could have skipped a real, clickable anchor to land on `target`
+ * in the first place, so it's what tells this apart from a click that merely
+ * landed somewhere else inside a large, unrelated container that happens to
+ * contain one ordinary link.
+ *
+ * Multiple descendant anchors are left alone (returns `null`): picking one
+ * would be a guess, and guessing wrong risks navigating somewhere the user
+ * didn't click.
+ */
+export function resolveClickedAnchor(target: HTMLElement): HTMLAnchorElement | null {
+    const ancestorAnchor = target.closest('a');
+
+    if (ancestorAnchor) {
+        return ancestorAnchor;
+    }
+
+    const descendantAnchors = target.querySelectorAll('a');
+
+    if (descendantAnchors.length !== 1) {
+        return null;
+    }
+
+    const [onlyAnchor] = descendantAnchors;
+
+    return getComputedStyle(onlyAnchor).pointerEvents === 'none' ? onlyAnchor : null;
+}
+
+/**
+ * Whether an `href` points somewhere the browser would actually navigate to.
+ *
+ * `#…` (same-page scroll) and `javascript:…` (a page's own click handler,
+ * invoked via the pseudo-protocol instead of a real `onclick`/listener) never
+ * navigate anywhere — a page's own UI commonly uses both as an `<a>`-shaped
+ * button (accordions, tabs, Bootstrap-style `data-toggle` collapses). Treating
+ * them as a real link caused dotCMS/core#37961's second QA regression: the
+ * editor took over (and thus `stopPropagation()`-blocked) clicks on these
+ * non-navigating anchors, so the page's own handler for them never ran.
+ */
+export function isNavigableHref(href: string | null | undefined): boolean {
+    if (!href) {
+        return false;
+    }
+
+    return !href.startsWith('#') && !/^\s*javascript:/i.test(href);
 }
 
 /**
@@ -621,6 +679,12 @@ export function createFullURL(params: DotPageApiParams, siteId?: string): string
     delete paramsCopy?.clientHost;
     delete paramsCopy?.url;
 
+    // A param set to `undefined` has been cleared (a removed filter, a reset
+    // publish date). URLSearchParams would print it as "key=undefined".
+    Object.keys(paramsCopy).forEach(
+        (key) => paramsCopy[key] === undefined && delete paramsCopy[key]
+    );
+
     const searchParams = new URLSearchParams(paramsCopy);
 
     const pureURL = new URL(`${url}?${searchParams.toString()}`, clientHost);
@@ -661,7 +725,9 @@ export function computeIsPageLocked(page: DotCMSPage, currentUser: CurrentUser):
  * Editing is allowed when ALL of the following are true:
  * - User has edit permission on the page
  * - Page is not locked (or locked by current user with feature flag enabled)
- * - No experiment is running or scheduled
+ *
+ * A running or scheduled experiment no longer blocks editing (#37308). The `experiment` argument
+ * is kept so callers and tests can show it is ignored.
  *
  * @param {DotCMSPage} page - The page to check
  * @param {CurrentUser} currentUser - The current user
@@ -677,12 +743,7 @@ export function computeCanEditPage(
 ): boolean {
     const hasEditPermission = !!page?.canEdit;
 
-    const isBlockedByExperiment = [
-        DotExperimentStatus.RUNNING,
-        DotExperimentStatus.SCHEDULED
-    ].includes(experiment?.status);
-
-    if (!hasEditPermission || isBlockedByExperiment) {
+    if (!hasEditPermission) {
         return false;
     }
 
@@ -1168,6 +1229,50 @@ export const isSamePageNavigation = (incomingUrl: string, currentUrl: string): b
 
     return target.pathname === current.pathname;
 };
+
+/**
+ * Scrolls a traditional page's iframe to the element a URL fragment points at.
+ *
+ * Traditional pages render through `srcdoc`, whose base URL is the admin's, so a
+ * browser-handled `#section` link resolves to the admin URL and loads the admin
+ * inside the canvas instead of scrolling. Callers cancel the click and scroll
+ * here instead. The target follows the HTML rules: the element with that id,
+ * else the first element with that name, and the top of the page for `#` or
+ * `#top`. An unknown fragment does nothing, as in a browser.
+ *
+ * Scrolls the iframe's own window rather than calling `scrollIntoView`, which
+ * would also scroll the editor's canvas around the iframe.
+ *
+ * @param {Window | null} win - The iframe's window
+ * @param {string} hash - The fragment, with or without the leading `#`
+ */
+export function scrollIframeToFragment(win: Window | null, hash: string): void {
+    if (!win) {
+        return;
+    }
+
+    const fragment = hash.replace(/^#/, '');
+    let id = fragment;
+
+    try {
+        id = decodeURIComponent(fragment);
+    } catch {
+        // A malformed escape is looked up as written.
+    }
+
+    const doc = win.document;
+    const target = id ? (doc.getElementById(id) ?? doc.getElementsByName(id)[0]) : undefined;
+
+    if (target) {
+        win.scrollTo({ top: target.getBoundingClientRect().top + (win.scrollY || 0), left: 0 });
+
+        return;
+    }
+
+    if (!id || id.toLowerCase() === 'top') {
+        win.scrollTo({ top: 0, left: 0 });
+    }
+}
 
 /** dotCMS path prefixes that stream a binary asset instead of rendering a page. */
 const ASSET_PATH_PREFIXES = ['/dA/', '/dotAsset/', '/contentAsset/'];

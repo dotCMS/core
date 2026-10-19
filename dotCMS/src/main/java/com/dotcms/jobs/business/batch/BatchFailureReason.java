@@ -48,6 +48,52 @@ public enum BatchFailureReason {
      */
     STAGED_CONTENT_UNAVAILABLE,
 
+    /**
+     * The path no longer resolves to a folder — it is gone, it is a file, or it is malformed.
+     * Added by bulk folder delete (#37063, spec FR-010, FR-019). Named to match the frontend
+     * half's independently-fixed vocabulary
+     * ({@code DOT_FOLDER_DELETE_FAILURE_REASONS}, PR dotCMS/core#37612) rather than the name
+     * originally drafted here ({@code NOT_FOUND}) — adopted 2026-09-19 so the client copy already
+     * written for this reason is not silently lost to its {@code UNCLASSIFIED} fallback.
+     */
+    PATH_NOT_FOUND,
+
+    /**
+     * The path names a folder the system protects — the system folder, or a site root — and never
+     * deletes. Added by bulk folder delete (#37063, spec FR-011, FR-019).
+     */
+    PROTECTED_FOLDER,
+
+    /**
+     * Content in the subtree was locked by another author and blocked the operation. Added by bulk
+     * folder delete (#37063, spec D-010, FR-019). Named {@code IN_USE} rather than {@code LOCKED}
+     * to match the frontend half's fixed vocabulary — same reconciliation as
+     * {@link #PATH_NOT_FOUND}.
+     */
+    IN_USE,
+
+    /**
+     * An ancestor in the same submission already covers this path, so it was never attempted as its
+     * own unit. Pairs with {@link BatchItemStatus#SKIPPED}, never {@link BatchItemStatus#FAILED}.
+     * <p>
+     * What "covers" means depends on the operation. For bulk folder delete (#37063, spec FR-013,
+     * FR-019) the ancestor removed the folder first. For bulk folder duplication (#37062) the
+     * ancestor's duplicate already carries a copy of it, and the folder itself is untouched.
+     * <p>
+     * Named {@code COVERED_BY_PARENT} rather than {@code ANCESTOR_REMOVED} to match the frontend
+     * half's fixed vocabulary, the same reconciliation as {@link #PATH_NOT_FOUND}.
+     */
+    COVERED_BY_PARENT,
+
+    /**
+     * No rights to add to the folder's parent, where its duplicate would land. Added by bulk folder
+     * duplication (#37062).
+     * <p>
+     * Distinct from {@link #PERMISSION_DENIED}, which is about the folder itself: the two send the
+     * author to fix permissions in different places, and the client writes different copy for each.
+     */
+    PARENT_PERMISSION_DENIED,
+
     /** Anything else. The message carries the detail, for logs only. */
     UNCLASSIFIED
 }

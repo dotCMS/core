@@ -5,6 +5,7 @@ import { vi } from 'vitest';
 import { ActivatedRoute } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
+import { Button } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
@@ -61,6 +62,27 @@ describe('DotPluginsListComponent', () => {
         vi.clearAllMocks();
         spectator = createComponent();
         component = spectator.component;
+    });
+
+    describe('refresh button', () => {
+        const refreshButton = () =>
+            spectator
+                .queryAll(Button)
+                .find((button) => button.el.nativeElement.dataset.testid === 'plugins-refresh-btn');
+
+        it('should render with the primary treatment instead of the grey secondary one', () => {
+            spectator.detectChanges();
+            const button = refreshButton();
+            expect(button).toBeDefined();
+            expect(button?.severity).toBeUndefined();
+        });
+
+        it('should be labelled with the plugins.refresh key', () => {
+            spectator.detectChanges();
+            const label = spectator.query('[data-testid="plugins-refresh-btn"]')?.textContent;
+            expect(label).toContain('plugins.refresh');
+            expect(label).not.toContain('plugins.refresh-table');
+        });
     });
 
     describe('drag and drop', () => {

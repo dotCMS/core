@@ -15,6 +15,7 @@ import com.dotcms.content.elasticsearch.business.*;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.IndexTag;
+import com.dotcms.content.index.IndexTimestamp;
 import com.dotcms.content.index.domain.Aggregation;
 import com.dotcms.content.index.domain.DotSearchException;
 import com.dotcms.enterprise.LicenseUtil;
@@ -803,8 +804,9 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         indicesToRemove.removeAll(listOfIndicesWithAlias);
 
         //Remove Indices which were created in the last day from the list of indicesToRemove
-        final Date yesterdayDate = Date.from(Instant.now().minus(Duration.ofDays(1)));
-        final String yesterdayDateTimestamp = ContentletIndexAPIImpl.timestampFormatter.format(yesterdayDate);
+        // The cutoff must use the same UTC suffix the names are written with (issue #37282).
+        final String yesterdayDateTimestamp =
+                IndexTimestamp.of(Instant.now().minus(Duration.ofDays(1)));
         final long yesterdayDateLong = Long.parseLong(yesterdayDateTimestamp);
 
         final List<String> listOfIndicesCreatedInTheLast24Hours = new ArrayList<>();

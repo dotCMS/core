@@ -3,12 +3,16 @@ package com.dotmarketing.common.reindex;
 import com.dotcms.contenttype.model.type.ContentType;
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 import org.apache.commons.lang.StringUtils;
@@ -26,6 +30,7 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import io.vavr.Lazy;
 import com.google.common.collect.ImmutableList;
 
 
@@ -382,7 +387,125 @@ public class ReindexQueueFactory {
 
         if (queue.isEmpty()) {
             lastIdIndexed = 0;
+            if (reindexingServers.size() > 1) {
+                // A safety net must never break what it protects: a failure here is logged and the
+                // normal path carries on as it did before this check existed.
+                try {
+                    takeOverStarvedSlices(reindexingServers, myIndex, priorityLevel);
+                } catch (final Exception e) {
+                    Logger.warn(this.getClass(), "Could not check the other servers' reindex "
+                            + "shares for stalls: " + e.getMessage(), e);
+                }
+            }
         }
+    }
+
+    /**
+     * How long another server's share of the journal may sit unchanged before an idle server takes
+     * it over. Read once: it is consulted on every idle poll of the reindex thread.
+     */
+    private static final Lazy<Duration> STARVED_SLICE_THRESHOLD = Lazy.of(() -> Duration.ofSeconds(
+            Config.getIntProperty("REINDEX_STARVED_SLICE_SECONDS", 120)));
+
+    private static StarvedSliceDetector starvedSliceDetector;
+
+    /** Shares whose takeover has already been logged; used only from the reindex thread. */
+    private static final Set<Integer> announcedTakeovers = new HashSet<>();
+
+    private static synchronized StarvedSliceDetector starvedSliceDetector() {
+        if (null == starvedSliceDetector) {
+            starvedSliceDetector = new StarvedSliceDetector(STARVED_SLICE_THRESHOLD.get());
+        }
+        return starvedSliceDetector;
+    }
+
+    /**
+     * Called when this server's own share of the journal is empty: loads the rows of any other
+     * share that has stopped moving.
+     *
+     * <p>The journal is split by {@code MOD(id, servers)} across every server that pinged in the
+     * last few minutes. A server that keeps pinging but does not index leaves its share untouched
+     * for as long as it keeps pinging, and a full reindex then hangs part-way with no error, no
+     * failed entries and nothing in the log (issue #36482). An idle server now picks those rows
+     * up. The worst case is indexing a document twice, which is harmless; the alternative was
+     * content that never got indexed.</p>
+     *
+     * <p>The check costs one grouped count, and only runs while this server has nothing of its own
+     * to do and the journal is split more than one way.</p>
+     */
+    private void takeOverStarvedSlices(final List<String> reindexingServers, final int myIndex,
+            final int priorityLevel) throws DotDataException {
+        final int sliceCount = reindexingServers.size();
+        final Map<Integer, StarvedSliceDetector.SliceSnapshot> snapshot =
+                loadShareSnapshot(sliceCount, priorityLevel);
+
+        final List<Integer> starved = starvedSliceDetector().starvedSlices(snapshot, myIndex,
+                sliceCount, Instant.now());
+        // One WARN per takeover, not one per poll while it lasts.
+        announcedTakeovers.retainAll(starved);
+        for (final int slice : starved) {
+            if (announcedTakeovers.add(slice)) {
+                Logger.warn(this.getClass(), String.format("Reindex share %d of %d, assigned to "
+                                + "server %s, has held %d entries without progress for over %d s. "
+                                + "That server is listed as alive but is not indexing its share; "
+                                + "this server is taking the entries over (issue #36482).", slice,
+                        sliceCount, reindexingServers.get(slice), snapshot.get(slice).count(),
+                        STARVED_SLICE_THRESHOLD.get().getSeconds()));
+            }
+
+            queue.addAll(loadShareEntries(sliceCount, slice, priorityLevel));
+        }
+    }
+
+    /**
+     * Row count and lowest id of every non-empty share of the journal, keyed by slice number.
+     *
+     * @param sliceCount how many ways the journal is split
+     * @param priorityLevel the highest priority still eligible for indexing
+     */
+    @VisibleForTesting
+    @CloseDBIfOpened
+    Map<Integer, StarvedSliceDetector.SliceSnapshot> loadShareSnapshot(final int sliceCount,
+            final int priorityLevel) throws DotDataException {
+        final DotConnect shares = new DotConnect();
+        // Grouped by position: PostgreSQL does not treat two bound MOD(id, ?) expressions as the
+        // same one, so "group by MOD(id, ?)" is rejected.
+        shares.setSQL("select MOD(id, ?) as slice, count(*) as rows_left, min(id) as min_id"
+                + " from dist_reindex_journal where priority <= ? group by 1");
+        shares.addParam(sliceCount);
+        shares.addParam(priorityLevel);
+
+        final Map<Integer, StarvedSliceDetector.SliceSnapshot> snapshot = new HashMap<>();
+        for (final Map<String, Object> row : shares.loadObjectResults()) {
+            snapshot.put(((Number) row.get("slice")).intValue(),
+                    new StarvedSliceDetector.SliceSnapshot(
+                            ((Number) row.get("rows_left")).longValue(),
+                            ((Number) row.get("min_id")).longValue()));
+        }
+        return snapshot;
+    }
+
+    /**
+     * Up to one batch of the entries in one share of the journal, in the order the normal path
+     * reads its own share.
+     *
+     * @param sliceCount how many ways the journal is split
+     * @param slice the share to read
+     * @param priorityLevel the highest priority still eligible for indexing
+     */
+    @VisibleForTesting
+    @CloseDBIfOpened
+    List<ReindexEntry> loadShareEntries(final int sliceCount, final int slice,
+            final int priorityLevel) throws DotDataException {
+        final DotConnect rows = new DotConnect();
+        rows.setSQL("select * from dist_reindex_journal where MOD(id, ?) = ?"
+                + " and priority <= ? ORDER BY priority ASC LIMIT 2000");
+        rows.addParam(sliceCount);
+        rows.addParam(slice);
+        rows.addParam(priorityLevel);
+        return rows.loadObjectResults().stream()
+                .map(this::mapToReindexEntry)
+                .collect(Collectors.toList());
     }
 
     private ReindexEntry mapToReindexEntry(final Map<String, Object> map) {

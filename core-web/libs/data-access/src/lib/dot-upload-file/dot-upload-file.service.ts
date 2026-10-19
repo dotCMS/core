@@ -6,6 +6,7 @@ import { inject, Injectable } from '@angular/core';
 import { catchError, filter, map, switchMap } from 'rxjs/operators';
 
 import {
+    DotBulkUploadActiveRun,
     DotBulkUploadEvent,
     DotBulkUploadForm,
     DotBulkUploadSubmitResponse,
@@ -14,6 +15,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { getFileMetadata, getFileVersion } from '@dotcms/utils';
 
+import { DotJobQueueService } from '../dot-job-queue/dot-job-queue.service';
 import { DotUploadService } from '../dot-upload/dot-upload.service';
 import {
     DotActionRequestOptions,
@@ -45,6 +47,7 @@ export class DotUploadFileService {
     /** The batch endpoint. Job-backed, so it answers a handle rather than a contentlet. */
     readonly #BULK_UPLOAD_URL = '/api/v1/assets/_bulkupload';
     readonly #http = inject(HttpClient);
+    readonly #jobQueueService = inject(DotJobQueueService);
     readonly #uploadService = inject(DotUploadService);
     readonly #workflowActionsFireService = inject(DotWorkflowActionsFireService);
 
@@ -170,6 +173,27 @@ export class DotUploadFileService {
                 asset: file
             }
         );
+    }
+
+    /**
+     * Reads the batches still being processed, so a reload can put their status back (#37062).
+     *
+     * Filtered to batches genuinely in progress: the listing answers with every non-terminal run,
+     * failed and abandoned ones included. A failure answers with no batches; nothing asked for this
+     * read, so it must not surface.
+     *
+     * @returns the batches in progress, for every user; the caller keeps its own
+     */
+    readActiveUploads(): Observable<DotBulkUploadActiveRun[]> {
+        return this.#jobQueueService.readActiveJobs<
+            { userId?: string; baseType?: string; stagedFiles?: unknown[] },
+            DotBulkUploadActiveRun
+        >('assetBulkUpload', (job) => ({
+            id: job.id,
+            userId: job.parameters?.userId,
+            fileCount: job.parameters?.stagedFiles?.length ?? 0,
+            baseType: job.parameters?.baseType
+        }));
     }
 
     /**

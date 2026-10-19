@@ -9,6 +9,7 @@ import {
     DotRoleUserResult,
     DotRolesService
 } from '@dotcms/data-access';
+import { DotMessageSeverity } from '@dotcms/dotcms-models';
 
 import { DotRolesStore } from './dot-roles.store';
 
@@ -266,7 +267,7 @@ describe('DotRolesStore', () => {
         it('should load members by role id, with no roleKey branching (#37070)', () => {
             store.loadMembers(SELECTED_ROLE);
 
-            expect(service.getUsers).toHaveBeenCalledWith('r-eco');
+            expect(service.getUsers).toHaveBeenCalledWith('r-eco', '');
             expect(store.members()).toHaveLength(2);
             expect(store.membersStatus()).toBe('LOADED');
         });
@@ -307,8 +308,8 @@ describe('DotRolesStore', () => {
             store.selectRole('r-eco');
             store.loadMembers({ id: 'r-eco' });
 
-            expect(service.getUsers).toHaveBeenCalledWith('r-eco');
-            expect(service.getUsers).toHaveBeenCalledWith('r-categories');
+            expect(service.getUsers).toHaveBeenCalledWith('r-eco', '');
+            expect(service.getUsers).toHaveBeenCalledWith('r-categories', '');
 
             const members = store.members();
             expect(members).toHaveLength(2);
@@ -727,6 +728,113 @@ describe('DotRolesStore', () => {
         });
     });
 
+    describe('member search', () => {
+        const JANE = { userId: 'u-9', firstName: 'Jane', lastName: 'Doe', emailAddress: 'j@x' };
+
+        beforeEach(() => {
+            store.loadRootRoles();
+            store.selectRole('r-eco');
+            store.loadMembers(SELECTED_ROLE);
+            vi.clearAllMocks();
+        });
+
+        it('should send the trimmed term to every role in the ancestor chain', () => {
+            service.getUsers.mockReturnValue(of([JANE]));
+
+            store.setMembersFilter('  jane ');
+
+            expect(store.membersFilter()).toBe('jane');
+            expect(service.getUsers).toHaveBeenCalledWith('r-eco', 'jane');
+            expect(service.getUsers).toHaveBeenCalledWith('r-categories', 'jane');
+            expect(store.members().map((m) => m.userId)).toEqual(['u-9']);
+        });
+
+        it('should reload silently, keeping the current rows instead of the skeleton', () => {
+            service.getUsers.mockReturnValue(NEVER);
+
+            store.setMembersFilter('jane');
+
+            expect(store.membersStatus()).toBe('LOADED');
+            expect(store.members()).toHaveLength(2);
+        });
+
+        it('should not reload for a term it already holds', () => {
+            store.setMembersFilter('jane');
+            vi.clearAllMocks();
+
+            store.setMembersFilter('jane ');
+
+            expect(service.getUsers).not.toHaveBeenCalled();
+        });
+
+        it('should keep the full roster ids for the picker while filtered', () => {
+            service.getUsers.mockReturnValue(of([JANE]));
+
+            store.setMembersFilter('jane');
+
+            expect(store.members().map((m) => m.userId)).toEqual(['u-9']);
+            expect(store.memberIds()).toEqual(['u-1', 'u-2']);
+        });
+
+        it('should keep the header count at the full roster while filtered', () => {
+            service.getUsers.mockReturnValue(of([JANE]));
+
+            store.setMembersFilter('jane');
+
+            expect(store.members()).toHaveLength(1);
+            expect(store.memberCount()).toBe(2);
+        });
+
+        it('should not rewrite the tree badge from a filtered roster', () => {
+            const badgeBefore = findRole(store.roles(), 'r-eco')?.userCount;
+            service.getUsers.mockReturnValue(of([]));
+
+            store.setMembersFilter('nobody');
+
+            expect(findRole(store.roles(), 'r-eco')?.userCount).toBe(badgeBefore);
+        });
+
+        it('should bring the full list back when the term is cleared', () => {
+            store.setMembersFilter('jane');
+            service.getUsers.mockReturnValue(of(MOCK_USER_FILTER_RESULTS));
+
+            store.setMembersFilter('');
+
+            expect(service.getUsers).toHaveBeenLastCalledWith(expect.any(String), '');
+            expect(store.members()).toHaveLength(2);
+        });
+
+        it('should drop the term when another role is selected', () => {
+            store.setMembersFilter('jane');
+
+            store.selectRole('r-snow');
+
+            expect(store.membersFilter()).toBe('');
+        });
+
+        it('should refresh the header count after a grant made while filtered', async () => {
+            service.getUsers.mockReturnValue(of([JANE]));
+            store.setMembersFilter('jane');
+            service.getUsers.mockImplementation((_roleId: string, filter?: string) =>
+                of(filter ? [JANE] : [...MOCK_USER_FILTER_RESULTS, JANE])
+            );
+
+            await store.grantUserToRole('u-9');
+
+            expect(service.getUsers).toHaveBeenCalledWith('r-eco', 'jane');
+            expect(service.getUsers).toHaveBeenCalledWith('r-eco', '');
+            expect(store.members()).toHaveLength(1);
+            expect(store.memberCount()).toBe(3);
+        });
+
+        it('should only reload the list after a grant made without a search', async () => {
+            await store.grantUserToRole('u-9');
+
+            expect(service.getUsers).toHaveBeenCalledTimes(2);
+            expect(service.getUsers).toHaveBeenCalledWith('r-eco', '');
+        });
+    });
+
     describe('isSystemRole', () => {
         it('isSystemRole should be true only for system roles', () => {
             service.getById.mockReturnValueOnce(of({ ...MOCK_ROLE_DETAIL, system: true }));
@@ -1062,6 +1170,49 @@ describe('DotRolesStore', () => {
             const categories = store.roles().find((n) => n.id === 'r-categories');
             expect(categories?.roleChildren?.map((c) => c.id)).toContain('r-eco');
             expect(result?.deleted).toBe(false);
+        });
+
+        it('should drop the deleted role from the search results the tree is showing', async () => {
+            service.searchTree.mockReturnValueOnce(
+                of([
+                    {
+                        id: 'r-categories',
+                        name: 'Categories',
+                        roleChildren: [{ id: 'r-eco', name: 'Eco Role' }]
+                    }
+                ])
+            );
+            store.setFilter('eco');
+            await Promise.resolve();
+
+            await store.deleteRole('r-eco');
+
+            expect(findRole(store.searchResults() ?? [], 'r-eco')).toBeUndefined();
+            expect(findRole(store.roles(), 'r-eco')).toBeUndefined();
+        });
+
+        it('should warn with a toast when the backend refuses the delete', async () => {
+            const messageDisplay = spectator.inject(DotMessageDisplayService);
+            service.delete.mockReturnValueOnce(
+                of({ deleted: false, roleId: 'r-eco', usersAffected: 0 })
+            );
+
+            await store.deleteRole('r-eco');
+
+            expect(messageDisplay.push).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: DotMessageSeverity.WARNING,
+                    message: 'roles.delete.rejected'
+                })
+            );
+        });
+
+        it('should not warn when the role was deleted', async () => {
+            const messageDisplay = spectator.inject(DotMessageDisplayService);
+
+            await store.deleteRole('r-eco');
+
+            expect(messageDisplay.push).not.toHaveBeenCalled();
         });
     });
 

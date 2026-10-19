@@ -34,6 +34,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.spi.FileSystemProvider;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -161,6 +166,16 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
          * Paths are final and have no restricted supertype, so they are matched by identity.
          */
         if (isRestrictedResourceType(clazz))
+        {
+            return false;
+        }
+
+        /**
+         * Servlet-container internals, embedded script interpreters and the alternate
+         * reflection, naming and process APIs. These can construct or run arbitrary code, so no
+         * method on them may be called from a template.
+         */
+        if (isRestrictedRuntimeType(clazz))
         {
             return false;
         }
@@ -326,6 +341,79 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
             {
                 return true;
             }
+        }
+
+        return false;
+    }
+
+    /**
+     * Package prefixes of servlet-container internals, embedded script interpreters and the
+     * alternate reflection and naming APIs. Matched against the class itself.
+     */
+    private static final String[] RESTRICTED_RUNTIME_PREFIXES = {
+            "org.apache.tomcat.",
+            "bsh.", "com.dotcms.repackage.bsh.",
+            "groovy.lang.", "org.codehaus.groovy.", "org.mozilla.javascript.",
+            "jdk.nashorn.", "org.openjdk.nashorn.", "org.graalvm.polyglot.",
+            "javax.naming.", "java.lang.invoke."
+    };
+
+    /**
+     * Types whose implementations live in other packages (for example a CDI container's
+     * InstanceManager, or the JDK's ProcessHandle implementation). Matched anywhere in the
+     * class hierarchy.
+     */
+    private static final Set<String> RESTRICTED_RUNTIME_TYPES = Set.of(
+            "org.apache.tomcat.InstanceManager",
+            "javax.naming.Context",
+            "javax.script.ScriptEngineFactory",
+            "java.lang.ProcessHandle",
+            "java.lang.ProcessHandle$Info"
+    );
+
+    /**
+     * Determines whether method execution on the given class is restricted because it is a
+     * servlet-container internal, an embedded script interpreter, or an alternate reflection,
+     * naming or process API.
+     *
+     * @param clazz class a method is about to be resolved on
+     * @return {@code true} if the class is a restricted runtime type (deny), {@code false} otherwise
+     */
+    static boolean isRestrictedRuntimeType(final Class<?> clazz)
+    {
+        if (clazz == null)
+        {
+            return false;
+        }
+
+        final String name = clazz.getName();
+        for (final String prefix : RESTRICTED_RUNTIME_PREFIXES)
+        {
+            if (name.startsWith(prefix))
+            {
+                return true;
+            }
+        }
+
+        final Deque<Class<?>> pending = new ArrayDeque<>();
+        final Set<Class<?>> seen = new HashSet<>();
+        pending.add(clazz);
+        while (!pending.isEmpty())
+        {
+            final Class<?> current = pending.poll();
+            if (!seen.add(current))
+            {
+                continue;
+            }
+            if (RESTRICTED_RUNTIME_TYPES.contains(current.getName()))
+            {
+                return true;
+            }
+            if (current.getSuperclass() != null)
+            {
+                pending.add(current.getSuperclass());
+            }
+            Collections.addAll(pending, current.getInterfaces());
         }
 
         return false;

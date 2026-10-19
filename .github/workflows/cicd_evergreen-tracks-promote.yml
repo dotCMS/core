@@ -299,3 +299,25 @@ jobs:
             — ${{ needs.apply.outputs.summary }}.
             Environments on these tracks pick this up at their next reconciler maintenance window,
             not immediately. <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>
+
+  # Reconcile the corpsites EvergreenState record with whatever Hub now holds.
+  # Runs on every apply, including no-move days (daily heal), and after a failed
+  # apply too, since the mirror must match what actually landed. Deliberately a
+  # separate job OUTSIDE the evergreen-tracks-registry lock (held only by `apply`):
+  # a slow or failing site sync must never block the next registry mutation.
+  site-sync:
+    needs: [ apply ]
+    if: >-
+      always()
+      && (needs.apply.result == 'success' || needs.apply.result == 'failure')
+      && (github.event.inputs.repo || 'dotcms/dotcms') == 'dotcms/dotcms'
+    uses: ./.github/workflows/cicd_comp_evergreen-site-sync.yml
+    with:
+      trigger: evergreen-tracks-promote (${{ github.event_name }})
+      apply: true
+      drift_check: ${{ github.event_name == 'schedule' }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      DOTCMS_DEVSITE_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITE_RELEASENOTES_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

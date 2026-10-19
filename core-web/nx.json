@@ -173,7 +173,8 @@
             "plugin": "@nx/eslint/plugin",
             "options": {
                 "targetName": "lint"
-            }
+            },
+            "exclude": ["libs/sdk/angular/toolchain/**"]
         },
         {
             "plugin": "@nx/vite/plugin",
@@ -253,6 +254,7 @@
             "include": [
                 "libs/sdk/ai/**/*",
                 "libs/sdk/client/**/*",
+                "libs/sdk/events/**/*",
                 "libs/sdk/experiments/**/*",
                 "libs/sdk/react/**/*",
                 "libs/sdk/types/**/*",

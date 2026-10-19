@@ -1,5 +1,7 @@
 package com.dotcms;
 
+import com.dotcms.content.elasticsearch.business.DeferredBinaryRemovalIT;
+import com.dotcms.jobs.business.HeartbeatIT;
 import com.dotcms.jobs.business.api.JobProcessorDiscoveryTest;
 import com.dotcms.jobs.business.api.JobQueueManagerAPICDITest;
 import com.dotcms.jobs.business.api.JobQueueManagerAPIIntegrationTest;
@@ -9,12 +11,28 @@ import com.dotcms.jobs.business.processor.impl.BulkUploadProcessorIT;
 import com.dotcms.jobs.business.processor.impl.BulkUploadNotificationIT;
 import com.dotcms.jobs.business.processor.impl.BulkUploadIndexingIT;
 import com.dotcms.jobs.business.processor.impl.BulkUploadConcurrencyIT;
+import com.dotcms.jobs.business.processor.impl.FolderBulkDeleteAnnouncementIT;
+import com.dotcms.jobs.business.processor.impl.FolderBulkDeleteCancellationIT;
+import com.dotcms.jobs.business.processor.impl.FolderBulkDeleteHeartbeatIT;
+import com.dotcms.jobs.business.processor.impl.FolderBulkDeleteMemoryCeilingIT;
+import com.dotcms.jobs.business.processor.impl.FolderBulkDeleteNotificationIT;
+import com.dotcms.jobs.business.processor.impl.FolderBulkDeleteProcessorIT;
+import com.dotcms.jobs.business.processor.impl.FolderBulkDeleteResumeIT;
+import com.dotcms.jobs.business.processor.impl.FolderBulkDuplicateCancellationIT;
+import com.dotcms.jobs.business.processor.impl.FolderBulkDuplicateHeartbeatIT;
+import com.dotcms.jobs.business.processor.impl.FolderBulkDuplicateNotificationIT;
+import com.dotcms.jobs.business.processor.impl.FolderBulkDuplicateProcessorIT;
+import com.dotcms.rest.api.v1.asset.bulkdelete.FolderBulkDeleteOverlapIT;
+import com.dotcms.rest.api.v1.asset.bulkdelete.FolderBulkDeleteResourceIT;
+import com.dotcms.rest.api.v1.asset.bulkduplicate.FolderBulkDuplicateResourceIT;
 import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadReclaimIT;
 import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadResourceIT;
 import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadSecurityIT;
 import com.dotcms.rest.api.v1.content.bulkrefresh.BulkRefreshResourceIntegrationTest;
 import com.dotcms.rest.api.v1.content.dotimport.ContentImportResourceIntegrationTest;
+import com.dotcms.rest.api.v1.job.JobQueueDomainQueuesBypassIntegrationTest;
 import com.dotcms.rest.api.v1.job.JobQueueHelperIntegrationTest;
+import com.dotmarketing.portlets.folders.business.FolderDeleteKeepsFilesOnRollbackIT;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
@@ -35,6 +53,7 @@ import org.junit.platform.suite.api.Suite;
         JobQueueManagerAPICDITest.class,
         PostgresJobQueueIntegrationTest.class,
         JobQueueManagerAPIIntegrationTest.class,
+        JobQueueDomainQueuesBypassIntegrationTest.class,
         JobQueueHelperIntegrationTest.class,
         ImportContentletsProcessorIntegrationTest.class,
         ContentImportResourceIntegrationTest.class,
@@ -46,7 +65,24 @@ import org.junit.platform.suite.api.Suite;
         BulkUploadConcurrencyIT.class,
         BulkUploadReclaimIT.class,
         BulkUploadSecurityIT.class,
-        JobProcessorDiscoveryTest.class
+        JobProcessorDiscoveryTest.class,
+        HeartbeatIT.class,
+        FolderBulkDeleteResourceIT.class,
+        FolderBulkDeleteProcessorIT.class,
+        FolderBulkDeleteCancellationIT.class,
+        FolderBulkDeleteNotificationIT.class,
+        FolderBulkDeleteOverlapIT.class,
+        FolderBulkDeleteAnnouncementIT.class,
+        FolderBulkDeleteResumeIT.class,
+        FolderBulkDeleteHeartbeatIT.class,
+        FolderBulkDeleteMemoryCeilingIT.class,
+        DeferredBinaryRemovalIT.class,
+        FolderDeleteKeepsFilesOnRollbackIT.class,
+        FolderBulkDuplicateResourceIT.class,
+        FolderBulkDuplicateProcessorIT.class,
+        FolderBulkDuplicateCancellationIT.class,
+        FolderBulkDuplicateNotificationIT.class,
+        FolderBulkDuplicateHeartbeatIT.class
 })
 public class Junit5Suite1 {
 

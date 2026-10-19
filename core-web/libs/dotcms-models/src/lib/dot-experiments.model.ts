@@ -23,6 +23,17 @@ export interface DotExperiment {
     creationDate: Date;
     modDate: number;
     goals: Goals | null;
+    /** Id of the user who created the experiment. What the Created By filter matches on. */
+    createdBy: string;
+    /**
+     * Display name of the creator, as the API resolves it — a full name, `System` for the system
+     * user, or `unknown` for a deleted user, an orphaned reference, a blank name or a failed
+     * lookup. Rendered as delivered; the screen never re-maps those values (#37304).
+     *
+     * Optional only because the portlet and the backend do not ship as one unit: against a backend
+     * that predates #37304 the field is absent, and the column falls back to its placeholder.
+     */
+    createdByUserName?: string;
 }
 
 export type DotExperimentsWithActions = DotExperiment & { actionsItemsMenu: MenuItem[] };

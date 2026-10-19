@@ -36,6 +36,11 @@ import static com.dotmarketing.util.UtilMethods.isSet;
  *                                     pushing? Defaults to false)</li>
  *       <li>dependencies:             true|false, defaults to true</li>
  *       <li>relationships:            true|false, defaults to true</li>
+ *       <li>relationshipsSecondLevel: true|false, defaults to false. When true, related content is
+ *                                     also followed one extra level (e.g. pushing A also includes
+ *                                     content related to A's direct relationships, not just the
+ *                                     direct relationships themselves); it does not recurse any
+ *                                     further than that one extra level.</li>
  *     </ul>
  * </ul>
  *
@@ -57,6 +62,7 @@ public class FilterDescriptor implements Comparable<FilterDescriptor> {
     public static final String EXCLUDE_QUERY_KEY = "excludeQuery";
     public static final String EXCLUDE_DEPENDENCY_QUERY_KEY = "excludeDependencyQuery";
     public static final String FORCE_PUSH_KEY = "forcePush";
+    public static final String RELATIONSHIPS_SECOND_LEVEL_KEY = "relationshipsSecondLevel";
     public static final String DEFAULT_SORT_VALUE = "1000";
 
     /**
@@ -170,6 +176,7 @@ public class FilterDescriptor implements Comparable<FilterDescriptor> {
         listOfPossibleFilters.add(EXCLUDE_QUERY_KEY);
         listOfPossibleFilters.add(EXCLUDE_DEPENDENCY_QUERY_KEY);
         listOfPossibleFilters.add(FORCE_PUSH_KEY);
+        listOfPossibleFilters.add(RELATIONSHIPS_SECOND_LEVEL_KEY);
 
         if(!getFilters().keySet().stream().allMatch(element -> listOfPossibleFilters.contains(element))){
             errors.add("The field `Filters` has a property that is not expected. Possible Properties: " + listOfPossibleFilters.toString());
@@ -199,6 +206,15 @@ public class FilterDescriptor implements Comparable<FilterDescriptor> {
                         .get(FilterDescriptor.FORCE_PUSH_KEY));
             } catch (final ClassCastException e){
                 errors.add("The value of the field `forcePush` cannot be cast to Boolean");
+            }
+        }
+
+        if(getFilters().containsKey(RELATIONSHIPS_SECOND_LEVEL_KEY)) {
+            try {
+                Boolean.class.cast(getFilters()
+                        .get(FilterDescriptor.RELATIONSHIPS_SECOND_LEVEL_KEY));
+            } catch (final ClassCastException e){
+                errors.add("The value of the field `relationshipsSecondLevel` cannot be cast to Boolean");
             }
         }
 

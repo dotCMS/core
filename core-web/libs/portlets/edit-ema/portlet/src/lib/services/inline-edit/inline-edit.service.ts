@@ -95,7 +95,7 @@ export class InlineEditService {
         this.$iframeWindow.set(iframe.nativeElement.contentWindow);
         this.$isInlineEditingEnable.set(true);
 
-        if (doc.querySelector('script[data-inline="true"]')) {
+        if (!doc || doc.querySelector('script[data-inline="true"]')) {
             return;
         }
 
@@ -105,6 +105,10 @@ export class InlineEditService {
 
     removeInlineEdit(iframe: ElementRef<HTMLIFrameElement>) {
         const doc = iframe.nativeElement.contentDocument;
+
+        if (!doc) {
+            return;
+        }
 
         doc.querySelectorAll('script[data-inline="true"]').forEach((script) => script.remove());
         doc.querySelectorAll('style').forEach((style) => {

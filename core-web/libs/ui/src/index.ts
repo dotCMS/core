@@ -25,6 +25,8 @@ export * from './lib/components/dot-workflow-push-publish/dot-workflow-push-publ
 export * from './lib/components/dot-asset-search/components/dot-asset-search-dialog/dot-asset-search-dialog.component';
 export * from './lib/components/dot-asset-search/dot-asset-search.component';
 export * from './lib/components/dot-chip-filter/dot-chip-filter.component';
+export * from './lib/components/dot-user-filter/dot-user-filter.component';
+export * from './lib/components/dot-user-picker/dot-user-picker.component';
 export * from './lib/components/dot-binary-option-selector/dot-binary-option-selector.component';
 export * from './lib/components/dot-chip-filter/constants';
 export * from './lib/components/dot-filter-bar/constants';
@@ -67,6 +69,11 @@ export * from './lib/components/dot-search-input/dot-search-input.component';
 export * from './lib/services/dot-keyboard-shortcut/dot-keyboard-shortcut.service';
 export * from './lib/services/dot-keyboard-shortcut/models';
 export * from './lib/services/dot-keyboard-shortcut/overlay';
+// Side panels: open one with DotSidePanelService or injectSidePanel; it renders in the outlet at
+// the root of the app.
+export * from './lib/components/dot-side-panel/dot-side-panel-outlet.component';
+export * from './lib/services/dot-side-panel/dot-side-panel.service';
+export * from './lib/services/dot-side-panel/inject-side-panel';
 export * from './lib/components/dot-search-input/constants';
 export * from './lib/components/dot-severity-icon/dot-severity-icon.component';
 export * from './lib/components/dot-sidebar-accordion';
@@ -150,6 +157,8 @@ export * from './lib/dialog/fullscreen-dialog';
 
 // Monaco editor presets
 export * from './lib/monaco/editor-options';
+export * from './lib/monaco/run-shortcut';
+export * from './lib/monaco/velocity-language';
 
 // Theme
 export * from './lib/theme';

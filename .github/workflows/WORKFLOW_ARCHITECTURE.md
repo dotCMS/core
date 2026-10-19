@@ -785,8 +785,22 @@ After clicking "Run workflow", you'll be redirected to the workflow run page sho
 3. Update this documentation with action details
 
 ### Version Updates
-- Ubuntu runner: Update `vars.UBUNTU_RUNNER_VERSION`
-- macOS runner: Update `vars.MACOS_*_RUNNER_VERSION`
+
+Runner images are selected by repository variables (Settings > Secrets and variables > Actions >
+Variables). Workflows read them as `vars.NAME || '<default>'`, so a change takes effect on the next
+run without a pull request. Keep each default in the code equal to the variable's value.
+
+| Variable | Value | Runner | Used by |
+|---|---|---|---|
+| `UBUNTU_RUNNER_VERSION` | `24.04` | `ubuntu-24.04` | Ubuntu jobs, including the `runner` input passed to the AI workflows (a few workflows still hardcode the label and are being migrated) |
+| `MACOS_SILICON_RUNNER_VERSION` | `15` | `macos-15` (arm64) | CLI native build |
+| `MACOS_INTEL_RUNNER_VERSION` | `15-intel` | `macos-15-intel` | CLI native build (GitHub ends hosted Intel macOS runners in fall 2027) |
+| `MACOS_RUNNER_VERSION` | `15` | `macos-15` | Publish Starter |
+
+- Never write `ubuntu-latest` or a literal version in `runs-on`; use
+  `ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}`.
+- Rolling back a runner image is a variable change; follow it with a pull request that realigns the
+  default.
 - Java version: Update `.sdkmanrc` file
 
 ### Best Practices

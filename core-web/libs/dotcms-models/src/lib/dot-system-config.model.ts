@@ -63,16 +63,47 @@ export interface DotBulkUploadCeilings {
     maxTotalBytes: number;
 }
 
+/**
+ * The bulk folder delete ceiling the server enforces, as it advertises it on
+ * `/api/v1/appconfiguration`.
+ *
+ * Advertised for the same reason as {@link DotBulkUploadCeilings}: so a client can name the limit
+ * rather than saying "fewer". The server remains the enforcement point.
+ */
+export interface DotFolderBulkDeleteCeilings {
+    /** Folder paths in one submission. */
+    maxPaths: number;
+}
+
+/**
+ * The bulk folder duplication ceiling the server enforces, as it advertises it on
+ * `/api/v1/appconfiguration` (#37062).
+ *
+ * The same shape as delete's: the most folders one submission may carry. Read from the constant
+ * the endpoint enforces with, so Content Drive can cap a selection at it and name the limit. The
+ * server remains the enforcement point.
+ */
+export type DotFolderBulkDuplicateCeilings = DotFolderBulkDeleteCeilings;
+
 export interface DotSystemConfig {
     logos: DotLogos;
     colors: DotUIColors;
     releaseInfo: DotReleaseInfo;
     systemTimezone: DotSystemTimezone;
+    /**
+     * Every time zone the server accepts, one entry per Java zone id. `offset` is the raw offset
+     * in milliseconds and ignores daylight saving time.
+     */
+    timezones?: DotSystemTimezone[];
     languages: DotSystemLanguage[];
     license: DotSystemLicense;
     cluster: DotCluster;
     /** Absent on an instance older than the field. See {@link DotBulkUploadCeilings}. */
     bulkUpload?: DotBulkUploadCeilings;
+    /** Absent on an instance older than the field. See {@link DotFolderBulkDeleteCeilings}. */
+    folderBulkDelete?: DotFolderBulkDeleteCeilings;
+    /** Absent on an instance older than the field. See {@link DotFolderBulkDuplicateCeilings}. */
+    folderBulkDuplicate?: DotFolderBulkDuplicateCeilings;
 }
 
 /**
@@ -84,10 +115,13 @@ export interface SystemConfigEntity {
         colors: DotUIColors;
         releaseInfo: DotReleaseInfo;
         systemTimezone: DotSystemTimezone;
+        timezones?: DotSystemTimezone[];
         languages: DotSystemLanguage[];
         license: DotSystemLicense;
         cluster: DotCluster;
         bulkUpload?: DotBulkUploadCeilings;
+        folderBulkDelete?: DotFolderBulkDeleteCeilings;
+        folderBulkDuplicate?: DotFolderBulkDuplicateCeilings;
         // Other config properties we don't need for the system config
         [key: string]: unknown;
     };

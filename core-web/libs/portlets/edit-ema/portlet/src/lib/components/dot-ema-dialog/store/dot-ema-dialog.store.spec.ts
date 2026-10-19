@@ -6,13 +6,12 @@ import { signal } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotActionUrlService, DotMessageService } from '@dotcms/data-access';
 import { DotCMSPage, DotCMSUVEAction } from '@dotcms/types';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotEmaDialogStore } from './dot-ema-dialog.store';
 
-import { DotActionUrlService } from '../../../services/dot-action-url/dot-action-url.service';
 import { LAYOUT_URL } from '../../../shared/consts';
 import { DialogStatus, FormStatus } from '../../../shared/enums';
 import { PAYLOAD_MOCK } from '../../../shared/mocks';

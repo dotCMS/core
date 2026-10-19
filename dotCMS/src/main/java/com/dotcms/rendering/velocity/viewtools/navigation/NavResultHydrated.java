@@ -2,22 +2,28 @@ package com.dotcms.rendering.velocity.viewtools.navigation;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.velocity.tools.view.context.ViewContext;
 
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPIImpl;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.json.JSONIgnore;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 
 public final class NavResultHydrated extends NavResult{
 
@@ -25,6 +31,20 @@ public final class NavResultHydrated extends NavResult{
      * 
      */
     private static final long serialVersionUID = 1L;
+    /** Prefixes of the Page API endpoints that render a page through Velocity. */
+    private static final String RENDER_PREFIX = "/api/v1/page/render/";
+    private static final String RENDER_HTML_PREFIX = "/api/v1/page/renderHTML/";
+
+    /**
+     * Supplies the configured index page name ({@code CMS_INDEX_PAGE}, default {@code index}) —
+     * the same value {@link com.dotmarketing.filters.CMSFilter} appends when it normalizes a
+     * folder URL on the front end. Package-private and mutable purely so tests can vary it:
+     * {@code HTMLPageAssetAPIImpl.CMS_INDEX_PAGE} is a {@code static final} vavr {@code Lazy}
+     * that memoizes on first read, so {@code Config.setProperty} cannot change it afterwards.
+     */
+    @VisibleForTesting
+    static Supplier<String> indexPageName = HTMLPageAssetAPIImpl.CMS_INDEX_PAGE::get;
+
     final NavResult navResult;
     final transient ViewContext context;
 
@@ -41,34 +61,160 @@ public final class NavResultHydrated extends NavResult{
     }
     
 
+    /**
+     * Tells whether this navigation item is the one the current request is on, which is what
+     * {@code $nav.active} resolves to in a Velocity template. Templates typically use it to mark
+     * the current section and keep its children expanded.
+     *
+     * @return {@code true} when this item is the current page, or a folder containing it
+     */
     public boolean isActive() {
-        if (context != null && UtilMethods.isSet(navResult.getHref())) {
-            HttpServletRequest req = (HttpServletRequest) context.getRequest();
-            if (req != null) {
-                // We exclude the page name from the Request URI so we can check if page's parent
-                // object is the real active object
-                String reqURI = req.getRequestURI().replace("/api/v1/page/render", "");
-                String parentPath = reqURI.substring(0, reqURI.lastIndexOf("/"));
-                if (!parentPath.endsWith("/"))
-                    // Adding a slash at the end of the path, so it avoids false positives
-                    // when two or more paths from the same level starts with the same name
-                    parentPath = parentPath + "/";
-                // If the current item is a folder, we check if it's part of current URI
-
-                // System.err.println(href + " : " + reqURI);
-                if (isFolder() && !navResult.getHref()
-                    .endsWith("/")) {
-                    String tempHref = navResult.getHref() + "/";
-                    return parentPath.startsWith(tempHref);
-                } else {
-                    // If it's a page, we check instead if it's the current URI
-                    return !isCodeLink() && navResult.getHref()
-                        .equalsIgnoreCase(reqURI);
-                }
-            }
+        if (context == null || !UtilMethods.isSet(navResult.getHref())) {
+            return false;
         }
-        return false;
+        final HttpServletRequest req = (HttpServletRequest) context.getRequest();
+        return req != null
+                && isActive(req.getRequestURI(), navResult.getHref(), isFolder(), isCodeLink(),
+                        belongsToRequestedSite(req));
     }
+
+    /**
+     * Whether this navigation item belongs to the site the request is being rendered for.
+     *
+     * <p>A navigation tree can be pulled from another site — {@code $navtool.getNav("//other/path")}
+     * — and its items carry unqualified hrefs, so a folder on that site can have the same path as a
+     * page on this one. Reads the site off the request attribute the Page API already sets rather
+     * than calling {@code getCurrentHost()}, which is {@code @CloseDBIfOpened} and resolves the
+     * system user — far too heavy to run once per navigation item per page render.
+     *
+     * @param req the current request
+     * @return {@code true} when the item is on the requested site, or when that cannot be determined
+     */
+    private boolean belongsToRequestedSite(final HttpServletRequest req) {
+        final Object requestedSite = req.getAttribute(WebKeys.CURRENT_HOST);
+        if (!(requestedSite instanceof Host) || navResult.getHostId() == null) {
+            // Cannot tell; keep the behavior the item would have had without this check.
+            return true;
+        }
+        return navResult.getHostId().equals(((Host) requestedSite).getIdentifier());
+    }
+
+    /**
+     * The active-state decision, pulled out of {@link #isActive()} as a pure function of its
+     * inputs so it can be exercised directly over the full range of request URI shapes. Holds no
+     * state and reads nothing beyond its arguments.
+     *
+     * @param requestURI the raw request URI, still carrying any Page API prefix
+     * @param href       the navigation item's URL path
+     * @param folder     whether the item is a folder rather than a page or link
+     * @param codeLink   whether the item is a Velocity code link, which is never active
+     * @param onRequestedSite whether the item belongs to the site being rendered
+     * @return {@code true} when the item is the current page, or a folder containing it
+     */
+    @VisibleForTesting
+    static boolean isActive(final String requestURI, final String href, final boolean folder,
+            final boolean codeLink, final boolean onRequestedSite) {
+
+        // A Page API render carries a prefix; the front end does not. Which it is decides whether
+        // the index candidate below is even considered.
+        final String strippedURI = stripRenderPrefix(requestURI);
+        final String reqURI = strippedURI != null ? strippedURI : requestURI;
+
+        if (matches(reqURI, href, folder, codeLink)) {
+            return true;
+        }
+
+        // Only the Page API needs the second attempt. CMSFilter has already redirected a folder URL
+        // and appended the index page name before Velocity sees a front-end request, so a front-end
+        // URI always carries a page segment and is matched above, exactly as it always has been.
+        // The Page API is a JAX-RS resource outside that filter, so a folder-style URL such as
+        // /api/v1/page/render/TravelHub arrives with no page segment at all -- which is what the
+        // Universal Visual Editor sends when it navigates in-editor. See issue #37105.
+        if (strippedURI == null) {
+            return false;
+        }
+        // The candidate is a guess at the page this folder-style URI means, and it is only a safe
+        // guess for the site being rendered. An item pulled from another site carries an unqualified
+        // href, so its folder path can collide with a page path here; without this check that folder
+        // would light up on a page it has nothing to do with.
+        if (!onRequestedSite) {
+            return false;
+        }
+        final String indexCandidate = indexCandidate(reqURI);
+        return indexCandidate != null && matches(indexCandidate, href, folder, codeLink);
+    }
+
+    /**
+     * Removes the prefix of a Page API rendering endpoint, keeping the leading slash of the page
+     * path.
+     *
+     * <p>Both tests require the trailing slash, which makes them mutually exclusive so their order
+     * cannot matter, and stops a page path that merely begins with {@code render} being mangled.
+     * {@code /api/v1/page/_render-sources/} is deliberately not handled: it returns references only
+     * and renders no Velocity, so no navigation item is ever hydrated on that path.
+     *
+     * @param requestURI the raw request URI
+     * @return the page path, or {@code null} when the URI carries no rendering prefix
+     */
+    private static String stripRenderPrefix(final String requestURI) {
+        if (requestURI.startsWith(RENDER_HTML_PREFIX)) {
+            return requestURI.substring(RENDER_HTML_PREFIX.length() - 1);
+        }
+        if (requestURI.startsWith(RENDER_PREFIX)) {
+            return requestURI.substring(RENDER_PREFIX.length() - 1);
+        }
+        return null;
+    }
+
+    /**
+     * Builds the URI this request would have had if it had named the folder's index page, which is
+     * the shape {@link com.dotmarketing.filters.CMSFilter} hands the front end.
+     *
+     * @param reqURI the prefix-stripped request URI
+     * @return the candidate URI, or {@code null} when the URI already names the index page
+     */
+    private static String indexCandidate(final String reqURI) {
+        final String indexPage = indexPageName.get();
+        if (reqURI.endsWith(StringPool.SLASH + indexPage)) {
+            return null;
+        }
+        return reqURI.endsWith(StringPool.SLASH)
+                ? reqURI + indexPage
+                : reqURI + StringPool.SLASH + indexPage;
+    }
+
+    /**
+     * The original active-state test, unchanged but for a guard against a URI holding no slash.
+     *
+     * @param uri      the URI to compare against
+     * @param href     the navigation item's URL path
+     * @param folder   whether the item is a folder
+     * @param codeLink whether the item is a Velocity code link
+     * @return whether the item is active for this URI
+     */
+    private static boolean matches(final String uri, final String href, final boolean folder,
+            final boolean codeLink) {
+
+        final int lastSlash = uri.lastIndexOf('/');
+        if (lastSlash < 0) {
+            return false;
+        }
+        // We exclude the page name from the Request URI so we can check if page's parent
+        // object is the real active object
+        String parentPath = uri.substring(0, lastSlash);
+        if (!parentPath.endsWith(StringPool.SLASH)) {
+            // Adding a slash at the end of the path, so it avoids false positives
+            // when two or more paths from the same level starts with the same name
+            parentPath = parentPath + StringPool.SLASH;
+        }
+        // If the current item is a folder, we check if it's part of current URI
+        if (folder && !href.endsWith(StringPool.SLASH)) {
+            return parentPath.startsWith(href + StringPool.SLASH);
+        }
+        // If it's a page, we check instead if it's the current URI
+        return !codeLink && href.equalsIgnoreCase(uri);
+    }
+
     @Override
     public String getCodeLink() {
         if (navResult.getCodeLink() != null && (navResult.getCodeLink()

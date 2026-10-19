@@ -271,6 +271,47 @@ describe('DotChipFilterComponent', () => {
         });
     });
 
+    describe('the loading state', () => {
+        /**
+         * Ahead of the values on purpose: while the labels are still being resolved the only thing
+         * that could go after the title is the raw values, which are identifiers the user never
+         * chose.
+         */
+        it('should replace the values with a spinner while loading', () => {
+            spectator.setInput('selections', ['dotcms.org.1']);
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('chip-values'))).toBeFalsy();
+            expect(spectator.query(byTestId('chip-loading'))).toBeTruthy();
+        });
+
+        /**
+         * New markup, so Material Symbols rather than PrimeIcons (ANGULAR_STANDARDS) — and the
+         * house spinner specifically, which is `progress_activity` spun by Tailwind. Asserted on
+         * the text content because that is where a Material Symbol's name lives.
+         */
+        it('should draw the house spinner rather than a PrimeIcon', () => {
+            spectator.setInput('loading', true);
+            spectator.detectChanges();
+
+            const spinner = spectator.query(byTestId('chip-loading'));
+
+            expect(spinner?.textContent?.trim()).toBe('progress_activity');
+            expect(spinner).toHaveClass('material-symbols-outlined');
+            expect(spinner).toHaveClass('animate-spin');
+        });
+
+        it('should show the values again once loading ends', () => {
+            spectator.setInput('selections', ['Blog']);
+            spectator.setInput('loading', false);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('chip-loading'))).toBeFalsy();
+            expect(getValues()).toContain('Blog');
+        });
+    });
+
     describe('accessibility', () => {
         it('should expose role=button and tabindex=0 on the host', () => {
             expect(spectator.element.getAttribute('role')).toBe('button');

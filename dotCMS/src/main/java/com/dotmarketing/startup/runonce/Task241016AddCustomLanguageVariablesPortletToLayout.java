@@ -26,6 +26,12 @@ import java.util.stream.Collectors;
  */
 public class Task241016AddCustomLanguageVariablesPortletToLayout implements StartupTask {
 
+    /**
+     * Stored with {@code portletSource=db}, the same marker admin-made custom content tools carry.
+     * What keeps it a product tool (not custom, not deletable or editable through the custom-tool
+     * operations) is its declaration in {@link com.dotmarketing.util.PortletID#LANGUAGE_VARIABLES}.
+     * Any future shipped tool inserted this way must be declared in {@code PortletID} as well.
+     */
     public static final String LANGUAGE_VARIABLES_PORTLET_ID = "c_Language-Variables";
     public static final String LANGUAGE_VARIABLES_PORTLET_NAME = "Language Variables";
     public static final String LANGUAGE_VARIABLES_CT_VAR_NAME = "Languagevariable";

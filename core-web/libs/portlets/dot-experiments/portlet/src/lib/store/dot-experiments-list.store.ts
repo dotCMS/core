@@ -13,7 +13,8 @@ import { filter, map, mergeMap, switchMap } from 'rxjs/operators';
 import {
     DotContentSearchService,
     DotExperimentsService,
-    DotHttpErrorManagerService
+    DotHttpErrorManagerService,
+    ExperimentsHealthResponse
 } from '@dotcms/data-access';
 import {
     ComponentStatus,
@@ -30,6 +31,7 @@ import { dotExperimentsApiEvents } from './dot-experiments-api.events';
 import { dotExperimentsListPageEvents } from './dot-experiments-list-page.events';
 
 import {
+    DEFAULT_EXPERIMENTS_LIST_CREATORS,
     DEFAULT_EXPERIMENTS_LIST_DIRECTION,
     DEFAULT_EXPERIMENTS_LIST_GOALS,
     DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -39,10 +41,16 @@ import {
     OPT_IN_STATUSES,
     PAGE_LOOKUP_LANGUAGE_HEADROOM
 } from '../shared/constants';
-import { DotExperimentPageInfo, DotExperimentsListViewState } from '../shared/models';
+import {
+    DotExperimentPageInfo,
+    DotExperimentsListViewState,
+    ExperimentsListSchedulePeriod
+} from '../shared/models';
 import {
     comparatorFor,
     distinctPageIds,
+    isScheduleRangeInverted,
+    matchesSchedulePeriod,
     emptyGoalCounts,
     emptyStatusCounts,
     fromRouteParams,
@@ -50,6 +58,7 @@ import {
     normalizePagePath,
     parseViewState,
     resolvedPageInfo,
+    scheduleBoundsOf,
     toQueryParams
 } from '../util/dot-experiments-list-store.util';
 import { resolvePagePath } from '../util/dot-experiments-list.util';
@@ -57,8 +66,12 @@ import { resolvePagePath } from '../util/dot-experiments-list.util';
 /** Full state of the experiments list. */
 export interface DotExperimentsListState extends DotExperimentsListViewState {
     status: ComponentStatus;
-    /** Analytics health, `null` until the gate resolves. Anything but `OK` blocks the list. */
-    healthStatus: HealthStatusTypes | null;
+    /**
+     * Full health response from the experiments gate, `null` until resolved.
+     * Use the `healthStatus`, `isLimitedMode`, and `isSlotUsed`
+     * computeds rather than reading this directly.
+     */
+    healthResponse: ExperimentsHealthResponse | null;
     /** Every experiment returned by the API, across all sites. Narrowed by `siteScopedExperiments`. */
     experiments: DotExperiment[];
     /** Page url/host resolved per `pageId`; the only source of site information for an experiment. */
@@ -66,14 +79,42 @@ export interface DotExperimentsListState extends DotExperimentsListViewState {
     error: unknown;
 }
 
+/**
+ * What both Clear affordances widen: the search term and every chip, back to page one.
+ *
+ * Shared rather than repeated so the two cannot drift — a filter added later has one place to be
+ * remembered, and the empty state's button stays the wider of the two by *adding* the page
+ * narrowing to this, never by listing its own copy of the chips.
+ */
+const CLEARED_TOOLBAR_NARROWINGS = {
+    filter: '',
+    selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
+    selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+    selectedCreators: DEFAULT_EXPERIMENTS_LIST_CREATORS,
+    scheduleFrom: null,
+    scheduleTo: null,
+    page: DEFAULT_EXPERIMENTS_LIST_PAGE,
+    // The path narrowing is in here and the page *scope* is not, though they sit side by side in
+    // state. Nothing in the app writes `?url=`: it arrives typed or pasted and is then echoed back
+    // on every change, which makes it a filter the user applied. `pageId` is the opposite — the
+    // screen hands it out on all four ways out and reads it back on the way in — so it is a scope
+    // this button does not own. Left here, a path that still matches rows could not be removed at
+    // all: the empty state's button is the only other way out and it appears only once the path
+    // matches nothing.
+    selectedPageUrl: null
+} as const;
+
 const initialState: DotExperimentsListState = {
     status: ComponentStatus.LOADING,
-    healthStatus: null,
+    healthResponse: null,
     experiments: [],
     pageInfoByPageId: {},
     filter: '',
     selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
     selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+    selectedCreators: DEFAULT_EXPERIMENTS_LIST_CREATORS,
+    scheduleFrom: null,
+    scheduleTo: null,
     page: DEFAULT_EXPERIMENTS_LIST_PAGE,
     perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -261,7 +302,7 @@ export const DotExperimentsListStore = signalStore(
          * no goal at all therefore drops out as soon as any goal is picked, since it matches
          * none of them.
          */
-        const filteredExperiments = computed<DotExperiment[]>(() => {
+        const goalFilteredExperiments = computed<DotExperiment[]>(() => {
             const selectedGoals = store.selectedGoals();
 
             if (!selectedGoals.length) {
@@ -274,6 +315,75 @@ export const DotExperimentsListStore = signalStore(
                 return goal !== null && selectedGoals.includes(goal);
             });
         });
+
+        /**
+         * Narrowed to the chosen creators, or left alone when none are chosen (#37307).
+         *
+         * Matching is on `createdBy`, the user id the payload carries, so it never waits on a
+         * display name having been resolved — and an id belonging to a user who has since been
+         * deleted simply matches nothing rather than erroring.
+         *
+         * Sits **after** `statusCounts` and `goalCounts` are taken, alongside the status and goal
+         * narrowings, so that choosing a creator cannot move the numbers shown beside the statuses
+         * and goals the user has not chosen (FR-050).
+         */
+        const creatorFilteredExperiments = computed<DotExperiment[]>(() => {
+            const selectedCreators = store.selectedCreators();
+
+            if (!selectedCreators.length) {
+                return goalFilteredExperiments();
+            }
+
+            return goalFilteredExperiments().filter((experiment) =>
+                selectedCreators.includes(experiment.createdBy)
+            );
+        });
+
+        /** The period as one value, since both bounds are always read together. */
+        const schedulePeriod = computed<ExperimentsListSchedulePeriod>(() => ({
+            from: store.scheduleFrom(),
+            to: store.scheduleTo()
+        }));
+
+        /**
+         * A period naming two real dates in the wrong order, which only the address can produce.
+         *
+         * Exposed rather than swallowed: it matches nothing by construction, so applying it would
+         * empty the table and read as a site with no experiments scheduled then. The narrowing
+         * below therefore leaves the rows alone and the screen says why (FR-021a).
+         */
+        const isScheduleRangeUnusable = computed<boolean>(() =>
+            isScheduleRangeInverted(schedulePeriod())
+        );
+
+        /**
+         * Narrowed to experiments scheduled to start inside the chosen period (#37307).
+         *
+         * The instants are resolved here rather than stored, because the period is held as
+         * calendar dates and what those mean in milliseconds depends on the reader's zone — which
+         * is the point of storing dates (FR-049a).
+         *
+         * Sits after the counts snapshot for the same reason as the creator narrowing above
+         * (FR-027, FR-050).
+         */
+        const scheduleFilteredExperiments = computed<DotExperiment[]>(() => {
+            const bounds = scheduleBoundsOf(schedulePeriod());
+
+            if (!bounds) {
+                return creatorFilteredExperiments();
+            }
+
+            return creatorFilteredExperiments().filter((experiment) =>
+                matchesSchedulePeriod(experiment, bounds)
+            );
+        });
+
+        /**
+         * Last link of the narrowing chain, and the one everything downstream reads — sorting,
+         * paging and `totalRecords`. Named separately from the narrowings above so that a filter
+         * added later extends the chain rather than redefining what "filtered" means.
+         */
+        const filteredExperiments = computed<DotExperiment[]>(() => scheduleFilteredExperiments());
 
         const sortedExperiments = computed<DotExperiment[]>(() => {
             const experiments = filteredExperiments();
@@ -303,28 +413,48 @@ export const DotExperimentsListStore = signalStore(
             statusCounts,
             goalCounts,
             statusFilteredExperiments,
+            goalFilteredExperiments,
+            creatorFilteredExperiments,
+            scheduleFilteredExperiments,
+            isScheduleRangeUnusable,
             filteredExperiments,
             sortedExperiments,
             pagedExperiments,
             totalRecords: computed<number>(() => filteredExperiments().length),
+            /** The resolved `health` field, or `null` while the gate is pending. */
+            healthStatus: computed<HealthStatusTypes | null>(
+                () => store.healthResponse()?.health ?? null
+            ),
             /**
              * Same rule as the legacy `AnalyticsAppGuard`: only `OK` passes. Stays `false`
              * while the gate is pending, so the list is never blocked on a guess.
              */
             isMisconfigured: computed<boolean>(() => {
-                const healthStatus = store.healthStatus();
+                const healthResponse = store.healthResponse();
 
-                return healthStatus !== null && healthStatus !== HealthStatusTypes.OK;
-            })
+                return healthResponse !== null && healthResponse.health !== HealthStatusTypes.OK;
+            }),
+            /** `true` when `FEATURE_FLAG_EXPERIMENTS=false` — operator can run one free experiment. */
+            isLimitedMode: computed<boolean>(() => store.healthResponse()?.tier === 'limited'),
+            /** `true` when the one free experiment slot is already occupied (limited mode only). */
+            isSlotUsed: computed<boolean>(
+                () => store.healthResponse()?.freeExperimentUsed === true
+            ),
+            /** `true` when the Analytics App is not configured for the site. */
+            showAnalyticsWarning: computed<boolean>(
+                () => store.healthResponse()?.warning === 'analytics_disabled'
+            )
         };
     }),
     withReducer<DotExperimentsListState>(
         on(dotExperimentsApiEvents.healthCheckSucceeded, ({ payload }) => ({
-            healthStatus: payload,
+            healthResponse: payload,
             // A non-OK gate stops the flow here: nothing else is fetched, so settle instead of
             // leaving the table stuck on its skeleton.
             status:
-                payload === HealthStatusTypes.OK ? ComponentStatus.LOADING : ComponentStatus.LOADED
+                payload.health === HealthStatusTypes.OK
+                    ? ComponentStatus.LOADING
+                    : ComponentStatus.LOADED
         })),
         on(dotExperimentsApiEvents.healthCheckFailed, ({ payload }) => ({
             status: ComponentStatus.ERROR,
@@ -371,6 +501,15 @@ export const DotExperimentsListStore = signalStore(
             selectedGoals: payload,
             page: DEFAULT_EXPERIMENTS_LIST_PAGE
         })),
+        on(dotExperimentsListPageEvents.creatorsChanged, ({ payload }) => ({
+            selectedCreators: payload,
+            page: DEFAULT_EXPERIMENTS_LIST_PAGE
+        })),
+        on(dotExperimentsListPageEvents.scheduleChanged, ({ payload }) => ({
+            scheduleFrom: payload.from,
+            scheduleTo: payload.to,
+            page: DEFAULT_EXPERIMENTS_LIST_PAGE
+        })),
         on(dotExperimentsListPageEvents.pageChanged, ({ payload }) => ({
             page: payload.page,
             perPage: payload.perPage
@@ -387,14 +526,17 @@ export const DotExperimentsListStore = signalStore(
          * the page they left. Carrying them across would silently answer the old question with the
          * new page's data, which reads as a result rather than as a leftover.
          *
-         * The reset is total for that reason, and it is expressed as the defaults rather than as a
-         * list of fields to clear: a field added to the view state later is reset by construction
-         * instead of by remembering to add it here.
+         * The reset is total for that reason. Every narrowing has to be named here, so adding one
+         * to the view state means adding it here too — `selectedCreators` (#37307) is the one that
+         * proved the point by being missed.
          */
         on(dotExperimentsListPageEvents.scopedToPage, ({ payload }) => ({
             filter: '',
             selectedStatuses: DEFAULT_EXPERIMENTS_LIST_STATUSES,
             selectedGoals: DEFAULT_EXPERIMENTS_LIST_GOALS,
+            selectedCreators: DEFAULT_EXPERIMENTS_LIST_CREATORS,
+            scheduleFrom: null,
+            scheduleTo: null,
             page: DEFAULT_EXPERIMENTS_LIST_PAGE,
             perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
             orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
@@ -421,14 +563,19 @@ export const DotExperimentsListStore = signalStore(
             status: ComponentStatus.LOADING
         })),
         /**
-         * `languageId` goes with it: it exists only to return the editor to the version of the
-         * narrowed page they came from, so it means nothing once that page is gone.
+         * One transition, so neither the row set nor the address is ever derived from a view state
+         * that is only half cleared.
+         *
+         * `languageId` goes with the page narrowing: it exists only to return the editor to the
+         * version of the narrowed page they came from, so it means nothing once that page is gone.
          * `syncUrlEffect` follows, which is what takes the params out of the address.
          */
-        on(dotExperimentsListPageEvents.pageNarrowingCleared, () => ({
-            page: DEFAULT_EXPERIMENTS_LIST_PAGE,
+        // Both clear what the toolbar's controls set; only the empty state's button also drops the
+        // page *scope*, and only because it is on screen beside one that matched nothing.
+        on(dotExperimentsListPageEvents.chipFiltersCleared, () => CLEARED_TOOLBAR_NARROWINGS),
+        on(dotExperimentsListPageEvents.filtersCleared, () => ({
+            ...CLEARED_TOOLBAR_NARROWINGS,
             selectedPageId: null,
-            selectedPageUrl: null,
             languageId: null
         })),
         on(
@@ -476,8 +623,8 @@ export const DotExperimentsListStore = signalStore(
                     switchMap(() =>
                         experimentsService.healthCheck().pipe(
                             mapResponse({
-                                next: (healthStatus) =>
-                                    dotExperimentsApiEvents.healthCheckSucceeded(healthStatus),
+                                next: (healthResponse) =>
+                                    dotExperimentsApiEvents.healthCheckSucceeded(healthResponse),
                                 error: toFailure(dotExperimentsApiEvents.healthCheckFailed)
                             })
                         )
@@ -487,7 +634,7 @@ export const DotExperimentsListStore = signalStore(
                 // Querying experiments on a broken Analytics install is pointless, so the first
                 // load hangs off the gate rather than off init.
                 loadAfterHealthCheck$: events.on(dotExperimentsApiEvents.healthCheckSucceeded).pipe(
-                    filter(({ payload }) => payload === HealthStatusTypes.OK),
+                    filter(({ payload }) => payload.health === HealthStatusTypes.OK),
                     map(() => dotExperimentsListPageEvents.loadExperiments())
                 ),
 
@@ -735,6 +882,9 @@ export const DotExperimentsListStore = signalStore(
                     filter: store.filter(),
                     selectedStatuses: store.selectedStatuses(),
                     selectedGoals: store.selectedGoals(),
+                    selectedCreators: store.selectedCreators(),
+                    scheduleFrom: store.scheduleFrom(),
+                    scheduleTo: store.scheduleTo(),
                     page: store.page(),
                     perPage: store.perPage(),
                     selectedPageId: store.selectedPageId(),

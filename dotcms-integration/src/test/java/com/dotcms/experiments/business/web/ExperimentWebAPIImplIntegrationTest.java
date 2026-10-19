@@ -12,6 +12,7 @@ import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.business.web.SelectedExperiment.LookBackWindow;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
@@ -35,6 +36,7 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.rules.model.LogicalOperator;
 import com.dotmarketing.portlets.templates.model.Template;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -62,6 +64,14 @@ public class ExperimentWebAPIImplIntegrationTest {
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        // Most tests in this class start multiple experiments concurrently or sequentially,
+        // which requires full mode. The flag now defaults to false (limited mode).
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(true);
+    }
+
+    @AfterClass
+    public static void afterClass() {
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(false);
     }
 
     /**
@@ -1222,5 +1232,45 @@ public class ExperimentWebAPIImplIntegrationTest {
             APILocator.getExperimentsAPI().end(experimentB.id().get(), APILocator.systemUser());
         }
 
+    }
+
+    /**
+     * Method to test: {@link ExperimentWebAPIImpl#getCode(Host, HttpServletRequest)}
+     * When: {@code FEATURE_FLAG_EXPERIMENTS} is {@code false} (limited mode) but a RUNNING
+     *       experiment exists on the site
+     * Should: Return the tracking JS (non-empty) and include the running experiment's ID,
+     *         proving that limited-mode experiments are actually served to visitors.
+     */
+    @Test
+    public void getCode_flagDisabled_runningExperiment_injectsJs()
+            throws DotDataException, DotSecurityException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final Template template = new TemplateDataGen().nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(site, template).nextPersisted();
+
+        // Start via the API (flag is true at class level from @BeforeClass) so the experiment
+        // has valid scheduling. The flag is disabled below only for the getCode() assertion.
+        final Experiment started = new ExperimentDataGen()
+                .page(page)
+                .trafficAllocation(100)
+                .nextPersistedAndStart();
+
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(false);
+
+        try {
+            final HttpServletRequest request = mock(HttpServletRequest.class);
+            when(request.getParameter("host_id")).thenReturn(site.getIdentifier());
+            // No user on the request → PageMode.get() returns LIVE (the default for front-end visitors).
+
+            final Optional<String> code = WebAPILocator.getExperimentWebAPI().getCode(site, request);
+
+            assertTrue("Tracking JS must be injected even when FEATURE_FLAG_EXPERIMENTS=false",
+                    code.isPresent());
+            assertTrue("Injected JS must reference the running experiment's ID",
+                    code.get().contains(started.id().get()));
+        } finally {
+            ConfigExperimentUtil.INSTANCE.setExperimentEnabled(true); // restore class-level state
+            ExperimentDataGen.end(started);
+        }
     }
 }

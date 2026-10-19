@@ -37,6 +37,27 @@ window.getComputedStyle = (element: Element, pseudoElement?: string | null) => {
     }
 };
 
+// jsdom implements no `matchMedia`, and PrimeNG's Overlay reads it while deciding whether it is
+// modal — so any spec that opens one (the paginator's rows-per-page panel, a popover) throws from
+// inside the framework before it can assert anything. Stubbed rather than worked around in each
+// spec, because the answer is the same everywhere: this is a desktop admin screen, so no media
+// query matches.
+if (typeof window !== 'undefined' && !window.matchMedia) {
+    Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: (query: string) => ({
+            matches: false,
+            media: query,
+            onchange: null,
+            addListener: () => undefined,
+            removeListener: () => undefined,
+            addEventListener: () => undefined,
+            removeEventListener: () => undefined,
+            dispatchEvent: () => false
+        })
+    });
+}
+
 // Workaround for the following issue:
 // https://github.com/jsdom/jsdom/issues/2177#issuecomment-1724971596
 const originalConsoleError = console.error;

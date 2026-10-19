@@ -1,0 +1,16 @@
+[project]
+name = "migrate-custom-fields-dev"
+version = "0.1.0"
+description = "Dev/test tooling for migrate_custom_fields.py — not a runtime dependency of the shipped script"
+requires-python = ">=3.11"
+dependencies = [
+    "httpx==0.28.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==8.3.4",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

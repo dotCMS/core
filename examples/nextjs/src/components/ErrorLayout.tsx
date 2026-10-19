@@ -4,9 +4,16 @@ interface ErrorLayoutProps {
     status: number;
     heading: string;
     body: string;
+    /** Raw error message, shown verbatim for developers. Omit it in production. */
+    detail?: string;
 }
 
-export function ErrorLayout({ status, heading, body }: ErrorLayoutProps) {
+export function ErrorLayout({
+    status,
+    heading,
+    body,
+    detail,
+}: ErrorLayoutProps) {
     return (
         <div className="flex min-h-dvh w-full items-center justify-center bg-bg px-6">
             <section className="mx-auto max-w-xl text-center">
@@ -19,6 +26,11 @@ export function ErrorLayout({ status, heading, body }: ErrorLayoutProps) {
                 <p className="mx-auto mt-4 max-w-md text-lg leading-relaxed text-muted">
                     {body}
                 </p>
+                {detail && (
+                    <pre className="mt-6 whitespace-pre-wrap break-words rounded-lg border border-primary/30 p-4 text-left font-mono text-sm leading-relaxed text-ink">
+                        {detail}
+                    </pre>
+                )}
                 <Link
                     href="/"
                     className="mt-8 inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 font-semibold text-bg transition-colors hover:bg-primary-deep"

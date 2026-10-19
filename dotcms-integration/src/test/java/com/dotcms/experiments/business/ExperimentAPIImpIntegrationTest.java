@@ -20,6 +20,7 @@ import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.ExperimentDataGen;
+import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.MultiTreeDataGen;
@@ -145,11 +146,15 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
         wireMockServer = prepareWireMock();
+        // Tests in this class call start() with multiple RUNNING experiments coexisting,
+        // which requires full mode — the flag now defaults to false (limited mode).
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(true);
     }
 
     @AfterClass
     public static void afterClass() {
         wireMockServer.stop();
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(false);
     }
 
     private static WireMockServer prepareWireMock() {

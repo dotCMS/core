@@ -221,26 +221,43 @@ export class DotContentTypeFilterComponent implements OnInit {
     readonly $popoverOpen = signal(false);
 
     /**
-     * Working copy of the base-type selection. Re-seeds whenever the host pushes a different set
-     * (URL restore, "clear all").
-     *
-     * Note `allowedBaseTypes` gates what is *offered*, not what is *selected* — a host that seeds a
-     * disallowed base type here would see it in the chip. Today they always agree (the AssetPicker
-     * feeds both from the same config array), so this is a latent mismatch, not a live bug.
+     * The host's content-type variables resolved through the cache — which holds every content
+     * type we have ever loaded, so selections survive focus changes and lazy-load pages that no
+     * longer contain them.
      */
-    readonly $selectedBaseTypes = linkedSignal<string[]>(() => this.$baseTypes() ?? []);
-
-    /**
-     * Working copy of the content-type selection, resolved from the host's variables through the
-     * cache — which holds every content type we have ever loaded, so selections survive focus
-     * changes and lazy-load pages that no longer contain them.
-     */
-    readonly $selectedContentTypes = linkedSignal<DotCMSContentType[]>(() => {
+    readonly #hostContentTypes = computed<DotCMSContentType[]>(() => {
         const variables = this.$contentTypes() ?? [];
         if (!variables.length) return [];
         const cache = this.#contentTypeCache();
         return cache.filter((ct) => variables.includes(ct.variable));
     });
+
+    /**
+     * Working copy of the base-type selection. Re-seeds whenever the host pushes a different set
+     * (URL restore, "clear all").
+     *
+     * A selected content type implies its base type, so the base types of the host's content types
+     * are added when the host did not select them. A link that names only a content type
+     * (`contentType:Blog`) then shows in the chip and in the panel like a selection made here, and
+     * the next selection emitted carries both.
+     *
+     * Note `allowedBaseTypes` gates what is *offered*, not what is *selected* — a host that seeds a
+     * disallowed base type here would see it in the chip. Today they always agree (the AssetPicker
+     * feeds both from the same config array), so this is a latent mismatch, not a live bug.
+     */
+    readonly $selectedBaseTypes = linkedSignal<string[]>(() => {
+        const baseTypes = this.$baseTypes() ?? [];
+        const implied = this.#hostContentTypes()
+            .map((ct) => ct.baseType)
+            .filter((baseType) => !baseTypes.includes(baseType));
+
+        return [...baseTypes, ...new Set(implied)];
+    });
+
+    /** Working copy of the content-type selection, seeded from {@link #hostContentTypes}. */
+    readonly $selectedContentTypes = linkedSignal<DotCMSContentType[]>(() =>
+        this.#hostContentTypes()
+    );
 
     /** Left column options: ALL_CONTENT prepended to base types. */
     protected readonly $leftOptions = computed<BaseTypeOption[]>(() => [
@@ -574,6 +591,7 @@ export class DotContentTypeFilterComponent implements OnInit {
         // cache for $selectedContentTypes to resolve them).
         const variables = this.$contentTypes() ?? [];
         const ensure = variables.length ? variables.join(',') : undefined;
+        let loaded = true;
         // `loading` is already true from initial state; no pre-fetch tap needed.
         this.#contentTypesService
             .getContentTypesWithPagination({
@@ -582,12 +600,14 @@ export class DotContentTypeFilterComponent implements OnInit {
                 per_page: ITEMS_PER_PAGE
             })
             .pipe(
-                catchError(() =>
-                    of({
+                catchError(() => {
+                    loaded = false;
+
+                    return of({
                         contentTypes: [],
                         pagination: { currentPage: 1, totalEntries: 0 } as DotPagination
-                    })
-                ),
+                    });
+                }),
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe(({ contentTypes, pagination }) => {
@@ -603,6 +623,14 @@ export class DotContentTypeFilterComponent implements OnInit {
                 // still need to resolve in $selectedContentTypes so #emitSelection
                 // doesn't drop a restored filter on first user interaction.
                 this.#cacheContentTypes(contentTypes);
+
+                // `ensure` returns every host-selected content type that exists. The ones missing
+                // (deleted, or a typo in an old link) would keep filtering the list with nothing in
+                // the chip to clear, so they are dropped from the host's selection. Only after a
+                // successful load: a failed one returns nothing and would drop them all.
+                if (loaded && this.#hostContentTypes().length < variables.length) {
+                    this.#emitSelection();
+                }
             });
     }
 

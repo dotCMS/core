@@ -135,7 +135,7 @@ test.describe('Content Drive Search Scope', () => {
         }
     });
 
-    test('presents the scope control on the all-fields default with a plain placeholder', async ({
+    test('presents the scope control on the title default with a plain placeholder', async ({
         adminPage,
         apiHelpers,
         request,
@@ -147,7 +147,8 @@ test.describe('Content Drive Search Scope', () => {
 
         await drive.goTo();
 
-        await search.expectActive('ALL_FIELDS');
+        // Title is the default since the search box cleanup on #37062.
+        await search.expectActive('TITLE');
         // The control names itself for assistive technology (FR-023), and the placeholder stays
         // the shared input's own "Search" — it deliberately does not describe the active scope
         // (FR-003 as amended).
@@ -168,14 +169,14 @@ test.describe('Content Drive Search Scope', () => {
         await drive.goTo();
         await search.open();
 
-        await search.expectOptionMarked('ALL_FIELDS');
+        await search.expectOptionMarked('TITLE');
         // FR-022: each option carries the explanation of what it matches. Asserted on a stable
         // phrase of the English copy, so rewording the rest does not break the test.
         await search.expectOptionExplained('TITLE', 'name only');
         await search.expectOptionExplained('ALL_FIELDS', 'any text inside it');
     });
 
-    test('narrows the results to title matches when title scope is chosen @critical', async ({
+    test('searches by title by default, and widens to all fields when chosen @critical', async ({
         adminPage,
         apiHelpers,
         request,
@@ -187,30 +188,29 @@ test.describe('Content Drive Search Scope', () => {
 
         await drive.goTo();
 
-        // The default scope sends no scope field at all — omitted, not null (FR-017) — and finds
-        // both rows, the title one and the body-field one.
-        const allFields = await drive.captureSearchPayload(
+        // The default scope is sent, not left out: the server's own default is All Fields, so an
+        // omitted scope would search every field while the box says Title. The prefix match reaches
+        // the title row but not the body-field row (FR-008).
+        const title = await drive.captureSearchPayload(
             () => drive.searchField.fill(seeded.term),
             (payload) => payload.filters.text === seeded.term
         );
-        expect(allFields.filters).not.toHaveProperty('searchScope');
-        expect(allFields.filters.text).toBe(seeded.term);
-        await drive.expectListContainsTitle(seeded.titleRowTitle);
-        await drive.expectListContainsTitle(seeded.fieldRowTitle);
-
-        // Choosing a scope re-runs the search immediately (FR-004), carrying the scope (FR-017).
-        // The prefix match reaches the title row but not the body-field row (FR-008).
-        const title = await drive.captureSearchPayload(
-            () => search.choose('TITLE'),
-            (payload) => payload.filters.searchScope === 'TITLE'
-        );
-        expect(title.filters.text).toBe(seeded.term);
         expect(title.filters.searchScope).toBe('TITLE');
         await drive.expectListContainsTitle(seeded.titleRowTitle);
         await expect(drive.listTitles.filter({ hasText: seeded.fieldRowTitle })).toHaveCount(0);
+
+        // Choosing a scope re-runs the search immediately (FR-004), carrying the scope (FR-017),
+        // and All Fields finds both rows.
+        const allFields = await drive.captureSearchPayload(
+            () => search.choose('ALL_FIELDS'),
+            (payload) => payload.filters.searchScope === 'ALL_FIELDS'
+        );
+        expect(allFields.filters.text).toBe(seeded.term);
+        await drive.expectListContainsTitle(seeded.titleRowTitle);
+        await drive.expectListContainsTitle(seeded.fieldRowTitle);
     });
 
-    test('restores all-fields results when the scope returns to all fields @critical', async ({
+    test('narrows back to title matches when the scope returns to title @critical', async ({
         adminPage,
         apiHelpers,
         request,
@@ -225,17 +225,17 @@ test.describe('Content Drive Search Scope', () => {
             () => drive.searchField.fill(seeded.term),
             (payload) => payload.filters.text === seeded.term
         );
-        await search.choose('TITLE');
+        await search.choose('ALL_FIELDS');
 
-        // Back to the default: the scope is dropped from the request entirely, never sent as a
-        // literal 'ALL_FIELDS' (FR-017, mirrored by the store deleting the key), and the row only
-        // All Fields can see comes back (FR-009's no-regression promise).
+        // Back to the default: the store drops the key, but the request still names Title, and the
+        // row only All Fields can see goes away again.
         const restored = await drive.captureSearchPayload(
-            () => search.choose('ALL_FIELDS'),
-            (payload) => payload.filters.text === seeded.term && !('searchScope' in payload.filters)
+            () => search.choose('TITLE'),
+            (payload) =>
+                payload.filters.text === seeded.term && payload.filters.searchScope === 'TITLE'
         );
-        expect(restored.filters).not.toHaveProperty('searchScope');
-        await drive.expectListContainsTitle(seeded.fieldRowTitle);
+        expect(restored.filters.searchScope).toBe('TITLE');
+        await expect(drive.listTitles.filter({ hasText: seeded.fieldRowTitle })).toHaveCount(0);
     });
 
     test('does not search again when the active scope is re-selected @critical', async ({
@@ -267,7 +267,7 @@ test.describe('Content Drive Search Scope', () => {
         await drive.expectNoSearchWhile(
             async () => {
                 await search.open();
-                await search.option('ALL_FIELDS').click();
+                await search.option('TITLE').click();
                 // A re-search would be a state change → store effect → request, all synchronous
                 // with the click itself — unlike the typing path, which carries the debounce. The
                 // panel closing is the deterministic signal that the click's consequences ran.
@@ -298,11 +298,11 @@ test.describe('Content Drive Search Scope', () => {
             (payload) => payload.filters.text === seeded.term
         );
 
+        // The default scope is Title, so the title row is what a drive-wide search finds.
         await drive.expectListContainsTitle(seeded.titleRowTitle);
-        await drive.expectListContainsTitle(seeded.fieldRowTitle);
     });
 
-    test('returns the scope to all fields when all filters are cleared @critical', async ({
+    test('returns the scope to title when all filters are cleared @critical', async ({
         adminPage,
         apiHelpers,
         request,
@@ -317,7 +317,7 @@ test.describe('Content Drive Search Scope', () => {
             () => drive.searchField.fill(seeded.term),
             (payload) => payload.filters.text === seeded.term
         );
-        await search.choose('TITLE');
+        await search.choose('ALL_FIELDS');
 
         const clearAll = adminPage.getByTestId('clear-all-filters');
         await expect(clearAll).toBeVisible();
@@ -325,7 +325,7 @@ test.describe('Content Drive Search Scope', () => {
 
         // The scope qualifies the term; with the filters gone it must be gone too, or the trigger
         // would claim a scope the listing is not using (FR-020).
-        await search.expectActive('ALL_FIELDS');
+        await search.expectActive('TITLE');
     });
 
     test('resolves a deep link to the scope it names and degrades an unknown one @critical', async ({
@@ -342,17 +342,18 @@ test.describe('Content Drive Search Scope', () => {
         // filtered search on load — no typing needed.
         await adminPage.goto(
             `${Portlet.ContentDrive}?filters=${encodeURIComponent(
-                `title:${seeded.term};searchScope:TITLE`
+                `title:${seeded.term};searchScope:ALL_FIELDS`
             )}`
         );
         await expect(drive.toolbar).toBeVisible({ timeout: 20000 });
 
-        await search.expectActive('TITLE');
+        // All Fields is the scope worth linking to, since Title is the default and is never stored.
+        await search.expectActive('ALL_FIELDS');
         await drive.expectListContainsTitle(seeded.titleRowTitle);
-        await expect(drive.listTitles.filter({ hasText: seeded.fieldRowTitle })).toHaveCount(0);
+        await drive.expectListContainsTitle(seeded.fieldRowTitle);
 
         // A stale or hand-edited scope must degrade to the default, never 400 the listing
-        // (FR-015): the unknown value is dropped and the term keeps its All Fields breadth.
+        // (FR-015): the unknown value is dropped and the term is searched by title.
         await adminPage.goto(
             `${Portlet.ContentDrive}?filters=${encodeURIComponent(
                 `title:${seeded.term};searchScope:WAT`
@@ -360,11 +361,12 @@ test.describe('Content Drive Search Scope', () => {
         );
         await expect(drive.toolbar).toBeVisible({ timeout: 20000 });
 
-        await search.expectActive('ALL_FIELDS');
-        await drive.expectListContainsTitle(seeded.fieldRowTitle);
+        await search.expectActive('TITLE');
+        await drive.expectListContainsTitle(seeded.titleRowTitle);
+        await expect(drive.listTitles.filter({ hasText: seeded.fieldRowTitle })).toHaveCount(0);
     });
 
-    test('starts a clean visit on all fields after a scope was changed', async ({
+    test('starts a clean visit on title after a scope was changed', async ({
         adminPage,
         apiHelpers,
         request,
@@ -379,7 +381,7 @@ test.describe('Content Drive Search Scope', () => {
             () => drive.searchField.fill(seeded.term),
             (payload) => payload.filters.text === seeded.term
         );
-        await search.choose('TITLE');
+        await search.choose('ALL_FIELDS');
 
         // The scope is filter state in the address, not a per-user preference (FR-016): a clean
         // entry — no query string — starts over on the default. A second goto alone would only
@@ -389,7 +391,7 @@ test.describe('Content Drive Search Scope', () => {
         await adminPage.goto('about:blank');
         await drive.goTo();
 
-        await search.expectActive('ALL_FIELDS');
+        await search.expectActive('TITLE');
     });
 
     test('searches a term made of query syntax without breaking the listing', async ({
@@ -400,18 +402,24 @@ test.describe('Content Drive Search Scope', () => {
     }) => {
         await seed(request, apiHelpers, testSuffix);
         const drive = new ContentDrivePage(adminPage);
+        const search = new ContentDriveSearchScope(adminPage);
 
         await drive.goTo();
+        // All Fields, because that is the scope that reads a term as literal text. Title, the
+        // default, deliberately splits it on punctuation the way the index does, so `(a+b)` there
+        // means words starting with "a" and "b", and rows legitimately match.
+        await search.choose('ALL_FIELDS');
 
         // The term is treated as literal text (FR-027): the capture's predicate already proves
         // the request answered 200 — an unescaped term would have failed the query before any
-        // results could render (FR-029), surfacing as the search error toast and a stale grid.
+        // results could render (FR-029), surfacing as the search error banner and a stale grid.
         await drive.captureSearchPayload(
             () => drive.searchField.fill('(a+b)'),
             (payload) => payload.filters.text === '(a+b)'
         );
 
         await expect(adminPage.locator('.p-toast-message')).toHaveCount(0);
+        await expect(adminPage.getByTestId('search-error-state')).toHaveCount(0);
         await expect(drive.listTitles).toHaveCount(0);
     });
 
@@ -435,7 +443,7 @@ test.describe('Content Drive Search Scope', () => {
 
         // Folder names match the term as a substring no matter the scope (FR-011): the scope
         // narrows contentlets, not the structure the user navigates through.
-        await search.choose('TITLE');
+        await search.choose('ALL_FIELDS');
         await drive.expectListContainsTitle(seeded.folderName);
     });
 });

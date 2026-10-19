@@ -1,0 +1,14 @@
+{
+  "entity": {
+    "id": "ct-noname",
+    "variable": "NoNameType",
+    "fields": [
+      {
+        "id": "field-noname-code",
+        "variable": "code",
+        "clazz": "com.dotcms.contenttype.model.field.ImmutableCustomField",
+        "values": "#dotParse(\"/dA/asset-noname-001\")"
+      }
+    ]
+  }
+}

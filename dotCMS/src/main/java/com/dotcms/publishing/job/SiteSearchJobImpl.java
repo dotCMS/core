@@ -20,6 +20,7 @@ import com.dotcms.publishing.PublisherAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -146,6 +147,26 @@ public class SiteSearchJobImpl {
         return bundleId;
     }
 
+    /**
+     * Runs one Site Search crawl: prepares the job from its Quartz detail, publishes every
+     * configured host into the search index, and records a {@link SiteSearchAudit} row for the run.
+     *
+     * <p><strong>Deliberately not transactional, and it must stay that way.</strong> The crawl runs
+     * for hours on a large site while touching Postgres only at the end, so wrapping it held one
+     * pooled connection open throughout — long enough to be evicted unnoticed, taking the closing
+     * audit insert with it. The audit save's own {@code @WrapInTransaction} is the transaction
+     * boundary instead. Two things not to do here: do not reintroduce a transaction around the
+     * crawl, and do not add Postgres writes to the crawl phase — the read-only assumption that makes
+     * this safe is guarded by
+     * {@code SiteSearchJobImplTest#Test_SiteSearchConfig_Stays_Non_Static_So_The_Crawl_Writes_Nothing}.
+     * Full rationale, including why the transaction protected nothing: issue #37321 and
+     * {@code specs/37321-site-search-job-db-conn/spec.md}.</p>
+     *
+     * @param jobContext the Quartz context carrying this run's job detail and fire time
+     * @throws DotDataException if the audit row cannot be saved — deliberately not swallowed, since
+     *         that row is the checkpoint an incremental crawl anchors on, so a run that lost it has
+     *         not succeeded
+     */
     @SuppressWarnings("unchecked")
     public void run(final JobExecutionContext jobContext)
             throws JobExecutionException, DotPublishingException, DotDataException, DotSecurityException, ElasticsearchException, IOException {
@@ -161,7 +182,6 @@ public class SiteSearchJobImpl {
                 "User:" + userAPI.getSystemUser().getUserId() + "; Date: " + date
                         + "; Job Identifier: " + SiteSearchAPI.ES_SITE_SEARCH_NAME);
 
-        HibernateUtil.startTransaction();
         try {
             final PreparedJobContext preparedJobContext = prepareJob(jobContext);
 
@@ -182,49 +202,57 @@ public class SiteSearchJobImpl {
                     publisherAPI.publish(config, status);
                 }
 
-                try {
-
-                    int filesCount = 0, pagesCount = 0, urlmapCount = 0;
-                    for (final BundlerStatus bundlerStatus : status.getBundlerStatuses()) {
-                        if (bundlerStatus.getBundlerClass()
-                                .equals(FileAssetBundler.class.getName())) {
-                            filesCount += bundlerStatus.getTotal();
-                        } else if (bundlerStatus.getBundlerClass()
-                                .equals(URLMapBundler.class.getName())) {
-                            urlmapCount += bundlerStatus.getTotal();
-                        } else if (bundlerStatus.getBundlerClass()
-                                .equals(HTMLPageAsContentBundler.class.getName())) {
-                            pagesCount += bundlerStatus.getTotal();
-                        }
+                int filesCount = 0;
+                int pagesCount = 0;
+                int urlmapCount = 0;
+                for (final BundlerStatus bundlerStatus : status.getBundlerStatuses()) {
+                    if (bundlerStatus.getBundlerClass()
+                            .equals(FileAssetBundler.class.getName())) {
+                        filesCount += bundlerStatus.getTotal();
+                    } else if (bundlerStatus.getBundlerClass()
+                            .equals(URLMapBundler.class.getName())) {
+                        urlmapCount += bundlerStatus.getTotal();
+                    } else if (bundlerStatus.getBundlerClass()
+                            .equals(HTMLPageAsContentBundler.class.getName())) {
+                        pagesCount += bundlerStatus.getTotal();
                     }
-
-                    final SiteSearchAudit audit = new SiteSearchAudit();
-                    audit.setPagesCount(pagesCount);
-                    audit.setFilesCount(filesCount);
-                    audit.setUrlmapsCount(urlmapCount);
-                    audit.setAllHosts(preparedJobContext.isIndexAll());
-                    audit.setFireDate(jobContext.getFireTime());
-                    audit.setHostList(preparedJobContext.getJoinedHosts());
-                    audit.setIncremental(preparedJobContext.isIncremental());
-                    audit.setStartDate(preparedJobContext.getStartDate());
-                    audit.setEndDate(preparedJobContext.getEndDate());
-                    audit.setIndexName(
-                            UtilMethods.isSet(preparedJobContext.getNewIndexName())
-                                    ? preparedJobContext
-                                    .getNewIndexName() : preparedJobContext.getIndexName());
-                    audit.setJobId(preparedJobContext.getJobId());
-                    audit.setJobName(preparedJobContext.getJobName());
-                    audit.setLangList(preparedJobContext.getLangList());
-                    audit.setPath(preparedJobContext.getPaths());
-                    audit.setPathInclude(preparedJobContext.isPathInclude());
-                    siteSearchAuditAPI.save(audit);
-
-                } catch (DotDataException ex) {
-                    Logger.error(this, "can't save audit data", ex);
                 }
+
+                final SiteSearchAudit audit = new SiteSearchAudit();
+                audit.setPagesCount(pagesCount);
+                audit.setFilesCount(filesCount);
+                audit.setUrlmapsCount(urlmapCount);
+                audit.setAllHosts(preparedJobContext.isIndexAll());
+                audit.setFireDate(jobContext.getFireTime());
+                audit.setHostList(preparedJobContext.getJoinedHosts());
+                audit.setIncremental(preparedJobContext.isIncremental());
+                audit.setStartDate(preparedJobContext.getStartDate());
+                audit.setEndDate(preparedJobContext.getEndDate());
+                audit.setIndexName(
+                        UtilMethods.isSet(preparedJobContext.getNewIndexName())
+                                ? preparedJobContext
+                                .getNewIndexName() : preparedJobContext.getIndexName());
+                audit.setJobId(preparedJobContext.getJobId());
+                audit.setJobName(preparedJobContext.getJobName());
+                audit.setLangList(preparedJobContext.getLangList());
+                audit.setPath(preparedJobContext.getPaths());
+                audit.setPathInclude(preparedJobContext.isPathInclude());
+                // Deliberately not caught. This row is the checkpoint an incremental crawl anchors
+                // its delta on, so a run that failed to write it has not succeeded — swallowing the
+                // failure here is what let issue #37321 sit unnoticed in production, the job
+                // reporting "Job Finished" while incremental indexing silently degraded to a full
+                // rebuild. The crawl is already complete by this point, so failing now costs no
+                // index work.
+                siteSearchAuditAPI.save(audit);
             }
         } finally {
-            HibernateUtil.closeSession();
+            // Silently, because an exception thrown from a finally REPLACES the one in flight. This
+            // method's whole point is to let a failed audit save reach the caller carrying the
+            // sitesearch_audit SQL — the detail that separates a #36706 column overflow from a dead
+            // socket. closeSession() throws DotHibernateException, and on precisely the dead-socket
+            // path this fix exists for, its flush/commit is what dies. There is no transaction left
+            // to commit here, so the cleanup has nothing worth reporting (issue #37321).
+            HibernateUtil.closeSessionSilently();
         }
         date = DateUtil.getCurrentDate();
         ActivityLogger.logInfo(getClass(), "Job Finished",
@@ -477,17 +505,34 @@ public class SiteSearchJobImpl {
             return Optional.empty();
         }
         final boolean readsOpenSearch = phase.isReadEnabled();
-        return Try.of(() -> contentMirrorStatuses.get().stream()
-                        .map(status -> indexedShortfall(status, readsOpenSearch, threshold))
-                        .flatMap(Optional::stream)
-                        .findFirst())
-                // Swallowed so a diagnostic can never break indexing, but never in silence: whoever
-                // switched this check on did it to learn something, and "no warning" would otherwise be
-                // indistinguishable from "the measurement blew up".
-                .onFailure(e -> Logger.warn(SiteSearchJobImpl.class,
-                        "Could not measure how complete the content index is before this Site Search "
-                                + "crawl; continuing without the check: " + e.getMessage()))
-                .getOrElse(Optional.empty());
+        // Whether the caller already owned a connection decides whether we may close one below.
+        final boolean callerOwnsConnection = DbConnectionFactory.connectionExists();
+        try {
+            return Try.of(() -> contentMirrorStatuses.get().stream()
+                            .map(status -> indexedShortfall(status, readsOpenSearch, threshold))
+                            .flatMap(Optional::stream)
+                            .findFirst())
+                    // Swallowed so a diagnostic can never break indexing, but never in silence: whoever
+                    // switched this check on did it to learn something, and "no warning" would otherwise be
+                    // indistinguishable from "the measurement blew up".
+                    .onFailure(e -> Logger.warn(SiteSearchJobImpl.class,
+                            "Could not measure how complete the content index is before this Site Search "
+                                    + "crawl; continuing without the check: " + e.getMessage()))
+                    .getOrElse(Optional.empty());
+        } finally {
+            // ContentIndexMirrorReconciler ends its work with an unannotated DotConnect count query,
+            // and DotConnect leases from the pool without ever closing — it relies on an enclosing
+            // @CloseDBIfOpened that does not exist on that path. Left alone, the connection stays
+            // bound to this thread, and since this check runs immediately before the crawl it would
+            // be held for hours: exactly the defect this job was just fixed for, and it would also
+            // rob the audit save of its own fresh connection (issue #37321).
+            //
+            // Only what this method caused is released. A caller that already owned a connection
+            // keeps it.
+            if (!callerOwnsConnection) {
+                DbConnectionFactory.closeSilently();
+            }
+        }
     }
 
     /** The shortfall message for one content row, or empty when that row is fine or unmeasured. */

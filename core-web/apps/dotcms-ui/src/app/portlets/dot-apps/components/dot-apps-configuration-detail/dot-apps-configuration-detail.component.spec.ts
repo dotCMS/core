@@ -131,6 +131,7 @@ class MockDotKeyValueComponent {
 })
 class MockDotAppsConfigurationDetailFormComponent {
     @Input() appConfigured: boolean;
+    @Input() appKey = '';
     @Input() formFields: DotAppsSecret[];
     @Output() data = new EventEmitter<{ [key: string]: string }>();
     @Output() valid = new EventEmitter<boolean>();
@@ -277,6 +278,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
             ).componentInstance;
             expect(formComponent.formFields).toEqual(sites[0].secrets);
             expect(formComponent.appConfigured).toEqual(sites[0].configured);
+            expect(formComponent.appKey).toEqual(appData.key);
         });
 
         it('should update formData and formValid fields when dot-apps-configuration-detail-form changed', () => {

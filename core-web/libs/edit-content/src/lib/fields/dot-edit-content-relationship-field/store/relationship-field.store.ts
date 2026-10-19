@@ -13,7 +13,7 @@ import {
     ComponentStatus,
     DotCMSContentlet,
     DotCMSContentType,
-    DotCMSContentTypeField,
+    ContentTypeRelationshipField,
     DotLanguage,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
@@ -23,7 +23,7 @@ import { RelationshipFieldService } from './relationship-field.service';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { STATIC_COLUMNS } from '../dot-edit-content-relationship-field.constants';
-import { SelectionMode, TableColumn } from '../models/relationship.models';
+import { RelationshipDescriptor, SelectionMode, TableColumn } from '../models/relationship.models';
 
 /**
  * Rows revealed per step.
@@ -36,7 +36,13 @@ export const RELATED_PAGE_SIZE = 40;
 export interface RelationshipFieldState {
     data: DotCMSContentlet[];
     status: ComponentStatus;
-    field: DotCMSContentTypeField | null;
+    field: ContentTypeRelationshipField | null;
+    /**
+     * The validated relationship settings, published by `RelationshipFieldService.prepareField`.
+     * Null until the field loads; read this rather than `field.relationships`, which is raw
+     * server JSON that nothing has checked yet.
+     */
+    relationships: RelationshipDescriptor | null;
     selectionMode: SelectionMode | null;
     contentType: DotCMSContentType | null;
     isNewEditorEnabled: boolean;
@@ -70,6 +76,7 @@ const initialState: RelationshipFieldState = {
     data: [],
     status: ComponentStatus.INIT,
     field: null,
+    relationships: null,
     columns: [],
     selectionMode: null,
     contentType: null,
@@ -160,7 +167,7 @@ export const RelationshipFieldStore = signalStore(
              * @param {string} params.contentTypeId - The ID of the content type to load.
              */
             initialize: rxMethod<{
-                field: DotCMSContentTypeField;
+                field: ContentTypeRelationshipField;
                 contentlet: DotCMSContentlet;
                 targetLanguageId?: number;
                 targetLanguage?: DotLanguage;
@@ -227,6 +234,7 @@ export const RelationshipFieldStore = signalStore(
                                                 status: ComponentStatus.LOADED,
                                                 contentType: newState.contentType,
                                                 isNewEditorEnabled: newState.isNewEditorEnabled,
+                                                relationships: newState.relationships,
                                                 selectionMode: newState.selectionMode,
                                                 columns: newState.columns,
                                                 data: newState.data,

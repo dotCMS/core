@@ -47,7 +47,7 @@ The value is validated against what the resolved site has configured **for that 
 
 A model the site has not configured for that capability is refused with a `404`, so a chat model sent to the images endpoint is refused even though the same site configured it perfectly well for chat. Nothing is passed through to the provider.
 
-`GET /api/inference/v1/models` is the discovery mechanism: it lists every model the resolved site has configured, in configured order, chat section first — so a caller who wants "whatever this site runs" reads the list and takes the first entry. Embeddings and image models are listed alongside chat models because every operation here requires an exact model name and this is the only place to learn one; listing chat alone would leave two of the four operations undiscoverable. The format has nowhere to record what a model is for — its model object carries no type, mode or modality field, which is why OpenAI's own listing mixes chat, embedding and image models the same way — so picking an entry the operation does not serve is refused by that operation with a `404` naming `model`. Nothing is added to the entries to signal capability: adding a field the format does not define is what the no-adapter promise of this family exists to avoid.
+`GET /api/inference/v1/models` is the discovery mechanism: it lists every model the resolved site has configured, in configured order, chat section first — so a caller who wants "whatever this site runs" reads the list and takes the first entry. Embeddings and image models are listed alongside chat models because every operation here requires an exact model name and this is the only place to learn one; listing chat alone would leave two of the four operations undiscoverable. Each entry carries a `type` field — `chat`, `embedding` or `image` — naming the operation that accepts it, read from the `providerConfig` section the model is configured in. A name configured in several sections reports the first of them (chat, then embeddings, then image). Any other operation refuses the model with a `404` naming `model`, unless the site configured it for that operation too. OpenAI's standard model object has no such field, but several OpenAI-compatible gateways add fields to it (Together AI adds a `type` with the same vocabulary; Mistral, OpenRouter and Groq add capability and context fields), and the official OpenAI SDKs keep unknown fields instead of rejecting them. The four standard fields keep their shape and values, so a standard client still deserializes the listing into its own type. Tool or function-calling support is not reported: `providerConfig` does not record it, so a flag would be a guess.
 
 Because the model is required and validated, swapping a site's provider is **not** invisible to callers: a caller pinning the old vendor's model gets an explicit `404` and has to re-read the model list. That is deliberate.
 
@@ -197,11 +197,15 @@ curl "https://demo.dotcms.com/api/inference/v1/models" \
 
 ```json
 { "object": "list", "data": [
-  { "id": "gpt-4o",      "object": "model", "created": 1789000000, "owned_by": "dotcms" },
-  { "id": "gpt-4o-mini", "object": "model", "created": 1789000000, "owned_by": "dotcms" } ] }
+  { "id": "gpt-4o",                 "object": "model", "created": 1789000000, "owned_by": "dotcms", "type": "chat" },
+  { "id": "gpt-4o-mini",            "object": "model", "created": 1789000000, "owned_by": "dotcms", "type": "chat" },
+  { "id": "text-embedding-3-small", "object": "model", "created": 1789000000, "owned_by": "dotcms", "type": "embedding" },
+  { "id": "dall-e-3",               "object": "model", "created": 1789000000, "owned_by": "dotcms", "type": "image" } ] }
 ```
 
 `created` is the time the listing was built, the same value on every entry: dotCMS serves a configuration, not a catalogue, and does not know when a vendor published a model.
+
+`type` is `chat`, `embedding` or `image`, taken from the `providerConfig` section the model is configured in (`chat`, `embeddings`, `image`). A name configured in more than one section is listed once, with the type of the first of those sections in that order.
 
 ---
 

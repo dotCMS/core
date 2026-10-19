@@ -9,9 +9,11 @@
 #
 # OPTIONS:
 #   --json              Output in JSON format
+#   --require-spec      Require spec.md to exist (for analysis phase)
 #   --require-tasks     Require tasks.md to exist (for implementation phase)
 #   --include-tasks     Include tasks.md in AVAILABLE_DOCS list
 #   --paths-only        Only output path variables (no validation)
+#   --template NAME     Include composed template content in JSON output
 #   --help, -h          Show help message
 #
 # OUTPUTS:
@@ -23,14 +25,19 @@ set -e
 
 # Parse command line arguments
 JSON_MODE=false
+REQUIRE_SPEC=false
 REQUIRE_TASKS=false
 INCLUDE_TASKS=false
 PATHS_ONLY=false
+TEMPLATE_NAME=""
 
-for arg in "$@"; do
-    case "$arg" in
+while [[ $# -gt 0 ]]; do
+    case "$1" in
         --json)
             JSON_MODE=true
+            ;;
+        --require-spec)
+            REQUIRE_SPEC=true
             ;;
         --require-tasks)
             REQUIRE_TASKS=true
@@ -41,6 +48,14 @@ for arg in "$@"; do
         --paths-only)
             PATHS_ONLY=true
             ;;
+        --template)
+            shift
+            if [[ $# -eq 0 ]]; then
+                echo "ERROR: --template requires a template name" >&2
+                exit 1
+            fi
+            TEMPLATE_NAME="$1"
+            ;;
         --help|-h)
             cat << 'EOF'
 Usage: check-prerequisites.sh [OPTIONS]
@@ -49,29 +64,32 @@ Consolidated prerequisite checking for Spec-Driven Development workflow.
 
 OPTIONS:
   --json              Output in JSON format
+  --require-spec      Require spec.md to exist (for analysis phase)
   --require-tasks     Require tasks.md to exist (for implementation phase)
   --include-tasks     Include tasks.md in AVAILABLE_DOCS list
   --paths-only        Only output path variables (no prerequisite validation)
+  --template NAME     Include composed template content in JSON output
   --help, -h          Show this help message
 
 EXAMPLES:
   # Check task prerequisites (plan.md required)
   ./check-prerequisites.sh --json
-  
+
   # Check implementation prerequisites (plan.md + tasks.md required)
   ./check-prerequisites.sh --json --require-tasks --include-tasks
-  
+
   # Get feature paths only (no validation)
   ./check-prerequisites.sh --paths-only
-  
+
 EOF
             exit 0
             ;;
         *)
-            echo "ERROR: Unknown option '$arg'. Use --help for usage information." >&2
+            echo "ERROR: Unknown option '$1'. Use --help for usage information." >&2
             exit 1
             ;;
     esac
+    shift
 done
 
 # Source common functions
@@ -128,6 +146,13 @@ if [[ ! -f "$IMPL_PLAN" ]]; then
     exit 1
 fi
 
+# Check for spec.md if required
+if $REQUIRE_SPEC && [[ ! -f "$FEATURE_SPEC" ]]; then
+    echo "ERROR: spec.md not found in $FEATURE_DIR" >&2
+    echo "Run /speckit-specify first to create the feature specification." >&2
+    exit 1
+fi
+
 # Check for tasks.md if required
 if $REQUIRE_TASKS && [[ ! -f "$TASKS" ]]; then
     echo "ERROR: tasks.md not found in $FEATURE_DIR" >&2
@@ -154,6 +179,16 @@ if $INCLUDE_TASKS && [[ -f "$TASKS" ]]; then
     docs+=("tasks.md")
 fi
 
+TEMPLATE_CONTENT=""
+if [[ -n "$TEMPLATE_NAME" ]]; then
+    if TEMPLATE_CONTENT=$(resolve_template_content "$TEMPLATE_NAME" "$REPO_ROOT"; status=$?; printf x; exit "$status"); then
+        TEMPLATE_CONTENT="${TEMPLATE_CONTENT%x}"
+    else
+        echo "ERROR: Could not resolve required $TEMPLATE_NAME from the template override stack for $REPO_ROOT" >&2
+        exit 1
+    fi
+fi
+
 # Output results
 if $JSON_MODE; then
     # Build JSON array of documents
@@ -163,10 +198,18 @@ if $JSON_MODE; then
         else
             json_docs=$(printf '%s\n' "${docs[@]}" | jq -R . | jq -s .)
         fi
-        jq -cn \
-            --arg feature_dir "$FEATURE_DIR" \
-            --argjson docs "$json_docs" \
-            '{FEATURE_DIR:$feature_dir,AVAILABLE_DOCS:$docs}'
+        if [[ -n "$TEMPLATE_NAME" ]]; then
+            jq -cn \
+                --arg feature_dir "$FEATURE_DIR" \
+                --argjson docs "$json_docs" \
+                --arg template_content "$TEMPLATE_CONTENT" \
+                '{FEATURE_DIR:$feature_dir,AVAILABLE_DOCS:$docs,TEMPLATE_CONTENT:$template_content}'
+        else
+            jq -cn \
+                --arg feature_dir "$FEATURE_DIR" \
+                --argjson docs "$json_docs" \
+                '{FEATURE_DIR:$feature_dir,AVAILABLE_DOCS:$docs}'
+        fi
     else
         if [[ ${#docs[@]} -eq 0 ]]; then
             json_docs="[]"
@@ -174,19 +217,24 @@ if $JSON_MODE; then
             json_docs=$(for d in "${docs[@]}"; do printf '"%s",' "$(json_escape "$d")"; done)
             json_docs="[${json_docs%,}]"
         fi
-        printf '{"FEATURE_DIR":"%s","AVAILABLE_DOCS":%s}\n' "$(json_escape "$FEATURE_DIR")" "$json_docs"
+        if [[ -n "$TEMPLATE_NAME" ]]; then
+            printf '{"FEATURE_DIR":"%s","AVAILABLE_DOCS":%s,"TEMPLATE_CONTENT":"%s"}\n' \
+                "$(json_escape "$FEATURE_DIR")" "$json_docs" "$(json_escape "$TEMPLATE_CONTENT")"
+        else
+            printf '{"FEATURE_DIR":"%s","AVAILABLE_DOCS":%s}\n' "$(json_escape "$FEATURE_DIR")" "$json_docs"
+        fi
     fi
 else
     # Text output
     echo "FEATURE_DIR:$FEATURE_DIR"
     echo "AVAILABLE_DOCS:"
-    
+
     # Show status of each potential document
     check_file "$RESEARCH" "research.md"
     check_file "$DATA_MODEL" "data-model.md"
     check_dir "$CONTRACTS_DIR" "contracts/"
     check_file "$QUICKSTART" "quickstart.md"
-    
+
     if $INCLUDE_TASKS; then
         check_file "$TASKS" "tasks.md"
     fi
