@@ -272,7 +272,9 @@ describe('DotCrumbtrailComponent', () => {
             store.setTitleStatus({ state: { live: false, working: true, hasLiveVersion: false } });
             spectator.detectChanges();
 
-            expect(spectator.query(byTestId('title-status-chip'))?.textContent?.trim()).toBe('Draft');
+            expect(spectator.query(byTestId('title-status-chip'))?.textContent?.trim()).toBe(
+                'Draft'
+            );
         });
 
         it('should remove the chip when the status is cleared', () => {
