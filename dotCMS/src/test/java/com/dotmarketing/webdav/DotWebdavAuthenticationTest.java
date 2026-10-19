@@ -26,6 +26,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.model.Company;
@@ -53,6 +54,7 @@ public class DotWebdavAuthenticationTest {
     private HttpServletRequest previousRequest;
     private MockedStatic<APILocator> locator;
     private MockedStatic<PublicCompanyFactory> companies;
+    private MockedStatic<CompanyUtils> companyUtils;
     private MockedStatic<LoginFactory> passwords;
     private MockedConstruction<Timer> timers;
     private MockedConstruction<Interpreter> preAuthenticators;
@@ -69,6 +71,7 @@ public class DotWebdavAuthenticationTest {
         previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         locator = mockStatic(APILocator.class);
         companies = mockStatic(PublicCompanyFactory.class);
+        companyUtils = mockStatic(CompanyUtils.class);
         passwords = mockStatic(LoginFactory.class);
         // Loading the helper must not leave its unrelated non-daemon cache-cleaner timer running.
         timers = mockConstruction(Timer.class);
@@ -83,12 +86,14 @@ public class DotWebdavAuthenticationTest {
         locator.when(APILocator::getUserAPI).thenReturn(userAPI);
         locator.when(APILocator::getApiTokenAPI).thenReturn(tokens);
         companies.when(PublicCompanyFactory::getDefaultCompany).thenReturn(company);
+        companyUtils.when(CompanyUtils::getDefaultCompany).thenReturn(company);
         when(company.getAuthType()).thenReturn(Company.AUTH_TYPE_EA);
         when(userAPI.getSystemUser()).thenReturn(systemUser);
         when(userAPI.loadByUserByEmail(USERNAME, systemUser, false)).thenReturn(user);
         when(userAPI.loadUserById(USER_ID, systemUser, false)).thenReturn(user);
         when(userAPI.loadUserById(USER_ID)).thenReturn(user);
         when(user.getUserId()).thenReturn(USER_ID);
+        when(user.getEmailAddress()).thenReturn(USERNAME);
         when(user.isActive()).thenReturn(true);
         when(tokens.fromJwt(CREDENTIAL, IP)).thenReturn(Optional.empty());
         final HttpServletRequest request = mock(HttpServletRequest.class);
@@ -110,6 +115,9 @@ public class DotWebdavAuthenticationTest {
         if (passwords != null) {
             passwords.close();
         }
+        if (companyUtils != null) {
+            companyUtils.close();
+        }
         if (companies != null) {
             companies.close();
         }
@@ -124,13 +132,14 @@ public class DotWebdavAuthenticationTest {
     @Test
     public void disabledModesDenyBeforeCheckingPasswordsOrTokens() throws Exception {
         passwords.when(() -> LoginFactory.passwordMatch(CREDENTIAL, user)).thenReturn(true);
-        for (final String mode : new String[]{null, "NONE"}) {
+        for (final String mode : new String[]{null, "NONE", "false", "invalid-mode", ""}) {
             Config.setProperty("ALLOW_BASIC_AUTH", mode);
             assertThrows(DotSecurityException.class,
                     () -> helper.authorizePrincipal(USERNAME, CREDENTIAL));
         }
         passwords.verifyNoInteractions();
         companies.verifyNoInteractions();
+        companyUtils.verifyNoInteractions();
         verify(tokens, never()).fromJwt(CREDENTIAL, IP);
     }
 
@@ -157,6 +166,7 @@ public class DotWebdavAuthenticationTest {
 
         verify(tokens).fromJwt(CREDENTIAL, IP);
         passwords.verifyNoInteractions();
+        companies.verifyNoInteractions();
         assertTrue("Token-only authentication must not enter the pre-authentication pipeline",
                 preAuthenticators.constructed().isEmpty());
     }

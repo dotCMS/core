@@ -84,7 +84,7 @@ public class WebDavAuthenticationFilterTest {
     /** NONE, including the default, does not forward credential-bearing data requests. */
     @Test
     public void credentialsAreNotForwardedWhenBasicAuthenticationIsDisabled() throws Exception {
-        for (final String mode : new String[]{null, "NONE"}) {
+        for (final String mode : new String[]{null, "NONE", "false", "invalid-mode", ""}) {
             Config.setProperty("ALLOW_BASIC_AUTH", mode);
             for (final String method : List.of("PROPPATCH", "PROPFIND", "GET", "PUT")) {
                 final FilterChain chain = mock(FilterChain.class);
