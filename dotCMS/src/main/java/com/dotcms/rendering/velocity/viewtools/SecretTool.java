@@ -200,6 +200,11 @@ public class SecretTool implements ViewTool {
 	 * Records the file asset whose code the current request is about to run, so that the Secrets
 	 * check can use that file's last editor. Only callers running a stored file asset should use
 	 * this; the {@code /dynamic} endpoints run caller-supplied code and must not.
+	 * <p>
+	 * Code evaluated on the fly inside the file, such as Velocity {@code #evaluate} or JavaScript
+	 * {@code eval}, has no file name of its own and so also runs with this file's editor. Never
+	 * evaluate request input in an endpoint whose file was last edited by a Scripting Developer,
+	 * or an anonymous caller could read any secret.
 	 *
 	 * @param request The current HTTP request.
 	 * @param file    The file asset {@link Contentlet} holding the script.
