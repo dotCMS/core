@@ -320,6 +320,26 @@ for (const [file, actor, consumer] of [
   });
 }
 
+test('protected manifest download rejects invalid Bearer without ambient session, while the valid case stays 200', () => {
+  const matches = requests.filter((r) => path.basename(r.file) === 'Manifest_Download_End_Point.postman_collection.json' &&
+    r.names[0].startsWith('Try to download Manifest with invalid') && r.names.at(-1) === 'Download manifest');
+  assert.equal(matches.length, 1);
+  const r = matches[0];
+  assert.equal(r.auth?.type, 'bearer');
+  assert.equal(value(r.auth, 'token'), 'not_valid_token');
+  assert.match((r.node.event || []).map(eventCode).join('\n'), /\.status\(401\)/,
+    'BundleResource.downloadManifest requires a backend user before bundle lookup');
+  assert.equal(r.names[0], 'Try to download Manifest with invalid token');
+  assert.match((r.node.event || []).filter((e) => e.listen === 'prerequest').map(eventCode).join('\n'),
+    /pm\.cookies\.jar\(\)\.clear\(/, 'Do not let setup authenticate the invalid-token request through a session');
+  assert.equal(manualAuth(r).length, 0);
+  assert.ok(!(r.request.header || []).some((h) => !h.disabled && /^cookie$/i.test(h.key)));
+  const positive = find('Manifest_Download_End_Point.postman_collection.json', 'Download Manifest Successfully / Download manifest');
+  assert.equal(positive.auth?.type, 'bearer');
+  assert.equal(value(positive.auth, 'token'), '{{jwt}}');
+  assert.match((positive.node.event || []).map(eventCode).join('\n'), /\.status\(200\)/);
+});
+
 test('non-admin actors are retained rather than replaced with the runner admin JWT', () => {
   const actors = {
     chris: ['Save Step [POST /api/v1/workflow/steps] / GivenInvalidSchemeId_ShouldRespond404',

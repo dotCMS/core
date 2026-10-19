@@ -234,7 +234,7 @@
 			]
 		},
 		{
-			"name": "Try to download Manifest with invalid user",
+			"name": "Try to download Manifest with invalid token",
 			"item": [
 				{
 					"name": "create content type and content",
@@ -433,11 +433,22 @@
 					"name": "Download manifest",
 					"event": [
 						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+									"    if (err) throw new Error('Could not isolate invalid-token request cookies');",
+									"});"
+								]
+							}
+						},
+						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Bundle uploaded sucessfully\", function () {",
-									"    pm.response.to.have.status(200);",
+									"pm.test(\"Invalid Bearer cannot download a protected manifest\", function () {",
+									"    pm.response.to.have.status(401);",
 									"});"
 								],
 								"type": "text/javascript"
