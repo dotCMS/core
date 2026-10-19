@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.system.permission;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.datagen.FolderDataGen;
@@ -53,6 +54,9 @@ import org.junit.Test;
  * - PUT /api/v1/permissions/{assetId} (update asset permissions)
  */
 public class PermissionResourceIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     static HttpServletResponse response;
     static PermissionResource resource;
@@ -173,7 +177,7 @@ public class PermissionResourceIntegrationTest {
                         .request());
 
         request.setHeader("Authorization",
-                ApiTokenTestUtils.adminBearerHeader());
+                TOKEN_UTILS.adminBearerHeader());
 
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, testHost);
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, testHost.getIdentifier());
@@ -197,7 +201,7 @@ public class PermissionResourceIntegrationTest {
                         .request());
 
         request.setHeader("Authorization",
-                ApiTokenTestUtils.bearerHeaderForEmail(email));
+                TOKEN_UTILS.bearerHeaderForEmail(email));
 
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, testHost);
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, testHost.getIdentifier());

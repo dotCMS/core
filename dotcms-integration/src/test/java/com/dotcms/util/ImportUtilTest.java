@@ -1,6 +1,7 @@
 package com.dotcms.util;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
@@ -160,6 +161,9 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(DataProviderRunner.class)
 public class ImportUtilTest extends BaseWorkflowIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static final String BINARY_FIELD_NAME = "binaryField";
     private static User user;
@@ -2440,7 +2444,7 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
                 new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                         .request());
 
-        request.setHeader("Authorization", ApiTokenTestUtils.adminBearerHeader());
+        request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
         request.setHeader("Origin", "localhost");
         request.setAttribute(WebKeys.USER,user);
         request.setAttribute(WebKeys.USER_ID,user.getUserId());

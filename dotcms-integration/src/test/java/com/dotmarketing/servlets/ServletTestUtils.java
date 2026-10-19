@@ -121,6 +121,9 @@ public class ServletTestUtils {
         Host testHost = null;
         Role testRole = null;
         User testUser = null;
+        // This helper owns the token it mints and deletes it before the owner is removed, because
+        // ApiTokenAPI.deleteToken revalidates the owning user.
+        final ApiTokenTestUtils tokenUtils = new ApiTokenTestUtils();
         try {
             // Create a test host, role, and user
             final String userPassword = RandomStringUtils.randomAlphabetic(10);
@@ -171,7 +174,7 @@ public class ServletTestUtils {
             // Send request to the servlet authenticated as the test user via a Bearer API token,
             // because username/password Basic authentication is disabled by default.
             request.setHeader("Authorization",
-                    ApiTokenTestUtils.bearerHeader(testUser));
+                    tokenUtils.bearerHeader(testUser));
             servlet.service(request, response);
 
             // Verify that the request was forwarded for both the invalid and the valid credential
@@ -189,6 +192,8 @@ public class ServletTestUtils {
             if (testRole != null) {
                 RoleDataGen.remove(testRole);
             }
+            // Delete the fixture token while its owner still exists, then remove the owner.
+            tokenUtils.close();
             if (testUser != null) {
                 UserDataGen.remove(testUser);
             }

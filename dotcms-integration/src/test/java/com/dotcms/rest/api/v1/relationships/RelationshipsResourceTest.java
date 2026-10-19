@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.relationships;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -37,6 +38,9 @@ import org.junit.Test;
  * @author nollymar
  */
 public class RelationshipsResourceTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static ContentTypeAPI contentTypeAPI;
     private static RelationshipAPI relationshipAPI;
@@ -127,7 +131,7 @@ public class RelationshipsResourceTest {
         );
 
         request.setHeader("Authorization",
-                ApiTokenTestUtils.adminBearerHeader());
+                TOKEN_UTILS.adminBearerHeader());
 
         return request;
     }

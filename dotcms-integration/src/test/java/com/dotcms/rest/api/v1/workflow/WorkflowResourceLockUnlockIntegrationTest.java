@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.workflow;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -55,6 +56,9 @@ import org.junit.Test;
  * @see SystemActionApiFireCommandFactory
  */
 public class WorkflowResourceLockUnlockIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static WorkflowResource workflowResource;
     private static ContentletAPI contentletAPI;
@@ -465,7 +469,7 @@ public class WorkflowResourceLockUnlockIntegrationTest {
                         new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                 .request());
 
-        request.setHeader("Authorization", ApiTokenTestUtils.bearerHeaderForEmail(email));
+        request.setHeader("Authorization", TOKEN_UTILS.bearerHeaderForEmail(email));
 
         return request;
     }

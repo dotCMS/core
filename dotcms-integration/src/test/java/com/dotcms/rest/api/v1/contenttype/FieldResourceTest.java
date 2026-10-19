@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.contenttype;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -59,6 +60,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class FieldResourceTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
 	private static final ObjectMapper mapper = new ObjectMapper();
 
@@ -2399,7 +2403,7 @@ public class FieldResourceTest {
 			).request()
 		);
 
-		request.setHeader("Authorization", ApiTokenTestUtils.adminBearerHeader());
+		request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
 
 		return request;
 	}

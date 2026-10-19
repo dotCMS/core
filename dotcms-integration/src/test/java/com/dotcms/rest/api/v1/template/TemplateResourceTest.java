@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.template;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -65,6 +66,9 @@ import org.junit.Test;
 
 public class TemplateResourceTest {
 
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
+
     static TemplateResource resource;
     static HttpServletResponse response;
     static User adminUser;
@@ -95,7 +99,7 @@ public class TemplateResourceTest {
                         .request());
 
         request.setHeader("Authorization",
-                ApiTokenTestUtils.bearerHeaderForEmail(userEmail));
+                TOKEN_UTILS.bearerHeaderForEmail(userEmail));
 
 
         return request;

@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.business;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -51,6 +52,9 @@ import java.util.Optional;
  * left over from other tests; everything created is removed in {@link #tearDown()}.</p>
  */
 public class FileAssetBaseTypeToContentTypeStrategyImplTest extends IntegrationTestBase {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private final List<ContentType> contentTypesToCleanUp = new ArrayList<>();
     private Host testSite;
@@ -118,7 +122,7 @@ public class FileAssetBaseTypeToContentTypeStrategyImplTest extends IntegrationT
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(new MockAttributeRequest(
                         new MockHttpRequestIntegrationTest("localhost", "/").request()).request()).request());
-        request.setHeader("Authorization", ApiTokenTestUtils.adminBearerHeader());
+        request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
         request.setHeader("User-Agent", "Fake-Agent");
         request.setHeader("Host", "localhost");
         request.setHeader("Origin", "localhost");

@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.workflow;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_DEFAULT_ID;
 import static com.dotcms.rest.api.v1.workflow.WorkflowTestUtil.ADMIN_DEFAULT_MAIL;
@@ -153,6 +154,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static WorkflowAPI workflowAPI;
     private static RoleAPI roleAPI;
@@ -2944,7 +2948,7 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         );
 
         request.setHeader("Authorization",
-                ApiTokenTestUtils.adminBearerHeader());
+                TOKEN_UTILS.adminBearerHeader());
 
         return request;
     }

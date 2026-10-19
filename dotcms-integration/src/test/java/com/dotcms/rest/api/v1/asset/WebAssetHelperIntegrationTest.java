@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.asset;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
@@ -64,6 +65,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class WebAssetHelperIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     public static final String ASSET_PATH_TEMPLATE = "//%s/%s/%s/%s";
     static Host host;
@@ -494,7 +498,7 @@ public class WebAssetHelperIntegrationTest {
                 ).request()
         );
 
-        request.setHeader("Authorization", ApiTokenTestUtils.adminBearerHeader());
+        request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
         request.setHeader("User-Agent", "Fake-Agent");
         request.setHeader("Host", "localhost");
         request.setHeader("Origin", "localhost");

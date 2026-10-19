@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.content;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -66,6 +67,9 @@ import org.junit.Test;
  * Integration tests for {@link ContentResource} (v1 endpoint: /api/v1/content).
  */
 public class ContentResourceIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static User systemUser;
 
@@ -979,7 +983,7 @@ public class ContentResourceIntegrationTest {
                 ).request()
         );
         request.setHeader("Authorization",
-                ApiTokenTestUtils.bearerHeaderForEmail(email));
+                TOKEN_UTILS.bearerHeaderForEmail(email));
         return request;
     }
 
@@ -1091,7 +1095,7 @@ public class ContentResourceIntegrationTest {
                 ).request()
         );
         request.setHeader("Authorization",
-                ApiTokenTestUtils.adminBearerHeader());
+                TOKEN_UTILS.adminBearerHeader());
         return request;
     }
 }

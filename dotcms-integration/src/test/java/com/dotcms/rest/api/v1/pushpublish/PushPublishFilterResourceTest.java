@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.pushpublish;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import com.dotcms.datagen.FilterDescriptorDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -36,6 +37,9 @@ import java.util.Map;
  * @see <a href="https://www.dotcms.com/docs/latest/push-publishing-filters#push-publishing-filters">Push Publishing Filters</a>
  */
 public class PushPublishFilterResourceTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     static HttpServletResponse response;
     static PushPublishFilterResource resource;
@@ -73,7 +77,7 @@ public class PushPublishFilterResourceTest {
 
         if(authorization) {
             request.setHeader("Authorization",
-                    ApiTokenTestUtils.adminBearerHeader());
+                    TOKEN_UTILS.adminBearerHeader());
 
         }
 

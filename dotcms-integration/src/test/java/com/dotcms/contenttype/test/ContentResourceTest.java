@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.test;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 
 import com.dotcms.DataProviderWeldRunner;
@@ -100,6 +101,9 @@ import static org.mockito.Mockito.when;
 @ApplicationScoped
 @RunWith(DataProviderWeldRunner.class)
 public class ContentResourceTest extends IntegrationTestBase {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     final static String REQUIRED_NUMERIC_FIELD_NAME = "numeric";
     final static String NON_REQUIRED_IMAGE_FIELD_NAME = "image";
@@ -1375,10 +1379,10 @@ public class ContentResourceTest extends IntegrationTestBase {
         );
 
         if (user == null){
-            request.setHeader("Authorization", ApiTokenTestUtils.adminBearerHeader());
+            request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
 
         } else if (!user.equals(userAPI.getAnonymousUser())){
-            request.setHeader("Authorization", ApiTokenTestUtils.bearerHeader(user));
+            request.setHeader("Authorization", TOKEN_UTILS.bearerHeader(user));
         }
 
         if (jsonPayload != null) {

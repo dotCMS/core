@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.contenttype;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -54,6 +55,9 @@ import org.junit.Test;
  * representation that downstream page-rendering code expects.
  */
 public class ContentTypeResourceUpdateMetadataTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static ContentTypeResource resource;
@@ -429,7 +433,7 @@ public class ContentTypeResourceUpdateMetadataTest {
                 ).request()
         );
         request.setHeader("Authorization",
-                ApiTokenTestUtils.adminBearerHeader());
+                TOKEN_UTILS.adminBearerHeader());
         return request;
     }
 }

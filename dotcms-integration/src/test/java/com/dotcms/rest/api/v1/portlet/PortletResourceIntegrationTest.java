@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.portlet;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -60,6 +61,9 @@ import static org.junit.Assert.fail;
  */
 public class PortletResourceIntegrationTest {
 
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
+
     private static final String TOOLS_BETA = PortletID.TOOLS_BETA.toString();
     private static final String ROLES = PortletID.ROLES.toString();
 
@@ -100,7 +104,7 @@ public class PortletResourceIntegrationTest {
     private static HttpServletRequest adminRequest() {
         final MockHeaderRequest request = (MockHeaderRequest) baseRequest();
         request.setHeader("Authorization",
-                ApiTokenTestUtils.adminBearerHeader());
+                TOKEN_UTILS.adminBearerHeader());
         return request;
     }
 

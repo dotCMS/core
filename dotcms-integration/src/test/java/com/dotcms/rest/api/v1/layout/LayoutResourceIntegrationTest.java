@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.layout;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.PortletDataGen;
@@ -71,6 +72,9 @@ import static org.junit.Assert.fail;
  * @author hassandotcms
  */
 public class LayoutResourceIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static final String TOOLS_BETA_PORTLET_ID = "tools-beta";
 
@@ -162,7 +166,7 @@ public class LayoutResourceIntegrationTest {
     private static HttpServletRequest adminRequest() {
         final MockHeaderRequest request = baseRequest();
         request.setHeader("Authorization",
-                ApiTokenTestUtils.adminBearerHeader());
+                TOKEN_UTILS.adminBearerHeader());
         return request;
     }
 

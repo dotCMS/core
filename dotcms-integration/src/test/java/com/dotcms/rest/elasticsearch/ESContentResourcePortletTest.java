@@ -1,6 +1,7 @@
 package com.dotcms.rest.elasticsearch;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -67,6 +68,9 @@ import org.junit.runner.RunWith;
  */
 @RunWith(DataProviderRunner.class)
 public class ESContentResourcePortletTest extends IntegrationTestBase {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static LanguageAPI languageAPI;
     private static ContentletAPI contentletAPI;
@@ -625,7 +629,7 @@ public class ESContentResourcePortletTest extends IntegrationTestBase {
 
         if (!anonymous){
             request.setHeader("Authorization",
-                    ApiTokenTestUtils.adminBearerHeader());
+                    TOKEN_UTILS.adminBearerHeader());
         }
 
         when(request.getContentType()).thenReturn(MediaType.APPLICATION_JSON);

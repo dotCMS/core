@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.versionable;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.FolderDataGen;
@@ -43,6 +44,9 @@ import org.junit.Test;
 
 public class VersionableResourceTest {
 
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
+
     static VersionableResource resource;
     static HttpServletResponse response;
     static User adminUser;
@@ -73,7 +77,7 @@ public class VersionableResourceTest {
                         .request());
 
         request.setHeader("Authorization",
-                ApiTokenTestUtils.bearerHeaderForEmail(userEmail));
+                TOKEN_UTILS.bearerHeaderForEmail(userEmail));
 
 
         return request;

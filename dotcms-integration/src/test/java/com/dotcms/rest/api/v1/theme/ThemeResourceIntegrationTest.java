@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.theme;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 
 import static com.dotmarketing.business.ThemeAPI.THEME_PNG;
@@ -54,6 +55,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class ThemeResourceIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static ContentletAPI contentletAPI;
     private static HostAPI hostAPI;
@@ -421,7 +425,7 @@ public class ThemeResourceIntegrationTest {
                         .request());
 
         request.setHeader("Authorization",
-                ApiTokenTestUtils.bearerHeaderForEmail(userEmail));
+                TOKEN_UTILS.bearerHeaderForEmail(userEmail));
 
 
         return request;

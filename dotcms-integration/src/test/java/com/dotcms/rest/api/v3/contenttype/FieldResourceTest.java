@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v3.contenttype;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.ColumnField;
@@ -54,6 +55,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
 public class FieldResourceTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -1060,7 +1064,7 @@ public class FieldResourceTest {
                 ).request()
         );
 
-        request.setHeader("Authorization", ApiTokenTestUtils.adminBearerHeader());
+        request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
 
         return request;
     }

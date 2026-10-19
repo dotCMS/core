@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.experiments;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static org.junit.Assert.assertEquals;
@@ -58,6 +59,9 @@ import org.junit.Test;
  * status code itself requires a layer that runs the mapper.
  */
 public class ExperimentsResourceIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static ExperimentsResource resource;
     private static HttpServletResponse response;
@@ -397,7 +401,7 @@ public class ExperimentsResourceIntegrationTest {
                         .request());
 
         request.setHeader("Authorization",
-                ApiTokenTestUtils.bearerHeader(adminUser));
+                TOKEN_UTILS.bearerHeader(adminUser));
 
         return request;
     }

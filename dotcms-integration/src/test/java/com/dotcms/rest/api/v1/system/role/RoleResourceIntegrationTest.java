@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.system.role;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotcms.datagen.LayoutDataGen;
@@ -68,6 +69,9 @@ import static org.junit.Assert.fail;
  */
 public class RoleResourceIntegrationTest {
 
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
+
     private static RoleResource resource;
     private static RoleAPI roleAPI;
     private static Host testHost;
@@ -106,7 +110,7 @@ public class RoleResourceIntegrationTest {
                         .request());
 
         request.setHeader("Authorization",
-                ApiTokenTestUtils.adminBearerHeader());
+                TOKEN_UTILS.adminBearerHeader());
         return request;
     }
 

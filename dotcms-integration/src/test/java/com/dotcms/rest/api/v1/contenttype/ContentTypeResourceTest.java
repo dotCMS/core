@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.contenttype;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -73,6 +74,9 @@ import org.mockito.Mockito;
 
 @RunWith(DataProviderRunner.class)
 public class ContentTypeResourceTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
 	private static final String HOST_TO_REPLACE = "{REPLACE_ME_WITH_HOST_ID}";
 	private static final ObjectMapper mapper = new ObjectMapper();
@@ -380,7 +384,7 @@ public class ContentTypeResourceTest {
 				).request()
 		);
 
-		request.setHeader("Authorization", ApiTokenTestUtils.adminBearerHeader());
+		request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
 
 		return request;
 	}

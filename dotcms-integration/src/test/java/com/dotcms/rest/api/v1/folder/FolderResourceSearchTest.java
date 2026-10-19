@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.folder;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -39,6 +40,9 @@ import java.util.List;
  */
 public class FolderResourceSearchTest {
 
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
+
     static HttpServletResponse response;
     static FolderResource resource;
     static User adminUser;
@@ -67,7 +71,7 @@ public class FolderResourceSearchTest {
                                 .request())
                         .request());
         request.setHeader("Authorization",
-                ApiTokenTestUtils.bearerHeaderForEmail(userEmail));
+                TOKEN_UTILS.bearerHeaderForEmail(userEmail));
         return request;
     }
 

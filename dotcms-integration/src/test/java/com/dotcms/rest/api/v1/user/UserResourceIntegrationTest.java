@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.user;
 
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -53,6 +54,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class UserResourceIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     static HttpServletResponse response;
     static HttpServletRequest request;
@@ -119,7 +123,7 @@ public class UserResourceIntegrationTest {
                         .request());
 
         request.setHeader("Authorization",
-                ApiTokenTestUtils.bearerHeaderForEmail(email));
+                TOKEN_UTILS.bearerHeaderForEmail(email));
 
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST,host);
         request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID,host.getIdentifier());

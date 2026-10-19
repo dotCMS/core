@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v2.asset;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -91,6 +92,9 @@ import org.junit.Test;
  * </ul>
  */
 public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     static final String ASSET_PATH_TEMPLATE = "//%s/%s/%s/%s";
 
@@ -708,7 +712,7 @@ public class WebAssetResourceV2IntegrationTest extends IntegrationTestBase {
                 ).request()
         );
         request.setHeader("Authorization",
-                ApiTokenTestUtils.adminBearerHeader());
+                TOKEN_UTILS.adminBearerHeader());
         request.setHeader("User-Agent", "Fake-Agent");
         request.setHeader("Host", "localhost");
         request.setHeader("Origin", "localhost");

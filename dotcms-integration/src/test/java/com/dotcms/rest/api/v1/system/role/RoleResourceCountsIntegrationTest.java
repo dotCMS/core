@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.system.role;
 
 import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
 
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.UserDataGen;
@@ -48,6 +49,9 @@ import static org.junit.Assert.assertTrue;
  * @author hassandotcms
  */
 public class RoleResourceCountsIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     static HttpServletResponse response;
     static RoleResource resource;
@@ -98,7 +102,7 @@ public class RoleResourceCountsIntegrationTest {
                                 .request())
                         .request());
         request.setHeader("Authorization",
-                ApiTokenTestUtils.adminBearerHeader());
+                TOKEN_UTILS.adminBearerHeader());
         return request;
     }
 
