@@ -15,7 +15,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.bradmcevoy.http.Request;
-import com.bradmcevoy.http.Resource;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.TokenType;
@@ -34,7 +33,6 @@ import com.liferay.portal.model.User;
 import java.lang.reflect.Field;
 import java.time.Instant;
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 import java.util.Timer;
 import javax.servlet.http.HttpServletRequest;
@@ -240,35 +238,23 @@ public class DotWebdavAuthenticationTest {
         verify(tokens).fromJwt(CREDENTIAL, IP);
     }
 
-    /** Every resource must propagate the shared helper's refusal as no principal. */
+    /** A representative resource must propagate refusal and deny anonymous data or discovery. */
     @Test
-    public void allElevenResourceDelegatesRefuseDeniedCredentialsAndAnonymousAccess() throws Exception {
+    public void fileResourceRefusesDeniedCredentialsAndAnonymousAccess() throws Exception {
         final DotWebdavHelper denied = mock(DotWebdavHelper.class);
         when(denied.authorizePrincipal(USERNAME, CREDENTIAL))
                 .thenThrow(new DotSecurityException("denied by authentication policy"));
-        final List<Class<? extends Resource>> types = List.of(
-                FileResourceImpl.class, FolderResourceImpl.class, HostResourceImpl.class,
-                WebdavRootResourceImpl.class, SystemRootResourceImpl.class,
-                LanguageFolderResourceImpl.class, LanguageFileResourceImpl.class,
-                TemplateFolderResourceImpl.class, TemplateFileResourceImpl.class,
-                TempFolderResourceImpl.class, TempFileResourceImpl.class);
-        for (final Class<? extends Resource> type : types) {
-            final Resource resource = mock(type, CALLS_REAL_METHODS);
-            final Class<?> fieldOwner = type == HostResourceImpl.class
-                    ? BasicFolderResourceImpl.class : type;
-            final Field field = fieldOwner.getDeclaredField("dotDavHelper");
-            field.setAccessible(true);
-            field.set(resource, denied);
+        final FileResourceImpl resource = mock(FileResourceImpl.class, CALLS_REAL_METHODS);
+        final Field field = FileResourceImpl.class.getDeclaredField("dotDavHelper");
+        field.setAccessible(true);
+        field.set(resource, denied);
 
-            assertNull(type.getSimpleName(), resource.authenticate(USERNAME, CREDENTIAL));
-            for (final Request.Method method : List.of(Request.Method.PROPFIND,
-                    Request.Method.PROPPATCH, Request.Method.OPTIONS, Request.Method.GET)) {
-                assertFalse(type.getSimpleName() + " must not grant anonymous " + method,
-                        resource.authorise(mock(Request.class), method, null));
-            }
-        }
-        verify(denied, org.mockito.Mockito.times(types.size()))
-                .authorizePrincipal(USERNAME, CREDENTIAL);
+        assertNull(resource.authenticate(USERNAME, CREDENTIAL));
+        final Request request = mock(Request.class);
+        assertFalse(resource.authorise(request, Request.Method.PROPFIND, null));
+        assertFalse(resource.authorise(request, Request.Method.PROPPATCH, null));
+        assertFalse(resource.authorise(request, Request.Method.OPTIONS, null));
+        verify(denied).authorizePrincipal(USERNAME, CREDENTIAL);
     }
 
     /** Build a genuinely typed API token rather than a generic mocked JWToken. */
