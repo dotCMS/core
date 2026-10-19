@@ -20,6 +20,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -55,6 +56,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -71,6 +73,16 @@ public class AppsAPIImpl implements AppsAPI {
     private final LocalSystemEventsAPI localSystemEventsAPI;
     private final LicenseValiditySupplier licenseValiditySupplier;
     private final AppDescriptorHelper appDescriptorHelper;
+
+    /**
+     * Legacy delegation switch. When {@code true}, users with the Apps portlet may change and read
+     * Apps configuration as they could before it became an administrator setting. Defaults to
+     * {@code false}; retained for one release for installations that delegated Apps configuration.
+     */
+    static final String APPS_ALLOW_PORTLET_CONFIGURATION = "APPS_ALLOW_PORTLET_CONFIGURATION";
+
+    /** Caller classes already logged as relying on {@link #APPS_ALLOW_PORTLET_CONFIGURATION}. */
+    private static final Set<String> delegatedCallersLogged = ConcurrentHashMap.newKeySet();
 
     @VisibleForTesting
     public AppsAPIImpl(final LayoutAPI layoutAPI, final HostAPI hostAPI,
@@ -104,6 +116,49 @@ public class AppsAPIImpl implements AppsAPI {
     private boolean userDoesNotHaveAccess(final User user) throws DotDataException {
         return !user.isAdmin() && !layoutAPI
                 .doesUserHaveAccessToPortlet(APPS_PORTLET_ID, user);
+    }
+
+    /**
+     * Apps configuration is an administrator setting, like Maintenance and other instance-level
+     * settings: changing an app's secrets (save or delete) and reading their values requires a CMS
+     * administrator or the system user. Listing app keys and descriptors keeps the
+     * {@link #userDoesNotHaveAccess(User)} rule, administrator or Apps portlet, so the Apps portlet
+     * can still show which sites are configured.
+     * <p>
+     * When {@link #APPS_ALLOW_PORTLET_CONFIGURATION} is {@code true}, users with the Apps portlet are
+     * also allowed, and each caller class that relies on it is logged once at WARN. Otherwise a
+     * refusal is logged at WARN with the app key and the user id.
+     *
+     * @param user   the acting user
+     * @param appKey the app whose configuration is being accessed, used only for logging
+     * @param change {@code true} for a save or delete, {@code false} for a read of values
+     * @return {@code true} when the user may not perform the operation
+     */
+    private boolean userCannotManageAppConfiguration(final User user, final String appKey,
+            final boolean change) throws DotDataException {
+        if (user.isAdmin() || UserAPI.SYSTEM_USER_ID.equals(user.getUserId())) {
+            return false;
+        }
+        if (Config.getBooleanProperty(APPS_ALLOW_PORTLET_CONFIGURATION, false)) {
+            if (userDoesNotHaveAccess(user)) {
+                return true;
+            }
+            final String caller = StackWalker.getInstance()
+                    .walk(frames -> frames.map(StackWalker.StackFrame::getClassName)
+                            .filter(name -> !name.equals(AppsAPIImpl.class.getName()))
+                            .findFirst())
+                    .orElse(StringPool.BLANK);
+            if (delegatedCallersLogged.add(change + StringPool.COLON + caller)) {
+                Logger.warn(AppsAPIImpl.class, String.format(
+                        "Apps configuration %s by a non-administrator allowed by %s; this setting is deprecated and will be removed (caller %s)",
+                        change ? "change" : "read", APPS_ALLOW_PORTLET_CONFIGURATION, caller));
+            }
+            return false;
+        }
+        Logger.warn(AppsAPIImpl.class, String.format(
+                "Apps configuration for app '%s' can only be %s by an administrator (user %s)",
+                appKey, change ? "changed" : "read", user.getUserId()));
+        return true;
     }
 
     @Override
@@ -216,7 +271,7 @@ public class AppsAPIImpl implements AppsAPI {
         if(!licenseValiditySupplier.hasValidLicense()){
             throw new InvalidLicenseException("Apps requires of an enterprise level license.");
         }
-        if (userDoesNotHaveAccess(user)) {
+        if (userCannotManageAppConfiguration(user, key, false)) {
             throw new DotSecurityException(String.format(
                     "Invalid secret access attempt on `%s` performed by user with id `%s` and host `%s` ",
                     key, user.getUserId(), host.getIdentifier()));
@@ -482,6 +537,7 @@ public class AppsAPIImpl implements AppsAPI {
     public void deleteSecret(final String key, final Set<String> propOrSecretName,
             final Host host, final User user)
             throws DotDataException, DotSecurityException {
+        throwIfUserCannotWrite(key, host.getIdentifier(), user);
         final Optional<AppSecrets> secretsForService = getSecrets(key, host, user);
         if (secretsForService.isPresent()) {
             final AppSecrets.Builder builder = new AppSecrets.Builder();
@@ -514,7 +570,7 @@ public class AppsAPIImpl implements AppsAPI {
     public void saveSecret(final String key, final Tuple2<String, Secret> keyAndSecret,
             final Host host, final User user)
             throws DotDataException, DotSecurityException {
-
+        throwIfUserCannotWrite(key, host.getIdentifier(), user);
         final Optional<AppSecrets> secretsForService = getSecrets(key, host, user);
         if (secretsForService.isPresent()) {
             //The secret already exists and wee need to update one specific entry they rest should be copy as they are
@@ -551,11 +607,7 @@ public class AppsAPIImpl implements AppsAPI {
     @Override
     public void saveSecrets(final AppSecrets secretsIn, final String hostIdentifier, final User user)
             throws DotDataException, DotSecurityException {
-        if (userDoesNotHaveAccess(user)) {
-            throw new DotSecurityException(String.format(
-                    "Invalid secret update attempt on `%s` performed by user with id `%s` and host `%s` ",
-                    secretsIn.getKey(), user.getUserId(), hostIdentifier));
-        }
+        throwIfUserCannotWrite(secretsIn.getKey(), hostIdentifier, user);
 
         final String internalKey = internalKey(secretsIn.getKey(), hostIdentifier);
         Host host = APILocator.getHostAPI().find(hostIdentifier, user, true);
@@ -775,12 +827,25 @@ public class AppsAPIImpl implements AppsAPI {
 
     private void deleteSecrets(final String key, final String siteIdentifier, final User user)
             throws DotDataException, DotSecurityException {
-        if (userDoesNotHaveAccess(user)) {
+        throwIfUserCannotWrite(key, siteIdentifier, user);
+        secretsStore.deleteValue(internalKey(key, siteIdentifier));
+    }
+
+    /**
+     * Refuses a secret save or delete unless
+     * {@link #userCannotManageAppConfiguration(User, String, boolean)} allows it.
+     *
+     * @param key            the app key
+     * @param hostIdentifier the site the secrets belong to
+     * @param user           the acting user
+     * @throws DotSecurityException when the user may not write the app's secrets
+     */
+    private void throwIfUserCannotWrite(final String key, final String hostIdentifier,
+            final User user) throws DotDataException, DotSecurityException {
+        if (userCannotManageAppConfiguration(user, key, true)) {
             throw new DotSecurityException(String.format(
-                    "Invalid service delete attempt on `%s` for host `%s` performed by user with id `%s`",
-                    key, siteIdentifier, user.getUserId()));
-        } else {
-            secretsStore.deleteValue(internalKey(key, siteIdentifier));
+                    "Invalid secret update attempt on `%s` performed by user with id `%s` and host `%s` ",
+                    key, user.getUserId(), hostIdentifier));
         }
     }
 
@@ -857,7 +922,9 @@ public class AppsAPIImpl implements AppsAPI {
         final boolean hasConfigurations = !filterSitesForAppKey(appKey, List.of(site.getIdentifier()),
                 user).isEmpty();
         if (hasConfigurations) {
-            final Optional<AppSecrets> secretsOptional = getSecrets(appKey, site, user);
+            // Warnings only name required params that have no value, so they follow the listing
+            // rule (checked by filterSitesForAppKey above) rather than the rule for reading values.
+            final Optional<AppSecrets> secretsOptional = resolveSecrets(appKey, false, site);
             if (secretsOptional.isPresent()) {
                 final Map<String, List<String>> warnings = new HashMap<>();
                 final AppSecrets appSecrets = secretsOptional.get();
