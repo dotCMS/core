@@ -18,6 +18,7 @@ import com.dotcms.enterprise.achecker.dao.ChecksDAO;
 import com.dotcms.enterprise.achecker.dao.LangCodesDAO;
 import com.dotcms.enterprise.achecker.model.LanguageCodeBean;
 import com.dotcms.enterprise.achecker.utility.LanguageUtility;
+import com.dotmarketing.util.Logger;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -586,40 +587,41 @@ public class BasicChecks {
 	}
 
 	/**
-	 * check if $code is a valid language code
-	 * return true if valid, otherwise, return false
+	 * Tells whether the given language is a known language code. Only the part before the first
+	 * '-' is checked, so {@code en-US} is looked up as {@code en}; 2 letter codes are matched
+	 * against the 2 letter column and 3 letter codes against the 3 letter column.
+	 *
+	 * @param code the language as found in the document, for example {@code en} or {@code en-US};
+	 *             sent to the database as a bound value
+	 * @return {@code true} when the code exists, {@code false} when it does not, has another length
+	 *         or cannot be looked up
 	 */
 	public boolean valid_lang_code(String code)
 	{
 		try{
 			code = cut_out_lang_code(code);
-			//		$code = BasicChecks::cut_out_lang_code($code);
 			BaseDAO dao = new BaseDAO();
 			
 			StringBuffer  sqlBuffer = new StringBuffer(  "SELECT COUNT(*) cnt FROM " + dao.getTablePrefix() + "lang_codes WHERE " );
 
 			if (code.length() == 2 ){
-				sqlBuffer.append( "code_2letters = '"+code +"'" );
+				sqlBuffer.append( "code_2letters = ?" );
 			}
 			else if (code.length() == 3 ){
-				sqlBuffer.append( "code_3letters = '"+code +"'" ); 
+				sqlBuffer.append( "code_3letters = ?" );
 			}
 			else {	
 				return false;
 			}
 
-			Map<String, Object> row = dao.executeOne(sqlBuffer.toString() );
-			if( row != null ){
-				Integer valore =  (Integer)row.get("cnt");
-				return valore > 0;
+			Map<String, Object> row = dao.executeOne(sqlBuffer.toString(), code);
+			if( row != null && row.get("cnt") instanceof Number ){
+				return ((Number) row.get("cnt")).intValue() > 0;
 			}
 			return false;
-			//		$result	= mysql_query($sql, $db) or die(mysql_error());
-			//		$row = mysql_fetch_assoc($result);
-			//
-			//		return ($row["cnt"] > 0);
 		}catch (Exception e) {
-			e.printStackTrace();
+			Logger.error(BasicChecks.class, "Unable to look up an Accessibility Checker language code: "
+					+ e.getClass().getName());
 			return false;
 		}
 	}
