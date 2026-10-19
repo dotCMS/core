@@ -4,19 +4,37 @@ import java.util.Enumeration;
 import java.util.Set;
 
 import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionContext;
-
-import com.google.common.collect.ImmutableSet;
 
 
 public class VelocitySessionWrapper implements HttpSession {
 
 
     final private HttpSession session;
+    final private HttpServletRequest request;
 
     public VelocitySessionWrapper(HttpSession session) {
+        this(session, null);
+    }
+
+    /**
+     * @param session The session to wrap.
+     * @param request The request being rendered, or {@code null}; its URI is named when a call is refused.
+     */
+    public VelocitySessionWrapper(final HttpSession session, final HttpServletRequest request) {
         this.session = session;
+        this.request = request;
+    }
+
+    /**
+     * @param key The attribute name.
+     * @return {@code true} when Velocity code may set or remove the given session attribute.
+     */
+    private boolean isSettable(final String key) {
+        return VelocityRequestWrapper.isSettable(key, () -> session,
+                () -> null != request ? request.getRequestURI() : null);
     }
 
     @Override
@@ -86,9 +104,14 @@ public class VelocitySessionWrapper implements HttpSession {
 
     }
 
+    /**
+     * Removes the attribute from the session unless it is one that only dotCMS sets.
+     */
     @Override
     public void removeAttribute(final String arg0) {
-        session.removeAttribute(arg0);
+        if (isSettable(arg0)) {
+            session.removeAttribute(arg0);
+        }
     }
 
     @Override
@@ -98,9 +121,12 @@ public class VelocitySessionWrapper implements HttpSession {
 
     }
 
+    /**
+     * Sets the attribute on the session unless it is one that only dotCMS sets.
+     */
     @Override
     public void setAttribute(final String arg0, final Object arg1) {
-        if (!VelocityRequestWrapper.SET_VALUE_BLACKLIST.contains(arg0)) {
+        if (isSettable(arg0)) {
             session.setAttribute(arg0, arg1);
         }
 

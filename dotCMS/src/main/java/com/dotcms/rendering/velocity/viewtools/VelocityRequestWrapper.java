@@ -1,11 +1,16 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import com.dotcms.auth.providers.oauth.OAuthConstants;
+import com.dotmarketing.business.LoginAsSession;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
@@ -27,11 +32,41 @@ public class VelocityRequestWrapper extends javax.servlet.http.HttpServletReques
     private String dotCMSUri;
     final protected static Set<String> SET_VALUE_BLACKLIST =
                     Config.getBooleanProperty("VELOCITY_PREVENT_SETTING_USER_ID", true)
-                                    ? ImmutableSet.of(WebKeys.USER_ID, WebKeys.USER)
+                                    ? ImmutableSet.of(WebKeys.USER_ID, WebKeys.USER, WebKeys.PRINCIPAL_USER_ID,
+                                                    LoginAsSession.SESSION_KEY, WebKeys.LOGIN_TO_EDIT_MODE,
+                                                    OAuthConstants.SESSION_NATIVE_LOGIN)
                                     : ImmutableSet.of();
+
+    private static final Set<String> REFUSED_KEYS_LOGGED = ConcurrentHashMap.newKeySet();
 
     private static final Lazy<Boolean> USE_OWASP_ENCODING_FOR_XSS_PARAMS =
             Lazy.of(() -> Config.getBooleanProperty("USE_OWASP_ENCODING_FOR_XSS_PARAMS", true));
+
+    /**
+     * Tells whether Velocity code may set or remove the given request or session attribute. The
+     * attributes in {@link #SET_VALUE_BLACKLIST} are set only by dotCMS itself; the first refused
+     * call for each of them is logged at WARN. The log is kept to once per attribute, not per user,
+     * so the set of logged keys stays bounded by the size of the list.
+     *
+     * @param key     The attribute name.
+     * @param session The session the call works on, or {@code null}; used to name the user in the log.
+     * @param uri     The URI of the request being rendered, or {@code null}; used in the log.
+     * @return {@code false} when Velocity code may not set or remove the attribute.
+     */
+    static boolean isSettable(final String key, final Supplier<HttpSession> session, final Supplier<String> uri) {
+        if (!SET_VALUE_BLACKLIST.contains(key)) {
+            return true;
+        }
+        if (REFUSED_KEYS_LOGGED.add(key)) {
+            final HttpSession currentSession = session.get();
+            final Object userId = null != currentSession ? currentSession.getAttribute(WebKeys.USER_ID) : null;
+            Logger.warn(VelocityRequestWrapper.class, String.format("Velocity code run by user '%s' for request " +
+                    "'%s' tried to set or remove the attribute '%s', which only dotCMS sets; the call was ignored. " +
+                    "This is logged once per attribute. Setting VELOCITY_PREVENT_SETTING_USER_ID=false allows it.",
+                    userId, uri.get(), key));
+        }
+        return false;
+    }
 
     private VelocityRequestWrapper(final HttpServletRequest req) {
         super(req);
@@ -74,7 +109,7 @@ public class VelocityRequestWrapper extends javax.servlet.http.HttpServletReques
 
     @Override
     public HttpSession getSession() {
-        return new VelocitySessionWrapper(super.getSession());
+        return new VelocitySessionWrapper(super.getSession(), this);
     }
 
     @Override
@@ -99,17 +134,28 @@ public class VelocityRequestWrapper extends javax.servlet.http.HttpServletReques
         return path;
     }
 
+    /**
+     * Removes the request attribute unless it is one that only dotCMS sets.
+     *
+     * @param key The attribute name.
+     */
     @Override
     public void removeAttribute(String key) {
-        if (SET_VALUE_BLACKLIST.contains(key)) {
+        if (!isSettable(key, () -> super.getSession(false), this::getRequestURI)) {
             return;
         }
         super.removeAttribute(key);
     }
 
+    /**
+     * Sets the request attribute unless it is one that only dotCMS sets.
+     *
+     * @param key   The attribute name.
+     * @param value The attribute value.
+     */
     @Override
     public void setAttribute(final String key, final Object value) {
-        if (SET_VALUE_BLACKLIST.contains(key)) {
+        if (!isSettable(key, () -> super.getSession(false), this::getRequestURI)) {
             return;
         }
         
