@@ -280,6 +280,24 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
     /**
+     * Reads an app's current secrets for a write that has already passed
+     * {@link #throwIfUserCannotWrite(String, String, User)}, so the user rule is not evaluated a
+     * second time as a read.
+     *
+     * @param key                  the app key
+     * @param fallbackOnSystemHost whether the System Host tiers participate
+     * @param host                 the site being resolved
+     * @return the merged {@link AppSecrets}, or {@link Optional#empty()} when nothing resolves
+     */
+    private Optional<AppSecrets> readSecretsAfterWriteCheck(final String key,
+            final boolean fallbackOnSystemHost, final Host host) throws DotDataException {
+        if(!licenseValiditySupplier.hasValidLicense()){
+            throw new InvalidLicenseException("Apps requires of an enterprise level license.");
+        }
+        return resolveSecrets(key, fallbackOnSystemHost, host);
+    }
+
+    /**
      * Resolves an app's secrets for a site by walking the 5-tier, specificity-first precedence model
      * independently for each declared/stored param. Env vars (tiers 1, 3, 4) and stored values
      * (tiers 2, 5) are merged per-param so an app can be fully provisioned from the environment with
@@ -538,7 +556,7 @@ public class AppsAPIImpl implements AppsAPI {
             final Host host, final User user)
             throws DotDataException, DotSecurityException {
         throwIfUserCannotWrite(key, host.getIdentifier(), user);
-        final Optional<AppSecrets> secretsForService = getSecrets(key, host, user);
+        final Optional<AppSecrets> secretsForService = readSecretsAfterWriteCheck(key, false, host);
         if (secretsForService.isPresent()) {
             final AppSecrets.Builder builder = new AppSecrets.Builder();
             final AppSecrets serviceSecrets = secretsForService.get();
@@ -555,7 +573,7 @@ public class AppsAPIImpl implements AppsAPI {
                 }
                 builder.withSecret(entry.getKey(), entry.getValue());
             }
-            saveSecrets(builder.withKey(key).build(), host, user);
+            writeSecrets(builder.withKey(key).build(), host.getIdentifier(), user);
         } else {
             throw new DotDataException(
                     String.format("Unable to find secret-property named `%s` for service `%s` .",
@@ -571,7 +589,7 @@ public class AppsAPIImpl implements AppsAPI {
             final Host host, final User user)
             throws DotDataException, DotSecurityException {
         throwIfUserCannotWrite(key, host.getIdentifier(), user);
-        final Optional<AppSecrets> secretsForService = getSecrets(key, host, user);
+        final Optional<AppSecrets> secretsForService = readSecretsAfterWriteCheck(key, false, host);
         if (secretsForService.isPresent()) {
             //The secret already exists and wee need to update one specific entry they rest should be copy as they are
             final AppSecrets serviceSecrets = secretsForService.get();
@@ -589,12 +607,12 @@ public class AppsAPIImpl implements AppsAPI {
             //finally override or add the new value.
             builder.withSecret(keyAndSecret._1, keyAndSecret._2);
 
-            saveSecrets(builder.withKey(key).build(), host, user);
+            writeSecrets(builder.withKey(key).build(), host.getIdentifier(), user);
         } else {
             //The secret is brand new . We need to create a whole new one.
             final AppSecrets.Builder builder = new AppSecrets.Builder();
             builder.withSecret(keyAndSecret._1, keyAndSecret._2);
-            saveSecrets(builder.withKey(key).build(), host, user);
+            writeSecrets(builder.withKey(key).build(), host.getIdentifier(), user);
         }
     }
 
@@ -608,10 +626,23 @@ public class AppsAPIImpl implements AppsAPI {
     public void saveSecrets(final AppSecrets secretsIn, final String hostIdentifier, final User user)
             throws DotDataException, DotSecurityException {
         throwIfUserCannotWrite(secretsIn.getKey(), hostIdentifier, user);
+        writeSecrets(secretsIn, hostIdentifier, user);
+    }
 
+    /**
+     * Stores an app's secrets for a site, keeping hidden values the caller did not change, and
+     * broadcasts the save event. Callers must have run
+     * {@link #throwIfUserCannotWrite(String, String, User)} first.
+     *
+     * @param secretsIn      the secrets to store
+     * @param hostIdentifier the site the secrets belong to
+     * @param user           the acting user, used for the site lookup and the save event
+     */
+    private void writeSecrets(final AppSecrets secretsIn, final String hostIdentifier,
+            final User user) throws DotDataException, DotSecurityException {
         final String internalKey = internalKey(secretsIn.getKey(), hostIdentifier);
-        Host host = APILocator.getHostAPI().find(hostIdentifier, user, true);
-        Optional<AppSecrets> existingAppSecrets = getSecrets(secretsIn.getKey(), false, host, user);
+        Host host = hostAPI.find(hostIdentifier, user, true);
+        Optional<AppSecrets> existingAppSecrets = readSecretsAfterWriteCheck(secretsIn.getKey(), false, host);
         AppSecrets secretsToSave = maintainHiddenValues(secretsIn, existingAppSecrets);
         secretsStore.deleteValue(internalKey);
         if (!secretsToSave.getSecrets().isEmpty()) {

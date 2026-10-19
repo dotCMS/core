@@ -3,8 +3,10 @@ package com.dotcms.security.apps;
 import static org.junit.Assert.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -27,9 +29,7 @@ import org.junit.Test;
  * administrator, and that {@link AppsAPIImpl#APPS_ALLOW_PORTLET_CONFIGURATION} lets users with the
  * Apps portlet do so as well.
  *
- * Deletes are used for the allowed cases because they reach the secrets store without the static
- * host lookup that {@code saveSecrets} performs; the integration test {@code AppsResourceTest}
- * covers an administrator save end to end.
+ * The integration test {@code AppsResourceTest} covers an administrator save end to end.
  */
 public class AppsAPIImplAdminSecretsTest {
 
@@ -38,6 +38,8 @@ public class AppsAPIImplAdminSecretsTest {
 
     private final SecretsStore secretsStore = mock(SecretsStore.class);
     private final Host site = mock(Host.class);
+    private final LayoutAPI layoutAPI = mock(LayoutAPI.class);
+    private final HostAPI hostAPI = mock(HostAPI.class);
 
     @After
     public void resetSwitch() {
@@ -45,13 +47,12 @@ public class AppsAPIImplAdminSecretsTest {
     }
 
     private AppsAPIImpl newApi(final boolean userHasAppsPortlet) throws Exception {
-        final LayoutAPI layoutAPI = mock(LayoutAPI.class);
         when(layoutAPI.doesUserHaveAccessToPortlet(anyString(), any(User.class)))
                 .thenReturn(userHasAppsPortlet);
         when(site.getIdentifier()).thenReturn(SITE_ID);
         return new AppsAPIImpl(
                 layoutAPI,
-                mock(HostAPI.class),
+                hostAPI,
                 secretsStore,
                 mock(AppsCache.class),
                 mock(LocalSystemEventsAPI.class),
@@ -138,5 +139,18 @@ public class AppsAPIImplAdminSecretsTest {
         assertThrows(DotSecurityException.class,
                 () -> api.deleteSecrets(APP_KEY, site, user(false)));
         verify(secretsStore, never()).deleteValue(anyString());
+    }
+
+    @Test
+    public void appsPortletUserSaveEvaluatesTheRuleOnceWhenDelegationSwitchIsOn() throws Exception {
+        Config.setProperty(AppsAPIImpl.APPS_ALLOW_PORTLET_CONFIGURATION, true);
+        final User user = user(false);
+        when(hostAPI.find(SITE_ID, user, true)).thenReturn(site);
+        newApi(true).saveSecret(APP_KEY, Tuple.of("apiKey",
+                secrets().getSecrets().get("apiKey")), site, user);
+        verify(secretsStore).saveValue(eq(AppsUtil.internalKey(APP_KEY, SITE_ID)), any());
+        // Each evaluation of the rule for this user checks Apps portlet access once, so a single
+        // call means the save was checked as a change only, with no extra check as a read.
+        verify(layoutAPI, times(1)).doesUserHaveAccessToPortlet(anyString(), eq(user));
     }
 }

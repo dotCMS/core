@@ -448,18 +448,29 @@ public class AppsAPIImplTest {
     /**
      * Given scenario: APPS_ALLOW_PORTLET_CONFIGURATION is on and a non-admin user with granted
      * portlet apps access saves configuration.
-     * Expected Result: The save succeeds.
+     * Expected Result: The value is stored and the system user reads it back.
      */
     @Test
     public void Test_Apps_Portlet_User_Can_Save_App_Configuration_When_Delegation_Switch_Is_On()
             throws DotDataException, DotSecurityException {
+        final AppsAPI api = APILocator.getAppsAPI();
         final User user = newAppsPortletUser();
+        final Host systemHost = APILocator.systemHost();
+        final String appKey = "apps-portlet-save-" + System.currentTimeMillis();
         Config.setProperty(AppsAPIImpl.APPS_ALLOW_PORTLET_CONFIGURATION, true);
         try {
-            APILocator.getAppsAPI().saveSecrets(new AppSecrets.Builder().build(),
-                    APILocator.systemHost(), user);
+            api.saveSecrets(new AppSecrets.Builder().withKey(appKey)
+                    .withHiddenSecret("apiKey", "saved-by-apps-portlet-user").build(),
+                    systemHost, user);
+
+            final Optional<AppSecrets> saved =
+                    api.getSecrets(appKey, systemHost, APILocator.systemUser());
+            assertTrue(saved.isPresent());
+            assertEquals("saved-by-apps-portlet-user",
+                    saved.get().getSecrets().get("apiKey").getString());
         } finally {
             Config.setProperty(AppsAPIImpl.APPS_ALLOW_PORTLET_CONFIGURATION, false);
+            api.deleteSecrets(appKey, systemHost, APILocator.systemUser());
         }
     }
 
