@@ -61,7 +61,9 @@ import { GlobalStore } from '@dotcms/store';
 import { DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import {
+    DOT_VELOCITY_LANGUAGE_ID,
     DotCopyContentModalService,
+    DotSidePanelConfig,
     DotSidePanelRef,
     DotSidePanelService,
     SafeUrlPipe
@@ -283,7 +285,10 @@ const createRouting = () =>
             {
                 provide: DotContentletService,
                 useValue: {
-                    getContentletByInode: () => of(URL_MAP_CONTENTLET)
+                    getContentletByInode: () => of(URL_MAP_CONTENTLET),
+                    // The VTL menu asks before opening Edit Code; by default the user may edit.
+                    canLock: () =>
+                        of({ canLock: true, locked: false, id: '', inode: '', lockedBy: '' })
                 }
             },
             {
@@ -2824,6 +2829,128 @@ describe('EditEmaEditorComponent', () => {
                             contentletInode: 'vtl-inode-123'
                         })
                     );
+                });
+
+                describe('Edit Code panel', () => {
+                    /** The side panels the editor opened, recorded instead of rendered. */
+                    let opened: {
+                        config: DotSidePanelConfig;
+                        ref: { closed: Subject<void>; close: Mock; requestClose: Mock };
+                    }[];
+
+                    beforeEach(() => {
+                        opened = [];
+                        vi.spyOn(spectator.inject(DotSidePanelService), 'open').mockImplementation(
+                            (_component, config) => {
+                                const closed = new Subject<void>();
+                                const ref = {
+                                    closed,
+                                    close: vi.fn(() => {
+                                        closed.next();
+                                        closed.complete();
+                                    }),
+                                    requestClose: vi.fn()
+                                };
+                                opened.push({ config, ref });
+
+                                return ref as unknown as ReturnType<DotSidePanelService['open']>;
+                            }
+                        );
+                    });
+
+                    const VELOCITY_FILE = {
+                        ...URL_MAP_CONTENTLET,
+                        inode: 'vtl-inode-123',
+                        identifier: 'vtl-identifier-123',
+                        languageId: 2,
+                        baseType: 'FILEASSET',
+                        extension: 'vtl',
+                        fileName: 'my-template.vtl'
+                    } as DotCMSContentlet;
+
+                    /** Clicks the file in the VTL menu and lets the panel open. */
+                    const openVelocityFile = async () => {
+                        vi.spyOn(
+                            spectator.debugElement.injector.get(DotContentletService),
+                            'getContentletByInode'
+                        ).mockReturnValue(of(VELOCITY_FILE));
+
+                        spectator.component.handleEditVTL(VTL_FILE_MOCK);
+                        spectator.detectChanges();
+                        await spectator.fixture.whenStable();
+                        spectator.detectChanges();
+                    };
+
+                    it("should open a Velocity file's source instead of the content editor", async () => {
+                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogServiceOpenSpy = vi.spyOn(
+                            spectator.inject(DialogService),
+                            'open'
+                        );
+
+                        await openVelocityFile();
+
+                        const [{ config }] = opened;
+                        expect((config.inputs?.['request'] as () => unknown)()).toEqual({
+                            inode: 'vtl-inode-123',
+                            title: 'my-template.vtl',
+                            language: DOT_VELOCITY_LANGUAGE_ID
+                        });
+                        expect((config.heading as () => string)()).toBe('my-template.vtl');
+                        expect(dialogSpy).not.toHaveBeenCalled();
+                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                    });
+
+                    it.each([
+                        [
+                            'the user cannot edit it',
+                            of({
+                                canLock: false,
+                                locked: true,
+                                id: '',
+                                inode: '',
+                                lockedBy: 'someone'
+                            })
+                        ],
+                        ['the lock check fails', throwError(() => new Error('network'))]
+                    ])(
+                        'should open the content editor instead when %s',
+                        async (_label, lockAnswer) => {
+                            vi.spyOn(
+                                spectator.debugElement.injector.get(DotContentletService),
+                                'canLock'
+                            ).mockReturnValue(
+                                lockAnswer as ReturnType<DotContentletService['canLock']>
+                            );
+                            const openContentForEdit = vi
+                                .spyOn(spectator.component, 'openContentForEdit')
+                                .mockImplementation(() => undefined);
+
+                            await openVelocityFile();
+
+                            expect(openContentForEdit).toHaveBeenCalledWith(VELOCITY_FILE);
+                            expect(opened).toHaveLength(0);
+                        }
+                    );
+
+                    it('should reload the page when the source is saved', async () => {
+                        await openVelocityFile();
+                        const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+
+                        (opened[0].config.outputs?.['saved'] as () => void)();
+
+                        expect(pageReloadSpy).toHaveBeenCalled();
+                    });
+
+                    it('should open the file again after the panel closed itself', async () => {
+                        await openVelocityFile();
+
+                        opened[0].ref.close();
+                        await openVelocityFile();
+
+                        // The close cleared the request, so the same file opens a new panel.
+                        expect(opened).toHaveLength(2);
+                    });
                 });
             });
 

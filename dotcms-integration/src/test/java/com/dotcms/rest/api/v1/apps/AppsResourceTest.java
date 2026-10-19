@@ -28,6 +28,7 @@ import com.dotcms.rest.api.v1.apps.view.SiteView;
 import com.dotcms.rest.api.v1.apps.view.ViewUtil;
 import com.dotcms.security.apps.AppDescriptorHelper;
 import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPIImpl;
 import com.dotcms.security.apps.ParamDescriptor;
 import com.dotcms.security.apps.SecretsStore;
@@ -1018,6 +1019,95 @@ public class AppsResourceTest extends IntegrationTestBase {
             final Response createSecretResponse3 = appsResource.createAppSecrets(request, response, appKey, host.getIdentifier(), secretForm3);
             Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, createSecretResponse3.getStatus());
 
+        }
+    }
+
+
+    /**
+     * Given scenario: An app whose `configuration` param is declared with type JSON (as the UVE app is).
+     * Expected Result: Malformed JSON is rejected with a 400, both when the secrets are first created
+     * and when they are later updated individually (the PUT path through
+     * {@code AppsHelper.validateFormForUpdate}); valid JSON is accepted on both paths. The stored
+     * secret is persisted as STRING so a release without Type.JSON can still read it, while the
+     * serialized view keeps reporting JSON from the descriptor.
+     */
+    @Test
+    public void Test_Json_Param_Validates_On_Create_And_Update_And_Is_Stored_As_String()
+            throws Exception {
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .param("configuration", false, Type.JSON, "Configuration", "UVE routes", true,
+                        StringPool.BLANK)
+                .withName("json-param-app")
+                .withDescription("demo")
+                .withExtraParameters(false);
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        when(request.getRequestURI()).thenReturn("/baseURL");
+        final String appKey = dataGen.getKey();
+        final File file = dataGen.nextPersistedDescriptor();
+        final String validJson = "{\"config\":[{\"pattern\":\".*\",\"url\":\"https://myspa.com\"}]}";
+        final String updatedJson = "{\"config\":[{\"pattern\":\"/blogs/(.*)\",\"url\":\"https://blogs.com\"}]}";
+        final String brokenJson = "{\"config\": [";
+
+        try (InputStream inputStream = Files.newInputStream(file.toPath())) {
+            final Response appResponse = appsResource.createApp(request, response,
+                    createFormDataMultiPart(dataGen.getFileName(), inputStream));
+            Assert.assertEquals(HttpStatus.SC_OK, appResponse.getStatus());
+
+            // Create: malformed JSON is rejected, valid JSON is saved.
+            Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, appsResource.createAppSecrets(request,
+                    response, appKey, host.getIdentifier(),
+                    new SecretForm(ImmutableMap.of("configuration",
+                            newInputParam(brokenJson.toCharArray(), false)))).getStatus());
+            Assert.assertEquals(HttpStatus.SC_OK, appsResource.createAppSecrets(request, response,
+                    appKey, host.getIdentifier(),
+                    new SecretForm(ImmutableMap.of("configuration",
+                            newInputParam(validJson.toCharArray(), false)))).getStatus());
+
+            // Update (secrets now exist, so this goes through validateFormForUpdate).
+            Assert.assertEquals(HttpStatus.SC_BAD_REQUEST, appsResource.updateAppIndividualSecret(
+                    request, response, appKey, host.getIdentifier(),
+                    new SecretForm(ImmutableMap.of("configuration",
+                            newInputParam(brokenJson.toCharArray(), false)))).getStatus());
+            Assert.assertEquals(HttpStatus.SC_OK, appsResource.updateAppIndividualSecret(
+                    request, response, appKey, host.getIdentifier(),
+                    new SecretForm(ImmutableMap.of("configuration",
+                            newInputParam(updatedJson.toCharArray(), false)))).getStatus());
+
+            // Stored as STRING, with the updated value.
+            final AppSecrets stored = APILocator.getAppsAPI()
+                    .getSecrets(appKey, host, APILocator.systemUser()).orElseThrow();
+            Assert.assertEquals(Type.STRING, stored.getSecrets().get("configuration").getType());
+            Assert.assertEquals(updatedJson,
+                    new String(stored.getSecrets().get("configuration").getValue()));
+
+            // The view still reports JSON, taken from the descriptor.
+            final Response detailResponse = appsResource.getAppDetail(request, response, appKey,
+                    host.getIdentifier());
+            Assert.assertEquals(HttpStatus.SC_OK, detailResponse.getStatus());
+            final AppView appDetailedView = (AppView) ((ResponseEntityView) detailResponse
+                    .getEntity()).getEntity();
+            final SecretView configurationView = appDetailedView.getSites().get(0).getSecrets()
+                    .stream().filter(view -> "configuration".equals(view.getName())).findFirst()
+                    .orElseThrow();
+
+            try (StringWriter writer = new StringWriter();
+                    JsonGenerator jsonGenerator = createJsonGenerator(writer)) {
+                ViewUtil.newStackContext(appDetailedView);
+                ViewUtil.currentSite(host.getIdentifier());
+                try {
+                    new SecretViewSerializer().serialize(configurationView, jsonGenerator, null);
+                    jsonGenerator.flush();
+                } finally {
+                    ViewUtil.disposeStackContext();
+                }
+                final Map<String, Object> serialized = DotObjectMapperProvider.getInstance()
+                        .getDefaultObjectMapper()
+                        .readValue(writer.toString(), new TypeReference<Map<String, Object>>() {});
+                Assert.assertEquals(Type.JSON.name(), serialized.get("type").toString());
+            }
         }
     }
 

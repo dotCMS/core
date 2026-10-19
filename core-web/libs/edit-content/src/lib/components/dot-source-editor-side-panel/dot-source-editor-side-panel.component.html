@@ -1,0 +1,67 @@
+@switch ($status()) {
+    @case (ComponentStatus.LOADING) {
+        <!-- The drawer's own spinner stops once this panel's code is in; this one covers loading the
+             file's source. The same spinner, so the hand-over between them does not show. -->
+        <div
+            class="flex size-full flex-1 items-center justify-center"
+            data-testid="source-editor-loading">
+            <p-progressSpinner styleClass="h-8! w-8!" strokeWidth="4" ariaLabel="Loading" />
+        </div>
+    }
+    @case (ComponentStatus.ERROR) {
+        <div
+            class="flex size-full flex-1 items-center justify-center text-gray-500"
+            data-testid="source-editor-error">
+            {{ 'edit.content.source-editor.load-error' | dm }}
+        </div>
+    }
+    @default {
+        <!-- Mounted only once the source is in, so the editor starts on the file rather than on
+             an empty model that is then replaced. The border is this panel's alone, on the host,
+             so other Monaco editors are untouched; `overflow-hidden` clips the editor's
+             background to the rounded corners and hides nothing, since ngx-monaco-editor already
+             clips its own container. -->
+        <ngx-monaco-editor
+            class="min-h-0 flex-1 overflow-hidden rounded-md border border-surface"
+            [ngModel]="$source()"
+            (ngModelChange)="onSourceChange($event)"
+            [options]="$editorOptions()"
+            (init)="onEditorInit($event)"
+            data-testid="source-editor-monaco" />
+    }
+}
+
+<div class="flex items-center justify-end gap-2" data-testid="source-editor-actions">
+    @if ($saveError() !== null) {
+        <!-- A failed save the shared HTTP handler cannot explain, such as a file the server refused
+             to stage, to the left of the buttons. The edits are still in the editor above. -->
+        <p-message
+            class="mr-auto min-w-0"
+            severity="error"
+            size="small"
+            data-testid="source-editor-save-error">
+            @if ($saveError(); as reason) {
+                {{ 'edit.content.source-editor.save-error-reason' | dm: [reason] }}
+            } @else {
+                {{ 'edit.content.source-editor.save-error' | dm }}
+            }
+        </p-message>
+    }
+    <p-button
+        [label]="'dot.common.cancel' | dm"
+        severity="secondary"
+        [outlined]="true"
+        [disabled]="$status() === ComponentStatus.SAVING"
+        (onClick)="requestClose()"
+        data-testid="source-editor-cancel" />
+    <p-button
+        [label]="'dot.common.save' | dm"
+        [disabled]="!$canSave()"
+        [loading]="$status() === ComponentStatus.SAVING"
+        (onClick)="save()"
+        data-testid="source-editor-save" />
+</div>
+
+<!-- The unsaved-changes prompt, on this panel's own ConfirmationService (see requestClose). On the
+     body, so the drawer it sits in never positions or clips it. -->
+<p-confirmDialog appendTo="body" />
