@@ -1,6 +1,5 @@
 package com.dotcms.rest;
 
-import com.dotcms.rendering.velocity.WidgetRenderer;
 import com.dotcms.api.web.HttpServletRequestImpersonator;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
@@ -12,6 +11,7 @@ import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
+import com.dotcms.rendering.velocity.WidgetRenderer;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.JsonUtil;

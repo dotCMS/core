@@ -1,7 +1,6 @@
 package com.dotcms.rendering.velocity;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.type.ContentType;
@@ -17,6 +16,7 @@ import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
@@ -135,6 +135,24 @@ public class WidgetRendererTest {
 
     /**
      * Method to test: {@link WidgetRenderer#render(HttpServletRequest, HttpServletResponse, Contentlet)}
+     * Given scenario: flag on, widget persisted as is (the data generator checks it in as the system user)
+     * Expected result: the system user does not qualify, the field value comes out as text
+     */
+    @Test
+    public void flagOnWithSystemLastModifierRendersFieldValueAsText() {
+        final Contentlet widget = new ContentletDataGen(widgetType.id())
+                .setProperty("widgetTitle", "WidgetRendererTest")
+                .setProperty("code", FIELD_VELOCITY)
+                .nextPersisted();
+        assertEquals(UserAPI.SYSTEM_USER_ID, widget.getModUser());
+
+        final String rendered = renderWithFlag(widget, true);
+
+        assertEquals("[3]" + FIELD_VELOCITY, rendered);
+    }
+
+    /**
+     * Method to test: {@link WidgetRenderer#render(HttpServletRequest, HttpServletResponse, Contentlet)}
      * Given scenario: a contentlet whose type is not a widget
      * Expected result: empty text, as before
      */
@@ -144,7 +162,6 @@ public class WidgetRendererTest {
                 APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
         assertTrue(render(notAWidget).isEmpty());
-        assertFalse(widgetType.baseType().name().isEmpty());
     }
 
 }

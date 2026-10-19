@@ -15,6 +15,8 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.WebKeys;
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.TimeZone;
 import org.junit.jupiter.api.AfterEach;
@@ -112,6 +114,24 @@ public class CMSUsersWebAPITest {
         assertEquals(1, result.size());
         assertTrue(result.get(0) instanceof TemplateUser);
         assertNull(result.get(0).getPassword());
+    }
+
+    /**
+     * Method to test: {@link CMSUsersWebAPI#getLoggedInUser(HttpServletRequest)}
+     * Given scenario: the request carries the logged-in user as a request attribute
+     * Expected result: the template gets a copy with no password or token
+     */
+    @Test
+    public void getLoggedInUserHidesCredentials() {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getAttribute(WebKeys.USER)).thenReturn(storedUser);
+
+        final User result = new CMSUsersWebAPI().getLoggedInUser(request);
+
+        assertTrue(result instanceof TemplateUser);
+        assertEquals("admin-id", result.getUserId());
+        assertNull(result.getPassword());
+        assertNull(result.getRememberMeToken());
     }
 
     /**

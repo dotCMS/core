@@ -3,6 +3,7 @@ package com.dotcms.rendering.velocity;
 import com.dotcms.featureflag.FeatureFlagName;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
@@ -34,7 +35,12 @@ import org.apache.velocity.context.Context;
  * second time, which makes Velocity written inside the widget field values run, is available
  * only when {@link FeatureFlagName#FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER} is on and the
  * widget was last modified by a user holding the {@link Role#SCRIPTING_DEVELOPER} role, the
- * same rule the {@code $sql} and {@code $secrets} view tools apply.
+ * rule the {@code $sql} view tool applies to the content that calls it. The system user never
+ * qualifies, so content checked in by import, push publishing or startup still renders its
+ * field values as text until a Scripting Developer saves it.
+ * <p>
+ * This class only covers rendering through REST. Pages render widgets through the Velocity
+ * resources that {@code ContentletLoader} writes, which have their own handling of field values.
  */
 public class WidgetRenderer {
 
@@ -70,8 +76,9 @@ public class WidgetRenderer {
 
         Context context = VelocityUtil.getBasicContext();
         for (final String key : widget.getMap().keySet()) {
-            context.put(key, widget.getMap().get(key).toString());
-            context.put("widget" + key, widget.getMap().get(key).toString());
+            final String value = String.valueOf(widget.getMap().get(key));
+            context.put(key, value);
+            context.put("widget" + key, value);
         }
 
         final List<Field> fields = FieldsCache.getFieldsByStructureInode(contStructure.getInode());
@@ -96,8 +103,10 @@ public class WidgetRenderer {
         }
 
         final Field codeField = contStructure.getFieldVar("widgetCode");
-        final String fval = codeField.getValues() != null ? codeField.getValues().trim() : "";
-        widgetExecuteCode.append(fval).append("\n");
+        if (codeField != null) {
+            final String fval = codeField.getValues() != null ? codeField.getValues().trim() : "";
+            widgetExecuteCode.append(fval).append("\n");
+        }
 
         VelocityUtil.getEngine().evaluate(context, firstEval, "", widgetExecuteCode.toString());
         if (!rendersFieldVelocity(widget)) {
@@ -128,15 +137,18 @@ public class WidgetRenderer {
 
     /**
      * Resolves the user who last modified the widget and checks the Scripting Developer role on it.
+     * The system user is not accepted even though {@code RoleAPI} treats it as holding every role:
+     * it is the modifier recorded for imported, pushed and startup content, not for a person.
      *
      * @param widget the widget being rendered
      * @return {@code true} when that user exists and holds the role; {@code false} otherwise or on any lookup error
      */
     private boolean lastModifiedByScriptingDeveloper(final Contentlet widget) {
         final String modUserId = widget.getModUser();
-        if (!UtilMethods.isSet(modUserId)) {
-            Logger.debug(this, () -> String.format("Widget %s: field values render as text, no last modifier recorded",
-                    widget.getIdentifier()));
+        if (!UtilMethods.isSet(modUserId) || UserAPI.SYSTEM_USER_ID.equals(modUserId)) {
+            Logger.debug(this, () -> String.format(
+                    "Widget %s: field values render as text, last modifier is '%s'",
+                    widget.getIdentifier(), modUserId));
             return false;
         }
         try {

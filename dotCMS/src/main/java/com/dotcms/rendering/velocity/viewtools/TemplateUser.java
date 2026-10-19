@@ -8,9 +8,12 @@ import java.util.HashMap;
  * <p>
  * It is a detached copy of the user loaded through {@code UserAPI}, so whatever a template
  * does to it never reaches the instance held by the user cache. The copy carries the
- * profile data (name, email, locale, dates) but none of the stored credential material:
+ * profile data (name, email, locale, dates) but not the stored password or the remember-me token:
  * {@link #getPassword()}, {@link #getRememberMeToken()} and {@link #getSkinId()} (the
  * remember-me token shares that column) always return {@code null}.
+ * <p>
+ * It is a read model for templates: never hand it to {@code UserAPI.save}, since the password
+ * and token columns would be written back as {@code null}.
  */
 public class TemplateUser extends User {
 

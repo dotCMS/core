@@ -70,10 +70,11 @@ public class CMSUsersWebAPI implements ViewTool {
 	}
 
 	/**
-	 * @param email
-	 * @return
+	 * Finds a user by email address.
+	 *
+	 * @param email the email address to look up
+	 * @return a template copy of the user (see {@link TemplateUser}), or {@code null} when not found
 	 */
-
 	public User getUserByEmail(String email) {
 		try {
 			return forTemplate(APILocator.getUserAPI().loadByUserByEmail(email, APILocator.getUserAPI().getSystemUser(), false));
@@ -92,11 +93,10 @@ public class CMSUsersWebAPI implements ViewTool {
 
 
 	/**
-	 * get User by user id
-	 * 
-	 * @param userId
-	 *            userid of the user to be obtained
-	 * @return User
+	 * Finds a user by id.
+	 *
+	 * @param userId the id of the user to be obtained
+	 * @return a template copy of the user (see {@link TemplateUser}), or {@code null} when not found or not set
 	 */
 	public User getUserByUserId(String userId) {
 		if (UtilMethods.isSet(userId)) {
@@ -112,10 +112,10 @@ public class CMSUsersWebAPI implements ViewTool {
 	}
 
 	/**
-	 * Retrieves the logged user from session
-	 * 
-	 * @param request
-	 * @return
+	 * Retrieves the logged-in user, back-end first and then the front-end session.
+	 *
+	 * @param request the current request
+	 * @return a template copy of the user (see {@link TemplateUser}), or {@code null} when nobody is logged in
 	 */
 	public User getLoggedInUser(HttpServletRequest request) {
 		User loggedInUser = PortalUtil.getUser(request);//back-end user
@@ -126,7 +126,7 @@ public class CMSUsersWebAPI implements ViewTool {
 				loggedInUser = (User) session.getAttribute(WebKeys.CMS_USER);
 			}
 		}
-		return loggedInUser;
+		return forTemplate(loggedInUser);
 	}
 
 
@@ -134,9 +134,10 @@ public class CMSUsersWebAPI implements ViewTool {
 
 
 	/**
-	 * This method return a list of users with the specified group
-	 * @param groupId compare string
-	 * @return List<User>
+	 * Returns the users holding the given role.
+	 *
+	 * @param groupId the role id
+	 * @return template copies of the users (see {@link TemplateUser}); empty when the role is unknown
 	 * @deprecated will now return a list of roles
 	 */
 	public List<User> getAllUsersInGroup(String groupId) {
