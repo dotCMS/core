@@ -291,6 +291,26 @@ public class ReindexQueueFactory {
     }
 
 
+    /**
+     * Tells whether another journal row for the same identifier is already parked as failed. A
+     * single save can queue more than one row for an identifier; each row is parked on its own.
+     *
+     * @param identifier the content identifier
+     * @param exceptId   the row to leave out, usually the one being parked
+     * @return {@code true} when another row of the identifier is already parked
+     * @throws DotDataException if the journal cannot be read
+     */
+    protected boolean hasOtherParkedEntry(final String identifier, final long exceptId)
+            throws DotDataException {
+        return !new DotConnect()
+                .setSQL("SELECT 1 FROM dist_reindex_journal WHERE ident_to_index = ?"
+                        + " AND priority >= ? AND id <> ? LIMIT 1")
+                .addParam(identifier)
+                .addParam(Priority.ERROR.dbValue())
+                .addParam(exceptId)
+                .loadObjectResults().isEmpty();
+    }
+
     protected void markAsFailed(ReindexEntry idx, String cause) throws DotDataException {
         final int newPriority =
                 (idx.errorCount() >= REINDEX_MAX_FAILURE_ATTEMPTS) ? Priority.ERROR.dbValue()

@@ -10,11 +10,6 @@ import static com.dotcms.content.index.IndexConfigHelper.isReadEnabled;
 import static com.dotcms.content.index.IndexConfigHelper.logShadowWriteFailure;
 import static com.dotmarketing.util.StringUtils.builder;
 
-import com.dotcms.api.system.event.message.MessageSeverity;
-import com.dotcms.api.system.event.message.MessageType;
-import com.dotcms.api.system.event.message.SystemMessageEventUtil;
-import com.dotcms.api.system.event.message.builder.SystemMessage;
-import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -58,6 +53,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.BulkProcessorListener;
+import com.dotmarketing.common.reindex.FailedIndexingNotifier;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.common.reindex.ReindexThread;
@@ -82,7 +78,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
-import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.StringPool;
@@ -1723,7 +1718,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             optimizeNewActiveIndicesAsync(
                     List.of(newInfo.getWorking(), newInfo.getLive()), newActiveOs);
 
-            notifyAdminsOfFailedReindex();
+            notifyReindexFinished();
 
         } catch (Exception e) {
             throw new DotRuntimeException(e.getMessage(), e);
@@ -1816,7 +1811,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final String newLive    = existing.reindexLive().orElseThrow();
         optimizeNewActiveIndicesAsync(List.of(), List.of(newWorking, newLive));
 
-        notifyAdminsOfFailedReindex();
+        notifyReindexFinished();
         return true;
     }
 
@@ -1918,28 +1913,16 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     /**
-     * Sends a system-wide warning message to CMS administrators if any content documents
-     * failed to be reindexed during the last full-reindex run.
+     * Tells the CMS administrators how the full reindex that just switched over finished: the
+     * usual "finished successfully" notification, or — when contents were skipped — a pop-up and
+     * a notification saying how many, both pointing to the index status.
      */
-    private void notifyAdminsOfFailedReindex() {
+    private void notifyReindexFinished() {
         try {
-            final long failedRecords = queueApi.getFailedReindexRecords().size();
-            if (failedRecords == 0) {
-                return;
-            }
-            final String message = LanguageUtil.get(
-                            APILocator.getCompanyAPI().getDefaultCompany(),
-                            "Contents-Failed-Reindex-message")
-                    .replace("{0}", String.valueOf(failedRecords));
-            final SystemMessage systemMessage = new SystemMessageBuilder()
-                    .setMessage(message)
-                    .setType(MessageType.SIMPLE_MESSAGE)
-                    .setSeverity(MessageSeverity.WARNING)
-                    .setLife(3600000)
-                    .create();
-            final List<String> users = APILocator.getRoleAPI()
-                    .findUserIdsForRole(APILocator.getRoleAPI().loadCMSAdminRole());
-            SystemMessageEventUtil.getInstance().pushMessage(systemMessage, users);
+            // One message per channel with the same words: a pop-up for whoever is connected and
+            // a bell notification — "finished successfully", or how many contents were skipped.
+            new FailedIndexingNotifier().reindexFinished(
+                    queueApi.getFailedReindexRecords().size());
         } catch (Exception e) {
             Logger.warnAndDebug(this.getClass(), "Could not send failed-reindex notification: " + e.getMessage(), e);
         }

@@ -577,10 +577,9 @@ public class ReindexThread {
         
         if (ESReindexationProcessStatus.inFullReindexation() && queueApi.recordsInQueue() == 0) {
             // The re-indexation process has finished successfully
-            if (indexAPI.reindexSwitchover(false)) {
-                // Generate and send an user notification
-                sendNotification("notification.reindexing.success", null, null, false);
-            }
+            // The switchover itself tells the CMS administrators how the reindex finished —
+            // successfully, or with the contents that failed — through FailedIndexingNotifier.
+            indexAPI.reindexSwitchover(false);
             return true;
         }
         return false;
