@@ -1,32 +1,103 @@
 package com.dotcms.rest;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.business.CloseDB;
+import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.WebResource.InitBuilder;
+import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
-import com.dotmarketing.exception.InvalidLicenseException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.UUIDGenerator;
+import com.liferay.portal.auth.PrincipalThreadLocal;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.MockedStatic;
 
 public class WebResourceIntegrationTest extends IntegrationTestBase {
 
   private static final String WRITE = "WRITE";
   private static final String READ = "READ";
   private static final String NONE = "None";
+
+  private final List<User> authenticationUsers = new ArrayList<>();
+  private final List<ApiToken> authenticationTokens = new ArrayList<>();
+  private final List<HttpServletRequest> authenticationRequests = new ArrayList<>();
+  private final String authenticationPassword = UUIDGenerator.generateUuid();
+  private String previousBasicAuth;
+  private String previousAnonymousAccess;
+  private String previousPrincipal;
+  private HttpServletRequest previousRequest;
+
+  /** Saves the authentication policy and thread-local identity for each test. */
+  @Before
+  public void saveAuthenticationState() {
+    previousBasicAuth = Config.getStringProperty("ALLOW_BASIC_AUTH", null);
+    previousAnonymousAccess = Config.getStringProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, null);
+    previousPrincipal = PrincipalThreadLocal.getName();
+    previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+  }
+
+  /** Removes only this test's fixtures and restores shared authentication state. */
+  @After
+  public void restoreAuthenticationState() {
+    try {
+      for (final HttpServletRequest request : authenticationRequests) {
+        final HttpSession session = request.getSession(false);
+        if (session != null) {
+          session.invalidate();
+        }
+      }
+      for (final ApiToken token : authenticationTokens) {
+        APILocator.getApiTokenAPI().deleteToken(token, APILocator.systemUser());
+      }
+      for (final User user : authenticationUsers) {
+        UserDataGen.remove(user, false);
+      }
+    } finally {
+      Config.setProperty("ALLOW_BASIC_AUTH", previousBasicAuth);
+      Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, previousAnonymousAccess);
+      PrincipalThreadLocal.setName(previousPrincipal);
+      HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
+    }
+  }
 
   private static HttpServletResponse response;
   private static User frontEndUser = null;
@@ -97,6 +168,249 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
     return request;
   }
   
+  /** Default and invalid settings must reject even correct password or API-JWT credentials. */
+  @Test
+  public void basic_password_and_api_jwt_fail_closed_without_explicit_enablement() throws Exception {
+    final User user = authenticationUser();
+    final String jwt = apiJwt(authenticationToken(user, null));
+    for (final String mode : new String[]{null, "NONE", "FALSE", "", "invalid"}) {
+      Config.setProperty("ALLOW_BASIC_AUTH", mode);
+      assertCredentialDenied("Basic", loginName(user), authenticationPassword);
+      assertCredentialDenied("Basic", loginName(user), jwt);
+    }
+  }
+
+  /** Token mode accepts a persisted same-owner API JWT, not a real account password. */
+  @Test
+  public void jwt_token_mode_accepts_api_jwt_but_not_password() throws Exception {
+    final User user = authenticationUser();
+    final String jwt = apiJwt(authenticationToken(user, null));
+    final LoginServiceAPI loginService = mock(LoginServiceAPI.class);
+    try (MockedStatic<APILocator> apis = mockStatic(APILocator.class, CALLS_REAL_METHODS)) {
+      apis.when(APILocator::getLoginServiceAPI).thenReturn(loginService);
+      try {
+        for (final String mode : new String[]{"JWT_TOKEN", " jwt_token "}) {
+          Config.setProperty("ALLOW_BASIC_AUTH", mode);
+          assertCredentialUser(user, "Basic", jwt);
+          assertCredentialDenied("Basic", loginName(user), authenticationPassword);
+        }
+      } finally {
+        verifyNoInteractions(loginService);
+      }
+    }
+  }
+
+  /** Compatibility mode retains real password login and adds username-bound API-JWT login. */
+  @Test
+  public void all_mode_accepts_password_and_api_jwt() throws Exception {
+    final User user = authenticationUser();
+    final String jwt = apiJwt(authenticationToken(user, null));
+    for (final String mode : new String[]{"ALL", " all "}) {
+      Config.setProperty("ALLOW_BASIC_AUTH", mode);
+      assertCredentialUser(user, "Basic", authenticationPassword);
+      assertCredentialUser(user, "Basic", jwt);
+    }
+  }
+
+  /** DOTAUTH and the live user/password path parameters must obey the same policy as Basic. */
+  @Test
+  public void legacy_header_and_url_credentials_obey_authentication_mode() throws Exception {
+    final User user = authenticationUser();
+    final String jwt = apiJwt(authenticationToken(user, null));
+    for (final String transport : new String[]{"DOTAUTH", "params"}) {
+      Config.setProperty("ALLOW_BASIC_AUTH", "NONE");
+      assertCredentialDenied(transport, loginName(user), authenticationPassword);
+      assertCredentialDenied(transport, loginName(user), jwt);
+      Config.setProperty("ALLOW_BASIC_AUTH", "JWT_TOKEN");
+      assertCredentialDenied(transport, loginName(user), authenticationPassword);
+      assertCredentialUser(user, transport, jwt);
+      Config.setProperty("ALLOW_BASIC_AUTH", "ALL");
+      assertCredentialUser(user, transport, authenticationPassword);
+      assertCredentialUser(user, transport, jwt);
+    }
+  }
+
+  /** A valid API JWT cannot be used with another existing account's login name in either mode. */
+  @Test
+  public void api_jwt_basic_requires_matching_username_in_both_enabled_modes() throws Exception {
+    final User owner = authenticationUser();
+    final User other = authenticationUser();
+    final String jwt = apiJwt(authenticationToken(owner, null));
+    for (final String mode : new String[]{"JWT_TOKEN", "ALL"}) {
+      Config.setProperty("ALLOW_BASIC_AUTH", mode);
+      assertCredentialUser(owner, "Basic", jwt);
+      assertCredentialDenied("Basic", loginName(other), jwt);
+    }
+  }
+
+  /** Token-only mode must not confuse a valid browser USER_TOKEN with an API token. */
+  @Test
+  public void jwt_token_mode_rejects_user_token_and_malformed_jwt() throws Exception {
+    final User user = authenticationUser();
+    final String userToken = JsonWebTokenUtils.getInstance().createUserToken(user, 1);
+    assertEquals("The browser token fixture must be valid before testing Basic rejection",
+        user.getUserId(), APILocator.getApiTokenAPI().userFromJwt(userToken, "127.0.0.1").get().getUserId());
+    Config.setProperty("ALLOW_BASIC_AUTH", "JWT_TOKEN");
+    assertCredentialDenied("Basic", loginName(user), userToken);
+    assertCredentialDenied("Basic", loginName(user), "not-a-jwt");
+  }
+
+  /** Both enabled modes must validate the persisted API token's allowed client network. */
+  @Test
+  public void api_jwt_basic_enforces_network_in_both_enabled_modes() throws Exception {
+    final User user = authenticationUser();
+    final String localJwt = apiJwt(authenticationToken(user, "127.0.0.0/8"));
+    final String foreignJwt = apiJwt(authenticationToken(user, "192.0.2.0/24"));
+    for (final String mode : new String[]{"JWT_TOKEN", "ALL"}) {
+      Config.setProperty("ALLOW_BASIC_AUTH", mode);
+      assertCredentialUser(user, "Basic", localJwt);
+      assertCredentialDenied("Basic", loginName(user), foreignJwt);
+    }
+  }
+
+  /** A successful API-JWT request cannot mint a password session that survives revocation. */
+  @Test
+  public void api_jwt_basic_rechecks_revocation_without_creating_login_session() throws Exception {
+    final User user = authenticationUser();
+    for (final String mode : new String[]{"JWT_TOKEN", "ALL"}) {
+      Config.setProperty("ALLOW_BASIC_AUTH", mode);
+      final ApiToken token = authenticationToken(user, null);
+      final String jwt = apiJwt(token);
+      final HttpServletRequest request = credentialRequest("Basic", loginName(user), jwt);
+      assertEquals(user.getUserId(), new WebResource.InitBuilder()
+          .requestAndResponse(request, response).init().getUser().getUserId());
+      final HttpSession session = request.getSession(false);
+      if (session != null) {
+        assertNull("API-JWT authentication must not establish a password login session",
+            session.getAttribute(WebKeys.USER_ID));
+      }
+      APILocator.getApiTokenAPI().revokeToken(token, APILocator.systemUser());
+      DateUtil.sleep(1000); // The existing token fixture considers revocation strictly before now.
+      assertCredentialDenied("Basic", loginName(user), jwt);
+    }
+  }
+
+  /** Disabling Basic must not disable ordinary Bearer or already authenticated session access. */
+  @Test
+  public void none_mode_preserves_bearer_and_session_authentication() throws Exception {
+    Config.setProperty("ALLOW_BASIC_AUTH", "NONE");
+    final User user = authenticationUser();
+    final String jwt = apiJwt(authenticationToken(user, null));
+    final HttpServletRequest bearer = new MockHeaderRequest(authenticationRequest(),
+        "Authorization", "Bearer " + jwt);
+    assertEquals(user.getUserId(), new WebResource.InitBuilder()
+        .requestAndResponse(bearer, response).init().getUser().getUserId());
+    final HttpServletRequest sessionRequest = authenticationRequest();
+    sessionRequest.getSession().setAttribute(WebKeys.USER_ID, user.getUserId());
+    final HttpServletRequest replayedBasic = new MockHeaderRequest(sessionRequest, "Authorization",
+        "Basic " + Base64.getEncoder().encodeToString(
+            "foreign-proxy-user:foreign-proxy-secret".getBytes(StandardCharsets.UTF_8)));
+    assertEquals(user.getUserId(), new WebResource.InitBuilder()
+        .requestAndResponse(replayedBasic, response).init().getUser().getUserId());
+  }
+
+  /** Only the explicit servlet fallback may ignore foreign Basic credentials for public assets. */
+  @Test
+  public void foreign_basic_can_fall_back_to_anonymous_only_for_public_asset_callers() {
+    for (final String mode : new String[]{"NONE", "JWT_TOKEN", "ALL"}) {
+      Config.setProperty("ALLOW_BASIC_AUTH", mode);
+      final HttpServletRequest asset = credentialRequest("Basic", "foreign-proxy-user", "foreign-proxy-secret");
+      assertEquals(cmsAnon.getUserId(), new WebResource().getCurrentUser(asset, response,
+          Collections.emptyMap(), AnonymousAccess.READ, true).getUserId());
+      assertCredentialDenied("Basic", "foreign-proxy-user", "foreign-proxy-secret");
+      final HttpServletRequest protectedAsset = credentialRequest("Basic", "foreign-proxy-user", "foreign-proxy-secret");
+      assertThrows(SecurityException.class, () -> new WebResource().getCurrentUser(protectedAsset,
+          response, Collections.emptyMap(), AnonymousAccess.NONE, true));
+    }
+  }
+
+  /** API-JWT authentication must not grant administrator permissions to a non-admin owner. */
+  @Test
+  public void api_jwt_basic_preserves_protected_resource_permissions() throws Exception {
+    final User user = authenticationUser();
+    final String jwt = apiJwt(authenticationToken(user, null));
+    for (final String mode : new String[]{"JWT_TOKEN", "ALL"}) {
+      Config.setProperty("ALLOW_BASIC_AUTH", mode);
+      assertCredentialUser(user, "Basic", jwt);
+      final HttpServletRequest request = credentialRequest("Basic", loginName(user), jwt);
+      assertThrows(SecurityException.class, () -> new WebResource.InitBuilder()
+          .requestAndResponse(request, response).requireAdmin(true).init());
+    }
+  }
+
+  /** Creates a disposable front-end account with a known password and no administrator role. */
+  private User authenticationUser() throws DotDataException {
+    final User user = new UserDataGen().emailAddress(UUIDGenerator.generateUuid() + "@example.com")
+        .password(authenticationPassword)
+        .roles(APILocator.getRoleAPI().loadFrontEndUserRole()).nextPersisted();
+    authenticationUsers.add(user);
+    return user;
+  }
+
+  /** Uses the company's actual login convention rather than assuming email-based authentication. */
+  private String loginName(final User user) {
+    return Company.AUTH_TYPE_EA.equals(CompanyUtils.getDefaultCompany().getAuthType())
+        ? user.getEmailAddress() : user.getUserId();
+  }
+
+  /** Persists an API token using the same fixture API as the JWT integration tests. */
+  private ApiToken authenticationToken(final User user, final String network) {
+    final ApiToken token = APILocator.getApiTokenAPI().persistApiToken(ApiToken.builder()
+        .withUserId(user.getUserId()).withExpires(Date.from(Instant.now().plus(1, ChronoUnit.DAYS)))
+        .withRequestingIp("127.0.0.1").withAllowNetwork(network == null ? "0.0.0.0/0" : network)
+        .build(), APILocator.systemUser());
+    authenticationTokens.add(token);
+    return token;
+  }
+
+  /** Signs a JWT for a persisted API token. */
+  private String apiJwt(final ApiToken token) {
+    return APILocator.getApiTokenAPI().getJWT(token, APILocator.systemUser());
+  }
+
+  /** Creates a fresh request with no cookies, authentication attributes or shared session. */
+  private HttpServletRequest authenticationRequest() {
+    final HttpServletRequest request = anonymousRequest();
+    authenticationRequests.add(request);
+    return request;
+  }
+
+  /** Builds header credentials; URL credentials are passed through InitBuilder.params instead. */
+  private HttpServletRequest credentialRequest(final String transport, final String username,
+      final String credential) {
+    final HttpServletRequest request = authenticationRequest();
+    if ("params".equals(transport)) {
+      return request;
+    }
+    final String encoded = Base64.getEncoder().encodeToString(
+        (username + ":" + credential).getBytes(StandardCharsets.UTF_8));
+    return new MockHeaderRequest(request, "Basic".equals(transport) ? "Authorization" : "DOTAUTH",
+        "Basic".equals(transport) ? "Basic " + encoded : encoded);
+  }
+
+  /** Exercises the real URL keys user/password, not the unused userid/pwd builder aliases. */
+  private InitBuilder credentialBuilder(final String transport, final String username,
+      final String credential) {
+    final InitBuilder builder = new WebResource.InitBuilder()
+        .requestAndResponse(credentialRequest(transport, username, credential), response);
+    return "params".equals(transport)
+        ? builder.params("/user/" + username + "/password/" + credential) : builder;
+  }
+
+  /** Asserts an authenticated identity without bypassing the resource's permission checks. */
+  private void assertCredentialUser(final User user, final String transport, final String credential) {
+    assertEquals(user.getUserId(), credentialBuilder(transport, loginName(user), credential)
+        .init().getUser().getUserId());
+  }
+
+  /** Asserts strict REST rejection rather than accepting an anonymous fallback. */
+  private void assertCredentialDenied(final String transport, final String username,
+      final String credential) {
+    final SecurityException denied = assertThrows(SecurityException.class,
+        () -> credentialBuilder(transport, username, credential).init());
+    assertEquals(401, denied.getResponse().getStatus());
+  }
+
   @Test(expected = com.dotcms.rest.exception.SecurityException.class)
   public void disallow_anon_access_default() throws Exception {
     Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, WRITE);
