@@ -1,5 +1,7 @@
 package com.dotcms.rest;
 
+import com.dotcms.auth.BasicAuthentication;
+import com.dotcms.auth.BasicAuthentication.Mode;
 import com.dotcms.auth.dotAuth.rest.DotAuthSessionCredentialProcessor;
 import com.dotcms.auth.dotAuth.rest.DotAuthSessionCredentialProcessorImpl;
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
@@ -594,7 +596,7 @@ public  class WebResource {
                 user = authenticateUser(userPass.get().username, userPass.get().password, request, response, userAPI);
             } catch (SecurityException e) {
                 // The anonymous fallback only covers header-replayed credentials (BASIC/DOTAUTH).
-                // An explicit request-parameter login (?userid=&pwd=) must still fail hard so it is
+                // An explicit request-parameter login (user/password) must still fail hard so it is
                 // never silently downgraded to anonymous. REST callers (option off) also fail hard.
                 if (!fallbackToAnonymousOnAuthFailure || CRED_SOURCE_REQUEST_PARAMETER.equals(source)) {
                     throw e;
@@ -765,8 +767,9 @@ public  class WebResource {
     }
 
     /**
-     * Authenticates and returns a {@link User} using <code>username</code> and <code>password</code>.
-     * If a wrong <code>username</code> or <code>password</code> are provided, a SecurityException is thrown
+     * Authenticates a username and credential under the shared Basic authentication policy.
+     * API JWTs identify their active owner without creating a browser login. Only compatibility
+     * mode permits the legacy password login pipeline; rejected credentials produce a 401.
      */
     @VisibleForTesting
     static User authenticateUser(final String username, final String password,
@@ -775,6 +778,18 @@ public  class WebResource {
                                  final UserAPI userAPI) throws SecurityException {
         User user       = null;
         final String ip = request != null ? request.getRemoteAddr() : BLANK;
+        final Mode mode = BasicAuthentication.mode();
+        if (mode == Mode.NONE) {
+            throw new SecurityException("Username and credential authentication is disabled",
+                    Response.Status.UNAUTHORIZED);
+        }
+        final Optional<User> tokenUser = BasicAuthentication.authenticateApiToken(username, password, ip);
+        if (tokenUser.isPresent()) {
+            return tokenUser.get();
+        }
+        if (mode != Mode.ALL) {
+            throw new SecurityException("Invalid API token credentials", Response.Status.UNAUTHORIZED);
+        }
 
         if(StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password)) { // providing login and password so let's try to authenticate
 

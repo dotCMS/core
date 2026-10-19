@@ -14,6 +14,8 @@ import static org.mockito.Mockito.when;
 import com.dotcms.UnitTestBase;
 import com.dotcms.auth.dotAuth.rest.DotAuthSessionCredentialProcessorImpl;
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
+import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.rest.exception.SecurityException;
@@ -21,8 +23,10 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
+import com.dotmarketing.util.CompanyUtils;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.auth.PrincipalThreadLocal;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import java.nio.charset.StandardCharsets;
@@ -32,6 +36,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.junit.After;
@@ -54,7 +59,7 @@ public class WebResourceAuthenticationTest extends UnitTestBase {
     @Parameterized.Parameters(name = "{index}: mode={0}, transport={1}")
     public static Collection<Object[]> restrictiveModes() {
         final List<Object[]> cases = new ArrayList<>();
-        for (final String mode : new String[]{null, "NONE", "JWT_TOKEN"}) {
+        for (final String mode : new String[]{null, "NONE", "FALSE", "", "invalid", "JWT_TOKEN", " jwt_token "}) {
             for (final String transport : new String[]{"Basic", "DOTAUTH", "params"}) {
                 cases.add(new Object[]{mode, transport});
             }
@@ -81,6 +86,51 @@ public class WebResourceAuthenticationTest extends UnitTestBase {
     public void restoreState() {
         Config.setProperty("ALLOW_BASIC_AUTH", previousMode);
         PrincipalThreadLocal.setName(previousPrincipal);
+    }
+
+    /** A verified API token must match the company's login convention and never invoke login. */
+    @Test
+    public void api_jwt_requires_matching_owner_and_rejects_browser_tokens() throws Exception {
+        final LoginServiceAPI loginService = mock(LoginServiceAPI.class);
+        final ApiTokenAPI tokens = mock(ApiTokenAPI.class);
+        final UserAPI userAPI = mock(UserAPI.class);
+        final User owner = mock(User.class);
+        when(owner.getUserId()).thenReturn("token-owner");
+        when(owner.getEmailAddress()).thenReturn("owner@example.com");
+        final ApiToken apiToken = mock(ApiToken.class);
+        when(apiToken.getActiveUser()).thenReturn(Optional.of(owner));
+        when(tokens.fromJwt("api-jwt", "127.0.0.1")).thenReturn(Optional.of(apiToken));
+        when(tokens.fromJwt("browser-jwt", "127.0.0.1"))
+                .thenReturn(Optional.of(mock(UserToken.class)));
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final Company company = mock(Company.class);
+        try (MockedStatic<APILocator> apis = mockStatic(APILocator.class);
+                MockedStatic<CompanyUtils> companies = mockStatic(CompanyUtils.class)) {
+            apis.when(APILocator::getApiTokenAPI).thenReturn(tokens);
+            apis.when(APILocator::getLoginServiceAPI).thenReturn(loginService);
+            companies.when(CompanyUtils::getDefaultCompany).thenReturn(company);
+            for (final String authType : new String[]{Company.AUTH_TYPE_EA, Company.AUTH_TYPE_ID}) {
+                when(company.getAuthType()).thenReturn(authType);
+                final String username = Company.AUTH_TYPE_EA.equals(authType)
+                        ? "OWNER@example.com" : owner.getUserId();
+                if (mode != null && "JWT_TOKEN".equalsIgnoreCase(mode.trim())) {
+                    assertEquals(owner, WebResource.authenticateUser(username, " api-jwt ",
+                            request, response, userAPI));
+                } else {
+                    assertThrows(SecurityException.class, () -> WebResource.authenticateUser(
+                            username, "api-jwt", request, response, userAPI));
+                }
+                assertThrows(SecurityException.class, () -> WebResource.authenticateUser(
+                        "another-user", "api-jwt", request, response, userAPI));
+                assertThrows(SecurityException.class, () -> WebResource.authenticateUser(
+                        username, "browser-jwt", request, response, userAPI));
+            }
+            verifyNoInteractions(loginService, response);
+            verify(request, never()).getSession();
+            verify(request, never()).getSession(true);
+        }
     }
 
     /** Passwords and rejected token candidates must not invoke login hooks or mint a session. */
