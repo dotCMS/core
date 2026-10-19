@@ -57,7 +57,7 @@ import {
     isActionableBrowseItem,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
-import { loadDotEditContentSidePanel } from '@dotcms/edit-content';
+import { loadDotEditContentSidePanel, loadDotSourceEditorSidePanel } from '@dotcms/edit-content';
 import {
     DotContentDriveUploadFiles,
     DotFolderTreeNodeData,
@@ -98,6 +98,7 @@ import { DotLegacyEditorSidePanelComponent } from '../components/dot-legacy-edit
 import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
     ACTION_CENTER_DIALOG_CLASS,
+    CONTENT_DRIVE_EDIT_CODE_PARAM,
     CONTENT_DRIVE_URL_PARAM,
     CONTENT_DRIVE_VIEW_PARAM,
     DIALOG_TYPE,
@@ -390,13 +391,32 @@ export class DotContentDriveShellComponent implements OnDestroy {
         closed: () => this.onLegacyPanelClosed()
     });
 
-    /** Whether either side panel is open. */
+    /** The file open in the Edit Code panel, from the store. */
+    protected readonly $sourceEditorRequest = this.#store.sourceEditor;
+
+    /**
+     * The Edit Code panel: a file's source in Monaco, open while the store names a file. Loaded on
+     * its first open, so Monaco stays out of this portlet's chunk. Kept so browser Back can route
+     * its close through the panel's unsaved-changes prompt.
+     */
+    readonly #sourceEditorPanel = injectSidePanel(this.$sourceEditorRequest, {
+        component: loadDotSourceEditorSidePanel,
+        heading: (request) => request.title,
+        inputs: (request) => ({ request }),
+        outputs: { saved: () => this.onSourceEditorSaved() },
+        closed: () => this.onSourceEditorClosed()
+    });
+
+    /** Whether any side panel is open. */
     readonly #anyPanelOpen = computed(
-        () => !!this.$editPanelRequest() || !!this.$legacyPanelRequest()
+        () =>
+            !!this.$editPanelRequest() ||
+            !!this.$legacyPanelRequest() ||
+            !!this.$sourceEditorRequest()
     );
 
     /**
-     * Whether the last `editContent` URL write reflected an open panel. Lets the effect push when
+     * Whether the last URL write named an open side panel. Lets the effect push when
      * opening (so Back can pop the panel) but replace when closing — a push on close would leave a
      * phantom entry whose Back puts the just-removed param back with no panel rendered.
      */
@@ -415,7 +435,9 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * @returns The open panel, or `undefined` when none is open.
      */
     #activePanel(): DotSidePanelHandle | undefined {
-        return [this.#legacyPanel, this.#editPanel].find((panel) => panel.isOpen());
+        return [this.#legacyPanel, this.#editPanel, this.#sourceEditorPanel].find((panel) =>
+            panel.isOpen()
+        );
     }
 
     readonly $items = this.#store.items;
@@ -690,9 +712,9 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
         // Browser Back/Forward: the open panel's params are written via `Location.go` (no router
         // navigation), so nothing else reacts to popstate. When Back removes or changes the param
-        // that names the open panel (edit OR create), route the close through the panel's
-        // unsaved-changes guard — a direct `closeEditPanel()` would tear the editor down and discard
-        // unsaved edits silently.
+        // that names the open panel (an edit, a create, or Edit Code's file), route the close
+        // through the panel's unsaved-changes guard — a direct `closeEditPanel()` would tear the
+        // editor down and discard unsaved edits silently.
         const locationSubscription = this.#location.subscribe((event) => {
             const params = new URLSearchParams(event.url?.split('?')[1] ?? '');
 
@@ -707,12 +729,17 @@ export class DotContentDriveShellComponent implements OnDestroy {
                 return;
             }
 
+            const sourceEditor = this.#store.sourceEditor();
             const location = this.#navigationService.$panelLocation();
-            if (!location) {
+            const panelParam = sourceEditor
+                ? { key: CONTENT_DRIVE_EDIT_CODE_PARAM, value: sourceEditor.inode }
+                : location && panelParamOf(location);
+
+            if (!panelParam) {
                 return;
             }
 
-            const { key, value } = panelParamOf(location);
+            const { key, value } = panelParam;
 
             if (params.get(key) !== value) {
                 // Restore the param so the URL matches the still-open panel while the guard decides.
@@ -1629,7 +1656,12 @@ export class DotContentDriveShellComponent implements OnDestroy {
             isEdit && panelLocation.editContentLang ? String(panelLocation.editContentLang) : null;
         queryParams[CONTENT_DRIVE_URL_PARAM.CREATE_CONTENT] =
             panelLocation?.kind === 'create' ? panelLocation.createContent : null;
-        const panelOpen = panelLocation !== null;
+        // Edit Code names its file the same way, so Back pops the panel through its prompt
+        // instead of leaving Content Drive. Only for Back: a URL carrying it opens nothing, and
+        // this write removes it.
+        const sourceEditor = this.#store.sourceEditor();
+        queryParams[CONTENT_DRIVE_EDIT_CODE_PARAM] = sourceEditor?.inode ?? null;
+        const panelOpen = panelLocation !== null || sourceEditor !== null;
 
         // The open folder dialog, the same way (#37759, FR-030).
         const folderParam = folderDialogParamOf(this.#store.dialog());
@@ -2141,6 +2173,19 @@ export class DotContentDriveShellComponent implements OnDestroy {
         this.#navigationService.closeEditPanel();
         this.#store.reloadContentDrive({ quiet: true });
         this.#dotRouterService.goToEditPage({ url, language_id: languageId });
+    }
+
+    /**
+     * A save in the Edit Code panel changed the file's version and modification date: refresh the
+     * list quietly. The panel closes itself right after.
+     */
+    protected onSourceEditorSaved() {
+        this.#store.reloadContentDrive({ quiet: true });
+    }
+
+    /** The Edit Code panel closed itself: clear its request. */
+    protected onSourceEditorClosed() {
+        this.#store.closeSourceEditor();
     }
 
     /**
