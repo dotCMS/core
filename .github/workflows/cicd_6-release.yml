@@ -235,7 +235,16 @@ jobs:
       ref: ${{ needs.release-prepare.outputs.release_tag }}
       validate: false
       version: ${{ needs.release-prepare.outputs.release_version }}
+      # generate-docker still produces the deployment context the deployment job
+      # downloads. Neither the throwaway test image nor the build-classes bundle
+      # has a consumer here: release runs no test phase (#37607).
       generate-docker: true
+      generate-test-image: false
+      generate-build-classes: false
+      # Install the coordinates the release job will publish (applies the Java
+      # changelist), so it no longer needs a second reactor build to publish.
+      # "Verify release coordinates were installed" below is the tripwire.
+      release-build: true
       java-version: ${{ github.event.inputs.java-version }}
       artifact-suffix: ${{ github.event.inputs.artifact-suffix }}
     permissions:
@@ -265,6 +274,10 @@ jobs:
       # independent derivations is how the deployment phase came to ask for
       # '-java-25' while the build published '-java25'.
       artifact-suffix: ${{ needs.build.outputs.artifact-suffix }}
+      # BuildKit's implicit scope is shared with every other run on this ref
+      # (trunk, nightly, merge queue all write scope=buildkit on main), so the
+      # release's layers get evicted between runs. Give releases their own scope.
+      docker-cache-scope-prefix: release
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
@@ -498,6 +511,10 @@ jobs:
       upload_javadocs: ${{ github.event.inputs.upload_javadocs == 'true' }}
       update_plugins: ${{ github.event.inputs.update_plugins == 'true' }}
       update_github_labels: ${{ github.event.inputs.update_github_labels == 'true' && github.ref_name == 'main' }}
+      # Publish the build's artifacts instead of compiling the reactor a second
+      # time; #37607. Validated before publishing, and skipped entirely when
+      # deploy_artifact is off.
+      reuse-build-artifacts: true
       java-version: ${{ github.event.inputs.java-version }}
       artifact-suffix: ${{ needs.build.outputs.artifact-suffix }}
     secrets:
