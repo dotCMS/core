@@ -19,6 +19,7 @@ import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
+import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.exception.SecurityException;
@@ -283,7 +284,13 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
       if (session != null) {
         assertNull("API-JWT authentication must not establish a password login session",
             session.getAttribute(WebKeys.USER_ID));
+        assertNull("API-JWT authentication must not cache an authenticated session user",
+            session.getAttribute(WebKeys.USER));
       }
+      final MockSessionRequest sessionReplay = new MockSessionRequest(authenticationRequest());
+      sessionReplay.setSession(session);
+      assertThrows(SecurityException.class, () -> new WebResource.InitBuilder()
+          .requestAndResponse(sessionReplay, response).init());
       APILocator.getApiTokenAPI().revokeToken(token, APILocator.systemUser());
       DateUtil.sleep(1000); // The existing token fixture considers revocation strictly before now.
       assertCredentialDenied("Basic", loginName(user), jwt);
