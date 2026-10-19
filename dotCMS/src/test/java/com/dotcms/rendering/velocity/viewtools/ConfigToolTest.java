@@ -67,8 +67,15 @@ public class ConfigToolTest {
         assertEquals(25L, configTool.getLongProperty("configtool.test.page.size"));
         assertTrue(configTool.getBooleanProperty("configtool.test.feature.enabled"));
 
-        assertEquals(15, configTool.getIntProperty("DEFAULT_PAGE_CACHE_SECONDS", 15));
-        assertEquals("", configTool.getStringProperty("DWRSESSIONID_SAMESITE", ""));
+        // keys read by the shipped templates come back exactly as Config holds them
+        assertEquals(Config.getIntProperty("DEFAULT_PAGE_CACHE_SECONDS", 15),
+                configTool.getIntProperty("DEFAULT_PAGE_CACHE_SECONDS", 15));
+        assertEquals(Config.getStringProperty("DEFAULT_TEMPLATE_NAME", "System Template"),
+                configTool.getStringProperty("DEFAULT_TEMPLATE_NAME", "System Template"));
+        assertEquals(Config.getBooleanProperty("DWRSESSIONID_SECURE", false),
+                configTool.getBooleanProperty("DWRSESSIONID_SECURE", false));
+        assertEquals(Config.getStringProperty("DWRSESSIONID_SAMESITE", ""),
+                configTool.getStringProperty("DWRSESSIONID_SAMESITE", ""));
     }
 
     /**
