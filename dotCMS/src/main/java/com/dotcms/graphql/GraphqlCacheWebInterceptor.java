@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import static com.dotcms.graphql.GraphQLCache.GRAPHQL_CACHE_RESULTS_CONFIG_PROPERTY;
 import static com.dotcms.util.HttpRequestDataUtil.getHeaderCaseInsensitive;
@@ -41,6 +42,8 @@ import static com.dotcms.util.HttpRequestDataUtil.getParamCaseInsensitive;
  * callers only share entries among themselves.
  * <p>
  * It takes the following parameters from the request, which can be sent as query params or headers:
+ * <p>
+ * Bodies that carry a mutation operation and introspection queries always bypass the cache.
  * <p>
  * <code>dotcachettl</code>: amount of time in seconds to cache the response for if not already in cache, otherwise it will be ignored.
  * Values above <code>cache.graphqlquerycache.maxseconds</code> are capped to that maximum.
@@ -71,6 +74,24 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
     static final int GRAPHQL_CACHE_MAX_TTL_DEFAULT = 3600;
     private static final String API_CALL = "/api/v1/graphql";
     private static final String INTROSPECTION_OPERATION_NAME = "\"operationName\":\"IntrospectionQuery\"";
+    /**
+     * Matches a body that carries a mutation operation. Mutations are never cached nor replayed in
+     * the background, because serving a stored response, or re-executing them on a refresh, would
+     * skip or repeat a write. The check is conservative: any body that mentions the keyword is
+     * treated as a mutation, which only costs it the cache. The body is JSON, so a line break
+     * before the keyword arrives as the two characters <code>\n</code>; those escapes count as
+     * separators too.
+     */
+    private static final Pattern MUTATION_OPERATION =
+            Pattern.compile("(?:^|[^A-Za-z0-9_]|\\\\[nrt])mutation\\b");
+    private static final int LOCK_STRIPES = 256;
+    private static final Object[] LOCKS = new Object[LOCK_STRIPES];
+
+    static {
+        for (int i = 0; i < LOCK_STRIPES; i++) {
+            LOCKS[i] = new Object();
+        }
+    }
     private static final String GRAPHQL_BYPASS_CACHE = "GRAPHQL_BYPASS_CACHE";
     private static final String GRAPHQL_CACHE_CREDENTIALED = "GRAPHQL_CACHE_CREDENTIALED";
     static final int INVALIDATE_CACHE = -1;
@@ -106,11 +127,12 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
 
         final GraphqlCacheKey cacheKey = GraphqlCacheKey.from(requestIn, query.get(),
                 getParamOrHeader(requestIn, GRAPHQL_CACHE_KEY_PARAM));
-        final String syncKey = cacheKey.value().intern();
+        final String syncKey = cacheKey.value();
 
         final int cacheTTL = getCacheTTL(requestIn);
         final boolean bypassCache = cacheTTL <= 0
-                || query.get().contains(INTROSPECTION_OPERATION_NAME);
+                || query.get().contains(INTROSPECTION_OPERATION_NAME)
+                || isMutation(query.get());
 
         Optional<String> graphResponseFromCache = bypassCache
                 ? Optional.empty()
@@ -123,7 +145,7 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
             return Result.SKIP_NO_CHAIN;
         }
 
-        synchronized (syncKey) {
+        synchronized (lockFor(syncKey)) {
             graphResponseFromCache = bypassCache ? Optional.empty() : graphCache.get(syncKey);
 
             if (graphResponseFromCache.isPresent()) {
@@ -137,6 +159,27 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
             return new Result.Builder().wrap(new MockHttpWriterCaptureResponse(response))
                     .wrap(wrapper).next().build();
         }
+    }
+
+    /**
+     * Picks the monitor that serializes the first execution for a key. Keys are spread over a fixed
+     * set of stripes, so no per-key object has to be kept (or interned) for the lifetime of the JVM.
+     *
+     * @param key the cache key
+     * @return the stripe to synchronize on
+     */
+    private static Object lockFor(final String key) {
+        return LOCKS[Math.floorMod(key.hashCode(), LOCK_STRIPES)];
+    }
+
+    /**
+     * Whether the request body carries a mutation operation.
+     *
+     * @param body the raw request body
+     * @return true when the body mentions a mutation
+     */
+    static boolean isMutation(final String body) {
+        return MUTATION_OPERATION.matcher(body).find();
     }
 
     private Optional<String> getAndRefresh(final HttpRequestReaderWrapper wrapper,

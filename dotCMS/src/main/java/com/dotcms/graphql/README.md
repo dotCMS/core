@@ -218,7 +218,12 @@ Entries are keyed on the server (`GraphqlCacheKey`) from the request body plus e
 servlet resolves from the request: the caller (auth headers, remember-me cookie or session user,
 or anonymous), the server name, the request parameters (site, language, variant, persona, page
 mode selectors) and the session attributes that drive those selectors. Different callers never
-share an entry; anonymous callers share entries only among themselves.
+share an entry; anonymous callers share entries only among themselves. Bodies that carry a
+mutation operation are never cached.
+
+Because entries are partitioned per caller and context, sites that serve many authenticated
+tokens, languages, variants or personas hold more entries than before; raise
+`cache.graphqlquerycache.size` (default 5000) if the hit rate drops because of evictions.
 
 ### Cache Control Headers
 

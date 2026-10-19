@@ -217,6 +217,22 @@ public class GraphqlCacheWebInterceptorIntegrationTest {
         assertFalse(again.hit);
     }
 
+    /**
+     * Method to test: {@link GraphqlCacheWebInterceptor#intercept}
+     * Given Scenario: the same mutation body is sent twice by the same caller
+     * ExpectedResult: neither request is served from cache
+     */
+    @Test
+    public void mutationsAreNeverCached() throws IOException {
+        final String body = "{\"query\":\"mutation { publish(id: \\\"" + UUID.randomUUID() + "\\\") { title } }\"}";
+
+        final Served first = serve(anonymousRequest(body).withHeader("Authorization", TOKEN_A));
+        final Served second = serve(anonymousRequest(body).withHeader("Authorization", TOKEN_A));
+
+        assertFalse(first.hit);
+        assertFalse(second.hit);
+    }
+
     private static String uniqueBody() {
         return "{\"query\":\"{ Collection_" + UUID.randomUUID().toString().replace("-", "") + " { title } }\"}";
     }

@@ -1,6 +1,8 @@
 package com.dotcms.graphql;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -52,5 +54,22 @@ public class GraphqlCacheWebInterceptorTest {
     public void capTTL_nonPositiveMaximumDisablesTheCap() {
         assertEquals(999999, GraphqlCacheWebInterceptor.capTTL(999999, 0));
         assertEquals(999999, GraphqlCacheWebInterceptor.capTTL(999999, -1));
+    }
+
+    /**
+     * Method to test: {@link GraphqlCacheWebInterceptor#isMutation(String)}
+     * Given Scenario: bodies with and without a mutation operation
+     * ExpectedResult: only bodies that carry the mutation keyword are flagged
+     */
+    @Test
+    public void isMutation_flagsMutationBodiesOnly() {
+        assertTrue(GraphqlCacheWebInterceptor.isMutation(
+                "{\"query\":\"mutation { publish(id: \\\"1\\\") { title } }\"}"));
+        assertTrue(GraphqlCacheWebInterceptor.isMutation(
+                "{\"query\":\"query Pages { page(url: \\\"/\\\") { title } }\\nmutation Publish { publish(id: \\\"1\\\") { title } }\",\"operationName\":\"Publish\"}"));
+        assertFalse(GraphqlCacheWebInterceptor.isMutation(
+                "{\"query\":\"{ BlogCollection { title } }\"}"));
+        assertFalse(GraphqlCacheWebInterceptor.isMutation(
+                "{\"query\":\"{ BlogCollection(query: \\\"+title:mutations\\\") { title } }\"}"));
     }
 }
