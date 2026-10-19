@@ -526,7 +526,14 @@ public class JsResource {
             } else {
                 initBuilder.requiredAnonAccess(AnonymousAccess.systemSetting());
             }
-            final InitDataObject initDataObject = initBuilder.init();
+            final InitDataObject initDataObject;
+            try {
+                initDataObject = initBuilder.init();
+            } catch (final SecurityException e) {
+                // unauthenticated callers can trigger this at will, so keep it out of the error log
+                Logger.debug(this, () -> "Rejected Javascript endpoint request: " + e.getMessage());
+                return ResponseUtil.mapExceptionResponse(e);
+            }
 
             final User user = initDataObject.getUser();
             final DotJSONCache cache = DotJSONCacheFactory.getCache(httpMethod);
@@ -557,10 +564,6 @@ public class JsResource {
                 return evalJavascript(request, response, reader, contextParams,
                         initDataObject.getUser(), cache);
             }
-        } catch (final SecurityException e) {
-            // unauthenticated callers can trigger this at will, so keep it out of the error log
-            Logger.debug(this, () -> "Rejected Javascript endpoint request: " + e.getMessage());
-            return ResponseUtil.mapExceptionResponse(e);
         }  catch(Exception e) {
 
             Logger.error(this,"Exception on Javascript endpoint. " + httpMethod.name() + "  method: " + e.getMessage(), e);

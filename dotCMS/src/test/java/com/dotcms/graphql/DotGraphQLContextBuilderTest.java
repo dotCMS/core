@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.RETURNS_SELF;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
@@ -28,7 +27,8 @@ class DotGraphQLContextBuilderTest {
 
     /**
      * When authentication is refused, the builder sends the exception's status (401 here) so the
-     * GraphQL servlet cannot turn it into a 400, and still rethrows the exception.
+     * GraphQL servlet cannot turn it into a 400, with a generic body that does not name the
+     * setting, and still rethrows the exception.
      */
     @Test
     void build_accessRefused_sendsStatusAndRethrows() throws Exception {
@@ -40,7 +40,8 @@ class DotGraphQLContextBuilderTest {
             assertSame(refused, assertThrows(SecurityException.class,
                     () -> new DotGraphQLContextBuilder().build(mock(HttpServletRequest.class), response)));
         }
-        verify(response).sendError(eq(401), anyString());
+        // the body stays generic; the detailed reason only goes to the debug log
+        verify(response).sendError(401, "Unauthorized");
     }
 
     /**

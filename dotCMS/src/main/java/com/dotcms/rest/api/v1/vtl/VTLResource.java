@@ -630,7 +630,14 @@ public class VTLResource {
             } else {
                 initBuilder.requiredAnonAccess(AnonymousAccess.systemSetting());
             }
-            final InitDataObject initDataObject = initBuilder.init();
+            final InitDataObject initDataObject;
+            try {
+                initDataObject = initBuilder.init();
+            } catch (final SecurityException e) {
+                // unauthenticated callers can trigger this at will, so keep it out of the error log
+                Logger.debug(this, () -> "Rejected VTL endpoint request: " + e.getMessage());
+                return ResponseUtil.mapExceptionResponse(e);
+            }
 
             final User user = initDataObject.getUser();
 
@@ -664,10 +671,6 @@ public class VTLResource {
                 return evalVelocity(request, response, reader, contextParams,
                     initDataObject.getUser(), cache, dynamic);
             }
-        } catch (final SecurityException e) {
-            // unauthenticated callers can trigger this at will, so keep it out of the error log
-            Logger.debug(this, () -> "Rejected VTL endpoint request: " + e.getMessage());
-            return ResponseUtil.mapExceptionResponse(e);
         }  catch(Exception e) {
             Logger.error(this,"Exception on VTL endpoint. GET method: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);

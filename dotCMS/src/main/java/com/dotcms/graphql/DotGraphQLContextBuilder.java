@@ -6,8 +6,8 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.util.Logger;
 import graphql.kickstart.execution.context.GraphQLKickstartContext;
-import io.vavr.control.Try;
 import graphql.kickstart.servlet.context.GraphQLServletContextBuilder;
+import io.vavr.control.Try;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.websocket.Session;
@@ -21,7 +21,8 @@ public class DotGraphQLContextBuilder implements GraphQLServletContextBuilder {
      * <p>
      * When authentication is refused, for example an anonymous caller while
      * {@code CONTENT_APIS_ALLOW_ANONYMOUS} is {@code NONE}, the error status (401 by default) is
-     * sent before the exception is rethrown. Without this the GraphQL servlet reports the failure
+     * sent with a generic "Unauthorized" body before the exception is rethrown; the detailed reason
+     * goes to the debug log only. Without this the GraphQL servlet reports the failure
      * as an unparseable request and answers 400 with an empty body.
      *
      * @param httpServletRequest  the GraphQL HTTP request
@@ -40,10 +41,12 @@ public class DotGraphQLContextBuilder implements GraphQLServletContextBuilder {
                     .requiredAnonAccess(AnonymousAccess.systemSetting())
                     .init();
         } catch (final SecurityException e) {
+            // the reason can name the setting that refused the caller, so keep it out of the body
+            Logger.debug(this, () -> "Rejected GraphQL request: " + e.getMessage());
             if (!httpServletResponse.isCommitted()) {
                 final int status = null != e.getResponse() ? e.getResponse().getStatus()
                         : HttpServletResponse.SC_UNAUTHORIZED;
-                Try.run(() -> httpServletResponse.sendError(status, e.getMessage()))
+                Try.run(() -> httpServletResponse.sendError(status, "Unauthorized"))
                         .onFailure(sendFailure -> Logger.debug(this, () ->
                                 "Could not send the GraphQL auth error: " + sendFailure.getMessage()));
             }
