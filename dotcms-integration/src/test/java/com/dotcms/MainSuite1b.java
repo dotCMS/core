@@ -15,6 +15,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        com.dotcms.test.util.ApiTokenTestUtilsTest.class,
         com.dotcms.keyvalue.busines.KeyValueAPIImplTest.class,
         com.dotcms.keyvalue.business.KeyValueAPITest.class,
         com.dotcms.tika.TikaUtilsTest.class,

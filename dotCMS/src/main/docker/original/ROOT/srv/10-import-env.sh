@@ -65,7 +65,8 @@ download_dotcms_db_assets () {
         echo "- Using Authorization: Bearer"
         export AUTH_HEADER="Authorization: Bearer $DOT_IMPORT_API_TOKEN"
     elif [ -n  "$DOT_IMPORT_USERNAME_PASSWORD"  ]; then
-        echo "- Using Authorization: Basic"
+        echo "- Using legacy Authorization: Basic; the remote server must allow ALLOW_BASIC_AUTH=ALL"
+        echo "- Prefer DOT_IMPORT_API_TOKEN for the secure default (NONE)"
         export AUTH_HEADER="Authorization: Basic $(echo -n $DOT_IMPORT_USERNAME_PASSWORD | base64)"
     fi
 

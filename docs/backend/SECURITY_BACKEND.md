@@ -92,6 +92,53 @@ public class MySecureForm {
 
 ## Authentication and Authorization
 
+### Programmatic Basic authentication
+
+`ALLOW_BASIC_AUTH` defaults to `NONE`. Set the environment override with
+`DOT_ALLOW_BASIC_AUTH`; changing an environment variable requires restarting the instance.
+The policy reads through `Config` for each authentication attempt and follows its normal
+property precedence. Mode names ignore surrounding whitespace and case. `FALSE`, missing,
+empty and unrecognized values disable Basic authentication rather than enabling a legacy mode.
+
+| Mode | Username/account password | Username/API JWT |
+| --- | --- | --- |
+| `NONE` (default) | Disabled | Disabled |
+| `JWT_TOKEN` | Disabled; no password verification | Accepted only for a valid API token belonging to the named user |
+| `ALL` | Legacy compatibility | Accepted after normal token validation; legacy password fallback remains enabled |
+
+API-token authentication validates signature, configured issuer rules, dates, persistence,
+revocation, the active owner and client-IP restrictions. It does not create a browser login
+session or cookie. `JWT_TOKEN` rejects login/remember-me tokens and never falls back to password
+verification. `ALL` preserves existing WebDAV login-token compatibility; it does not add that
+credential type to REST or weaken endpoints that already require Bearer authentication.
+
+The restriction covers HTTP Basic and equivalent programmatic credential paths (`DOTAUTH`,
+accepted REST user/password parameters and legacy Ajax password fallbacks). Existing supported
+session/Bearer access and designated JSON/form login remain available, including the deprecated
+JSON token-login endpoint used by deployed CLI clients. An independently valid session retains
+precedence; disabling Basic does not revoke sessions already established. Foreign Basic headers
+on public assets retain the existing anonymous fallback without granting private access.
+
+**Migration:** use an API JWT with `Authorization: Bearer <token>` for ordinary API clients.
+Obtain it through normal JSON session login (`POST /api/v1/authentication`) followed by
+session-authenticated `POST /api/v1/apitoken` (`entity.jwt`), or provision a token separately.
+Do not forward the bootstrap session into token-authenticated test clients, log credentials,
+or substitute a login token (`entity.token`) where an API token is required.
+
+WebDAV remains a Basic-transport client: opt into `JWT_TOKEN` and supply the matching username
+and API JWT as its password. `NONE` disables WebDAV credential access, including protected
+operations routed through library shortcuts. `ALL` re-enables account-password exposure and
+should be used only as an explicit legacy compatibility choice, never to keep ordinary test
+suites green. Separate Postman compatibility runs are documented in
+[`dotcms-postman/README.md`](../../dotcms-postman/README.md).
+
+Remote token creation uses the designated JSON-login/session-token flow without a Basic
+exemption. Upgrade older senders that still send password Basic before switching a receiver
+to `NONE`, or provision tokens through a supported path. Docker environment imports should
+use `DOT_IMPORT_API_TOKEN`; the legacy `DOT_IMPORT_USERNAME_PASSWORD` option requires the
+**remote** server to opt into `ALL`. Unrelated outbound Basic used for OAuth/search providers
+is not controlled by this setting.
+
 ### Authentication Check Pattern
 ```java
 public Response secureEndpoint(HttpServletRequest request, HttpServletResponse response) {
