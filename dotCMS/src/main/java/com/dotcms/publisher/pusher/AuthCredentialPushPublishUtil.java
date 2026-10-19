@@ -7,6 +7,7 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.jsonwebtoken.*;
 import org.apache.commons.lang.StringUtils;
@@ -132,7 +133,13 @@ public enum AuthCredentialPushPublishUtil {
         }
 
         final String token = getTokenFromRequest(request);
-        return token.equals( key.get() ) ? Optional.of(publishingEndPoint) : Optional.empty();
+        final boolean matches = token.equals( key.get() );
+        if (!matches) {
+            Logger.debug(AuthCredentialPushPublishUtil.class, () -> String.format(
+                    "Push publish key does not match the one set for endpoint: %s",
+                    publishingEndPoint.getServerName()));
+        }
+        return matches ? Optional.of(publishingEndPoint) : Optional.empty();
     }
 
     private String getTokenFromRequest(final HttpServletRequest request) {
