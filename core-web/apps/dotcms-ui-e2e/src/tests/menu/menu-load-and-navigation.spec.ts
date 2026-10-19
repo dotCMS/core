@@ -2,7 +2,13 @@ import { DotNavigationPage } from '@pages';
 import { expect, test } from '@playwright/test';
 import { getGroupHolding } from '@requests/layouts';
 
-import { escapeRegExp, menuLinkOf, mIdOf, startWithBar } from './helpers/menu-state';
+import {
+    escapeRegExp,
+    menuLinkOf,
+    mIdOf,
+    NEW_TAB_MODIFIERS,
+    startWithBar
+} from './helpers/menu-state';
 
 /**
  * Journey: the admin navigation loads once and its clicks behave as they always have (#38078).
@@ -33,7 +39,7 @@ test.describe('Admin navigation — load and clicks', () => {
         await nav.openGroup(site.tabName);
         const before = page.url();
 
-        for (const modifier of ['Control', 'Meta'] as const) {
+        for (const modifier of NEW_TAB_MODIFIERS) {
             const popup = context.waitForEvent('page', { timeout: 1500 }).catch(() => null);
             await nav.clickItem('Templates', [modifier], site.tabName);
             // The browser may open the link in a new tab; the admin tab itself must stay where it was.

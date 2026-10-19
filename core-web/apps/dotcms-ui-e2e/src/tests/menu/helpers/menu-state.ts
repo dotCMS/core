@@ -25,6 +25,16 @@ export async function startWithBar(page: Page, state: 'expanded' | 'collapsed'):
     );
 }
 
+/**
+ * The modifier keys that mean "open in a new tab" for a link click on the OS running the browser.
+ *
+ * Chromium uses Cmd on macOS and Ctrl everywhere else. Cmd on Linux is a plain click: the browser
+ * itself follows a hash link, with no code of ours involved, so it is not a click to assert on.
+ * macOS also gets Ctrl, which there does nothing at all.
+ */
+export const NEW_TAB_MODIFIERS: readonly ('Control' | 'Meta')[] =
+    process.platform === 'darwin' ? ['Control', 'Meta'] : ['Control'];
+
 /** Escapes `text` so it matches literally inside a `RegExp`. */
 export function escapeRegExp(text: string): string {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
