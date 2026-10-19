@@ -151,10 +151,10 @@ public interface FeatureFlagName {
     /**
      * Makes the {@code $cmsuser} Velocity tool's lookups ({@code getUserByEmail},
      * {@code getUserByUserId}, {@code getAllUsersInGroup}) return read-only
-     * {@code UserProfile} objects. On by default ({@code dotmarketing-config.properties} sets
-     * {@code FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES=true}). Turn it off only for installations
-     * whose templates pass looked-up accounts to methods that require a {@code User}; lookups then
-     * return detached {@code User} copies with the credential fields cleared.
+     * {@code UserProfile} objects. On by default: when the flag is not set, it is treated as
+     * {@code true}. Turn it off only for installations whose templates pass looked-up accounts to
+     * methods that require a {@code User}; lookups then return detached {@code User} copies with
+     * the credential fields cleared.
      */
     String FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES = "FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES";
 }
