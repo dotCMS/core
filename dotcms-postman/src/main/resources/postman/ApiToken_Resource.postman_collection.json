@@ -1359,6 +1359,9 @@
 							}
 						}
 					],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					},
 					"request": {
 						"auth": {
 							"type": "basic",
@@ -1473,6 +1476,9 @@
 							}
 						}
 					],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					},
 					"request": {
 						"auth": {
 							"type": "basic",
@@ -1522,6 +1528,9 @@
 							}
 						}
 					],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					},
 					"request": {
 						"auth": {
 							"type": "basic",
