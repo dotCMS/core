@@ -12,6 +12,7 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
+import java.util.TreeMap;
 import javax.servlet.AsyncContext;
 import javax.servlet.DispatcherType;
 import javax.servlet.ReadListener;
@@ -38,7 +39,7 @@ public class DotCMSMockRequest implements HttpServletRequest {
     private String remoteHost;
     private String queryString;
     private Map<String, String[]> paramMap = new HashMap<>();
-    final private Map<String, String> headers = new HashMap<>();
+    final private Map<String, String> headers = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     private String servletPath;
     final private Map<String, Object> attributes = new HashMap<>();
     protected byte[] content;
@@ -157,13 +158,14 @@ public class DotCMSMockRequest implements HttpServletRequest {
     }
 
     @Override
-    public Enumeration<String> getHeaders(String s) {
-        return null;
+    public Enumeration<String> getHeaders(final String name) {
+        final String value = headers.get(name);
+        return Collections.enumeration(value == null ? Collections.emptyList() : Collections.singletonList(value));
     }
 
     @Override
     public Enumeration<String> getHeaderNames() {
-        return null;
+        return Collections.enumeration(headers.keySet());
     }
 
     @Override
@@ -273,7 +275,7 @@ public class DotCMSMockRequest implements HttpServletRequest {
 
     @Override
     public Enumeration<String> getAttributeNames() {
-        return null;
+        return Collections.enumeration(attributes.keySet());
     }
 
     @Override

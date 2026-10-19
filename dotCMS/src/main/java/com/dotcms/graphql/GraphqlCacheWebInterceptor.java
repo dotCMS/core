@@ -5,9 +5,12 @@ import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.mock.request.DotCMSMockRequest;
 import com.dotcms.mock.request.HttpRequestReaderWrapper;
+import com.dotcms.mock.response.DotCMSMockResponse;
+import com.dotcms.mock.response.MockHttpStatusResponse;
 import com.dotcms.mock.response.MockHttpWriterCaptureResponse;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -18,6 +21,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Optional;
@@ -30,24 +34,31 @@ import static com.dotcms.util.HttpRequestDataUtil.getParamCaseInsensitive;
  * This interceptor returns the response for a GraphQL request from cache, if available.
  * Otherwise it lets the request to be processed as normal and caches the GraphQL response,
  * on a expiring cache {@link GraphQLCache}, after the request is processed.
- *
- * By default it uses the GraphQL query as the key if no custom key is specified.
+ * <p>
+ * Entries are keyed by {@link GraphqlCacheKey}: the request body together with the caller and the
+ * request context (site, language, variant, persona, page mode) that the GraphQL servlet resolves
+ * from the request. Callers that present different credentials never share an entry, and anonymous
+ * callers only share entries among themselves.
  * <p>
  * It takes the following parameters from the request, which can be sent as query params or headers:
  * <p>
  * <code>dotcachettl</code>: amount of time in seconds to cache the response for if not already in cache, otherwise it will be ignored.
+ * Values above <code>cache.graphqlquerycache.maxseconds</code> are capped to that maximum.
  * Special values:
  * <ul>
  *     <li>0: bypasses the cache
- *     <li>-1:bypasses the cache and clears this entry for the given key/query
+ *     <li>-1: bypasses the cache and, for callers that present a credential, clears their entry for the given query
  * </ul>
  * <p>
- * <code>dotcachekey</code>: uses this as the cache key instead of the GraphQL query
+ * <code>dotcachekey</code>: adds this value to the derived cache key, so the same query can be cached under
+ * more than one entry for the same caller and context
  * <p>
- * <code>dotcacherefresh</code>: background refreshes the cache entry for this key/query
+ * <code>dotcacherefresh</code>: background refreshes the cache entry for this key/query. The refresh replays the
+ * request with its headers; requests whose key depends on the session or on cookies are not refreshed in the
+ * background, because that state cannot be replayed.
  *
  * If no parameters are provided it will cache the response based on the default config of the underlying cache implementation {@link GraphQLCache}
- *   and using the GraphQL query as the key.
+ *   and using the derived key.
  */
 public class GraphqlCacheWebInterceptor implements WebInterceptor {
 
@@ -55,10 +66,14 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
     final static String GRAPHQL_CACHE_TTL_PARAM = "dotcachettl";
     final static String GRAPHQL_CACHE_KEY_PARAM = "dotcachekey";
     final static String GRAPHQL_CACHE_REFRESH_PARAM = "dotcacherefresh";
+    static final String GRAPHQL_CACHE_DEFAULT_TTL_PROPERTY = "cache.graphqlquerycache.seconds";
+    static final String GRAPHQL_CACHE_MAX_TTL_PROPERTY = "cache.graphqlquerycache.maxseconds";
+    static final int GRAPHQL_CACHE_MAX_TTL_DEFAULT = 3600;
     private static final String API_CALL = "/api/v1/graphql";
     private static final String INTROSPECTION_OPERATION_NAME = "\"operationName\":\"IntrospectionQuery\"";
     private static final String GRAPHQL_BYPASS_CACHE = "GRAPHQL_BYPASS_CACHE";
-    private static final int INVALIDATE_CACHE = -1;
+    private static final String GRAPHQL_CACHE_CREDENTIALED = "GRAPHQL_CACHE_CREDENTIALED";
+    static final int INVALIDATE_CACHE = -1;
 
     private final GraphQLCache graphCache = CacheLocator.getGraphQLCache();
 
@@ -67,7 +82,9 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
 
     private final DotGraphQLHttpServlet graphQLHttpServlet = new DotGraphQLHttpServlet();
 
-    private final Lazy<Integer> defaultTTL = Lazy.of(()->Config.getIntProperty("cache.graphqlquerycache.seconds", 15));
+    private final Lazy<Integer> defaultTTL = Lazy.of(()->Config.getIntProperty(GRAPHQL_CACHE_DEFAULT_TTL_PROPERTY, 15));
+
+    private final Lazy<Integer> maxTTL = Lazy.of(()->Config.getIntProperty(GRAPHQL_CACHE_MAX_TTL_PROPERTY, GRAPHQL_CACHE_MAX_TTL_DEFAULT));
 
     @Override
     public String[] getFilters() {
@@ -87,19 +104,18 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
             return Result.NEXT;
         }
 
-        final String syncKey = getParamOrHeader(requestIn, GRAPHQL_CACHE_KEY_PARAM)
-                .orElseGet(() -> query.get().intern());
+        final GraphqlCacheKey cacheKey = GraphqlCacheKey.from(requestIn, query.get(),
+                getParamOrHeader(requestIn, GRAPHQL_CACHE_KEY_PARAM));
+        final String syncKey = cacheKey.value().intern();
 
-        final boolean bypassCache = bypassCacheByTTL(requestIn)
+        final int cacheTTL = getCacheTTL(requestIn);
+        final boolean bypassCache = cacheTTL <= 0
                 || query.get().contains(INTROSPECTION_OPERATION_NAME);
-
-        final Integer cacheTTL = getCacheTTL(requestIn).isPresent() ? getCacheTTL(requestIn).get()
-                : null;
 
         Optional<String> graphResponseFromCache = bypassCache
                 ? Optional.empty()
-                : refreshKey(wrapper) ?
-                        getAndRefresh(wrapper, response, syncKey, cacheTTL)
+                : refreshKey(requestIn) && !cacheKey.isSessionScoped()
+                        ? getAndRefresh(wrapper, syncKey, cacheTTL)
                         : graphCache.get(syncKey);
 
         if (graphResponseFromCache.isPresent()) {
@@ -117,31 +133,57 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
 
             wrapper.setAttribute(GRAPHQL_CACHE_KEY, syncKey);
             wrapper.setAttribute(GRAPHQL_BYPASS_CACHE, bypassCache);
+            wrapper.setAttribute(GRAPHQL_CACHE_CREDENTIALED, cacheKey.isCredentialed());
             return new Result.Builder().wrap(new MockHttpWriterCaptureResponse(response))
                     .wrap(wrapper).next().build();
         }
     }
 
-    private Optional<String> getAndRefresh(HttpRequestReaderWrapper wrapper, HttpServletResponse response, String syncKey,
-            Integer cacheTTL) {
+    private Optional<String> getAndRefresh(final HttpRequestReaderWrapper wrapper,
+            final String syncKey, final int cacheTTL) {
         // copy request
         final DotCMSMockRequest requestCopy = getRequestCopy(wrapper);
 
         return graphCache.getAndRefresh(syncKey, ()
-                        -> processGraphQLRequest(requestCopy, response),
+                        -> processGraphQLRequest(requestCopy),
                 cacheTTL);
     }
 
-    private DotCMSMockRequest getRequestCopy(HttpRequestReaderWrapper wrapper) {
+    /**
+     * Copies what the GraphQL servlet needs to replay the request on another thread: body,
+     * parameters, attributes, headers and the addressing details. Cookies and the session are not
+     * copied, which is why requests whose key depends on them are never refreshed in the background.
+     *
+     * @param wrapper the request being served
+     * @return a detached copy of the request
+     */
+    private DotCMSMockRequest getRequestCopy(final HttpRequestReaderWrapper wrapper) {
         final DotCMSMockRequest requestCopy = new DotCMSMockRequest();
         requestCopy.setContent(wrapper.getRawRequest().get());
         requestCopy.setParameterMap(wrapper.getParameterMap());
+        requestCopy.setMethod(wrapper.getMethod());
+        requestCopy.setRequestURI(wrapper.getRequestURI());
+        requestCopy.setRequestURL(wrapper.getRequestURL());
+        requestCopy.setQueryString(wrapper.getQueryString());
+        requestCopy.setServerName(wrapper.getServerName());
+        requestCopy.setRemoteAddr(wrapper.getRemoteAddr());
+        requestCopy.setRemoteHost(wrapper.getRemoteHost());
 
         final Enumeration<String> attributes = wrapper.getAttributeNames();
-        
-        while(attributes.hasMoreElements()) {
-            String name = attributes.nextElement();
-            requestCopy.setAttribute(name, wrapper.getAttribute(name));
+        if (attributes != null) {
+            for (final String name : Collections.list(attributes)) {
+                requestCopy.setAttribute(name, wrapper.getAttribute(name));
+            }
+        }
+
+        final Enumeration<String> headers = wrapper.getHeaderNames();
+        if (headers != null) {
+            for (final String name : Collections.list(headers)) {
+                final String value = wrapper.getHeader(name);
+                if (name != null && value != null) {
+                    requestCopy.addHeader(name, value);
+                }
+            }
         }
         return requestCopy;
     }
@@ -154,11 +196,6 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
         response.getWriter().write(graphResponseFromCache);
     }
 
-    private boolean bypassCacheByTTL(HttpServletRequest requestIn) {
-        final Optional<Integer> cacheTTL = getCacheTTL(requestIn);
-        return cacheTTL.isPresent() && cacheTTL.get() <=0;
-    }
-
     private boolean refreshKey(HttpServletRequest requestIn) {
         final Optional<String> backgroundRefreshParam = getParamOrHeader(requestIn,
                 GRAPHQL_CACHE_REFRESH_PARAM);
@@ -167,16 +204,35 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
                 && backgroundRefreshParam.get().equalsIgnoreCase("true");
     }
 
-    private Optional<Integer> getCacheTTL(HttpServletRequest requestIn) {
-        final Optional<String> paramOrHeader = getParamOrHeader(requestIn, GRAPHQL_CACHE_TTL_PARAM);
+    /**
+     * Resolves the TTL, in seconds, to apply to this request: the <code>dotcachettl</code>
+     * parameter or header when it is a valid integer, otherwise the configured default. The
+     * result is capped by {@link #GRAPHQL_CACHE_MAX_TTL_PROPERTY}.
+     *
+     * @param requestIn the request
+     * @return the TTL; 0 or a negative value means the cache is bypassed
+     */
+    private int getCacheTTL(final HttpServletRequest requestIn) {
+        final int requested = getParamOrHeader(requestIn, GRAPHQL_CACHE_TTL_PARAM)
+                .flatMap(value -> Try.of(() -> Integer.parseInt(value.trim())).toJavaOptional())
+                .orElseGet(defaultTTL::get);
 
-        if(paramOrHeader.isPresent()) {
-            return Try.of(()->
-                Optional.of(Integer.parseInt(paramOrHeader.get()))
-            ).getOrElse(Optional.empty());
+        return capTTL(requested, maxTTL.get());
+    }
+
+    /**
+     * Caps a requested TTL to the configured maximum. Zero and negative values keep their special
+     * meaning and are returned unchanged. A non-positive maximum disables the cap.
+     *
+     * @param requested the TTL the caller asked for, or the default
+     * @param max the configured maximum
+     * @return the TTL to apply
+     */
+    static int capTTL(final int requested, final int max) {
+        if (requested <= 0 || max <= 0) {
+            return requested;
         }
-
-        return Optional.of(defaultTTL.get());
+        return Math.min(requested, max);
     }
 
     @Override
@@ -184,27 +240,23 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
             final HttpServletResponse response) {
         final String cacheKey = (String) request.getAttribute(GRAPHQL_CACHE_KEY);
 
-        if(response.getStatus() ==200 && response instanceof MockHttpWriterCaptureResponse
+        if(response.getStatus() == HttpServletResponse.SC_OK && response instanceof MockHttpWriterCaptureResponse
                 && UtilMethods.isSet(cacheKey)) {
             final MockHttpWriterCaptureResponse mockResponse = (MockHttpWriterCaptureResponse) response;
             response.setHeader("x-graphql-cache", "miss, writing to cache");
             final String graphqlResponse = mockResponse.writer.toString();
 
-            final Map<String,Object> map = Try.of(()->new ObjectMapper()
-                    .readValue(graphqlResponse, Map.class)).getOrNull();
-
             Try.run(() -> mockResponse.originalResponse.getWriter().write(graphqlResponse));
 
-            final boolean bypassCache = (boolean) request.getAttribute(GRAPHQL_BYPASS_CACHE);
-            final Lazy<Optional<Integer>> cacheTTL = Lazy.of(()-> getCacheTTL(request));
+            final boolean bypassCache = Boolean.TRUE.equals(request.getAttribute(GRAPHQL_BYPASS_CACHE));
+            final boolean credentialed = Boolean.TRUE.equals(request.getAttribute(GRAPHQL_CACHE_CREDENTIALED));
+            final int cacheTTL = getCacheTTL(request);
 
-            if(map!=null && map.get("data")!=null && !bypassCache && cacheTTL.get().isPresent()) {
-                graphCache.put(cacheKey, graphqlResponse, cacheTTL.get().get());
-            } else if(map!=null && map.get("data")!=null && !bypassCache) {
-                graphCache.put(cacheKey, graphqlResponse);
+            if(!bypassCache && hasData(graphqlResponse)) {
+                graphCache.put(cacheKey, graphqlResponse, cacheTTL);
             }
 
-            if(cacheTTL.get().isPresent() && cacheTTL.get().get()==INVALIDATE_CACHE) {
+            if(cacheTTL == INVALIDATE_CACHE && credentialed) {
                 graphCache.remove(cacheKey);
             }
         } else if(response instanceof MockHttpWriterCaptureResponse) {
@@ -215,16 +267,42 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
         return true;
     }
 
-    private String processGraphQLRequest(final HttpServletRequest request,
-            final HttpServletResponse response)  {
+    /**
+     * Whether a GraphQL response body carries a non-null <code>data</code> member. Only such
+     * responses are worth caching.
+     *
+     * @param graphqlResponse the response body
+     * @return true when the body is a JSON object with data
+     */
+    private static boolean hasData(final String graphqlResponse) {
+        final Map<String,Object> map = Try.of(()->new ObjectMapper()
+                .readValue(graphqlResponse, Map.class)).getOrNull();
+        return map != null && map.get("data") != null;
+    }
+
+    /**
+     * Replays the request against the GraphQL servlet on a detached response and returns the
+     * body, or an empty string when the execution did not succeed, so that the cache keeps the
+     * previous entry instead of storing an error.
+     *
+     * @param request the request copy to replay
+     * @return the response body, or empty when it must not be cached
+     */
+    private String processGraphQLRequest(final HttpServletRequest request)  {
         try {
             graphQLHttpServlet.init();
         } catch (ServletException e) {
             throw new RuntimeException(e);
         }
-        MockHttpWriterCaptureResponse mockHttpResponse = new MockHttpWriterCaptureResponse(response);
+        final MockHttpWriterCaptureResponse mockHttpResponse = new MockHttpWriterCaptureResponse(
+                new MockHttpStatusResponse(new DotCMSMockResponse()));
         graphQLHttpServlet.doPost(request, mockHttpResponse);
-        return mockHttpResponse.writer.toString();
+        final String graphqlResponse = mockHttpResponse.writer.toString();
+        if (mockHttpResponse.getStatus() != HttpServletResponse.SC_OK || !hasData(graphqlResponse)) {
+            Logger.debug(this, () -> "Background refresh did not produce a cacheable response, keeping the current entry");
+            return "";
+        }
+        return graphqlResponse;
     }
 
     private final Map<String,String> corsHeaders = ImmutableMap.<String, String>builder()
