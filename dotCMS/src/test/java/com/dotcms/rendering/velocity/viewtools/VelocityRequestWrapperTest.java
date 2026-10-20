@@ -11,6 +11,10 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import static org.mockito.Mockito.*;
 
@@ -136,5 +140,35 @@ public class VelocityRequestWrapperTest extends UnitTestBase {
         
         // Then: removeAttribute should be called on the wrapped request
         verify(mockRequest, times(1)).removeAttribute(testKey);
+    }
+
+    /**
+     * Tests that the session handed out by the wrapper is the session wrapper, so attribute
+     * writes made through it follow the same rules as writes made through the request.
+     */
+    @Test
+    public void testGetSession_returnsSessionWrapperThatAppliesAttributeRules() {
+        final HttpSession mockSession = mock(HttpSession.class);
+        when(mockRequest.getSession()).thenReturn(mockSession);
+        final VelocityRequestWrapper wrapper = VelocityRequestWrapper.wrapVelocityRequest(mockRequest);
+
+        final HttpSession session = wrapper.getSession();
+        session.setAttribute(WebKeys.USER_ID, "testUserId");
+        session.setAttribute("testAttribute", "value");
+
+        assertTrue(session instanceof VelocitySessionWrapper);
+        verify(mockSession, never()).setAttribute(WebKeys.USER_ID, "testUserId");
+        verify(mockSession, times(1)).setAttribute("testAttribute", "value");
+    }
+
+    /**
+     * Tests that requests already wrapped are reused, which is how the servlet, the util class
+     * and the view context all share one wrapper per request.
+     */
+    @Test
+    public void testWrapVelocityRequest_withWrappedRequest_returnsSameInstance() {
+        final VelocityRequestWrapper wrapper = VelocityRequestWrapper.wrapVelocityRequest(mockRequest);
+
+        assertSame(wrapper, VelocityRequestWrapper.wrapVelocityRequest(wrapper));
     }
 }

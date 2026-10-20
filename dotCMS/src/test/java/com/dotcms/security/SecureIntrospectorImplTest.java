@@ -15,7 +15,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
 import com.dotmarketing.util.Config;
+import javax.servlet.ServletRequestWrapper;
+import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpServletResponseWrapper;
 import org.apache.velocity.util.introspection.SecureIntrospectorImpl;
 import org.junit.Test;
 
@@ -217,6 +221,36 @@ public class SecureIntrospectorImplTest {
         assertDeniedIfPresent("bsh.Interpreter", "eval");
         assertDeniedIfPresent("org.apache.tomcat.SimpleInstanceManager", "newInstance");
         assertDeniedIfPresent("org.apache.catalina.core.DefaultInstanceManager", "newInstance");
+    }
+
+    /**
+     * The accessors that return the object a servlet request or response wraps must not be
+     * callable from a template on any wrapper type, and the container's own request, response
+     * and session classes must not be callable either.
+     */
+    @Test
+    public void wrapped_request_and_response_accessors_are_denied() {
+        assertDenied(VelocityRequestWrapper.class, "getRequest");
+        assertDenied(HttpServletRequestWrapper.class, "getRequest");
+        assertDenied(ServletRequestWrapper.class, "getRequest");
+        assertDenied(HttpServletResponseWrapper.class, "getResponse");
+        assertAllowed(VelocityRequestWrapper.class, "getRequestURI");
+        assertAllowed(VelocityRequestWrapper.class, "getSession");
+        assertDeniedIfPresent("org.apache.catalina.connector.RequestFacade", "getSession");
+        assertDeniedIfPresent("org.apache.catalina.connector.ResponseFacade", "getWriter");
+        assertDeniedIfPresent("org.apache.catalina.session.StandardSessionFacade", "setAttribute");
+    }
+
+    /**
+     * The map returned by the container's getParameterMap() stays readable from a template,
+     * both through its methods and through iteration (which is checked without a method name).
+     */
+    @Test
+    public void request_parameter_map_stays_readable() throws Exception {
+        final Class<?> parameterMap = Class.forName("org.apache.catalina.util.ParameterMap");
+        for (final String method : new String[] {"get", "keySet", "entrySet", "containsKey", null}) {
+            assertAllowed(parameterMap, method);
+        }
     }
 
     /**
