@@ -24,6 +24,16 @@ import org.apache.velocity.exception.ResourceNotFoundException;
 @Path("/widget")
 public class WidgetResource {
 
+    /**
+     * Response header set when the widget's field values were returned as text.
+     */
+    public static final String WIDGET_RENDER_HEADER = "X-DotCMS-Widget-Render";
+
+    /**
+     * Value of {@link #WIDGET_RENDER_HEADER} when widget field scripting did not run.
+     */
+    public static final String FIELD_SCRIPTING_OFF = "field-scripting-off";
+
     private final WebResource webResource = new WebResource();
 
     @GET
@@ -75,7 +85,13 @@ public class WidgetResource {
 
 		}
 
-        return responseResource.response( WidgetRenderer.getInstance().render( request, response, widget ) );
+        final WidgetRenderer.Rendering rendering = WidgetRenderer.getInstance()
+                .renderWithDetails(request, response, widget);
+        if (rendering.fieldScriptingSkipped()) {
+            // The body is the widget text itself, so the note travels as a header
+            response.setHeader(WIDGET_RENDER_HEADER, FIELD_SCRIPTING_OFF);
+        }
+        return responseResource.response(rendering.text());
     }
 
 	/**

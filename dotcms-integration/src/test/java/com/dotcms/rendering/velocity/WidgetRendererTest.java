@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.type.ContentType;
@@ -31,7 +32,7 @@ import org.junit.Test;
 /**
  * {@link WidgetRenderer} always evaluates the widget code; it evaluates the produced text a
  * second time (which runs Velocity written inside the widget field values) only when the
- * feature flag is on and the widget was last modified by a Scripting Developer.
+ * feature flag is on (its default) and the widget was last modified by a Scripting Developer.
  */
 public class WidgetRendererTest {
 
@@ -86,13 +87,25 @@ public class WidgetRendererTest {
     }
 
     private static String renderWithFlag(final Contentlet widget, final boolean flag) {
-        final boolean previous = Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER, false);
+        final boolean previous = Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER, true);
         try {
             Config.setProperty(FeatureFlagName.FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER, flag);
             return render(widget);
         } finally {
             Config.setProperty(FeatureFlagName.FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER, previous);
         }
+    }
+
+    /**
+     * Method to test: {@link WidgetRenderer#render(HttpServletRequest, HttpServletResponse, Contentlet)}
+     * Given scenario: the flag is left at its default, widget last modified by a Scripting Developer
+     * Expected result: the Velocity inside the field value is evaluated, the switch is on by default
+     */
+    @Test
+    public void defaultFlagEvaluatesFieldValueForScriptingDeveloper() {
+        assertTrue(Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER, true));
+
+        assertEquals("[3]42", render(widgetLastModifiedBy(scriptingDeveloper)));
     }
 
     /**
@@ -175,6 +188,65 @@ public class WidgetRendererTest {
                 APILocator.getLanguageAPI().getDefaultLanguage().getId());
 
         assertTrue(render(notAWidget).isEmpty());
+    }
+
+    /**
+     * Method to test: {@link WidgetRenderer#renderWithDetails(HttpServletRequest, HttpServletResponse, Contentlet)}
+     * Given scenario: flag off, a widget whose field value holds Velocity
+     * Expected result: the rendering says the field scripting was skipped
+     */
+    @Test
+    public void flagOffReportsSkippedFieldScripting() {
+        final WidgetRenderer.Rendering rendering = renderWithDetailsAndFlag(
+                widgetLastModifiedBy(scriptingDeveloper), false);
+
+        assertEquals("[3]" + FIELD_VELOCITY, rendering.text().trim());
+        assertTrue(rendering.fieldScriptingSkipped());
+    }
+
+    /**
+     * Method to test: {@link WidgetRenderer#renderWithDetails(HttpServletRequest, HttpServletResponse, Contentlet)}
+     * Given scenario: flag off, a widget whose field value is plain text
+     * Expected result: nothing to report, the output has no Velocity left in it
+     */
+    @Test
+    public void flagOffWithPlainFieldReportsNothing() {
+        final Contentlet widget = new ContentletDataGen(widgetType.id())
+                .setProperty("widgetTitle", "WidgetRendererTest")
+                .setProperty("code", "plain text")
+                .nextPersisted();
+
+        final WidgetRenderer.Rendering rendering = renderWithDetailsAndFlag(widget, false);
+
+        assertEquals("[3]plain text", rendering.text().trim());
+        assertFalse(rendering.fieldScriptingSkipped());
+    }
+
+    /**
+     * Method to test: {@link WidgetRenderer#renderWithDetails(HttpServletRequest, HttpServletResponse, Contentlet)}
+     * Given scenario: flag on, widget last modified by a Scripting Developer
+     * Expected result: the field value is evaluated and there is nothing to report
+     */
+    @Test
+    public void flagOnWithScriptingRoleReportsNothing() {
+        final WidgetRenderer.Rendering rendering = renderWithDetailsAndFlag(
+                widgetLastModifiedBy(scriptingDeveloper), true);
+
+        assertEquals("[3]42", rendering.text().trim());
+        assertFalse(rendering.fieldScriptingSkipped());
+    }
+
+    private static WidgetRenderer.Rendering renderWithDetailsAndFlag(final Contentlet widget, final boolean flag) {
+        final boolean previous = Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER, true);
+        try {
+            Config.setProperty(FeatureFlagName.FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER, flag);
+            final HttpServletRequest request = new MockSessionRequest(
+                    new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                    .request();
+            return WidgetRenderer.getInstance().renderWithDetails(request, new MockHttpResponse().response(), widget);
+        } finally {
+            Config.setProperty(FeatureFlagName.FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER, previous);
+        }
     }
 
 }

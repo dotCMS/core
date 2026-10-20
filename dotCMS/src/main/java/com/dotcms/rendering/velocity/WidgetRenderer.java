@@ -32,12 +32,13 @@ import org.apache.velocity.context.Context;
  * and overrides any property with the same name.
  * <p>
  * The widget code is evaluated once, and that is the result. Evaluating the produced text a
- * second time, which makes Velocity written inside the widget field values run, is available
- * only when {@link FeatureFlagName#FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER} is on and the
- * widget was last modified by a user holding the {@link Role#SCRIPTING_DEVELOPER} role, the
- * rule the {@code $sql} view tool applies to the content that calls it. The system user never
- * qualifies, so content checked in by import, push publishing or startup still renders its
- * field values as text until a Scripting Developer saves it.
+ * second time, which makes Velocity written inside the widget field values run, happens only
+ * for widgets last modified by a user holding the {@link Role#SCRIPTING_DEVELOPER} role, the
+ * rule the {@code $sql} and {@code $secrets} view tools apply to the content that calls them.
+ * The system user never qualifies, so content checked in by import, push publishing or startup
+ * renders its field values as text until a Scripting Developer saves it.
+ * {@link FeatureFlagName#FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER}, on by default, is the
+ * switch that turns the second evaluation off for everyone.
  * <p>
  * This class only covers rendering through REST. Pages render widgets through the Velocity
  * resources that {@code ContentletLoader} writes, which have their own handling of field values.
@@ -56,6 +57,23 @@ public class WidgetRenderer {
     }
 
     /**
+     * Text sent to API consumers when a widget's field values were left as text because the
+     * second evaluation did not run. It is the same text on every endpoint, so consumers can match it.
+     */
+    public static final String FIELD_SCRIPTING_OFF_WARNING =
+            "Widget field scripting is off; widget field values were rendered as text.";
+
+    /**
+     * What a widget rendered to.
+     *
+     * @param text                  the rendered text
+     * @param fieldScriptingSkipped {@code true} when the second evaluation did not run and the
+     *                              text still contains Velocity, so field values came out as text
+     */
+    public record Rendering(String text, boolean fieldScriptingSkipped) {
+    }
+
+    /**
      * Renders the given widget. Contentlets whose type is not a Widget render as an empty string.
      *
      * @param request  the current request, used to build the web context
@@ -65,10 +83,24 @@ public class WidgetRenderer {
      */
     public String render(final HttpServletRequest request, final HttpServletResponse response,
             final Contentlet widget) {
+        return renderWithDetails(request, response, widget).text();
+    }
+
+    /**
+     * Renders the given widget and tells whether its field values were left as text. Contentlets
+     * whose type is not a Widget render as an empty string.
+     *
+     * @param request  the current request, used to build the web context
+     * @param response the current response, used to build the web context
+     * @param widget   the widget contentlet to render
+     * @return the rendered text and the field-scripting indicator
+     */
+    public Rendering renderWithDetails(final HttpServletRequest request, final HttpServletResponse response,
+            final Contentlet widget) {
 
         final Structure contStructure = widget.getStructure();
         if (contStructure.getStructureType() != Structure.STRUCTURE_TYPE_WIDGET) {
-            return "";
+            return new Rendering("", false);
         }
 
         final StringWriter firstEval = new StringWriter();
@@ -76,7 +108,9 @@ public class WidgetRenderer {
 
         Context context = VelocityUtil.getBasicContext();
         for (final String key : widget.getMap().keySet()) {
-            final String value = String.valueOf(widget.getMap().get(key));
+            // The contentlet map drops null values on put, so this is only a guard against a null getter
+            final Object rawValue = widget.getMap().get(key);
+            final String value = rawValue == null ? "" : rawValue.toString();
             context.put(key, value);
             context.put("widget" + key, value);
         }
@@ -109,13 +143,16 @@ public class WidgetRenderer {
         }
 
         VelocityUtil.getEngine().evaluate(context, firstEval, "", widgetExecuteCode.toString());
+        final String firstPass = firstEval.toString();
         if (!rendersFieldVelocity(widget)) {
-            return firstEval.toString();
+            // Only worth flagging when Velocity is left in the output; plain widgets stay silent
+            final boolean velocityLeft = firstPass.contains("$") || firstPass.contains("#");
+            return new Rendering(firstPass, velocityLeft);
         }
 
         final StringWriter secondEval = new StringWriter();
-        VelocityUtil.getEngine().evaluate(context, secondEval, "", firstEval.toString());
-        return secondEval.toString();
+        VelocityUtil.getEngine().evaluate(context, secondEval, "", firstPass);
+        return new Rendering(secondEval.toString(), false);
     }
 
     /**
@@ -123,11 +160,11 @@ public class WidgetRenderer {
      * which runs any Velocity found in the widget field values.
      *
      * @param widget the widget being rendered
-     * @return {@code true} only when the feature flag is on and the widget's last modifier
-     * holds the Scripting Developer role
+     * @return {@code true} only when the feature flag is on (its default) and the widget's last
+     * modifier holds the Scripting Developer role
      */
     boolean rendersFieldVelocity(final Contentlet widget) {
-        if (!Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER, false)) {
+        if (!Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER, true)) {
             Logger.debug(this, () -> String.format("Widget %s: field values render as text, %s is off",
                     widget.getIdentifier(), FeatureFlagName.FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER));
             return false;

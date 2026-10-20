@@ -39,9 +39,11 @@ public interface FeatureFlagName {
     String FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION = "FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION";
 
     /**
-     * When on, the widget REST render ({@code /api/widget} and {@code /api/content?render=true})
-     * evaluates Velocity found in the widget field values, provided the widget was last modified
-     * by a user holding the Scripting Developer role. Off by default: field values render as text.
+     * Kill switch for widget field scripting over REST ({@code /api/widget},
+     * {@code /api/content?render=true} and {@code _search} with {@code render}). On by default:
+     * Velocity found in a widget's field values is evaluated when the widget was last modified by
+     * a user holding the Scripting Developer role, and rendered as text otherwise. Off: field
+     * values render as text for every widget. Pages are not affected either way.
      */
     String FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER = "FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER";
 
