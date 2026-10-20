@@ -421,9 +421,8 @@ public class UserResourceHelper implements Serializable {
 
 			if (userToSave.getUserId().equalsIgnoreCase(modUser.getUserId())) {
 
-				// Counted and refused under a lock like any other password check
-				boolean passwordMatch = LoginLockout.getInstance()
-						.passwordMatch(updateUserForm.getCurrentPassword(), modUser);
+				// Goes through login lockout: counted, and refused under a lock, like any other password check
+				boolean passwordMatch = loginService.passwordMatch(updateUserForm.getCurrentPassword(), modUser);
 
 				if (!passwordMatch){
 					throw new IncorrectPasswordException();

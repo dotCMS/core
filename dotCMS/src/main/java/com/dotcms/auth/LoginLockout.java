@@ -53,7 +53,8 @@ import java.util.function.LongSupplier;
  * <p>The client address is {@link HttpServletRequest#getRemoteAddr()}. Behind a proxy it is the real
  * client only when Tomcat's {@code RemoteIpValve} trusts that proxy (the bundled {@code server.xml}
  * trusts private ranges by default); otherwise every login shares the proxy's address. A warning is
- * logged when one address is locked out of several accounts, which is what that looks like.
+ * logged, at most once a minute per node, for any address locked out of several accounts, which is what
+ * that looks like.
  *
  * <p>The main login flow ({@code UserManagerImpl#authenticate}) uses {@link #begin},
  * {@link #succeeded} and {@link #failed} directly. Other places that check a password (WebDAV, the
@@ -95,7 +96,7 @@ public final class LoginLockout {
     /** An address locked out of this many accounts at once is reported as a likely shared proxy address. */
     private static final int SHARED_SOURCE_WARNING_ACCOUNTS = 5;
 
-    private static final long PURGE_INTERVAL_MILLIS = 60_000L;
+    private static final long MAINTENANCE_INTERVAL_MILLIS = 60_000L;
 
     /**
      * Counts one attempt for an account and source and returns the new count and the source's lock.
@@ -128,9 +129,13 @@ public final class LoginLockout {
     private static final String CLEAR_SOURCE_SQL =
             "DELETE FROM login_lockout WHERE user_id = ? AND source = ? AND locked_until <= ?";
 
-    /** How many accounts a source is locked out of right now. Parameters: source, now. */
-    private static final String ACCOUNTS_LOCKED_FROM_SOURCE_SQL =
-            "SELECT COUNT(DISTINCT user_id) AS accounts FROM login_lockout WHERE source = ? AND locked_until > ?";
+    /**
+     * Sources locked out of at least a given number of accounts right now, with that number. Parameters: now,
+     * account-wide source, minimum accounts.
+     */
+    private static final String SHARED_SOURCES_SQL =
+            "SELECT source, COUNT(DISTINCT user_id) AS accounts FROM login_lockout"
+                    + " WHERE locked_until > ? AND source <> ? GROUP BY source HAVING COUNT(DISTINCT user_id) >= ?";
 
     /**
      * Removes rows that no longer affect any login: their lock has run out (or never existed) and their
@@ -187,7 +192,7 @@ public final class LoginLockout {
     private static final LoginLockout INSTANCE = new LoginLockout(System::currentTimeMillis);
 
     private final LongSupplier clock;
-    private final AtomicLong lastPurge = new AtomicLong();
+    private final AtomicLong lastMaintenance = new AtomicLong();
 
     LoginLockout(final LongSupplier clock) {
         this.clock = clock;
@@ -563,45 +568,55 @@ public final class LoginLockout {
                         + " for " + seconds + "s, last attempt from " + clientAddress()
                 : "Source locked out of account after " + attempts + " login attempts: user " + userId
                         + " from " + source + " for " + seconds + "s");
-        if (!ACCOUNT_WIDE.equals(source)) {
-            warnIfShared(source, now);
-        }
-        purgeExpired(now);
+        maintain(now);
     }
 
     /**
-     * Logs a warning when one source is locked out of several accounts at once. Either one client is
-     * trying many accounts, or the source is a proxy or load balancer that Tomcat does not trust, so
-     * every user behind it is counted as one address.
+     * Housekeeping run when a lock is set, at most once a minute per node, so it costs nothing on most
+     * locks while still running whenever failures are frequent: deletes rows that no longer affect a login,
+     * and reports sources that look shared.
      */
-    private void warnIfShared(final String source, final long now) throws DotDataException {
-        final List<Map<String, Object>> rows = new DotConnect().setSQL(ACCOUNTS_LOCKED_FROM_SOURCE_SQL)
-                .addParam(source).addParam(now).loadObjectResults();
-        final int accounts = rows.isEmpty() ? 0 : ((Number) rows.get(0).get("accounts")).intValue();
-        if (accounts >= SHARED_SOURCE_WARNING_ACCOUNTS) {
-            Logger.warn(this, "Login lockout: " + source + " is locked out of " + accounts + " accounts. Either one"
-                    + " client is trying many accounts, or this is a proxy or load balancer address and every user"
-                    + " behind it shares one lockout. If it is a proxy, add it to CMS_REMOTEIP_INTERNALPROXIES so"
-                    + " Tomcat uses the real client address.");
+    private void maintain(final long now) {
+        final long last = lastMaintenance.get();
+        if (now - last < MAINTENANCE_INTERVAL_MILLIS || !lastMaintenance.compareAndSet(last, now)) {
+            return;
         }
+        purgeExpired(now);
+        warnAboutSharedSources(now);
     }
 
     /**
      * Deletes rows, for any account, that no longer affect a login. Sources that fail and never succeed
-     * would otherwise stay in the table for good. Runs when a lock is set, at most once a minute per node,
-     * so the table is trimmed when failures are frequent without adding a delete to every lock.
+     * would otherwise stay in the table for good.
      */
     private void purgeExpired(final long now) {
-        final long last = lastPurge.get();
-        if (now - last < PURGE_INTERVAL_MILLIS || !lastPurge.compareAndSet(last, now)) {
-            return;
-        }
         try {
             new DotConnect().setSQL(PURGE_SQL)
                     .addParam(now).addParam(now - windowSeconds() * 1000L)
                     .loadResult();
         } catch (final DotDataException | RuntimeException e) {
             Logger.warn(this, "Unable to remove expired login lockout rows: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Logs a warning for each source locked out of several accounts at once. Either one client is trying
+     * many accounts, or the source is a proxy or load balancer that Tomcat does not trust, so every user
+     * behind it is counted as one address.
+     */
+    private void warnAboutSharedSources(final long now) {
+        try {
+            final List<Map<String, Object>> rows = new DotConnect().setSQL(SHARED_SOURCES_SQL)
+                    .addParam(now).addParam(ACCOUNT_WIDE).addParam(SHARED_SOURCE_WARNING_ACCOUNTS)
+                    .loadObjectResults();
+            for (final Map<String, Object> row : rows) {
+                Logger.warn(this, "Login lockout: " + row.get("source") + " is locked out of " + row.get("accounts")
+                        + " accounts. Either one client is trying many accounts, or this is a proxy or load balancer"
+                        + " address and every user behind it shares one lockout. If it is a proxy, add it to"
+                        + " CMS_REMOTEIP_INTERNALPROXIES so Tomcat uses the real client address.");
+            }
+        } catch (final DotDataException | RuntimeException e) {
+            Logger.warn(this, "Unable to check login lockout sources: " + e.getMessage());
         }
     }
 
