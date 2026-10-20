@@ -1485,7 +1485,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
         }
 
         // Only a supported container sort resolves to a column; anything else uses the page order
-        final String effectiveOrderBy = ContainerSortBy.resolveOrDefault(orderby);
+        final String effectiveOrderBy = ContainerSortBy.resolveOrDefault(orderby, containerIdentifier);
         final StringBuilder query = new StringBuilder();
         query.append("SELECT contentlet.*, contentlet_1_.owner FROM contentlet JOIN inode contentlet_1_ ON (contentlet.inode=contentlet_1_.inode) ")
                 .append(" JOIN multi_tree ON (multi_tree.child = contentlet.identifier) ")

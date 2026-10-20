@@ -103,4 +103,18 @@ public class ContainerSortByTest extends UnitTestBase {
                 ContainerSortBy.resolveOrDefault("tree_order,(select 1)"));
         assertEquals(ContainerSortBy.DEFAULT_ORDER_BY, ContainerSortBy.resolveOrDefault("-title"));
     }
+
+    /**
+     * Method to test: {@link ContainerSortBy#warnsFor(String)}
+     * Given: the same container falling back twice, and a fallback with no container
+     * Should: warn the first time only, and never without a container
+     */
+    @Test
+    public void unsupportedValueWarnsOncePerContainer() {
+        final String containerId = "container-" + System.nanoTime();
+
+        assertTrue(ContainerSortBy.warnsFor(containerId));
+        assertFalse(ContainerSortBy.warnsFor(containerId));
+        assertFalse(ContainerSortBy.warnsFor(null));
+    }
 }

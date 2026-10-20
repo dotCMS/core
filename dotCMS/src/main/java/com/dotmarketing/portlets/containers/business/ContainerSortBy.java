@@ -6,6 +6,8 @@ import com.dotmarketing.util.UtilMethods;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Supported values of the "sort contentlets by" setting of a container.
@@ -67,19 +69,62 @@ public final class ContainerSortBy {
     }
 
     /**
+     * Containers already reported for an unsupported stored value, so a page render logs the
+     * warning once per container instead of once per request. Bounded so a site with many such
+     * containers cannot grow it without limit; past the bound the warning stops and only the debug
+     * line remains.
+     */
+    private static final Set<String> WARNED_CONTAINERS = ConcurrentHashMap.newKeySet();
+    private static final int WARNED_CONTAINERS_LIMIT = 1000;
+
+    /**
      * Resolves a value the same way as {@link #resolve(String)} but never fails: an unsupported
-     * value falls back to {@link #DEFAULT_ORDER_BY} and leaves a warning in the log.
+     * value falls back to {@link #DEFAULT_ORDER_BY} and is reported in the debug log. Use
+     * {@link #resolveOrDefault(String, String)} when the container is known, so the fallback is
+     * also reported once as a warning.
      *
      * @param value the stored or requested value
      * @return the sort expression to use
      */
     public static String resolveOrDefault(final String value) {
+        return resolveOrDefault(value, null);
+    }
+
+    /**
+     * Resolves a value the same way as {@link #resolve(String)} but never fails: an unsupported
+     * value falls back to {@link #DEFAULT_ORDER_BY}. The first time a given container falls back
+     * a warning is logged; later renders of the same container only leave a debug line, since a
+     * value stored before it was validated would otherwise be reported on every request.
+     *
+     * @param value       the stored or requested value
+     * @param containerId the container the value belongs to; may be null
+     * @return the sort expression to use
+     */
+    public static String resolveOrDefault(final String value, final String containerId) {
         return resolve(value).orElseGet(() -> {
-            Logger.warn(ContainerSortBy.class,
-                    "Unsupported sort contentlets by value, using the page container order instead");
-            Logger.debug(ContainerSortBy.class, () -> "Unsupported sort contentlets by value: " + value);
+            if (warnsFor(containerId)) {
+                Logger.warn(ContainerSortBy.class, () -> String.format(
+                        "Container %s has an unsupported sort contentlets by value; using the page "
+                                + "container order instead (reported once per container)", containerId));
+            }
+            Logger.debug(ContainerSortBy.class, () -> String.format(
+                    "Unsupported sort contentlets by value '%s' on container %s", value, containerId));
             return DEFAULT_ORDER_BY;
         });
+    }
+
+    /**
+     * Records that the given container fell back to the default order and tells whether that is
+     * the first time, which is when the warning is logged.
+     *
+     * @param containerId the container; null never warns
+     * @return true the first time the container is seen, while the record is under its bound
+     */
+    static boolean warnsFor(final String containerId) {
+        if (containerId == null || WARNED_CONTAINERS.size() >= WARNED_CONTAINERS_LIMIT) {
+            return false;
+        }
+        return WARNED_CONTAINERS.add(containerId);
     }
 
     /**
