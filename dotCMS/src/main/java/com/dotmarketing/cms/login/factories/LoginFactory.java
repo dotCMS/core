@@ -194,9 +194,13 @@ public class LoginFactory {
 
     			match = auth == Authenticator.SUCCESS
     					&& (skipPasswordCheck || !isLockedOut(user, LoginLockout.clientAddress(request)));
-    			if (!skipPasswordCheck && auth != Authenticator.SUCCESS && null != user) {
-    				// LDAP refused the password; it still counts toward the login lockout
-    				LoginLockout.getInstance().countFailure(user.getUserId(), LoginLockout.clientAddress(request));
+    			if (!skipPasswordCheck && null != user) {
+    				// LDAP checked the password; the result still counts toward the login lockout
+    				if (auth != Authenticator.SUCCESS) {
+    					LoginLockout.getInstance().countFailure(user.getUserId(), LoginLockout.clientAddress(request));
+    				} else if (match) {
+    					LoginLockout.getInstance().succeeded(user.getUserId(), LoginLockout.clientAddress(request));
+    				}
     			}
         	} else {
 	            if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
@@ -379,9 +383,13 @@ public class LoginFactory {
     			}
 
     			match = auth == Authenticator.SUCCESS && !isLockedOut(user, LoginLockout.clientAddress());
-    			if (auth != Authenticator.SUCCESS && null != user) {
-    				// LDAP refused the password; it still counts toward the login lockout
-    				LoginLockout.getInstance().countFailure(user.getUserId(), LoginLockout.clientAddress());
+    			if (null != user) {
+    				// LDAP checked the password; the result still counts toward the login lockout
+    				if (auth != Authenticator.SUCCESS) {
+    					LoginLockout.getInstance().countFailure(user.getUserId(), LoginLockout.clientAddress());
+    				} else if (match) {
+    					LoginLockout.getInstance().succeeded(user.getUserId(), LoginLockout.clientAddress());
+    				}
     			}
         	} else {
         	    // Liferay authentication

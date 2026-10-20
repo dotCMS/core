@@ -20,7 +20,10 @@ the same counts and locks.
 - **Fixed length.** Locks last `AUTH_LOCKOUT_DURATION_SECONDS` and do not grow. A count that ages out of
   the window, or whose lock has run out, starts over.
 - **Counted before the check.** Each attempt is counted before its password is checked, so parallel
-  requests get at most the limit between them.
+  requests get at most the limit between them. A client that sends more than that at once from one address
+  (a WebDAV mount opening several connections, a script using REST basic auth) gets a refusal for the extra
+  requests and can retry. A refused request whose password was right hands its count back, so only wrong
+  passwords ever lead to a lock.
 - **While locked,** the password is still checked (same timing) and the login fails exactly like a wrong
   password. Nothing is counted.
 - **Clearing.** A successful login clears the count for its own address. A password reset, or a new

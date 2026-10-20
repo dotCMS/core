@@ -555,7 +555,13 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         if (attempt.isRefused()) {
             // Same work, delay, failure handlers and result as a wrong password, so a refused login gives
             // no signal about whether the guess was right.
-            LoginFactory.passwordMatch(password, user);
+            if (LoginFactory.passwordMatch(password, user)) {
+                // Refused only because a lock applies or too many attempts were in flight at once: a right
+                // password hands its count back, so it never sets a lock of its own
+                LoginLockout.getInstance().release(attempt);
+            } else {
+                LoginLockout.getInstance().failed(attempt);
+            }
             SecurityLogger.logInfo(this.getClass(), "Login refused, locked out: user " + user.getUserId()
                     + " from " + LoginLockout.clientAddress());
             this.processFailedLogin(user, login, companyId, byEmailAddress, attempt, true);
@@ -717,14 +723,17 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
      *                       done via User ID, set to {@code false}.
      * @param attempt        The login lockout attempt for this login; see {@link LoginLockout#begin(String, String)}.
      * @param refused        If the login was refused by login lockout, set this to {@code true}: the request is
-     *                       delayed the same way, but the User's failure counter is not changed.
+     *                       delayed the same way, but the User's failure counter is not changed, and the
+     *                       caller has already finished the lockout attempt.
      */
     private void processFailedLogin(final User user, final String login, final String companyId,
                                     final boolean byEmailAddress, final LoginLockout.Attempt attempt,
                                     final boolean refused) {
         Logger.debug(this, String.format("Authentication for user '%s' has failed.", login));
-        // Recorded first, before the delay below, so the lock state is up to date as soon as possible
-        LoginLockout.getInstance().failed(attempt);
+        if (!refused) {
+            // Recorded first, before the delay below, so the lock state is up to date as soon as possible
+            LoginLockout.getInstance().failed(attempt);
+        }
         try {
             this.runCustomOnFailureHandlers(companyId, login, byEmailAddress);
             if (refused) {

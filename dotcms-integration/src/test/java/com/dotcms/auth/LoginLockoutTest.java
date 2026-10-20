@@ -595,6 +595,44 @@ public class LoginLockoutTest {
 
     /**
      * Given: an account
+     * When: 12 correct-password logins arrive from one address at the same moment, more than the per-address
+     *       limit, on the main login flow
+     * Then: some may be refused for arriving together, but none sets a lock, and the next login gets in
+     */
+    @Test
+    public void test_parallel_correct_logins_do_not_lock() throws Exception {
+        final User user = newUser();
+        try {
+            final List<Integer> results = inParallel(12, ADDRESS, () -> login(user, PASSWORD));
+            assertTrue(results.contains(Authenticator.SUCCESS));
+            assertFalse(LoginLockout.getInstance().isLocked(user.getUserId()));
+            assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: an account
+     * When: 12 correct-password logins arrive from one address at the same moment through the legacy login, the
+     *       same check WebDAV and the REST current-password check use
+     * Then: none sets a lock, and the next login gets in
+     */
+    @Test
+    public void test_parallel_correct_legacy_logins_do_not_lock() throws Exception {
+        final User user = newUser();
+        try {
+            final List<Boolean> results = inParallel(12, ADDRESS, () -> legacyLogin(user, PASSWORD));
+            assertTrue(results.contains(true));
+            assertFalse(LoginLockout.getInstance().isLocked(user.getUserId()));
+            assertTrue(legacyLogin(user, PASSWORD));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: an account
      * When: 10 wrong passwords arrive from one address at the same moment, on the main login flow
      * Then: all fail and the address ends up locked out
      */

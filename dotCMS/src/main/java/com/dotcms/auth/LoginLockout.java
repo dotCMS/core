@@ -45,7 +45,9 @@ import java.util.function.LongSupplier;
  *     it is opt-in.</li>
  * </ul>
  * An attempt is counted against its address before the password is checked ({@link #begin}), so
- * parallel requests cannot all pass a check made before any of them was counted. Locks last a fixed
+ * parallel requests cannot all pass a check made before any of them was counted. A refused attempt whose
+ * password was right hands its count back ({@link #release}), so only wrong passwords lead to a lock and
+ * a client that sends many requests at once just gets some refusals it can retry. Locks last a fixed
  * time and do not grow. While a lock applies every password check fails, including the correct
  * password, and nothing is counted. A successful login clears the count for its own address; a password
  * reset or a new password set by an administrator clears everything for the account.
@@ -159,7 +161,7 @@ public final class LoginLockout {
     /**
      * One login attempt, counted against its source before the password is checked. Get it from
      * {@link #begin(String, String)} and finish it with {@link #succeeded}, {@link #failed} or
-     * {@link #notAPasswordLogin}.
+     * {@link #release}.
      */
     public static final class Attempt {
 
@@ -382,27 +384,35 @@ public final class LoginLockout {
      * A lock that a parallel attempt set on the source stays. Nothing is written unless the attempt was
      * counted.
      */
-    @CloseDBIfOpened
     public void succeeded(final Attempt attempt) {
-        if (!attempt.counted) {
-            return;
-        }
-        try {
-            new DotConnect().setSQL(CLEAR_SOURCE_SQL)
-                    .addParam(attempt.userId).addParam(attempt.source).addParam(clock.getAsLong())
-                    .loadResult();
-        } catch (final DotDataException | RuntimeException e) {
-            Logger.error(this, "Unable to clear login lockout state for user " + attempt.userId + ": "
-                    + e.getMessage(), e);
+        if (attempt.counted) {
+            succeeded(attempt.userId, attempt.source);
         }
     }
 
     /**
-     * Finishes an attempt that was not a password failure (for example, WebDAV accepted an API token in
-     * the password field): its count is handed back.
+     * Records a successful password login from the given source that was checked outside {@link #begin}
+     * (for example by LDAP): earlier attempts from the source no longer count. A lock in force stays.
      */
     @CloseDBIfOpened
-    public void notAPasswordLogin(final Attempt attempt) {
+    public void succeeded(final String userId, final String source) {
+        try {
+            new DotConnect().setSQL(CLEAR_SOURCE_SQL)
+                    .addParam(userId).addParam(source).addParam(clock.getAsLong())
+                    .loadResult();
+        } catch (final DotDataException | RuntimeException e) {
+            Logger.error(this, "Unable to clear login lockout state for user " + userId + ": " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Finishes an attempt that was not a password failure, handing its count back: the password was
+     * right but the attempt was refused (a lock applies, or too many attempts from the source were in
+     * flight at once), or a different credential was accepted (WebDAV takes an API token in the password
+     * field). Only a wrong password can lead to a lock.
+     */
+    @CloseDBIfOpened
+    public void release(final Attempt attempt) {
         if (!attempt.counted) {
             return;
         }
@@ -489,7 +499,9 @@ public final class LoginLockout {
      * update. It answers the way that path does:
      * <ul>
      *     <li>while a lock applies to this source or the whole account, or the source has used up its
-     *     attempts, every password is refused after the same hashing work;</li>
+     *     attempts (including attempts still in flight), every password is refused after the same hashing
+     *     work. A refused attempt with the right password hands its count back, so it never sets a lock;
+     *     the caller can retry;</li>
      *     <li>a wrong password counts as a failed login from this source;</li>
      *     <li>a right password clears the count for this source.</li>
      * </ul>
@@ -511,13 +523,18 @@ public final class LoginLockout {
         final Attempt attempt = begin(user.getUserId(), source);
         // Check the password even when refused, so a refused login takes the same time to answer and
         // gives no signal about whether the guess was right.
-        final boolean match = LoginFactory.passwordMatch(password, user) && !attempt.isRefused();
-        if (match) {
-            succeeded(attempt);
-            return true;
+        if (LoginFactory.passwordMatch(password, user)) {
+            if (!attempt.isRefused()) {
+                succeeded(attempt);
+                return true;
+            }
+            SecurityLogger.logInfo(LoginLockout.class, "Login refused, locked out: user " + user.getUserId()
+                    + " from " + source);
+            release(attempt);
+            return false;
         }
         if (otherCredential.test(password, user)) {
-            notAPasswordLogin(attempt);
+            release(attempt);
             return true;
         }
         if (attempt.isRefused()) {

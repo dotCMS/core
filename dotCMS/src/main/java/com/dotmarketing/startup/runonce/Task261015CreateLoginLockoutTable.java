@@ -18,16 +18,10 @@ public class Task261015CreateLoginLockoutTable extends AbstractJDBCStartupTask {
 
     private static final String TABLE_NAME = "login_lockout";
 
-    /**
-     * Runs when the table is missing, or when it has the earlier per-account layout (no {@code source}
-     * column) from a pre-release build. Lockout state is short-lived, so that table is simply rebuilt.
-     */
     @Override
     public boolean forceRun() {
         try {
-            final DotDatabaseMetaData metaData = new DotDatabaseMetaData();
-            return !metaData.tableExists(DbConnectionFactory.getConnection(), TABLE_NAME)
-                    || !metaData.hasColumn(TABLE_NAME, "source");
+            return !new DotDatabaseMetaData().tableExists(DbConnectionFactory.getConnection(), TABLE_NAME);
         } catch (final SQLException e) {
             Logger.error(this, e.getMessage(), e);
             return false;
@@ -36,8 +30,7 @@ public class Task261015CreateLoginLockoutTable extends AbstractJDBCStartupTask {
 
     @Override
     public String getPostgresScript() {
-        return "DROP TABLE IF EXISTS login_lockout;" // nosemgrep: gitlab.find_sec_bugs.CUSTOM_INJECTION-2 -- fully hardcoded DDL, no user input
-                + "CREATE TABLE login_lockout ("
+        return "CREATE TABLE IF NOT EXISTS login_lockout (" // nosemgrep: gitlab.find_sec_bugs.CUSTOM_INJECTION-2 -- fully hardcoded DDL, no user input
                 + " user_id varchar(100) not null,"
                 + " source varchar(100) not null,"
                 + " failures int not null,"
@@ -46,6 +39,6 @@ public class Task261015CreateLoginLockoutTable extends AbstractJDBCStartupTask {
                 + " mod_date timestamptz not null,"
                 + " constraint pk_login_lockout primary key (user_id, source)"
                 + ");"
-                + "CREATE INDEX idx_login_lockout_window ON login_lockout (window_start);";
+                + "CREATE INDEX IF NOT EXISTS idx_login_lockout_window ON login_lockout (window_start);";
     }
 }
