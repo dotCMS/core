@@ -9,7 +9,7 @@
     <p-listbox
         [(ngModel)]="$selectedValue"
         [ngModelOptions]="{ standalone: true }"
-        [options]="$options"
+        [options]="$options()"
         [multiple]="false"
         [checkbox]="false"
         optionLabel="label"

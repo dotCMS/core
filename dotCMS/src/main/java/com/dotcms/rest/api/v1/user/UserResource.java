@@ -54,6 +54,7 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDUtil;
@@ -98,6 +99,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.Serializable;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
@@ -132,6 +134,10 @@ public class UserResource implements Serializable {
 	public static final String USER_ID = "userID";
 	public static final String USER_MSG = "User ";
 	public static final String USER_WITH_USER_ID_MSG = "User with userId '";
+	/** Item key carrying whether the User is a CMS Administrator; returned to Role administrators. */
+	private static final String ADMIN_ITEM_KEY = "admin";
+	/** Access-role keys any back-end user may filter by: they only mirror each item's backend/frontend flags. */
+	private static final Set<String> ACCESS_ROLE_KEYS = Set.of(Role.DOTCMS_BACK_END_USER, Role.DOTCMS_FRONT_END_USER);
 	private final WebResource webResource;
 	private final UserAPI userAPI;
 	private final HostAPI siteAPI;
@@ -409,15 +415,29 @@ public class UserResource implements Serializable {
 	 *                         on it.
 	 * @param permission       The permission type that Users may have on the previous asset.
 	 * @param roleKeys         Optional Role keys -- repeatable and/or comma-separated -- that restrict the results to
-	 *                         Users holding any of them, e.g. {@code roleKey=DOTCMS_BACK_END_USER}.
+	 *                         Users holding any of them, e.g. {@code roleKey=DOTCMS_BACK_END_USER}. Keys are matched
+	 *                         exactly. Keys other than the Back-end and Front-end access roles require the same
+	 *                         privilege as {@code includeRoles}; otherwise 403.
+	 * @param roleIds          Optional Role IDs -- repeatable and/or comma-separated -- combined with {@code roleKeys}
+	 *                         to restrict the results to Users directly holding any of them, e.g.
+	 *                         {@code roleId=892ab105-f212-407f-8fb4-58ec59310a5e}. Unlike keys, IDs also reach Roles
+	 *                         created without a key. Requires the same privilege as {@code includeRoles}; otherwise
+	 *                         403.
 	 * @param includeRoles     Opt-in flag. When {@code true}, every returned User carries a {@code roles} list with
 	 *                         its <b>directly assigned</b> Roles -- inherited Roles and the User's personal Role are
 	 *                         excluded -- as {@code {id, name, roleKey}} entries. Defaults to {@code false}, in which
 	 *                         case the response is identical to the one returned before this flag existed. Reading
 	 *                         role membership requires the same privilege as {@code GET /v1/roles/users/{id}}: CMS
 	 *                         Administrator, or access to both the Roles and the Users portlets; otherwise 403.
+	 *                         <p>Each item's {@code admin} flag (whether the User is a CMS Administrator) is only
+	 *                         returned to callers with that same privilege; for anyone else the key is left out.</p>
 	 *
 	 * @return A {@link Response} containing the list of dotCMS users that match the filtering criteria.
+	 *
+	 * @throws ForbiddenException  If {@code includeRoles}, a {@code roleId}, or a {@code roleKey} other than the
+	 *                             access roles is requested without the privilege described above.
+	 * @throws BadRequestException If a {@code roleKey} or {@code roleId} matches no Role.
+	 * @throws DotDataException    An error occurred when resolving the User's portlet access.
 	 */
 	@Operation(
 		operationId = "filterUsers",
@@ -428,7 +448,10 @@ public class UserResource implements Serializable {
 				+ "objects (`roleKey` may be null for roles created without a key); roles held through the role "
 				+ "hierarchy and the user's personal role are not included. Requesting roles requires being a CMS "
 				+ "Administrator or having access to both the Roles and Users portlets (403 otherwise). Without the "
-				+ "flag the payload is unchanged."
+				+ "flag the payload is unchanged. Results can be restricted to users directly holding any of the "
+				+ "given roles through `roleKey` and/or `roleId`; filtering by any role other than the Back-end and "
+				+ "Front-end access roles requires that same privilege. The `admin` flag on each item is only "
+				+ "returned to callers with that same privilege; for anyone else it is left out."
 	)
 	@io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
 		@ApiResponse(responseCode = "200",
@@ -436,13 +459,13 @@ public class UserResource implements Serializable {
 					content = @Content(mediaType = "application/json",
 									  schema = @Schema(implementation = ResponseEntityListUserView.class))),
 		@ApiResponse(responseCode = "400",
-					description = "Bad request - a provided roleKey does not match any existing Role",
+					description = "Bad request - a provided roleKey or roleId does not match any existing Role",
 					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "401",
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "403",
-					description = "Forbidden - insufficient permissions, or includeRoles=true requested without CMS Administrator / Roles+Users portlet access",
+					description = "Forbidden - insufficient permissions, or includeRoles=true / a role filter other than the Back-end and Front-end access roles requested without CMS Administrator / Roles+Users portlet access",
 					content = @Content(mediaType = "application/json"))
 	})
 	@GET
@@ -460,7 +483,8 @@ public class UserResource implements Serializable {
 						   @Parameter(description = "Include default user in results") @QueryParam(UserPaginator.INCLUDE_DEFAULT) boolean includeDefault,
 						   @Parameter(description = "Asset inode for permission-based filtering") @QueryParam(UserPaginator.ASSET_INODE_PARAM) String assetInode,
 						   @Parameter(description = "Permission type for asset-based filtering") @QueryParam(UserPaginator.PERMISSION_PARAM) int permission,
-						   @Parameter(description = "Role key(s) to restrict results to users holding any of them; repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER") @QueryParam(UserPaginator.ROLE_KEY_PARAM) final List<String> roleKeys,
+						   @Parameter(description = "Role key(s) to restrict results to users holding any of them; repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER (exact match). Keys other than DOTCMS_BACK_END_USER and DOTCMS_FRONT_END_USER require CMS Administrator or Roles+Users portlet access (403 otherwise)") @QueryParam(UserPaginator.ROLE_KEY_PARAM) final List<String> roleKeys,
+						   @Parameter(description = "Role ID(s) to restrict results to users directly holding any of them, combined with roleKey; repeatable and/or comma-separated. Also matches roles created without a key. Requires CMS Administrator or Roles+Users portlet access (403 otherwise)") @QueryParam(UserPaginator.ROLE_ID_PARAM) final List<String> roleIds,
 						   @Parameter(description = "When true, each user carries a `roles` array of its directly assigned roles as {id, name, roleKey}; inherited roles and the user's personal role are excluded. Requires CMS Administrator or Roles+Users portlet access (403 otherwise). Defaults to false (payload unchanged)") @DefaultValue("false") @QueryParam(UserPaginator.INCLUDE_ROLES_PARAM) final boolean includeRoles)
 			throws DotDataException {
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -477,20 +501,24 @@ public class UserResource implements Serializable {
 		extraParams.put(UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, includeDefault);
 		extraParams.put(UserAPI.FilteringParams.ORDER_BY_PARAM, orderBy);
 
-		final List<Role> roles = this.resolveRoleKeys(roleKeys);
+		final User user = initData.getUser();
+		final boolean roleAdministrator = this.isRoleAdministrator(user);
+		final List<String> requestedRoleKeys = splitValues(roleKeys);
+		final List<String> requestedRoleIds = splitValues(roleIds);
+		// Authorization is checked before the roles are loaded
+		if (needsRoleAdministrator(requestedRoleKeys, requestedRoleIds)) {
+			requireRoleAdministrator(user, roleAdministrator, "filter users by role");
+		}
+		final List<Role> roles = new ArrayList<>(this.resolveRoleKeys(requestedRoleKeys));
+		roles.addAll(this.resolveRoleIds(requestedRoleIds));
 		if (UtilMethods.isSet(roles)) {
 			extraParams.put(UserPaginator.ROLES_PARAM, roles);
 		}
-		final User user = initData.getUser();
 		// Only set when requested: extra params are echoed into the Link header, and the default response must stay
 		// identical to the pre-flag one
 		if (includeRoles) {
-			if (!this.isRoleAdministrator(user)) {
-				// Same privilege as GET /v1/roles/users/{id}: role membership is not visible to every back-end user
-				final String message = USER_MSG + user.getUserId() + " does not have permissions to read user roles";
-				Logger.error(this, message);
-				throw new ForbiddenException(message);
-			}
+			// Same privilege as GET /v1/roles/users/{id}: role membership is not visible to every back-end user
+			requireRoleAdministrator(user, roleAdministrator, "read user roles");
 			extraParams.put(UserPaginator.INCLUDE_ROLES_PARAM, true);
 		}
 
@@ -499,7 +527,24 @@ public class UserResource implements Serializable {
 		// arguments, so the direction is passed here too (same wiring as RoleResource#loadUsersByRoleId).
 		final OrderDirection orderDirection = OrderDirection.valueOf(direction);
 		extraParams.put(UserAPI.FilteringParams.ORDER_DIRECTION_PARAM, UserAPI.FilteringParams.sqlDirection(orderDirection));
-		return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, orderDirection, extraParams);
+		// Applied to the items rather than passed as an extra param, so the Link header stays the same for every caller
+		final Function<PaginatedArrayList<Map<String, Object>>, PaginatedArrayList<Map<String, Object>>> itemsFunction =
+				roleAdministrator ? null : UserResource::withoutAdminFlag;
+		return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, orderDirection, extraParams,
+				itemsFunction);
+	}
+
+	/**
+	 * Removes the {@code admin} flag from every paginated User item, for callers who are not Role administrators.
+	 *
+	 * @param items The paginated User items, modified in place.
+	 *
+	 * @return The same items, without the {@code admin} key.
+	 */
+	private static PaginatedArrayList<Map<String, Object>> withoutAdminFlag(
+			final PaginatedArrayList<Map<String, Object>> items) {
+		items.forEach(item -> item.remove(ADMIN_ITEM_KEY));
+		return items;
 	}
 
 	/**
@@ -520,28 +565,97 @@ public class UserResource implements Serializable {
 	}
 
 	/**
-	 * Resolves the {@code roleKey} query parameter values -- each entry may itself be a comma-separated list -- into
-	 * the {@link Role} objects expected by the {@link UserPaginator#ROLES_PARAM} parameter.
+	 * Rejects the request with a 403 unless the calling User is a Role administrator, as computed by
+	 * {@link #isRoleAdministrator(User)}. The denial is recorded in the security log.
 	 *
-	 * @param roleKeys The Role key values provided by the caller, potentially empty.
+	 * @param user               The calling {@link User}.
+	 * @param roleAdministrator  Whether that User is a Role administrator.
+	 * @param action             What the User asked to do, used in the log and error message (e.g. "read user roles").
+	 *
+	 * @throws ForbiddenException If the User is not a Role administrator.
+	 */
+	private static void requireRoleAdministrator(final User user, final boolean roleAdministrator,
+												 final String action) {
+		if (!roleAdministrator) {
+			final String message = USER_MSG + user.getUserId() + " does not have permissions to " + action;
+			SecurityLogger.logInfo(UserResource.class, message);
+			throw new ForbiddenException(message);
+		}
+	}
+
+	/**
+	 * Flattens a repeatable query parameter whose entries may themselves be comma-separated lists, dropping blank
+	 * values.
+	 *
+	 * @param values The raw query parameter values, potentially {@code null}.
+	 *
+	 * @return The individual trimmed values, or an empty list if none were provided.
+	 */
+	private static List<String> splitValues(final List<String> values) {
+		if (!UtilMethods.isSet(values)) {
+			return List.of();
+		}
+		return values.stream()
+				.filter(Objects::nonNull)
+				.flatMap(value -> Arrays.stream(value.split(",")))
+				.map(String::trim)
+				.filter(UtilMethods::isSet)
+				.collect(Collectors.toList());
+	}
+
+	/**
+	 * Tells whether a role filter requires the Role-administrator privilege. Filtering by the Back-end or Front-end
+	 * access roles only mirrors the {@code backendUser} / {@code frontendUser} flags every list item already carries,
+	 * so it stays open to any back-end user; any other key, or any role ID, requires the privilege.
+	 *
+	 * @param roleKeys The requested Role keys.
+	 * @param roleIds  The requested Role IDs.
+	 *
+	 * @return {@code true} if the filter needs the Role-administrator privilege.
+	 */
+	private static boolean needsRoleAdministrator(final List<String> roleKeys, final List<String> roleIds) {
+		return !roleIds.isEmpty() || roleKeys.stream().anyMatch(roleKey -> !ACCESS_ROLE_KEYS.contains(roleKey));
+	}
+
+	/**
+	 * Resolves the requested Role keys into the {@link Role} objects expected by the
+	 * {@link UserPaginator#ROLES_PARAM} parameter.
+	 *
+	 * @param roleKeys The individual Role keys provided by the caller, potentially empty.
 	 *
 	 * @return The list of resolved {@link Role} objects, or an empty list if no keys were provided.
 	 *
 	 * @throws BadRequestException If any of the provided keys does not match an existing Role.
 	 */
 	private List<Role> resolveRoleKeys(final List<String> roleKeys) {
-		if (!UtilMethods.isSet(roleKeys)) {
-			return List.of();
-		}
 		return roleKeys.stream()
-				.flatMap(value -> Arrays.stream(value.split(",")))
-				.map(String::trim)
-				.filter(UtilMethods::isSet)
 				.map(roleKey -> {
 					final Role role = Try.of(() -> this.roleAPI.loadRoleByKey(roleKey))
 							.getOrElseThrow(DotRuntimeException::new);
 					if (null == role || !UtilMethods.isSet(role.getId())) {
 						throw new BadRequestException(String.format("Role with key '%s' was not found", roleKey));
+					}
+					return role;
+				}).collect(Collectors.toList());
+	}
+
+	/**
+	 * Resolves the requested Role IDs into the {@link Role} objects expected by the
+	 * {@link UserPaginator#ROLES_PARAM} parameter.
+	 *
+	 * @param roleIds The individual Role IDs provided by the caller, potentially empty.
+	 *
+	 * @return The list of resolved {@link Role} objects, or an empty list if no IDs were provided.
+	 *
+	 * @throws BadRequestException If any of the provided IDs does not match an existing Role.
+	 */
+	private List<Role> resolveRoleIds(final List<String> roleIds) {
+		return roleIds.stream()
+				.map(roleId -> {
+					final Role role = Try.of(() -> this.roleAPI.loadRoleById(roleId))
+							.getOrElseThrow(DotRuntimeException::new);
+					if (null == role || !UtilMethods.isSet(role.getId())) {
+						throw new BadRequestException(String.format("Role with id '%s' was not found", roleId));
 					}
 					return role;
 				}).collect(Collectors.toList());

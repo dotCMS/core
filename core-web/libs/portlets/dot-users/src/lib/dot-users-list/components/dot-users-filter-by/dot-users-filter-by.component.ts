@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal } from '@angular/core';
+import { Component, computed, inject, linkedSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ListboxModule } from 'primeng/listbox';
@@ -13,16 +13,13 @@ import {
     DotMessagePipe
 } from '@dotcms/ui';
 
-import { DotUsersListStore } from '../../store/dot-users-list.store';
-
-/**
- * Role-key values used by dotCMS system roles. Mirrors
- * `com.dotmarketing.business.Role.DOTCMS_BACK_END_USER` and
- * `Role.DOTCMS_FRONT_END_USER`. Empty string means "no role filter".
- */
-export const USERS_FILTER_ALL = '';
-export const USERS_FILTER_BACKEND = 'DOTCMS_BACK_END_USER';
-export const USERS_FILTER_FRONTEND = 'DOTCMS_FRONT_END_USER';
+import {
+    DotUsersListStore,
+    USERS_FILTER_ALL,
+    USERS_FILTER_BACKEND,
+    USERS_FILTER_CMS_ADMIN,
+    USERS_FILTER_FRONTEND
+} from '../../store/dot-users-list.store';
 
 interface FilterOption {
     value: string;
@@ -39,8 +36,7 @@ interface FilterOption {
         DotFilterListItemComponent,
         DotMessagePipe
     ],
-    templateUrl: './dot-users-filter-by.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    templateUrl: './dot-users-filter-by.component.html'
 })
 export class DotUsersFilterByComponent {
     readonly #store = inject(DotUsersListStore);
@@ -49,7 +45,7 @@ export class DotUsersFilterByComponent {
     protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
     protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
 
-    protected readonly $options: FilterOption[] = [
+    readonly #accessOptions: FilterOption[] = [
         {
             value: USERS_FILTER_ALL,
             label: this.#dotMessageService.get('users.filter.all-access')
@@ -64,6 +60,22 @@ export class DotUsersFilterByComponent {
         }
     ];
 
+    readonly #cmsAdminOption: FilterOption = {
+        value: USERS_FILTER_CMS_ADMIN,
+        label: this.#dotMessageService.get('users.access.cms-admin')
+    };
+
+    /**
+     * Listbox options. CMS Administrator is offered only while the store
+     * says the viewer may filter by role membership; the backend answers
+     * 403 for anyone else.
+     */
+    protected readonly $options = computed<FilterOption[]>(() =>
+        this.#store.canFilterByRole()
+            ? [...this.#accessOptions, this.#cmsAdminOption]
+            : this.#accessOptions
+    );
+
     /** Two-way bound to the listbox. Kept in sync with the store's roleFilter. */
     protected readonly $selectedValue = linkedSignal<string>(() => this.#store.roleFilter());
 
@@ -75,7 +87,7 @@ export class DotUsersFilterByComponent {
     protected readonly $selections = computed(() => {
         const value = this.$selectedValue();
         if (!value) return [];
-        const option = this.$options.find((opt) => opt.value === value);
+        const option = this.$options().find((opt) => opt.value === value);
 
         return option ? [option.label] : [];
     });

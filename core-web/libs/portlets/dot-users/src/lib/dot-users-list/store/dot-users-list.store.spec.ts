@@ -197,6 +197,8 @@ describe('DotUsersListStore', () => {
             );
             // No inline roles in the downgraded response — column stays empty.
             expect(store.userRoles()).toEqual({ 'dotcms.org.1': [] });
+            // Same backend gate as role-membership filters, so the UI stops offering them.
+            expect(store.canFilterByRole()).toBe(false);
         });
 
         it('does NOT retry on non-403 errors — they bubble up to the error state', () => {
@@ -215,6 +217,84 @@ describe('DotUsersListStore', () => {
 
             expect(usersService.getUsersPaginated).toHaveBeenCalledTimes(1);
             expect(store.status()).toBe(ComponentStatus.ERROR);
+            // A non-403 error says nothing about the gate: the flag keeps its initial value.
+            expect(store.canFilterByRole()).toBe(false);
+        });
+
+        it('offers role filters only once a load has succeeded with includeRoles', () => {
+            expect(store.canFilterByRole()).toBe(false);
+
+            store.loadUsers();
+
+            expect(store.canFilterByRole()).toBe(true);
+        });
+
+        it('keeps serving loads after a failed one', () => {
+            usersService.getUsersPaginated
+                .mockReturnValueOnce(
+                    throwError(
+                        () => new HttpErrorResponse({ status: 500, statusText: 'Server Error' })
+                    )
+                )
+                .mockReturnValueOnce(of(MOCK_RESPONSE));
+
+            store.loadUsers();
+            expect(store.status()).toBe(ComponentStatus.ERROR);
+
+            store.loadUsers();
+
+            expect(usersService.getUsersPaginated).toHaveBeenCalledTimes(2);
+            expect(store.status()).toBe(ComponentStatus.LOADED);
+            expect(store.users()).toEqual(MOCK_USERS);
+        });
+
+        it('drops a gated role filter together with includeRoles when the backend answers 403', () => {
+            usersService.getUsersPaginated
+                .mockReturnValueOnce(
+                    throwError(
+                        () =>
+                            new HttpErrorResponse({
+                                status: 403,
+                                statusText: 'Forbidden',
+                                url: '/api/v1/users/filter?roleKey=CMS%20Administrator&includeRoles=true'
+                            })
+                    )
+                )
+                .mockReturnValueOnce(of(MOCK_RESPONSE));
+
+            store.setRoleFilter('CMS Administrator');
+
+            expect(usersService.getUsersPaginated).toHaveBeenCalledTimes(2);
+            expect(usersService.getUsersPaginated).toHaveBeenNthCalledWith(
+                1,
+                expect.objectContaining({ roleKey: 'CMS Administrator', includeRoles: true })
+            );
+            expect(usersService.getUsersPaginated).toHaveBeenNthCalledWith(
+                2,
+                expect.objectContaining({ roleKey: undefined, includeRoles: false, page: 1 })
+            );
+            expect(store.roleFilter()).toBe('');
+            expect(store.canFilterByRole()).toBe(false);
+            expect(store.status()).toBe(ComponentStatus.LOADED);
+        });
+
+        it('keeps an access-role filter on the 403 retry', () => {
+            usersService.getUsersPaginated
+                .mockReturnValueOnce(
+                    throwError(
+                        () => new HttpErrorResponse({ status: 403, statusText: 'Forbidden' })
+                    )
+                )
+                .mockReturnValueOnce(of(MOCK_RESPONSE));
+
+            store.setRoleFilter('DOTCMS_BACK_END_USER');
+
+            expect(usersService.getUsersPaginated).toHaveBeenNthCalledWith(
+                2,
+                expect.objectContaining({ roleKey: 'DOTCMS_BACK_END_USER', includeRoles: false })
+            );
+            expect(store.roleFilter()).toBe('DOTCMS_BACK_END_USER');
+            expect(store.canFilterByRole()).toBe(false);
         });
     });
 
