@@ -4,9 +4,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -22,6 +24,7 @@ import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -53,6 +56,16 @@ public class WidgetRendererTest {
         }
         plainUser = new UserDataGen().nextPersisted();
         scriptingDeveloper = new UserDataGen().roles(scriptingRole).nextPersisted();
+    }
+
+    @AfterClass
+    public static void cleanup() throws Exception {
+        // Deleting the type also deletes the widgets persisted by the tests.
+        ContentTypeDataGen.remove(widgetType);
+        // Deleting a user needs a replacement user that owns a user role, which the system user lacks.
+        final User admin = TestUserUtils.getAdminUser();
+        APILocator.getUserAPI().delete(plainUser, admin, APILocator.systemUser(), false);
+        APILocator.getUserAPI().delete(scriptingDeveloper, admin, APILocator.systemUser(), false);
     }
 
     private static Contentlet widgetLastModifiedBy(final User user) {

@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -17,6 +18,7 @@ import java.io.StringWriter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.velocity.context.Context;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -31,6 +33,12 @@ public class CMSUsersWebAPIIntegrationTest {
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
         user = new UserDataGen().password("a-very-long-password-" + System.currentTimeMillis()).nextPersisted();
+    }
+
+    @AfterClass
+    public static void cleanup() throws Exception {
+        // Deleting a user needs a replacement user that owns a user role, which the system user lacks.
+        APILocator.getUserAPI().delete(user, TestUserUtils.getAdminUser(), APILocator.systemUser(), false);
     }
 
     private static String evaluate(final String template) {
