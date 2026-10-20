@@ -580,6 +580,13 @@ import org.junit.runners.Suite.SuiteClasses;
         RoleResourceUsersIntegrationTest.class,
         com.dotmarketing.common.reindex.ReindexDeleteJournalTest.class,
         AiRetrievalPermissionTest.class,
+        com.dotmarketing.portlets.cmsmaintenance.ajax.CMSMaintenanceAjaxIntegrationTest.class,
+        com.dotmarketing.portlets.structure.ajax.StructureAjaxIntegrationTest.class,
+        com.dotmarketing.portlets.structure.action.EditFieldActionReorderTest.class,
+        com.dotmarketing.portlets.contentlet.ajax.ImportContentletAjaxIntegrationTest.class,
+        com.dotmarketing.portlets.languagesmanager.ajax.LanguageAjaxIntegrationTest.class,
+        com.dotmarketing.business.ajax.RoleAjaxLayoutsIntegrationTest.class,
+        com.dotmarketing.portlets.languagesmanager.action.EditLanguageKeysActionTest.class,
 })
 
 public class MainSuite2b {

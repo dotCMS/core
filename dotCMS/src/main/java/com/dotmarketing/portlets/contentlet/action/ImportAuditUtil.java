@@ -55,6 +55,33 @@ public class ImportAuditUtil {
 		}
 		return true;
 	}
+	/**
+	 * Returns the id of the user who started an import, as stored in its audit record.
+	 *
+	 * @param importId the import id
+	 * @return the owner's user id without surrounding blanks, or {@code null} when the id is
+	 *         {@code null}, there is no audit record for it, or the record cannot be read
+	 */
+	@CloseDBIfOpened
+	public static String findImportOwner(final Long importId) {
+		if (importId == null) {
+			return null;
+		}
+		final DotConnect db = new DotConnect();
+		db.setSQL("SELECT userid FROM import_audit WHERE id = ?");
+		db.addParam(importId.longValue());
+		try {
+			final List<Map<String, Object>> rows = db.loadObjectResults();
+			if (rows == null || rows.isEmpty() || rows.get(0).get("userid") == null) {
+				return null;
+			}
+			return rows.get(0).get("userid").toString().trim();
+		} catch (DotDataException e) {
+			Logger.error(ImportAuditUtil.class, "Could not read the user who started an import", e);
+			return null;
+		}
+	}
+
 	@WrapInTransaction
 	public static void cancelImport(long importId){
 		DotConnect dc = new DotConnect();
