@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.contentlet.ajax;
 
 import com.dotmarketing.business.ajax.DwrUtil;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 import com.dotmarketing.util.SecurityLogger;
@@ -16,15 +17,19 @@ public class ImportContentletAjax {
 
 	/**
 	 * Tells the import pages whether an import has finished.
-	 * <p>A caller who did not start the import and is not a CMS administrator always gets
-	 * {@code true}, the same answer an unknown import id gets, and the import is not looked at.
-	 * That answer is not written to the security log because the page asks repeatedly.</p>
+	 * <p>For a CMS administrator the stored status of the import is read directly. For any other
+	 * caller, the user who started the import is first read from its audit record with
+	 * {@link ImportAuditUtil#findImportOwner(Long)}; a caller who did not start it gets
+	 * {@code true}, the stored status is not read, and nothing is written to the security log.
+	 * A {@code null} id also gets {@code true}.</p>
 	 *
 	 * @param id the import id
 	 * @return {@code false} while the import is still running, {@code true} otherwise
 	 * @throws DotSecurityException if nobody is logged in
+	 * @throws DotDataException     if the user who started the import cannot be read
 	 */
-	public boolean checkImportStatus(Long id) throws DotSecurityException, PortalException, SystemException {
+	public boolean checkImportStatus(Long id)
+			throws DotSecurityException, DotDataException, PortalException, SystemException {
 		final User user = DwrUtil.getLoggedInUser();
 		if (!canManageImport(user, id)) {
 			return true;
@@ -42,8 +47,11 @@ public class ImportContentletAjax {
 	 * @throws DotSecurityException if nobody is logged in, or the logged-in user did not start the
 	 *                              import and is not a CMS administrator (also for an unknown or
 	 *                              missing id)
+	 * @throws DotDataException     if the user who started the import cannot be read; the import
+	 *                              is then not cancelled
 	 */
-	public long cancelImport(Long importId) throws DotSecurityException, PortalException, SystemException {
+	public long cancelImport(Long importId)
+			throws DotSecurityException, DotDataException, PortalException, SystemException {
 		final User user = DwrUtil.getLoggedInUser();
 		if (!canManageImport(user, importId)) {
 			SecurityLogger.logInfo(ImportContentletAjax.class, String.format(
@@ -64,8 +72,9 @@ public class ImportContentletAjax {
 	 * @param user     the logged-in {@link User}
 	 * @param importId the import id
 	 * @return {@code true} if the user can manage the import
+	 * @throws DotDataException if the user who started the import cannot be read
 	 */
-	private boolean canManageImport(final User user, final Long importId) {
+	private boolean canManageImport(final User user, final Long importId) throws DotDataException {
 		if (importId == null) {
 			return false;
 		}

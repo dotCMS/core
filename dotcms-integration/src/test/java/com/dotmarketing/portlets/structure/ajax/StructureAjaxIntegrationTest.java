@@ -8,14 +8,17 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.SelectField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -28,6 +31,7 @@ import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
@@ -69,6 +73,8 @@ public class StructureAjaxIntegrationTest {
     private static Field searchableField;
     private static Field selectField;
     private static Container containerUsingReadType;
+    private static Category category;
+    private static ContentType categoryType;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -95,17 +101,44 @@ public class StructureAjaxIntegrationTest {
         containerUsingReadType = new ContainerDataGen()
                 .withContentType(readType, "$!{" + searchableField.variable() + "}")
                 .nextPersisted();
+
+        // Both the reader and the stranger can read the category, so only READ on the content
+        // type decides whether getCategoriesTree returns it.
+        category = new CategoryDataGen()
+                .setCategoryName("structureAjaxCategory" + suffix)
+                .setKey("structureAjaxCategory" + suffix)
+                .setCategoryVelocityVarName("structureAjaxCategory" + suffix)
+                .nextPersisted();
+        for (final User user : new User[]{reader, stranger}) {
+            permissionAPI.save(new Permission(category.getPermissionId(),
+                            APILocator.getRoleAPI().getUserRole(user).getId(), PermissionAPI.PERMISSION_READ, true),
+                    category, systemUser, false);
+            assertTrue(permissionAPI.doesUserHavePermission(category, PermissionAPI.PERMISSION_READ, user));
+        }
+        categoryType = newContentType();
+        new FieldDataGen().type(CategoryField.class)
+                .name("category" + suffix).velocityVarName("category" + suffix)
+                .values(category.getInode())
+                .contentTypeId(categoryType.id()).nextPersisted();
     }
 
+    /**
+     * Removes the container, the content types and the category, then deletes the test users,
+     * handing whatever they own to the admin user, and finally the owner role.
+     */
     @AfterClass
-    public static void cleanUp() {
+    public static void cleanUp() throws Exception {
         if (containerUsingReadType != null) {
             ContainerDataGen.remove(containerUsingReadType);
         }
         createdTypes.forEach(ContentTypeDataGen::remove);
+        if (category != null) {
+            CategoryDataGen.delete(category);
+        }
+        final User replacement = TestUserUtils.getAdminUser();
         for (final User user : new User[]{editor, reader, stranger}) {
             if (user != null) {
-                UserDataGen.remove(user);
+                APILocator.getUserAPI().delete(user, replacement, systemUser, false);
             }
         }
         if (ownerRole != null) {
@@ -413,6 +446,39 @@ public class StructureAjaxIntegrationTest {
         dwrContext.loginAs(reader);
 
         assertEquals("", new StructureAjax().getDropDownList("00000000-0000-0000-0000-000000000000"));
+    }
+
+    /**
+     * Method to test: {@link StructureAjax#getCategoriesTree(String, String)}
+     * Given: a content type with a category field, asked for by a back-end user who can read the
+     * category but has no permission on the type
+     * Expected: an empty list
+     */
+    @Test
+    public void getCategoriesTree_withoutReadOnType_returnsEmptyList() throws Exception {
+        dwrContext.loginAs(stranger);
+
+        final List<Map<String, Object>> tree =
+                new StructureAjax().getCategoriesTree(categoryType.variable(), ".*");
+
+        assertTrue("no category must be returned, got " + tree, tree.isEmpty());
+    }
+
+    /**
+     * Method to test: {@link StructureAjax#getCategoriesTree(String, String)}
+     * Given: a content type with a category field, asked for by a back-end user with READ on the
+     * type and on the category
+     * Expected: the field's category is returned
+     */
+    @Test
+    public void getCategoriesTree_withReadOnType_returnsCategory() throws Exception {
+        dwrContext.loginAs(reader);
+
+        final List<Map<String, Object>> tree =
+                new StructureAjax().getCategoriesTree(categoryType.variable(), ".*");
+
+        assertTrue("the field's category must be returned, got " + tree, tree.stream()
+                .anyMatch(entry -> category.getInode().equals(entry.get("inode"))));
     }
 
     private static User backendUser(final String label) throws DotDataException {

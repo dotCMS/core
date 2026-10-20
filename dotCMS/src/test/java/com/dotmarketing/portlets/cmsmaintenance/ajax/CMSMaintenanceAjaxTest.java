@@ -7,6 +7,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.RETURNS_DEFAULTS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
@@ -14,30 +15,38 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.publisher.assets.business.PushedAssetsAPI;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.cache.ContentTypeCache;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.fixtask.FixTasksExecutor;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
 import com.dotmarketing.portlets.cmsmaintenance.util.CleanAssetsThread;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.language.LanguageUtil;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.AfterEach;
@@ -335,6 +344,84 @@ class CMSMaintenanceAjaxTest {
 
         assertEquals(7, new CMSMaintenanceAjax().removeOldVersions("01/31/2026"));
         maintenanceFactory.verify(() -> CMSMaintenanceFactory.deleteOldAssetVersions(expectedDate));
+    }
+
+    /**
+     * Given: a CMS administrator with the Maintenance portlet
+     * When: cleanAssets is called
+     * Then: the clean assets job is created, started, and its initial status is returned
+     */
+    @Test
+    void cleanAssets_startsJobForAdminWithPortlet() throws Exception {
+        givenLoggedInUser(true, true);
+        final CleanAssetsThread job = mock(CleanAssetsThread.class);
+        final CleanAssetsThread.BasicProcessStatus status = mock(CleanAssetsThread.BasicProcessStatus.class);
+        final Map<String, String> initialStatus = Map.of("running", "true");
+        when(status.buildStatusMap()).thenReturn(initialStatus);
+        when(job.getProcessStatus()).thenReturn(status);
+        cleanAssetsThread.when(() -> CleanAssetsThread.getInstance(true, true)).thenReturn(job);
+
+        assertEquals(initialStatus, new CMSMaintenanceAjax().cleanAssets());
+        verify(job).start();
+    }
+
+    /**
+     * Given: a CMS administrator with the Maintenance portlet
+     * When: deletePushedAssets is called
+     * Then: the whole push history is deleted and "success" is returned
+     */
+    @Test
+    void deletePushedAssets_deletesHistoryForAdminWithPortlet() throws Exception {
+        givenLoggedInUser(true, true);
+
+        assertEquals("success", new CMSMaintenanceAjax().deletePushedAssets());
+        verify(pushedAssetsAPI).deleteAllPushedAssets();
+    }
+
+    /**
+     * Given: a CMS administrator with the Maintenance portlet
+     * When: fixAssetsInconsistencies is called
+     * Then: the fix tasks are run and their results are returned
+     */
+    @Test
+    void fixAssetsInconsistencies_runsFixTasksForAdminWithPortlet() throws Exception {
+        givenLoggedInUser(true, true);
+        final List<Map<String, Integer>> results = List.of(Map.of("total", 3));
+        when(fixTasksExecutor.getTasksresults()).thenReturn(results);
+
+        assertEquals(results, new CMSMaintenanceAjax().fixAssetsInconsistencies());
+        verify(fixTasksExecutor).execute(isNull());
+    }
+
+    /**
+     * Given: a CMS administrator with the Maintenance portlet
+     * When: cleanReindexStructure is called for a content type
+     * Then: that type's content is removed from the index, the type is reindexed and the
+     * confirmation message is returned
+     */
+    @Test
+    void cleanReindexStructure_reindexesTypeForAdminWithPortlet() throws Exception {
+        givenLoggedInUser(true, true);
+        final Structure type = mock(Structure.class);
+        final ContentTypeCache contentTypeCache = mock(ContentTypeCache.class);
+        when(contentTypeCache.getStructureByInode("type-inode")).thenReturn(type);
+        final ContentletIndexAPI contentletIndexAPI = mock(ContentletIndexAPI.class);
+        apiLocator.when(APILocator::getContentletIndexAPI).thenReturn(contentletIndexAPI);
+        final Company company = mock(Company.class);
+        when(company.getCompanyId()).thenReturn("company-id");
+        when(company.getLocale()).thenReturn(Locale.US);
+        languageUtil.when(() -> LanguageUtil.get("company-id", Locale.US,
+                "message.cmsmaintenance.cache.indexrebuilt")).thenReturn("Index rebuilt");
+
+        try (MockedStatic<CacheLocator> cacheLocator = mockStatic(CacheLocator.class);
+                MockedStatic<PublicCompanyFactory> companies = mockStatic(PublicCompanyFactory.class)) {
+            cacheLocator.when(CacheLocator::getContentTypeCache).thenReturn(contentTypeCache);
+            companies.when(PublicCompanyFactory::getDefaultCompany).thenReturn(company);
+
+            assertEquals("Index rebuilt", new CMSMaintenanceAjax().cleanReindexStructure("type-inode"));
+        }
+        verify(contentletIndexAPI).removeContentFromIndexByStructureInode("type-inode");
+        verify(contentletAPI).refresh(type);
     }
 
     /**

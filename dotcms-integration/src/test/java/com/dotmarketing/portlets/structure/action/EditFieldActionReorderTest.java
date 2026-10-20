@@ -18,6 +18,7 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.util.IntegrationTestInitService;
@@ -25,6 +26,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
+import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
@@ -99,14 +101,50 @@ public class EditFieldActionReorderTest {
                 .doesUserHaveAccessToPortlet(CONTENT_TYPES_PORTLET, contentTypesPortletUser));
     }
 
+    /** One step of the class cleanup. */
+    @FunctionalInterface
+    private interface CleanupStep {
+        void run() throws Exception;
+    }
+
+    /**
+     * Removes the content types, deletes the test users (handing whatever they own to the admin
+     * user), the owner role and the test layout, reloaded first because the persisted instance is
+     * detached from the current session. Every step runs even when an earlier one fails; the first
+     * failure is rethrown at the end with the others attached.
+     */
     @AfterClass
     public static void cleanUp() throws Exception {
-        createdTypes.forEach(ContentTypeDataGen::remove);
-        UserDataGen.remove(userWithoutPortlets);
-        UserDataGen.remove(contentTypesPortletUser);
-        UserDataGen.remove(editor);
-        RoleDataGen.remove(ownerRole);
-        APILocator.getLayoutAPI().removeLayout(contentTypesLayout);
+        final List<Exception> failures = new ArrayList<>();
+        runCleanupStep(failures, () -> createdTypes.forEach(ContentTypeDataGen::remove));
+        for (final User user : new User[]{userWithoutPortlets, contentTypesPortletUser, editor}) {
+            if (null != user) {
+                runCleanupStep(failures, () -> APILocator.getUserAPI()
+                        .delete(user, TestUserUtils.getAdminUser(), systemUser, false));
+            }
+        }
+        if (null != ownerRole) {
+            runCleanupStep(failures, () -> RoleDataGen.remove(ownerRole));
+        }
+        if (null != contentTypesLayout) {
+            runCleanupStep(failures, () -> {
+                final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+                layoutAPI.removeLayout(layoutAPI.findLayout(contentTypesLayout.getId()));
+            });
+        }
+        if (!failures.isEmpty()) {
+            final Exception first = failures.get(0);
+            failures.stream().skip(1).forEach(first::addSuppressed);
+            throw first;
+        }
+    }
+
+    private static void runCleanupStep(final List<Exception> failures, final CleanupStep step) {
+        try {
+            step.run();
+        } catch (final Exception e) {
+            failures.add(e);
+        }
     }
 
     /**
@@ -161,6 +199,51 @@ public class EditFieldActionReorderTest {
         final ContentType typeB = newContentType();
         final List<Field> posted = new ArrayList<>(reversed(textFields(typeA, 2)));
         posted.addAll(textFields(typeB, 1));
+        final Map<String, Integer> before = storedSortOrders(posted);
+
+        final ActionRequestImpl request = reorderRequest(editor, newOrder(posted));
+        new EditFieldAction().processAction(null, null, null, request, mock(ActionResponse.class));
+
+        assertEquals(before, storedSortOrders(posted));
+        assertTrue(SessionMessages.contains(request, ERROR_MESSAGE));
+        assertFalse(SessionMessages.contains(request, SUCCESS_MESSAGE));
+    }
+
+    /**
+     * Method to test: {@link EditFieldAction#processAction} with {@code cmd=reorder}
+     * Given: a user posts first the fields of a content type on which they have EDIT_PERMISSIONS,
+     * then a field of a content type they can only read
+     * Expected: no field of either type changes, an error message and no success message
+     */
+    @Test
+    public void reorder_editableTypeFirstThenFieldOfReadOnlyType_changesNothing() throws Exception {
+        final ContentType editableType = newContentType();
+        final ContentType readOnlyType = newContentTypeEditorCanOnlyRead();
+        final List<Field> posted = new ArrayList<>(reversed(textFields(editableType, 2)));
+        posted.addAll(textFields(readOnlyType, 1));
+        final Map<String, Integer> before = storedSortOrders(posted);
+
+        final ActionRequestImpl request = reorderRequest(editor, newOrder(posted));
+        new EditFieldAction().processAction(null, null, null, request, mock(ActionResponse.class));
+
+        assertEquals(before, storedSortOrders(posted));
+        assertTrue(SessionMessages.contains(request, ERROR_MESSAGE));
+        assertFalse(SessionMessages.contains(request, SUCCESS_MESSAGE));
+    }
+
+    /**
+     * Method to test: {@link EditFieldAction#processAction} with {@code cmd=reorder}
+     * Given: a user posts first a field of a content type they can only read, then the fields of
+     * a content type on which they have EDIT_PERMISSIONS
+     * Expected: the request is denied on the first field's type: no field of either type changes,
+     * an error message and no success message
+     */
+    @Test
+    public void reorder_readOnlyTypeFirstThenFieldsOfEditableType_changesNothing() throws Exception {
+        final ContentType readOnlyType = newContentTypeEditorCanOnlyRead();
+        final ContentType editableType = newContentType();
+        final List<Field> posted = new ArrayList<>(textFields(readOnlyType, 1));
+        posted.addAll(reversed(textFields(editableType, 2)));
         final Map<String, Integer> before = storedSortOrders(posted);
 
         final ActionRequestImpl request = reorderRequest(editor, newOrder(posted));
@@ -279,6 +362,21 @@ public class EditFieldActionReorderTest {
      * user without portlets.
      */
     private static ContentType newContentType() throws DotDataException, DotSecurityException {
+        return newContentType(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT_PERMISSIONS);
+    }
+
+    /** Like {@link #newContentType()}, but the editor can only read the type. */
+    private static ContentType newContentTypeEditorCanOnlyRead() throws DotDataException, DotSecurityException {
+        return newContentType(PermissionAPI.PERMISSION_READ);
+    }
+
+    /**
+     * A new content type with its own permissions: everything for a separate role, the given
+     * permission for the editor, READ for the Content Types portlet user, nothing for the user
+     * without portlets.
+     */
+    private static ContentType newContentType(final int editorPermission)
+            throws DotDataException, DotSecurityException {
         final String suffix = String.valueOf(System.nanoTime());
         final ContentType type = new ContentTypeDataGen()
                 .name("EditFieldReorderType" + suffix)
@@ -291,12 +389,13 @@ public class EditFieldActionReorderTest {
         permissionAPI.removePermissions(type);
         savePermission(type, ownerRole, PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE
                 | PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS);
-        savePermission(type, APILocator.getRoleAPI().getUserRole(editor),
-                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT_PERMISSIONS);
+        savePermission(type, APILocator.getRoleAPI().getUserRole(editor), editorPermission);
         savePermission(type, APILocator.getRoleAPI().getUserRole(contentTypesPortletUser),
                 PermissionAPI.PERMISSION_READ);
 
-        assertTrue(permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, editor, true));
+        assertTrue(permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, editor, true));
+        assertEquals((editorPermission & PermissionAPI.PERMISSION_EDIT_PERMISSIONS) != 0,
+                permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, editor, true));
         assertFalse(permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
                 contentTypesPortletUser, true));
         assertFalse(permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, userWithoutPortlets, true));

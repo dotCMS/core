@@ -140,9 +140,8 @@ public final class FieldReorderHelper {
     /**
      * Loads the content type with the user's own permissions (which requires READ) and then
      * requires EDIT_PERMISSIONS on it. A missing type and a type the user cannot read or edit are
-     * rejected the same way, and the permission API's own message, which names the user and the
-     * type, is replaced by a fixed one. Any other failure to load the type is a data error and is
-     * not logged as a rejection.
+     * rejected the same way, with a fixed message. Any other failure to load the type is a data
+     * error and is not logged as a rejection.
      */
     private static ContentType findEditableType(final User user, final String contentTypeId)
             throws DotSecurityException, DotDataException {
@@ -193,7 +192,7 @@ public final class FieldReorderHelper {
 
     /**
      * Writes the single security log line for a rejected reorder and builds the exception to
-     * throw. Only the user id and a fixed reason are logged, never values from the request.
+     * throw. Logs the user id and a fixed reason.
      */
     private static DotSecurityException deny(final User user, final String reason) {
         final String userId = null == user ? "[not logged in]" : user.getUserId();

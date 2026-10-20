@@ -1,10 +1,10 @@
 package com.dotmarketing.portlets.cmsmaintenance.ajax;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.TestUserUtils;
@@ -17,7 +17,9 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.ajax.DwrWebContextRule;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.fixtask.FixTasksExecutor;
 import com.liferay.portal.model.User;
+import java.util.List;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -25,8 +27,9 @@ import org.junit.Test;
 
 /**
  * Integration tests for {@link CMSMaintenanceAjax} with real roles and layouts: every method
- * requires a CMS administrator who also has the Maintenance portlet. Only the methods that change
- * nothing are called here; the ones that delete data are covered by the unit tests.
+ * requires a CMS administrator who also has the Maintenance portlet. The methods that delete data
+ * are only called by users who are turned away; their allowed path is covered by the unit tests,
+ * so the shared test database keeps its data.
  */
 public class CMSMaintenanceAjaxIntegrationTest {
 
@@ -165,18 +168,65 @@ public class CMSMaintenanceAjaxIntegrationTest {
     /**
      * Method to test: {@link CMSMaintenanceAjax#getFixAssetsProgress()}
      * Given: a CMS administrator with the Maintenance portlet
-     * Expected: the call completes without an exception (the answer is {@code null} when no fix
-     * task has run)
+     * Expected: the results the fix tasks have gathered so far, or {@code null} when they have
+     * none
      */
     @Test
-    public void getFixAssetsProgress_allowsAdminWithPortlet() {
+    public void getFixAssetsProgress_allowsAdminWithPortlet() throws Exception {
+        final List<?> gathered = FixTasksExecutor.getInstance().getTasksresults();
+        final List<?> expected = gathered.isEmpty() ? null : gathered;
+
         dwrContext.loginAs(adminWithPortlet);
 
-        try {
-            new CMSMaintenanceAjax().getFixAssetsProgress();
-        } catch (final Exception e) {
-            fail("the fix assets progress must be readable by an administrator with the Maintenance portlet, got " + e);
-        }
+        assertEquals(expected, new CMSMaintenanceAjax().getFixAssetsProgress());
+    }
+
+    /**
+     * Method to test: {@link CMSMaintenanceAjax#removeOldVersions(String)}
+     * Given: a back-end user with the Maintenance portlet who is not a CMS administrator, then a
+     * CMS administrator without the portlet
+     * Expected: DotSecurityException for both, before any version is deleted (the cut-off date is
+     * far in the past, so nothing is lost if a call were let through)
+     */
+    @Test
+    public void removeOldVersions_requiresAdminWithMaintenancePortlet() {
+        dwrContext.loginAs(maintenancePortletUser);
+        assertThrows(DotSecurityException.class,
+                () -> new CMSMaintenanceAjax().removeOldVersions("01/01/1990"));
+
+        dwrContext.loginAs(adminWithoutPortlet);
+        assertThrows(DotSecurityException.class,
+                () -> new CMSMaintenanceAjax().removeOldVersions("01/01/1990"));
+    }
+
+    /**
+     * Method to test: {@link CMSMaintenanceAjax#cleanAssets()}
+     * Given: a back-end user with the Maintenance portlet who is not a CMS administrator, then a
+     * CMS administrator without the portlet
+     * Expected: DotSecurityException for both; no clean-assets status is returned
+     */
+    @Test
+    public void cleanAssets_requiresAdminWithMaintenancePortlet() {
+        dwrContext.loginAs(maintenancePortletUser);
+        assertThrows(DotSecurityException.class, () -> new CMSMaintenanceAjax().cleanAssets());
+
+        dwrContext.loginAs(adminWithoutPortlet);
+        assertThrows(DotSecurityException.class, () -> new CMSMaintenanceAjax().cleanAssets());
+    }
+
+    /**
+     * Method to test: {@link CMSMaintenanceAjax#deletePushedAssets()}
+     * Given: a back-end user with the Maintenance portlet who is not a CMS administrator, then a
+     * CMS administrator without the portlet
+     * Expected: DotSecurityException for both, not a result text
+     */
+    @Test
+    public void deletePushedAssets_requiresAdminWithMaintenancePortlet() {
+        dwrContext.loginAs(maintenancePortletUser);
+        assertThrows(DotSecurityException.class, () -> new CMSMaintenanceAjax().deletePushedAssets());
+
+        dwrContext.loginAs(adminWithoutPortlet);
+        assertThrows(DotSecurityException.class, () -> new CMSMaintenanceAjax().deletePushedAssets());
     }
 
     private static User user(final String label, final Role... roles) {

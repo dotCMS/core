@@ -50,6 +50,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import javax.annotation.Nullable;
 import javax.servlet.http.HttpServletRequest;
 
 
@@ -623,8 +624,10 @@ public class StructureAjax {
 	 *
 	 * @param id inode of the content type
 	 * @return the content type properties, or {@code null}
-	 * @throws DotDataException     kept for the existing callers
-	 * @throws DotSecurityException kept for the existing callers
+	 * @throws DotDataException     declared by the signature; not thrown by the current
+	 *                              implementation
+	 * @throws DotSecurityException declared by the signature; not thrown by the current
+	 *                              implementation
 	 */
 	public Map<String, Object> fetchByIdentity(String id) throws DotDataException, DotSecurityException {
 		if (!canRead(loggedInUser(), id)) {
@@ -640,7 +643,8 @@ public class StructureAjax {
 	/**
 	 * Lists the containers that use a content type, shown before the type is deleted. A user who
 	 * cannot read the content type, or an unknown content type, gets no containers and a size of
-	 * zero, and the containers are not looked up.
+	 * zero, and the containers are not looked up. The containers are looked up with the inode of
+	 * the content type that was loaded for the READ check.
 	 *
 	 * @param structureInode inode of the content type
 	 * @return a map with the {@code containers} list and its {@code size}
@@ -653,14 +657,15 @@ public class StructureAjax {
 
 		Map<Object,Object> result = new HashMap<>();
 		List<Map<String,String>> containersList = new ArrayList<>();
-		if (!canRead(loggedInUser(), structureInode)) {
+		final ContentType readableType = findReadableType(loggedInUser(), structureInode);
+		if (null == readableType) {
 			result.put("containers", containersList);
 			result.put("size", 0);
 			return result;
 		}
 
 		// checking if there are containers using this structure
-		List<Container> containers=APILocator.getContainerAPI().findContainersForStructure(structureInode, true);
+		List<Container> containers=APILocator.getContainerAPI().findContainersForStructure(readableType.inode(), true);
 		Map<String, Container> containersInUse = new HashMap<>();		
 		
 		for(Container c : containers) {
@@ -693,38 +698,57 @@ public class StructureAjax {
 
 	}
 
+	/**
+	 * Returns the user of the current DWR request as resolved by {@link UserWebAPI}, or
+	 * {@code null} when nobody is logged in. The methods that return content type data use it, so
+	 * a request without a user gets the same empty answer as a type the user cannot read, and no
+	 * security log line is written for it. {@link #reorderfields(String, String)} resolves its
+	 * user with {@link DwrUtil#getLoggedInUser()} instead, which throws a
+	 * {@link DotSecurityException} when nobody is logged in.
+	 */
+	@Nullable
 	private User loggedInUser() {
 		return userWebAPI.getLoggedInUser(WebContextFactory.get().getHttpServletRequest());
 	}
 
 	/**
-	 * Tells whether the user may read a content type. The type is loaded with
+	 * Tells whether the user may read a content type: {@code true} when
+	 * {@link #findReadableType(User, String)} loads it.
+	 */
+	private boolean canRead(final User user, final String typeInode) {
+		return null != findReadableType(user, typeInode);
+	}
+
+	/**
+	 * Loads a content type the user may read. The type is loaded with
 	 * {@code ContentTypeAPI.find}, the same READ check {@link #getKeyStructureFields(String)} and
 	 * {@link #getStructureCategories(String)} rely on; for content types it honours front-end
 	 * roles, unlike the older check in {@link #getStructureDetails(String)}.
 	 * {@link #getCategoriesTree(String, String)} does not use it, as that method also serves
 	 * front-end sessions and applies its own front-end role rule.
 	 * <p>No user, a blank or unknown id, a type the user cannot read, and a failure to load the
-	 * type all answer {@code false}, so an unknown id looks the same as a hidden one. Only a type
-	 * the user cannot read is a denial and writes one security log line. A failure to load the
-	 * type is logged as an error of this class, not as a denial. Neither line holds a value from
-	 * the request.</p>
+	 * type all answer {@code null}. Only a type the user cannot read is a denial and writes one
+	 * security log line. A failure to load the type is logged as a warning of this class, not as
+	 * a denial. Neither line holds a value from the request.</p>
+	 *
+	 * @return the content type, or {@code null} in any of the cases above
 	 */
-	private boolean canRead(final User user, final String typeInode) {
+	@Nullable
+	private ContentType findReadableType(@Nullable final User user, final String typeInode) {
 		if (null == user || !UtilMethods.isSet(typeInode)) {
-			return false;
+			return null;
 		}
 		try {
-			return null != APILocator.getContentTypeAPI(user).find(typeInode);
+			return APILocator.getContentTypeAPI(user).find(typeInode);
 		} catch (final NotFoundInDbException e) {
-			return false;
+			return null;
 		} catch (final DotSecurityException e) {
 			logReadDenied(user);
-			return false;
+			return null;
 		} catch (final DotDataException e) {
 			Logger.warn(StructureAjax.class,
 					"The content type could not be loaded to check READ permission", e);
-			return false;
+			return null;
 		}
 	}
 

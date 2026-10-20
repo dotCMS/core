@@ -20,6 +20,7 @@ import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
 import com.dotmarketing.util.Logger;
@@ -53,6 +54,8 @@ class ImportContentletAjaxTest {
     private String importOwner;
     /** Status stored in the audit row of {@link #IMPORT_ID}. */
     private int importStatus = ImportAuditUtil.STATUS_PENDING;
+    /** Whether reading the owner of an import fails with a data error. */
+    private boolean ownerLookupFails;
 
     /** Names of the {@link SecurityLogger} methods called during a test. */
     private final List<String> securityLoggerCalls = new ArrayList<>();
@@ -84,7 +87,12 @@ class ImportContentletAjaxTest {
                 (mock, context) -> {
                     final List<Map<String, Object>> rows = importOwner == null
                             ? List.of() : List.of(Map.of("userid", importOwner));
-                    when(mock.loadObjectResults()).thenAnswer(invocation -> rows);
+                    when(mock.loadObjectResults()).thenAnswer(invocation -> {
+                        if (ownerLookupFails) {
+                            throw new DotDataException("the import audit table could not be read");
+                        }
+                        return rows;
+                    });
                     when(mock.loadResults()).thenAnswer(invocation -> new ArrayList<>(rows));
                     when(mock.getString("userid")).thenAnswer(invocation -> importOwner);
                     when(mock.getInt("status")).thenAnswer(
@@ -256,5 +264,88 @@ class ImportContentletAjaxTest {
         new ImportContentletAjax().checkImportStatus(IMPORT_ID);
 
         securityLogger.verifyNoInteractions();
+    }
+
+    /**
+     * Given: a user who is not a CMS administrator, and an import audit table that cannot be read
+     * when the owner of the import is looked up
+     * When: cancelImport is called
+     * Then: the data error reaches the caller as a DotDataException, not as a denial: the import
+     * is not cancelled and nothing is written to the security log
+     */
+    @Test
+    void cancelImport_ownerLookupDataErrorIsNotReportedAsDenial() throws Exception {
+        givenLoggedInUser(false);
+        importOwner = CALLER_ID;
+        ownerLookupFails = true;
+
+        assertThrows(DotDataException.class, () -> new ImportContentletAjax().cancelImport(IMPORT_ID));
+        assertImportNotCancelled();
+        securityLogger.verifyNoInteractions();
+    }
+
+    /**
+     * Given: a user who is not a CMS administrator, and an import audit table that cannot be read
+     * when the owner of the import is looked up
+     * When: checkImportStatus is called
+     * Then: the data error reaches the caller as a DotDataException instead of the import being
+     * reported as finished, and nothing is written to the security log
+     */
+    @Test
+    void checkImportStatus_ownerLookupDataErrorIsNotReportedAsFinished() throws Exception {
+        givenLoggedInUser(false);
+        importOwner = CALLER_ID;
+        ownerLookupFails = true;
+
+        assertThrows(DotDataException.class,
+                () -> new ImportContentletAjax().checkImportStatus(IMPORT_ID));
+        securityLogger.verifyNoInteractions();
+    }
+
+    /**
+     * Given: an import id with no audit record and a user who is not a CMS administrator
+     * When: checkImportStatus is called
+     * Then: true is returned, the same answer as for an import of another user, and no status is
+     * read
+     */
+    @Test
+    void checkImportStatus_unknownIdReportsFinished() throws Exception {
+        givenLoggedInUser(false);
+        importOwner = null;
+
+        assertTrue(new ImportContentletAjax().checkImportStatus(IMPORT_ID));
+        importAudit.verify(() -> ImportAuditUtil.isImportfinished(anyLong()), never());
+        securityLogger.verifyNoInteractions();
+    }
+
+    /**
+     * Given: no import id and a user who is not a CMS administrator
+     * When: checkImportStatus is called
+     * Then: true is returned, the same answer as for an import of another user, and no status is
+     * read
+     */
+    @Test
+    void checkImportStatus_nullIdReportsFinished() throws Exception {
+        givenLoggedInUser(false);
+        importOwner = "another-user";
+
+        assertTrue(new ImportContentletAjax().checkImportStatus(null));
+        importAudit.verify(() -> ImportAuditUtil.isImportfinished(anyLong()), never());
+        securityLogger.verifyNoInteractions();
+    }
+
+    /**
+     * Given: a pending import started by another user, and a CMS administrator as caller
+     * When: checkImportStatus is called
+     * Then: the stored status is read and false is returned (still running)
+     */
+    @Test
+    void checkImportStatus_returnsStatusToAdmin() throws Exception {
+        givenLoggedInUser(true);
+        importOwner = "another-user";
+        importStatus = ImportAuditUtil.STATUS_PENDING;
+
+        assertFalse(new ImportContentletAjax().checkImportStatus(IMPORT_ID));
+        importAudit.verify(() -> ImportAuditUtil.isImportfinished(IMPORT_ID));
     }
 }

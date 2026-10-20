@@ -69,6 +69,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.mockito.MockedStatic;
 import org.mockito.invocation.Invocation;
 
@@ -88,6 +89,10 @@ class StructureAjaxTest {
     private static final String FIELD_B1 = "field-b1-inode";
     private static final String SELECT_FIELD = "select-field-inode";
     private static final String UNKNOWN_FIELD = "unknown-field-inode";
+    /** The text getStructureFields returns for a type without fields. */
+    private static final String NO_FIELDS = "[  ]";
+    /** The answer reorderfields gives when the fields could not be reordered. */
+    private static final String REORDER_FAILED = "Fields-could-not-be-reorderd";
 
     private final HttpServletRequest request = mock(HttpServletRequest.class);
     private final UserWebAPI userWebAPI = mock(UserWebAPI.class);
@@ -379,9 +384,9 @@ class StructureAjaxTest {
      * Given: a user with EDIT_PERMISSIONS on the content type, and a content type lookup that
      * fails with a data error (not a missing type)
      * When: reorderfields is called
-     * Then: the data error is not reported as a denial: no DotSecurityException and no security
-     * log entry; the caller gets either a non-security exception or the "could not be
-     * reordered" text, and nothing is saved
+     * Then: the data error is not reported as a denial: no exception reaches the caller, the
+     * answer is the "could not be reordered" text, nothing goes to the security log and nothing
+     * is saved
      */
     @Test
     void reorderfields_typeLookupDataErrorIsNotReportedAsDenial() throws Exception {
@@ -389,19 +394,11 @@ class StructureAjaxTest {
         givenPermissionOnTypeA(PERMISSION_EDIT_PERMISSIONS, true);
         when(contentTypeAPI.find(TYPE_A)).thenThrow(new DotDataException("content type could not be loaded"));
 
-        String answer = null;
-        Exception failure = null;
-        try {
-            answer = new StructureAjax().reorderfields(TYPE_A, FIELD_A1 + " @ 2," + FIELD_A2 + " @ 1");
-        } catch (final Exception e) {
-            failure = e;
-        }
+        final String answer = assertDoesNotThrow(() -> new StructureAjax()
+                        .reorderfields(TYPE_A, FIELD_A1 + " @ 2," + FIELD_A2 + " @ 1"),
+                "a data error while loading the content type must not reach the caller as an exception");
 
-        assertFalse(failure instanceof DotSecurityException,
-                "a data error while loading the content type must not be answered as a denial, got " + failure);
-        if (null == failure) {
-            assertEquals("Fields-could-not-be-reorderd", answer);
-        }
+        assertEquals(REORDER_FAILED, answer);
         assertTrue(securityLoggerCalls.isEmpty(),
                 "a data error must not write to the security log, got " + securityLoggerCalls);
         assertNothingSaved();
@@ -455,6 +452,169 @@ class StructureAjaxTest {
     }
 
     /**
+     * Given: a user with EDIT_PERMISSIONS on the content type and an empty or missing list
+     * When: reorderfields is called
+     * Then: the request is not denied (no exception, no security log entry) and nothing is saved
+     */
+    @ParameterizedTest(name = "list: [{0}]")
+    @NullAndEmptySource
+    void reorderfields_emptyListSavesNothing(final String inodeList) throws Exception {
+        givenPermissionOnTypeA(PERMISSION_READ, true);
+        givenPermissionOnTypeA(PERMISSION_EDIT_PERMISSIONS, true);
+
+        assertDoesNotThrow(() -> new StructureAjax().reorderfields(TYPE_A, inodeList));
+
+        assertNothingSaved();
+        assertTrue(securityLoggerCalls.isEmpty(),
+                "an empty list is not a denial, got " + securityLoggerCalls);
+    }
+
+    /**
+     * Given: a user with EDIT_PERMISSIONS on the content type and a list where one entry has no
+     * {@code " @ "} separator
+     * When: reorderfields is called
+     * Then: that entry is skipped and the other entries are saved with their sort order
+     */
+    @Test
+    void reorderfields_skipsEntryWithoutSeparator() throws Exception {
+        givenPermissionOnTypeA(PERMISSION_READ, true);
+        givenPermissionOnTypeA(PERMISSION_EDIT_PERMISSIONS, true);
+
+        new StructureAjax().reorderfields(TYPE_A, FIELD_A1 + "@2," + FIELD_A2 + " @ 1");
+
+        assertEquals(Map.of(FIELD_A2, 1), savedSortOrders());
+        assertTrue(securityLoggerCalls.isEmpty(),
+                "a skipped entry is not a denial, got " + securityLoggerCalls);
+    }
+
+    /**
+     * Given: a user with EDIT_PERMISSIONS on the content type and a list where one entry has the
+     * separator but no sort order ({@code "<inode> @ "})
+     * When: reorderfields is called
+     * Then: that entry is skipped, no sort order is saved for its field, and the other entries are
+     * saved
+     */
+    @Test
+    void reorderfields_skipsEntryWithBlankSortOrder() throws Exception {
+        givenPermissionOnTypeA(PERMISSION_READ, true);
+        givenPermissionOnTypeA(PERMISSION_EDIT_PERMISSIONS, true);
+
+        new StructureAjax().reorderfields(TYPE_A, FIELD_A1 + " @ ," + FIELD_A2 + " @ 3");
+
+        assertEquals(Map.of(FIELD_A2, 3), savedSortOrders());
+    }
+
+    /**
+     * Given: a user with EDIT_PERMISSIONS on the content type and a negative sort order
+     * When: reorderfields is called
+     * Then: the negative sort order is saved as sent
+     */
+    @Test
+    void reorderfields_savesNegativeSortOrderAsSent() throws Exception {
+        givenPermissionOnTypeA(PERMISSION_READ, true);
+        givenPermissionOnTypeA(PERMISSION_EDIT_PERMISSIONS, true);
+
+        new StructureAjax().reorderfields(TYPE_A, FIELD_A1 + " @ -3," + FIELD_A2 + " @ 1");
+
+        assertEquals(Map.of(FIELD_A1, -3, FIELD_A2, 1), savedSortOrders());
+    }
+
+    /**
+     * Given: a user with EDIT_PERMISSIONS on the content type and a sort order too large for an
+     * int
+     * When: reorderfields is called
+     * Then: the "could not be reordered" text is returned, nothing is saved, not even the valid
+     * entry, and nothing is written to the security log
+     */
+    @Test
+    void reorderfields_sortOrderOutOfIntRangeSavesNothing() throws Exception {
+        givenPermissionOnTypeA(PERMISSION_READ, true);
+        givenPermissionOnTypeA(PERMISSION_EDIT_PERMISSIONS, true);
+
+        final String answer = new StructureAjax()
+                .reorderfields(TYPE_A, FIELD_A1 + " @ 2," + FIELD_A2 + " @ 99999999999");
+
+        assertEquals(REORDER_FAILED, answer);
+        assertNothingSaved();
+        assertTrue(securityLoggerCalls.isEmpty(),
+                "a sort order out of range is not a denial, got " + securityLoggerCalls);
+    }
+
+    /**
+     * Given: a user with EDIT_PERMISSIONS on type A, and no content type inode (the content type
+     * API answers {@code null} for it)
+     * When: reorderfields is called with fields of type A
+     * Then: a DotSecurityException is thrown, nothing is saved and the denial is recorded once in
+     * the security log
+     */
+    @Test
+    void reorderfields_rejectsMissingTypeInode() throws Exception {
+        givenPermissionOnTypeA(PERMISSION_READ, true);
+        givenPermissionOnTypeA(PERMISSION_EDIT_PERMISSIONS, true);
+
+        assertThrows(DotSecurityException.class,
+                () -> new StructureAjax().reorderfields(null, FIELD_A1 + " @ 2"));
+        assertNothingSaved();
+        assertOneSecurityLogEntry();
+    }
+
+    /**
+     * Given: an inode that resolves to no content type
+     * When: checkDependencies is called
+     * Then: size is 0, containers is empty, the containers are not looked up and nothing is
+     * written to the security log
+     */
+    @Test
+    void checkDependencies_unknownTypeListsNoContainers() throws Exception {
+        final Map<Object, Object> result = new StructureAjax().checkDependencies(UNKNOWN_TYPE);
+
+        assertEquals(0, result.get("size"));
+        assertEquals(List.of(), result.get("containers"));
+        verify(containerAPI, never()).findContainersForStructure(anyString(), anyBoolean());
+        verify(containerAPI, never()).findContainersForStructure(anyString());
+        assertTrue(securityLoggerCalls.isEmpty(), "got " + securityLoggerCalls);
+    }
+
+    /**
+     * Given: an inode that resolves to no content type
+     * When: getStructureFields is called
+     * Then: the text of a type without fields, {@code "[  ]"}, is returned
+     */
+    @Test
+    void getStructureFields_unknownTypeReturnsNoFields() {
+        assertEquals(NO_FIELDS, new StructureAjax().getStructureFields(UNKNOWN_TYPE));
+        assertTrue(securityLoggerCalls.isEmpty(), "got " + securityLoggerCalls);
+    }
+
+    /**
+     * Given: an inode that resolves to no content type
+     * When: getSearchableStructureFields is called
+     * Then: an empty list is returned
+     */
+    @Test
+    void getSearchableStructureFields_unknownTypeReturnsEmptyList() {
+        final List<Map> fields = new StructureAjax().getSearchableStructureFields(UNKNOWN_TYPE);
+
+        assertNotNull(fields);
+        assertTrue(fields.isEmpty(), "no field must be returned, got " + fields);
+        assertTrue(securityLoggerCalls.isEmpty(), "got " + securityLoggerCalls);
+    }
+
+    /**
+     * Given: a variable name that is no content type
+     * When: getCategoriesTree is called
+     * Then: an empty list is returned and no category is looked up
+     */
+    @Test
+    void getCategoriesTree_unknownVariableNameReturnsEmptyList() throws Exception {
+        final List<Map<String, Object>> tree = new StructureAjax().getCategoriesTree("unknownType", ".*");
+
+        assertTrue(tree.isEmpty(), "no category must be returned, got " + tree);
+        verify(categoryAPI, never()).find(anyString(), any(User.class), anyBoolean());
+        assertTrue(securityLoggerCalls.isEmpty(), "got " + securityLoggerCalls);
+    }
+
+    /**
      * Given: a user without READ on the content type
      * When: fetchByIdentity is called
      * Then: null is returned
@@ -486,16 +646,13 @@ class StructureAjaxTest {
     /**
      * Given: a user without READ on the content type
      * When: getStructureFields is called
-     * Then: no field of the type is returned
+     * Then: the text of a type without fields, {@code "[  ]"}, is returned
      */
     @Test
     void getStructureFields_requiresReadOnType() throws Exception {
         givenPermissionOnTypeA(PERMISSION_READ, false);
 
-        final String fields = new StructureAjax().getStructureFields(TYPE_A);
-
-        assertFalse(fields != null && fields.contains(FIELD_A1),
-                "no field data must be returned, got " + fields);
+        assertEquals(NO_FIELDS, new StructureAjax().getStructureFields(TYPE_A));
     }
 
     /**

@@ -49,10 +49,15 @@ public class ImportContentletAjaxIntegrationTest {
         admin = TestUserUtils.getAdminUser();
     }
 
+    /** Deletes the test users, handing whatever they own to the admin user. */
     @AfterClass
-    public static void removeUsers() {
-        UserDataGen.remove(owner);
-        UserDataGen.remove(otherUser);
+    public static void removeUsers() throws Exception {
+        final User replacement = TestUserUtils.getAdminUser();
+        for (final User user : new User[]{owner, otherUser}) {
+            if (null != user) {
+                APILocator.getUserAPI().delete(user, replacement, APILocator.systemUser(), false);
+            }
+        }
     }
 
     @After
@@ -174,6 +179,45 @@ public class ImportContentletAjaxIntegrationTest {
         dwrContext.loginAs(owner);
 
         assertFalse(new ImportContentletAjax().checkImportStatus(importId));
+    }
+
+    /**
+     * Method to test: {@link ImportContentletAjax#checkImportStatus(Long)}
+     * Given: an id with no import row, polled by a user who is not a CMS administrator
+     * Expected: {@code true}, the same answer as for another user's import
+     */
+    @Test
+    public void checkImportStatus_unknownIdReportsFinished() throws Exception {
+        dwrContext.loginAs(otherUser);
+
+        assertTrue(new ImportContentletAjax().checkImportStatus(UNKNOWN_IMPORT_ID));
+    }
+
+    /**
+     * Method to test: {@link ImportContentletAjax#checkImportStatus(Long)}
+     * Given: no import id, polled by a user who is not a CMS administrator
+     * Expected: {@code true}, the same answer as for another user's import
+     */
+    @Test
+    public void checkImportStatus_nullIdReportsFinished() throws Exception {
+        dwrContext.loginAs(otherUser);
+
+        assertTrue(new ImportContentletAjax().checkImportStatus(null));
+    }
+
+    /**
+     * Method to test: {@link ImportContentletAjax#checkImportStatus(Long)}
+     * Given: a pending import of another user, polled by a CMS administrator
+     * Expected: {@code false} (still running), and the import stays pending
+     */
+    @Test
+    public void checkImportStatus_returnsStatusToAdmin() throws Exception {
+        final long importId = pendingImportOf(owner.getUserId());
+
+        dwrContext.loginAs(admin);
+
+        assertFalse(new ImportContentletAjax().checkImportStatus(importId));
+        assertEquals(ImportAuditUtil.STATUS_PENDING, storedStatus(importId));
     }
 
     private static User backendUser(final String label) throws DotDataException {
