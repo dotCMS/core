@@ -398,7 +398,7 @@ public class CompletionsToolTest {
      * Feature: Explicit opt-in for raw completions (#37153, AC-003 / AC-004)
      * Scenario: the three raw overloads on the unsafe construction
      * When each overload is called with escaping off
-     * Then the model text is the literal markup, raw(JSONObject) is byte-for-byte the CompletionsAPI result,
+     * Then the model text is the literal markup, raw(JSONObject) matches the CompletionsAPI result apart from the per-call timestamps,
      * and the default payload differs from it only by Encode.forHtml on string leaves
      */
     @Test
