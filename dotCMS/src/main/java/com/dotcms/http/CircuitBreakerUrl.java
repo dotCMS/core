@@ -41,6 +41,7 @@ import net.jodah.failsafe.FailsafeException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.http.Header;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
 import org.apache.http.ProtocolException;
@@ -56,6 +57,7 @@ import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.protocol.HttpCoreContext;
 
 /**
  * Defaults to GET requests with 2000 timeout
@@ -658,16 +660,21 @@ public class CircuitBreakerUrl {
         public URI getLocationURI(final HttpRequest request, final HttpResponse response,
                                   final HttpContext context) throws ProtocolException {
             final URI location = super.getLocationURI(request, response, context);
-            checkRedirectTarget(location, allowAccessToPrivateSubnets.get());
+            final HttpHost target = context == null ? null : HttpCoreContext.adapt(context).getTargetHost();
+            final String originScheme = target == null ? null : target.getSchemeName();
+            checkRedirectTarget(location, allowAccessToPrivateSubnets.get(), originScheme);
             return location;
         }
 
         @VisibleForTesting
-        static void checkRedirectTarget(final URI location, final boolean allowPrivateSubnets)
-                throws ProtocolException {
+        static void checkRedirectTarget(final URI location, final boolean allowPrivateSubnets,
+                                        final String originScheme) throws ProtocolException {
             final String scheme = location.getScheme() == null ? "" : location.getScheme().toLowerCase();
             if (!"http".equals(scheme) && !"https".equals(scheme)) {
                 throw new ProtocolException("Redirect to scheme '" + scheme + "' is not allowed");
+            }
+            if ("https".equalsIgnoreCase(originScheme) && "http".equals(scheme)) {
+                throw new ProtocolException("Redirect from https to http is not followed: " + location.getHost());
             }
             if (!allowPrivateSubnets && IPUtils.isIpPrivateSubnet(location.getHost())) {
                 throw new ProtocolException("Remote HttpRequests cannot be redirected to private subnets: "

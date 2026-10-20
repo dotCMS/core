@@ -589,6 +589,8 @@ public class DotAuthResource {
             }
             final String body = fetchValidated(url, MediaType.APPLICATION_JSON,
                     OIDC_DISCOVERY_MAX_RESPONSE_BYTES);
+            SecurityLogger.logInfo(DotAuthResource.class,
+                    String.format("User %s fetched OIDC discovery document from %s", user.getUserId(), url));
             final JsonNode doc = MAPPER.readTree(body);
             final Map<String, Object> entity = Map.of(
                     "issuer", text(doc, "issuer"),
@@ -1047,6 +1049,10 @@ public class DotAuthResource {
             if (status < 200 || status >= 300) {
                 throw new BadRequestException(String.format("Got invalid response for url: [%s] response: [%d]",
                         current, status));
+            }
+            if (!current.equals(url)) {
+                SecurityLogger.logInfo(DotAuthResource.class,
+                        String.format("Fetch for %s ended at %s after redirects", url, current));
             }
             return body;
         }
