@@ -38,9 +38,11 @@ import java.util.function.LongSupplier;
  *     IPv6 addresses are grouped by their /64 prefix, which one host can rotate through. WebDAV is
  *     counted apart from other logins ({@value #WEBDAV_SOURCE_PREFIX}address), so a mounted drive
  *     retrying a stale password locks only WebDAV from that machine.</li>
- *     <li><b>Per account, all addresses together</b> (source {@value #ACCOUNT_WIDE}). A looser backstop:
- *     once failures from every address add up to {@code AUTH_LOCKOUT_ACCOUNT_MAX_FAILURES} within the
- *     window, the account is locked for everyone. This caps guessing spread over many addresses.</li>
+ *     <li><b>Per account, all addresses together</b> (source {@value #ACCOUNT_WIDE}). An optional, looser
+ *     backstop, off by default: once failures from every address add up to
+ *     {@code AUTH_LOCKOUT_ACCOUNT_MAX_FAILURES} within the window, the account is locked for everyone. It
+ *     caps guessing spread over many addresses, but anyone who knows a login name can then trigger it, so
+ *     it is opt-in.</li>
  * </ul>
  * An attempt is counted against its address before the password is checked ({@link #begin}), so
  * parallel requests cannot all pass a check made before any of them was counted. Locks last a fixed
@@ -64,7 +66,7 @@ import java.util.function.LongSupplier;
  *     <li>{@code FEATURE_FLAG_AUTH_LOGIN_LOCKOUT} (default {@code true})</li>
  *     <li>{@code auth.max.failures.limit}: attempts per address (portal property, default 5)</li>
  *     <li>{@code AUTH_LOCKOUT_ACCOUNT_MAX_FAILURES}: failures per account from all addresses
- *     (default 100; 0 switches the account-wide lock off)</li>
+ *     (default 0, which leaves the account-wide lock off)</li>
  *     <li>{@code AUTH_LOCKOUT_WINDOW_SECONDS}: how long attempts are counted together (default 3600)</li>
  *     <li>{@code AUTH_LOCKOUT_DURATION_SECONDS}: lock length (default 900)</li>
  * </ul>
@@ -203,10 +205,11 @@ public final class LoginLockout {
     }
 
     /**
-     * @return the failure limit for an account from all addresses together, 0 or less when switched off
+     * @return the failure limit for an account from all addresses together; 0 or less (the default) leaves the
+     * account-wide lock off
      */
     public static int accountMaxFailures() {
-        return Config.getIntProperty(LOCKOUT_ACCOUNT_MAX_FAILURES, 100);
+        return Config.getIntProperty(LOCKOUT_ACCOUNT_MAX_FAILURES, 0);
     }
 
     /**

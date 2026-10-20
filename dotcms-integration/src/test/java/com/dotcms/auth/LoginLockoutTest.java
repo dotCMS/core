@@ -336,6 +336,31 @@ public class LoginLockoutTest {
     }
 
     /**
+     * Given: the default configuration, where the account-wide limit is off
+     * When: two addresses each use up their attempts
+     * Then: only those addresses are locked out; nothing is counted account-wide, and an address that never
+     *       failed still gets in
+     */
+    @Test
+    public void test_account_wide_limit_is_off_by_default() throws Exception {
+        assertEquals(0, LoginLockout.accountMaxFailures());
+        final User user = newUser();
+        try {
+            failLogins(user, LIMIT);
+            from(OTHER_ADDRESS);
+            failLogins(user, LIMIT);
+            assertTrue(lockedFrom(user, ADDRESS));
+            assertTrue(lockedFrom(user, OTHER_ADDRESS));
+            assertFalse(lockoutRows(user).containsKey(LoginLockout.ACCOUNT_WIDE));
+
+            from(THIRD_ADDRESS);
+            assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
      * Given: an account-wide limit of 8 and a per-address limit of 5
      * When: two addresses each fail 4 times, so no single address reaches its limit
      * Then: the account is locked for every address, including one that never failed, until a new password is set

@@ -12,8 +12,11 @@ the same counts and locks.
   - IPv6 addresses are grouped by their /64 network, since one host can usually use any address in it.
   - WebDAV is counted on its own (`webdav:<address>`), so a mounted drive retrying a stale password locks
     only WebDAV from that machine, not backend logins.
-- **Per account, all addresses together.** Once failures from every address add up to
-  `AUTH_LOCKOUT_ACCOUNT_MAX_FAILURES` within the window, the account is locked for every address.
+- **Per account, all addresses together (opt-in, off by default).** When `AUTH_LOCKOUT_ACCOUNT_MAX_FAILURES`
+  is set above 0 and failures from every address add up to it within the window, the account is locked for
+  every address. It caps guessing spread over many addresses, but anyone who knows a login name can trigger
+  it and keep that account, administrators included, locked for everyone. Enable it only if that trade-off
+  suits the site.
 - **Fixed length.** Locks last `AUTH_LOCKOUT_DURATION_SECONDS` and do not grow. A count that ages out of
   the window, or whose lock has run out, starts over.
 - **Counted before the check.** Each attempt is counted before its password is checked, so parallel
@@ -36,7 +39,7 @@ they are neither counted nor blocked.
 |---|---|---|
 | `FEATURE_FLAG_AUTH_LOGIN_LOCKOUT` | `true` | Turns lockout on or off. Env var: `DOT_FEATURE_FLAG_AUTH_LOGIN_LOCKOUT`. |
 | `auth.max.failures.limit` | `5` | Attempts per address and account in a window (portal property). `0` also turns lockout off. |
-| `AUTH_LOCKOUT_ACCOUNT_MAX_FAILURES` | `100` | Failures per account from all addresses in a window. `0` turns the account-wide lock off. |
+| `AUTH_LOCKOUT_ACCOUNT_MAX_FAILURES` | `0` (off) | Failures per account from all addresses in a window before the account is locked for everyone. Set above 0 to enable. |
 | `AUTH_LOCKOUT_WINDOW_SECONDS` | `3600` | How long attempts are counted together. |
 | `AUTH_LOCKOUT_DURATION_SECONDS` | `900` | Lock length. |
 
@@ -54,7 +57,8 @@ accounts, or the address is an untrusted proxy.
 ## Support runbook: a user is locked out
 
 1. **Try another network, or wait.** Locks are per address and last 15 minutes by default, so the user can
-   log in from another network or wait. Only the account-wide limit blocks every address.
+   log in from another network or wait. Only the account-wide limit, if a site has enabled it, blocks every
+   address.
 2. **Unlock now:** reset the password through the "Forgot password" email, or have an administrator set a
    new password in Users. Either clears all lockout state for the account.
 3. **Unlock without changing the password:** with database access, clear the state directly.
