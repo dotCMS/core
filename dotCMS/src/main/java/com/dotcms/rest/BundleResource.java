@@ -41,6 +41,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
@@ -394,7 +395,12 @@ public class BundleResource {
 	private Permissionable findPermissionable(final String assetId) {
 		final ContentType contentType = Try.of(() ->
 				APILocator.getContentTypeAPI(APILocator.systemUser()).find(assetId)).getOrNull();
-		return contentType != null ? contentType
+		if (contentType != null) {
+			return contentType;
+		}
+		final Link link = Try.of(() -> APILocator.getMenuLinkAPI()
+				.findWorkingLinkById(assetId, APILocator.systemUser(), false)).getOrNull();
+		return link != null ? link
 				: Try.of(() -> new AssetPermissionHelper().resolveAsset(assetId)).getOrNull();
 	}
 

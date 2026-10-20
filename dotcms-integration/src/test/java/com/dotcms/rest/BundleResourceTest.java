@@ -18,6 +18,9 @@ import com.dotcms.datagen.BundleDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.EnvironmentDataGen;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.LayoutDataGen;
+import com.dotcms.datagen.LinkDataGen;
 import com.dotcms.datagen.PushPublishingEndPointDataGen;
 import com.dotcms.datagen.PushedAssetDataGen;
 import com.dotcms.datagen.RoleDataGen;
@@ -36,6 +39,9 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.Layout;
+import com.dotmarketing.portlets.links.model.Link;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -423,6 +429,50 @@ public class BundleResourceTest {
 
         final Response resp = bundleResource.deleteEnvironmentPushHistory(
                 mockRequestFor(APILocator.systemUser()), response, "environmentid/" + environment.getId());
+
+        assertEquals(200, resp.getStatus());
+        assertTrue(APILocator.getPushedAssetsAPI().getPushedAssets(contentlet.getIdentifier()).isEmpty());
+    }
+
+    @Test
+    public void test_deletePushHistory_linkEditor_deletesHistory() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole(), role)
+                .nextPersisted();
+        createdUsers.add(user);
+        final Host site = new SiteDataGen().nextPersisted();
+        final Link link = new LinkDataGen().hostId(site.getIdentifier())
+                .parent(new FolderDataGen().site(site).nextPersisted())
+                .target("https://www.dotcms.com").linkType("EXTERNAL").nextPersisted();
+        APILocator.getPermissionAPI().save(
+                new Permission(link.getPermissionId(), role.getId(),
+                        PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true),
+                link, APILocator.systemUser(), false);
+        pushHistoryFor(link.getIdentifier(), new EnvironmentDataGen().nextPersisted());
+
+        final Response resp = bundleResource.deletePushHistory(
+                mockRequestFor(user), response, "assetid/" + link.getIdentifier());
+
+        assertEquals(200, resp.getStatus());
+        assertTrue(APILocator.getPushedAssetsAPI().getPushedAssets(link.getIdentifier()).isEmpty());
+    }
+
+    @Test
+    public void test_deleteEnvironmentPushHistory_userWithConfigurationAccess_deletesHistory() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        final Layout layout = new LayoutDataGen().portletIds(PortletID.CONFIGURATION.toString()).nextPersisted();
+        APILocator.getRoleAPI().addLayoutToRole(layout, role);
+        final User user = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole(), role)
+                .nextPersisted();
+        createdUsers.add(user);
+        final Contentlet contentlet = newContentlet();
+        final Environment environment = new EnvironmentDataGen().nextPersisted();
+        pushHistoryFor(contentlet.getIdentifier(), environment);
+
+        final Response resp = bundleResource.deleteEnvironmentPushHistory(
+                mockRequestFor(user), response, "environmentid/" + environment.getId());
 
         assertEquals(200, resp.getStatus());
         assertTrue(APILocator.getPushedAssetsAPI().getPushedAssets(contentlet.getIdentifier()).isEmpty());
