@@ -26,7 +26,9 @@ import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.manifest.ManifestUtil;
 import com.dotcms.publishing.output.TarGzipBundleOutput;
 import org.apache.commons.io.IOUtils;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.system.permission.AssetPermissionHelper;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.NotFoundException;
@@ -34,12 +36,16 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.rest.param.ISODateParam;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
@@ -100,6 +106,7 @@ import static com.dotcms.publisher.business.PublishAuditStatus.Status.SUCCESS_WI
 public class BundleResource {
 
     public  static final String BUNDLE_THREAD_POOL_SUBMITTER_NAME = "bundlepolling";
+    private static final String CONFIGURATION_BETA_PORTLET_ID = "configuration-beta";
     private final WebResource            webResource            = new WebResource();
     private final BundleAPI              bundleAPI              = APILocator.getBundleAPI();
     private final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
@@ -324,6 +331,7 @@ public class BundleResource {
                 return responseResource.response( "false" );
 			}
 
+			checkCanEditAsset(initData.getUser(), assetId);
 			APILocator.getPushedAssetsAPI().deletePushedAssets(assetId);
 
 		} catch (DotDataException e) {
@@ -358,6 +366,7 @@ public class BundleResource {
                 return responseResource.response( "false" );
 			}
 
+			checkCanManageEnvironments(initData.getUser());
 			APILocator.getPushedAssetsAPI().deletePushedAssetsByEnvironment(environmentId);
 
 		} catch (DotDataException e) {
@@ -366,6 +375,39 @@ public class BundleResource {
 		}
 
         return responseResource.response( "true" );
+	}
+
+	private void checkCanEditAsset(final User user, final String assetId) throws DotDataException {
+		if (user.isAdmin()) {
+			return;
+		}
+		final Permissionable asset = findPermissionable(assetId);
+		final boolean canEdit = asset != null && APILocator.getPermissionAPI()
+				.doesUserHavePermission(asset, PermissionAPI.PERMISSION_EDIT, user, false);
+		if (!canEdit) {
+			throw new ForbiddenException(String.format(
+					"User '%s' is not allowed to delete the push history of asset '%s'",
+					user.getUserId(), assetId));
+		}
+	}
+
+	private Permissionable findPermissionable(final String assetId) {
+		final ContentType contentType = Try.of(() ->
+				APILocator.getContentTypeAPI(APILocator.systemUser()).find(assetId)).getOrNull();
+		return contentType != null ? contentType
+				: Try.of(() -> new AssetPermissionHelper().resolveAsset(assetId)).getOrNull();
+	}
+
+	private void checkCanManageEnvironments(final User user) throws DotDataException {
+		final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+		final boolean canManage = user.isAdmin()
+				|| layoutAPI.doesUserHaveAccessToPortlet(PortletID.CONFIGURATION.toString(), user)
+				|| layoutAPI.doesUserHaveAccessToPortlet(CONFIGURATION_BETA_PORTLET_ID, user);
+		if (!canManage) {
+			throw new ForbiddenException(String.format(
+					"User '%s' is not allowed to delete the push history of an environment",
+					user.getUserId()));
+		}
 	}
 
     /**

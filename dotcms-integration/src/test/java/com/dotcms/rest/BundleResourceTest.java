@@ -13,7 +13,23 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.BundleDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.EnvironmentDataGen;
+import com.dotcms.datagen.PushPublishingEndPointDataGen;
+import com.dotcms.datagen.PushedAssetDataGen;
+import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.publisher.environment.bean.Environment;
+import com.dotcms.publisher.pusher.PushPublisher;
+import com.dotcms.publisher.util.PusheableAsset;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -351,5 +367,82 @@ public class BundleResourceTest {
                 mockRequestFor(APILocator.systemUser()), response, "userid/" + userB.getUserId());
 
         assertEquals(200, resp.getStatus());
+    }
+
+    @Test
+    public void test_deletePushHistory_userWithoutEditPermission_isForbidden() throws Exception {
+        final User user = newBackendUser();
+        final Contentlet contentlet = newContentlet();
+        pushHistoryFor(contentlet.getIdentifier(), new EnvironmentDataGen().nextPersisted());
+
+        assertThrows(ForbiddenException.class, () -> bundleResource.deletePushHistory(
+                mockRequestFor(user), response, "assetid/" + contentlet.getIdentifier()));
+
+        assertFalse(APILocator.getPushedAssetsAPI().getPushedAssets(contentlet.getIdentifier()).isEmpty());
+    }
+
+    @Test
+    public void test_deletePushHistory_userWithEditPermission_deletesHistory() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole(), role)
+                .nextPersisted();
+        createdUsers.add(user);
+        final Contentlet contentlet = newContentlet();
+        APILocator.getPermissionAPI().save(
+                new Permission(contentlet.getPermissionId(), role.getId(),
+                        PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true),
+                contentlet, APILocator.systemUser(), false);
+        pushHistoryFor(contentlet.getIdentifier(), new EnvironmentDataGen().nextPersisted());
+
+        final Response resp = bundleResource.deletePushHistory(
+                mockRequestFor(user), response, "assetid/" + contentlet.getIdentifier());
+
+        assertEquals(200, resp.getStatus());
+        assertTrue(APILocator.getPushedAssetsAPI().getPushedAssets(contentlet.getIdentifier()).isEmpty());
+    }
+
+    @Test
+    public void test_deleteEnvironmentPushHistory_userWithoutConfigurationAccess_isForbidden() throws Exception {
+        final User user = newBackendUser();
+        final Contentlet contentlet = newContentlet();
+        final Environment environment = new EnvironmentDataGen().nextPersisted();
+        pushHistoryFor(contentlet.getIdentifier(), environment);
+
+        assertThrows(ForbiddenException.class, () -> bundleResource.deleteEnvironmentPushHistory(
+                mockRequestFor(user), response, "environmentid/" + environment.getId()));
+
+        assertFalse(APILocator.getPushedAssetsAPI().getPushedAssets(contentlet.getIdentifier()).isEmpty());
+    }
+
+    @Test
+    public void test_deleteEnvironmentPushHistory_admin_deletesHistory() throws Exception {
+        final Contentlet contentlet = newContentlet();
+        final Environment environment = new EnvironmentDataGen().nextPersisted();
+        pushHistoryFor(contentlet.getIdentifier(), environment);
+
+        final Response resp = bundleResource.deleteEnvironmentPushHistory(
+                mockRequestFor(APILocator.systemUser()), response, "environmentid/" + environment.getId());
+
+        assertEquals(200, resp.getStatus());
+        assertTrue(APILocator.getPushedAssetsAPI().getPushedAssets(contentlet.getIdentifier()).isEmpty());
+    }
+
+    private static Contentlet newContentlet() {
+        final Host site = new SiteDataGen().nextPersisted();
+        final ContentType contentType = new ContentTypeDataGen().host(site).nextPersisted();
+        return new ContentletDataGen(contentType.id()).host(site).nextPersisted();
+    }
+
+    private static void pushHistoryFor(final String assetId, final Environment environment) {
+        new PushedAssetDataGen()
+                .assetId(assetId)
+                .assetType(PusheableAsset.CONTENTLET.toString())
+                .bundle(new BundleDataGen().nextPersisted())
+                .publishingEndPoint(new PushPublishingEndPointDataGen().environment(environment).nextPersisted())
+                .environment(environment)
+                .pushDate(new Date())
+                .publisher(PushPublisher.class)
+                .nextPersisted();
     }
 }
