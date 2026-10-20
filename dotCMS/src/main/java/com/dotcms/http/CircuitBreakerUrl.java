@@ -22,6 +22,8 @@ import java.io.OutputStream;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -50,7 +52,9 @@ import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.client.utils.URIUtils;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -655,6 +659,61 @@ public class CircuitBreakerUrl {
     static final class PrivateSubnetRedirectStrategy extends DefaultRedirectStrategy {
 
         static final PrivateSubnetRedirectStrategy INSTANCE = new PrivateSubnetRedirectStrategy();
+
+        /**
+         * Headers that carry the caller's identity. They are not sent to a host other than the one
+         * the caller addressed.
+         */
+        private static final List<String> CREDENTIAL_HEADERS =
+                List.of("Authorization", "Cookie", "Proxy-Authorization");
+
+        /**
+         * Builds the redirect and sets its headers explicitly. HttpClient copies the original
+         * request's headers onto a redirect only when the redirect has none, and a plain GET redirect
+         * has none, so removing headers after the fact would be undone by that copy.
+         *
+         * <p>A redirect to another host or port keeps every header except the credential headers.
+         * If the request carried nothing but credentials, nothing is left to send, and the redirect
+         * is refused rather than letting HttpClient copy the credentials back.</p>
+         */
+        @Override
+        public HttpUriRequest getRedirect(final HttpRequest request, final HttpResponse response,
+                                          final HttpContext context) throws ProtocolException {
+            final HttpUriRequest redirect = super.getRedirect(request, response, context);
+            final Header[] headers = request.getAllHeaders();
+            final HttpHost previous = context == null ? null : HttpCoreContext.adapt(context).getTargetHost();
+            if (sameOrigin(previous, URIUtils.extractHost(redirect.getURI()))) {
+                redirect.setHeaders(headers);
+                return redirect;
+            }
+            final Header[] kept = Arrays.stream(headers)
+                    .filter(header -> CREDENTIAL_HEADERS.stream().noneMatch(header.getName()::equalsIgnoreCase))
+                    .toArray(Header[]::new);
+            if (kept.length == 0 && headers.length > 0) {
+                throw new ProtocolException("Redirect to " + redirect.getURI().getHost()
+                        + " is not followed: the request carries only credentials");
+            }
+            redirect.setHeaders(kept);
+            return redirect;
+        }
+
+        /**
+         * Whether two hosts are the same origin for header purposes: the host names match ignoring
+         * case, and the ports match once a missing port is replaced by the default for the scheme.
+         */
+        @VisibleForTesting
+        static boolean sameOrigin(final HttpHost previous, final HttpHost target) {
+            return previous != null && target != null
+                    && previous.getHostName().equalsIgnoreCase(target.getHostName())
+                    && defaultPort(previous) == defaultPort(target);
+        }
+
+        private static int defaultPort(final HttpHost host) {
+            if (host.getPort() != -1) {
+                return host.getPort();
+            }
+            return "https".equalsIgnoreCase(host.getSchemeName()) ? 443 : 80;
+        }
 
         @Override
         public URI getLocationURI(final HttpRequest request, final HttpResponse response,
