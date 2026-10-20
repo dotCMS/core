@@ -44,9 +44,9 @@ public class ImportContentletAjax {
 	 *
 	 * @param importId the import id
 	 * @return the id of the cancelled import
-	 * @throws DotSecurityException if nobody is logged in, or the logged-in user did not start the
-	 *                              import and is not a CMS administrator (also for an unknown or
-	 *                              missing id)
+	 * @throws DotSecurityException if nobody is logged in, the id is missing, or the logged-in user
+	 *                              did not start the import and is not a CMS administrator (an
+	 *                              unknown id counts as an import the user did not start)
 	 * @throws DotDataException     if the user who started the import cannot be read; the import
 	 *                              is then not cancelled
 	 */

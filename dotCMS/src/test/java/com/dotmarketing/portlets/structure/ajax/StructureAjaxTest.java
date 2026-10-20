@@ -26,7 +26,9 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.ImmutableRelationshipField;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
@@ -88,6 +90,7 @@ class StructureAjaxTest {
     private static final String FIELD_A2 = "field-a2-inode";
     private static final String FIELD_B1 = "field-b1-inode";
     private static final String SELECT_FIELD = "select-field-inode";
+    private static final String RELATIONSHIP_FIELD = "relationship-field-inode";
     private static final String UNKNOWN_FIELD = "unknown-field-inode";
     /** The text getStructureFields returns for a type without fields. */
     private static final String NO_FIELDS = "[  ]";
@@ -283,6 +286,21 @@ class StructureAjaxTest {
         return field;
     }
 
+    /** A relationship field to type B, added to the fields of type A. */
+    private void givenRelationshipFieldOnTypeA() {
+        final List<com.dotcms.contenttype.model.field.Field> fields = new ArrayList<>(contentTypeA.fields());
+        fields.add(ImmutableRelationshipField.builder()
+                .id(RELATIONSHIP_FIELD)
+                .name("Related")
+                .variable("related")
+                .contentTypeId(TYPE_A)
+                .relationType("typeB")
+                .values("0")
+                .sortOrder(3)
+                .build());
+        when(contentTypeA.fields()).thenReturn(fields);
+    }
+
     /** A category field on type A, pointing to the category {@code category-inode}. */
     private void givenCategoryFieldOnTypeA() {
         final Field categoryField = legacyField("category-field-inode", TYPE_A, 4);
@@ -337,6 +355,22 @@ class StructureAjaxTest {
             }
         }
         return sortOrders;
+    }
+
+    /** The field with the given id as it was passed to the field API to be saved. */
+    private com.dotcms.contenttype.model.field.Field savedField(final String fieldId) {
+        for (final Invocation save : fieldSaves()) {
+            final Object fields = save.getArgument(0);
+            final List<?> saved = fields instanceof List ? (List<?>) fields : List.of(fields);
+            for (final Object field : saved) {
+                final com.dotcms.contenttype.model.field.Field current =
+                        (com.dotcms.contenttype.model.field.Field) field;
+                if (fieldId.equals(current.id())) {
+                    return current;
+                }
+            }
+        }
+        throw new AssertionError("the field " + fieldId + " was not saved, got " + fieldSaves());
     }
 
     private void assertNothingSaved() {
@@ -437,6 +471,29 @@ class StructureAjaxTest {
         }
         assertEquals(Map.of(FIELD_A1, 2, FIELD_A2, 1), savedSortOrders());
         fieldFactory.verify(() -> FieldFactory.saveField(any(Field.class)), never());
+    }
+
+    /**
+     * Given: a user with EDIT_PERMISSIONS on type A, which has a relationship field next to its
+     * text fields
+     * When: reorderfields is called with a text field and the relationship field
+     * Then: both are saved with their new sort order, and the relationship field is saved so that
+     * its relationship is neither created nor updated, as the content type field layout does when
+     * it moves fields
+     */
+    @Test
+    void reorderfields_savesRelationshipFieldWithoutRecreatingRelationship() throws Exception {
+        givenPermissionOnTypeA(PERMISSION_READ, true);
+        givenPermissionOnTypeA(PERMISSION_EDIT_PERMISSIONS, true);
+        givenRelationshipFieldOnTypeA();
+
+        new StructureAjax().reorderfields(TYPE_A, FIELD_A1 + " @ 2," + RELATIONSHIP_FIELD + " @ 1");
+
+        assertEquals(Map.of(FIELD_A1, 2, RELATIONSHIP_FIELD, 1), savedSortOrders());
+        final com.dotcms.contenttype.model.field.Field saved = savedField(RELATIONSHIP_FIELD);
+        assertTrue(saved instanceof RelationshipField, "got " + saved);
+        assertTrue(((RelationshipField) saved).skipRelationshipCreation(),
+                "a reorder must not create or update the relationship of the field");
     }
 
     /**
@@ -644,6 +701,90 @@ class StructureAjaxTest {
     }
 
     /**
+     * Given: a user with READ on the content type, and a content type lookup that fails with a
+     * data error (not a missing type)
+     * When: checkDependencies is called
+     * Then: the data error reaches the caller instead of a size of zero, which the delete dialog
+     * would read as "no container uses this type"; the containers are not looked up and nothing
+     * is written to the security log
+     */
+    @Test
+    void checkDependencies_typeLookupDataErrorIsReportedToTheCaller() throws Exception {
+        givenPermissionOnTypeA(PERMISSION_READ, true);
+        when(contentTypeAPI.find(TYPE_A)).thenThrow(new DotDataException("content type could not be loaded"));
+
+        assertThrows(DotDataException.class, () -> new StructureAjax().checkDependencies(TYPE_A));
+
+        verify(containerAPI, never()).findContainersForStructure(anyString(), anyBoolean());
+        verify(containerAPI, never()).findContainersForStructure(anyString());
+        assertTrue(securityLoggerCalls.isEmpty(), "got " + securityLoggerCalls);
+    }
+
+    /**
+     * Given: nobody is logged in
+     * When: fetchByIdentity, checkDependencies, getStructureFields and getSearchableStructureFields
+     * are called for a content type
+     * Then: each answers like a type the caller cannot read, the content type is not loaded and
+     * nothing is written to the security log
+     */
+    @Test
+    void typeReads_withoutLoggedInUserReturnNothing() throws Exception {
+        when(userWebAPI.getLoggedInUser(request)).thenReturn(null);
+        final StructureAjax structureAjax = new StructureAjax();
+
+        assertNull(structureAjax.fetchByIdentity(TYPE_A));
+        assertEquals(0, structureAjax.checkDependencies(TYPE_A).get("size"));
+        assertEquals(NO_FIELDS, structureAjax.getStructureFields(TYPE_A));
+        final List<Map> searchable = structureAjax.getSearchableStructureFields(TYPE_A);
+        assertNotNull(searchable);
+        assertTrue(searchable.isEmpty(), "no field must be returned, got " + searchable);
+
+        verify(contentTypeAPI, never()).find(anyString());
+        assertTrue(securityLoggerCalls.isEmpty(), "got " + securityLoggerCalls);
+    }
+
+    /**
+     * Given: a logged-in user and no content type inode
+     * When: fetchByIdentity, checkDependencies, getStructureFields and getSearchableStructureFields
+     * are called
+     * Then: each answers like an unknown type and the content type is not loaded
+     */
+    @ParameterizedTest(name = "inode: [{0}]")
+    @NullAndEmptySource
+    void typeReads_blankInodeReturnNothing(final String inode) throws Exception {
+        final StructureAjax structureAjax = new StructureAjax();
+
+        assertNull(structureAjax.fetchByIdentity(inode));
+        assertEquals(0, structureAjax.checkDependencies(inode).get("size"));
+        assertEquals(NO_FIELDS, structureAjax.getStructureFields(inode));
+        final List<Map> searchable = structureAjax.getSearchableStructureFields(inode);
+        assertNotNull(searchable);
+        assertTrue(searchable.isEmpty(), "no field must be returned, got " + searchable);
+
+        verify(contentTypeAPI, never()).find(any());
+    }
+
+    /**
+     * Given: a logged-in user and a content type lookup that fails with a data error
+     * When: fetchByIdentity, getStructureFields and getSearchableStructureFields are called
+     * Then: each answers like a type with nothing to show, and the failure is not written to the
+     * security log as a denial
+     */
+    @Test
+    void typeReads_typeLookupDataErrorReturnNothingWithoutDenial() throws Exception {
+        when(contentTypeAPI.find(TYPE_A)).thenThrow(new DotDataException("content type could not be loaded"));
+        final StructureAjax structureAjax = new StructureAjax();
+
+        assertNull(structureAjax.fetchByIdentity(TYPE_A));
+        assertEquals(NO_FIELDS, structureAjax.getStructureFields(TYPE_A));
+        final List<Map> searchable = structureAjax.getSearchableStructureFields(TYPE_A);
+        assertNotNull(searchable);
+        assertTrue(searchable.isEmpty(), "no field must be returned, got " + searchable);
+
+        assertTrue(securityLoggerCalls.isEmpty(), "got " + securityLoggerCalls);
+    }
+
+    /**
      * Given: a user without READ on the content type
      * When: getStructureFields is called
      * Then: the text of a type without fields, {@code "[  ]"}, is returned
@@ -666,7 +807,8 @@ class StructureAjaxTest {
 
         final List<Map> fields = new StructureAjax().getSearchableStructureFields(TYPE_A);
 
-        assertTrue(fields == null || fields.isEmpty(), "no field must be returned, got " + fields);
+        assertNotNull(fields);
+        assertTrue(fields.isEmpty(), "no field must be returned, got " + fields);
     }
 
     /**

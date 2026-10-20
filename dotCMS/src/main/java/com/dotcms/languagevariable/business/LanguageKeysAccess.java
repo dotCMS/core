@@ -1,4 +1,4 @@
-package com.dotmarketing.portlets.languagesmanager.business;
+package com.dotcms.languagevariable.business;
 
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LayoutAPI;

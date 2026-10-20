@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.languagesmanager.ajax;
 
+import com.dotcms.languagevariable.business.LanguageKeysAccess;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ajax.DwrUtil;
@@ -9,7 +10,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageKeysAccess;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.util.Logger;

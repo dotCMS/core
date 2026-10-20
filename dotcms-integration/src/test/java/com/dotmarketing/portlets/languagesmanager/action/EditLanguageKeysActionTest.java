@@ -7,6 +7,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.datagen.LayoutDataGen;
@@ -20,7 +22,6 @@ import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
@@ -53,6 +54,7 @@ public class EditLanguageKeysActionTest {
     private static final String ERROR_MESSAGE = "error";
     private static final String SUCCESS_MESSAGE = "message";
     private static final String VALUE = "Saved from the language keys page";
+    private static final String REFERER = "/c/portal/layout?p_l_id=languages";
 
     private static LanguageAPI languageAPI;
     private static Language language;
@@ -114,24 +116,23 @@ public class EditLanguageKeysActionTest {
 
     /**
      * Method to test: {@link EditLanguageKeysAction#processAction} with {@code cmd=save}
-     * Given: a back-end user with neither the Languages nor the Locales portlet posts a new key
-     * Expected: the request is rejected (DotSecurityException or the action's error message) and
+     * Given: a back-end user with neither the Languages nor the Locales portlet posts a new key,
+     * with a referer to return to
+     * Expected: the action's error message, no success message, no redirect to the referer, and
      * the key is not written
      */
     @Test
-    public void save_requiresLanguagesOrLocalesPortlet() {
+    public void save_requiresLanguagesOrLocalesPortlet() throws Exception {
         final ActionRequestImpl request = saveRequest(userWithoutPortlet);
+        when(request.getParameter("referer")).thenReturn(REFERER);
+        final ActionResponse response = mock(ActionResponse.class);
 
-        Exception failure = null;
-        try {
-            new EditLanguageKeysAction().processAction(null, null, null, request, mock(ActionResponse.class));
-        } catch (final Exception e) {
-            failure = e;
-        }
+        new EditLanguageKeysAction().processAction(null, null, null, request, response);
 
         assertFalse("the key must not be written", storedValue().isPresent());
-        assertTrue("the request must be rejected, got " + failure,
-                failure instanceof DotSecurityException || SessionMessages.contains(request, ERROR_MESSAGE));
+        assertTrue(SessionMessages.contains(request, ERROR_MESSAGE));
+        assertFalse(SessionMessages.contains(request, SUCCESS_MESSAGE));
+        verify(response, never()).sendRedirect(anyString());
     }
 
     /**

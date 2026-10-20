@@ -6,6 +6,7 @@
  */
 package com.dotmarketing.portlets.languagesmanager.action;
 
+import com.dotcms.languagevariable.business.LanguageKeysAccess;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -16,7 +17,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
-import com.dotmarketing.portlets.languagesmanager.business.LanguageKeysAccess;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -109,8 +109,9 @@ public class EditLanguageKeysAction extends DotPortletAction {
      * Saves the language keys posted by the language keys page for the selected language.
      * <p>Only a user with access to the Languages or the Locales portlet can save keys, checked by
      * {@link LanguageKeysAccess#requireLanguagesOrLocalesPortlet} before any posted value is read.
-     * A rejected request saves nothing and adds an error message, the same way an invalid key
-     * name is reported.</p>
+     * A rejected request saves nothing, adds the {@code message.insufficient.permissions.to.save}
+     * error message and returns {@code false}, so, as with an invalid key name, the user stays on
+     * the language keys page.</p>
      *
      * @param req    - The HTTP Request wrapper.
      * @param res    - The HTTP Response wrapper.

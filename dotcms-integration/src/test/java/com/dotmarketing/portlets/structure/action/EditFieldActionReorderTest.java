@@ -150,8 +150,9 @@ public class EditFieldActionReorderTest {
     /**
      * Method to test: {@link EditFieldAction#processAction} with {@code cmd=reorder}
      * Given: a back-end user with no portlets and no permission on the content type posts a new
-     * order for its fields
-     * Expected: no sort order changes, an error message and no success message
+     * order for its fields, with a referer to return to
+     * Expected: no sort order changes, an error message, no success message and no redirect to
+     * the referer
      */
     @Test
     public void reorder_userWithoutPortletsOrPermissions_changesNothing() throws Exception {
@@ -160,18 +161,22 @@ public class EditFieldActionReorderTest {
         final Map<String, Integer> before = storedSortOrders(fields);
 
         final ActionRequestImpl request = reorderRequest(userWithoutPortlets, newOrder(reversed(fields)));
-        new EditFieldAction().processAction(null, null, null, request, mock(ActionResponse.class));
+        when(request.getParameter("referer")).thenReturn(REFERER);
+        final ActionResponse response = mock(ActionResponse.class);
+        new EditFieldAction().processAction(null, null, null, request, response);
 
         assertEquals(before, storedSortOrders(fields));
         assertTrue(SessionMessages.contains(request, ERROR_MESSAGE));
         assertFalse(SessionMessages.contains(request, SUCCESS_MESSAGE));
+        verify(response, never()).sendRedirect(anyString());
     }
 
     /**
      * Method to test: {@link EditFieldAction#processAction} with {@code cmd=reorder}
      * Given: a back-end user with the Content Types portlet who can read the content type but has
-     * no EDIT_PERMISSIONS on it posts a new order for its fields
-     * Expected: no sort order changes, an error message and no success message
+     * no EDIT_PERMISSIONS on it posts a new order for its fields, with a referer to return to
+     * Expected: no sort order changes, an error message, no success message and no redirect to
+     * the referer
      */
     @Test
     public void reorder_contentTypesPortletUserWithoutEditPermissions_changesNothing() throws Exception {
@@ -180,11 +185,41 @@ public class EditFieldActionReorderTest {
         final Map<String, Integer> before = storedSortOrders(fields);
 
         final ActionRequestImpl request = reorderRequest(contentTypesPortletUser, newOrder(reversed(fields)));
-        new EditFieldAction().processAction(null, null, null, request, mock(ActionResponse.class));
+        when(request.getParameter("referer")).thenReturn(REFERER);
+        final ActionResponse response = mock(ActionResponse.class);
+        new EditFieldAction().processAction(null, null, null, request, response);
 
         assertEquals(before, storedSortOrders(fields));
         assertTrue(SessionMessages.contains(request, ERROR_MESSAGE));
         assertFalse(SessionMessages.contains(request, SUCCESS_MESSAGE));
+        verify(response, never()).sendRedirect(anyString());
+    }
+
+    /**
+     * Method to test: {@link EditFieldAction#processAction} with {@code cmd=reorder}
+     * Given: a user with READ, WRITE and PUBLISH on the content type, but not EDIT_PERMISSIONS,
+     * posts a new order for its fields, with a referer to return to
+     * Expected: no sort order changes, an error message, no success message and no redirect to
+     * the referer
+     */
+    @Test
+    public void reorder_withWriteAndPublishButNotEditPermissions_changesNothing() throws Exception {
+        final ContentType type = newContentType(PermissionAPI.PERMISSION_READ
+                | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH);
+        assertTrue(permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_WRITE, editor, true));
+        assertTrue(permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_PUBLISH, editor, true));
+        final List<Field> fields = textFields(type, 3);
+        final Map<String, Integer> before = storedSortOrders(fields);
+
+        final ActionRequestImpl request = reorderRequest(editor, newOrder(reversed(fields)));
+        when(request.getParameter("referer")).thenReturn(REFERER);
+        final ActionResponse response = mock(ActionResponse.class);
+        new EditFieldAction().processAction(null, null, null, request, response);
+
+        assertEquals(before, storedSortOrders(fields));
+        assertTrue(SessionMessages.contains(request, ERROR_MESSAGE));
+        assertFalse(SessionMessages.contains(request, SUCCESS_MESSAGE));
+        verify(response, never()).sendRedirect(anyString());
     }
 
     /**
@@ -305,6 +340,34 @@ public class EditFieldActionReorderTest {
 
     /**
      * Method to test: {@link EditFieldAction#processAction} with {@code cmd=reorder}
+     * Given: a user with EDIT_PERMISSIONS on the content type posts first an order for an inode
+     * that is no field, then a new order for the type's fields, with a referer to return to (the
+     * content type is taken from the first posted field)
+     * Expected: no field changes, an error message, no success message and no redirect to the
+     * referer
+     */
+    @Test
+    public void reorder_unknownFieldInodeFirst_changesNothing() throws Exception {
+        final ContentType type = newContentType();
+        final List<Field> fields = textFields(type, 2);
+        final Map<String, Integer> before = storedSortOrders(fields);
+        final Map<String, String> posted = new LinkedHashMap<>();
+        posted.put(UUID.randomUUID().toString(), "30");
+        posted.putAll(newOrder(reversed(fields)));
+
+        final ActionRequestImpl request = reorderRequest(editor, posted);
+        when(request.getParameter("referer")).thenReturn(REFERER);
+        final ActionResponse response = mock(ActionResponse.class);
+        new EditFieldAction().processAction(null, null, null, request, response);
+
+        assertEquals(before, storedSortOrders(fields));
+        assertTrue(SessionMessages.contains(request, ERROR_MESSAGE));
+        assertFalse(SessionMessages.contains(request, SUCCESS_MESSAGE));
+        verify(response, never()).sendRedirect(anyString());
+    }
+
+    /**
+     * Method to test: {@link EditFieldAction#processAction} with {@code cmd=reorder}
      * Given: a user with EDIT_PERMISSIONS on a content type posts no sort order at all, with a
      * referer to return to
      * Expected: no field changes, an error message, no success message and no redirect to the
@@ -372,8 +435,8 @@ public class EditFieldActionReorderTest {
 
     /**
      * A new content type with its own permissions: everything for a separate role, the given
-     * permission for the editor, READ for the Content Types portlet user, nothing for the user
-     * without portlets.
+     * permission for the editor (which must include READ), READ for the Content Types portlet
+     * user, nothing for the user without portlets.
      */
     private static ContentType newContentType(final int editorPermission)
             throws DotDataException, DotSecurityException {

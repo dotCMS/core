@@ -2,7 +2,6 @@ package com.dotmarketing.portlets.structure.ajax;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
@@ -10,6 +9,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.contenttype.model.field.CategoryField;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.SelectField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -33,6 +33,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
@@ -56,6 +58,8 @@ import org.junit.Test;
 public class StructureAjaxIntegrationTest {
 
     private static final String SELECT_OPTIONS = "Red|red\r\nBlue|blue";
+    /** The answer reorderfields gives when the fields could not be reordered. */
+    private static final String REORDER_FAILED = "Fields-could-not-be-reorderd";
 
     @ClassRule
     public static final DwrWebContextRule dwrContext = new DwrWebContextRule();
@@ -236,7 +240,8 @@ public class StructureAjaxIntegrationTest {
      * Method to test: {@link StructureAjax#reorderfields(String, String)}
      * Given: a user with EDIT_PERMISSIONS on a content type posts a valid order for the first field
      * and a non-numeric order for the second one
-     * Expected: no success answer and no field is saved, not even the first one
+     * Expected: the "could not be reordered" answer, not a rejection of the user, and no field is
+     * saved, not even the first one
      */
     @Test
     public void reorderfields_nonNumericOrder_savesNothing() throws Exception {
@@ -246,17 +251,75 @@ public class StructureAjaxIntegrationTest {
         final String list = "," + fields.get(0).id() + " @ 50," + fields.get(1).id() + " @ first";
 
         dwrContext.loginAs(editor);
-        String answer = null;
-        try {
-            answer = new StructureAjax().reorderfields(type.inode(), list);
-        } catch (final Exception rejected) {
-            // a rejection is an acceptable outcome; what matters is that nothing is saved
-            assertTrue("only a rejection is acceptable, got " + rejected,
-                    rejected instanceof DotSecurityException);
-        }
+        final String answer = new StructureAjax().reorderfields(type.inode(), list);
 
-        assertNotEquals(successMessage(), answer);
+        assertEquals(REORDER_FAILED, answer);
         assertEquals(before, storedSortOrders(fields));
+    }
+
+    /**
+     * Method to test: {@link StructureAjax#reorderfields(String, String)}
+     * Given: a back-end user with READ, WRITE and PUBLISH on a content type, but not
+     * EDIT_PERMISSIONS
+     * Expected: DotSecurityException; the stored sort orders and the type's modification date stay
+     * as they were
+     */
+    @Test
+    public void reorderfields_withWriteAndPublishButNotEditPermissions_isDenied() throws Exception {
+        final ContentType type = newContentType(PermissionAPI.PERMISSION_READ
+                | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH);
+        assertTrue(permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_WRITE, reader, true));
+        assertTrue(permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_PUBLISH, reader, true));
+        final List<Field> fields = textFields(type, 3);
+        final Map<String, Integer> before = storedSortOrders(fields);
+        final Date modDate = backdateModDate(type);
+
+        dwrContext.loginAs(reader);
+        assertThrows(DotSecurityException.class, () -> new StructureAjax()
+                .reorderfields(type.inode(), orderList(reversed(fields))));
+
+        assertEquals(before, storedSortOrders(fields));
+        assertEquals(modDate.getTime(), storedModDate(type).getTime());
+    }
+
+    /**
+     * Method to test: {@link StructureAjax#reorderfields(String, String)}
+     * Given: a user with READ and EDIT_PERMISSIONS on a content type that has a text field and a
+     * relationship field to a content type the user cannot read
+     * Expected: the success message, both fields stored with their new sort order, and the
+     * relationship left as it was
+     */
+    @Test
+    public void reorderfields_typeWithRelationshipField_savesNewOrder() throws Exception {
+        final ContentType relatedType = newContentTypeOnlyOwnerCanRead();
+        assertFalse(permissionAPI.doesUserHavePermission(relatedType, PermissionAPI.PERMISSION_READ, editor, true));
+        final ContentType type = newContentType();
+        final List<Field> fields = new ArrayList<>(textFields(type, 1));
+        final String variable = "related" + System.nanoTime();
+        fields.add(new FieldDataGen().type(RelationshipField.class)
+                .name(variable).velocityVarName(variable).sortOrder(2)
+                .relationType(relatedType.variable())
+                .values(String.valueOf(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()))
+                .contentTypeId(type.id()).nextPersisted());
+        final Relationship relationship = APILocator.getRelationshipAPI()
+                .getRelationshipFromField(fields.get(1), systemUser);
+        assertNotNull(relationship);
+        final List<Field> newOrder = reversed(fields);
+
+        dwrContext.loginAs(editor);
+        final String answer = new StructureAjax().reorderfields(type.inode(), orderList(newOrder));
+
+        assertEquals(successMessage(), answer);
+        final Map<String, Integer> expected = new LinkedHashMap<>();
+        for (int i = 0; i < newOrder.size(); i++) {
+            expected.put(newOrder.get(i).id(), sortOrderAt(i));
+        }
+        assertEquals(expected, storedSortOrders(newOrder));
+        final Relationship after = APILocator.getRelationshipAPI()
+                .getRelationshipFromField(fields.get(1), systemUser);
+        assertNotNull(after);
+        assertEquals(relationship.getInode(), after.getInode());
+        assertEquals(relationship.getCardinality(), after.getCardinality());
     }
 
     /**
@@ -493,6 +556,33 @@ public class StructureAjaxIntegrationTest {
      * EDIT_PERMISSIONS for the editor, READ for the reader, nothing for the stranger.
      */
     private static ContentType newContentType() throws DotDataException, DotSecurityException {
+        return newContentType(PermissionAPI.PERMISSION_READ);
+    }
+
+    /**
+     * A new content type with its own permissions: everything for a separate role, READ and
+     * EDIT_PERMISSIONS for the editor, the given permission for the reader (which must include
+     * READ and not EDIT_PERMISSIONS), nothing for the stranger.
+     */
+    private static ContentType newContentType(final int readerPermission)
+            throws DotDataException, DotSecurityException {
+        final ContentType type = newContentTypeOnlyOwnerCanRead();
+        savePermission(type, APILocator.getRoleAPI().getUserRole(editor),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT_PERMISSIONS);
+        savePermission(type, APILocator.getRoleAPI().getUserRole(reader), readerPermission);
+
+        assertTrue(permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, editor, true));
+        assertTrue(permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, reader, true));
+        assertFalse(permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, reader, true));
+        assertFalse(permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, stranger, true));
+        return type;
+    }
+
+    /**
+     * A new content type whose only permissions are everything for a separate role, so none of
+     * the test users can read it.
+     */
+    private static ContentType newContentTypeOnlyOwnerCanRead() throws DotDataException, DotSecurityException {
         final String suffix = String.valueOf(System.nanoTime());
         final ContentType type = new ContentTypeDataGen()
                 .name("StructureAjaxType" + suffix)
@@ -505,14 +595,6 @@ public class StructureAjaxIntegrationTest {
         permissionAPI.removePermissions(type);
         savePermission(type, ownerRole, PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE
                 | PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS);
-        savePermission(type, APILocator.getRoleAPI().getUserRole(editor),
-                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT_PERMISSIONS);
-        savePermission(type, APILocator.getRoleAPI().getUserRole(reader), PermissionAPI.PERMISSION_READ);
-
-        assertTrue(permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, editor, true));
-        assertTrue(permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, reader, true));
-        assertFalse(permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, reader, true));
-        assertFalse(permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, stranger, true));
         return type;
     }
 

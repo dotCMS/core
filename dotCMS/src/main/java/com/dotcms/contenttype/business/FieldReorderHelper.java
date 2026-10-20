@@ -3,6 +3,8 @@ package com.dotcms.contenttype.business;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.RelationshipFieldBuilder;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionLevel;
@@ -29,7 +31,9 @@ import java.util.stream.Collectors;
  *     <li>every field id in the request must be one of that content type's fields;</li>
  *     <li>every sort order must be a whole number;</li>
  *     <li>the fields are saved through {@link FieldAPI#saveFields(List, User)} as the calling user,
- *     which also updates the content type's modification date when a sort order changes.</li>
+ *     which also updates the content type's modification date when a sort order changes. A
+ *     relationship field is saved without creating or updating its relationship, so only its sort
+ *     order changes.</li>
  * </ol>
  * Nothing is saved until every entry has passed these checks. A missing content type or field, a
  * content type the user cannot read or edit, and a field of another content type are rejected with
@@ -183,11 +187,22 @@ public final class FieldReorderHelper {
         final List<Field> reordered = new ArrayList<>(sortOrderByFieldId.size());
         for (final Map.Entry<String, String> fieldOrder : sortOrderByFieldId.entrySet()) {
             final Field field = fieldsOfType.get(fieldOrder.getKey());
-            reordered.add(FieldBuilder.builder(field)
+            reordered.add(keepRelationship(FieldBuilder.builder(field)
                     .sortOrder(Integer.parseInt(fieldOrder.getValue()))
-                    .build());
+                    .build()));
         }
         APILocator.getContentTypeFieldAPI().saveFields(reordered, user);
+    }
+
+    /**
+     * Marks an existing relationship field so that saving its new sort order neither creates nor
+     * updates its relationship, as the content type field layout does when it moves fields. Any
+     * other field is returned as it is.
+     */
+    private static Field keepRelationship(final Field field) {
+        return field instanceof RelationshipField
+                ? RelationshipFieldBuilder.builder(field).skipRelationshipCreation(true).build()
+                : field;
     }
 
     /**

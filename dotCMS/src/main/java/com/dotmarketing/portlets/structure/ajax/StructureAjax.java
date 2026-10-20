@@ -644,11 +644,13 @@ public class StructureAjax {
 	 * Lists the containers that use a content type, shown before the type is deleted. A user who
 	 * cannot read the content type, or an unknown content type, gets no containers and a size of
 	 * zero, and the containers are not looked up. The containers are looked up with the inode of
-	 * the content type that was loaded for the READ check.
+	 * the content type that was loaded for the READ check. A failure to load the content type is
+	 * thrown, not answered with a size of zero, because the delete dialog reads zero as "no
+	 * container uses this type".
 	 *
 	 * @param structureInode inode of the content type
 	 * @return a map with the {@code containers} list and its {@code size}
-	 * @throws DotDataException when the containers cannot be loaded
+	 * @throws DotDataException when the content type or the containers cannot be loaded
 	 */
 	public Map<Object,Object> checkDependencies(String structureInode) throws DotDataException{
 
@@ -657,7 +659,7 @@ public class StructureAjax {
 
 		Map<Object,Object> result = new HashMap<>();
 		List<Map<String,String>> containersList = new ArrayList<>();
-		final ContentType readableType = findReadableType(loggedInUser(), structureInode);
+		final ContentType readableType = loadReadableType(loggedInUser(), structureInode);
 		if (null == readableType) {
 			result.put("containers", containersList);
 			result.put("size", 0);
@@ -700,10 +702,12 @@ public class StructureAjax {
 
 	/**
 	 * Returns the user of the current DWR request as resolved by {@link UserWebAPI}, or
-	 * {@code null} when nobody is logged in. The methods that return content type data use it, so
-	 * a request without a user gets the same empty answer as a type the user cannot read, and no
-	 * security log line is written for it. {@link #reorderfields(String, String)} resolves its
-	 * user with {@link DwrUtil#getLoggedInUser()} instead, which throws a
+	 * {@code null} when nobody is logged in. {@link #fetchByIdentity(String)},
+	 * {@link #checkDependencies(String)}, {@link #getStructureFields(String)},
+	 * {@link #getSearchableStructureFields(String)} and the four field option readers use it, so a
+	 * request without a user gets the same empty answer from them as a type the user cannot read,
+	 * and no security log line is written for it. The other methods resolve their user themselves;
+	 * {@link #reorderfields(String, String)} uses {@link DwrUtil#getLoggedInUser()}, which throws a
 	 * {@link DotSecurityException} when nobody is logged in.
 	 */
 	@Nullable
@@ -735,6 +739,28 @@ public class StructureAjax {
 	 */
 	@Nullable
 	private ContentType findReadableType(@Nullable final User user, final String typeInode) {
+		try {
+			return loadReadableType(user, typeInode);
+		} catch (final DotDataException e) {
+			Logger.warn(StructureAjax.class,
+					"The content type could not be loaded to check READ permission", e);
+			return null;
+		}
+	}
+
+	/**
+	 * Loads a content type the user may read, like {@link #findReadableType(User, String)}, but a
+	 * failure to load the type is thrown to the caller instead of answering {@code null}. Used
+	 * where an empty answer would be taken as a fact about the type, such as "no container uses
+	 * it".
+	 *
+	 * @return the content type, or {@code null} for no user, a blank or unknown id, or a type the
+	 *         user cannot read
+	 * @throws DotDataException when the content type cannot be loaded
+	 */
+	@Nullable
+	private ContentType loadReadableType(@Nullable final User user, final String typeInode)
+			throws DotDataException {
 		if (null == user || !UtilMethods.isSet(typeInode)) {
 			return null;
 		}
@@ -744,10 +770,6 @@ public class StructureAjax {
 			return null;
 		} catch (final DotSecurityException e) {
 			logReadDenied(user);
-			return null;
-		} catch (final DotDataException e) {
-			Logger.warn(StructureAjax.class,
-					"The content type could not be loaded to check READ permission", e);
 			return null;
 		}
 	}
