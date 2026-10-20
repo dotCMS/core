@@ -729,7 +729,9 @@ public class UserResource implements Serializable {
 	 * Updates the current HTTP Session data in order to simulate that the impersonated user - the Login As User - is
 	 * logged into the back-end of the system. This involves refreshing the UI of the back-end to reflect the Portlets
 	 * that the impersonated user has access to. While a Login As is active the session holds a {@link LoginAsSession},
-	 * which Logout As reads to restore the principal user; reverting removes it.
+	 * which Logout As reads to restore the principal user; reverting removes it. The record holds one level only: a
+	 * further Login As started from the impersonated user replaces it, so Logout As then returns to that user rather
+	 * than to the original principal.
 	 *
 	 * @param request         The {@link HttpServletRequest} object.
 	 * @param site            The {@link Host} object representing the Site that the Login As user is directed to.
