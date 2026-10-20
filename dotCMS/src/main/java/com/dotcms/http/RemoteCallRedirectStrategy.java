@@ -24,24 +24,23 @@ public class RemoteCallRedirectStrategy extends DefaultRedirectStrategy {
             Lazy.of(() -> Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
 
     /**
-     * Decides whether the response is a redirect the client may follow. A redirect whose
-     * location resolves to an internal address is refused by raising a protocol error, which
-     * ends the call instead of silently returning the non-redirected response.
+     * Resolves the redirect location and refuses it when it points at an internal address.
+     * The check lives here rather than in {@code isRedirected} because the parent's
+     * {@code getLocationURI} records each resolved location in the client context to detect
+     * circular redirects, so it must run exactly once per response, which the client does
+     * when it builds the redirected request.
      *
      * @param request  the request that was sent
-     * @param response the response received
+     * @param response the redirect response received
      * @param context  the execution context
-     * @return {@code true} when the redirect may be followed
+     * @return the location to follow
      * @throws ProtocolException when the location cannot be resolved or must not be followed
      */
     @Override
-    public boolean isRedirected(final HttpRequest request, final HttpResponse response,
+    public URI getLocationURI(final HttpRequest request, final HttpResponse response,
             final HttpContext context) throws ProtocolException {
 
-        if (!super.isRedirected(request, response, context)) {
-            return false;
-        }
-        final URI location = getLocationURI(request, response, context);
+        final URI location = super.getLocationURI(request, response, context);
         final String host = location.getHost();
         if (IPUtils.isIpPrivateSubnet(host) && !allowAccessToPrivateSubnets.get()) {
             SecurityLogger.logInfo(this.getClass(), "Refused to follow a redirect to host '" + host
@@ -49,6 +48,6 @@ public class RemoteCallRedirectStrategy extends DefaultRedirectStrategy {
             throw new ProtocolException("Redirect to host '" + host
                     + "' refused: it resolves to a private or internal address");
         }
-        return true;
+        return location;
     }
 }
