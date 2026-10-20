@@ -23,8 +23,11 @@ import { errorMessage } from '../toolkit/tool-runtime';
  * and `upload-assets.spec.ts` checks every request against it. Add a request, add it here.
  */
 export const UPLOAD_ASSETS_ENDPOINTS: readonly Endpoint[] = [
+    // The upload itself: `publish` picks which one.
     'PUT /api/v2/assets/publish',
     'PUT /api/v2/assets/save',
+    // `verify`: read each uploaded asset's live status, and re-fire PUBLISH for one that is
+    // not live yet (see verifyLive).
     'GET /api/v1/content/{identifier}',
     'PUT /api/v1/workflow/actions/default/fire/PUBLISH'
 ];
