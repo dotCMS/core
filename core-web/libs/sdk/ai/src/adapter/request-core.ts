@@ -28,12 +28,8 @@ interface FileFieldDescriptor {
     type: string; // MIME type, e.g. "image/png"
     data?: string; // base64-encoded content (exactly one of data, url, blob)
     url?: string; // URL to fetch content from
-    // Content as a Blob, sent as-is. Host-side callers pass a file-backed one
-    // (`fs.openAsBlob`), so the caller never reads, copies or base64-encodes the file.
-    // `fetch` itself still gathers a request body into memory before sending it (measured
-    // on Node 22: one full copy, for FormData and stream bodies alike), so an upload costs
-    // about its own size in memory. `data` exists for sandboxed code, whose values cross a
-    // serialization boundary a disk-backed Blob cannot.
+    // Content as a Blob, sent without copying it first: a file-backed one
+    // (`fs.openAsBlob`) stays on disk until `fetch` reads it.
     blob?: Blob;
 }
 
@@ -59,12 +55,10 @@ export interface RequestOptions {
     // survive the JSON.stringify boundary in the consuming sandbox. Set 'base64' to
     // force the binary path regardless of the declared content-type.
     responseType?: 'auto' | 'base64';
-    // Host only: hand a successful response's body stream to this sink instead of decoding
-    // it, and resolve to whatever the sink returns. The body is never buffered, and the
-    // request's deadline and abort signal stay in force until the sink settles — so a
-    // transfer cannot outlive the deadline that bounds it. Error responses never reach the
-    // sink; they are read and thrown as `HttpError` as usual. Sandboxed code cannot pass
-    // one: a function does not cross into the worker.
+    // Host only (a function cannot be posted out of the sandbox worker): stream a
+    // successful response's body to this sink instead of decoding it, and resolve to what
+    // the sink returns. The request's signal and deadline cover the sink until it settles.
+    // Error responses are thrown as `HttpError` and never reach it.
     onBody?: (body: ReadableStream<Uint8Array>, info: ResponseBodyInfo) => Promise<unknown>;
 }
 
