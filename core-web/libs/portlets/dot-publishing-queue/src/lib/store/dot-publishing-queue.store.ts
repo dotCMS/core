@@ -1,7 +1,14 @@
-import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStore,
+    withComputed,
+    withHooks,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 import { EMPTY, of } from 'rxjs';
 
-import { DestroyRef, effect, inject, untracked } from '@angular/core';
+import { DestroyRef, computed, effect, inject, untracked } from '@angular/core';
 
 import { catchError, map, switchMap, take, tap } from 'rxjs/operators';
 
@@ -25,6 +32,8 @@ import {
     RetryBundleResultView
 } from '@dotcms/dotcms-models';
 
+import { ulidTimestamp } from '../util/ulid.util';
+
 type LoadStatus = 'init' | 'loading' | 'loaded' | 'error';
 
 /** Statuses targeted by the dialog's "SUCCESS" scope — matches legacy
@@ -47,10 +56,21 @@ export const PURGE_FAILED_STATUSES: readonly PublishAuditStatus[] = [
 
 const POLL_INTERVAL_MS = 15000;
 
-/** `count` sent to `/api/bundle/getunsendbundles` when we only want a total.
+/** `count` sent to `/api/bundle/getunsendbundles` to get every unsent bundle.
  * `BundleResource` forwards it as the factory's `limit`, and `DotConnect` treats
- * any `maxRows <= 0` as "no limit" — see `loadDraftBundlesCount`. */
-const DRAFT_COUNT_UNBOUNDED = -1;
+ * any `maxRows <= 0` as "no limit" — see `loadNewBundles`. */
+const NEW_BUNDLES_UNBOUNDED = -1;
+
+/**
+ * A row of the bundles table. Rows from `/api/v1/publishing` carry `isNew: false`;
+ * unsent bundles from `/api/bundle/getunsendbundles` carry `isNew: true` and only
+ * know their id, name and item count, so most other columns are empty.
+ */
+export interface PublishingQueueRow extends Omit<PublishingJobView, 'assetCount'> {
+    /** `null` when the item count is unknown (a New row whose count the server didn't send). */
+    assetCount: number | null;
+    isNew: boolean;
+}
 
 interface DotPublishingQueueState {
     bundlesRows: PublishingJobView[];
@@ -61,19 +81,21 @@ interface DotPublishingQueueState {
     bundlesSortDirection: PublishingSortDirection;
     bundlesSelectedIds: string[];
 
-    /** Number of unsent ("draft") bundles — the ones the Select Bundle dialog
-     * lists. Shown on the toolbar's "Bundles (N)" button and next to its
-     * "Select Bundle" entry.
-     *
-     * `null` = unknown (not fetched yet, or the fetch failed). Consumers must
-     * render the label without a number in that case rather than showing `0`,
-     * which would read as "you have no drafts". */
-    draftBundlesTotal: number | null;
+    /** Unsent bundles of the current user (every user's, for a CMS Administrator),
+     * rendered as "New" rows pinned above page 1 of the table. They do not count
+     * toward `bundlesTotal`. */
+    newBundles: PublishingQueueRow[];
 
     rowsPerPage: number;
     search: string;
     /** Status chips checked in the toolbar filter. Empty = no filter (all statuses). */
     statusFilter: PublishAuditStatus[];
+    /** Whether the filter's "New" option is checked. New bundles have no audit
+     * status, so the option can't be expressed as a `statusFilter` code. */
+    newFilter: boolean;
+
+    /** Unsent bundle whose Set Up dialog is open, or `null` when it is closed. */
+    setupBundleId: string | null;
 
     selectedBundleId: string | null;
     selectedAssets: BundleAssetView[];
@@ -105,11 +127,14 @@ const initialState: DotPublishingQueueState = {
     bundlesSort: null,
     bundlesSortDirection: 'desc',
     bundlesSelectedIds: [],
-    draftBundlesTotal: null,
+    newBundles: [],
 
     rowsPerPage: 20,
     search: '',
     statusFilter: [],
+    newFilter: false,
+
+    setupBundleId: null,
 
     selectedBundleId: null,
     selectedAssets: [],
@@ -124,6 +149,28 @@ const initialState: DotPublishingQueueState = {
 
 export const DotPublishingQueueStore = signalStore(
     withState<DotPublishingQueueState>(initialState),
+    withComputed((store) => {
+        /** New rows show when the filter is empty or includes "New". */
+        const showNewRows = computed(() => store.newFilter() || store.statusFilter().length === 0);
+        /** Audit rows are skipped only when "New" is the sole filter option. */
+        const showAuditRows = computed(
+            () => !(store.newFilter() && store.statusFilter().length === 0)
+        );
+
+        return {
+            showNewRows,
+            showAuditRows,
+
+            /** What the table renders: New rows pinned above page 1, then the
+             * current page of `/api/v1/publishing`. */
+            tableRows: computed<PublishingQueueRow[]>(() => {
+                const pinned = store.bundlesPage() === 1 && showNewRows() ? store.newBundles() : [];
+                const audit = store.bundlesRows().map((row) => ({ ...row, isNew: false }));
+
+                return pinned.length > 0 ? [...pinned, ...audit] : audit;
+            })
+        };
+    }),
     withMethods((store) => {
         const service = inject(DotPublishingQueueService);
         const currentUserService = inject(DotCurrentUserService);
@@ -134,8 +181,8 @@ export const DotPublishingQueueStore = signalStore(
 
         let pollHandle: ReturnType<typeof setInterval> | null = null;
 
-        /** Cached so the draft count doesn't re-fetch the current user on every
-         * refresh. The portlet can't outlive a session change. */
+        /** Cached so loading New bundles doesn't re-fetch the current user on
+         * every refresh. The portlet can't outlive a session change. */
         let currentUserId: string | null = null;
 
         /**
@@ -152,6 +199,11 @@ export const DotPublishingQueueStore = signalStore(
          *   causes.
          */
         function loadBundles(silent = false) {
+            if (!store.showAuditRows()) {
+                patchState(store, { bundlesRows: [], bundlesTotal: 0, bundlesStatus: 'loaded' });
+                return;
+            }
+
             if (!silent) {
                 patchState(store, { bundlesStatus: 'loading' });
             }
@@ -195,50 +247,56 @@ export const DotPublishingQueueStore = signalStore(
         }
 
         /**
-         * Refreshes `draftBundlesTotal` — the count the toolbar shows on its
-         * "Bundles (N)" button and next to the "Select Bundle" entry.
+         * Loads the unsent bundles shown as "New" rows above page 1.
          *
-         * There is no count endpoint for drafts. `/api/v1/publishing` reports a
-         * real total but reads `publish_audit`, which does not contain drafts at
-         * all (they live only in `publishing_bundle`). The one endpoint that
-         * surfaces drafts — `GET /api/bundle/getunsendbundles/userid/{id}` —
-         * returns `numRows = bundles.size()` of the page it was asked for, not a
-         * total (`BundleResource#getUnsendBundles`). So we ask for the list
-         * unbounded and count it here.
+         * `/api/v1/publishing` reads `publish_audit`, which does not contain unsent
+         * bundles at all (they live only in `publishing_bundle`). The one endpoint
+         * that surfaces them — `GET /api/bundle/getunsendbundles/userid/{id}` —
+         * pages by `start`/`count` but returns `numRows` of the page it was asked
+         * for, not a total (`BundleResource#getUnsendBundles`), so it is asked for
+         * the whole list. That is cheaper than it looks: `SELECT_UNSEND_BUNDLES{,_ADMIN}`
+         * carry no SQL `LIMIT` and `DotConnect` trims rows in Java afterwards, and
+         * each row is just `{id, name}`.
          *
-         * That is cheaper than it looks: `SELECT_UNSEND_BUNDLES{,_ADMIN}` carry
-         * no SQL `LIMIT` and `DotConnect` trims rows in Java afterwards, so the
-         * database does identical work whether we request one page or all of
-         * them. Only the JSON grows, and each row is just `{id, name}`.
+         * The list is user-scoped by the backend: a regular user sees only their
+         * own unsent bundles, a CMS Administrator sees everyone's.
          *
-         * The count is user-scoped by the backend: a regular user sees only
-         * their own drafts, a CMS Administrator sees everyone's. Two users
-         * legitimately see different numbers on the same button.
-         *
-         * Errors are swallowed rather than surfaced: the count is decoration on
-         * a button, and `null` already renders as a plain "Bundles" label. A
-         * toast here would punish the user for something they didn't ask for and
-         * cannot act on.
+         * `silent` (tab regaining focus) swallows errors and keeps the current
+         * rows; a user-initiated load reports them.
          */
-        function loadDraftBundlesCount() {
+        function loadNewBundles(silent = false) {
             const userId$ = currentUserId
                 ? of(currentUserId)
                 : currentUserService.getCurrentUser().pipe(
                       map((user) => user.userId),
                       tap((userId) => (currentUserId = userId))
                   );
+            const search = store.search().trim();
 
             userId$
                 .pipe(
                     switchMap((userId) =>
-                        service.getUnsendBundles(userId, '*', 0, DRAFT_COUNT_UNBOUNDED)
+                        service.getUnsendBundles(
+                            userId,
+                            search ? `*${search}*` : '*',
+                            0,
+                            NEW_BUNDLES_UNBOUNDED
+                        )
                     ),
                     take(1),
-                    catchError(() => EMPTY)
+                    catchError((error) => {
+                        if (!silent) {
+                            httpErrorManager.handle(error);
+                        }
+
+                        return EMPTY;
+                    })
                 )
                 .subscribe((response) => {
                     patchState(store, {
-                        draftBundlesTotal: response.items?.length ?? response.numRows ?? 0
+                        newBundles: (response.items ?? []).map((item) =>
+                            toNewRow(item.id, item.name, item.assetCount)
+                        )
                     });
                 });
         }
@@ -330,15 +388,15 @@ export const DotPublishingQueueStore = signalStore(
         }
 
         /** User-visible "give me the latest" entry point — the toolbar's Refresh
-         * button and the post-action reload every mutation triggers. Pulls the
-         * draft count too, since pushing / deleting / purging bundles all move
-         * rows in and out of the unsent set.
+         * button and the post-action reload every mutation triggers. Reloads the
+         * New rows too, since pushing / deleting / purging bundles all move rows
+         * in and out of the unsent set.
          *
          * Deliberately NOT what the 15 s poll calls (it calls `loadBundles(true)`
          * directly) so background ticks don't add a second request. */
         function refresh() {
             loadBundles();
-            loadDraftBundlesCount();
+            loadNewBundles();
         }
 
         // Fires a silent refresh as soon as the tab comes back into focus so
@@ -358,9 +416,12 @@ export const DotPublishingQueueStore = signalStore(
                 loadBundles(true);
             }, POLL_INTERVAL_MS);
 
+            // Also picks up bundles the user created in another tab (e.g. via
+            // "Add to bundle" on a content) while this one was in the background.
             onVisibilityChange = () => {
                 if (!document.hidden) {
                     loadBundles(true);
+                    loadNewBundles(true);
                 }
             };
             document.addEventListener('visibilitychange', onVisibilityChange);
@@ -381,7 +442,7 @@ export const DotPublishingQueueStore = signalStore(
 
         return {
             loadBundles,
-            loadDraftBundlesCount,
+            loadNewBundles,
             loadAssets,
             loadDetail,
             refresh,
@@ -396,9 +457,16 @@ export const DotPublishingQueueStore = signalStore(
                 });
             },
 
-            setStatusFilter(statuses: PublishAuditStatus[]) {
+            /**
+             * Applies the toolbar's status filter.
+             *
+             * @param statuses  audit statuses to list; empty means every status
+             * @param newFilter whether the "New" option is checked
+             */
+            setStatusFilter(statuses: PublishAuditStatus[], newFilter = false) {
                 patchState(store, {
                     statusFilter: statuses,
+                    newFilter,
                     bundlesPage: 1,
                     bundlesSelectedIds: []
                 });
@@ -490,6 +558,15 @@ export const DotPublishingQueueStore = signalStore(
                         refresh();
                         onDone?.();
                     });
+            },
+
+            /** Opens the Set Up dialog for an unsent bundle. */
+            openSetup(bundleId: string) {
+                patchState(store, { setupBundleId: bundleId });
+            },
+
+            closeSetup() {
+                patchState(store, { setupBundleId: null });
             },
 
             openDetail(bundleId: string) {
@@ -616,6 +693,7 @@ export const DotPublishingQueueStore = signalStore(
                 effect(() => {
                     store.search();
                     store.statusFilter();
+                    store.newFilter();
                     store.bundlesPage();
                     store.bundlesSort();
                     store.bundlesSortDirection();
@@ -623,12 +701,45 @@ export const DotPublishingQueueStore = signalStore(
                     untracked(() => store.loadBundles());
                 });
 
-                store.loadDraftBundlesCount();
+                // Only the search narrows the unsent list; the status filter and
+                // the page decide whether it is shown, not what it contains.
+                effect(() => {
+                    store.search();
+                    untracked(() => store.loadNewBundles());
+                });
+
                 store.startPolling();
             }
         };
     })
 );
+
+/**
+ * Builds a "New" row for an unsent bundle. The endpoint returns its id, name and
+ * item count. The creation date is decoded from the id (a ULID) and doubles as
+ * the last update, since nothing records changes to an unsent bundle — the same
+ * fallback audit rows use when they have no `statusUpdated`.
+ *
+ * @param bundleId   the bundle id
+ * @param bundleName the bundle name
+ * @param assetCount the number of queued assets, if the server sent it
+ */
+function toNewRow(bundleId: string, bundleName: string, assetCount?: number): PublishingQueueRow {
+    return {
+        bundleId,
+        bundleName,
+        status: null,
+        filterName: null,
+        filterKey: null,
+        assetCount: assetCount ?? null,
+        assetPreview: [],
+        environmentCount: 0,
+        createDate: ulidTimestamp(bundleId) ?? '',
+        statusUpdated: null,
+        numTries: 0,
+        isNew: true
+    };
+}
 
 /** Max number of per-bundle failure details listed inline in a retry toast
  * before it collapses to "and N more". Keeps the toast readable for large

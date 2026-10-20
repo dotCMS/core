@@ -170,14 +170,22 @@ public class BundleResource {
     }
 
     /**
-     * Returns a list of un-send bundles (haven't been sent to any Environment) filtered by owner and name
+     * Returns the unsent bundles (not yet sent to any environment) of a user, optionally
+     * filtered by name. A regular user may only list their own; a CMS Administrator may list
+     * anyone's.
      *
-     * @param request
-     * @param params
-     * @return
-     * @throws DotStateException
-     * @throws DotDataException
-     * @throws JSONException
+     * <p>Each item carries {@code id}, {@code name} and {@code assetCount} — the number of
+     * assets queued in the bundle. {@code assetCount} is left out when the count can't be read,
+     * so the list itself still loads.</p>
+     *
+     * @param request  the HTTP request; reads the {@code name}, {@code start} and {@code count}
+     *                 query parameters
+     * @param response the HTTP response
+     * @param params   path parameters; {@code userid} selects whose bundles to list
+     * @return a JSON object with the bundles under {@code items}
+     * @throws DotStateException if the user can't be resolved
+     * @throws DotDataException  if the bundles can't be read
+     * @throws JSONException     if the response can't be built
      */
     @GET
     @Path ("/getunsendbundles/{params:.*}")
@@ -242,11 +250,24 @@ public class BundleResource {
             //Filter by name
             bundles = APILocator.getBundleAPI().getUnsendBundlesByName( userId, bundleName, offset, start );
         }
+
+        // One grouped COUNT for the whole page instead of one query per bundle. A failure only
+        // costs the counts: the list is still useful without them.
+        final List<String> bundleIds = bundles.stream().map(Bundle::getId).collect(Collectors.toList());
+        final Map<String, Integer> assetCounts = Try.of(() -> PublisherAPIImpl.getInstance()
+                        .countQueueElementsByBundleIds(bundleIds))
+                .onFailure(e -> Logger.warn(this, "Unable to count the assets of the unsent bundles: "
+                        + e.getMessage(), e))
+                .getOrNull();
+
         for ( Bundle b : bundles ) {
 
             JSONObject jsonBundle = new JSONObject();
             jsonBundle.put( "id", b.getId() );
             jsonBundle.put( "name", StringEscapeUtils.unescapeJava(b.getName()));
+            if ( assetCounts != null ) {
+                jsonBundle.put( "assetCount", assetCounts.getOrDefault( b.getId(), 0 ) );
+            }
             //Added to the response list
             jsonBundles.add( jsonBundle );
         }

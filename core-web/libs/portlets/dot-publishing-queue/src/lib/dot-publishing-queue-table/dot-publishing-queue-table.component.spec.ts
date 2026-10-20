@@ -20,19 +20,19 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
-import { PublishAuditStatus, PublishingJobView } from '@dotcms/dotcms-models';
+import { PublishAuditStatus } from '@dotcms/dotcms-models';
 import { DotClipboardUtil } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 
 import { DotPublishingQueueTableComponent } from './dot-publishing-queue-table.component';
 
-import { DotPublishingQueueStore } from '../store/dot-publishing-queue.store';
+import { DotPublishingQueueStore, PublishingQueueRow } from '../store/dot-publishing-queue.store';
 
 const row = (
     bundleId: string,
     status: PublishAuditStatus = PublishAuditStatus.SUCCESS
-): PublishingJobView => ({
+): PublishingQueueRow => ({
     bundleId,
     bundleName: `Bundle ${bundleId}`,
     status,
@@ -43,14 +43,31 @@ const row = (
     environmentCount: 1,
     createDate: '2026-06-08T10:00:00Z',
     statusUpdated: null,
-    numTries: 1
+    numTries: 1,
+    isNew: false
+});
+
+/** An unsent bundle, as `loadNewBundles` maps it: only its id and name are known. */
+const newRow = (bundleId: string): PublishingQueueRow => ({
+    bundleId,
+    bundleName: `Draft ${bundleId}`,
+    status: null,
+    filterName: null,
+    filterKey: null,
+    assetCount: null,
+    assetPreview: [],
+    environmentCount: 0,
+    createDate: '',
+    statusUpdated: null,
+    numTries: 0,
+    isNew: true
 });
 
 describe('DotPublishingQueueTableComponent', () => {
     let spectator: Spectator<DotPublishingQueueTableComponent>;
     let store: ReturnType<typeof makeStoreStub>;
 
-    const bundlesRows = signal<PublishingJobView[]>([]);
+    const tableRows = signal<PublishingQueueRow[]>([]);
     const bundlesStatus = signal<'init' | 'loading' | 'loaded' | 'error'>('loaded');
     const bundlesTotal = signal(0);
     const bundlesPage = signal(1);
@@ -61,7 +78,7 @@ describe('DotPublishingQueueTableComponent', () => {
 
     function makeStoreStub() {
         return {
-            bundlesRows,
+            tableRows,
             bundlesStatus,
             bundlesTotal,
             bundlesPage,
@@ -76,6 +93,7 @@ describe('DotPublishingQueueTableComponent', () => {
             clearBundlesSelection: vi.fn(() => bundlesSelectedIds.set([])),
             openDetail: vi.fn(),
             openAssetList: vi.fn(),
+            openSetup: vi.fn(),
             deleteBundle: vi.fn(),
             retryBundles: vi.fn()
         };
@@ -102,7 +120,9 @@ describe('DotPublishingQueueTableComponent', () => {
                 useValue: new MockDotMessageService({
                     'publishing-queue.asset-list.items-count.singular': '{0} item',
                     'publishing-queue.asset-list.items-count.plural': '{0} items',
-                    'publishing-queue.column.items.view': 'View items'
+                    'publishing-queue.column.items.view': 'View items',
+                    'publishing-queue.row.set-up': 'Set up',
+                    'publishing-queue.status.NEW': 'New'
                 })
             },
             mockProvider(DotGlobalMessageService, { error: vi.fn() }),
@@ -113,7 +133,7 @@ describe('DotPublishingQueueTableComponent', () => {
     });
 
     beforeEach(() => {
-        bundlesRows.set([row('b1'), row('b2', PublishAuditStatus.FAILED_TO_PUBLISH)]);
+        tableRows.set([row('b1'), row('b2', PublishAuditStatus.FAILED_TO_PUBLISH)]);
         bundlesStatus.set('loaded');
         bundlesTotal.set(2);
         bundlesPage.set(1);
@@ -160,7 +180,7 @@ describe('DotPublishingQueueTableComponent', () => {
 
     describe('Items column', () => {
         it('renders the count as a "N items" link', () => {
-            bundlesRows.set([{ ...row('b1'), assetCount: 20 }]);
+            tableRows.set([{ ...row('b1'), assetCount: 20 }]);
             spectator.detectChanges();
 
             const link = spectator.query(byTestId('pq-bundles-items-btn'));
@@ -168,7 +188,7 @@ describe('DotPublishingQueueTableComponent', () => {
         });
 
         it('underlines on hover only, so the column stays quiet at rest', () => {
-            bundlesRows.set([{ ...row('b1'), assetCount: 20 }]);
+            tableRows.set([{ ...row('b1'), assetCount: 20 }]);
             spectator.detectChanges();
 
             const link = spectator.query(byTestId('pq-bundles-items-btn'));
@@ -177,7 +197,7 @@ describe('DotPublishingQueueTableComponent', () => {
         });
 
         it('carries a "View items" tooltip and aria-label so the click target reads as an action', () => {
-            bundlesRows.set([{ ...row('b1'), assetCount: 20 }]);
+            tableRows.set([{ ...row('b1'), assetCount: 20 }]);
             spectator.detectChanges();
 
             expect(
@@ -186,7 +206,7 @@ describe('DotPublishingQueueTableComponent', () => {
         });
 
         it('opens the asset list without also triggering the row-detail dialog', () => {
-            bundlesRows.set([{ ...row('b1'), assetCount: 20 }]);
+            tableRows.set([{ ...row('b1'), assetCount: 20 }]);
             spectator.detectChanges();
 
             spectator.click(byTestId('pq-bundles-items-btn'));
@@ -196,7 +216,7 @@ describe('DotPublishingQueueTableComponent', () => {
         });
 
         it('uses the singular wording for exactly one item', () => {
-            bundlesRows.set([{ ...row('b1'), assetCount: 1 }]);
+            tableRows.set([{ ...row('b1'), assetCount: 1 }]);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('pq-bundles-items-btn'))?.textContent?.trim()).toBe(
@@ -205,7 +225,7 @@ describe('DotPublishingQueueTableComponent', () => {
         });
 
         it('renders an empty bundle as plain text — there is nothing to open', () => {
-            bundlesRows.set([{ ...row('b1'), assetCount: 0 }]);
+            tableRows.set([{ ...row('b1'), assetCount: 0 }]);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('pq-bundles-items-btn'))).toBeFalsy();
@@ -218,6 +238,138 @@ describe('DotPublishingQueueTableComponent', () => {
     it('row click opens the detail dialog', () => {
         spectator.component.onRowClick(row('b1'));
         expect(store.openDetail).toHaveBeenCalledWith('b1');
+    });
+
+    describe('New rows', () => {
+        beforeEach(() => {
+            tableRows.set([newRow('n1'), row('b1')]);
+            spectator.detectChanges();
+        });
+
+        const newRowEl = () => spectator.query('[data-testid="pq-bundles-row"][data-new]');
+
+        it('renders a "New" status tag', () => {
+            expect(newRowEl()?.querySelector('[data-testid="pq-status-chip"]')).toHaveText('New');
+        });
+
+        it('shows Date Entered and Last Update when the id carried a date', () => {
+            const createDate = '2026-06-08T10:00:00Z';
+            tableRows.set([
+                { ...newRow('n1'), createDate },
+                { ...row('b1'), createDate, statusUpdated: null }
+            ]);
+            spectator.detectChanges();
+
+            const [newEl, auditEl] = spectator.queryAll(byTestId('pq-bundles-row'));
+            const cell = (el: Element, testId: string) =>
+                el.querySelector(`[data-testid="${testId}"]`)?.textContent?.trim();
+
+            expect(cell(newEl, 'pq-bundles-created')).toContain('2026');
+            // Same date, same rendering as an audit row that has no status update yet.
+            expect(cell(newEl, 'pq-bundles-created')).toBe(cell(auditEl, 'pq-bundles-created'));
+            expect(cell(newEl, 'pq-bundles-modified')).toBe(cell(auditEl, 'pq-bundles-modified'));
+        });
+
+        it('shows the item count as a link that opens Set up, not the asset list', () => {
+            tableRows.set([{ ...newRow('n1'), assetCount: 3 }]);
+            spectator.detectChanges();
+
+            const link = newRowEl()?.querySelector('[data-testid="pq-bundles-items-btn"]');
+            expect(link).toHaveText('3 items');
+
+            spectator.click(link as HTMLElement);
+
+            expect(store.openSetup).toHaveBeenCalledWith('n1');
+            expect(store.openAssetList).not.toHaveBeenCalled();
+            expect(store.openDetail).not.toHaveBeenCalled();
+        });
+
+        it('shows "0 items" as plain text for an empty New bundle', () => {
+            tableRows.set([{ ...newRow('n1'), assetCount: 0 }]);
+            spectator.detectChanges();
+
+            expect(newRowEl()?.querySelector('[data-testid="pq-bundles-items-btn"]')).toBeFalsy();
+            expect(newRowEl()?.querySelector('[data-testid="pq-bundles-items"]')).toHaveText(
+                '0 items'
+            );
+        });
+
+        it('shows a dash when the item count is unknown, and for dates when the id carried none', () => {
+            const el = newRowEl();
+            expect(el?.querySelector('[data-testid="pq-bundles-items-btn"]')).toBeFalsy();
+            expect(el?.querySelector('[data-testid="pq-bundles-items"]')).toHaveText('—');
+            expect(el?.querySelector('[data-testid="pq-bundles-created"]')).toHaveText('—');
+            expect(el?.querySelector('[data-testid="pq-bundles-modified"]')).toHaveText('—');
+        });
+
+        it('shows the Set up button next to the kebab, only on New rows', () => {
+            const buttons = spectator.queryAll(byTestId('pq-bundles-setup-btn'));
+            expect(buttons.length).toBe(1);
+            expect(newRowEl()?.contains(buttons[0])).toBe(true);
+            expect(buttons[0]).toHaveText('Set up');
+            expect(buttons[0].classList).toContain('p-button-outlined');
+            expect(newRowEl()?.querySelector('[data-testid="pq-bundles-kebab-btn"]')).toBeTruthy();
+        });
+
+        it('Set up opens the Set Up dialog without also opening the bundle details', () => {
+            spectator.click(byTestId('pq-bundles-setup-btn'));
+            expect(store.openSetup).toHaveBeenCalledWith('n1');
+            expect(store.openDetail).not.toHaveBeenCalled();
+        });
+
+        it('clicking the row opens the Set Up dialog instead of the bundle details', () => {
+            spectator.component.onRowClick(newRow('n1'));
+            expect(store.openSetup).toHaveBeenCalledWith('n1');
+            expect(store.openDetail).not.toHaveBeenCalled();
+        });
+
+        it('kebab offers only Generate/download, a separator and Delete', () => {
+            const items = spectator.component.bundlesKebabFor(newRow('n1'));
+            expect(items.map((i) => i.label ?? 'separator')).toEqual([
+                'publishing-queue.kebab.generate-download',
+                'separator',
+                'publishing-queue.history.kebab.delete'
+            ]);
+        });
+
+        it('kebab Generate/download opens the download dialog for the bundle', () => {
+            spectator.component.bundlesKebabFor(newRow('n1'))[0].command?.({} as never);
+            expect(downloadService.open).toHaveBeenCalledWith('n1');
+        });
+
+        it('kebab Delete confirms, then deletes the bundle', () => {
+            const items = spectator.component.bundlesKebabFor(newRow('n1'));
+            items[items.length - 1].command?.({} as never);
+            expect(confirmationService.confirm).toHaveBeenCalled();
+            expect(store.deleteBundle).toHaveBeenCalledWith('n1');
+        });
+
+        it('widens the actions column only while a New row is on screen', () => {
+            expect(spectator.component.$actionsColumnWidth()).toBe('9.5rem');
+
+            tableRows.set([row('b1')]);
+            expect(spectator.component.$actionsColumnWidth()).toBe('3rem');
+        });
+
+        it('holds the actions cell open with a content min-width on every row', () => {
+            // The <th> width alone gets squeezed (the table is `width: auto`), so
+            // the cell contents carry the minimum.
+            const wrappers = spectator.queryAll<HTMLElement>(byTestId('pq-bundles-actions'));
+            expect(wrappers.length).toBe(2);
+            wrappers.forEach((el) => expect(el.style.minWidth).toBe('7.5rem'));
+
+            tableRows.set([row('b1')]);
+            spectator.detectChanges();
+            expect(
+                spectator.query<HTMLElement>(byTestId('pq-bundles-actions'))?.style.minWidth
+            ).toBe('');
+        });
+
+        it('leaves rows with an audit status without a Set up button', () => {
+            tableRows.set([row('b1')]);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('pq-bundles-setup-btn'))).toBeFalsy();
+        });
     });
 
     describe('pagination', () => {
@@ -310,7 +462,7 @@ describe('DotPublishingQueueTableComponent', () => {
         });
 
         it('kebabFor returns the SAME array reference across change-detection cycles', () => {
-            const r = bundlesRows()[0];
+            const r = tableRows()[0];
             const a = spectator.component.kebabFor(r);
             spectator.detectChanges();
             const b = spectator.component.kebabFor(r);
@@ -463,13 +615,13 @@ describe('DotPublishingQueueTableComponent', () => {
         // and "natural width" (rows present) — otherwise PrimeNG's default
         // width:100% squeezes the Filter column when Bundle Id has extra space.
         it('uses natural width when rows are present', () => {
-            bundlesRows.set([row('b1')]);
+            tableRows.set([row('b1')]);
             spectator.detectChanges();
             expect(spectator.component.$ptConfig().table.style.width).toBe('auto');
         });
 
         it('fills the container when the rows list is empty', () => {
-            bundlesRows.set([]);
+            tableRows.set([]);
             spectator.detectChanges();
             const style = spectator.component.$ptConfig().table.style as Record<string, string>;
             expect(style.width).toBe('100%');

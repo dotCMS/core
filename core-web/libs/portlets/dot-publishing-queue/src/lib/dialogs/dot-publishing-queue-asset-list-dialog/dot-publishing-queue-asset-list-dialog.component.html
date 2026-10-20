@@ -75,12 +75,10 @@
                                 size="small"
                                 severity="secondary"
                                 styleClass="opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity h-8! w-8! min-w-0! p-0!"
-                                [pTooltip]="'publishing-queue.select-bundle.delete-tooltip' | dm"
+                                [pTooltip]="'publishing-queue.delete-from-bundle' | dm"
                                 tooltipPosition="left"
                                 (onClick)="onRemoveAsset(asset)"
-                                [attr.aria-label]="
-                                    'publishing-queue.select-bundle.delete-tooltip' | dm
-                                "
+                                [attr.aria-label]="'publishing-queue.delete-from-bundle' | dm"
                                 data-testid="pq-asset-remove-btn">
                                 <span
                                     class="material-symbols-rounded text-lg! leading-none!"

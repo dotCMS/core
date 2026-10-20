@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal } from '@angular/core';
+import { Component, computed, inject, linkedSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ListboxModule } from 'primeng/listbox';
@@ -93,6 +93,10 @@ const STATUS_FILTER_GROUPS: readonly StatusFilterGroup[] = [
     }
 ];
 
+/** Listbox value of the "New" option. Unsent bundles have no audit status, so
+ * the option maps to the store's `newFilter` flag instead of to status codes. */
+const NEW_OPTION_VALUE = 'new';
+
 @Component({
     selector: 'dot-publishing-queue-status-filter',
     imports: [
@@ -103,8 +107,7 @@ const STATUS_FILTER_GROUPS: readonly StatusFilterGroup[] = [
         DotFilterListItemComponent,
         DotMessagePipe
     ],
-    templateUrl: './dot-publishing-queue-status-filter.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    templateUrl: './dot-publishing-queue-status-filter.component.html'
 })
 export class DotPublishingQueueStatusFilterComponent {
     readonly #store = inject(DotPublishingQueueStore);
@@ -114,18 +117,31 @@ export class DotPublishingQueueStatusFilterComponent {
     protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
     protected readonly LISTBOX_SCROLL_HEIGHT = '320px';
 
-    protected readonly $options: StatusOption[] = STATUS_FILTER_GROUPS.map((group) => ({
-        value: group.value,
-        label: this.#dotMessageService.get(group.labelKey),
-        codes: group.codes
-    }));
+    /** "New" first (it is the earliest point of a bundle's lifecycle), then the
+     * audit status groups. */
+    protected readonly $options: StatusOption[] = [
+        {
+            value: NEW_OPTION_VALUE,
+            label: this.#dotMessageService.get('publishing-queue.filter.status.new'),
+            codes: []
+        },
+        ...STATUS_FILTER_GROUPS.map((group) => ({
+            value: group.value,
+            label: this.#dotMessageService.get(group.labelKey),
+            codes: group.codes
+        }))
+    ];
 
-    /** Selected group keys, derived from the store. A group counts as selected
-     * only when **all** of its codes are in the store filter. */
+    /** Selected option keys, derived from the store. A status group counts as
+     * selected only when **all** of its codes are in the store filter; "New"
+     * follows the store's `newFilter` flag. */
     protected readonly $selected = linkedSignal<string[]>(() => {
         const filter = new Set(this.#store.statusFilter());
+        const newFilter = this.#store.newFilter();
         return this.$options
-            .filter((opt) => opt.codes.every((c) => filter.has(c)))
+            .filter((opt) =>
+                opt.value === NEW_OPTION_VALUE ? newFilter : opt.codes.every((c) => filter.has(c))
+            )
             .map((opt) => opt.value);
     });
 
@@ -139,14 +155,15 @@ export class DotPublishingQueueStatusFilterComponent {
     static readonly STATUS_FILTER_GROUPS = STATUS_FILTER_GROUPS;
 
     /**
-     * Sends the union of the selected groups' statuses to the store.
+     * Sends the union of the selected groups' statuses, and whether "New" is
+     * checked, to the store.
      */
     protected onChange(): void {
         const selected = new Set(this.$selected());
         const codes = this.$options
             .filter((opt) => selected.has(opt.value))
             .flatMap((opt) => [...opt.codes]);
-        this.#store.setStatusFilter(codes);
+        this.#store.setStatusFilter(codes, selected.has(NEW_OPTION_VALUE));
     }
 
     /**

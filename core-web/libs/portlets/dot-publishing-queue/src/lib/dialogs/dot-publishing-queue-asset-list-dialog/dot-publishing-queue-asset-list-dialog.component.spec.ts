@@ -60,7 +60,7 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
                     'publishing-queue.column.name': 'Name',
                     'publishing-queue.column.type': 'Type',
                     'publishing-queue.asset-list.empty': 'No items',
-                    'publishing-queue.select-bundle.delete-tooltip': 'Delete from bundle',
+                    'publishing-queue.delete-from-bundle': 'Delete from bundle',
                     'publishing-queue.asset-list.remove-confirm.header':
                         'Remove asset from bundle?',
                     'publishing-queue.asset-list.remove-confirm.message':

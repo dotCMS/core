@@ -13,6 +13,7 @@ import com.dotcms.publisher.business.DotPublisherException;
 import com.dotcms.publisher.business.PublishAuditHistory;
 import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherAPIImpl;
@@ -25,6 +26,8 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.json.JSONArray;
+import com.dotmarketing.util.json.JSONObject;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -47,6 +50,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -351,5 +355,36 @@ public class BundleResourceTest {
                 mockRequestFor(APILocator.systemUser()), response, "userid/" + userB.getUserId());
 
         assertEquals(200, resp.getStatus());
+    }
+
+    /**
+     * Method to Test: {@link BundleResource#getUnsendBundles(HttpServletRequest, HttpServletResponse, String)}
+     * Given: a backend user with two unsent bundles, one holding two queued assets and one empty
+     * When:  they list their unsent bundles
+     * Should: report each bundle's number of queued assets as {@code assetCount}, with 0 for the
+     *         empty bundle, so the Publishing Queue can show it without one request per bundle.
+     */
+    @Test
+    public void test_getUnsendBundles_includesAssetCountPerBundle() throws Exception {
+        final User user = newBackendUser();
+        final String filledBundleId = insertPublishingBundle(user.getUserId(), null);
+        final String emptyBundleId = insertPublishingBundle(user.getUserId(), null);
+        com.dotcms.publisher.business.PublisherAPI.getInstance().saveBundleAssets(
+                list(new FolderDataGen().nextPersisted().getIdentifier(),
+                        new FolderDataGen().nextPersisted().getIdentifier()),
+                filledBundleId, adminUser);
+
+        final Response resp = bundleResource.getUnsendBundles(
+                mockRequestFor(user), response, "userid/" + user.getUserId());
+
+        assertEquals(200, resp.getStatus());
+        final JSONArray items = new JSONObject(resp.getEntity().toString()).getJSONArray("items");
+        final Map<String, Integer> countsById = new HashMap<>();
+        for (int i = 0; i < items.length(); i++) {
+            final JSONObject item = items.getJSONObject(i);
+            countsById.put(item.getString("id"), item.getInt("assetCount"));
+        }
+        assertEquals(Integer.valueOf(2), countsById.get(filledBundleId));
+        assertEquals(Integer.valueOf(0), countsById.get(emptyBundleId));
     }
 }

@@ -40,7 +40,9 @@ export interface PublishingJobView {
 export interface UnsentBundlesResponse {
     identifier: string;
     label: string;
-    items: { id: string; name: string }[];
+    /** `assetCount` is the number of assets queued in the bundle. It is missing
+     * when the server couldn't count them (and on servers older than #38037). */
+    items: { id: string; name: string; assetCount?: number }[];
     numRows: number;
 }
 

@@ -1,3 +1,10 @@
 @if ($status()) {
-    <p-tag [severity]="$bucket()" [value]="$labelKey() | dm" data-testid="pq-status-chip" />
+    @if ($isNew()) {
+        <p-tag
+            [value]="$labelKey() | dm"
+            styleClass="bg-primary-50! text-primary-700!"
+            data-testid="pq-status-chip" />
+    } @else {
+        <p-tag [severity]="$bucket()" [value]="$labelKey() | dm" data-testid="pq-status-chip" />
+    }
 }

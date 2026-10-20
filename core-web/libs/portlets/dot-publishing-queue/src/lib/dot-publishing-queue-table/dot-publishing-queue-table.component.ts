@@ -1,12 +1,5 @@
 import { DatePipe } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    inject,
-    signal,
-    viewChild
-} from '@angular/core';
+import { Component, computed, inject, signal, viewChild } from '@angular/core';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -23,7 +16,7 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { DotGlobalMessageService, DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
-import { PublishAuditStatus, PublishingJobView } from '@dotcms/dotcms-models';
+import { PublishAuditStatus } from '@dotcms/dotcms-models';
 import {
     DotClipboardUtil,
     DotEmptyContainerComponent,
@@ -34,7 +27,7 @@ import {
 import { DotDownloadBundleDialogService } from '@services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 
 import { DotPublishingStatusChipComponent } from '../components/dot-publishing-status-chip/dot-publishing-status-chip.component';
-import { DotPublishingQueueStore } from '../store/dot-publishing-queue.store';
+import { DotPublishingQueueStore, PublishingQueueRow } from '../store/dot-publishing-queue.store';
 
 /** Standard dotCMS bundle ids are 26-char ULIDs. Some are longer (custom
  * import/sync paths). Cap the visible length so the column doesn't stretch;
@@ -79,7 +72,6 @@ const ACTIVE_STATUSES = new Set<PublishAuditStatus>([
     ],
     providers: [ConfirmationService, DotClipboardUtil],
     templateUrl: './dot-publishing-queue-table.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0 flex-1' }
 })
 export class DotPublishingQueueTableComponent {
@@ -110,7 +102,7 @@ export class DotPublishingQueueTableComponent {
         table: {
             style: {
                 'table-layout': 'fixed' as const,
-                ...(this.store.bundlesRows().length === 0
+                ...(this.store.tableRows().length === 0
                     ? { height: '100%', width: '100%' }
                     : { width: 'auto' })
             }
@@ -124,15 +116,51 @@ export class DotPublishingQueueTableComponent {
         subtitle: this.#dotMessageService.get('publishing-queue.empty.bundles.subtitle')
     };
 
+    /** Wide enough for the "Set up" button only while a New row is on screen;
+     * otherwise just the kebab, so the other columns keep their room. */
+    readonly $actionsColumnWidth = computed(() =>
+        this.store.tableRows().some((row) => row.isNew) ? '9.5rem' : '3rem'
+    );
+
+    /**
+     * Minimum width of the actions cell contents while a New row is on screen.
+     *
+     * The `<th>` width alone doesn't hold: `$ptConfig` gives the table
+     * `width: auto`, which makes the browser ignore `table-layout: fixed` and
+     * treat column widths as preferences, so a table wider than the portlet
+     * squeezes every column to fit. A cell's content min-width is the one thing
+     * that squeezing has to respect. The `<th>` width is this plus the cell padding.
+     */
+    readonly $actionsContentMinWidth = computed(() =>
+        this.store.tableRows().some((row) => row.isNew) ? '7.5rem' : null
+    );
+
     readonly $selectedRows = computed(() => {
         const selectedIds = new Set(this.store.bundlesSelectedIds());
-        return this.store.bundlesRows().filter((row) => selectedIds.has(row.bundleId));
+        return this.store.tableRows().filter((row) => selectedIds.has(row.bundleId));
     });
 
     /** Per-row builder. Kept as a pure arrow so the spec can call it directly
      * to verify the items' shape. The template never calls this — it calls
      * `kebabFor(row)` which returns a memoized reference (see below). */
-    readonly bundlesKebabFor = (row: PublishingJobView): MenuItem[] => {
+    readonly bundlesKebabFor = (row: PublishingQueueRow): MenuItem[] => {
+        // A New bundle has no audit entry, so there are no details to show and
+        // nothing to retry; sending it goes through the "Set up" button.
+        if (row.isNew) {
+            return [
+                {
+                    label: this.#dotMessageService.get('publishing-queue.kebab.generate-download'),
+                    command: () => this.#dotDownloadBundleDialogService.open(row.bundleId)
+                },
+                { separator: true },
+                {
+                    label: this.#dotMessageService.get('publishing-queue.history.kebab.delete'),
+                    styleClass: 'p-menuitem-danger',
+                    command: () => this.#confirmRemove(row)
+                }
+            ];
+        }
+
         const items: MenuItem[] = [
             {
                 label: this.#dotMessageService.get('publishing-queue.history.kebab.view-details'),
@@ -180,13 +208,13 @@ export class DotPublishingQueueTableComponent {
      * twice. */
     readonly #kebabMenus = computed(() => {
         const map = new Map<string, MenuItem[]>();
-        for (const row of this.store.bundlesRows()) {
+        for (const row of this.store.tableRows()) {
             map.set(row.bundleId, this.bundlesKebabFor(row));
         }
         return map;
     });
 
-    kebabFor(row: PublishingJobView): MenuItem[] {
+    kebabFor(row: PublishingQueueRow): MenuItem[] {
         return this.#kebabMenus().get(row.bundleId) ?? [];
     }
 
@@ -194,7 +222,7 @@ export class DotPublishingQueueTableComponent {
      * row was right-clicked. One shared `<p-contextMenu>` instead of one per row
      * keeps the DOM small even with hundreds of rows. */
     readonly contextMenu = viewChild<ContextMenu>('rowContextMenu');
-    readonly contextMenuRow = signal<PublishingJobView | null>(null);
+    readonly contextMenuRow = signal<PublishingQueueRow | null>(null);
     readonly contextMenuItems = computed<MenuItem[]>(() => {
         const row = this.contextMenuRow();
         return row ? this.kebabFor(row) : [];
@@ -240,7 +268,7 @@ export class DotPublishingQueueTableComponent {
      * @param event the `contextmenu` event, prevented so the browser menu doesn't show
      * @param row   the row that was right-clicked
      */
-    onRowContextMenu(event: MouseEvent, row: PublishingJobView): void {
+    onRowContextMenu(event: MouseEvent, row: PublishingQueueRow): void {
         event.preventDefault();
         this.#openKebab?.hide();
         this.#openKebab = null;
@@ -270,11 +298,32 @@ export class DotPublishingQueueTableComponent {
         }
     }
 
-    onSelectionChange(rows: PublishingJobView[]): void {
+    onSelectionChange(rows: PublishingQueueRow[]): void {
         this.store.setBundlesSelection(rows.map((r) => r.bundleId));
     }
 
-    onRowClick(row: PublishingJobView): void {
+    /**
+     * Opens a row's items: the Set Up dialog for a New row (it lists and edits
+     * the items), the asset list dialog for any other row.
+     *
+     * @param row the row whose "N items" link was clicked
+     */
+    onItemsClick(row: PublishingQueueRow): void {
+        if (row.isNew) {
+            this.store.openSetup(row.bundleId);
+            return;
+        }
+
+        this.store.openAssetList(row.bundleId);
+    }
+
+    /** A New row opens its Set Up dialog; any other row opens the bundle details. */
+    onRowClick(row: PublishingQueueRow): void {
+        if (row.isNew) {
+            this.store.openSetup(row.bundleId);
+            return;
+        }
+
         this.store.openDetail(row.bundleId);
     }
 
@@ -314,7 +363,7 @@ export class DotPublishingQueueTableComponent {
      * service — the dialog itself is mounted once in `main-legacy.component.html`.
      * `isBundle: true` routes the submit to the bundle endpoint instead of asset.
      */
-    #openPushPublish(row: PublishingJobView): void {
+    #openPushPublish(row: PublishingQueueRow): void {
         this.#dotPushPublishDialogService.open({
             assetIdentifier: row.bundleId,
             title: row.bundleName || row.bundleId,
@@ -322,7 +371,7 @@ export class DotPublishingQueueTableComponent {
         });
     }
 
-    #confirmRemove(row: PublishingJobView): void {
+    #confirmRemove(row: PublishingQueueRow): void {
         this.#confirmationService.confirm({
             header: this.#dotMessageService.get('publishing-queue.delete.confirm.header'),
             message: this.#dotMessageService.get(
