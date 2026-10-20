@@ -499,8 +499,8 @@ public class RoleAjax {
 		final User caller = getLoggedInUser();
 		validateRolesPortletPermissions(caller);
 		if (!caller.isAdmin()) {
-			SecurityLogger.logInfo(getClass(),
-					"Unauthorized attempt to " + action + " by user " + caller.getUserId());
+			SecurityLogger.logWarn(getClass(), "Unauthorized attempt to " + action + " by user "
+					+ caller.getUserId() + " from " + DwrUtil.getHttpServletRequest().getRemoteHost());
 			throw new DotSecurityException("User does not have permission to " + action);
 		}
 	}

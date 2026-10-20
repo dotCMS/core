@@ -1,6 +1,7 @@
 package com.dotmarketing.business.ajax;
 
 import static org.junit.Assert.assertThrows;
+import static org.mockito.AdditionalMatchers.and;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -17,6 +18,7 @@ import com.dotmarketing.business.web.UserWebAPI;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 import org.junit.Test;
 import org.junit.function.ThrowingRunnable;
 import org.mockito.MockedStatic;
@@ -39,35 +41,14 @@ public class RoleAjaxTest {
 
     @Test
     public void addUserToRole_rejectsNonAdmin() {
-        final User nonAdmin = mock(User.class);
-        when(nonAdmin.isAdmin()).thenReturn(false);
-        when(nonAdmin.getUserId()).thenReturn("non-admin-user");
-
-        try (MockedStatic<DwrUtil> dwrUtil = mockStatic(DwrUtil.class);
-                MockedStatic<SecurityLogger> ignored = mockStatic(SecurityLogger.class)) {
-            dwrUtil.when(DwrUtil::getLoggedInUser).thenReturn(nonAdmin);
-            // validateRolesPortletPermissions passes (portlet access alone must not
-            // be enough to grant roles) — the admin gate must still reject.
-
-            assertThrows(DotSecurityException.class,
-                    () -> newRoleAjax().addUserToRole("some-user", "some-role"));
-        }
+        assertNonAdminRejectedAndLogged(
+                () -> newRoleAjax().addUserToRole("some-user", "some-role"));
     }
 
     @Test
     public void removeUsersFromRole_rejectsNonAdmin() {
-        final User nonAdmin = mock(User.class);
-        when(nonAdmin.isAdmin()).thenReturn(false);
-        when(nonAdmin.getUserId()).thenReturn("non-admin-user");
-
-        try (MockedStatic<DwrUtil> dwrUtil = mockStatic(DwrUtil.class);
-                MockedStatic<SecurityLogger> ignored = mockStatic(SecurityLogger.class)) {
-            dwrUtil.when(DwrUtil::getLoggedInUser).thenReturn(nonAdmin);
-
-            assertThrows(DotSecurityException.class,
-                    () -> newRoleAjax().removeUsersFromRole(
-                            new String[] {"some-user"}, "some-role"));
-        }
+        assertNonAdminRejectedAndLogged(() -> newRoleAjax().removeUsersFromRole(
+                new String[] {"some-user"}, "some-role"));
     }
 
     @Test
@@ -95,21 +76,27 @@ public class RoleAjaxTest {
 
     /**
      * Runs {@code call} as a non-admin who passes the roles-portlet check and
-     * asserts it is refused with {@link DotSecurityException} and recorded in
-     * the security log.
+     * asserts it is refused with {@link DotSecurityException} and recorded as a
+     * warning in the security log, with the user and remote address.
      */
     private void assertNonAdminRejectedAndLogged(final ThrowingRunnable call) {
         final User nonAdmin = mock(User.class);
         when(nonAdmin.isAdmin()).thenReturn(false);
         when(nonAdmin.getUserId()).thenReturn("non-admin-user");
 
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRemoteHost()).thenReturn("10.0.0.7");
+
         try (MockedStatic<DwrUtil> dwrUtil = mockStatic(DwrUtil.class);
                 MockedStatic<SecurityLogger> securityLogger = mockStatic(SecurityLogger.class)) {
+            // validateRolesPortletPermissions passes (portlet access alone must not
+            // be enough) — the admin gate must still reject.
             dwrUtil.when(DwrUtil::getLoggedInUser).thenReturn(nonAdmin);
+            dwrUtil.when(DwrUtil::getHttpServletRequest).thenReturn(request);
 
             assertThrows(DotSecurityException.class, call);
-            securityLogger.verify(() -> SecurityLogger.logInfo(
-                    eq(RoleAjax.class), contains("non-admin-user")));
+            securityLogger.verify(() -> SecurityLogger.logWarn(eq(RoleAjax.class),
+                    and(contains("non-admin-user"), contains("10.0.0.7"))));
         }
     }
 
