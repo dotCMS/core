@@ -1007,6 +1007,31 @@ public class UserResourceIntegrationTest {
 
     /**
      * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator holds an
+     * extra assignable role and updates their own account without it and with an ordinary new role.
+     * Expected Result: {@link DotSecurityException} (403); nothing changes: the extra role is still
+     * held and the new role is not granted.
+     */
+    @Test
+    public void test_update_nonAdminAddingAndRemovingRoles_forbidden() throws Exception {
+        final Role extra = new RoleDataGen().key("extra" + uniq()).nextPersisted();
+        final Role ordinary = new RoleDataGen().key("ordinary" + uniq()).nextPersisted();
+        rolesToClean.add(extra);
+        rolesToClean.add(ordinary);
+        final User manager = newUserManager(extra);
+        final List<String> roles = directRoleIds(manager);
+        roles.remove(extra.getId());
+        roles.add(ordinary.getId());
+
+        assertThrows(DotSecurityException.class, () -> resource.update(requestAs(manager), response,
+                updateFormFor(manager).roles(roles).build()));
+
+        assertTrue(APILocator.getRoleAPI().doesUserHaveRole(manager, extra));
+        assertFalse(APILocator.getRoleAPI().doesUserHaveRole(manager, ordinary));
+    }
+
+    /**
+     * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
      * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator holds role P
      * directly and its child role C through it. They update their own account sending every role
      * they hold, inherited ones included, as the Users screen does on every save.

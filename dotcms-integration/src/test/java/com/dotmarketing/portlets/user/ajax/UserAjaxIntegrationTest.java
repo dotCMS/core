@@ -207,6 +207,52 @@ public class UserAjaxIntegrationTest {
 
     /**
      * Method to test: {@link UserAjax#updateUserRoles(String, List)}
+     * Given Scenario: A user with the Users tool who is not a CMS Administrator holds an extra
+     * assignable role and saves their own roles without it and with an ordinary new role added.
+     * Expected Result: {@link DotSecurityException}; nothing changes: the extra role is still held and
+     * the new role is not granted.
+     */
+    @Test
+    public void updateUserRoles_nonAdminAddingAndRemovingRoles_refused() throws Exception {
+        final Role extra = new RoleDataGen().nextPersisted();
+        final Role ordinary = new RoleDataGen().nextPersisted();
+        final User manager = newUserManagerLoggedIn(extra);
+        final List<String> requested = directRoleIds(manager);
+        requested.remove(extra.getId());
+        requested.add(ordinary.getId());
+
+        assertThrows(DotSecurityException.class,
+                () -> new UserAjax().updateUserRoles(manager.getUserId(), requested));
+
+        assertTrue(roleAPI.doesUserHaveRole(manager, extra));
+        assertFalse(roleAPI.doesUserHaveRole(manager, ordinary));
+    }
+
+    /**
+     * Method to test: {@link UserAjax#updateUserRoles(String, List)}
+     * Given Scenario: A user with the Users tool who is not a CMS Administrator saves their own roles
+     * exactly as the Users screen lists them ({@link UserAjax#getUserRoles(String)}: direct roles
+     * without the user's personal role).
+     * Expected Result: No error; the roles are identical before and after.
+     */
+    @Test
+    public void updateUserRoles_nonAdminSavingRolesAsListedByScreen_succeeds() throws Exception {
+        final User manager = newUserManagerLoggedIn(new RoleDataGen().nextPersisted());
+        final Set<String> before = directRoleIdSet(manager);
+
+        final List<String> listedByScreen = new UserAjax().getUserRoles(manager.getUserId()).stream()
+                .map(roleMap -> roleMap.get("id").toString())
+                .collect(Collectors.toCollection(ArrayList::new));
+        assertFalse("precondition: the screen does not list the personal role",
+                listedByScreen.contains(roleAPI.getUserRole(manager).getId()));
+
+        new UserAjax().updateUserRoles(manager.getUserId(), listedByScreen);
+
+        assertEquals(before, directRoleIdSet(manager));
+    }
+
+    /**
+     * Method to test: {@link UserAjax#updateUserRoles(String, List)}
      * Given Scenario: A CMS Administrator saves another user's roles, dropping role A and adding role B.
      * Expected Result: Role A is removed and role B is added, as before.
      */
