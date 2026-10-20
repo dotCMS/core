@@ -114,7 +114,9 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 The Critical Rules above are one-line summaries. The full directives live in the guides below, so
 before the **first edit** in any of these areas, read the linked guide and say in your reply which
 directive you are applying. The index under "Documentation (Load On-Demand)" is reference; this
-table is a gate.
+table is a gate. A project hook (`.claude/hooks/read-first.py`, wired in `.claude/settings.json`)
+repeats the row as context the first time an Edit or Write lands in a gated area in a session, unless
+the guide was already read; it reminds, it never blocks.
 
 | When the change touches… | Read first |
 |---|---|
@@ -128,6 +130,17 @@ table is a gate.
 | A `pom.xml` dependency or version | [Maven Build System](docs/backend/MAVEN_BUILD_SYSTEM.md) |
 | Anything under `core-web/` | [core-web/CLAUDE.md](core-web/CLAUDE.md) and [docs/frontend/README.md](docs/frontend/README.md) |
 | A commit message, branch name or PR description | [Git Workflows](docs/core/GIT_WORKFLOWS.md) |
+| Any Java under `dotCMS/src/main/java` | [Java Standards](docs/backend/JAVA_STANDARDS.md) — immutables, exceptions, utilities, Javadoc on every method you touch |
+| A DB schema change, an index mapping change, or a REST/GraphQL contract change | [Rollback-Unsafe Change Categories](docs/core/ROLLBACK_UNSAFE_CATEGORIES.md) |
+| An executor, thread pool, `synchronized` block or anything that blocks on I/O | [When to Use Virtual Threads](docs/backend/VIRTUAL_THREADS.md) |
+| `loadFields`, `toMap`, or how a field lands in the index document | [Index Field Emission](docs/backend/INDEX_FIELD_EMISSION.md) |
+| A system-event producer or consumer (`SystemEventsAPI`, `EventSubscriber`) | [System Events](docs/backend/SYSTEM_EVENTS.md) — at-least-once delivery, idempotent consumers |
+| A new metric or anything under `com.dotcms.telemetry` | [Telemetry Implementation](docs/backend/TELEMETRY_IMPLEMENTATION.md) |
+| Anything under `tools/dotcms-cli/` | [CLI Overview](docs/cli/CLI_OVERVIEW.md) — compiles to a lower `maven.compiler.release` than core |
+| A Playwright test under `core-web/apps/dotcms-ui-e2e/` | [E2E Tests](docs/testing/E2E_TESTS.md) |
+| `.github/workflows/**` | [CI/CD Pipeline](docs/core/CICD_PIPELINE.md) |
+| A `Dockerfile` or anything under `docker/` | [Docker Build Process](docs/infrastructure/DOCKER_BUILD_PROCESS.md) |
+| Creating or triaging a GitHub issue | [GitHub Issue Management](docs/core/GITHUB_ISSUE_MANAGEMENT.md) |
 
 ## Documentation (Load On-Demand)
 
