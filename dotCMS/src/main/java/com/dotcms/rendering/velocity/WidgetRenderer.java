@@ -67,8 +67,8 @@ public class WidgetRenderer {
      * What a widget rendered to.
      *
      * @param text                  the rendered text
-     * @param fieldScriptingSkipped {@code true} when the second evaluation did not run and the
-     *                              text still contains Velocity, so field values came out as text
+     * @param fieldScriptingSkipped {@code true} when the second evaluation did not run and some
+     *                              field value holds Velocity, so it came out as text
      */
     public record Rendering(String text, boolean fieldScriptingSkipped) {
     }
@@ -145,14 +145,30 @@ public class WidgetRenderer {
         VelocityUtil.getEngine().evaluate(context, firstEval, "", widgetExecuteCode.toString());
         final String firstPass = firstEval.toString();
         if (!rendersFieldVelocity(widget)) {
-            // Only worth flagging when Velocity is left in the output; plain widgets stay silent
-            final boolean velocityLeft = firstPass.contains("$") || firstPass.contains("#");
-            return new Rendering(firstPass, velocityLeft);
+            return new Rendering(firstPass, fieldValuesHoldVelocity(widget));
         }
 
         final StringWriter secondEval = new StringWriter();
         VelocityUtil.getEngine().evaluate(context, secondEval, "", firstPass);
         return new Rendering(secondEval.toString(), false);
+    }
+
+    /**
+     * Tells whether any field value of the widget looks like Velocity. This is the test a page
+     * render applies to decide whether a field value is merged as a template, so it marks exactly
+     * the values that a page would have evaluated and this renderer left as text. Text produced
+     * by the widget code itself (a price, a colour, an anchor) does not count.
+     *
+     * @param widget the widget being rendered
+     * @return {@code true} when some string property contains {@code $} or {@code #}
+     */
+    private static boolean fieldValuesHoldVelocity(final Contentlet widget) {
+        for (final Object value : widget.getMap().values()) {
+            if (value instanceof String text && (text.contains("$") || text.contains("#"))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

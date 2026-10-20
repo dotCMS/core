@@ -224,6 +224,29 @@ public class WidgetRendererTest {
 
     /**
      * Method to test: {@link WidgetRenderer#renderWithDetails(HttpServletRequest, HttpServletResponse, Contentlet)}
+     * Given scenario: flag off, the widget code itself prints a colour and a price, the field values are plain
+     * Expected result: nothing to report, {@code $} and {@code #} in the output do not count
+     */
+    @Test
+    public void flagOffWithVelocityLookalikesInWidgetCodeReportsNothing() {
+        final ContentType colourType = TestDataUtils.getWidgetLikeContentType(
+                "WidgetRendererColourType" + System.currentTimeMillis(), null, () -> "#fff costs $20 [$code]");
+        final Contentlet widget = new ContentletDataGen(colourType.id())
+                .setProperty("widgetTitle", "WidgetRendererTest")
+                .setProperty("code", "plain text")
+                .nextPersisted();
+        try {
+            final WidgetRenderer.Rendering rendering = renderWithDetailsAndFlag(widget, false);
+
+            assertEquals("#fff costs $20 [plain text]", rendering.text().trim());
+            assertFalse(rendering.fieldScriptingSkipped());
+        } finally {
+            ContentTypeDataGen.remove(colourType);
+        }
+    }
+
+    /**
+     * Method to test: {@link WidgetRenderer#renderWithDetails(HttpServletRequest, HttpServletResponse, Contentlet)}
      * Given scenario: flag on, widget last modified by a Scripting Developer
      * Expected result: the field value is evaluated and there is nothing to report
      */
