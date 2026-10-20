@@ -124,17 +124,10 @@ public class ApiTokenResourceTest {
                 .expirationSeconds(3600)
                 .build();
 
-        // The other user is either not visible to the requester (404) or the request is refused
-        final Response restResponse;
-        try {
-            restResponse = resource.issueApiToken(request, response, form);
-        } catch (final DotDataException e) {
-            assertTrue("Exception message should indicate admin-only restriction",
-                    e.getMessage().contains("Only Admin user"));
-            return;
-        }
-        assertNotEquals("A non-admin user should not get a token for another user",
-                Response.Status.OK.getStatusCode(), restResponse.getStatus());
+        // The other user is not readable by the requester, so the resource answers 404 before the admin check
+        final Response restResponse = resource.issueApiToken(request, response, form);
+        assertEquals("A non-admin user should get 404 for a token request on another user",
+                Response.Status.NOT_FOUND.getStatusCode(), restResponse.getStatus());
     }
 
     @Test()
