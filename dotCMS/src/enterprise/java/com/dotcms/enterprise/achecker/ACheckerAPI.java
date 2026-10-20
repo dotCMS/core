@@ -49,10 +49,10 @@ public interface ACheckerAPI {
      *
      * @throws DotValidationException If the {@code guidelines} or {@code lang} value is not
      *                                accepted, or a requested guideline does not exist.
-     * @throws DotDataException       If the check cannot be completed for any other reason; the
-     *                                message is fixed and does not repeat the underlying error.
+     * @throws com.dotmarketing.exception.DotRuntimeException If the check cannot be completed for
+     *                                any other reason; the message is fixed and does not repeat
+     *                                the underlying error.
      */
-    ACheckerResponse validate(final Map<String, String> validationData)
-            throws DotValidationException, DotDataException;
+    ACheckerResponse validate(final Map<String, String> validationData) throws DotValidationException;
 
 }

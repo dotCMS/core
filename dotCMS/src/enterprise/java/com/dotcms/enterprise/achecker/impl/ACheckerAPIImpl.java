@@ -1,5 +1,6 @@
 package com.dotcms.enterprise.achecker.impl;
 
+import com.dotcms.enterprise.achecker.AChecker;
 import com.dotcms.enterprise.achecker.ACheckerAPI;
 import com.dotcms.enterprise.achecker.ACheckerRequest;
 import com.dotcms.enterprise.achecker.ACheckerRequestValidator;
@@ -11,6 +12,7 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.util.EnterpriseFeature;
 import com.dotmarketing.business.DotValidationException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
@@ -28,7 +30,26 @@ public class ACheckerAPIImpl implements ACheckerAPI {
     /** Message reported when the check fails for a reason other than a rejected request value. */
     static final String CHECK_FAILED_MESSAGE = "The accessibility check could not be completed";
 
+    private final AChecker checker;
+
     private List<GuideLineBean> accessibilityGuidelineList = null;
+
+    /**
+     * Creates the API backed by the default {@link ACheckerImpl}.
+     */
+    public ACheckerAPIImpl() {
+        this(new ACheckerImpl());
+    }
+
+    /**
+     * Creates the API backed by the given checker. Mainly useful in tests, which can pass a checker
+     * that fails in a controlled way.
+     *
+     * @param checker the {@link AChecker} that runs the accessibility check
+     */
+    ACheckerAPIImpl(final AChecker checker) {
+        this.checker = checker;
+    }
 
     /**
      * Returns the list of Accessibility Guidelines available in the system.
@@ -73,13 +94,14 @@ public class ACheckerAPIImpl implements ACheckerAPI {
      *
      * @throws DotValidationException If the {@code guidelines} or {@code lang} value is not
      *                                accepted, or a requested guideline does not exist.
-     * @throws DotDataException       With the message "The accessibility check could not be
-     *                                completed" if the check fails for any other reason; the
-     *                                underlying error is logged and not attached.
+     * @throws DotRuntimeException    With the message "The accessibility check could not be
+     *                                completed" if the check fails for any other reason, so the
+     *                                REST layer answers with a server error; the underlying error
+     *                                is logged and not attached.
      */
     @EnterpriseFeature
-    public ACheckerResponse validate(final Map<String, String> validationData)
-            throws DotValidationException, DotDataException {
+    @Override
+    public ACheckerResponse validate(final Map<String, String> validationData) throws DotValidationException {
         final List<String> guidelineTokens =
                 ACheckerRequestValidator.guidelineTokens(validationData.get(GUIDELINES));
         final String lang = ACheckerRequestValidator.lang(validationData.get(LANG));
@@ -88,12 +110,12 @@ public class ACheckerAPIImpl implements ACheckerAPI {
         try {
             final ACheckerRequest request = new ACheckerRequest(lang, content,
                     String.join(",", guidelineTokens), Boolean.parseBoolean(fragment));
-            return new ACheckerImpl().validate(request);
+            return this.checker.validate(request);
         } catch (final DotValidationException e) {
             throw e;
         } catch (final Exception e) {
             Logger.error(this, "Accessibility check failed: " + e.getClass().getName(), e);
-            throw new DotDataException(CHECK_FAILED_MESSAGE);
+            throw new DotRuntimeException(CHECK_FAILED_MESSAGE);
         }
     }
 

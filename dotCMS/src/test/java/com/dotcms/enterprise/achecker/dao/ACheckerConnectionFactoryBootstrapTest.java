@@ -15,6 +15,8 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import org.h2.jdbcx.JdbcConnectionPool;
+import org.h2.jdbcx.JdbcDataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +31,9 @@ class ACheckerConnectionFactoryBootstrapTest {
 
     /** H2 error code for a statement the account has no rights for. */
     private static final int NOT_ENOUGH_RIGHTS = 90096;
+
+    /** H2 error code for a wrong user name or password. */
+    private static final int WRONG_USER_OR_PASSWORD = 28000;
 
     private static final String BOOTSTRAP_SCRIPT =
             "CREATE TABLE IF NOT EXISTS AC_guidelines(guideline_id INT, abbr VARCHAR(100));\n"
@@ -108,6 +113,50 @@ class ACheckerConnectionFactoryBootstrapTest {
         assertFalse(second.isClosed());
         assertEquals(ACheckerConnectionFactory.RESTRICTED_USER, currentUser(second));
         assertEquals("WCAG2-AA", guidelineAbbr(second, 7));
+    }
+
+    @Test
+    void poolThatCannotOpenConnectionsIsReplaced() throws SQLException {
+        // Given a bootstrapped database whose current pool can no longer sign in
+        ACheckerConnectionFactory.getConnection(dynamicContentPath.toString(), bootstrapScriptPath);
+        final String urlPrefix = ACheckerConnectionFactory.databaseUrlPrefix(dynamicContentPath.toString());
+        final JdbcConnectionPool unusablePool = JdbcConnectionPool.create(
+                ACheckerConnectionFactory.restrictedPoolUrl(urlPrefix),
+                ACheckerConnectionFactory.RESTRICTED_USER, "not-the-password");
+        final SQLException signInError = assertThrows(SQLException.class, unusablePool::getConnection);
+        assertEquals(WRONG_USER_OR_PASSWORD, signInError.getErrorCode());
+        ACheckerConnectionFactory.usePoolForTests(unusablePool);
+
+        // When a connection is requested
+        final Connection connection =
+                ACheckerConnectionFactory.getConnection(dynamicContentPath.toString(), bootstrapScriptPath);
+
+        // Then the unusable pool is disposed and a working read-only connection comes from a new one
+        assertThrows(IllegalStateException.class, unusablePool::getConnection);
+        assertEquals(ACheckerConnectionFactory.RESTRICTED_USER, currentUser(connection));
+        assertEquals("WCAG2-AA", guidelineAbbr(connection, 7));
+    }
+
+    @Test
+    void bootstrapConnectionIsClosed() throws SQLException {
+        // Given a bootstrapped database
+        ACheckerConnectionFactory.getConnection(dynamicContentPath.toString(), bootstrapScriptPath);
+
+        // When the open sessions are listed by an administrator
+        final JdbcDataSource admin = new JdbcDataSource();
+        admin.setURL(ACheckerConnectionFactory.databaseUrlPrefix(dynamicContentPath.toString())
+                + ";FILE_LOCK=NO;MODE=MySQL");
+        admin.setUser("sa");
+        admin.setPassword("sa");
+        try (Connection adminConnection = admin.getConnection();
+                Statement statement = adminConnection.createStatement();
+                ResultSet sessions = statement.executeQuery(
+                        "SELECT COUNT(*) FROM INFORMATION_SCHEMA.SESSIONS WHERE USER_NAME = 'SA'")) {
+
+            // Then the only administrator session is the one opened by this test
+            assertTrue(sessions.next());
+            assertEquals(1, sessions.getInt(1));
+        }
     }
 
     private static String currentUser(final Connection connection) throws SQLException {

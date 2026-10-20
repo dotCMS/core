@@ -147,6 +147,39 @@ class DAOImplTest {
         assertNull(failure.getCause());
     }
 
+    @Test
+    void queryWithoutValuesStillMapsRows() throws SQLException {
+        // Given the query form kept for queries built from numeric ids
+        createGuidelines();
+        final BaseDAO baseDAO = new BaseDAO(dao);
+
+        // When a typed query without placeholders runs
+        final List<GuideLineBean> beans = baseDAO.execute(GuideLineBean.class,
+                "select * from AC_guidelines where guideline_id = 7");
+        final GuideLineBean single = baseDAO.executeOne(GuideLineBean.class,
+                "select * from AC_guidelines where guideline_id = 8");
+
+        // Then the rows are mapped as before
+        assertEquals(1, beans.size());
+        assertEquals("WCAG2-AA", beans.get(0).getAbbr());
+        assertNotNull(single);
+        assertEquals("508", single.getAbbr());
+    }
+
+    @Test
+    void rowThatCannotBecomeABeanFailsWithFixedMessage() throws SQLException {
+        // Given a bean class without a constructor taking the row map
+        createGuidelines();
+        final BaseDAO baseDAO = new BaseDAO(dao);
+
+        // When a row is read into it
+        final SQLException failure = assertThrows(SQLException.class,
+                () -> baseDAO.executeOne(StringBuilder.class, "select * from AC_guidelines where abbr = ?", "508"));
+
+        // Then the message is fixed and does not name the class
+        assertEquals("Accessibility Checker row could not be read", failure.getMessage());
+    }
+
     /** Builds a connection whose {@code prepareStatement} always throws the given exception. */
     private static Connection connectionFailingWith(final SQLException failure) {
         return (Connection) Proxy.newProxyInstance(DAOImplTest.class.getClassLoader(),

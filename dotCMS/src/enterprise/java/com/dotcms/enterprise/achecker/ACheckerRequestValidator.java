@@ -38,6 +38,10 @@ public final class ACheckerRequestValidator {
     /** Largest number of guideline abbreviations accepted in one {@code guidelines} value. */
     public static final int MAX_GUIDELINE_TOKENS = 20;
 
+    /** Message used when a {@code guidelines} value holds more abbreviations than allowed. */
+    public static final String TOO_MANY_GUIDELINES_MESSAGE =
+            "'" + ACheckerAPI.GUIDELINES + "' parameter accepts at most " + MAX_GUIDELINE_TOKENS + " values";
+
     private static final String GUIDELINE_SEPARATOR = ",";
     private static final Pattern GUIDELINE_TOKEN = Pattern.compile("[A-Za-z0-9._-]{1,100}");
     private static final Pattern LANGUAGE_TAG = Pattern.compile("[A-Za-z]{2,3}([-_][A-Za-z0-9]{2,8})*");
@@ -55,10 +59,11 @@ public final class ACheckerRequestValidator {
      *
      * @param guidelines the raw {@code guidelines} value, e.g. {@code "WCAG2-AA,508"}
      * @return the abbreviations in submitted order, as a list that cannot be modified
-     * @throws DotValidationException if there are more than {@value #MAX_GUIDELINE_TOKENS}
-     *                                abbreviations, or any abbreviation is longer than 100
-     *                                characters or contains anything other than letters, digits,
-     *                                '.', '_' or '-'
+     * @throws DotValidationException with {@link #TOO_MANY_GUIDELINES_MESSAGE} if there are more
+     *                                than {@value #MAX_GUIDELINE_TOKENS} abbreviations, or with
+     *                                {@link #UNSUPPORTED_GUIDELINES_MESSAGE} if any abbreviation is
+     *                                longer than 100 characters or contains anything other than
+     *                                letters, digits, '.', '_' or '-'
      */
     public static List<String> guidelineTokens(final String guidelines) {
         if (guidelines == null) {
@@ -70,8 +75,11 @@ public final class ACheckerRequestValidator {
             if (token.isEmpty()) {
                 continue;
             }
-            if (!GUIDELINE_TOKEN.matcher(token).matches() || tokens.size() == MAX_GUIDELINE_TOKENS) {
+            if (!GUIDELINE_TOKEN.matcher(token).matches()) {
                 throw new DotValidationException(UNSUPPORTED_GUIDELINES_MESSAGE);
+            }
+            if (tokens.size() == MAX_GUIDELINE_TOKENS) {
+                throw new DotValidationException(TOO_MANY_GUIDELINES_MESSAGE);
             }
             tokens.add(token);
         }

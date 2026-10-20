@@ -95,7 +95,7 @@ class ACheckerRequestValidatorTest {
         final DotValidationException exception = assertThrows(DotValidationException.class,
                 () -> ACheckerRequestValidator.guidelineTokens(guidelines));
 
-        assertEquals(ACheckerRequestValidator.UNSUPPORTED_GUIDELINES_MESSAGE, exception.getMessage());
+        assertEquals("'guidelines' parameter accepts at most 20 values", exception.getMessage());
     }
 
     @Test

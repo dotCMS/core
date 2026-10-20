@@ -131,6 +131,18 @@ public class ACheckerConnectionFactory {
 	}
 
 	/**
+	 * Replaces the read-only pool and closes the shared connection, so the next connection request
+	 * goes through the given pool first. Only meant for tests, which use it to check what happens
+	 * when the current pool can no longer open connections.
+	 *
+	 * @param replacement the pool the next connection request should use
+	 */
+	static synchronized void usePoolForTests(final JdbcConnectionPool replacement) {
+		resetForTests();
+		pool = replacement;
+	}
+
+	/**
 	 * Tells whether the shared connection exists and is still open. A connection whose state
 	 * cannot be read is treated as closed, so a new one is opened.
 	 *

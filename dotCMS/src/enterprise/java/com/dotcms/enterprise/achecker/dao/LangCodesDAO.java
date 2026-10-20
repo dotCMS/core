@@ -32,6 +32,16 @@ public class LangCodesDAO extends BaseDAO {
 	public LangCodesDAO() throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
 		super();
 	}
+
+	/**
+	 * Creates a DAO that runs its queries through the given {@link DAO}. Mainly for tests, where
+	 * the {@link DAO} can point at a throw-away database.
+	 *
+	 * @param dao the {@link DAO} that runs the queries
+	 */
+	public LangCodesDAO(final DAO dao) {
+		super(dao);
+	}
 	/**
 	 * Return all rows
 	 * @access  public
