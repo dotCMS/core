@@ -1277,9 +1277,9 @@ public class RoleResource implements Serializable {
 	}
 
 	/**
-	 * Whether a user may see which users hold a role and which roles a user holds. Role
-	 * membership carries user details, so it takes an administrator, or a user with access to
-	 * both the Roles and the Users portlets.
+	 * Whether a user may see which users hold a role and which roles a user holds; the rule
+	 * lives in {@link RoleHelper#canReadRoleMembership(User)} and is shared with the legacy
+	 * DWR listing.
 	 *
 	 * @param user the user making the request
 	 * @return {@code true} when the user may read role membership
@@ -1287,10 +1287,7 @@ public class RoleResource implements Serializable {
 	 */
 	private boolean canReadRoleMembership(final User user) throws DotDataException {
 
-		final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
-		return user.isAdmin() ||
-				(layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user) &&
-						layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), user));
+		return this.roleHelper.canReadRoleMembership(user);
 	}
 
 	/**
