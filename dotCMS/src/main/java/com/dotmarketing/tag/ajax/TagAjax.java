@@ -183,13 +183,29 @@ public class TagAjax {
 	 * @param tagId id of the tag to be deleted
 	 * @return list of all the tags, with the owner information and the respective permission
 	 */
-	public void deleteTag ( String tagId ) throws DotDataException {
+	public void deleteTag ( String tagId ) throws DotDataException, DotSecurityException {
 		try {
-			tagAPI.deleteTag(tagId);
-		} catch (DotDataException e) {
+			deleteTag(getLoggedInUser(), tagId);
+		} catch (DotDataException | DotSecurityException e) {
 			//Logging the error because DWR tends to swallow the exceptions
 			Logger.error(TagAjax.class, "Error deleting tag", e);
 			throw e;
+		}
+	}
+
+	/**
+	 * Deletes a tag on behalf of the given user, following the rules of
+	 * {@link TagAPI#canDeleteTag(User, String)}.
+	 *
+	 * @param user  user requesting the deletion
+	 * @param tagId id of the tag to be deleted
+	 * @throws DotSecurityException if the user can't delete the tag
+	 * @throws DotDataException     if there's a data access error
+	 */
+	static void deleteTag(final User user, final String tagId) throws DotDataException, DotSecurityException {
+		if (!tagAPI.deleteTag(user, tagId)) {
+			throw new DotSecurityException(String.format(
+					"User '%s' lacks permission to delete tag '%s'", user.getUserId(), tagId));
 		}
 	}
 
@@ -237,6 +253,21 @@ public class TagAjax {
 			Logger.error(TagAjax.class, "Error deleting tag", e);
 			throw e;
 		}
+	}
+
+	/**
+	 * Returns the user logged in to the current DWR request.
+	 *
+	 * @return the logged in user
+	 * @throws DotSecurityException if there's no logged in user
+	 */
+	private static User getLoggedInUser() throws DotSecurityException {
+		final HttpServletRequest request = WebContextFactory.get().getHttpServletRequest();
+		final User user = WebAPILocator.getUserWebAPI().getLoggedInUser(request);
+		if (user == null) {
+			throw new DotSecurityException("There's no logged in user");
+		}
+		return user;
 	}
 
 	/**

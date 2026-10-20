@@ -721,15 +721,19 @@ public class TagResource {
                         .init();
         final User user = initDataObject.getUser();
         Logger.debug(TagResource.class,()->String.format(" user %s is requesting delete tagsInode by inode %s ",user.getUserId(), inode));
+        if (!Try.of(() -> tagAPI.canDeleteTagInodesByInode(user, inode)).getOrElse(false)) {
+            throw new ForbiddenException(String.format(
+                    "User '%s' lacks permission to remove the tags of inode '%s'", user.getUserId(), inode));
+        }
         final List<TagInode> tagInodes = Try.of(() -> tagAPI.getTagInodesByInode(inode))
                 .getOrElse(ImmutableList.of());
         if (tagInodes.isEmpty()) {
             Logger.error(TagResource.class, String.format("No tags were found by the inode %s.",inode));
             return Response.status(Status.NOT_FOUND).build();
         }
+        final boolean deleted;
         try {
-            tagAPI.deleteTagInodesByInode(inode);
-            Logger.error(TagResource.class, String.format("Tags with inode %s successfully removed.",inode));
+            deleted = tagAPI.deleteTagInodesByInode(user, inode);
         } catch (DotDataException e) {
             final String errorMessage = Try.of(() -> LanguageUtil
                     .get(user.getLocale(), "tag.error.tag.inode.delete", inode))
@@ -738,6 +742,11 @@ public class TagResource {
             Logger.error(TagResource.class, errorMessage);
             throw new BadRequestException(e, errorMessage);
         }
+        if (!deleted) {
+            throw new ForbiddenException(String.format(
+                    "User '%s' lacks permission to remove the tags of inode '%s'", user.getUserId(), inode));
+        }
+        Logger.debug(TagResource.class, String.format("Tags with inode %s successfully removed.", inode));
         return Response.ok(new ResponseEntityView(OK)).build();
 
     }
