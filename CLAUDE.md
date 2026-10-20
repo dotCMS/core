@@ -109,6 +109,26 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 - **Frontend**: Angular (see `core-web/package.json`'s `@angular/core`), Nx, PrimeNG, Tailwind CSS, Jest/Spectator — [core-web/CLAUDE.md](core-web/CLAUDE.md)
 - **Infrastructure**: Docker, PostgreSQL, Elasticsearch, GitHub Actions
 
+## Required Reading Before You Edit
+
+The Critical Rules above are one-line summaries. The full directives live in the guides below, so
+before the **first edit** in any of these areas, read the linked guide and say in your reply which
+directive you are applying. The index under "Documentation (Load On-Demand)" is reference; this
+table is a gate.
+
+| When the change touches… | Read first |
+|---|---|
+| A new or moved integration test class (`dotcms-integration/src/test/**`) | [Integration Tests](docs/testing/INTEGRATION_TESTS.md) — suite chosen by CI runtime (sample 3+ recent PRs), appended at the **end** of the `@SuiteClasses` list, `@AfterClass` cleanup of test data, `-Dmaven.build.cache.enabled=false` when running |
+| A unit test in `dotCMS/src/test/**` | [Backend Unit Tests](docs/testing/BACKEND_UNIT_TESTS.md) |
+| A feature flag (`FeatureFlagName`, `Config.get*Property`, `dotmarketing-config.properties`) | [Configuration Patterns → Feature Flags](docs/backend/CONFIGURATION_PATTERNS.md#feature-flags) — constant in `FeatureFlagName`, `FEATURE_FLAG_` prefix, default stated in the Javadoc |
+| A JAX-RS resource, `@Schema`, `@Operation` or `openapi.yaml` | [REST API Patterns](docs/backend/REST_API_PATTERNS.md) and [REST API Guide](dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md) — regenerate and commit `openapi.yaml` |
+| `DotConnect`, `@WrapInTransaction`, `@CloseDBIfOpened`, SQL strings | [Database Patterns](docs/backend/DATABASE_PATTERNS.md) |
+| Input handling, auth checks, logging of user data, secrets | [Security Patterns](docs/backend/SECURITY_BACKEND.md) |
+| `ESContentFactoryImpl`, `IndexAPI`, anything under `content/elasticsearch` or `opensearch` | [Search API Migration](docs/backend/SEARCH_API_MIGRATION.md) and [OpenSearch Migration](docs/backend/OPENSEARCH_MIGRATION.md) |
+| A `pom.xml` dependency or version | [Maven Build System](docs/backend/MAVEN_BUILD_SYSTEM.md) |
+| Anything under `core-web/` | [core-web/CLAUDE.md](core-web/CLAUDE.md) and [docs/frontend/README.md](docs/frontend/README.md) |
+| A commit message, branch name or PR description | [Git Workflows](docs/core/GIT_WORKFLOWS.md) |
+
 ## Documentation (Load On-Demand)
 
 ### Core Architecture & Workflows
