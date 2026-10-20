@@ -18,6 +18,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Layout;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
@@ -50,7 +52,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
-import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
+import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import org.apache.commons.beanutils.BeanUtils;
@@ -1294,23 +1296,27 @@ public class RoleResource implements Serializable {
 	/**
 	 * Whether the user may use a workflow action that assigns work to the given role. Such a
 	 * user has to pick an assignee among the role's members, so those members are visible to
-	 * them even without the membership privilege. Schemes the current license does not cover
-	 * are skipped.
+	 * them even without the membership privilege. The actions of each scheme come from the
+	 * workflow cache and are matched on their assignee role first, so the permission check
+	 * runs only for the few actions that assign to this role.
 	 *
 	 * @param user   the user making the request
 	 * @param roleId the role whose members are requested
-	 * @return {@code true} when one of the user's workflow actions assigns to the role
-	 * @throws DotDataException if the workflow schemes cannot be loaded
+	 * @return {@code true} when the user may use a workflow action that assigns to the role
+	 * @throws DotDataException if the workflow schemes or actions cannot be loaded
 	 */
 	private boolean canAssignToRole(final User user, final String roleId) throws DotDataException {
 
-		final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
-		for (final WorkflowScheme scheme : workflowAPI.findSchemes(false)) {
+		final WorkFlowFactory workflowFactory = FactoryLocator.getWorkFlowFactory();
+		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+		for (final WorkflowScheme scheme : APILocator.getWorkflowAPI().findSchemes(false)) {
 
-			final List<WorkflowAction> actions = Try.of(() -> workflowAPI.findActions(scheme, user))
-					.getOrElse(List.of());
-			if (actions.stream().anyMatch(action -> roleId.equals(action.getNextAssign()))) {
-				return true;
+			for (final WorkflowAction action : workflowFactory.findActions(scheme)) {
+
+				if (roleId.equals(action.getNextAssign())
+						&& permissionAPI.doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user)) {
+					return true;
+				}
 			}
 		}
 		return false;
