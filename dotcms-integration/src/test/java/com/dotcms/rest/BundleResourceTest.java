@@ -36,6 +36,7 @@ import com.dotmarketing.business.Role;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.rest.exception.ForbiddenException;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -432,6 +433,18 @@ public class BundleResourceTest {
 
         assertEquals(200, resp.getStatus());
         assertTrue(APILocator.getPushedAssetsAPI().getPushedAssets(contentlet.getIdentifier()).isEmpty());
+    }
+
+    @Test
+    public void test_deletePushHistory_unknownAsset_isNotFound() throws Exception {
+        final User user = newBackendUser();
+        final String assetId = UUIDGenerator.generateUuid();
+        pushHistoryFor(assetId, new EnvironmentDataGen().nextPersisted());
+
+        assertThrows(NotFoundException.class, () -> bundleResource.deletePushHistory(
+                mockRequestFor(user), response, "assetid/" + assetId));
+
+        assertFalse(APILocator.getPushedAssetsAPI().getPushedAssets(assetId).isEmpty());
     }
 
     @Test

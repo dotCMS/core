@@ -8,6 +8,7 @@ import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -107,10 +108,11 @@ import static com.dotcms.publisher.business.PublishAuditStatus.Status.SUCCESS_WI
 public class BundleResource {
 
     public  static final String BUNDLE_THREAD_POOL_SUBMITTER_NAME = "bundlepolling";
-    private static final String CONFIGURATION_BETA_PORTLET_ID = "configuration-beta";
     private final WebResource            webResource            = new WebResource();
     private final BundleAPI              bundleAPI              = APILocator.getBundleAPI();
     private final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
+    private final AssetPermissionHelper  assetPermissionHelper  =
+            CDIUtils.getBean(AssetPermissionHelper.class).orElseGet(AssetPermissionHelper::new);
 
     private final PublishQueueElementTransformer publishQueueElementTransformer =
             new PublishQueueElementTransformer();
@@ -383,9 +385,10 @@ public class BundleResource {
 			return;
 		}
 		final Permissionable asset = findPermissionable(assetId);
-		final boolean canEdit = asset != null && APILocator.getPermissionAPI()
-				.doesUserHavePermission(asset, PermissionAPI.PERMISSION_EDIT, user, false);
-		if (!canEdit) {
+		if (asset == null) {
+			throw new NotFoundException(String.format("Asset '%s' was not found", assetId));
+		}
+		if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_EDIT, user, false)) {
 			throw new ForbiddenException(String.format(
 					"User '%s' is not allowed to delete the push history of asset '%s'",
 					user.getUserId(), assetId));
@@ -401,14 +404,14 @@ public class BundleResource {
 		final Link link = Try.of(() -> APILocator.getMenuLinkAPI()
 				.findWorkingLinkById(assetId, APILocator.systemUser(), false)).getOrNull();
 		return link != null ? link
-				: Try.of(() -> new AssetPermissionHelper().resolveAsset(assetId)).getOrNull();
+				: Try.of(() -> assetPermissionHelper.resolveAsset(assetId)).getOrNull();
 	}
 
 	private void checkCanManageEnvironments(final User user) throws DotDataException {
 		final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		final boolean canManage = user.isAdmin()
 				|| layoutAPI.doesUserHaveAccessToPortlet(PortletID.CONFIGURATION.toString(), user)
-				|| layoutAPI.doesUserHaveAccessToPortlet(CONFIGURATION_BETA_PORTLET_ID, user);
+				|| layoutAPI.doesUserHaveAccessToPortlet(PortletID.CONFIGURATION_BETA.toString(), user);
 		if (!canManage) {
 			throw new ForbiddenException(String.format(
 					"User '%s' is not allowed to delete the push history of an environment",
