@@ -812,8 +812,25 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
     private void delayFailedLogin(final User user, final String login) {
         if (Config.getBooleanProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true)) {
             Logger.debug(this, String.format("Delaying login attempts for user '%s'", login));
-            this.delayRequest(user.getFailedLoginAttempts());
+            this.delayRequest(this.delaySeed(user));
         }
+    }
+
+    /**
+     * Returns the failed login count that paces the delay. With login lockout on, the count starts over at the
+     * limit, so a larger stored value can only be left from before lockout (it used to reset only on a successful
+     * login). Such a value is capped below the limit here rather than reset in the database, so the first failed
+     * login of a dormant account does not sleep for the square of an old count.
+     *
+     * @param user The {@link User} that failed to log in.
+     *
+     * @return The seed for {@link #delayRequest(int)}.
+     */
+    private int delaySeed(final User user) {
+        final int maxFailures = LoginLockout.maxFailures();
+        return LoginLockout.getInstance().isEnabled(maxFailures)
+                ? Math.min(user.getFailedLoginAttempts(), maxFailures - 1)
+                : user.getFailedLoginAttempts();
     }
 
     /**

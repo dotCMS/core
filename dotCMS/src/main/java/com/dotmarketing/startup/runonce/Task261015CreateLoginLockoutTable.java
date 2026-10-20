@@ -11,8 +11,8 @@ import java.sql.SQLException;
  * Creates {@code login_lockout}, which holds login attempt counts and locks for
  * {@link com.dotcms.auth.LoginLockout}: one row per account and source (client address, or WebDAV from
  * that address), plus one account-wide row (source {@code *}). A separate table keeps the migration
- * additive: the {@code user_} schema does not change (only its failed-login counts restart at zero), and
- * an older release rolled back onto this schema never reads the new table.
+ * additive: nothing on {@code user_} changes, and an older release rolled back onto this schema never
+ * reads the new table.
  */
 public class Task261015CreateLoginLockoutTable extends AbstractJDBCStartupTask {
 
@@ -21,8 +21,6 @@ public class Task261015CreateLoginLockoutTable extends AbstractJDBCStartupTask {
     /**
      * Runs when the table is missing, or when it has the earlier per-account layout (no {@code source}
      * column) from a pre-release build. Lockout state is short-lived, so that table is simply rebuilt.
-     * It also restarts every user's failed-login count: that count only reset on a successful login, so
-     * dormant accounts can carry large values, and it sets the delay applied to the next failed login.
      */
     @Override
     public boolean forceRun() {
@@ -48,7 +46,6 @@ public class Task261015CreateLoginLockoutTable extends AbstractJDBCStartupTask {
                 + " mod_date timestamptz not null,"
                 + " constraint pk_login_lockout primary key (user_id, source)"
                 + ");"
-                + "CREATE INDEX idx_login_lockout_window ON login_lockout (window_start);"
-                + "UPDATE user_ SET failedloginattempts = 0 WHERE failedloginattempts <> 0;";
+                + "CREATE INDEX idx_login_lockout_window ON login_lockout (window_start);";
     }
 }

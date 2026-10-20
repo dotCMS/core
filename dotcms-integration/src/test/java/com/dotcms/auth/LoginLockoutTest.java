@@ -588,19 +588,29 @@ public class LoginLockoutTest {
 
     /**
      * Given: an account whose stored failed-login count is far above the limit, as dormant accounts can carry
-     *        from before this change
-     * When: one wrong password is tried, and then the upgrade task runs
-     * Then: the wrong password does not lock the account, and the task restarts the count at zero
+     *        from before this change, and a delay of one millisecond per counted failure
+     * When: one wrong password is tried, and the upgrade task runs
+     * Then: the wrong password does not lock the account and is delayed only as for a count below the limit,
+     *       and the task leaves the stored count alone (the migration does not touch {@code user_})
      */
     @Test
     public void test_counter_above_limit_from_before_upgrade() throws Exception {
         final User user = newUser();
+        final Object strategyBefore = Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "pow");
         try {
             final User counted = APILocator.getUserAPI().loadUserById(user.getUserId());
-            counted.setFailedLoginAttempts(50);
+            counted.setFailedLoginAttempts(10_000);
             APILocator.getUserAPI().save(counted, APILocator.systemUser(), false);
 
+            // Uncapped, this failure would sleep for 10 seconds
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, true);
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, "time_mills");
+            final long start = System.currentTimeMillis();
             assertEquals(Authenticator.FAILURE, login(user, "wrong-after-upgrade"));
+            final long elapsed = System.currentTimeMillis() - start;
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, false);
+            assertTrue("failed login took " + elapsed + "ms", elapsed < 5_000L);
+
             assertFalse(LoginLockout.getInstance().isLocked(user.getUserId()));
             assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
 
@@ -610,10 +620,12 @@ public class LoginLockoutTest {
             new Task261015CreateLoginLockoutTable().executeUpgrade();
             DbConnectionFactory.closeSilently();
             CacheLocator.getUserCache().remove(user.getUserId());
-            assertEquals(0, failedLoginAttempts(user));
+            assertEquals(50, failedLoginAttempts(user));
             assertTrue(lockoutRows(user).isEmpty());
             assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
         } finally {
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, false);
+            Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY, strategyBefore);
             cleanUp(user);
         }
     }
