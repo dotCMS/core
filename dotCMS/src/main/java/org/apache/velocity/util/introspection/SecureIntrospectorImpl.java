@@ -40,6 +40,9 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.servlet.ServletRequestWrapper;
+import javax.servlet.ServletResponseWrapper;
+
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
@@ -176,6 +179,16 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
          * method on them may be called from a template.
          */
         if (isRestrictedRuntimeType(clazz))
+        {
+            return false;
+        }
+
+        /**
+         * Servlet request and response wrappers keep the object they wrap behind getRequest()
+         * and getResponse(). Templates work with the wrapper they are given, so those two
+         * accessors are not callable from a template on any wrapper type.
+         */
+        if (isWrappedObjectAccessor(clazz, methodName))
         {
             return false;
         }
@@ -347,16 +360,38 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
     }
 
     /**
+     * Determines whether the call is the accessor on a servlet request or response wrapper
+     * that returns the wrapped request or response.
+     *
+     * @param clazz class a method is about to be resolved on
+     * @param methodName name of the method about to be resolved
+     * @return {@code true} for {@code getRequest} on a request wrapper and {@code getResponse}
+     *         on a response wrapper, {@code false} otherwise
+     */
+    static boolean isWrappedObjectAccessor(final Class<?> clazz, final String methodName)
+    {
+        return ("getRequest".equals(methodName) && ServletRequestWrapper.class.isAssignableFrom(clazz))
+                || ("getResponse".equals(methodName) && ServletResponseWrapper.class.isAssignableFrom(clazz));
+    }
+
+    /**
      * Package prefixes of servlet-container internals, embedded script interpreters and the
      * alternate reflection and naming APIs. Matched against the class itself.
      */
     private static final String[] RESTRICTED_RUNTIME_PREFIXES = {
-            "org.apache.tomcat.",
+            "org.apache.tomcat.", "org.apache.catalina.",
             "bsh.", "com.dotcms.repackage.bsh.",
             "groovy.lang.", "org.codehaus.groovy.", "org.mozilla.javascript.",
             "jdk.nashorn.", "org.openjdk.nashorn.", "org.graalvm.polyglot.",
             "javax.naming.", "java.lang.invoke."
     };
+
+    /**
+     * The map the container returns from {@code getParameterMap()}. It is a plain
+     * {@code LinkedHashMap} with a lock flag, so templates keep reading request parameters
+     * from it even though it lives in a restricted package.
+     */
+    private static final String PARAMETER_MAP_TYPE = "org.apache.catalina.util.ParameterMap";
 
     /**
      * Types whose implementations live in other packages (for example a CDI container's
@@ -387,6 +422,10 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
         }
 
         final String name = clazz.getName();
+        if (PARAMETER_MAP_TYPE.equals(name))
+        {
+            return false;
+        }
         for (final String prefix : RESTRICTED_RUNTIME_PREFIXES)
         {
             if (name.startsWith(prefix))
