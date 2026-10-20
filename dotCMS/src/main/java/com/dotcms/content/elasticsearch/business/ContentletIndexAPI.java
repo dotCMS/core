@@ -32,7 +32,14 @@ public interface ContentletIndexAPI {
     @Deprecated(forRemoval = true)
     SimpleDateFormat timestampFormatter = new SimpleDateFormat("yyyyMMddHHmmss");
 
-    /** Thread-safe formatter for index timestamp suffixes ({@code yyyyMMddHHmmss}). */
+    /**
+     * Thread-safe formatter for index timestamp suffixes ({@code yyyyMMddHHmmss}).
+     *
+     * @deprecated it carries no zone, so formatting a local time stamps the JVM default zone into
+     * the name; use {@link com.dotcms.content.index.IndexTimestamp}, which always uses UTC
+     * (issue #37282).
+     */
+    @Deprecated
     DateTimeFormatter threadSafeTimestampFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
     void checkAndInitializeIndex();

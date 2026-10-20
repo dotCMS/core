@@ -254,6 +254,7 @@
             "include": [
                 "libs/sdk/ai/**/*",
                 "libs/sdk/client/**/*",
+                "libs/sdk/events/**/*",
                 "libs/sdk/experiments/**/*",
                 "libs/sdk/react/**/*",
                 "libs/sdk/types/**/*",

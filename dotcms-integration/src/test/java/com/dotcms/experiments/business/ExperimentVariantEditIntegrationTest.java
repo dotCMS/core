@@ -10,6 +10,7 @@ import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
+import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.RunningIds.RunningId;
@@ -24,6 +25,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -70,6 +72,14 @@ public class ExperimentVariantEditIntegrationTest {
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        // Enable the flag so nextPersistedAndStart() bypasses the limited-mode free-slot check.
+        // ENDED experiments from earlier tests in the same suite run would otherwise block start().
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(true);
+    }
+
+    @AfterClass
+    public static void tearDown() {
+        ConfigExperimentUtil.INSTANCE.setExperimentEnabled(false);
     }
 
     /**

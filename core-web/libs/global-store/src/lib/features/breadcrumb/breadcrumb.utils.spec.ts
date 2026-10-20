@@ -233,6 +233,141 @@ describe('Breadcrumb Utils - Route Handlers', () => {
     });
 });
 
+/**
+ * Content Drive links always carry query params (`path`, `filters`, `editContent`, …) and usually no
+ * `mId`, so they never match a menu item and the trail used to stay as it was: the previous page's
+ * title after a redirect, a blank one in a new tab (#37759).
+ */
+describe('ROUTE_HANDLERS.contentDrive', () => {
+    // Read without the property access throwing, so a missing handler fails the assertion instead.
+    const handler = () => ROUTE_HANDLERS['contentDrive'];
+
+    const CONTENT_DRIVE: MenuItemEntity = {
+        id: 'content-drive',
+        label: 'Content Drive',
+        labelParent: 'Content',
+        menuLink: '/content-drive',
+        url: '/content-drive',
+        angular: true,
+        active: false,
+        ajax: false,
+        parentMenuId: 'content-parent',
+        parentMenuLabel: 'Content',
+        parentMenuIcon: 'pi pi-file'
+    } as MenuItemEntity;
+
+    const URL = '/content-drive?path=/blog/&editContent=id-1&editContentLang=1';
+
+    describe('matching', () => {
+        it('matches a Content Drive URL with query params', () => {
+            expect(handler()?.test(URL)).toBe(true);
+            expect(handler()?.test('/content-drive?filters=contentType:Blog')).toBe(true);
+            expect(handler()?.test('/content-drive?createContent=webPageContent')).toBe(true);
+        });
+
+        it('leaves the bare URL to the menu match, which already handles it', () => {
+            expect(handler()?.test('/content-drive')).toBe(false);
+        });
+
+        it('matches no other path', () => {
+            expect(handler()?.test('/content-drive-archive?x=1')).toBe(false);
+            expect(handler()?.test('/c/content?filter=Blog')).toBe(false);
+            expect(handler()?.test('/drive/content-drive?x=1')).toBe(false);
+        });
+    });
+
+    it("starts a fresh trail from Content Drive's place in the menu", () => {
+        expect(handler()?.handler({ url: URL, menu: [CONTENT_DRIVE], breadcrumbs: [] })).toEqual({
+            type: 'set',
+            breadcrumbs: [
+                { label: 'Content', disabled: true },
+                {
+                    label: 'Content Drive',
+                    target: '_self',
+                    url: '/dotAdmin/#/content-drive?path=/blog/'
+                }
+            ]
+        });
+    });
+
+    it('appends Content Drive to the trail of the page that sent the author there', () => {
+        const fromQueryTool = [
+            { label: 'Home', disabled: true },
+            { label: 'Dev Tools', disabled: true },
+            { label: 'Query Tool', target: '_self', url: '/dotAdmin/#/c/query-tool' }
+        ];
+
+        expect(
+            handler()?.handler({ url: URL, menu: [CONTENT_DRIVE], breadcrumbs: fromQueryTool })
+        ).toEqual({
+            type: 'append',
+            breadcrumbs: [
+                {
+                    label: 'Content Drive',
+                    target: '_self',
+                    url: '/dotAdmin/#/content-drive?path=/blog/'
+                }
+            ]
+        });
+    });
+
+    describe('crumb URL', () => {
+        const crumbUrlOf = (url: string) => {
+            const result = handler()?.handler({ url, menu: [CONTENT_DRIVE], breadcrumbs: [] });
+
+            return result?.type === 'set' ? result.breadcrumbs.at(-1)?.url : undefined;
+        };
+
+        // The crumb outlives the panel or dialog the URL opened. Once another crumb follows it, a
+        // click on it must go back to the folder, not reopen the content or start another create.
+        it('drops the params that open a panel or a folder dialog', () => {
+            expect(
+                crumbUrlOf(
+                    '/content-drive?path=/blog/&createContent=webPageContent&editFolder=f-1&folderPermissions=f-1&createFolder=true'
+                )
+            ).toBe('/dotAdmin/#/content-drive?path=/blog/');
+        });
+
+        // Kept as the router wrote them, so a click on the crumb reports the same URL and the
+        // trail truncates to it instead of growing.
+        it('keeps the browsing params untouched and in order', () => {
+            expect(
+                crumbUrlOf(
+                    '/content-drive?filters=contentType:Blog%3BlanguageId:1&editContent=id-1&path=/blog/&isTreeExpanded=true'
+                )
+            ).toBe(
+                '/dotAdmin/#/content-drive?filters=contentType:Blog%3BlanguageId:1&path=/blog/&isTreeExpanded=true'
+            );
+        });
+
+        it('links to the bare Content Drive when the URL only opened a panel', () => {
+            expect(crumbUrlOf('/content-drive?editContent=id-1&editContentLang=1')).toBe(
+                '/dotAdmin/#/content-drive'
+            );
+        });
+    });
+
+    it('leaves a trail that already ends on Content Drive, as after a reload', () => {
+        const onContentDrive = [
+            { label: 'Home', disabled: true },
+            { label: 'Content', disabled: true },
+            {
+                label: 'Content Drive',
+                target: '_self',
+                url: '/dotAdmin/#/content-drive?path=/other/'
+            }
+        ];
+
+        expect(
+            handler()?.handler({ url: URL, menu: [CONTENT_DRIVE], breadcrumbs: onContentDrive })
+        ).toBeUndefined();
+    });
+
+    it('does nothing when Content Drive is not in the menu', () => {
+        expect(handler()?.handler({ url: URL, menu: [], breadcrumbs: [] })).toBeUndefined();
+    });
+});
+
 describe('shouldReplaceLastCrumb', () => {
     describe('contentEdit rule', () => {
         it('should return true when both items match /content/{id}', () => {

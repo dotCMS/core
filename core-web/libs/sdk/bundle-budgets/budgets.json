@@ -3,5 +3,7 @@
     "react-layout-only": 7500,
     "react-hook-only": 5200,
     "analytics-neutral": 25000,
+    "events-init": 30000,
+    "events-react": 2200,
     "uve-only": 3700
 }

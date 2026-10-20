@@ -128,7 +128,10 @@ describe('DotCreateContentletComponent', () => {
         expect(dotIframeService.reloadData).toHaveBeenCalledTimes(1);
     });
 
-    it('should emit shutdown and redirect to Content Drive with un-prefixed params when coming from Content Drive', () => {
+    // Content Drive creates in its own side panel now, so no create reaches this screen from it and
+    // the `CD_` round trip is gone (#37759, FR-026). Old params in the URL are ignored and the
+    // close goes back to Content Search, as for anyone else.
+    it('should emit shutdown and go back to Content Search even with old CD_ params in the URL', () => {
         vi.spyOn(routerService, 'currentSavedURL', 'get').mockReturnValue('/c/content/new/');
         vi.spyOn(routerService, 'currentPortlet', 'get').mockReturnValue({
             url: 'c/content/new/blog?CD_path=/foo&CD_filters=bar',
@@ -138,10 +141,11 @@ describe('DotCreateContentletComponent', () => {
         // Drive the wrapper's (shutdown) output so the close wiring is covered, not just onClose().
         spectator.triggerEventHandler('dot-contentlet-wrapper', 'shutdown', {});
         expect(spectator.component.shutdown.emit).toHaveBeenCalledTimes(1);
-        expect(routerService.gotoPortlet).toHaveBeenCalledWith('content-drive', {
-            queryParams: { path: '/foo', filters: 'bar' }
-        });
-        expect(routerService.goToContent).not.toHaveBeenCalled();
+        expect(routerService.gotoPortlet).not.toHaveBeenCalledWith(
+            'content-drive',
+            expect.anything()
+        );
+        expect(routerService.goToContent).toHaveBeenCalledTimes(1);
     });
 
     it('should emit shutdown and redirect to Pages page when shutdown from pages', () => {

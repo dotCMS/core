@@ -211,7 +211,7 @@ export class DotTemplateListComponent implements OnInit {
     editTemplate(template: DotTemplate): void {
         this.isTemplateAsFile(template)
             ? this.dotSiteBrowserService.setSelectedFolder(template.identifier).subscribe(() => {
-                  this.dotRouterService.goToSiteBrowser();
+                  this.dotRouterService.goToSiteBrowser(template.identifier);
               })
             : this.dotRouterService.goToEditTemplate(template.identifier);
     }
@@ -314,7 +314,7 @@ export class DotTemplateListComponent implements OnInit {
         event.stopPropagation();
 
         this.dotSiteBrowserService.setSelectedFolder(path).subscribe(() => {
-            this.dotRouterService.goToSiteBrowser();
+            this.dotRouterService.goToSiteBrowser(path);
         }); // This takes one under the hood
     }
 

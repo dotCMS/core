@@ -183,6 +183,44 @@
       "response": []
     },
     {
+      "name": "Refuses a request with no body",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });\n\npm.test('errorCode is EMPTY_SELECTION', function () {\n    const body = pm.response.json();\n    const error = body.errors && body.errors[0];\n    pm.expect(error.errorCode).to.eql('EMPTY_SELECTION');\n    pm.expect(error.fieldName).to.eql('assetPaths');\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/assets/folders/_bulkdelete",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "assets",
+            "folders",
+            "_bulkdelete"
+          ]
+        },
+        "description": "#37782 - a request with no body at all is refused the same way as an empty selection, a 400 EMPTY_SELECTION, not a 500 from reading the missing form."
+      },
+      "response": []
+    },
+    {
       "name": "Refuses a selection over the configured maximum",
       "event": [
         {

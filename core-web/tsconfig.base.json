@@ -39,9 +39,7 @@
             "@dotcms/edit-content": ["libs/edit-content/src/index.ts"],
             "@dotcms/edit-content-bridge": ["libs/edit-content-bridge/src/index.ts"],
             "@dotcms/edit-content/*": ["libs/edit-content/src/lib/*"],
-            "@dotcms/edit-content/custom-languages/*": [
-                "./libs/edit-content/src/lib/custom-languages/*"
-            ],
+            "@dotcms/events": ["libs/sdk/events/src/index.ts"],
             "@dotcms/experiments": ["libs/sdk/experiments/src/index.ts"],
             "@dotcms/portlets/content-drive/portlet": [
                 "libs/portlets/dot-content-drive/portlet/src/index.ts"
@@ -74,6 +72,9 @@
             ],
             "@dotcms/portlets/dot-auth/portlet": ["libs/portlets/dot-auth/src/index.ts"],
             "@dotcms/portlets/dot-ai/portlet": ["libs/portlets/dot-ai/src/index.ts"],
+            "@dotcms/portlets/dot-configuration/portlet": [
+                "libs/portlets/dot-configuration/src/index.ts"
+            ],
             "@dotcms/portlets/dot-plugins/portlet": ["libs/portlets/dot-plugins/src/index.ts"],
             "@dotcms/portlets/dot-es-search/portlet": ["libs/portlets/dot-es-search/src/index.ts"],
             "@dotcms/portlets/dot-publishing-queue/portlet": [

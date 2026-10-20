@@ -90,6 +90,11 @@ export interface DotSystemConfig {
     colors: DotUIColors;
     releaseInfo: DotReleaseInfo;
     systemTimezone: DotSystemTimezone;
+    /**
+     * Every time zone the server accepts, one entry per Java zone id. `offset` is the raw offset
+     * in milliseconds and ignores daylight saving time.
+     */
+    timezones?: DotSystemTimezone[];
     languages: DotSystemLanguage[];
     license: DotSystemLicense;
     cluster: DotCluster;
@@ -110,6 +115,7 @@ export interface SystemConfigEntity {
         colors: DotUIColors;
         releaseInfo: DotReleaseInfo;
         systemTimezone: DotSystemTimezone;
+        timezones?: DotSystemTimezone[];
         languages: DotSystemLanguage[];
         license: DotSystemLicense;
         cluster: DotCluster;
