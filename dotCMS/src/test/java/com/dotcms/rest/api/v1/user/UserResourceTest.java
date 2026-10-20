@@ -566,6 +566,38 @@ public class UserResourceTest extends UnitTestBase {
      * <ul>
      *     <li><b>Method to test:</b> {@link UserResource#filter(HttpServletRequest, HttpServletResponse, String, int,
      *     int, String, String, boolean, boolean, String, int, List, boolean)}</li>
+     *     <li><b>Given Scenario:</b> A caller who is neither an administrator nor a Roles plus Users portlet holder
+     *     filters by a {@code roleKey}.</li>
+     *     <li><b>Expected Result:</b> {@link ForbiddenException}: filtering by role reveals who holds it, the same
+     *     privilege {@code includeRoles} takes. The paginator is never reached.</li>
+     * </ul>
+     */
+    @Test(expected = ForbiddenException.class)
+    public void testFilterWithRoleKeysWithoutPrivilegeIsForbidden() throws DotDataException {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final WebResource webResource = mock(WebResource.class);
+        final InitDataObject initDataObject = mock(InitDataObject.class);
+        final User user = new User();
+        when(initDataObject.getUser()).thenReturn(user);
+        when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
+
+        final RoleAPI roleAPI = mock(RoleAPI.class);
+        final Role backendRole = new Role();
+        backendRole.setId("backend-role-id");
+        when(roleAPI.loadRoleByKey("DOTCMS_BACK_END_USER")).thenReturn(backendRole);
+
+        final PaginationUtil paginationUtil = mock(PaginationUtil.class);
+        final UserResource resource = getFilterTestResource(webResource, roleAPI, paginationUtil);
+
+        resource.filter(request, response, "jane", 0, 40, null, "ASC", false, false, null, 0,
+                List.of("DOTCMS_BACK_END_USER"), false);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserResource#filter(HttpServletRequest, HttpServletResponse, String, int,
+     *     int, String, String, boolean, boolean, String, int, List, boolean)}</li>
      *     <li><b>Given Scenario:</b> Call the {@code /filter} endpoint passing {@code roleKey} values, both repeated
      *     and comma-separated.</li>
      *     <li><b>Expected Result:</b> Every key is resolved through the {@link RoleAPI} and the resulting Role list
@@ -578,7 +610,9 @@ public class UserResourceTest extends UnitTestBase {
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final WebResource webResource = mock(WebResource.class);
         final InitDataObject initDataObject = mock(InitDataObject.class);
-        final User user = new User();
+        // filtering by role reveals who holds it, so the caller must be privileged
+        final User user = mock(User.class);
+        when(user.isAdmin()).thenReturn(true);
         when(initDataObject.getUser()).thenReturn(user);
         when(webResource.init(Mockito.any(InitBuilder.class))).thenReturn(initDataObject);
 
