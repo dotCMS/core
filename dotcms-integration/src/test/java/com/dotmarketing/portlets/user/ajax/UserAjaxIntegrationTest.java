@@ -277,6 +277,25 @@ public class UserAjaxIntegrationTest {
     }
 
     /**
+     * Method to test: {@link UserAjax#addUser(String, String, String, String, String)}
+     * Given Scenario: A user with the Users tool who is not a CMS Administrator creates a user from the
+     * Users screen.
+     * Expected Result: {@link DotSecurityException}; no user is created. Creating users requires a CMS
+     * Administrator on this path as on {@code POST /api/v1/users}.
+     */
+    @Test
+    public void addUser_nonAdmin_refusedAndNoUserCreated() throws Exception {
+        newUserManagerLoggedIn();
+        final String newUserId = "addedbymanager-" + UUIDGenerator.shorty();
+
+        assertThrows(DotSecurityException.class, () -> new UserAjax().addUser(newUserId, "Added",
+                "ByManager", newUserId + "@dotcms.com", "Passw0rd!" + UUIDGenerator.shorty()));
+
+        assertThrows(com.dotmarketing.business.NoSuchUserException.class,
+                () -> APILocator.getUserAPI().loadUserById(newUserId));
+    }
+
+    /**
      * Method to test: {@link UserAjax#updateUserRoles(String, List)}
      * Given Scenario: A CMS Administrator saves another user's roles, dropping role A and adding role B.
      * Expected Result: Role A is removed and role B is added, as before.

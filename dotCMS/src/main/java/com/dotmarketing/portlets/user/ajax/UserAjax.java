@@ -113,7 +113,9 @@ public class UserAjax {
 
 	/**
 	 * Creates a new system user. Validations regarding password security
-	 * policies are enforced during the process.
+	 * policies are enforced during the process. Only a CMS Administrator can
+	 * create users; this is checked before the user record is created, so a
+	 * refused request creates nothing.
 	 * 
 	 * @param userId
 	 *            - The internal user ID.
@@ -139,7 +141,13 @@ public class UserAjax {
 	public Map<String, Object> addUser(String userId, String firstName, String lastName, String email, String password) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
 
 		//Validate if this logged in user has the required permissions to access the users portlet
-		validateUsersPortletPermissions(getLoggedInUser());
+		final User caller = getLoggedInUser();
+		validateUsersPortletPermissions(caller);
+		// creating users requires a CMS Administrator; checked before the user record is created
+		if (!caller.isAdmin()) {
+			SecurityLogger.logInfo(getClass(), "User '" + caller.getUserId() + "' is not allowed to create users");
+			throw new DotSecurityException("Only a CMS Administrator can create users");
+		}
 		validateMaximumLength(firstName,lastName,email);
 
         //auth
