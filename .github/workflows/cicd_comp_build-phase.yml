@@ -184,7 +184,6 @@ jobs:
           # which made the PR effective pom differ from trunk's for that module.
           maven-args: "clean install ${{ env.VALIDATE_PROFILE }} -Dprod=true -DskipTests=true"
           generate-artifacts: true
-          require-main: ${{ inputs.version == '1.0.0-SNAPSHOT' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           cleanup-runner: true
           version: ${{ inputs.version }}
