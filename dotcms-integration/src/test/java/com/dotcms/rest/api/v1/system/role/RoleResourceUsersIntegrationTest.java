@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.system.role;
 
+import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -8,8 +9,10 @@ import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -87,6 +90,13 @@ public class RoleResourceUsersIntegrationTest {
                 new MockAttributeRequest(
                         new MockHttpRequestIntegrationTest("localhost", "/").request())
                         .request());
+    }
+
+    private static HttpServletRequest requestFor(final User user) {
+        final MockSessionRequest request = baseRequest();
+        request.getSession().setAttribute(
+                com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+        return request.request();
     }
 
     private static HttpServletRequest mockAdminRequest() {
@@ -295,5 +305,42 @@ public class RoleResourceUsersIntegrationTest {
 
         resource.loadUsersByRoleId(request.request(), new MockHttpResponse(),
                 role.getId(), null, 1, 40, null, "ASC");
+    }
+
+    /**
+     * A backend user who can open the Roles portlet but not the Users portlet is not allowed
+     * to see who holds a role: membership carries user details, so it takes the same privilege
+     * as reading a user's roles.
+     */
+    @Test(expected = ForbiddenException.class)
+    public void rolesPortletWithoutUsersPortlet_isForbidden() throws Exception {
+        final Role role = track(new RoleDataGen().nextPersisted());
+        final Layout rolesLayout = new LayoutDataGen().portletIds("roles").nextPersisted();
+        final Role portletRole = track(new RoleDataGen().layout(rolesLayout).nextPersisted());
+        final User limited = track(new UserDataGen()
+                .roles(roleAPI.loadBackEndUserRole(), portletRole).nextPersisted());
+
+        resource.loadUsersByRoleId(requestFor(limited), new MockHttpResponse(),
+                role.getId(), null, 1, 40, null, "ASC");
+    }
+
+    /**
+     * A backend user who is not an administrator but holds both the Roles and the Users
+     * portlets can still list a role's members.
+     */
+    @Test
+    public void rolesAndUsersPortlets_canListMembers() throws Exception {
+        final Role role = track(new RoleDataGen().nextPersisted());
+        final User member = track(new UserDataGen().roles(role).nextPersisted());
+        final Layout layout = new LayoutDataGen().portletIds("roles", "users").nextPersisted();
+        final Role portletRole = track(new RoleDataGen().layout(layout).nextPersisted());
+        final User delegate = track(new UserDataGen()
+                .roles(roleAPI.loadBackEndUserRole(), portletRole).nextPersisted());
+
+        final ResponseEntityPaginatedDataView view = resource.loadUsersByRoleId(
+                requestFor(delegate), new MockHttpResponse(),
+                role.getId(), null, 1, 40, null, "ASC");
+
+        assertTrue(userIds(view).contains(member.getUserId()));
     }
 }

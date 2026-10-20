@@ -821,7 +821,8 @@ public class RoleResource implements Serializable {
 	 * user serialization (email address included). Grants inherited through the role hierarchy
 	 * are not part of the response: clients that need the effective member list walk the
 	 * ancestor chain through the {@code parent} attribute of {@link RoleView} and call this
-	 * endpoint per role.
+	 * endpoint per role. The caller must be an administrator or hold both the Roles and the
+	 * Users portlets, the same privilege {@link #loadUserRoles} asks for.
 	 *
 	 * @param request   {@link HttpServletRequest}
 	 * @param response  {@link HttpServletResponse}
@@ -839,7 +840,8 @@ public class RoleResource implements Serializable {
 		summary = "Get the users directly granted a role",
 		description = "Returns the paginated list of users directly granted the given role, "
 				+ "using the standard user serialization (email address included). Grants "
-				+ "inherited through the role hierarchy are not included."
+				+ "inherited through the role hierarchy are not included. The caller must be "
+				+ "an administrator or have access to both the Roles and the Users portlets."
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200",
@@ -853,7 +855,7 @@ public class RoleResource implements Serializable {
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "403",
-					description = "Forbidden - roles portlet access required",
+					description = "Forbidden - administrator, or Roles and Users portlet access, required",
 					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "404",
 					description = "Role not found",
@@ -886,6 +888,17 @@ public class RoleResource implements Serializable {
 				.requiredPortlet("roles")
 				.requestAndResponse(request, response)
 				.rejectWhenNoUser(true).init();
+
+		final User user = initData.getUser();
+		if (!this.canReadRoleMembership(user)) {
+
+			SecurityLogger.logInfo(this.getClass(), "unauthorized attempt to list the users of role "
+					+ roleId + " by user " + user.getUserId() + " from " + request.getRemoteHost());
+			final String forbiddenMessage = "The User: " + user.getUserId()
+					+ " does not have permissions to list the users of a role";
+			Logger.error(this, forbiddenMessage);
+			throw new ForbiddenException(forbiddenMessage);
+		}
 
 		Logger.debug(this, () -> "Loading the users directly granted the role: " + roleId);
 
@@ -1216,15 +1229,9 @@ public class RoleResource implements Serializable {
 				.requiredFrontendUser(false).requestAndResponse(request, response)
 				.rejectWhenNoUser(true).init().getUser();
 
-		final boolean isRoleAdministrator = modUser.isAdmin() ||
-				(
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-				);
-
 		Logger.debug(this, ()-> "Loading the user roles for: " + modUser);
 
-		if (isRoleAdministrator) {
+		if (this.canReadRoleMembership(modUser)) {
 
 			User userRecover = Try.of(()->this.userAPI.loadUserById(userIdOrEmail)).getOrNull();
 			if (userRecover == null) {
@@ -1248,6 +1255,23 @@ public class RoleResource implements Serializable {
 		final String forbiddenMessage = "The User: " + modUser.getUserId() + " does not have permissions to retrieve users roles";
 		Logger.error(this, forbiddenMessage);
 		throw new ForbiddenException(forbiddenMessage);
+	}
+
+	/**
+	 * Whether a user may see which users hold a role and which roles a user holds. Role
+	 * membership carries user details, so it takes an administrator, or a user with access to
+	 * both the Roles and the Users portlets.
+	 *
+	 * @param user the user making the request
+	 * @return {@code true} when the user may read role membership
+	 * @throws DotDataException if the user's portlet access cannot be resolved
+	 */
+	private boolean canReadRoleMembership(final User user) throws DotDataException {
+
+		final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+		return user.isAdmin() ||
+				(layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user) &&
+						layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), user));
 	}
 
 	/**

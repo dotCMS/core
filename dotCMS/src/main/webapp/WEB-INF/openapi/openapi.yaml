@@ -16823,7 +16823,8 @@ paths:
     get:
       description: "Returns the paginated list of users directly granted the given\
         \ role, using the standard user serialization (email address included). Grants\
-        \ inherited through the role hierarchy are not included."
+        \ inherited through the role hierarchy are not included. The caller must be\
+        \ an administrator or have access to both the Roles and the Users portlets."
       operationId: loadUsersByRoleId
       parameters:
       - description: Id of the role to list users for
@@ -16881,7 +16882,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - roles portlet access required
+          description: "Forbidden - administrator, or Roles and Users portlet access,\
+            \ required"
         "404":
           content:
             application/json: {}
