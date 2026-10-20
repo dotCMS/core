@@ -14,7 +14,7 @@
     <properties>
         <maven.deploy.skip>false</maven.deploy.skip>
         <flatten.mode>bom</flatten.mode>
-        <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
+        <aws-java-sdk.version>1.12.797</aws-java-sdk.version>
         <twelvemonkeys.version>3.10.1</twelvemonkeys.version>
         <swagger.version>2.2.34</swagger.version>
         <bytebuddy.version>1.14.15</bytebuddy.version>
@@ -22,9 +22,10 @@
         <bouncy-castle.version>1.85</bouncy-castle.version>
         <awaitility.version>4.0.0</awaitility.version>
         <shedlock.version>4.33.0</shedlock.version>
-        <jackson.version>2.17.2</jackson.version>
+        <jackson.version>2.18.11</jackson.version>
         <jersey.version>2.28</jersey.version>
         <graalvm.version>22.3.3</graalvm.version>
+        <grpc.version>1.75.0</grpc.version>
     </properties>
     <dependencyManagement>
 
@@ -68,6 +69,15 @@
                 <scope>import</scope>
             </dependency>
 
+            <!-- grpc: imported first so every io.grpc artifact resolves to one version.
+                 Stay on 1.75.x: 1.76+ expects guava 33.4+, and guava is pinned to 32.0.1-jre below. -->
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-bom</artifactId>
+                <version>${grpc.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
             <!-- Asynchronous NIO client server framework for the jvm -->
             <!-- <dependency>
@@ -627,7 +637,7 @@
             <dependency>
                 <groupId>commons-fileupload</groupId>
                 <artifactId>commons-fileupload</artifactId>
-                <version>1.5</version>
+                <version>1.6.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
