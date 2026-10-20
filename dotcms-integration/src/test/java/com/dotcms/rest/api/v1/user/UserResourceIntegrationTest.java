@@ -5,6 +5,7 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.ejb.UserTestUtil;
 import java.util.Collections;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -902,5 +903,210 @@ public class UserResourceIntegrationTest {
             assertTrue("modificationDate must be non-increasing at index " + i,
                     (Long) modDates.get(i - 1) >= (Long) modDates.get(i));
         }
+    }
+
+    // ==================== Role changes require a CMS Administrator ====================
+
+    private static final String USER_MANAGER_PASSWORD = "Passw0rd!";
+
+    /**
+     * Creates a back-end user who is not a CMS Administrator but has the Users and Roles tools,
+     * holding the given extra roles. Registered for cleanup.
+     */
+    private static User newUserManager(final Role... extraRoles) throws Exception {
+        final String suffix = uniq();
+        final com.dotmarketing.business.Layout layout = new com.dotcms.datagen.LayoutDataGen()
+                .name("Users and Roles " + suffix).portletIds("users", "roles").nextPersisted();
+        final Role toolsRole = new RoleDataGen().layout(layout).nextPersisted();
+        rolesToClean.add(toolsRole);
+
+        final List<Role> roles = new ArrayList<>(List.of(TestUserUtils.getBackendRole(), toolsRole));
+        roles.addAll(List.of(extraRoles));
+        final User manager = new UserDataGen().firstName("Manager").lastName("User" + suffix)
+                .emailAddress("usermanager" + suffix + "@dotcms.com").password(USER_MANAGER_PASSWORD)
+                .roles(roles.toArray(new Role[0])).nextPersisted();
+        usersToClean.add(manager);
+
+        final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+        assertFalse("precondition: the caller must not be a CMS Administrator", manager.isAdmin());
+        assertTrue("precondition: the caller must have the Users and Roles tools",
+                layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), manager)
+                        && layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), manager));
+        return manager;
+    }
+
+    private static HttpServletRequest requestAs(final User user) {
+        return mockRequestAs(user.getEmailAddress(), USER_MANAGER_PASSWORD);
+    }
+
+    /** The ids of the roles the user holds directly. */
+    private static List<String> directRoleIds(final User user) throws Exception {
+        return APILocator.getRoleAPI().loadRolesForUser(user.getUserId(), false).stream()
+                .map(Role::getId).collect(Collectors.toCollection(ArrayList::new));
+    }
+
+    /**
+     * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator updates
+     * their own account with the CMS Administrator role added by key.
+     * Expected Result: {@link DotSecurityException} (403); still not a CMS Administrator, roles unchanged.
+     */
+    @Test
+    public void test_update_nonAdminAddingAdministratorRoleByKey_forbidden() throws Exception {
+        final User manager = newUserManager();
+        final Set<String> before = Set.copyOf(directRoleIds(manager));
+        final List<String> roles = directRoleIds(manager);
+        roles.add(Role.CMS_ADMINISTRATOR_ROLE);
+
+        assertThrows(DotSecurityException.class, () -> resource.update(requestAs(manager), response,
+                updateFormFor(manager).roles(roles).build()));
+
+        assertFalse(manager.isAdmin());
+        assertEquals(before, Set.copyOf(directRoleIds(manager)));
+    }
+
+    /**
+     * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator updates
+     * their own account with an ordinary assignable role added by id.
+     * Expected Result: {@link DotSecurityException} (403); the role is not granted.
+     */
+    @Test
+    public void test_update_nonAdminAddingRoleById_forbidden() throws Exception {
+        final User manager = newUserManager();
+        final Role ordinary = new RoleDataGen().key("ordinary" + uniq()).nextPersisted();
+        rolesToClean.add(ordinary);
+        final List<String> roles = directRoleIds(manager);
+        roles.add(ordinary.getId());
+
+        assertThrows(DotSecurityException.class, () -> resource.update(requestAs(manager), response,
+                updateFormFor(manager).roles(roles).build()));
+
+        assertFalse(APILocator.getRoleAPI().doesUserHaveRole(manager, ordinary));
+    }
+
+    /**
+     * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator holds an
+     * extra assignable role and updates their own account without it.
+     * Expected Result: {@link DotSecurityException} (403); the role is still held.
+     */
+    @Test
+    public void test_update_nonAdminRemovingOwnRole_forbidden() throws Exception {
+        final Role extra = new RoleDataGen().key("extra" + uniq()).nextPersisted();
+        rolesToClean.add(extra);
+        final User manager = newUserManager(extra);
+        final List<String> roles = directRoleIds(manager);
+        roles.remove(extra.getId());
+
+        assertThrows(DotSecurityException.class, () -> resource.update(requestAs(manager), response,
+                updateFormFor(manager).roles(roles).build()));
+
+        assertTrue(APILocator.getRoleAPI().doesUserHaveRole(manager, extra));
+    }
+
+    /**
+     * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator holds role P
+     * directly and its child role C through it. They update their own account sending every role
+     * they hold, inherited ones included, as the Users screen does on every save.
+     * Expected Result: 200; the direct roles are unchanged and C is not granted directly.
+     */
+    @Test
+    public void test_update_nonAdminRolesWithInheritedRole_succeeds() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final Role parent = new RoleDataGen().key("parent" + uniq()).nextPersisted();
+        final Role child = new RoleDataGen().key("child" + uniq()).parent(parent.getId()).nextPersisted();
+        rolesToClean.add(child);
+        rolesToClean.add(parent);
+        final User manager = newUserManager(parent);
+        assertTrue("precondition: the child role must be inherited", roleAPI.doesUserHaveRole(manager, child));
+        final Set<String> before = Set.copyOf(directRoleIds(manager));
+        assertFalse("precondition: the child role must not be held directly", before.contains(child.getId()));
+
+        final List<String> everyRoleHeld = roleAPI.loadRolesForUser(manager.getUserId(), true).stream()
+                .map(Role::getId).collect(Collectors.toList());
+        final Response resourceResponse = resource.update(requestAs(manager), response,
+                updateFormFor(manager).roles(everyRoleHeld).build());
+
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        assertEquals(before, Set.copyOf(directRoleIds(manager)));
+    }
+
+    /**
+     * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator changes
+     * only their own first name and sends no roles.
+     * Expected Result: 200; the name is updated and the roles are unchanged.
+     */
+    @Test
+    public void test_update_nonAdminRolesFieldAbsent_succeeds() throws Exception {
+        final User manager = newUserManager();
+        final Set<String> before = Set.copyOf(directRoleIds(manager));
+
+        final Response resourceResponse = resource.update(requestAs(manager), response,
+                updateFormFor(manager).firstName("Renamed").build());
+
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        assertEquals("Renamed", APILocator.getUserAPI().loadUserById(manager.getUserId()).getFirstName());
+        assertEquals(before, Set.copyOf(directRoleIds(manager)));
+    }
+
+    /**
+     * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A CMS Administrator updates another user, adding the CMS Administrator role by key.
+     * Expected Result: 200; the user is now a CMS Administrator.
+     */
+    @Test
+    public void test_update_adminAddingAdministratorRole_succeeds() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final User target = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+        usersToClean.add(target);
+        final List<String> roles = directRoleIds(target);
+        roles.add(Role.CMS_ADMINISTRATOR_ROLE);
+
+        final Response resourceResponse = resource.update(mockRequest(), response,
+                updateFormFor(target).roles(roles).build());
+
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        assertTrue(target.isAdmin());
+        roleAPI.removeRoleFromUser(roleAPI.loadCMSAdminRole(), target);
+    }
+
+    /**
+     * Method to test: {@link UserResource#create(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator creates a
+     * user with the CMS Administrator role.
+     * Expected Result: {@link DotSecurityException} (403); no user is created.
+     */
+    @Test
+    public void test_create_nonAdminWithAdministratorRole_forbidden() throws Exception {
+        final User manager = newUserManager();
+        final String newUserId = "createdbymanager-" + uniq();
+
+        assertThrows(DotSecurityException.class, () -> resource.create(requestAs(manager), response,
+                createFormFor(newUserId).roles(List.of(Role.DOTCMS_BACK_END_USER, Role.CMS_ADMINISTRATOR_ROLE))
+                        .build()));
+
+        assertThrows(com.dotmarketing.business.NoSuchUserException.class,
+                () -> APILocator.getUserAPI().loadUserById(newUserId));
+    }
+
+    /**
+     * Method to test: {@link UserResource#create(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator creates a
+     * user without the roles field (the default Front-end User role applies).
+     * Expected Result: {@link DotSecurityException} (403); no user is created.
+     */
+    @Test
+    public void test_create_nonAdminWithDefaultRole_forbidden() throws Exception {
+        final User manager = newUserManager();
+        final String newUserId = "createdbymanager-" + uniq();
+
+        assertThrows(DotSecurityException.class,
+                () -> resource.create(requestAs(manager), response, createFormFor(newUserId).build()));
+
+        assertThrows(com.dotmarketing.business.NoSuchUserException.class,
+                () -> APILocator.getUserAPI().loadUserById(newUserId));
     }
 }
