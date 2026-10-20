@@ -16715,8 +16715,10 @@ paths:
       - Roles
   /v1/roles/{roleid}/rolehierarchyanduserroles:
     get:
-      description: Load the user and roles by role id with optional hierarchy and
-        filtering
+      description: "Load the user and roles by role id with optional hierarchy and\
+        \ filtering. The caller must be an administrator, have access to both the\
+        \ Roles and the Users portlets, or hold a workflow action that assigns to\
+        \ the role."
       operationId: loadUsersAndRolesByRoleId
       parameters:
       - description: Role ID
@@ -16754,7 +16756,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - backend user required
+          description: Forbidden - membership privilege or an assigning workflow action
+            required
         "404":
           content:
             application/json: {}
@@ -19808,7 +19811,8 @@ paths:
           type: integer
           format: int32
       - description: "Role key(s) to restrict results to users holding any of them;\
-          \ repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER"
+          \ repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER.\
+          \ Requires CMS Administrator or Roles+Users portlet access (403 otherwise)"
         in: query
         name: roleKey
         schema:

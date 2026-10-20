@@ -3,6 +3,9 @@ package com.dotcms.rest.api.v1.system.role;
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.WorkflowActionDataGen;
+import com.dotcms.datagen.WorkflowDataGen;
+import com.dotcms.datagen.WorkflowStepDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -12,7 +15,12 @@ import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.Layout;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -24,6 +32,7 @@ import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -33,6 +42,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -342,5 +352,66 @@ public class RoleResourceUsersIntegrationTest {
                 role.getId(), null, 1, 40, null, "ASC");
 
         assertTrue(userIds(view).contains(member.getUserId()));
+    }
+
+    // ==================== GET /v1/roles/{roleid}/rolehierarchyanduserroles ====================
+
+    /**
+     * A back-end user with no portlets and no workflow action that assigns to the role cannot
+     * read the role's hierarchy and members.
+     */
+    @Test(expected = ForbiddenException.class)
+    public void hierarchy_plainBackendUser_isForbidden() throws Exception {
+        final Role role = track(new RoleDataGen().nextPersisted());
+        final User plain = track(new UserDataGen()
+                .roles(roleAPI.loadBackEndUserRole()).nextPersisted());
+
+        resource.loadUsersAndRolesByRoleId(requestFor(plain), new MockHttpResponse(),
+                role.getId(), false, null);
+    }
+
+    /**
+     * A back-end user who may use a workflow action that assigns work to the role must be able
+     * to pick an assignee, so the role's members stay visible to them.
+     */
+    @Test
+    public void hierarchy_assignerOfTheRole_isAllowed() throws Exception {
+        final Role role = track(new RoleDataGen().nextPersisted());
+        track(new UserDataGen().roles(role).nextPersisted());
+        final Role assignerRole = track(new RoleDataGen().nextPersisted());
+        final User assigner = track(new UserDataGen()
+                .roles(roleAPI.loadBackEndUserRole(), assignerRole).nextPersisted());
+
+        final WorkflowScheme scheme = new WorkflowDataGen().nextPersisted();
+        final WorkflowStep step = new WorkflowStepDataGen(scheme.getId()).nextPersisted();
+        final WorkflowAction action = new WorkflowActionDataGen(scheme.getId(), step.getId())
+                .nextAssign(role.getId()).nextPersisted();
+        APILocator.getPermissionAPI().save(
+                new Permission(action.getId(), assignerRole.getId(), PermissionAPI.PERMISSION_USE),
+                action, APILocator.systemUser(), false);
+
+        final Response response = resource.loadUsersAndRolesByRoleId(requestFor(assigner),
+                new MockHttpResponse(), role.getId(), false, null);
+
+        assertEquals(200, response.getStatus());
+        assertNotNull(response.getEntity());
+    }
+
+    /**
+     * A back-end user who may read role membership (Roles plus Users portlets) can read the
+     * role's hierarchy and members.
+     */
+    @Test
+    public void hierarchy_rolesAndUsersPortlets_isAllowed() throws Exception {
+        final Role role = track(new RoleDataGen().nextPersisted());
+        final Layout layout = new LayoutDataGen().portletIds("roles", "users").nextPersisted();
+        final Role portletRole = track(new RoleDataGen().layout(layout).nextPersisted());
+        final User delegate = track(new UserDataGen()
+                .roles(roleAPI.loadBackEndUserRole(), portletRole).nextPersisted());
+
+        final Response response = resource.loadUsersAndRolesByRoleId(requestFor(delegate),
+                new MockHttpResponse(), role.getId(), false, null);
+
+        assertEquals(200, response.getStatus());
     }
 }
