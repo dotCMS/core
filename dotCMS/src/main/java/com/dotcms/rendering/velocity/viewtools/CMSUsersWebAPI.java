@@ -41,6 +41,10 @@ import com.liferay.portal.util.PortalUtil;
  * can turn the flag off; lookups then return detached {@link User} copies with the credential
  * fields cleared. Only turn it off when templates need it, because those copies are accepted
  * wherever a {@link User} is.
+ *
+ * <p>{@link #getLoggedInUser(HttpServletRequest)} always returns a {@link User}, because templates
+ * pass the requester to methods that require one, but as a detached copy without the credential
+ * fields rather than the object held by the session.
  */
 public class CMSUsersWebAPI implements ViewTool {
 
@@ -109,12 +113,14 @@ public class CMSUsersWebAPI implements ViewTool {
 	}
 
 	/**
-	 * Retrieves the logged user from session
-	 * 
-	 * @param request
-	 * @return
+	 * Returns the user making the request: the back-end user, or else the front-end user held by
+	 * the session.
+	 *
+	 * @param request the current request
+	 * @return a detached copy of the requester without the password, password-reset and
+	 *         remember-me tokens, or {@code null} if nobody is logged in
 	 */
-	public User getLoggedInUser(HttpServletRequest request) {
+	public User getLoggedInUser(final HttpServletRequest request) {
 		User loggedInUser = PortalUtil.getUser(request);//back-end user
 
 		if(!UtilMethods.isSet(loggedInUser)){
@@ -123,7 +129,7 @@ public class CMSUsersWebAPI implements ViewTool {
 				loggedInUser = (User) session.getAttribute(WebKeys.CMS_USER);
 			}
 		}
-		return loggedInUser;
+		return loggedInUser == null ? null : detachedCopyWithoutCredentials(loggedInUser);
 	}
 
 
@@ -280,17 +286,22 @@ public class CMSUsersWebAPI implements ViewTool {
 		if (user == null) {
 			return null;
 		}
-		return Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES, true)
-				? new UserProfile(user)
-				: detachedCopyWithoutCredentials(user);
+		if (Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES, true)) {
+			return new UserProfile(user);
+		}
+		// another account's login addresses are not needed by templates
+		final User copy = detachedCopyWithoutCredentials(user);
+		copy.setLoginIP(null);
+		copy.setLastLoginIP(null);
+		return copy;
 	}
 
 	/**
-	 * Copies a user so that templates never hold the cached record, and clears the password,
-	 * the password-reset and remember-me tokens, the additional info and the login IP addresses
-	 * on the copy.
+	 * Copies a user so that templates never hold the cached or session record. The copy keeps
+	 * the profile fields, the additional info (as its own map) and the modification date, and has
+	 * the password, the password-reset token and the remember-me token cleared.
 	 *
-	 * @param user the cached account
+	 * @param user the cached or session account
 	 * @return a detached copy without credential fields
 	 */
 	private static User detachedCopyWithoutCredentials(final User user) {
@@ -298,9 +309,9 @@ public class CMSUsersWebAPI implements ViewTool {
 		copy.setPassword(null);
 		copy.setIcqId(null);
 		copy.setRememberMeToken(null);
-		copy.setAdditionalInfo(new HashMap<>());
-		copy.setLoginIP(null);
-		copy.setLastLoginIP(null);
+		// clone() rebuilds the user without these two
+		copy.setAdditionalInfo(user.getAdditionalInfo() == null ? null : new HashMap<>(user.getAdditionalInfo()));
+		copy.setModificationDate(user.getModificationDate());
 		return copy;
 	}
 

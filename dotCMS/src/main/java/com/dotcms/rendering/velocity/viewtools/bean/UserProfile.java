@@ -135,9 +135,14 @@ public final class UserProfile {
         return user.getModificationDate();
     }
 
-    /** @return when the user last logged in */
+    /** @return when the user logged in, for the current or most recent session */
     public Date getLoginDate() {
         return user.getLoginDate();
+    }
+
+    /** @return when the user logged in before the current session, usually shown as last access */
+    public Date getLastLoginDate() {
+        return user.getLastLoginDate();
     }
 
     /** @return the comments stored on the account */

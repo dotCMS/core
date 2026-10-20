@@ -21,6 +21,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import java.lang.reflect.Method;
+import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
@@ -40,6 +41,9 @@ import org.junit.Test;
  * accept those profiles. This is controlled by the {@code FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES}
  * feature flag, on by default; installations whose templates still need full {@link User} objects
  * can turn it off, which makes lookups return a detached copy with the credential fields cleared.
+ *
+ * <p>{@code getLoggedInUser} keeps returning a {@link User}, because templates pass the requester to
+ * methods that require one, but as a detached copy without the credential fields.
  */
 public class CMSUsersWebAPITest {
 
@@ -72,6 +76,7 @@ public class CMSUsersWebAPITest {
                 .nextPersisted();
         // a pending password-reset token is stored on the user record
         profiledUser.setIcqId("reset-" + UUIDGenerator.generateUuid());
+        profiledUser.setLastLoginDate(new Date());
         APILocator.getUserAPI().save(profiledUser, APILocator.systemUser(), false);
 
         adminUser = new UserDataGen()
@@ -81,27 +86,45 @@ public class CMSUsersWebAPITest {
 
         requester = new UserDataGen()
                 .emailAddress("cmsuser.requester." + suffix + "@dotcms.com")
+                .password("Requ3ster-Passw0rd-" + suffix)
+                .additionalInfo("team", "qa")
                 .roles(APILocator.getRoleAPI().loadBackEndUserRole())
                 .nextPersisted();
+        requester.setIcqId("reset-" + UUIDGenerator.generateUuid());
+        APILocator.getUserAPI().save(requester, APILocator.systemUser(), false);
+    }
+
+    /**
+     * Builds a request made by {@code user}, logged in through the session.
+     */
+    private static HttpServletRequest requestFor(final User user) {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpSession session = mock(HttpSession.class);
+        when(request.getSession()).thenReturn(session);
+        when(request.getSession(false)).thenReturn(session);
+        when(session.getAttribute(WebKeys.CMS_USER)).thenReturn(user);
+        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+        return request;
+    }
+
+    /**
+     * Builds the tool the way the toolbox does for the given request.
+     */
+    private static CMSUsersWebAPI cmsUserTool(final HttpServletRequest request) {
+        final ViewContext viewContext = mock(ViewContext.class);
+        when(viewContext.getRequest()).thenReturn(request);
+        when(viewContext.getVelocityContext()).thenReturn(VelocityUtil.getBasicContext());
+
+        final CMSUsersWebAPI tool = new CMSUsersWebAPI();
+        tool.init(viewContext);
+        return tool;
     }
 
     /**
      * Builds the tool the way the toolbox does for a request made by {@code user}.
      */
     private static CMSUsersWebAPI cmsUserTool(final User user) {
-        final ViewContext viewContext = mock(ViewContext.class);
-        final HttpServletRequest request = mock(HttpServletRequest.class);
-        final HttpSession session = mock(HttpSession.class);
-        when(viewContext.getRequest()).thenReturn(request);
-        when(viewContext.getVelocityContext()).thenReturn(VelocityUtil.getBasicContext());
-        when(request.getSession()).thenReturn(session);
-        when(request.getSession(false)).thenReturn(session);
-        when(session.getAttribute(WebKeys.CMS_USER)).thenReturn(user);
-        when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
-
-        final CMSUsersWebAPI tool = new CMSUsersWebAPI();
-        tool.init(viewContext);
-        return tool;
+        return cmsUserTool(requestFor(user));
     }
 
     private static String render(final String template) throws Exception {
@@ -132,25 +155,30 @@ public class CMSUsersWebAPITest {
     }
 
     /**
-     * A user copy returned with the flag off keeps the identity and display fields but carries none
-     * of the credential fields, and is detached from the cached user record.
+     * A user copy handed to a template keeps the identity, display fields, additional info and
+     * modification date of the stored record, carries none of the credential fields, and is
+     * detached from the cached user record.
      */
-    private static void assertDetachedCopyWithoutCredentials(final Object lookedUp, final User source)
+    private static void assertDetachedCopyWithoutCredentials(final Object handedOut, final User source)
             throws Exception {
-        assertTrue("With the flag off, lookups return User objects", lookedUp instanceof User);
-        final User copy = (User) lookedUp;
-        assertEquals(source.getUserId(), copy.getUserId());
-        assertEquals(source.getEmailAddress(), copy.getEmailAddress());
-        assertEquals(source.getFullName(), copy.getFullName());
+        assertTrue("Expected a User copy: " + handedOut, handedOut instanceof User);
+        final User copy = (User) handedOut;
+        final User stored = APILocator.getUserAPI().loadUserById(source.getUserId());
+        assertNotSame("Copies must be detached from the cached user record", stored, copy);
+
+        assertEquals(stored.getUserId(), copy.getUserId());
+        assertEquals(stored.getEmailAddress(), copy.getEmailAddress());
+        assertEquals(stored.getFullName(), copy.getFullName());
+        assertNotNull("premise: the stored record has a modification date", stored.getModificationDate());
+        assertEquals("modification date must be kept", stored.getModificationDate(), copy.getModificationDate());
+        assertEquals("additional info must be kept", stored.getAdditionalInfo(), copy.getAdditionalInfo());
+        assertNotSame("additional info must be a copy", stored.getAdditionalInfo(), copy.getAdditionalInfo());
+
         assertFalse("password must be cleared", UtilMethods.isSet(copy.getPassword()));
         assertFalse("reset token must be cleared", UtilMethods.isSet(copy.getIcqId()));
         // the remember-me token is kept in the skin id field
         assertFalse("remember-me token must be cleared", UtilMethods.isSet(copy.getRememberMeToken()));
         assertFalse("remember-me token must be cleared", UtilMethods.isSet(copy.getSkinId()));
-        assertTrue("additional info must be cleared",
-                copy.getAdditionalInfo() == null || copy.getAdditionalInfo().isEmpty());
-        assertNotSame("Legacy copies must be detached from the cached user record",
-                APILocator.getUserAPI().loadUserById(source.getUserId()), copy);
     }
 
     @Test
@@ -243,5 +271,45 @@ public class CMSUsersWebAPITest {
         } finally {
             Config.setProperty(READ_ONLY_PROFILES_FLAG, flagValue);
         }
+    }
+
+    /**
+     * {@code getLoggedInUser} returns a {@link User} for the requester, since templates pass it to
+     * methods that require one, but as a detached copy without the credential fields. The object
+     * held by the session is left untouched.
+     */
+    @Test
+    public void getLoggedInUser_returns_a_detached_copy_without_credential_fields() throws Exception {
+        final User sessionUser = APILocator.getUserAPI().loadUserById(requester.getUserId());
+        final String sessionPassword = sessionUser.getPassword();
+        final String sessionResetToken = sessionUser.getIcqId();
+        final String sessionRememberMeToken = sessionUser.getRememberMeToken();
+        // premise: the session's object carries all three credential fields
+        assertTrue(UtilMethods.isSet(sessionPassword));
+        assertTrue(UtilMethods.isSet(sessionResetToken));
+        assertTrue(UtilMethods.isSet(sessionRememberMeToken));
+
+        final HttpServletRequest request = requestFor(sessionUser);
+        final Object loggedIn = cmsUserTool(request).getLoggedInUser(request);
+
+        assertNotSame("Templates must not get the session's own user object", sessionUser, loggedIn);
+        assertDetachedCopyWithoutCredentials(loggedIn, requester);
+
+        assertEquals(sessionPassword, sessionUser.getPassword());
+        assertEquals(sessionResetToken, sessionUser.getIcqId());
+        assertEquals(sessionRememberMeToken, sessionUser.getRememberMeToken());
+    }
+
+    /**
+     * Profiles expose the last login date, which templates print as the last access time.
+     */
+    @Test
+    public void profiles_expose_the_last_login_date() throws Exception {
+        final User stored = APILocator.getUserAPI().loadUserById(profiledUser.getUserId());
+        assertNotNull("premise: the stored record has a last login date", stored.getLastLoginDate());
+
+        final Object profile = cmsUserTool(requester).getUserByEmail(profiledUser.getEmailAddress());
+        final Method lastLoginDate = profile.getClass().getMethod("getLastLoginDate");
+        assertEquals(stored.getLastLoginDate(), lastLoginDate.invoke(profile));
     }
 }
