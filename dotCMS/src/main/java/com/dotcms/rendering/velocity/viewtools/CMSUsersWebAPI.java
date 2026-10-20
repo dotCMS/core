@@ -45,16 +45,6 @@ public class CMSUsersWebAPI implements ViewTool {
 		this.categoryAPI = categoryAPI;
 	}
 
-	/**
-	 * Returns the copy of a user that templates get to see.
-	 *
-	 * @param user the user loaded through the API, possibly {@code null}
-	 * @return a {@link TemplateUser} carrying the profile data, or {@code null} when the user is {@code null}
-	 */
-	static User forTemplate(final User user) {
-		return user == null ? null : new TemplateUser(user);
-	}
-
 	public void init(Object obj) {
 		ViewContext context = (ViewContext) obj;
 		this.request = context.getRequest();
@@ -70,14 +60,13 @@ public class CMSUsersWebAPI implements ViewTool {
 	}
 
 	/**
-	 * Finds a user by email address.
-	 *
-	 * @param email the email address to look up
-	 * @return a template copy of the user (see {@link TemplateUser}), or {@code null} when not found
+	 * @param email
+	 * @return
 	 */
+
 	public User getUserByEmail(String email) {
 		try {
-			return forTemplate(APILocator.getUserAPI().loadByUserByEmail(email, APILocator.getUserAPI().getSystemUser(), false));
+			return APILocator.getUserAPI().loadByUserByEmail(email, APILocator.getUserAPI().getSystemUser(), false);
 		} catch (Exception e) {
 			Logger.error(CMSUsersWebAPI.class,e.getMessage(), e);
 			return null;
@@ -93,15 +82,16 @@ public class CMSUsersWebAPI implements ViewTool {
 
 
 	/**
-	 * Finds a user by id.
-	 *
-	 * @param userId the id of the user to be obtained
-	 * @return a template copy of the user (see {@link TemplateUser}), or {@code null} when not found or not set
+	 * get User by user id
+	 * 
+	 * @param userId
+	 *            userid of the user to be obtained
+	 * @return User
 	 */
 	public User getUserByUserId(String userId) {
 		if (UtilMethods.isSet(userId)) {
 			try{
-				return forTemplate(APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false));
+				return APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false);
 			} catch (Exception e1) {
 				Logger.error(CMSUsersWebAPI.class,e1.getMessage(), e1);
 				return null;
@@ -112,10 +102,10 @@ public class CMSUsersWebAPI implements ViewTool {
 	}
 
 	/**
-	 * Retrieves the logged-in user, back-end first and then the front-end session.
-	 *
-	 * @param request the current request
-	 * @return a template copy of the user (see {@link TemplateUser}), or {@code null} when nobody is logged in
+	 * Retrieves the logged user from session
+	 * 
+	 * @param request
+	 * @return
 	 */
 	public User getLoggedInUser(HttpServletRequest request) {
 		User loggedInUser = PortalUtil.getUser(request);//back-end user
@@ -126,7 +116,7 @@ public class CMSUsersWebAPI implements ViewTool {
 				loggedInUser = (User) session.getAttribute(WebKeys.CMS_USER);
 			}
 		}
-		return forTemplate(loggedInUser);
+		return loggedInUser;
 	}
 
 
@@ -134,10 +124,9 @@ public class CMSUsersWebAPI implements ViewTool {
 
 
 	/**
-	 * Returns the users holding the given role.
-	 *
-	 * @param groupId the role id
-	 * @return template copies of the users (see {@link TemplateUser}); empty when the role is unknown
+	 * This method return a list of users with the specified group
+	 * @param groupId compare string
+	 * @return List<User>
 	 * @deprecated will now return a list of roles
 	 */
 	public List<User> getAllUsersInGroup(String groupId) {
@@ -152,7 +141,7 @@ public class CMSUsersWebAPI implements ViewTool {
 		
 		for (String userId : uids) {
 			try {
-				ret.add(forTemplate(APILocator.getUserAPI().loadUserById(userId, APILocator.getUserAPI().getSystemUser(), true)));
+				ret.add(APILocator.getUserAPI().loadUserById(userId, APILocator.getUserAPI().getSystemUser(), true));
 			} catch (Exception e1) {
 				Logger.error(this, e1.getMessage(), e1);
 			}	

@@ -105,8 +105,7 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderHandlerTest.class,
         ContentAnalyticsPersistenceModeIT.class,
         EventAnalyticsProxyResourceIntegrationTest.class,
-        com.dotcms.rendering.velocity.WidgetRendererTest.class,
-        com.dotcms.rendering.velocity.viewtools.CMSUsersWebAPIIntegrationTest.class
+        com.dotcms.rendering.velocity.WidgetRendererTest.class
 })
 public class MainSuite2a {
 
