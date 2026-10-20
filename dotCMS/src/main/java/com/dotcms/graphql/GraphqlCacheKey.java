@@ -1,7 +1,7 @@
 package com.dotcms.graphql;
 
-import com.dotcms.variant.VariantAPI;
 import com.dotcms.visitor.domain.Visitor;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.function.Supplier;
 
 /**
  * Derives the cache key under which {@link GraphqlCacheWebInterceptor} stores a GraphQL response.
@@ -32,8 +33,9 @@ import java.util.TreeMap;
  *     <li>the server name the request was addressed to and every request parameter, which cover
  *     the {@code Host}, {@code language_id}, {@code variantName}, persona and {@code mode}
  *     selectors among others</li>
- *     <li>the session attributes the servlet reads: selected language, time machine date and
- *     language, selected site, page mode, variant and the visitor's persona</li>
+ *     <li>the session attributes the servlet reads: the selected language when it is not the
+ *     default one, the time machine date, the selected site, the page mode and the visitor's
+ *     persona</li>
  *     <li>the {@code dotcachekey} value, when the caller sends one, as an extra namespace</li>
  * </ul>
  * Credentials never make it into the key as-is: the whole canonical string is hashed with
@@ -56,27 +58,25 @@ final class GraphqlCacheKey {
             GraphqlCacheWebInterceptor.GRAPHQL_CACHE_REFRESH_PARAM);
 
     /**
-     * Session attributes, other than the logged-in user and the visitor, that change what the
-     * servlet returns for an otherwise identical request.
+     * Session attributes, other than the language, the logged-in user and the visitor, that change
+     * what the servlet returns for an otherwise identical request. They are written by the back-end
+     * UI, never by the GraphQL servlet itself, so they stay put for the life of a session.
      */
     private static final String[] SESSION_ATTRIBUTES = {
-            WebKeys.HTMLPAGE_LANGUAGE,
             TIME_MACHINE_DATE,
-            TIME_MACHINE_LANGUAGE,
             WebKeys.CMS_SELECTED_HOST_ID,
-            WebKeys.PAGE_MODE_SESSION,
-            VariantAPI.VARIANT_KEY
+            WebKeys.PAGE_MODE_SESSION
     };
 
     private final String value;
     private final boolean credentialed;
-    private final boolean sessionScoped;
+    private final boolean replayable;
 
     private GraphqlCacheKey(final String value, final boolean credentialed,
-            final boolean sessionScoped) {
+            final boolean replayable) {
         this.value = value;
         this.credentialed = credentialed;
-        this.sessionScoped = sessionScoped;
+        this.replayable = replayable;
     }
 
     /**
@@ -89,6 +89,22 @@ final class GraphqlCacheKey {
      */
     static GraphqlCacheKey from(final HttpServletRequest request, final String body,
             final Optional<String> clientKey) {
+        return from(request, body, clientKey,
+                () -> APILocator.getLanguageAPI().getDefaultLanguage().getId());
+    }
+
+    /**
+     * Builds the key for the given request.
+     *
+     * @param request           the incoming GraphQL request
+     * @param body              the raw request body
+     * @param clientKey         the {@code dotcachekey} the caller sent, if any
+     * @param defaultLanguageId supplies the default language id, consulted only when the session
+     *                          carries a language
+     * @return the derived key
+     */
+    static GraphqlCacheKey from(final HttpServletRequest request, final String body,
+            final Optional<String> clientKey, final Supplier<Long> defaultLanguageId) {
 
         final StringBuilder canonical = new StringBuilder(body.length() + 256);
         append(canonical, "body", body);
@@ -119,18 +135,19 @@ final class GraphqlCacheKey {
 
         // Session parts are always appended, so a request with an empty session hashes the same
         // as one without a session.
-        boolean sessionScoped = UtilMethods.isSet(rememberMe) || UtilMethods.isSet(sessionUserId);
+        append(canonical, "session.language", sessionLanguage(session, defaultLanguageId));
         for (final String attribute : SESSION_ATTRIBUTES) {
-            final String attributeValue = stringAttribute(session, attribute);
-            sessionScoped |= attributeValue != null;
-            append(canonical, "session." + attribute, attributeValue);
+            append(canonical, "session." + attribute, stringAttribute(session, attribute));
         }
-        final String persona = visitorPersona(session);
-        sessionScoped |= persona != null;
-        append(canonical, "session.persona", persona);
+        append(canonical, "session.persona", visitorPersona(session));
+
+        // A remember-me cookie logs the caller in through a filter the background replay never
+        // runs, so the replay would run anonymously; once the session holds the user, it can be
+        // copied along and the replay resolves the same caller.
+        final boolean replayable = !UtilMethods.isSet(rememberMe) || UtilMethods.isSet(sessionUserId);
 
         return new GraphqlCacheKey(DigestUtils.sha256Hex(canonical.toString()), credentialed,
-                sessionScoped);
+                replayable);
     }
 
     /**
@@ -153,13 +170,14 @@ final class GraphqlCacheKey {
     }
 
     /**
-     * Whether part of the key came from the session or a cookie. Such requests cannot be replayed
-     * in the background, because the copy used for a refresh carries neither.
+     * Whether a background refresh can replay the request as the same caller. The replay carries
+     * the headers and a snapshot of the session, but no cookies, so a caller identified by the
+     * remember-me cookie alone cannot be replayed.
      *
-     * @return true when the key depends on session or cookie state
+     * @return true when the request can be replayed in the background
      */
-    boolean isSessionScoped() {
-        return sessionScoped;
+    boolean isReplayable() {
+        return replayable;
     }
 
     private static void append(final StringBuilder canonical, final String name,
@@ -211,6 +229,30 @@ final class GraphqlCacheKey {
         }
         final Object userId = session.getAttribute(com.liferay.portal.util.WebKeys.USER_ID);
         return userId instanceof String ? (String) userId : null;
+    }
+
+    /**
+     * The language the servlet would take from the session, or null when the session carries none
+     * or carries the default language. The servlet stores the language it resolved back into the
+     * session on every request, so the default must not count: otherwise the first request of a
+     * session (no attribute yet) and every later one (attribute set to the default) would hash
+     * differently although they are served the same way.
+     *
+     * @param session           the session, if any
+     * @param defaultLanguageId supplies the default language id
+     * @return the session language id, or null when it does not change the response
+     */
+    private static String sessionLanguage(final HttpSession session,
+            final Supplier<Long> defaultLanguageId) {
+        if (session == null) {
+            return null;
+        }
+        final String language = Optional.ofNullable(stringAttribute(session, TIME_MACHINE_LANGUAGE))
+                .orElseGet(() -> stringAttribute(session, WebKeys.HTMLPAGE_LANGUAGE));
+        if (language == null || language.equals(String.valueOf(defaultLanguageId.get()))) {
+            return null;
+        }
+        return language;
     }
 
     private static String stringAttribute(final HttpSession session, final String name) {

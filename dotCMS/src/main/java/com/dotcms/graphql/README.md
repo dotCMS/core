@@ -230,8 +230,8 @@ tokens, languages, variants or personas hold more entries than before; raise
 - `dotcachettl: Int` - Cache TTL in seconds (0=bypass, -1=bypass and clear the caller's own entry;
   clearing needs a credential). Capped by `cache.graphqlquerycache.maxseconds`.
 - `dotcachekey: String` - Extra namespace added to the derived key
-- `dotcacherefresh: Boolean` - Background refresh; replays the request with its headers, so it is
-  skipped when the key depends on the session or on cookies
+- `dotcacherefresh: Boolean` - Background refresh; replays the request with its headers and a
+  snapshot of its session, so it is skipped only for callers known through the remember-me cookie alone
 
 ### Schema Caching
 

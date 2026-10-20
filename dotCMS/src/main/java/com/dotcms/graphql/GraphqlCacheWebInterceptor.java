@@ -4,7 +4,9 @@ import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.mock.request.DotCMSMockRequest;
+import com.dotcms.mock.request.DotCMSMockRequestWithSession;
 import com.dotcms.mock.request.HttpRequestReaderWrapper;
+import com.dotcms.mock.request.MockSession;
 import com.dotcms.mock.response.DotCMSMockResponse;
 import com.dotcms.mock.response.MockHttpStatusResponse;
 import com.dotcms.mock.response.MockHttpWriterCaptureResponse;
@@ -20,6 +22,7 @@ import io.vavr.control.Try;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -57,8 +60,8 @@ import static com.dotcms.util.HttpRequestDataUtil.getParamCaseInsensitive;
  * more than one entry for the same caller and context
  * <p>
  * <code>dotcacherefresh</code>: background refreshes the cache entry for this key/query. The refresh replays the
- * request with its headers; requests whose key depends on the session or on cookies are not refreshed in the
- * background, because that state cannot be replayed.
+ * request with its headers and a snapshot of its session; a caller known only through the remember-me cookie
+ * is not refreshed in the background, because the replay carries no cookies.
  *
  * If no parameters are provided it will cache the response based on the default config of the underlying cache implementation {@link GraphQLCache}
  *   and using the derived key.
@@ -136,7 +139,7 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
 
         Optional<String> graphResponseFromCache = bypassCache
                 ? Optional.empty()
-                : refreshKey(requestIn) && !cacheKey.isSessionScoped()
+                : refreshKey(requestIn) && cacheKey.isReplayable()
                         ? getAndRefresh(wrapper, syncKey, cacheTTL)
                         : graphCache.get(syncKey);
 
@@ -194,14 +197,18 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
 
     /**
      * Copies what the GraphQL servlet needs to replay the request on another thread: body,
-     * parameters, attributes, headers and the addressing details. Cookies and the session are not
-     * copied, which is why requests whose key depends on them are never refreshed in the background.
+     * parameters, attributes, headers, the addressing details and a snapshot of the session
+     * attributes. Cookies are not copied, which is why a caller known only through the remember-me
+     * cookie is never refreshed in the background.
      *
      * @param wrapper the request being served
      * @return a detached copy of the request
      */
     private DotCMSMockRequest getRequestCopy(final HttpRequestReaderWrapper wrapper) {
-        final DotCMSMockRequest requestCopy = new DotCMSMockRequest();
+        final HttpSession session = wrapper.getSession(false);
+        final DotCMSMockRequest requestCopy = session == null
+                ? new DotCMSMockRequest()
+                : new DotCMSMockRequestWithSession(new MockSession(session), wrapper.isSecure());
         requestCopy.setContent(wrapper.getRawRequest().get());
         requestCopy.setParameterMap(wrapper.getParameterMap());
         requestCopy.setMethod(wrapper.getMethod());

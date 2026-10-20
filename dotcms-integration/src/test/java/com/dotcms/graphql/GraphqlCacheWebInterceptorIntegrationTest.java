@@ -13,6 +13,7 @@ import com.dotcms.mock.response.DotCMSMockResponse;
 import com.dotcms.mock.response.MockHttpStatusResponse;
 import com.dotcms.mock.response.MockHttpWriterCaptureResponse;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.util.WebKeys;
 import java.io.IOException;
@@ -143,6 +144,32 @@ public class GraphqlCacheWebInterceptorIntegrationTest {
         assertFalse(sessionUser.hit);
         assertFalse(anonymous.hit);
         assertFalse(anonymous.body.equals(sessionUser.body));
+    }
+
+    /**
+     * Method to test: {@link GraphqlCacheWebInterceptor#intercept}
+     * Given Scenario: a logged-in session sends a body, the servlet stores the default language in
+     * the session while serving it, and the same body is sent again
+     * ExpectedResult: the second request is a hit, since the stored default language changes nothing
+     */
+    @Test
+    public void defaultLanguageStoredInSessionKeepsTheEntry() throws IOException {
+        final String body = uniqueBody();
+        final MockSession session = new MockSession(UUID.randomUUID().toString());
+        session.setAttribute(WebKeys.USER_ID, "dotcms.org.1");
+
+        final Served first = serve(new RequestBuilder(body, session));
+        session.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,
+                String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId()));
+        final Served second = serve(new RequestBuilder(body, session));
+        session.setAttribute(com.dotmarketing.util.WebKeys.HTMLPAGE_LANGUAGE,
+                String.valueOf(APILocator.getLanguageAPI().getDefaultLanguage().getId() + 1));
+        final Served otherLanguage = serve(new RequestBuilder(body, session));
+
+        assertFalse(first.hit);
+        assertTrue(second.hit);
+        assertEquals(first.body, second.body);
+        assertFalse(otherLanguage.hit);
     }
 
     /**

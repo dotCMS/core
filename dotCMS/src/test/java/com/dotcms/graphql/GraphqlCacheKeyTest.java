@@ -40,8 +40,14 @@ public class GraphqlCacheKeyTest extends UnitTestBase {
         return request;
     }
 
+    private static final long DEFAULT_LANGUAGE_ID = 1L;
+
     private static GraphqlCacheKey key(final HttpServletRequest request) {
-        return GraphqlCacheKey.from(request, BODY, Optional.empty());
+        return key(request, BODY);
+    }
+
+    private static GraphqlCacheKey key(final HttpServletRequest request, final String body) {
+        return GraphqlCacheKey.from(request, body, Optional.empty(), () -> DEFAULT_LANGUAGE_ID);
     }
 
     /**
@@ -56,7 +62,7 @@ public class GraphqlCacheKeyTest extends UnitTestBase {
 
         assertEquals(first.value(), second.value());
         assertFalse(first.isCredentialed());
-        assertFalse(first.isSessionScoped());
+        assertTrue(first.isReplayable());
         assertTrue(first.value().matches("[0-9a-f]{64}"));
     }
 
@@ -75,7 +81,7 @@ public class GraphqlCacheKeyTest extends UnitTestBase {
 
         assertNotEquals(anonymous.value(), credentialed.value());
         assertTrue(credentialed.isCredentialed());
-        assertFalse(credentialed.isSessionScoped());
+        assertTrue(credentialed.isReplayable());
         assertFalse(credentialed.value().contains("aaaa"));
     }
 
@@ -116,19 +122,25 @@ public class GraphqlCacheKeyTest extends UnitTestBase {
     /**
      * Method to test: {@link GraphqlCacheKey#from(HttpServletRequest, String, Optional)}
      * Given Scenario: the remember-me cookie is present
-     * ExpectedResult: the key differs from the anonymous one and cannot be refreshed in the background
+     * ExpectedResult: the key differs from the anonymous one; the request can only be replayed once
+     * the session also holds the user
      */
     @Test
     public void rememberMeCookieChangesTheKey() {
         final HttpServletRequest withCookie = request();
         when(withCookie.getCookies()).thenReturn(
                 new Cookie[] {new Cookie(CookieKeys.JWT_ACCESS_TOKEN, "cookie-token")});
+        final HttpServletRequest withCookieAndSession = requestWithSessionUser("dotcms.org.1");
+        when(withCookieAndSession.getCookies()).thenReturn(
+                new Cookie[] {new Cookie(CookieKeys.JWT_ACCESS_TOKEN, "cookie-token")});
 
         final GraphqlCacheKey credentialed = key(withCookie);
+        final GraphqlCacheKey loggedIn = key(withCookieAndSession);
 
         assertNotEquals(key(request()).value(), credentialed.value());
         assertTrue(credentialed.isCredentialed());
-        assertTrue(credentialed.isSessionScoped());
+        assertFalse(credentialed.isReplayable());
+        assertTrue(loggedIn.isReplayable());
     }
 
     /**
@@ -146,7 +158,7 @@ public class GraphqlCacheKeyTest extends UnitTestBase {
         assertEquals(firstSession.value(), secondSession.value());
         assertNotEquals(firstSession.value(), otherUser.value());
         assertTrue(firstSession.isCredentialed());
-        assertTrue(firstSession.isSessionScoped());
+        assertTrue(firstSession.isReplayable());
     }
 
     /**
@@ -193,7 +205,7 @@ public class GraphqlCacheKeyTest extends UnitTestBase {
         final GraphqlCacheKey withControls = key(requestWithParams(
                 orderedParams("dotcachettl", "600", "DotCacheRefresh", "true")));
         final GraphqlCacheKey withClientKey = GraphqlCacheKey.from(request(), BODY,
-                Optional.of("home"));
+                Optional.of("home"), () -> DEFAULT_LANGUAGE_ID);
 
         assertEquals(plain.value(), withControls.value());
         assertNotEquals(plain.value(), withClientKey.value());
@@ -229,13 +241,46 @@ public class GraphqlCacheKeyTest extends UnitTestBase {
         final GraphqlCacheKey personalized = key(withPersona);
 
         assertEquals(anonymous.value(), emptySession.value());
-        assertFalse(emptySession.isSessionScoped());
         assertNotEquals(anonymous.value(), language.value());
         assertNotEquals(anonymous.value(), personalized.value());
         assertNotEquals(language.value(), personalized.value());
-        assertTrue(language.isSessionScoped());
-        assertTrue(personalized.isSessionScoped());
+        assertTrue(language.isReplayable());
         assertFalse(language.isCredentialed());
+    }
+
+    /**
+     * Method to test: {@link GraphqlCacheKey#from(HttpServletRequest, String, Optional, java.util.function.Supplier)}
+     * Given Scenario: the servlet has stored the default language in the session after a first request
+     * ExpectedResult: the key is the same as before the session carried a language
+     */
+    @Test
+    public void defaultSessionLanguageDoesNotChangeTheKey() {
+        final HttpSession session = mock(HttpSession.class);
+        when(session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE))
+                .thenReturn(String.valueOf(DEFAULT_LANGUAGE_ID));
+        final HttpServletRequest withDefaultLanguage = request();
+        when(withDefaultLanguage.getSession(false)).thenReturn(session);
+
+        final GraphqlCacheKey defaultLanguage = key(withDefaultLanguage);
+
+        assertEquals(key(request()).value(), defaultLanguage.value());
+    }
+
+    /**
+     * Method to test: {@link GraphqlCacheKey#from(HttpServletRequest, String, Optional, java.util.function.Supplier)}
+     * Given Scenario: a time machine language is set in the session
+     * ExpectedResult: it takes part in the key like a selected language
+     */
+    @Test
+    public void timeMachineLanguageChangesTheKey() {
+        final HttpSession session = mock(HttpSession.class);
+        when(session.getAttribute("tm_lang")).thenReturn("3");
+        final HttpServletRequest withTimeMachine = request();
+        when(withTimeMachine.getSession(false)).thenReturn(session);
+
+        final GraphqlCacheKey timeMachine = key(withTimeMachine);
+
+        assertNotEquals(key(request()).value(), timeMachine.value());
     }
 
     /**
@@ -245,9 +290,9 @@ public class GraphqlCacheKeyTest extends UnitTestBase {
      */
     @Test
     public void bodyChangesTheKey() {
-        final GraphqlCacheKey first = GraphqlCacheKey.from(request(), BODY, Optional.empty());
-        final GraphqlCacheKey second = GraphqlCacheKey.from(request(),
-                "{\"query\":\"{ NewsCollection { title } }\"}", Optional.empty());
+        final GraphqlCacheKey first = key(request());
+        final GraphqlCacheKey second = key(request(),
+                "{\"query\":\"{ NewsCollection { title } }\"}");
 
         assertNotEquals(first.value(), second.value());
     }
