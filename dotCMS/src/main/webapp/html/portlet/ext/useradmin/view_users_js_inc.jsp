@@ -1578,7 +1578,6 @@
             	"Content-Type": "application/json"
             	},
             load : function(data){
-            	console.log("jwt", data);
             	loadApiKeys() ;
                 revealJWT(data.entity.jwt);
             },
