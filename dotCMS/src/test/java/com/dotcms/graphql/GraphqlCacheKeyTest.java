@@ -268,6 +268,24 @@ public class GraphqlCacheKeyTest extends UnitTestBase {
 
     /**
      * Method to test: {@link GraphqlCacheKey#from(HttpServletRequest, String, Optional, java.util.function.Supplier)}
+     * Given Scenario: a request selects a non-default language through a parameter, and the servlet
+     * has stored that language in the session by the time the request is repeated
+     * ExpectedResult: both requests hash the same, since the parameter decides the language either way
+     */
+    @Test
+    public void languageParameterOverridesTheSessionLanguage() {
+        final HttpServletRequest firstRequest = requestWithParams(Map.of("language_id", "2"));
+        final HttpSession session = mock(HttpSession.class);
+        when(session.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn("2");
+        final HttpServletRequest repeated = requestWithParams(Map.of("language_id", "2"));
+        when(repeated.getSession(false)).thenReturn(session);
+
+        assertEquals(key(firstRequest).value(), key(repeated).value());
+        assertNotEquals(key(request()).value(), key(firstRequest).value());
+    }
+
+    /**
+     * Method to test: {@link GraphqlCacheKey#from(HttpServletRequest, String, Optional, java.util.function.Supplier)}
      * Given Scenario: a time machine language is set in the session
      * ExpectedResult: it takes part in the key like a selected language
      */
@@ -310,6 +328,7 @@ public class GraphqlCacheKeyTest extends UnitTestBase {
         params.forEach((name, value) -> parameterMap.put(name, new String[] {value}));
         final HttpServletRequest request = request();
         when(request.getParameterMap()).thenReturn(parameterMap);
+        params.forEach((name, value) -> when(request.getParameter(name)).thenReturn(value));
         return request;
     }
 

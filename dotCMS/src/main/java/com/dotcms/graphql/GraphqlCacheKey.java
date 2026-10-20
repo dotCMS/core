@@ -48,6 +48,7 @@ final class GraphqlCacheKey {
     private static final String REQUESTED_WITH_HEADER = "X-Requested-With";
     private static final String TIME_MACHINE_DATE = "tm_date";
     private static final String TIME_MACHINE_LANGUAGE = "tm_lang";
+    private static final String LANGUAGE_ID_PARAM = "language_id";
 
     /**
      * Parameters that steer the cache itself and must not partition it.
@@ -135,7 +136,7 @@ final class GraphqlCacheKey {
 
         // Session parts are always appended, so a request with an empty session hashes the same
         // as one without a session.
-        append(canonical, "session.language", sessionLanguage(session, defaultLanguageId));
+        append(canonical, "session.language", sessionLanguage(request, session, defaultLanguageId));
         for (final String attribute : SESSION_ATTRIBUTES) {
             append(canonical, "session." + attribute, stringAttribute(session, attribute));
         }
@@ -232,19 +233,22 @@ final class GraphqlCacheKey {
     }
 
     /**
-     * The language the servlet would take from the session, or null when the session carries none
-     * or carries the default language. The servlet stores the language it resolved back into the
-     * session on every request, so the default must not count: otherwise the first request of a
-     * session (no attribute yet) and every later one (attribute set to the default) would hash
-     * differently although they are served the same way.
+     * The language the servlet would take from the session, or null when it does not take part in
+     * the resolution: no session, a language parameter on the request (which always wins and is
+     * already part of the key), or the default language. The servlet stores the language it
+     * resolved back into the session on every request, so neither the parameter case nor the
+     * default may count: otherwise the first request of a session (no attribute yet) and every
+     * later one (attribute written back) would hash differently although they are served the
+     * same way.
      *
+     * @param request           the request
      * @param session           the session, if any
      * @param defaultLanguageId supplies the default language id
      * @return the session language id, or null when it does not change the response
      */
-    private static String sessionLanguage(final HttpSession session,
-            final Supplier<Long> defaultLanguageId) {
-        if (session == null) {
+    private static String sessionLanguage(final HttpServletRequest request,
+            final HttpSession session, final Supplier<Long> defaultLanguageId) {
+        if (session == null || hasLanguageParameter(request)) {
             return null;
         }
         final String language = Optional.ofNullable(stringAttribute(session, TIME_MACHINE_LANGUAGE))
@@ -253,6 +257,11 @@ final class GraphqlCacheKey {
             return null;
         }
         return language;
+    }
+
+    private static boolean hasLanguageParameter(final HttpServletRequest request) {
+        return UtilMethods.isSet(request.getParameter(WebKeys.HTMLPAGE_LANGUAGE))
+                || UtilMethods.isSet(request.getParameter(LANGUAGE_ID_PARAM));
     }
 
     private static String stringAttribute(final HttpSession session, final String name) {
