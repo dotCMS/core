@@ -27,29 +27,5 @@
     "Bash(mkdir -p ~/.config/dotcms/create-issue*)",
     "Bash(rm ~/.config/dotcms/create-issue/default-team*)",
     "Bash(echo*)"
-  ],
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Edit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/hooks/read-first.py\" pre"
-          }
-        ]
-      }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Read",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 \"${CLAUDE_PROJECT_DIR}/.claude/hooks/read-first.py\" post"
-          }
-        ]
-      }
-    ]
-  }
+  ]
 }

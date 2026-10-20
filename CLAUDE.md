@@ -114,9 +114,7 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 The Critical Rules above are one-line summaries. The full directives live in the guides below, so
 before the **first edit** in any of these areas, read the linked guide and say in your reply which
 directive you are applying. The index under "Documentation (Load On-Demand)" is reference; this
-table is a gate. A project hook (`.claude/hooks/read-first.py`, wired in `.claude/settings.json`)
-repeats the row as context the first time an Edit or Write lands in a gated area in a session, unless
-the guide was already read; it reminds, it never blocks.
+table is a gate.
 
 | When the change touches… | Read first |
 |---|---|
@@ -141,6 +139,23 @@ the guide was already read; it reminds, it never blocks.
 | `.github/workflows/**` | [CI/CD Pipeline](docs/core/CICD_PIPELINE.md) |
 | A `Dockerfile` or anything under `docker/` | [Docker Build Process](docs/infrastructure/DOCKER_BUILD_PROCESS.md) |
 | Creating or triaging a GitHub issue | [GitHub Issue Management](docs/core/GITHUB_ISSUE_MANAGEMENT.md) |
+| A new module, package or cross-module feature | [Architecture Overview](docs/core/ARCHITECTURE_OVERVIEW.md) |
+| Input handling, auth checks, logging of user data, secrets (principles) | [Security Principles](docs/core/SECURITY_PRINCIPLES.md) — the backend patterns are in the Security Patterns row above |
+| `/api/inference/v1/**`, anything under `com.dotcms.ai` | [Inference API](docs/backend/INFERENCE_API.md) |
+| Health endpoints, `com.dotcms.health`, log levels | [Health Monitoring](docs/backend/HEALTH_MONITORING.md) |
+| GraphQL types for image or file fields, `com.dotcms.graphql` | [GraphQL Asset Fields Migration](docs/backend/GRAPHQL_ASSET_FIELDS_MIGRATION.md) |
+| Reflection, class scanning or annotation lookups | [Jandex Metadata Scanning](docs/backend/JANDEX_METADATA_SCANNING.md) — prefer Jandex over reflection |
+| `OS_*` / `ES_*` properties, the search client configuration | [OpenSearch Client Configuration](docs/backend/OPENSEARCH_CLIENT_CONFIGURATION.md) |
+| QA of the ES → OpenSearch migration phases | [Migration Test Plan](docs/backend/OPENSEARCH_MIGRATION_TEST_PLAN.md) and [Migration Tester Guide](docs/backend/OPENSEARCH_MIGRATION_TESTER_GUIDE.md) |
+| Angular syntax, signals, change detection, forms, icons | [Angular Standards](docs/frontend/ANGULAR_STANDARDS.md) |
+| A new Angular component or its file layout | [Component Architecture](docs/frontend/COMPONENT_ARCHITECTURE.md) |
+| An NgRx Signal Store, `rxMethod`, `patchState` | [State Management](docs/frontend/STATE_MANAGEMENT.md) |
+| Tailwind, PrimeNG theme, SCSS, form markup | [Styling Standards](docs/frontend/STYLING_STANDARDS.md) |
+| TypeScript types, `as const`, private fields | [TypeScript Standards](docs/frontend/TYPESCRIPT_STANDARDS.md) |
+| Writing a Jest/Spectator test | [Testing Frontend](docs/frontend/TESTING_FRONTEND.md) |
+| Reviewing a frontend test | [Testing Review Rules](docs/frontend/TESTING_REVIEW_RULES.md) |
+| The GlobalStore breadcrumb trail | [Breadcrumbs](docs/frontend/BREADCRUMBS.md) |
+| `tools/dotcms-cli` build: profiles, native image, dev mode | [CLI Build System](docs/cli/CLI_BUILD_SYSTEM.md) |
 
 ## Documentation (Load On-Demand)
 
