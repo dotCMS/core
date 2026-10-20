@@ -56,3 +56,4 @@ Release-25.07.10 LTS
 50. https://github.com/dotCMS/core/issues/37603 : Binary field stuck on infinite loading spinner when creating new content (legacy Dojo/JSP editor) #37603
 51. https://github.com/dotCMS/core/issues/35996 : security(deps): upgrade bundled DOMPurify in TinyMCE / Monaco / Swagger UI assets (CVE-2025-26791 follow-up) #35996
 52. https://github.com/dotCMS/core/issues/36546 : Upgrade dependencies flagged in scan (netty, commons-fileupload, grpc) #36546
+53. https://github.com/dotCMS/core/pull/38083 : chore(saml): bump com.dotcms.samlbundle to 26.10.17 #38083
