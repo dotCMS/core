@@ -15,6 +15,7 @@ import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.BundleDataGen;
+import com.dotcms.datagen.CategoryDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.EnvironmentDataGen;
@@ -41,6 +42,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Layout;
+import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.business.DotCacheException;
@@ -469,6 +471,30 @@ public class BundleResourceTest {
 
         assertEquals(200, resp.getStatus());
         assertTrue(APILocator.getPushedAssetsAPI().getPushedAssets(link.getIdentifier()).isEmpty());
+    }
+
+    @Test
+    public void test_deletePushHistory_categoryEditor_deletesHistory() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole(), role)
+                .nextPersisted();
+        createdUsers.add(user);
+        final Category category = new CategoryDataGen()
+                .setCategoryName("category-" + System.currentTimeMillis())
+                .setKey("category-" + System.currentTimeMillis())
+                .nextPersisted();
+        APILocator.getPermissionAPI().save(
+                new Permission(category.getPermissionId(), role.getId(),
+                        PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true),
+                category, APILocator.systemUser(), false);
+        pushHistoryFor(category.getInode(), new EnvironmentDataGen().nextPersisted());
+
+        final Response resp = bundleResource.deletePushHistory(
+                mockRequestFor(user), response, "assetid/" + category.getInode());
+
+        assertEquals(200, resp.getStatus());
+        assertTrue(APILocator.getPushedAssetsAPI().getPushedAssets(category.getInode()).isEmpty());
     }
 
     @Test

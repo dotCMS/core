@@ -27,7 +27,6 @@ import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.manifest.ManifestUtil;
 import com.dotcms.publishing.output.TarGzipBundleOutput;
 import org.apache.commons.io.IOUtils;
-import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.v1.system.permission.AssetPermissionHelper;
 import com.dotcms.rest.exception.BadRequestException;
@@ -42,7 +41,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
@@ -59,12 +57,14 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.vavr.CheckedFunction0;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.Reader;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.StreamingOutput;
 import org.apache.commons.lang.StringEscapeUtils;
@@ -380,6 +380,16 @@ public class BundleResource {
         return responseResource.response( "true" );
 	}
 
+	/**
+	 * Makes sure the user may delete the push history of an asset. Administrators always can;
+	 * anyone else needs edit permission on the asset.
+	 *
+	 * @param user    the user making the request
+	 * @param assetId the id of the asset whose push history is being deleted
+	 * @throws DotDataException   if the permissions cannot be read
+	 * @throws NotFoundException  if the id does not match any supported asset
+	 * @throws ForbiddenException if the user does not have edit permission on the asset
+	 */
 	private void checkCanEditAsset(final User user, final String assetId) throws DotDataException {
 		if (user.isAdmin()) {
 			return;
@@ -395,18 +405,34 @@ public class BundleResource {
 		}
 	}
 
+	/**
+	 * Finds the asset a push history entry belongs to. Content types, menu links, categories,
+	 * folders, sites, contentlets, templates and containers are supported, tried in that order.
+	 *
+	 * @param assetId the id the push history is recorded under
+	 * @return the asset, or {@code null} when the id matches none of the supported types
+	 */
 	private Permissionable findPermissionable(final String assetId) {
-		final ContentType contentType = Try.of(() ->
-				APILocator.getContentTypeAPI(APILocator.systemUser()).find(assetId)).getOrNull();
-		if (contentType != null) {
-			return contentType;
-		}
-		final Link link = Try.of(() -> APILocator.getMenuLinkAPI()
-				.findWorkingLinkById(assetId, APILocator.systemUser(), false)).getOrNull();
-		return link != null ? link
-				: Try.of(() -> assetPermissionHelper.resolveAsset(assetId)).getOrNull();
+		final User systemUser = APILocator.systemUser();
+		return Stream.<CheckedFunction0<Permissionable>>of(
+						() -> APILocator.getContentTypeAPI(systemUser).find(assetId),
+						() -> APILocator.getMenuLinkAPI().findWorkingLinkById(assetId, systemUser, false),
+						() -> APILocator.getCategoryAPI().find(assetId, systemUser, false),
+						() -> assetPermissionHelper.resolveAsset(assetId))
+				.map(lookup -> Try.of(lookup).getOrNull())
+				.filter(Objects::nonNull)
+				.findFirst()
+				.orElse(null);
 	}
 
+	/**
+	 * Makes sure the user may delete the push history of a publishing environment. Administrators
+	 * and users with access to the Configuration tool, where environments are managed, can.
+	 *
+	 * @param user the user making the request
+	 * @throws DotDataException   if the user's tools cannot be read
+	 * @throws ForbiddenException if the user is not allowed
+	 */
 	private void checkCanManageEnvironments(final User user) throws DotDataException {
 		final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		final boolean canManage = user.isAdmin()
