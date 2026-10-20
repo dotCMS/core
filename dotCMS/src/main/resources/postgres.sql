@@ -2483,6 +2483,7 @@ CREATE TABLE login_lockout (
     mod_date     TIMESTAMPTZ  NOT NULL,
     CONSTRAINT pk_login_lockout PRIMARY KEY (user_id, source)
 );
+CREATE INDEX idx_login_lockout_window ON login_lockout (window_start);
 
 --Content Types improvement
 CREATE INDEX idx_lower_structure_name ON structure (LOWER(velocity_var_name));

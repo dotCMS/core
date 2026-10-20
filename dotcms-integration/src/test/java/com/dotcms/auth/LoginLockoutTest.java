@@ -4,7 +4,10 @@ import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
 import com.dotcms.rest.api.v1.authentication.ResetPasswordTokenUtil;
+import com.dotcms.rest.api.v1.user.UpdateCurrentUserForm;
+import com.dotcms.rest.api.v1.user.UserResourceHelper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -31,12 +34,16 @@ import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
@@ -44,9 +51,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.LongSupplier;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -769,7 +779,12 @@ public class LoginLockoutTest {
                 DbConnectionFactory.closeSilently();
             }
 
-            lockByFailedLogins(user);
+            // A fresh instance, since each one purges at most once a minute
+            final LoginLockout lockout = new LoginLockout(System::currentTimeMillis);
+            for (int i = 0; i < LIMIT; i++) {
+                lockout.failed(lockout.begin(user.getUserId(), ADDRESS));
+            }
+            assertTrue(lockedFrom(user, ADDRESS));
 
             assertTrue(lockoutRows(stale).isEmpty());
             assertFalse(lockoutRows(user).isEmpty());
@@ -780,7 +795,153 @@ public class LoginLockoutTest {
     }
 
     /**
-     * Given: lockout switched off with {@code AUTH_LOCKOUT_ENABLED=false}
+     * Given: failures from one address below the limit
+     * When: the counting window passes with no lock ever set, and the address fails again
+     * Then: the old failures no longer count, so the lock comes only at the limit within the new window
+     */
+    @Test
+    public void test_count_ages_out_of_the_window_without_a_lock() throws Exception {
+        final User user = newUser();
+        final AtomicLong now = new AtomicLong(System.currentTimeMillis());
+        final LoginLockout lockout = new LoginLockout(now::get);
+        try {
+            for (int i = 0; i < LIMIT - 1; i++) {
+                lockout.failed(lockout.begin(user.getUserId(), ADDRESS));
+            }
+            assertFalse(lockout.isLocked(user.getUserId(), ADDRESS));
+
+            now.addAndGet((lockout.windowSeconds() + 1) * 1000L);
+            for (int i = 0; i < LIMIT - 1; i++) {
+                lockout.failed(lockout.begin(user.getUserId(), ADDRESS));
+            }
+            assertFalse(lockout.isLocked(user.getUserId(), ADDRESS));
+
+            lockout.failed(lockout.begin(user.getUserId(), ADDRESS));
+            assertTrue(lockout.isLocked(user.getUserId(), ADDRESS));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: an attempt that started before parallel failures from the same address locked it
+     * When: that attempt's password turns out to be right
+     * Then: its success does not remove the lock the others set
+     */
+    @Test
+    public void test_lock_set_during_an_attempt_survives_its_success() throws Exception {
+        final User user = newUser();
+        final LoginLockout lockout = LoginLockout.getInstance();
+        try {
+            final LoginLockout.Attempt inFlight = lockout.begin(user.getUserId(), ADDRESS);
+            assertFalse(inFlight.isRefused());
+            for (int i = 0; i < LIMIT - 1; i++) {
+                lockout.failed(lockout.begin(user.getUserId(), ADDRESS));
+            }
+            assertTrue(lockedFrom(user, ADDRESS));
+
+            lockout.succeeded(inFlight);
+            assertTrue(lockedFrom(user, ADDRESS));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: a locked address, and an attempt whose lock check ran before the lock was set
+     * When: the attempt is counted
+     * Then: the count sees the lock and the attempt is refused
+     */
+    @Test
+    public void test_attempt_counted_after_a_lock_is_refused() throws Exception {
+        final User user = newUser();
+        try {
+            lockByFailedLogins(user);
+            // The first reading of the clock (the lock check) falls after the lock has run out, as if the check
+            // had happened before the lock was set; every later reading is the real time.
+            final Deque<Long> readings = new ArrayDeque<>(
+                    List.of(System.currentTimeMillis() + (LoginLockout.getInstance().lockSeconds() + 60) * 1000L));
+            final LongSupplier clock = () -> readings.isEmpty() ? System.currentTimeMillis() : readings.poll();
+            final LoginLockout.Attempt attempt = new LoginLockout(clock).begin(user.getUserId(), ADDRESS);
+
+            assertTrue(attempt.isRefused());
+            assertTrue(lockedFrom(user, ADDRESS));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * IPv6 addresses count under their /64 network, which one host can usually pick any address from; an
+     * IPv4-mapped address counts as the IPv4 address.
+     */
+    @Test
+    public void test_ipv6_addresses_are_grouped_by_64() {
+        assertEquals("2001:db8:1:2::/64", LoginLockout.clientAddress(requestFrom("2001:db8:1:2:aaaa:bbbb:cccc:dddd")));
+        assertEquals("2001:db8:1:2::/64", LoginLockout.clientAddress(requestFrom("2001:db8:1:2::1")));
+        assertNotEquals("2001:db8:1:2::/64", LoginLockout.clientAddress(requestFrom("2001:db8:1:3::1")));
+        assertEquals("fe80::/64", LoginLockout.clientAddress(requestFrom("fe80::1%eth0")));
+        assertEquals("192.0.2.30", LoginLockout.clientAddress(requestFrom("::ffff:192.0.2.30")));
+        assertEquals("not-an-address:x", LoginLockout.clientAddress(requestFrom("not-an-address:x")));
+    }
+
+    /**
+     * Given: an account
+     * When: wrong passwords come from different addresses in one IPv6 /64
+     * Then: they share one count, so the /64 is locked out while another network still gets in
+     */
+    @Test
+    public void test_ipv6_network_is_locked_as_one_source() throws Exception {
+        final User user = newUser();
+        try {
+            for (int i = 0; i < LIMIT; i++) {
+                from("2001:db8:5:6::" + Integer.toHexString(i + 1));
+                assertEquals(Authenticator.FAILURE, login(user, "wrong-" + i));
+            }
+            from("2001:db8:5:6::ffff");
+            assertEquals(Authenticator.FAILURE, login(user, PASSWORD));
+            from("2001:db8:5:7::1");
+            assertEquals(Authenticator.SUCCESS, login(user, PASSWORD));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: a signed-in user changing their own details, which asks for the current password
+     * When: the wrong current password is sent up to the limit from one address
+     * Then: that address is locked out, and the correct current password is refused there too
+     */
+    @Test
+    public void test_current_password_check_counts_and_refuses_while_locked() throws Exception {
+        final User user = newUser();
+        try {
+            final HttpServletRequest request = requestFrom(ADDRESS);
+            when(request.getSession()).thenReturn(mock(HttpSession.class));
+            for (int i = 0; i < LIMIT; i++) {
+                final UpdateCurrentUserForm form = new UpdateCurrentUserForm.Builder()
+                        .userId(user.getUserId()).givenName(user.getFirstName()).surname(user.getLastName())
+                        .email(user.getEmailAddress()).currentPassword("wrong-" + i).build();
+                assertThrows(IncorrectPasswordException.class,
+                        () -> UserResourceHelper.getInstance().updateUser(form, user, request, Locale.US));
+                DbConnectionFactory.closeSilently();
+            }
+            assertTrue(lockedFrom(user, ADDRESS));
+
+            final UpdateCurrentUserForm correct = new UpdateCurrentUserForm.Builder()
+                    .userId(user.getUserId()).givenName(user.getFirstName()).surname(user.getLastName())
+                    .email(user.getEmailAddress()).currentPassword(PASSWORD).build();
+            assertThrows(IncorrectPasswordException.class,
+                    () -> UserResourceHelper.getInstance().updateUser(correct, user, request, Locale.US));
+            DbConnectionFactory.closeSilently();
+            assertEquals(Authenticator.FAILURE, login(user, PASSWORD));
+        } finally {
+            cleanUp(user);
+        }
+    }
+
+    /**
+     * Given: lockout switched off with {@code FEATURE_FLAG_AUTH_LOGIN_LOCKOUT=false}
      * When: more wrong passwords than the limit are tried, on the main login and over WebDAV
      * Then: nothing is recorded or locked and the correct password still works on every path
      */

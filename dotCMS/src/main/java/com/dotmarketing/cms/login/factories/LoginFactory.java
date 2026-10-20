@@ -194,6 +194,10 @@ public class LoginFactory {
 
     			match = auth == Authenticator.SUCCESS
     					&& (skipPasswordCheck || !isLockedOut(user, LoginLockout.clientAddress(request)));
+    			if (!skipPasswordCheck && auth != Authenticator.SUCCESS && null != user) {
+    				// LDAP refused the password; it still counts toward the login lockout
+    				LoginLockout.getInstance().countFailure(user.getUserId(), LoginLockout.clientAddress(request));
+    			}
         	} else {
 	            if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {
 	            	user = APILocator.getUserAPI().loadByUserByEmail(userName, APILocator.getUserAPI().getSystemUser(), false);
@@ -375,6 +379,10 @@ public class LoginFactory {
     			}
 
     			match = auth == Authenticator.SUCCESS && !isLockedOut(user, LoginLockout.clientAddress());
+    			if (auth != Authenticator.SUCCESS && null != user) {
+    				// LDAP refused the password; it still counts toward the login lockout
+    				LoginLockout.getInstance().countFailure(user.getUserId(), LoginLockout.clientAddress());
+    			}
         	} else {
         	    // Liferay authentication
  	            if (comp.getAuthType().equals(Company.AUTH_TYPE_EA)) {

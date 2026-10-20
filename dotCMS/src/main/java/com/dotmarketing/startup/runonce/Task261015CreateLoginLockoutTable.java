@@ -48,6 +48,7 @@ public class Task261015CreateLoginLockoutTable extends AbstractJDBCStartupTask {
                 + " mod_date timestamptz not null,"
                 + " constraint pk_login_lockout primary key (user_id, source)"
                 + ");"
+                + "CREATE INDEX idx_login_lockout_window ON login_lockout (window_start);"
                 + "UPDATE user_ SET failedloginattempts = 0 WHERE failedloginattempts <> 0;";
     }
 }

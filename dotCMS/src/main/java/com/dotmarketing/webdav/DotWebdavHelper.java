@@ -192,6 +192,7 @@ public class DotWebdavHelper {
 		} catch (AuthException ae) {
 
 			Logger.debug(this, "Username : " + username + " failed to login", ae);
+			this.countPreAuthenticatorFailure(username, useEmailAsLogin);
 			throw new DotSecurityException(ae.getMessage(),ae);
 		} catch (Exception e) {
 
@@ -220,6 +221,27 @@ public class DotWebdavHelper {
 		}
 
 		return user;
+	}
+
+	/**
+	 * Counts a password that a pre-authenticator such as LDAP refused before dotCMS checked it, as a failed
+	 * WebDAV login, so the login lockout applies to those failures too.
+	 *
+	 * @param username        The login name sent by the WebDAV client.
+	 * @param useEmailAsLogin Whether the login name is an email address rather than a user ID.
+	 */
+	private void countPreAuthenticatorFailure(final String username, final boolean useEmailAsLogin) {
+		try {
+			final UserAPI userAPI = APILocator.getUserAPI();
+			final User user = useEmailAsLogin
+					? userAPI.loadByUserByEmail(username, userAPI.getSystemUser(), false)
+					: userAPI.loadUserById(username, userAPI.getSystemUser(), false);
+			if (null != user) {
+				LoginLockout.getInstance().countFailure(user.getUserId(), LoginLockout.webdavSource());
+			}
+		} catch (final Exception e) {
+			Logger.debug(this, () -> "No login lockout count for WebDAV user " + username + ": " + e.getMessage());
+		}
 	}
 
 	private boolean tryMatchJsonWebToken (final String jsonWebToken, final User user) {

@@ -2,6 +2,7 @@ package com.dotcms.auth;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -9,14 +10,20 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.net.InetAddresses;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
 
 import javax.servlet.http.HttpServletRequest;
+import java.net.Inet6Address;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiPredicate;
 import java.util.function.LongSupplier;
 
@@ -28,8 +35,9 @@ import java.util.function.LongSupplier;
  *     <li><b>Per account and client address.</b> Each address gets {@code auth.max.failures.limit}
  *     password attempts within the counting window. When they are used up without a success, that
  *     address is locked out of that account. Other addresses, including the owner's, are not affected.
- *     WebDAV is counted apart from other logins ({@value #WEBDAV_SOURCE_PREFIX}address), so a mounted
- *     drive retrying a stale password locks only WebDAV from that machine.</li>
+ *     IPv6 addresses are grouped by their /64 prefix, which one host can rotate through. WebDAV is
+ *     counted apart from other logins ({@value #WEBDAV_SOURCE_PREFIX}address), so a mounted drive
+ *     retrying a stale password locks only WebDAV from that machine.</li>
  *     <li><b>Per account, all addresses together</b> (source {@value #ACCOUNT_WIDE}). A looser backstop:
  *     once failures from every address add up to {@code AUTH_LOCKOUT_ACCOUNT_MAX_FAILURES} within the
  *     window, the account is locked for everyone. This caps guessing spread over many addresses.</li>
@@ -42,16 +50,18 @@ import java.util.function.LongSupplier;
  *
  * <p>The client address is {@link HttpServletRequest#getRemoteAddr()}. Behind a proxy it is the real
  * client only when Tomcat's {@code RemoteIpValve} trusts that proxy (the bundled {@code server.xml}
- * trusts private ranges by default); otherwise every login shares the proxy's address.
+ * trusts private ranges by default); otherwise every login shares the proxy's address. A warning is
+ * logged when one address is locked out of several accounts, which is what that looks like.
  *
  * <p>The main login flow ({@code UserManagerImpl#authenticate}) uses {@link #begin},
  * {@link #succeeded} and {@link #failed} directly. Other places that check a password (WebDAV, the
- * legacy {@code LoginFactory.doLogin} methods) go through
- * {@link #passwordMatch(String, User, String, BiPredicate)}.
+ * legacy {@code LoginFactory.doLogin} methods, Login As and the current-password check on a user update)
+ * go through {@link #passwordMatch(String, User, String, BiPredicate)}. Passwords checked by an external
+ * authenticator such as LDAP are counted with {@link #countFailure(String, String)}.
  *
  * <p>Configuration:
  * <ul>
- *     <li>{@code AUTH_LOCKOUT_ENABLED} (default {@code true})</li>
+ *     <li>{@code FEATURE_FLAG_AUTH_LOGIN_LOCKOUT} (default {@code true})</li>
  *     <li>{@code auth.max.failures.limit}: attempts per address (portal property, default 5)</li>
  *     <li>{@code AUTH_LOCKOUT_ACCOUNT_MAX_FAILURES}: failures per account from all addresses
  *     (default 100; 0 switches the account-wide lock off)</li>
@@ -61,7 +71,7 @@ import java.util.function.LongSupplier;
  */
 public final class LoginLockout {
 
-    public static final String LOCKOUT_ENABLED = "AUTH_LOCKOUT_ENABLED";
+    public static final String LOCKOUT_ENABLED = FeatureFlagName.FEATURE_FLAG_AUTH_LOGIN_LOCKOUT;
     public static final String LOCKOUT_DURATION_SECONDS = "AUTH_LOCKOUT_DURATION_SECONDS";
     public static final String LOCKOUT_WINDOW_SECONDS = "AUTH_LOCKOUT_WINDOW_SECONDS";
     public static final String LOCKOUT_ACCOUNT_MAX_FAILURES = "AUTH_LOCKOUT_ACCOUNT_MAX_FAILURES";
@@ -77,11 +87,19 @@ public final class LoginLockout {
 
     private static final int MAX_ADDRESS_LENGTH = 64;
 
+    /** Bytes of an IPv6 address that identify its /64 network. */
+    private static final int IPV6_PREFIX_BYTES = 8;
+
+    /** An address locked out of this many accounts at once is reported as a likely shared proxy address. */
+    private static final int SHARED_SOURCE_WARNING_ACCOUNTS = 5;
+
+    private static final long PURGE_INTERVAL_MILLIS = 60_000L;
+
     /**
-     * Counts one attempt for an account and source and returns the new count. Both CASE conditions
-     * mean the count starts over: it is older than the window, or its lock has run out. Parameters:
-     * user, source, now, mod date, then window cutoff and now (failures), window cutoff, now and now
-     * (window start), now (lock), mod date.
+     * Counts one attempt for an account and source and returns the new count and the source's lock.
+     * Both CASE conditions mean the count starts over: it is older than the window, or its lock has run
+     * out. Parameters: user, source, now, mod date, then window cutoff and now (failures), window
+     * cutoff, now and now (window start), now (lock), mod date.
      */
     private static final String COUNT_SQL =
             "INSERT INTO login_lockout (user_id, source, failures, window_start, locked_until, mod_date)"
@@ -92,7 +110,7 @@ public final class LoginLockout {
                     + " AND login_lockout.locked_until <= ?)) THEN ? ELSE login_lockout.window_start END,"
                     + " locked_until = CASE WHEN login_lockout.locked_until <= ? THEN 0"
                     + " ELSE login_lockout.locked_until END,"
-                    + " mod_date = ? RETURNING failures";
+                    + " mod_date = ? RETURNING failures, locked_until";
 
     /** Hands back one attempt that turned out not to be a password failure. */
     private static final String UNCOUNT_SQL =
@@ -103,6 +121,14 @@ public final class LoginLockout {
             "INSERT INTO login_lockout (user_id, source, failures, window_start, locked_until, mod_date)"
                     + " VALUES (?, ?, 0, ?, ?, ?) ON CONFLICT (user_id, source) DO UPDATE SET"
                     + " locked_until = ?, failures = 0, window_start = ?, mod_date = ?";
+
+    /** Clears one source's count after a success, but never a lock in force. Parameters: user, source, now. */
+    private static final String CLEAR_SOURCE_SQL =
+            "DELETE FROM login_lockout WHERE user_id = ? AND source = ? AND locked_until <= ?";
+
+    /** How many accounts a source is locked out of right now. Parameters: source, now. */
+    private static final String ACCOUNTS_LOCKED_FROM_SOURCE_SQL =
+            "SELECT COUNT(DISTINCT user_id) AS accounts FROM login_lockout WHERE source = ? AND locked_until > ?";
 
     /**
      * Removes rows that no longer affect any login: their lock has run out (or never existed) and their
@@ -159,6 +185,7 @@ public final class LoginLockout {
     private static final LoginLockout INSTANCE = new LoginLockout(System::currentTimeMillis);
 
     private final LongSupplier clock;
+    private final AtomicLong lastPurge = new AtomicLong();
 
     LoginLockout(final LongSupplier clock) {
         this.clock = clock;
@@ -183,21 +210,52 @@ public final class LoginLockout {
     }
 
     /**
-     * @return the client address of the current request, or {@value #UNKNOWN_SOURCE} outside a request
+     * @return the source the current request's logins are counted under, or {@value #UNKNOWN_SOURCE}
+     * outside a request
      */
     public static String clientAddress() {
         return clientAddress(HttpServletRequestThreadLocal.INSTANCE.getRequest());
     }
 
     /**
-     * @return the client address of the given request, or {@value #UNKNOWN_SOURCE} when there is none
+     * Returns the source a request's logins are counted under: its remote address, with an IPv6
+     * address reduced to its /64 network ({@code 2001:db8:1:2::/64}), since a single host can usually
+     * pick any address in its /64. An IPv4-mapped IPv6 address counts as the IPv4 address.
+     *
+     * @return the source, or {@value #UNKNOWN_SOURCE} when there is no request or address
      */
     public static String clientAddress(final HttpServletRequest request) {
         final String address = null != request ? request.getRemoteAddr() : null;
         if (!UtilMethods.isSet(address)) {
             return UNKNOWN_SOURCE;
         }
-        return address.length() > MAX_ADDRESS_LENGTH ? address.substring(0, MAX_ADDRESS_LENGTH) : address;
+        final String source = address.indexOf(':') >= 0 ? ipv6Network(address) : address;
+        return source.length() > MAX_ADDRESS_LENGTH ? source.substring(0, MAX_ADDRESS_LENGTH) : source;
+    }
+
+    /**
+     * @return the /64 network of an IPv6 literal, the IPv4 address of an IPv4-mapped one, or the input
+     * unchanged when it is not an IP literal. Parsing never does a DNS lookup.
+     */
+    private static String ipv6Network(final String address) {
+        final InetAddress parsed;
+        try {
+            // Tomcat may report a zone, as in fe80::1%eth0; the zone does not identify the host
+            final int zone = address.indexOf('%');
+            parsed = InetAddresses.forString(zone >= 0 ? address.substring(0, zone) : address);
+        } catch (final IllegalArgumentException e) {
+            return address;
+        }
+        if (!(parsed instanceof Inet6Address)) {
+            return parsed.getHostAddress();
+        }
+        final byte[] network = Arrays.copyOf(Arrays.copyOf(parsed.getAddress(), IPV6_PREFIX_BYTES), 16);
+        try {
+            // Built from raw bytes, so no lookup either
+            return InetAddresses.toAddrString(InetAddress.getByAddress(network)) + "/64";
+        } catch (final UnknownHostException e) {
+            return address;
+        }
     }
 
     /**
@@ -283,9 +341,10 @@ public final class LoginLockout {
     /**
      * Starts a login attempt from the given source, before its password is checked. When a lock is in
      * force the attempt is refused and nothing is counted. Otherwise the attempt is counted now, and
-     * refused if that takes the source past its limit for the window; counting first means parallel
-     * attempts get at most the limit between them. With lockout switched off, or on a database error,
-     * the attempt is neither counted nor refused.
+     * refused if that takes the source past its limit for the window, or if a lock was set on the source
+     * between the check and the count; counting first means parallel attempts get at most the limit
+     * between them. With lockout switched off, or on a database error, the attempt is neither counted
+     * nor refused.
      */
     @CloseDBIfOpened
     public Attempt begin(final String userId, final String source) {
@@ -297,7 +356,12 @@ public final class LoginLockout {
             return new Attempt(userId, source, true, false, 0);
         }
         try {
-            final int number = count(userId, source);
+            final Map<String, Object> row = count(userId, source);
+            if (((Number) row.get("locked_until")).longValue() > clock.getAsLong()) {
+                // Locked by a parallel attempt after the check above: refused, and the lock left as it is
+                return new Attempt(userId, source, true, false, 0);
+            }
+            final int number = ((Number) row.get("failures")).intValue();
             return new Attempt(userId, source, number > maxFailures, true, number);
         } catch (final DotDataException | RuntimeException e) {
             Logger.error(this, "Unable to count login attempt for user " + userId + ": " + e.getMessage(), e);
@@ -307,11 +371,21 @@ public final class LoginLockout {
 
     /**
      * Finishes an attempt whose password was accepted: earlier attempts from its source no longer count.
-     * Nothing is written unless the attempt was counted.
+     * A lock that a parallel attempt set on the source stays. Nothing is written unless the attempt was
+     * counted.
      */
+    @CloseDBIfOpened
     public void succeeded(final Attempt attempt) {
-        if (attempt.counted) {
-            clear(attempt.userId, attempt.source);
+        if (!attempt.counted) {
+            return;
+        }
+        try {
+            new DotConnect().setSQL(CLEAR_SOURCE_SQL)
+                    .addParam(attempt.userId).addParam(attempt.source).addParam(clock.getAsLong())
+                    .loadResult();
+        } catch (final DotDataException | RuntimeException e) {
+            Logger.error(this, "Unable to clear login lockout state for user " + attempt.userId + ": "
+                    + e.getMessage(), e);
         }
     }
 
@@ -349,7 +423,7 @@ public final class LoginLockout {
             }
             final int accountMax = accountMaxFailures();
             if (!attempt.refused && accountMax > 0) {
-                final int accountFailures = count(attempt.userId, ACCOUNT_WIDE);
+                final int accountFailures = ((Number) count(attempt.userId, ACCOUNT_WIDE).get("failures")).intValue();
                 if (accountFailures >= accountMax) {
                     lock(attempt.userId, ACCOUNT_WIDE, accountFailures);
                 }
@@ -357,6 +431,15 @@ public final class LoginLockout {
         } catch (final DotDataException | RuntimeException e) {
             Logger.error(this, "Unable to record failed login for user " + attempt.userId + ": " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Counts a failed login whose password was checked by an external authenticator, such as LDAP or a
+     * WebDAV pre-authenticator, rather than by dotCMS. Same effect as a wrong password through
+     * {@link #begin} and {@link #failed}; nothing is counted while a lock is in force.
+     */
+    public void countFailure(final String userId, final String source) {
+        failed(begin(userId, source));
     }
 
     /**
@@ -393,8 +476,9 @@ public final class LoginLockout {
     }
 
     /**
-     * Password check for login paths that do not go through {@code UserManagerImpl#authenticate}: WebDAV
-     * and the legacy {@code LoginFactory.doLogin} methods. It answers the way that path does:
+     * Password check for places that do not go through {@code UserManagerImpl#authenticate}: WebDAV, the
+     * legacy {@code LoginFactory.doLogin} methods, Login As and the current-password check on a user
+     * update. It answers the way that path does:
      * <ul>
      *     <li>while a lock applies to this source or the whole account, or the source has used up its
      *     attempts, every password is refused after the same hashing work;</li>
@@ -438,9 +522,12 @@ public final class LoginLockout {
 
     /**
      * Counts one attempt for the account and source in a single statement, so concurrent attempts on
-     * several nodes all count, and returns the count this attempt brought it to.
+     * several nodes all count.
+     *
+     * @return the row after counting: {@code failures} (the count this attempt brought it to) and
+     * {@code locked_until}
      */
-    private int count(final String userId, final String source) throws DotDataException {
+    private Map<String, Object> count(final String userId, final String source) throws DotDataException {
         final long now = clock.getAsLong();
         final long windowCutoff = now - windowSeconds() * 1000L;
         final Date modDate = new Date(now);
@@ -455,7 +542,7 @@ public final class LoginLockout {
         if (rows.isEmpty()) {
             throw new DotDataException("No count returned for login attempt of user " + userId);
         }
-        return ((Number) rows.get(0).get("failures")).intValue();
+        return rows.get(0);
     }
 
     private void lock(final String userId, final String source, final int attempts) throws DotDataException {
@@ -473,15 +560,39 @@ public final class LoginLockout {
                         + " for " + seconds + "s, last attempt from " + clientAddress()
                 : "Source locked out of account after " + attempts + " login attempts: user " + userId
                         + " from " + source + " for " + seconds + "s");
+        if (!ACCOUNT_WIDE.equals(source)) {
+            warnIfShared(source, now);
+        }
         purgeExpired(now);
     }
 
     /**
+     * Logs a warning when one source is locked out of several accounts at once. Either one client is
+     * trying many accounts, or the source is a proxy or load balancer that Tomcat does not trust, so
+     * every user behind it is counted as one address.
+     */
+    private void warnIfShared(final String source, final long now) throws DotDataException {
+        final List<Map<String, Object>> rows = new DotConnect().setSQL(ACCOUNTS_LOCKED_FROM_SOURCE_SQL)
+                .addParam(source).addParam(now).loadObjectResults();
+        final int accounts = rows.isEmpty() ? 0 : ((Number) rows.get(0).get("accounts")).intValue();
+        if (accounts >= SHARED_SOURCE_WARNING_ACCOUNTS) {
+            Logger.warn(this, "Login lockout: " + source + " is locked out of " + accounts + " accounts. Either one"
+                    + " client is trying many accounts, or this is a proxy or load balancer address and every user"
+                    + " behind it shares one lockout. If it is a proxy, add it to CMS_REMOTEIP_INTERNALPROXIES so"
+                    + " Tomcat uses the real client address.");
+        }
+    }
+
+    /**
      * Deletes rows, for any account, that no longer affect a login. Sources that fail and never succeed
-     * would otherwise stay in the table for good. Run whenever a lock is set, so the table is trimmed
-     * most often exactly when failures are frequent.
+     * would otherwise stay in the table for good. Runs when a lock is set, at most once a minute per node,
+     * so the table is trimmed when failures are frequent without adding a delete to every lock.
      */
     private void purgeExpired(final long now) {
+        final long last = lastPurge.get();
+        if (now - last < PURGE_INTERVAL_MILLIS || !lastPurge.compareAndSet(last, now)) {
+            return;
+        }
         try {
             new DotConnect().setSQL(PURGE_SQL)
                     .addParam(now).addParam(now - windowSeconds() * 1000L)
