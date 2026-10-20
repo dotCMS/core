@@ -28,6 +28,7 @@ import java.io.StringWriter;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -104,6 +105,7 @@ public class WfTaskAjaxTest extends IntegrationTestBase {
                 new Permission(contentlet.getPermissionId(), readOnlyRole.getId(),
                         PermissionAPI.PERMISSION_READ, true),
                 contentlet, APILocator.systemUser(), false);
+        assertNotNull(APILocator.getContentletAPI().find(contentlet.getInode(), user, false));
 
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getParameter(Contentlet.WORKFLOW_ACTION_KEY))
