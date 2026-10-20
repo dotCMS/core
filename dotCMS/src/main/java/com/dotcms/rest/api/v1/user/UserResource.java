@@ -861,10 +861,9 @@ public class UserResource implements Serializable {
 		User currentLoginAsUser = new User();
 		Response response;
 		try {
-			final User principalUser = APILocator.getLoginAsAPI()
-					.getPrincipalUser(WebSessionContext.getInstance(httpServletRequest));
-			principalUserId = null != principalUser ? principalUser.getUserId() : null;
 			currentLoginAsUser = PortalUtil.getUser(httpServletRequest);
+			principalUserId = APILocator.getLoginAsAPI()
+					.getPrincipalUserId(WebSessionContext.getInstance(httpServletRequest));
 			final Map<String, Object> sessionData = this.helper.doLogoutAs(principalUserId, currentLoginAsUser, serverName);
 			revertLoginAsSessionInfo(httpServletRequest, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
 					.CURRENT_HOST)), principalUserId);

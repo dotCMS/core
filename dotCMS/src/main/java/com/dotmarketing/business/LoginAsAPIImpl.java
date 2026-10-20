@@ -18,6 +18,11 @@ public class LoginAsAPIImpl implements LoginAsAPI {
         this(APILocator.getUserAPI());
     }
 
+    /**
+     * Creates the API with the given {@link UserAPI}, so tests can pass a mock.
+     *
+     * @param userAPI The API used to load the principal user.
+     */
     @VisibleForTesting
     LoginAsAPIImpl(UserAPI userAPI) {
         this.userAPI = userAPI;
@@ -58,13 +63,14 @@ public class LoginAsAPIImpl implements LoginAsAPI {
     }
 
     /**
-     * A Login As is active when the context holds a {@link LoginAsSession} whose impersonated user
-     * is the context's current user.
+     * Returns the ID of the user who started the active Login As. A Login As is active when the
+     * context holds a {@link LoginAsSession} whose impersonated user is the context's current user.
      *
      * @param appContext The context, usually the HTTP session.
      * @return The ID of the user who started the Login As, or {@code null} when none is active.
      */
-    private String getPrincipalUserId(final AppContext appContext) {
+    @Override
+    public String getPrincipalUserId(final AppContext appContext) {
         final Object loginAsSession = appContext.getAttribute(LoginAsSession.SESSION_KEY);
         if (loginAsSession instanceof LoginAsSession) {
             final LoginAsSession active = (LoginAsSession) loginAsSession;

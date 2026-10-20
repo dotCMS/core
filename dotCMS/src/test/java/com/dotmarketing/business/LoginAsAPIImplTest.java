@@ -68,6 +68,19 @@ public class LoginAsAPIImplTest {
     }
 
     /**
+     * Given Scenario: The session holds a user ID under PRINCIPAL_USER_ID and no Login As record.
+     * ExpectedResult: No Login As is reported and no user is loaded.
+     */
+    @Test
+    public void getPrincipalUser_withPrincipalUserIdAndNoLoginAsSession_returnsNull() throws Exception {
+        when(appContext.getAttribute(WebKeys.PRINCIPAL_USER_ID)).thenReturn(PRINCIPAL_ID);
+
+        assertFalse(loginAsAPI.isLoginAsUser(appContext));
+        assertNull(loginAsAPI.getPrincipalUser(appContext));
+        verify(userAPI, never()).loadUserById(anyString());
+    }
+
+    /**
      * Given Scenario: The session holds a Login As record whose impersonated user is not the
      * current session user.
      * ExpectedResult: No Login As is reported and no user is loaded.
