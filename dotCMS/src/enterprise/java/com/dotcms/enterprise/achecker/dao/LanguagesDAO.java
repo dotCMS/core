@@ -146,23 +146,19 @@ public class LanguagesDAO extends BaseDAO {
 	}
 
 	/**
-	 * Return language with given language code
-	 * @access  public
-	 * @param   $langCode
-	 *          $charset
-	 * @return  table rows
-	 * @author  Cindy Qi Li
+	 * Finds the language with the given language code and character set.
+	 *
+	 * @param langCode the language code, for example {@code en}; sent to the database as a bound value
+	 * @param charset the character set, for example {@code utf-8}; sent to the database as a bound value
+	 * @return the first matching row, keyed by lower-cased column name, or {@code null} when there is none
+	 * @throws SQLException if the query fails
 	 */
 	public Map<String, Object> getByLangCodeAndCharset(String langCode, String charset) throws SQLException
 	{
-		//		global $addslashes;
-		//		$langCode = $addslashes($langCode);
-		//		$charset = $addslashes($charset);
+		String sql = "SELECT * FROM "+tablePrefix+"languages l  WHERE l.language_code = ? AND " +
+		" l.charset = ? ORDER BY l.native_name";
 
-		String sql = "SELECT * FROM "+tablePrefix+"languages l  WHERE l.language_code = '"+langCode+"' AND " +
-		" l.charset='"+charset+"'ORDER BY l.native_name";
-
-		List<Map<String, Object>> rows = execute(sql);
+		List<Map<String, Object>> rows = execute(sql, langCode, charset);
 		if (rows != null && rows.size() > 0)
 		{
 			Map<String, Object> oneres = rows.get(0);
@@ -172,20 +168,21 @@ public class LanguagesDAO extends BaseDAO {
 	}
 
 	/**
-	 * Return all languages except the ones with language code in the given string 
-	 * @access  public
-	 * @param   $langCode : one language codes, for example: en
-	 * @return  table rows
-	 * @author  Cindy Qi Li
+	 * Returns every language except the one with the given language code, ordered by native name.
+	 * When no code is given, every language is returned.
+	 *
+	 * @param langCode the language code to leave out, for example {@code en}; sent to the database
+	 *                 as a bound value
+	 * @return the matching rows, keyed by lower-cased column name
+	 * @throws SQLException if the query fails
 	 */
 	public List<Map<String, Object>> getAllExceptLangCode(String langCode ) throws SQLException
 	{
-//		global $addslashes;
 		if( langCode == null || StringUtils.isEmpty(langCode)){
 			return this.getAll();
 		}else {
-			String sql = "SELECT * FROM "+tablePrefix+"languages WHERE language_code <> '"+langCode+"' ORDER BY native_name";
-			return execute(sql);
+			String sql = "SELECT * FROM "+tablePrefix+"languages WHERE language_code <> ? ORDER BY native_name";
+			return execute(sql, langCode);
 		}
 	}
 
