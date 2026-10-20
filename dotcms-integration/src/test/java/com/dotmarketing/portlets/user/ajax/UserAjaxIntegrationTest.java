@@ -253,6 +253,31 @@ public class UserAjaxIntegrationTest {
 
     /**
      * Method to test: {@link UserAjax#updateUserRoles(String, List)}
+     * Given Scenario: A user holds parent role P directly and its child role C through it. A CMS
+     * Administrator saves the user's roles with C instead of P.
+     * Expected Result: P is removed and C is now held directly, so the user keeps C.
+     */
+    @Test
+    public void updateUserRoles_adminReplacingParentRoleWithChild_childGrantedDirectly() throws Exception {
+        final Role parent = new RoleDataGen().nextPersisted();
+        final Role child = new RoleDataGen().parent(parent.getId()).nextPersisted();
+        final User target = new UserDataGen().roles(TestUserUtils.getBackendRole(), parent).nextPersisted();
+        assertTrue("precondition: the child role must be inherited", roleAPI.doesUserHaveRole(target, child));
+        setUpDwrContext(TestUserUtils.getAdminUser());
+
+        final List<String> requested = directRoleIds(target);
+        requested.remove(parent.getId());
+        requested.add(child.getId());
+        new UserAjax().updateUserRoles(target.getUserId(), requested);
+
+        final Set<String> direct = directRoleIdSet(target);
+        assertFalse("the parent role must be removed", direct.contains(parent.getId()));
+        assertTrue("the child role must be held directly", direct.contains(child.getId()));
+        assertTrue(roleAPI.doesUserHaveRole(target, child));
+    }
+
+    /**
+     * Method to test: {@link UserAjax#updateUserRoles(String, List)}
      * Given Scenario: A CMS Administrator saves another user's roles, dropping role A and adding role B.
      * Expected Result: Role A is removed and role B is added, as before.
      */

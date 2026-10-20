@@ -1500,10 +1500,13 @@ public class UserResource implements Serializable {
     /**
      * The roles an update would add to and remove from a user.
      *
-     * @param toAdd    User-assignable roles the user does not hold yet.
+     * @param toAdd    User-assignable roles the user does not hold yet. Decides whether the update
+     *                 changes the user's roles at all.
      * @param toRemove User-assignable roles the user holds directly and that were not sent.
+     * @param toGrant  Every user-assignable role sent. Granted after the removals; roles the user
+     *                 still holds at that point are skipped.
      */
-    private record RoleChanges(List<Role> toAdd, List<Role> toRemove) { }
+    private record RoleChanges(List<Role> toAdd, List<Role> toRemove, List<Role> toGrant) { }
 
     /**
      * Works out how the {@code roles} list sent in the payload changes the user's role memberships,
@@ -1564,26 +1567,32 @@ public class UserResource implements Serializable {
             }
         }
 
-        // ...and add the missing ones
+        // ...and grant the sent ones after the removals; the ones the user does not hold now make
+        // the update a change
         final List<Role> toAdd = new ArrayList<>();
-        final Set<String> toAddIds = new HashSet<>();
+        final List<Role> toGrant = new ArrayList<>();
+        final Set<String> toGrantIds = new HashSet<>();
         for (final Role desiredRole : desiredRoles) {
 
             if (!desiredRole.isEditUsers()) {
                 Logger.debug(this, ()-> "Role '" + desiredRole.getName()
                         + "' is not user-assignable. Ignoring it...");
-            } else if (!this.roleAPI.doesUserHaveRole(userToSave, desiredRole)
-                    && toAddIds.add(desiredRole.getId())) {
-                toAdd.add(desiredRole);
+            } else if (toGrantIds.add(desiredRole.getId())) {
+                toGrant.add(desiredRole);
+                if (!this.roleAPI.doesUserHaveRole(userToSave, desiredRole)) {
+                    toAdd.add(desiredRole);
+                }
             }
         }
 
-        return new RoleChanges(toAdd, toRemove);
+        return new RoleChanges(toAdd, toRemove, toGrant);
     }
 
     /**
      * Writes the role changes computed by {@link #computeRoleChanges(UserForm, User)}: removals
-     * first, then additions.
+     * first, then every sent role is granted. Granting after the removals means a role the user only
+     * held through a removed parent role is granted directly; roles the user still holds are skipped
+     * by {@link com.dotmarketing.business.RoleAPI#addRoleToUser(Role, User)}.
      *
      * @param roleChanges The roles to add and remove.
      * @param userToSave  The user being updated.
@@ -1599,7 +1608,7 @@ public class UserResource implements Serializable {
                     + "' from user:" + userToSave.getUserId() + " email:" + userToSave.getEmailAddress());
         }
 
-        for (final Role role : roleChanges.toAdd()) {
+        for (final Role role : roleChanges.toGrant()) {
             this.roleAPI.addRoleToUser(role, userToSave);
         }
     }

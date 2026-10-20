@@ -555,7 +555,10 @@ public class UserAjax {
 			}
 		}
 
-		// requested assignable roles the user does not hold yet (directly or inherited) are added
+		// requested assignable roles are granted after the removals; addRoleToUser skips the ones the
+		// user still holds at that point (directly or inherited)
+		final List<Role> rolesToGrant = new ArrayList<>();
+		// ...and the ones the user does not hold now make the request a change
 		final List<Role> rolesToAdd = new ArrayList<>();
 		for (final String roleId : requestedRoleIds) {
 			final Role r = roleAPI.loadRoleById(roleId);
@@ -563,8 +566,11 @@ public class UserAjax {
 				Logger.debug(this, () -> "Role id '" + roleId + "' does not exist. Ignoring it...");
 				continue;
 			}
-			if (r.isEditUsers() && !roleAPI.doesUserHaveRole(user, r)) {
-				rolesToAdd.add(r);
+			if (r.isEditUsers()) {
+				rolesToGrant.add(r);
+				if (!roleAPI.doesUserHaveRole(user, r)) {
+					rolesToAdd.add(r);
+				}
 			}
 		}
 
@@ -580,7 +586,7 @@ public class UserAjax {
 			}
 		}
 
-		for (final Role r : rolesToAdd) {
+		for (final Role r : rolesToGrant) {
 			try {
 				roleAPI.addRoleToUser(r, user);
 			} catch(DotDataException | DotStateException e) {

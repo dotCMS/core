@@ -1079,6 +1079,36 @@ public class UserResourceIntegrationTest {
 
     /**
      * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user holds parent role P directly and its child role C through it. A CMS
+     * Administrator sets the user's roles to C instead of P.
+     * Expected Result: 200; P is removed and C is now held directly, so the user keeps C.
+     */
+    @Test
+    public void test_update_adminReplacingParentRoleWithChild_childGrantedDirectly() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final Role parent = new RoleDataGen().key("parentswap" + uniq()).nextPersisted();
+        final Role child = new RoleDataGen().key("childswap" + uniq()).parent(parent.getId()).nextPersisted();
+        rolesToClean.add(child);
+        rolesToClean.add(parent);
+        final User target = new UserDataGen().roles(TestUserUtils.getBackendRole(), parent).nextPersisted();
+        usersToClean.add(target);
+        assertTrue("precondition: the child role must be inherited", roleAPI.doesUserHaveRole(target, child));
+
+        final List<String> roles = directRoleIds(target);
+        roles.remove(parent.getId());
+        roles.add(child.getId());
+        final Response resourceResponse = resource.update(mockRequest(), response,
+                updateFormFor(target).roles(roles).build());
+
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        final Set<String> direct = Set.copyOf(directRoleIds(target));
+        assertFalse("the parent role must be removed", direct.contains(parent.getId()));
+        assertTrue("the child role must be held directly", direct.contains(child.getId()));
+        assertTrue(roleAPI.doesUserHaveRole(target, child));
+    }
+
+    /**
+     * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
      * Given Scenario: A CMS Administrator updates another user, adding the CMS Administrator role by key.
      * Expected Result: 200; the user is now a CMS Administrator.
      */
