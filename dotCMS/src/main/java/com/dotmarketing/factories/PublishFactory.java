@@ -591,11 +591,9 @@ public class PublishFactory {
                     Set contentletSet = new HashSet();
 
                     String condition = "working=" + com.dotmarketing.db.DbConnectionFactory.getDBTrue() + " and deleted=" + com.dotmarketing.db.DbConnectionFactory.getDBFalse();
-                    // Only a supported container sort is used; the page order does not apply to
-                    // this query, which falls back to the contentlet sort order instead
-                    final String sort = ContainerSortBy.resolve(container.getSortContentletsBy())
-                            .filter(resolved -> !ContainerSortBy.DEFAULT_ORDER_BY.equals(resolved))
-                            .orElse("contentlet.sort_order");
+                    // This query has no multi_tree join, so the page order (with or without a
+                    // direction) becomes the contentlet sort order; see ContainerSortBy
+                    final String sort = ContainerSortBy.resolveForContentletQuery(container.getSortContentletsBy());
 
                     while ( catsIter.hasNext() ) {
                         Category category = (Category) catsIter.next();

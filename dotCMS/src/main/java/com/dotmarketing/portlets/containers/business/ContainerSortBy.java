@@ -23,11 +23,14 @@ public final class ContainerSortBy {
     /** Sort expression used when no supported value is set: the position in the page container. */
     public static final String DEFAULT_ORDER_BY = "multi_tree.tree_order";
 
+    /** Sort expression standing in for the page order where there is no page: the contentlet's own order. */
+    public static final String CONTENTLET_SORT_ORDER = "contentlet.sort_order";
+
     private static final Map<String, String> COLUMNS = Map.of(
             "tree_order", DEFAULT_ORDER_BY,
             "title", "contentlet.title",
             "mod_date", "contentlet.mod_date",
-            "sort_order", "contentlet.sort_order",
+            "sort_order", CONTENTLET_SORT_ORDER,
             "inode", "contentlet.inode");
 
     private ContainerSortBy() {
@@ -56,6 +59,21 @@ public final class ContainerSortBy {
             return Optional.of(column + " " + parts[1]);
         }
         return Optional.empty();
+    }
+
+    /**
+     * Resolves a value for a query that lists contentlets without joining {@code multi_tree}, so
+     * the page order cannot apply: the page order, with or without a direction, becomes the
+     * contentlet's own sort order, and an unsupported value falls back to it as well.
+     *
+     * @param value the stored or requested value
+     * @return the sort expression to use, never empty
+     */
+    public static String resolveForContentletQuery(final String value) {
+        return resolve(value)
+                .map(resolved -> resolved.startsWith(DEFAULT_ORDER_BY)
+                        ? resolved.replace(DEFAULT_ORDER_BY, CONTENTLET_SORT_ORDER) : resolved)
+                .orElse(CONTENTLET_SORT_ORDER);
     }
 
     /**

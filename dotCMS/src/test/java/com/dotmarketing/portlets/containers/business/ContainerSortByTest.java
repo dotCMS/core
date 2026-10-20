@@ -105,6 +105,20 @@ public class ContainerSortByTest extends UnitTestBase {
     }
 
     /**
+     * Method to test: {@link ContainerSortBy#resolveForContentletQuery(String)}
+     * Given: the page order with and without a direction, a contentlet column, an unsupported value
+     * Should: never name multi_tree; the page order becomes the contentlet sort order, keeping the direction
+     */
+    @Test
+    public void contentletQueryNeverSortsByThePageOrder() {
+        assertEquals("contentlet.sort_order", ContainerSortBy.resolveForContentletQuery(null));
+        assertEquals("contentlet.sort_order", ContainerSortBy.resolveForContentletQuery("tree_order"));
+        assertEquals("contentlet.sort_order desc", ContainerSortBy.resolveForContentletQuery("tree_order desc"));
+        assertEquals("contentlet.title asc", ContainerSortBy.resolveForContentletQuery("title asc"));
+        assertEquals("contentlet.sort_order", ContainerSortBy.resolveForContentletQuery("title, mod_date"));
+    }
+
+    /**
      * Method to test: {@link ContainerSortBy#warnsFor(String)}
      * Given: the same container falling back twice, and a fallback with no container
      * Should: warn the first time only, and never without a container
