@@ -18,6 +18,7 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.api.v1.apps.ExportSecretForm;
 import com.dotcms.rest.api.v1.apps.view.SecretView.SecretViewSerializer;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
@@ -446,7 +447,7 @@ public class AppsAPIImplTest {
     }
 
     /**
-     * Given scenario: APPS_ALLOW_PORTLET_CONFIGURATION is on and a non-admin user with granted
+     * Given scenario: FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION is on and a non-admin user with granted
      * portlet apps access saves configuration.
      * Expected Result: The value is stored and the system user reads it back.
      */
@@ -457,7 +458,7 @@ public class AppsAPIImplTest {
         final User user = newAppsPortletUser();
         final Host systemHost = APILocator.systemHost();
         final String appKey = "apps-portlet-save-" + System.currentTimeMillis();
-        Config.setProperty(AppsAPIImpl.APPS_ALLOW_PORTLET_CONFIGURATION, true);
+        Config.setProperty(FeatureFlagName.FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION, true);
         try {
             api.saveSecrets(new AppSecrets.Builder().withKey(appKey)
                     .withHiddenSecret("apiKey", "saved-by-apps-portlet-user").build(),
@@ -469,7 +470,7 @@ public class AppsAPIImplTest {
             assertEquals("saved-by-apps-portlet-user",
                     saved.get().getSecrets().get("apiKey").getString());
         } finally {
-            Config.setProperty(AppsAPIImpl.APPS_ALLOW_PORTLET_CONFIGURATION, false);
+            Config.setProperty(FeatureFlagName.FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION, false);
             api.deleteSecrets(appKey, systemHost, APILocator.systemUser());
         }
     }

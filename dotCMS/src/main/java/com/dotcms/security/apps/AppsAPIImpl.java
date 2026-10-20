@@ -13,6 +13,7 @@ import static com.dotmarketing.util.UtilMethods.isSet;
 import static java.util.Collections.emptyMap;
 
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.api.v1.apps.view.SecretView.SecretViewSerializer;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.LicenseValiditySupplier;
@@ -75,13 +76,9 @@ public class AppsAPIImpl implements AppsAPI {
     private final AppDescriptorHelper appDescriptorHelper;
 
     /**
-     * Legacy delegation switch. When {@code true}, users with the Apps portlet may change and read
-     * Apps configuration as they could before it became an administrator setting. Defaults to
-     * {@code false}; retained for one release for installations that delegated Apps configuration.
+     * Caller classes already logged as relying on
+     * {@link FeatureFlagName#FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION}.
      */
-    static final String APPS_ALLOW_PORTLET_CONFIGURATION = "APPS_ALLOW_PORTLET_CONFIGURATION";
-
-    /** Caller classes already logged as relying on {@link #APPS_ALLOW_PORTLET_CONFIGURATION}. */
     private static final Set<String> delegatedCallersLogged = ConcurrentHashMap.newKeySet();
 
     @VisibleForTesting
@@ -120,18 +117,20 @@ public class AppsAPIImpl implements AppsAPI {
 
     /**
      * Apps configuration is an administrator setting, like Maintenance and other instance-level
-     * settings: changing an app's secrets (save or delete) and reading their values requires a CMS
-     * administrator or the system user. Listing app keys and descriptors keeps the
-     * {@link #userDoesNotHaveAccess(User)} rule, administrator or Apps portlet, so the Apps portlet
-     * can still show which sites are configured.
+     * settings: changing an app's secrets (save or delete), reading their values, uploading an app
+     * descriptor and removing an app require a CMS administrator or the system user. Listing app
+     * keys and descriptors keeps the {@link #userDoesNotHaveAccess(User)} rule, administrator or
+     * Apps portlet, so the Apps portlet can still show which sites are configured.
      * <p>
-     * When {@link #APPS_ALLOW_PORTLET_CONFIGURATION} is {@code true}, users with the Apps portlet are
+     * When {@link FeatureFlagName#FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION} is {@code true},
+     * users with the Apps portlet are
      * also allowed, and each caller class that relies on it is logged once at WARN. Otherwise a
      * refusal is logged at WARN with the app key and the user id.
      *
      * @param user   the acting user
      * @param appKey the app whose configuration is being accessed, used only for logging
-     * @param change {@code true} for a save or delete, {@code false} for a read of values
+     * @param change {@code true} for a save, delete, descriptor upload or app removal,
+     *               {@code false} for a read of values
      * @return {@code true} when the user may not perform the operation
      */
     private boolean userCannotManageAppConfiguration(final User user, final String appKey,
@@ -139,7 +138,8 @@ public class AppsAPIImpl implements AppsAPI {
         if (user.isAdmin() || UserAPI.SYSTEM_USER_ID.equals(user.getUserId())) {
             return false;
         }
-        if (Config.getBooleanProperty(APPS_ALLOW_PORTLET_CONFIGURATION, false)) {
+        if (Config.getBooleanProperty(
+                FeatureFlagName.FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION, false)) {
             if (userDoesNotHaveAccess(user)) {
                 return true;
             }
@@ -151,7 +151,8 @@ public class AppsAPIImpl implements AppsAPI {
             if (delegatedCallersLogged.add(change + StringPool.COLON + caller)) {
                 Logger.warn(AppsAPIImpl.class, String.format(
                         "Apps configuration %s by a non-administrator allowed by %s; this setting is deprecated and will be removed (caller %s)",
-                        change ? "change" : "read", APPS_ALLOW_PORTLET_CONFIGURATION, caller));
+                        change ? "change" : "read",
+                        FeatureFlagName.FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION, caller));
             }
             return false;
         }
@@ -788,10 +789,15 @@ public class AppsAPIImpl implements AppsAPI {
                 : Optional.of(appDescriptorMeta);
     }
 
+    /**
+     * Writes an uploaded app descriptor into the user apps directory. Uploading a descriptor is a
+     * change to Apps configuration, so it follows
+     * {@link #userCannotManageAppConfiguration(User, String, boolean)} before any file is read.
+     */
     @Override
     public AppDescriptor createAppDescriptor(final File file,
             final User user) throws DotDataException, AlreadyExistException, DotSecurityException {
-        if (userDoesNotHaveAccess(user)) {
+        if (userCannotManageAppConfiguration(user, file.getName(), true)) {
             throw new DotSecurityException(String.format(
                     "Invalid attempt to create an app descriptor performed by user with id `%s`.",
                     user.getUserId()));
@@ -823,11 +829,17 @@ public class AppsAPIImpl implements AppsAPI {
     }
 
 
+    /**
+     * Deletes the app's configuration on every site and, when asked, its descriptor file. Removing
+     * an app is a change to Apps configuration, so it follows
+     * {@link #userCannotManageAppConfiguration(User, String, boolean)} once, before any lookup, and
+     * the per-site deletes below do not evaluate it again.
+     */
     @Override
     public void removeApp(final String key, final User user,
             final boolean removeDescriptor)
             throws DotSecurityException, DotDataException {
-        if (userDoesNotHaveAccess(user)) {
+        if (userCannotManageAppConfiguration(user, key, true)) {
             throw new DotSecurityException(String.format(
                     "Invalid attempt to delete an App descriptor performed by user with id `%s`.",
                     user.getUserId()));
@@ -846,7 +858,7 @@ public class AppsAPIImpl implements AppsAPI {
                 //Now we need to verify the service-key has a configuration for this host.
                 if(appKeys.contains(appKeyLC)){
                     //And if it does we attempt to delete all the secrets.
-                    deleteSecrets(key, hostId, user);
+                    secretsStore.deleteValue(internalKey(key, hostId));
                 }
             }
             if(removeDescriptor) {

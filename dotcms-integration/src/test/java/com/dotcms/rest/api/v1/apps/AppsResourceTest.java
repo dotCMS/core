@@ -1681,10 +1681,11 @@ public class AppsResourceTest extends IntegrationTestBase {
 
     /**
      * Given scenario: an app has secrets on a site. A non-administrator who holds the Apps portlet
-     * (and can read the site) tries to save, delete one secret and delete all secrets through the
-     * REST resource; then an administrator saves and deletes.
+     * (and can read the site) tries to save, delete one secret, delete all secrets, remove the app
+     * and upload a new descriptor through the REST resource; then an administrator deletes the
+     * secrets and removes the app.
      * Expected Result: every non-administrator change gets 403 and leaves the stored configuration
-     * unchanged; the administrator changes return 200.
+     * and descriptors unchanged; the administrator changes return 200.
      */
     @Test
     public void Test_Non_Administrator_Cannot_Change_App_Configuration() throws Exception {
@@ -1737,10 +1738,28 @@ public class AppsResourceTest extends IntegrationTestBase {
                         ImmutableSet.of("p1"))).getStatus());
         Assert.assertEquals(HttpStatus.SC_FORBIDDEN, portletResource.deleteAllAppSecrets(
                 request, response, appKey, host.getIdentifier()).getStatus());
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, portletResource.deleteApp(
+                request, response, appKey, true).getStatus());
+
+        final AppDescriptorDataGen uploadDataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false, true)
+                .withName("admin-only-upload")
+                .withDescription("demo")
+                .withExtraParameters(false);
+        final File uploadFile = uploadDataGen.nextPersistedDescriptor();
+        try (InputStream inputStream = Files.newInputStream(uploadFile.toPath())) {
+            Assert.assertEquals(HttpStatus.SC_FORBIDDEN, portletResource.createApp(request,
+                    response, createFormDataMultiPart(uploadDataGen.getFileName(), inputStream))
+                    .getStatus());
+        }
+        assertTrue(APILocator.getAppsAPI()
+                .getAppDescriptor(uploadDataGen.getKey(), APILocator.systemUser()).isEmpty());
 
         final AppSecrets stored = APILocator.getAppsAPI()
                 .getSecrets(appKey, host, APILocator.systemUser()).orElseThrow();
         Assert.assertEquals("v1", stored.getSecrets().get("p1").getString());
+        assertTrue(APILocator.getAppsAPI()
+                .getAppDescriptor(appKey, APILocator.systemUser()).isPresent());
 
         createSecret(request, response, appKey, host,
                 ImmutableMap.of("p1", newInputParam("v2".toCharArray(), false)));
@@ -1748,6 +1767,10 @@ public class AppsResourceTest extends IntegrationTestBase {
                 request, response, appKey, host.getIdentifier()).getStatus());
         assertTrue(APILocator.getAppsAPI()
                 .getSecrets(appKey, host, APILocator.systemUser()).isEmpty());
+        Assert.assertEquals(HttpStatus.SC_OK,
+                appsResource.deleteApp(request, response, appKey, true).getStatus());
+        assertTrue(APILocator.getAppsAPI()
+                .getAppDescriptor(appKey, APILocator.systemUser()).isEmpty());
     }
 
     private void createSecret(final HttpServletRequest request, final HttpServletResponse response,
