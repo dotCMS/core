@@ -379,7 +379,7 @@ public class BundleResourceTest {
     }
 
     @Test
-    public void test_deletePushHistory_userWithoutEditPermission_isForbidden() throws Exception {
+    public void test_deletePushHistory_userWithoutPublishPermission_isForbidden() throws Exception {
         final User user = newBackendUser();
         final Contentlet contentlet = newContentlet();
         pushHistoryFor(contentlet.getIdentifier(), new EnvironmentDataGen().nextPersisted());
@@ -391,7 +391,7 @@ public class BundleResourceTest {
     }
 
     @Test
-    public void test_deletePushHistory_userWithEditPermission_deletesHistory() throws Exception {
+    public void test_deletePushHistory_userWithOnlyEditPermission_isForbidden() throws Exception {
         final Role role = new RoleDataGen().nextPersisted();
         final User user = new UserDataGen()
                 .roles(APILocator.getRoleAPI().loadBackEndUserRole(), role)
@@ -401,6 +401,26 @@ public class BundleResourceTest {
         APILocator.getPermissionAPI().save(
                 new Permission(contentlet.getPermissionId(), role.getId(),
                         PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true),
+                contentlet, APILocator.systemUser(), false);
+        pushHistoryFor(contentlet.getIdentifier(), new EnvironmentDataGen().nextPersisted());
+
+        assertThrows(ForbiddenException.class, () -> bundleResource.deletePushHistory(
+                mockRequestFor(user), response, "assetid/" + contentlet.getIdentifier()));
+
+        assertFalse(APILocator.getPushedAssetsAPI().getPushedAssets(contentlet.getIdentifier()).isEmpty());
+    }
+
+    @Test
+    public void test_deletePushHistory_userWithPublishPermission_deletesHistory() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole(), role)
+                .nextPersisted();
+        createdUsers.add(user);
+        final Contentlet contentlet = newContentlet();
+        APILocator.getPermissionAPI().save(
+                new Permission(contentlet.getPermissionId(), role.getId(),
+                        PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_PUBLISH, true),
                 contentlet, APILocator.systemUser(), false);
         pushHistoryFor(contentlet.getIdentifier(), new EnvironmentDataGen().nextPersisted());
 
@@ -450,7 +470,7 @@ public class BundleResourceTest {
     }
 
     @Test
-    public void test_deletePushHistory_linkEditor_deletesHistory() throws Exception {
+    public void test_deletePushHistory_linkPublisher_deletesHistory() throws Exception {
         final Role role = new RoleDataGen().nextPersisted();
         final User user = new UserDataGen()
                 .roles(APILocator.getRoleAPI().loadBackEndUserRole(), role)
@@ -462,7 +482,7 @@ public class BundleResourceTest {
                 .target("https://www.dotcms.com").linkType("EXTERNAL").nextPersisted();
         APILocator.getPermissionAPI().save(
                 new Permission(link.getPermissionId(), role.getId(),
-                        PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true),
+                        PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_PUBLISH, true),
                 link, APILocator.systemUser(), false);
         pushHistoryFor(link.getIdentifier(), new EnvironmentDataGen().nextPersisted());
 
@@ -474,7 +494,7 @@ public class BundleResourceTest {
     }
 
     @Test
-    public void test_deletePushHistory_categoryEditor_deletesHistory() throws Exception {
+    public void test_deletePushHistory_categoryPublisher_deletesHistory() throws Exception {
         final Role role = new RoleDataGen().nextPersisted();
         final User user = new UserDataGen()
                 .roles(APILocator.getRoleAPI().loadBackEndUserRole(), role)
@@ -486,7 +506,7 @@ public class BundleResourceTest {
                 .nextPersisted();
         APILocator.getPermissionAPI().save(
                 new Permission(category.getPermissionId(), role.getId(),
-                        PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true),
+                        PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_PUBLISH, true),
                 category, APILocator.systemUser(), false);
         pushHistoryFor(category.getInode(), new EnvironmentDataGen().nextPersisted());
 

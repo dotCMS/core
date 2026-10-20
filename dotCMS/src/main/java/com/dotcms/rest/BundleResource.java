@@ -382,13 +382,13 @@ public class BundleResource {
 
 	/**
 	 * Makes sure the user may delete the push history of an asset. Administrators always can;
-	 * anyone else needs edit permission on the asset.
+	 * anyone else needs publish permission on the asset.
 	 *
 	 * @param user    the user making the request
 	 * @param assetId the id of the asset whose push history is being deleted
 	 * @throws DotDataException   if the permissions cannot be read
 	 * @throws NotFoundException  if the id does not match any supported asset
-	 * @throws ForbiddenException if the user does not have edit permission on the asset
+	 * @throws ForbiddenException if the user does not have publish permission on the asset
 	 */
 	private void checkCanEditAsset(final User user, final String assetId) throws DotDataException {
 		if (user.isAdmin()) {
@@ -398,7 +398,7 @@ public class BundleResource {
 		if (asset == null) {
 			throw new NotFoundException(String.format("Asset '%s' was not found", assetId));
 		}
-		if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_EDIT, user, false)) {
+		if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
 			throw new ForbiddenException(String.format(
 					"User '%s' is not allowed to delete the push history of asset '%s'",
 					user.getUserId(), assetId));
