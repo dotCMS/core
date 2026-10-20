@@ -181,7 +181,7 @@
                 </th>
                 <th style="width: 24%">{{ 'users.table.header.roles' | dm }}</th>
                 <th style="width: 15%">{{ 'users.table.header.access' | dm }}</th>
-                <th pSortableColumn="lastLoginDate" style="width: 8%">
+                <th pSortableColumn="lastLoginDate" class="whitespace-nowrap" style="width: 12%">
                     {{ 'users.table.header.last-login' | dm }}
                     <p-sortIcon field="lastLoginDate" />
                 </th>
@@ -258,9 +258,9 @@
                             }
                         </div>
                     </td>
-                    <td data-testid="users-cell-last-login">
+                    <td class="whitespace-nowrap" data-testid="users-cell-last-login">
                         @if (user.lastLoginDate) {
-                            {{ user.lastLoginDate | date: 'MM/dd/yyyy' }}
+                            {{ user.lastLoginDate | date: 'MM/dd/yyyy, h:mm a' }}
                         }
                     </td>
                     <td (click)="$event.stopPropagation()" data-testid="users-cell-actions">

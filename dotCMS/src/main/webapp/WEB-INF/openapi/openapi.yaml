@@ -3562,6 +3562,32 @@ paths:
       summary: Generate Site Auth
       tags:
       - Content Analytics
+  /v1/analytics/health:
+    get:
+      description: Returns a dotCMS-evaluated analytics health state. Always returns
+        200 — never returns 503 unlike the catch-all proxy. Reflects the App configuration
+        and backend connectivity for the site resolved from the request.
+      operationId: analyticsHealth
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "ResponseEntityView containing {\"health\": \"OK\"|\"\
+                  NOT_CONFIGURED\"|\"CONFIGURATION_ERROR\"}"
+          description: Health state evaluated successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized — backend user required
+        "403":
+          content:
+            application/json: {}
+          description: User lacks READ on the resolved site
+      summary: Evaluate analytics health for the current site
+      tags:
+      - Content Analytics
   /v1/analytics/{path}:
     get:
       description: "Forwards any authenticated GET request to /v1/analytics/** to\
@@ -5623,29 +5649,39 @@ paths:
           description: Security key regenerated successfully
         "401":
           content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
       summary: Regenerate company security key
       tags:
       - System Configuration
   /v1/configuration/_validateCompanyEmail:
     post:
+      description: Queues a test e-mail from the given sender to the logged-in user.
+        The result is delivered later as a system message.
       operationId: validateEmail
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/CompanyEmailForm"
+        description: Sender address to send the test e-mail from
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Test e-mail queued
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: "Missing body, or the sender is not a valid e-mail address"
+        "401":
+          content:
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
+      summary: Send a test e-mail from the company address
       tags:
       - System Configuration
   /v1/configuration/authentication:
@@ -5673,12 +5709,8 @@ paths:
           description: Bad request - invalid auth type
         "401":
           content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
       summary: Save company authentication type
       tags:
       - System Configuration
@@ -5696,12 +5728,8 @@ paths:
           description: Company configuration retrieved successfully
         "401":
           content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
       summary: Get company configuration
       tags:
       - System Configuration
@@ -5729,12 +5757,8 @@ paths:
           description: Bad request - invalid parameters
         "401":
           content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
       summary: Save company basic info and branding
       tags:
       - System Configuration
@@ -5775,6 +5799,53 @@ paths:
       summary: Retrieve whitelisted configuration values
       tags:
       - System Configuration
+  /v1/configuration/dotcmsLogo:
+    get:
+      description: "Returns the /dA/ path of the stock dotCMS login logo. The path\
+        \ can be saved as loginScreenLogo through PUT /api/v1/configuration/branding.\
+        \ Read-only: no content and no company setting is created or changed. Returns\
+        \ 404 when this instance doesn't have the stock logo, or it isn't published,\
+        \ readable by anonymous users, or the stock dotCMS image."
+      operationId: getDotcmsLogo
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Path of the stock dotCMS login logo
+        "401":
+          content:
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
+        "404":
+          content:
+            application/json: {}
+          description: The dotCMS logo is not available on this instance
+      summary: Get the stock dotCMS login logo
+      tags:
+      - System Configuration
+  /v1/configuration/license:
+    get:
+      description: "Returns the title, licensor, change date, change license and full\
+        \ text of the license shipped with the running build. When the license file\
+        \ can't be read, returns a short pointer to the published license and null\
+        \ header values."
+      operationId: getLicense
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityLicenseInfoView"
+          description: License retrieved successfully
+        "401":
+          content:
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a backend user"
+      summary: Get the dotCMS license
+      tags:
+      - System Configuration
   /v1/configuration/locale:
     put:
       description: Updates the locale (language and timezone) for the current company.
@@ -5800,12 +5871,8 @@ paths:
           description: Invalid locale parameters (e.g. invalid timezone)
         "401":
           content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
       summary: Save company locale info
       tags:
       - System Configuration
@@ -10891,10 +10958,10 @@ paths:
           content:
             application/javascript:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringHealth"
+                $ref: "#/components/schemas/ResponseEntityViewExperimentsHealthView"
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringHealth"
+                $ref: "#/components/schemas/ResponseEntityViewExperimentsHealthView"
           description: default response
       tags:
       - Experiment
@@ -10925,15 +10992,16 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Experiment cancelled successfully
+        "403":
+          content:
+            application/json: {}
+          description: Feature disabled (FEATURE_DISABLED) — flag=false
       tags:
       - Experiment
   /v1/experiments/{experimentId}:
@@ -10992,15 +11060,16 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityExperimentView"
-          description: default response
+          description: Experiment archived successfully
+        "403":
+          content:
+            application/json: {}
+          description: Feature disabled (FEATURE_DISABLED) — flag=false
       tags:
       - Experiment
   /v1/experiments/{experimentId}/_end:
@@ -11013,15 +11082,12 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Experiment ended successfully
       tags:
       - Experiment
   /v1/experiments/{experimentId}/_start:
@@ -11034,15 +11100,27 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Experiment started successfully
+        "400":
+          content:
+            application/json: {}
+          description: Duration exceeds the 10-day limited-mode cap
+        "403":
+          content:
+            application/json: {}
+          description: "Limited-mode gate rejected the start. errorCode FEATURE_DISABLED:\
+            \ flag=false and the free experiment slot is already occupied. errorCode\
+            \ SCHEDULED_START_NOT_ALLOWED: flag=false and the experiment has a future\
+            \ startDate."
+        "503":
+          content:
+            application/json: {}
+          description: Analytics App not configured for this site (ANALYTICS_NOT_CONFIGURED)
       tags:
       - Experiment
   /v1/experiments/{experimentId}/goals/primary:
@@ -11242,15 +11320,16 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityExperimentResults"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityExperimentResults"
-          description: default response
+          description: Experiment results retrieved
+        "503":
+          content:
+            application/json: {}
+          description: Analytics App not configured for this site
       tags:
       - Experiment
   /v1/fieldTypes:
@@ -12265,7 +12344,8 @@ paths:
           description: "Unauthorized: Invalid or missing user authentication."
         "403":
           description: "Forbidden: User lacks permission to enqueue jobs in the specified\
-            \ queue."
+            \ queue, or the queue has a dedicated endpoint (the message names it)\
+            \ and does not accept jobs through this one."
         "404":
           description: "Not Found: Queue with the specified name does not exist."
         "500":
@@ -12377,7 +12457,8 @@ paths:
           description: "Unauthorized: Invalid or missing user authentication."
         "403":
           description: "Forbidden: User lacks permission to enqueue jobs in the specified\
-            \ queue."
+            \ queue, or the queue has a dedicated endpoint (the message names it)\
+            \ and does not accept jobs through this one."
         "404":
           description: "Not Found: Queue with the specified name does not exist."
         "500":
@@ -27020,9 +27101,10 @@ components:
           example: "#3C1361"
         backgroundImage:
           type: string
-          description: Background image path (dotAsset path starting with /dA). Cleared
-            if omitted.
-          example: /dA/abc123/background.png
+          description: "Login background: a dotAsset path starting with /dA/, one\
+            \ of the bundled backgrounds /html/images/backgrounds/bg-1.jpg to bg-11.jpg,\
+            \ or the value already stored. Cleared if omitted."
+          example: /html/images/backgrounds/bg-11.jpg
         emailAddress:
           type: string
           description: Company email address used as the system sender. Accepts plain
@@ -27077,8 +27159,10 @@ components:
           example: "#3C1361"
         backgroundImage:
           type: string
-          description: Background image path (dotAsset path starting with /dA)
-          example: /dA/abc123/background.png
+          description: "Stored login background: a /dA path, a bundled background\
+            \ /html/images/backgrounds/bg-1.jpg to bg-11.jpg, or a legacy URL; null\
+            \ when none is set"
+          example: /html/images/backgrounds/bg-11.jpg
         companyId:
           type: string
           description: Company identifier
@@ -29284,6 +29368,33 @@ components:
           format: float
         trafficProportion:
           $ref: "#/components/schemas/TrafficProportion"
+    ExperimentsHealthView:
+      type: object
+      properties:
+        freeExperimentUsed:
+          type: boolean
+          description: Whether the single free experiment slot is already occupied.
+            Present only when tier="limited"; null when tier="full".
+        health:
+          type: string
+          description: Current health state of the experiments / analytics configuration
+          enum:
+          - OK
+          - NOT_CONFIGURED
+          - CONFIGURATION_ERROR
+        tier:
+          type: string
+          description: "License tier: \"full\" when experiments are fully enabled,\
+            \ \"limited\" when restricted to one free experiment"
+          enum:
+          - full
+          - limited
+        warning:
+          type: string
+          description: Warning code present when the Analytics App is not configured
+            for the site. Absent when configured.
+          enum:
+          - analytics_disabled
     ExportSecretForm:
       type: object
       properties:
@@ -32234,6 +32345,31 @@ components:
           type: array
           items:
             type: string
+    LicenseInfoView:
+      type: object
+      properties:
+        changeDate:
+          type: string
+          description: When the license changes to the Change License
+          example: "Four years from August 01, 2025"
+        changeLicense:
+          type: string
+          description: License that applies after the Change Date
+          example: GNU General Public License (GPL) v3
+        licensor:
+          type: string
+          description: Licensor named in the license
+          example: dotCMS LLC
+        text:
+          type: string
+          description: Full license text
+        title:
+          type: string
+          description: License name and version
+          example: dotCMS Business Source License 1.1
+      required:
+      - text
+      - title
     LineDividerField:
       type: object
       allOf:
@@ -35460,6 +35596,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityLicenseInfoView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/LicenseInfoView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityListContentTypeView:
       type: object
       properties:
@@ -37365,6 +37524,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityViewExperimentsHealthView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/ExperimentsHealthView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityViewJob:
       type: object
       properties:
@@ -37537,35 +37719,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MulitreeView"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityViewMapStringHealth:
-      type: object
-      properties:
-        entity:
-          type: object
-          additionalProperties:
-            type: string
-            enum:
-            - OK
-            - NOT_CONFIGURED
-            - CONFIGURATION_ERROR
         errors:
           type: array
           items:

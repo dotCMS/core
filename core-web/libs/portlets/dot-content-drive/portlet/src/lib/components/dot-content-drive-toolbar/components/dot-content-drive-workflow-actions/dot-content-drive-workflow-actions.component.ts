@@ -56,9 +56,6 @@ export class DotContentDriveWorkflowActionsComponent {
             case WORKFLOW_ACTION_ID.DOWNLOAD:
                 this.download();
                 break;
-            case WORKFLOW_ACTION_ID.RENAME:
-                this.rename();
-                break;
         }
     }
 
@@ -123,12 +120,5 @@ export class DotContentDriveWorkflowActionsComponent {
             detail: this.#dotMessageService.get('content-drive.toast.download-success-detail'),
             life: SUCCESS_MESSAGE_LIFE
         });
-    }
-
-    /**
-     * Renames the selected items.
-     */
-    private rename() {
-        console.warn('Rename functionality is under development');
     }
 }

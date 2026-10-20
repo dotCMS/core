@@ -3,6 +3,7 @@ package com.dotcms;
 import com.dotcms.ai.app.ConfigServiceTest;
 import com.dotcms.ai.client.AIProxyClientTest;
 import com.dotcms.ai.listener.EmbeddingContentListenerTest;
+import com.dotcms.ai.rest.AiRetrievalPermissionTest;
 import com.dotcms.ai.viewtool.AIViewToolTest;
 import com.dotcms.ai.viewtool.CompletionsToolTest;
 import com.dotcms.ai.viewtool.EmbeddingsToolTest;
@@ -77,6 +78,8 @@ import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
+import com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxActionTest;
+import com.dotcms.publisher.environment.ajax.EnvironmentAjaxActionTest;
 import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.PushedAssetUtilTest;
@@ -96,6 +99,7 @@ import com.dotcms.rendering.velocity.viewtools.MessageToolTest;
 import com.dotcms.rendering.velocity.viewtools.XmlToolTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMapTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockTest;
+import com.dotcms.rest.BundlePublisherResourceTest;
 import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.api.v1.announcements.AnnouncementsHelperIntegrationTest;
 import com.dotcms.rest.api.v1.announcements.RemoteAnnouncementsLoaderIntegrationTest;
@@ -489,6 +493,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.business.LayoutAPITest.class,
         com.dotmarketing.business.PermissionAPIIntegrationTest.class,
         com.dotmarketing.business.PermissionAPITest.class,
+        com.dotmarketing.business.ajax.PermissionAjaxIntegrationTest.class,
         com.dotmarketing.servlets.BinaryExporterServletTest.class,
         com.dotmarketing.servlets.ShortyServletAndTitleImageTest.class,
         com.dotmarketing.servlets.InitRunnerTest.class,
@@ -560,6 +565,9 @@ import org.junit.runners.Suite.SuiteClasses;
         SamlConfigurationServiceTest.class,
         ClusterFactoryTest.class,
         BundleResourceTest.class,
+        BundlePublisherResourceTest.class,
+        PublishingEndpointAjaxActionTest.class,
+        EnvironmentAjaxActionTest.class,
         IdentityProviderConfigurationFactoryTest.class,
         GoogleTranslationServiceIntegrationTest.class,
         Task240131UpdateLanguageVariableContentTypeTest.class,
@@ -573,6 +581,7 @@ import org.junit.runners.Suite.SuiteClasses;
         RoleResourceCountsIntegrationTest.class,
         RoleResourceUsersIntegrationTest.class,
         com.dotmarketing.common.reindex.ReindexDeleteJournalTest.class,
+        AiRetrievalPermissionTest.class,
 })
 
 public class MainSuite2b {

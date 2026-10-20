@@ -21,6 +21,7 @@ public class FilterDescriptorDataGen extends AbstractDataGen<FilterDescriptor> {
 
     private boolean dependencies = true;
     private boolean relationships = true;
+    private boolean relationshipsSecondLevel = false;
     private boolean forcePush = false;
     private boolean defaultFilter = true;
     private boolean clearFilterList = Boolean.TRUE;
@@ -36,6 +37,18 @@ public class FilterDescriptorDataGen extends AbstractDataGen<FilterDescriptor> {
 
     public FilterDescriptorDataGen relationships(boolean relationships) {
         this.relationships = relationships;
+        return this;
+    }
+
+    /**
+     * Sets whether the generated filter should include related content one extra level beyond
+     * its direct relationships (e.g. pushing A, related to B, related to C, also includes C).
+     *
+     * @param relationshipsSecondLevel {@code true} to enable second-level relationship traversal.
+     * @return The {@link FilterDescriptorDataGen} object.
+     */
+    public FilterDescriptorDataGen relationshipsSecondLevel(boolean relationshipsSecondLevel) {
+        this.relationshipsSecondLevel = relationshipsSecondLevel;
         return this;
     }
 
@@ -85,7 +98,8 @@ public class FilterDescriptorDataGen extends AbstractDataGen<FilterDescriptor> {
                 FilterDescriptor.DEPENDENCIES_KEY,dependencies,
                 FilterDescriptor.RELATIONSHIPS_KEY,relationships,
                 FilterDescriptor.FORCE_PUSH_KEY,forcePush,
-                FilterDescriptor.EXCLUDE_DEPENDENCY_CLASSES_KEY, excludeDependencyClasses
+                FilterDescriptor.EXCLUDE_DEPENDENCY_CLASSES_KEY, excludeDependencyClasses,
+                "relationshipsSecondLevel", relationshipsSecondLevel
         );
 
         try {

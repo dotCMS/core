@@ -3,7 +3,6 @@ package com.dotcms.rest.api.v1.index;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelper;
 import com.liferay.portal.language.LanguageUtil;
 import java.io.IOException;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,11 +31,11 @@ import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
-import com.dotcms.content.elasticsearch.business.ContentletIndexAPIImpl;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.content.elasticsearch.business.IndiciesAPI;
 import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexTimestamp;
 import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
 import com.dotcms.content.index.MigrationHaltReport;
 import com.dotcms.content.index.domain.NodeStats;
@@ -288,8 +287,9 @@ public class ESIndexResource {
             boolean live = init.getParamsMap().containsKey("live") ? Boolean.parseBoolean(init.getParamsMap().get("live")) : false;
             String indexName = init.getParamsMap().get("index");
 
-            if(indexName == null)
-                indexName=ContentletIndexAPIImpl.threadSafeTimestampFormatter.format(LocalDateTime.now());
+            if (indexName == null) {
+                indexName = IndexTimestamp.now();
+            }
             indexName = (live) ? "live_" + indexName : "working_" + indexName;
 
             APILocator.getContentletIndexAPI().createContentIndex(indexName, shards);

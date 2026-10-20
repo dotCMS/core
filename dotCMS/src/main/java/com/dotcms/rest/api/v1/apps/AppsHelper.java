@@ -654,6 +654,17 @@ class AppsHelper {
                     );
                 }
 
+                if (paramDescriptor != null && Type.JSON.equals(paramDescriptor.getType())
+                        && null != entry.getValue() && UtilMethods.isSet(entry.getValue().getValue())
+                        && !AppsUtil.isValidJson(new String(entry.getValue().getValue()))) {
+                    throw new IllegalArgumentException(
+                            String.format(
+                                    "Param `%s` is of type JSON but its value is not valid JSON.",
+                                    paramName
+                            )
+                    );
+                }
+
                 if (paramDescriptor != null && Type.BOOL.equals(paramDescriptor.getType())
                         && UtilMethods.isSet(entry.getValue())) {
                     final String asString = new String(entry.getValue().getValue());
