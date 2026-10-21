@@ -56,3 +56,5 @@ Release-25.07.10 LTS
 50. https://github.com/dotCMS/core/issues/37603 : Binary field stuck on infinite loading spinner when creating new content (legacy Dojo/JSP editor) #37603
 51. https://github.com/dotCMS/core/issues/35996 : security(deps): upgrade bundled DOMPurify in TinyMCE / Monaco / Swagger UI assets (CVE-2025-26791 follow-up) #35996
 52. https://github.com/dotCMS/core/issues/37956 : Backport the AWS SDK v1 upgrade (#37904) into 25.07 LTS #37956
+53. https://github.com/dotCMS/core/pull/37474 : fix(network): handle IPv6 addresses in IPUtils checks #37474
+53. https://github.com/dotCMS/core/pull/37474 : fix(network): handle IPv6 addresses in IPUtils checks #37474
