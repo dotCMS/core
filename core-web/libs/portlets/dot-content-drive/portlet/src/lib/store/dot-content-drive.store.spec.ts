@@ -1864,23 +1864,26 @@ describe('DotContentDriveStore - runs in progress on load', () => {
         expect(Object.keys(store.folderDeleteRuns())).toEqual(['delete-1']);
     });
 
-    it('should hold no upload completion for a restore that cannot happen without an author', () => {
-        // With no author nothing is ever restored to claim a held completion, so holding one would
-        // keep it for the portlet's lifetime.
+    it('should hold only a bounded number of upload completions when no restore can claim them', () => {
+        // With no author nothing is restored, but a batch's own answer can still claim its early
+        // completion (#37896). Bounded, so other tabs' completions are not kept for the portlet's
+        // lifetime.
         currentUser$ = throwError(() => new Error('boom'));
         build();
 
-        store.reportUploadCompleted('Upload', {
-            jobId: 'other-tab',
-            state: 'SUCCESS',
-            total: 1,
-            processed: 1,
-            successCount: 1,
-            failedCount: 0,
-            skippedCount: 0
-        } as DotBulkUploadCompletedEvent);
+        for (let index = 0; index <= 20; index++) {
+            store.reportUploadCompleted('Upload', {
+                jobId: `other-tab-${index}`,
+                state: 'SUCCESS',
+                total: 1,
+                processed: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0
+            } as DotBulkUploadCompletedEvent);
+        }
 
-        expect(store.unclaimedUploadCompletions()).toEqual({});
+        expect(Object.keys(store.unclaimedUploadCompletions())).toHaveLength(20);
     });
 });
 

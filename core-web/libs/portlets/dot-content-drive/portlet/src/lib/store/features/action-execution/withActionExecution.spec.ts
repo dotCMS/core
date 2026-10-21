@@ -1314,14 +1314,18 @@ describe('withActionExecution', () => {
                 expect(store.unclaimedUploadCompletions()).toEqual({});
             });
 
-            it('should stop holding untracked completions once the restore has run', () => {
-                // Held after it, they would only accumulate for the portlet's lifetime.
+            it('should hold only the most recent untracked completions after the restore', () => {
+                // Held after it too, for a batch whose answer is still on its way; bounded, so
+                // other tabs' batches cannot accumulate for the portlet's lifetime.
                 build();
                 store.restoreUploadRuns([]);
 
-                store.reportUploadCompleted('Upload', uploadCompleted('other-tab'));
+                for (let index = 0; index <= 20; index++) {
+                    store.reportUploadCompleted('Upload', uploadCompleted(`other-${index}`));
+                }
 
-                expect(store.unclaimedUploadCompletions()).toEqual({});
+                expect(Object.keys(store.unclaimedUploadCompletions())).toHaveLength(20);
+                expect(store.unclaimedUploadCompletions()).not.toHaveProperty('other-0');
             });
 
             it('should not report a batch this page is already tracking a second time', () => {
@@ -1595,6 +1599,43 @@ describe('withActionExecution', () => {
             expect(store.toolbarRunCount()).toBe(0);
         });
 
+        it('should report a batch whose completion arrived before the server answered', () => {
+            // A small batch can finish, and its completion be pushed, before the answer that
+            // accepted it reaches the page. Untracked then, it was dropped: no outcome, and the
+            // background run never ended (#37896, CI E2E "the folder's own rule refused the file").
+            build();
+            store.restoreUploadRuns([]);
+            store.reportUploadCompleted('Upload', completed());
+
+            const runId = store.startExternalRun({
+                operation: 'upload:upload-1',
+                total: 1,
+                targets: [] as string[]
+            });
+            store.trackUploadJob('upload-1', ['//demo.com/images'], runId, 'FILEASSET');
+
+            expect(store.toolbarRunCount()).toBe(0);
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Upload',
+                    successCount: 3,
+                    affectedFolders: ['//demo.com/images'],
+                    baseType: 'FILEASSET'
+                })
+            );
+            expect(store.unclaimedUploadCompletions()).toEqual({});
+        });
+
+        it('should still ignore an untracked batch that this page never claims', () => {
+            build();
+            store.restoreUploadRuns([]);
+
+            store.reportUploadCompleted('Upload', completed({ jobId: 'someone-elses' }));
+            store.trackUploadJob('upload-1');
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
         it('should settle a batch only once', () => {
             // A resumed run must not report twice, and the same event can be delivered again.
             build();
@@ -1626,6 +1667,33 @@ describe('withActionExecution', () => {
             refresh.mockReturnValue(of({ jobId: 'job-1' }));
             store.executeRefresh('Refresh', ['inode-1']);
         };
+
+        it('should report a run whose completion arrived before the server answered', () => {
+            // A reindex over a few rows can finish before its 202 reaches the page. Untracked
+            // then, the completion was dropped and the author never heard the run ended.
+            build();
+            const answer = new Subject<{ jobId: string }>();
+            refresh.mockReturnValue(answer);
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            store.reportRefreshCompleted('Refresh', completed());
+            answer.next({ jobId: 'job-1' });
+            answer.complete();
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({ actionName: 'Refresh', successCount: 2 })
+            );
+            expect(store.refreshJobIds()).toEqual([]);
+        });
+
+        it('should still ignore a run it never submitted', () => {
+            build();
+
+            store.reportRefreshCompleted('Refresh', completed({ jobId: 'someone-elses' }));
+            submitRefresh();
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
 
         it('should publish a result for a run this store submitted', () => {
             build();
@@ -1957,6 +2025,24 @@ describe('withActionExecution', () => {
             );
             store.executeFolderBulkDelete(['//d/a/', '//d/b/', '//d/c/'], ['inode-a']);
         };
+
+        it('should end the run when the completion arrived before the server answered', () => {
+            // A delete of a few empty folders can finish before its 202 reaches the page. The
+            // completion is reported either way; the late answer must not start tracking a run
+            // that is already over, or the folders stay marked in flight for good.
+            build();
+            const answer = new Subject<DotFolderBulkDeleteSubmitResponse>();
+            submitFolderBulkDelete.mockReturnValue(answer);
+            store.executeFolderBulkDelete(['//d/a/', '//d/b/', '//d/c/'], ['inode-a']);
+
+            store.reportFolderDeleteCompleted('Delete', completed());
+            answer.next({ jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status', submitted: 3 });
+            answer.complete();
+
+            expect(store.runs()).toEqual({});
+            expect(store.folderDeleteJobs()).toEqual({});
+            expect(store.actionExecutionResult()?.successCount).toBe(2);
+        });
 
         it('should report the SERVER’s counts, not the number submitted', () => {
             build();
