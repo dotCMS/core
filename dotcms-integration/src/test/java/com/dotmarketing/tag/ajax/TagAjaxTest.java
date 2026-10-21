@@ -21,7 +21,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Integration tests for {@link TagAjax#deleteTag(User, String)}.
+ * Integration tests for the permission checks in {@link TagAjax}.
  */
 public class TagAjaxTest extends IntegrationTestBase {
 
@@ -80,6 +80,54 @@ public class TagAjaxTest extends IntegrationTestBase {
         TagAjax.deleteTag(systemUser, tag.getTagId());
 
         assertNull("The tag should be deleted", tagAPI.getTagByTagId(tag.getTagId()));
+    }
+
+    /**
+     * Method to test: {@link TagAjax#checkCanEditUserTags(User, String)}
+     * Given: a user without admin rights or the Users portlet changes another user's tags
+     * Expected: a {@link DotSecurityException} is thrown
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_checkCanEditUserTags_otherUser_shouldThrow() throws Exception {
+        final User limitedUser = newLimitedUser();
+        final User otherUser = newLimitedUser();
+        try {
+            TagAjax.checkCanEditUserTags(limitedUser, otherUser.getUserId());
+        } finally {
+            UserDataGen.remove(limitedUser);
+            UserDataGen.remove(otherUser);
+        }
+    }
+
+    /**
+     * Method to test: {@link TagAjax#checkCanEditUserTags(User, String)}
+     * Given: a user without admin rights changes their own tags
+     * Expected: no exception
+     */
+    @Test
+    public void test_checkCanEditUserTags_ownTags_shouldPass() throws Exception {
+        final User limitedUser = newLimitedUser();
+        try {
+            TagAjax.checkCanEditUserTags(limitedUser, limitedUser.getUserId());
+        } finally {
+            UserDataGen.remove(limitedUser);
+        }
+    }
+
+    /**
+     * Method to test: {@link TagAjax#checkCanEditUserTags(User, String)}
+     * Given: an admin changes another user's tags
+     * Expected: no exception
+     */
+    @Test
+    public void test_checkCanEditUserTags_adminUser_shouldPass() throws Exception {
+        final User otherUser = newLimitedUser();
+        try {
+            TagAjax.checkCanEditUserTags(APILocator.getUserAPI().loadByUserByEmail(
+                    "admin@dotcms.com", systemUser, false), otherUser.getUserId());
+        } finally {
+            UserDataGen.remove(otherUser);
+        }
     }
 
     private static User newLimitedUser() {

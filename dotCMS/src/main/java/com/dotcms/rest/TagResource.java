@@ -709,7 +709,7 @@ public class TagResource {
     public Response deleteTagInodesByInode(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
             @Parameter(description = "Inode identifier to remove all tag associations from", required = true)
-            @PathParam("inode") final String inode) {
+            @PathParam("inode") final String inode) throws DotDataException {
 
         final InitDataObject initDataObject =
                 new WebResource.InitBuilder(webResource)
@@ -721,7 +721,7 @@ public class TagResource {
                         .init();
         final User user = initDataObject.getUser();
         Logger.debug(TagResource.class,()->String.format(" user %s is requesting delete tagsInode by inode %s ",user.getUserId(), inode));
-        if (!Try.of(() -> tagAPI.canDeleteTagInodesByInode(user, inode)).getOrElse(false)) {
+        if (!tagAPI.canDeleteTagInodesByInode(user, inode)) {
             throw new ForbiddenException(String.format(
                     "User '%s' lacks permission to remove the tags of inode '%s'", user.getUserId(), inode));
         }

@@ -735,8 +735,15 @@ public class TagAPIImpl implements TagAPI {
             return true;
         }
 
-        final Contentlet contentlet = Try.of(() -> APILocator.getContentletAPI()
-                .find(inode, APILocator.systemUser(), false)).getOrNull();
+        final Contentlet contentlet;
+        try {
+            contentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
+        } catch (final DotSecurityException e) {
+            // Not expected with the system user; deny rather than guess
+            Logger.warn(this, String.format("Could not load inode '%s' to check its tags: %s",
+                    inode, e.getMessage()));
+            return false;
+        }
         if (contentlet == null) {
             Logger.debug(this, () -> String.format(
                     "Inode '%s' is not a contentlet, only admins can remove its tags", inode));

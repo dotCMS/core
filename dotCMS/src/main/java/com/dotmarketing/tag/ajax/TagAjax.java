@@ -17,6 +17,7 @@ import com.dotmarketing.tag.business.TagAlreadyExistsException;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
@@ -256,6 +257,25 @@ public class TagAjax {
 	}
 
 	/**
+	 * Checks that a user may change the tags of a given user: the user themselves, an admin, or
+	 * a user with access to the Users portlet.
+	 *
+	 * @param user   user making the change
+	 * @param userId id of the user whose tags are changed
+	 * @throws DotSecurityException if the user can't change those tags
+	 * @throws DotDataException     if the user's portlet access can't be resolved
+	 */
+	static void checkCanEditUserTags(final User user, final String userId)
+			throws DotDataException, DotSecurityException {
+		if (user.isAdmin() || user.getUserId().equals(userId)
+				|| APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), user)) {
+			return;
+		}
+		throw new DotSecurityException(String.format(
+				"User '%s' lacks permission to change the tags of user '%s'", user.getUserId(), userId));
+	}
+
+	/**
 	 * Returns the user logged in to the current DWR request.
 	 *
 	 * @return the logged in user
@@ -281,6 +301,7 @@ public class TagAjax {
 	public Map<String, List<Tag>> deleteTag ( String tagNameOrId, String userId ) throws DotDataException, DotSecurityException {
 
 		try {
+			checkCanEditUserTags(getLoggedInUser(), userId);
 			Tag tag = APILocator.getTagAPI().getTagByTagId(tagNameOrId);
 
 			if ( !UtilMethods.isSet(tag) || !UtilMethods.isSet(tag.getTagId()) ) {
