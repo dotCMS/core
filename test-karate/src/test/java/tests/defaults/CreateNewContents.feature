@@ -55,4 +55,4 @@ Feature: Content Management API Tests
     Examples:
       | scenario          | useAuth | credentials               | expectedError                                                                            |
       | No Credentials    | false   | null                      | CONTENT_APIS_ALLOW_ANONYMOUS permission exceeded - system set to READ but WRITE was required |
-      | Wrong Credentials | true    | 'admin@dotcms.com:admin1' | Authentication credentials are required                                               |
+      | Basic Disabled    | true    | 'admin@dotcms.com:admin1' | Username and credential authentication is disabled                                    |
