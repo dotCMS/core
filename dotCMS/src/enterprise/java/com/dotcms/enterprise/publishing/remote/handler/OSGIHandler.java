@@ -67,11 +67,6 @@ public class OSGIHandler implements IHandler {
             throw new RuntimeException( "need an enterprise pro license to run this" );
         }
 
-        if ( !Boolean.TRUE.equals( config.get( PublisherConfig.Config.OSGI_DEPLOY_ALLOWED.name() ) ) ) {
-            Logger.warn( this, "Plugins in the bundle were ignored: this bundle may not deploy plugins" );
-            return;
-        }
-
         //Get the felix folder on this server
         final String felixLoadFolderPath = OSGIUtil.getInstance().getFelixDeployPath();
         final File felixLoadFolder = new File( felixLoadFolderPath );
@@ -82,6 +77,11 @@ public class OSGIHandler implements IHandler {
 
         //Verify if on this bundler we shipped some bundles
         if ( bundlerOSGIFolder.exists() ) {
+
+            if ( !Boolean.TRUE.equals( config.get( PublisherConfig.Config.OSGI_DEPLOY_ALLOWED.name() ) ) ) {
+                Logger.warn( this, "Plugins in the bundle were ignored: this bundle may not deploy plugins" );
+                return;
+            }
 
             //Search for the list of bungles inside this bundler
             final Collection<File> bundles = FileUtil.listFilesRecursively(
@@ -97,6 +97,9 @@ public class OSGIHandler implements IHandler {
 
                 //Get our wrapper
                 final OSGIWrapper wrapper = BundlerUtil.jsonToObject(wrapperDescriptor, OSGIWrapper.class);
+                if ( wrapper == null ) {
+                    throw new DotRuntimeException( "The bundle has an invalid plugin descriptor" );
+                }
                 final PushPublisherConfig.Operation operation = wrapper.getOperation();
                 final String bundleJarName = wrapper.getJarName();
 

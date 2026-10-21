@@ -9,6 +9,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.zip.GZIPInputStream;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
@@ -40,7 +41,8 @@ public final class BundlePluginAccess {
 
     /**
      * Tells whether a bundle archive has entries in its plugins folder. The archive is only listed,
-     * nothing is extracted.
+     * nothing is extracted. Entry names are normalized first, so a name with {@code .} or {@code ..}
+     * segments that resolves into the plugins folder counts.
      *
      * @param archive The {@code .tar.gz} bundle file.
      * @return {@code true} if at least one entry sits in the plugins folder; {@code false} if none
@@ -51,9 +53,11 @@ public final class BundlePluginAccess {
                 new BufferedInputStream(Files.newInputStream(archive.toPath()))))) {
             TarArchiveEntry entry;
             while ((entry = tar.getNextTarEntry()) != null) {
-                String name = entry.getName().replace('\\', '/');
-                while (name.startsWith("./") || name.startsWith("/")) {
-                    name = name.startsWith("./") ? name.substring(2) : name.substring(1);
+                // collapse "." and ".." the way extraction resolves them
+                String name = Paths.get(entry.getName().replace('\\', '/')).normalize()
+                        .toString().replace('\\', '/');
+                while (name.startsWith("/")) {
+                    name = name.substring(1);
                 }
                 if (name.equals(OSGIBundler.FOLDER_BUNDLES)
                         || name.startsWith(OSGIBundler.FOLDER_BUNDLES + "/")) {

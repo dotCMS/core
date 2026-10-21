@@ -259,6 +259,11 @@ public class BundlePublisher extends Publisher {
             }
             Logger.error(BundlePublisher.class, "Error publishing bundle with ID '" + bundleName + "': " + e.getMessage(), e);
 
+            if (metadataFailed) {
+                FileUtil.deltree(folderOut);
+                FileUtils.deleteQuietly(new File(bundlePath + bundleName));
+            }
+
             //Update audit
             try {
                 detail.setStatus(PublishAuditStatus.Status.FAILED_TO_PUBLISH.getCode());
@@ -276,10 +281,6 @@ public class BundlePublisher extends Publisher {
                 localSystemEventsAPI.asyncNotify(new PushPublishFailureOnReceiverEvent(config.getAssets(), e));
             } catch (DotPublisherException e1) {
                 throw new DotPublishingException("Cannot update audit of bundle with ID '" + bundleName + "': ", e);
-            }
-            if (metadataFailed) {
-                FileUtil.deltree(folderOut);
-                FileUtils.deleteQuietly(new File(bundlePath + bundleName));
             }
             throw new DotPublishingException("Error publishing bundle with ID '" + bundleName + "': " + e, e);
         } finally {
