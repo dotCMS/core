@@ -496,7 +496,7 @@
 	<textarea class="tokenDivClass" id="revealTokenDiv"></textarea>
 	<div class="buttonRow">
 		<button dojoType="dijit.form.Button" type="button" class=""
-			onClick="dijit.byId('revealJwtDialog').hide();"><%=LanguageUtil.get(pageContext, "close")%></button>
+			onClick="dojo.byId('revealTokenDiv').value=''; dijit.byId('revealJwtDialog').hide();"><%=LanguageUtil.get(pageContext, "close")%></button>
 	</div>
 </div>
 
