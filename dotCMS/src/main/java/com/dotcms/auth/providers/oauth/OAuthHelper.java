@@ -14,6 +14,7 @@ import com.google.common.cache.CacheBuilder;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.SecurityUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -303,11 +304,13 @@ public class OAuthHelper {
             if (u != null) {
                 final boolean trustUnflagged = config != null && config.trustEmailWithoutVerifiedClaim;
                 if (Boolean.TRUE.equals(emailVerifiedClaim) || (emailVerifiedClaim == null && trustUnflagged)) {
-                    SecurityLogger.logInfo(OAuthHelper.class, "OAuth identity from issuer '" + issuer
+                    SecurityLogger.logInfo(OAuthHelper.class, "OAuth identity from issuer '"
+                            + SecurityUtils.sanitizeForLogging(issuer)
                             + "' linked to existing user " + u.getUserId() + " by email");
                     return u;
                 }
-                SecurityLogger.logWarn(OAuthHelper.class, "OAuth identity from issuer '" + issuer
+                SecurityLogger.logWarn(OAuthHelper.class, "OAuth identity from issuer '"
+                        + SecurityUtils.sanitizeForLogging(issuer)
                         + "' matched existing user " + u.getUserId() + " by email but was NOT linked: "
                         + (emailVerifiedClaim == null
                         ? "the IdP sent no email_verified claim and "
