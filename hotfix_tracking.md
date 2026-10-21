@@ -58,3 +58,4 @@ Release-25.07.10 LTS
 52. https://github.com/dotCMS/core/issues/37956 : Backport the AWS SDK v1 upgrade (#37904) into 25.07 LTS #37956
 53. https://github.com/dotCMS/core/pull/37474 : fix(network): handle IPv6 addresses in IPUtils checks #37474
 53. https://github.com/dotCMS/core/pull/37474 : fix(network): handle IPv6 addresses in IPUtils checks #37474
+54. https://github.com/dotCMS/core/pull/37549 : fix(velocity): harden SecureIntrospector restricted-class coverage #37549
