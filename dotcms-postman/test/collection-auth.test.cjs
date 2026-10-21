@@ -282,6 +282,37 @@ test('DAV CRUD keeps username/API-JWT auth, REST setup uses Bearer, no conflicti
   assert.equal(value(setup.auth, 'token'), '{{jwt}}');
 });
 
+test('List directories resolves its expected href from the hostName variable, not a literal host', () => {
+  const r = find('WebDav.postman_collection.json', 'Test WebDav conection / List directories');
+  const events = (r.node.event || []).filter((e) => e.listen === 'test');
+  assert.ok(events.length, 'Keep the List directories response test');
+  // Run the real collection script. xml2Json is a structured stub so this isolates the href assertion, not XML parsing.
+  const run = (hostName, responseHref) => {
+    const failures = [], statuses = [];
+    const replaceIn = (text) => String(text).replace(/\{\{([^{}]+)\}\}/g,
+      (match, key) => (key === 'hostName' ? hostName : match));
+    const response = { status: 207,
+      text: () => `<D:multistatus><D:response><D:href>${responseHref}</D:href></D:response></D:multistatus>`,
+      to: { have: { status: (code) => { statuses.push(code); assert.equal(response.status, code); } } } };
+    const pm = { variables: { get: (key) => key === 'hostName' ? hostName : undefined, replaceIn },
+      response, test: (name, fn) => { try { fn(); } catch (error) { failures.push({ name, error }); } },
+      expect: (actual) => ({ to: { eql: (expected) => assert.strictEqual(actual, expected) } }) };
+    const xml2Json = () => ({ 'd:multistatus': { 'd:response': [{ 'd:href': responseHref }] } });
+    for (const event of events) vm.runInNewContext(eventCode(event), { pm, xml2Json });
+    return { failures, statuses };
+  };
+  for (const hostName of ['default', 'custom.example.test', 'demo.dotcms.com']) {
+    const { failures, statuses } = run(hostName, `/webdav/live/1/${hostName}/`);
+    assert.deepEqual(statuses, [207], `Keep the 207 assertion for ${hostName}`);
+    assert.deepEqual(failures, [], `Accept the ${hostName} site instead of the demo.dotcms.com literal`);
+  }
+  // Negative control: a response href that disagrees with the resolved variable must still fail.
+  const wrong = run('custom.example.test', '/webdav/live/1/demo.dotcms.com/');
+  assert.deepEqual(wrong.statuses, [207]);
+  assert.equal(wrong.failures.length, 1, 'The XML href assertion must reject a mismatched response host');
+  assert.match(wrong.failures[0].name, /Validate the XML response/);
+});
+
 test('representative noauth/invalid/expired/custom-token requests are not elevated to admin', () => {
   const anonymous = [
     ['GraphQLTests.json', 'Page API / Checking Layout and Container Properties / Containers Property is Returned With Anon User'],

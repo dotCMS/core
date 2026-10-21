@@ -108,7 +108,7 @@
 									"// Validate the XML response",
 									"pm.test(\"Validate the XML response\", function () {",
 									"    var responseXML = xml2Json(pm.response.text());",
-									"    var expectedHrefValue = \"/webdav/live/1/demo.dotcms.com/\";",
+									"    var expectedHrefValue = pm.variables.replaceIn(\"/webdav/live/1/{{hostName}}/\");",
 									"    var hrefValue = responseXML['d:multistatus']['d:response'][0]['d:href'];",
 									"    pm.expect(hrefValue).to.eql(expectedHrefValue);",
 									"});"
