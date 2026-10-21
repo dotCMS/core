@@ -13,6 +13,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.NoSuchCompanyException;
 import com.liferay.portal.SystemException;
@@ -20,6 +21,7 @@ import com.liferay.portal.ejb.CompanyUtil;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -29,6 +31,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -47,10 +50,30 @@ import static org.mockito.Mockito.when;
 
 public class ApiTokenResourceTest {
 
+    private static final List<User> createdUsers = new ArrayList<>();
+    private static final List<ApiToken> createdTokens = new ArrayList<>();
+
     @BeforeClass
     public static void prepare() throws Exception{
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+    }
+
+    /**
+     * Deletes the users and tokens created by the tests that go through {@link #newUser()} and
+     * {@link #persistToken(User)}, tokens first so no token outlives its owner.
+     */
+    @AfterClass
+    public static void cleanUp() {
+
+        for (final ApiToken token : createdTokens) {
+            try {
+                APILocator.getApiTokenAPI().deleteToken(token, APILocator.systemUser());
+            } catch (Exception e) {
+                Logger.warn(ApiTokenResourceTest.class, "Unable to delete token " + token.getId(), e);
+            }
+        }
+        createdUsers.forEach(UserDataGen::remove);
     }
 
     /**
@@ -208,7 +231,7 @@ public class ApiTokenResourceTest {
     @Test
     public void test_getApiTokens_owner_listsOwnTokenWithoutJwt() throws Exception {
 
-        final User owner = new UserDataGen().active(true).nextPersisted();
+        final User owner = newUser();
         final ApiToken token = persistToken(owner);
         final String jwt = APILocator.getApiTokenAPI().getJWT(token, owner);
 
@@ -228,7 +251,7 @@ public class ApiTokenResourceTest {
     @Test
     public void test_getApiTokens_admin_listsOtherUsersTokenWithoutJwt() throws Exception {
 
-        final User owner = new UserDataGen().active(true).nextPersisted();
+        final User owner = newUser();
         final User admin = newCmsAdmin();
         final ApiToken token = persistToken(owner);
         final String jwt = APILocator.getApiTokenAPI().getJWT(token, owner);
@@ -249,8 +272,8 @@ public class ApiTokenResourceTest {
     @Test
     public void test_getApiTokens_otherNonAdminUser_seesNoTokens() throws Exception {
 
-        final User owner = new UserDataGen().active(true).nextPersisted();
-        final User other = new UserDataGen().active(true).nextPersisted();
+        final User owner = newUser();
+        final User other = newUser();
         persistToken(owner);
 
         final Response restResponse = resourceFor(other).getApiTokens(
@@ -268,8 +291,8 @@ public class ApiTokenResourceTest {
     @Test
     public void test_revokeApiToken_otherNonAdminUser_isRejected() throws Exception {
 
-        final User owner = new UserDataGen().active(true).nextPersisted();
-        final User other = new UserDataGen().active(true).nextPersisted();
+        final User owner = newUser();
+        final User other = newUser();
         final ApiToken token = persistToken(owner);
 
         assertThrows(DotStateException.class, () -> resourceFor(other).revokeApiToken(
@@ -286,8 +309,8 @@ public class ApiTokenResourceTest {
     @Test
     public void test_deleteApiToken_otherNonAdminUser_isRejected() throws Exception {
 
-        final User owner = new UserDataGen().active(true).nextPersisted();
-        final User other = new UserDataGen().active(true).nextPersisted();
+        final User owner = newUser();
+        final User other = newUser();
         final ApiToken token = persistToken(owner);
 
         assertThrows(DotStateException.class, () -> resourceFor(other).deleteApiToken(
@@ -304,7 +327,7 @@ public class ApiTokenResourceTest {
     @Test
     public void test_revokeApiToken_admin_canRevokeOtherUsersToken() throws Exception {
 
-        final User owner = new UserDataGen().active(true).nextPersisted();
+        final User owner = newUser();
         final User admin = newCmsAdmin();
         final ApiToken token = persistToken(owner);
 
@@ -325,15 +348,24 @@ public class ApiTokenResourceTest {
         return new ApiTokenResource(APILocator.getApiTokenAPI(), webResource);
     }
 
+    private static User newUser() throws DotDataException {
+
+        final User user = new UserDataGen().active(true).nextPersisted();
+        createdUsers.add(user);
+        return user;
+    }
+
     private static ApiToken persistToken(final User owner) {
 
-        return APILocator.getApiTokenAPI().persistApiToken(owner.getUserId(),
+        final ApiToken token = APILocator.getApiTokenAPI().persistApiToken(owner.getUserId(),
                 Date.from(Instant.now().plus(1, ChronoUnit.DAYS)), owner.getUserId(), "127.0.0.1");
+        createdTokens.add(token);
+        return token;
     }
 
     private static User newCmsAdmin() throws DotDataException {
 
-        final User admin = new UserDataGen().active(true).nextPersisted();
+        final User admin = newUser();
         APILocator.getRoleAPI().addRoleToUser(APILocator.getRoleAPI().loadCMSAdminRole(), admin);
         return admin;
     }
