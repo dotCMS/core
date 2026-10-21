@@ -24,6 +24,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Map;
@@ -242,7 +243,7 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
             final String graphResponseFromCache) throws IOException {
         corsHeaders.forEach(response::setHeader);
         response.setContentType("application/json;charset=UTF-8");
-        response.setContentLength(graphResponseFromCache.getBytes().length);
+        response.setContentLength(graphResponseFromCache.getBytes(StandardCharsets.UTF_8).length);
         response.getWriter().write(graphResponseFromCache);
     }
 
