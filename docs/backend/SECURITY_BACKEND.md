@@ -94,11 +94,17 @@ public class MySecureForm {
 
 ### Programmatic Basic authentication
 
-`ALLOW_BASIC_AUTH` defaults to `NONE`. Set the environment override with
-`DOT_ALLOW_BASIC_AUTH`; changing an environment variable requires restarting the instance.
-The policy reads through `Config` for each authentication attempt and follows its normal
-property precedence. Mode names ignore surrounding whitespace and case. `FALSE`, missing,
-empty and unrecognized values disable Basic authentication rather than enabling a legacy mode.
+`ALLOW_BASIC_AUTH` defaults to `NONE` and is read through `Config` for each authentication
+attempt, not cached at startup. Administrators can change it at runtime through
+`POST /api/v1/system-table`, for example with `{"key":"ALLOW_BASIC_AUTH","value":"NONE"}`.
+System-table changes require no restart and apply to subsequent authentication attempts;
+existing sessions are not revoked.
+
+Normal configuration precedence still applies: an explicit `DOT_ALLOW_BASIC_AUTH` environment
+override wins over the system table. Changing the process environment requires restarting the
+instance; do not pin that override if administrators need to change this setting at runtime.
+Mode names ignore surrounding whitespace and case. `FALSE`, missing, empty and unrecognized
+values disable Basic authentication rather than enabling a legacy mode.
 
 | Mode | Username/account password | Username/API JWT |
 | --- | --- | --- |

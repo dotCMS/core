@@ -17732,7 +17732,7 @@
 					"        method: 'GET', header: header }, function (err, response) {",
 					"        if (err || response.code !== 200) throw new Error('Fixture user lookup failed');",
 					"        const users = response.json().entity;",
-					"        const matches = Array.isArray(users) ? users.filter(u => u.emailAddress.toLowerCase() === email) : [];",
+					"        const matches = Array.isArray(users) ? users.filter(u => typeof u.emailAddress === 'string' && u.emailAddress.toLowerCase() === email) : [];",
 					"        if (matches.length !== 1 || !matches[0].id) throw new Error('Fixture user not uniquely resolved');",
 					"        pm.sendRequest({ url: pm.environment.get('serverURL') + '/api/v1/apitoken', method: 'POST', header: header,",
 					"            body: { mode: 'raw', raw: JSON.stringify({ userId: matches[0].id, expirationSeconds: 60000,",

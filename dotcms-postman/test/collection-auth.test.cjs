@@ -204,7 +204,8 @@ test('workflow resolves exact starter emails and provisions canonical chris/bill
       if (request.method === 'GET') {
         const email = new URL(request.url).searchParams.get('query');
         const actor = email.split('@')[0];
-        data = { entity: [{ id: 'dotcms.org.1', emailAddress: 'admin@dotcms.com' },
+        data = { entity: [{}, { id: 'incomplete-user', emailAddress: null },
+          { id: 'dotcms.org.1', emailAddress: 'admin@dotcms.com' },
           { id: `canonical-${actor}-id`, emailAddress: email }] };
       } else {
         const subject = JSON.parse(request.body.raw).userId;
