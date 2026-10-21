@@ -11,3 +11,4 @@ Feature: Validate banner images
     And match responseHeaders contains { 'Content-Disposition': '#notnull' }
     And match responseHeaders['Content-Disposition'][0] contains 'inline'
     And match responseHeaders['Content-Disposition'][0] contains 'filename="' + imageName + '"'
+    And match responseBytes == read('classpath:resources/ftm/' + imageName)
