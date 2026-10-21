@@ -146,7 +146,6 @@ import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.filters.CMSUrlUtilIntegrationTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
-import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
 import com.dotmarketing.portlets.browser.BrowserUtilTest;
 import com.dotmarketing.portlets.browser.ajax.BrowserAjaxTest;
 import com.dotmarketing.portlets.categories.business.CategoryFactoryTest;
@@ -303,7 +302,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task201102UpdateColumnSitelicTableTest.class,
         DependencyManagerTest.class,
         com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class,
-        GenericBundleActivatorIntegrationTest.class,
         SAMLHelperTest.class,
         PermissionHelperTest.class,
         ResetPasswordTokenUtilTest.class,
