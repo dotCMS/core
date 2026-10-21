@@ -182,13 +182,19 @@ recovery archives like the other deletion paths.
 
 The job carries the exact binary and metadata paths stored for the inode when it was recorded, so
 recording it lists the inode's objects inside the deletion transaction, and a storage listing
-failure aborts the deletion. The worker refuses while a content version with that inode exists,
-then deletes the recorded metadata before the recorded source objects, so a failure leaves the
-sources available for a retry. It never deletes by prefix: an inode can be re-created after the
-deletion (push publishing keeps the sender's inodes), and the revisions it uploads survive. Objects
-uploaded under the deleted inode by a transaction that overlapped the deletion are therefore not
-reclaimed. The inode's completed renditions and legacy image cache are still removed whole, since
-they regenerate on demand. S3 failures use the job queue's retry policy; after retries are
+failure aborts the deletion. The worker deletes the recorded metadata before the recorded source
+objects, so a failure leaves the sources available for a retry. It never deletes by prefix: an
+inode can be re-created after the deletion (push publishing keeps the sender's inodes), and the
+revisions it uploads survive. Objects uploaded under the deleted inode by a transaction that
+overlapped the deletion are therefore not reclaimed. The inode's completed renditions and legacy
+image cache are removed whole, since they regenerate on demand.
+
+If a content version with that inode exists again when the job runs, the worker locks that row
+and deletes only the recorded revision files (`.revisions/<uuid>/` binaries and the metadata in
+those folders) whose folder the row does not reference through any `storageKey` or
+`metadataStorageKey`. It keeps recorded older-layout binaries and metadata, renditions and the
+legacy image cache, logs what it kept, and completes. If the row's JSON is empty or cannot be
+read, it keeps every recorded file. S3 failures use the job queue's retry policy; after retries are
 exhausted the job stays failed and can be retried through the job management API. Direct
 submissions through the public job endpoint are rejected. With the flag off, workers do not touch
 storage and pending jobs are not silently completed.
@@ -203,7 +209,12 @@ Cleanup runs as a queued job, never inside the caller's request. It handles one 
 transaction: it locks that row, rechecks that it was not edited after the field was removed,
 uploads and verifies a recovery ZIP, clears the old field reference, records the exact cleanup
 inventory, and advances the job's saved cursor, all in the row's own commit. Only that row is locked
-while its archive uploads, and a retry resumes after the last committed row. A separate step checks that
+while its archive uploads, and a retry resumes after the last committed row. A row whose field
+points at a file that was already gone (a binary missing from the storage listing, or metadata
+that exists neither locally nor in S3) is still cleared: the file is listed in the ZIP's
+`missing.json` and logged as a warning, and it stays out of the recorded cleanup inventory. A
+storage error, a listed file that disappears before it is archived, or an archive S3 does not
+confirm still fails the row, and the job retries it. A separate step checks that
 the archived files are no longer referenced and that the ZIP is still available before deleting
 metadata, originals and renditions. It never deletes a whole field prefix, so uploads made after
 the inventory was captured survive a retry. Direct submissions through the public job endpoint are
@@ -217,7 +228,11 @@ writes a verified S3 recovery ZIP before removing content. Archives live in the
 `deleted-content-backups` group at `<identifier>/<inode>/<uuid>.zip`. Full destruction and
 all-version deletion archive each version, deleting one language archives each version in that
 language, and single-version deletion archives only that version. A failed backup aborts the
-deletion. Binary cleanup never deletes recovery archives. Field trash ZIPs use the same group and
+deletion: an S3 error, a read or write error, or an upload S3 does not confirm. A file that was
+already gone before the deletion does not: a binary with no local copy and no S3 copy, or metadata
+the row points to that no longer exists, is left out of the ZIP, listed in a `missing.json` entry
+(`kind`, `field`, and the `path` it would have had) and logged as a warning. Binary cleanup never
+deletes recovery archives. Field trash ZIPs use the same group and
 layout.
 
 Each ZIP contains `contentlet.json` (the row's complete typed field data), `contentlet.xml`, and
@@ -320,12 +335,22 @@ unreferenced object behind.
 
 With the flag on, the local asset directory is a cache that `BinaryCacheEvictionJob` can trim.
 The job is scheduled only when `BINARY_CACHE_EVICTION_CRON` is set. Each node has its own cache, so
-the job runs on every node from the node-local scheduled thread pool, not from the clustered Quartz
-scheduler, which would fire it on only one node per run. The first run is at least ten minutes after
-startup, and each run schedules the next one when it finishes, so runs never overlap. A run holds
-one thread of the shared scheduled pool (`SCHEDULER_COREPOOLSIZE`, default 5) while it works. It
-evicts the oldest files once the cache exceeds `BINARY_CACHE_MAX_SIZE_MB` (default 5000), skipping
-files newer than `BINARY_CACHE_EVICTION_MIN_AGE_MINUTES` (default 60).
+the job runs on every node from its own node-local thread (`binary-cache-eviction`), not from the
+clustered Quartz scheduler, which would fire it on only one node per run. The first run is at least
+ten minutes after startup, and each run schedules the next one when it finishes, so runs never
+overlap. Because a run can take minutes, it does not use the shared scheduled pool. Once the
+cache exceeds `BINARY_CACHE_MAX_SIZE_MB` (default 5000), it evicts the files least recently read by
+anything first, with API reads always recorded, skipping files read or written within
+`BINARY_CACHE_EVICTION_MIN_AGE_MINUTES` (default 60). The order comes from each file's access time.
+The binary API sets the access time explicitly when it hands a cached file to a reader, at most once
+a minute per file, so API reads count on `noatime` mounts too. Other reads count only where the
+mount updates access times: on default `relatime` mounts the kernel also records a read once the
+access time is over 24 hours old, which includes backup scans and the job's own verification of a
+file it then keeps. The API does not touch the modification time, because HTTP ETags and
+Last-Modified headers are built from it.
+
+If a run ends with the cache still over its limit and no file evicted, the job logs a warning with
+the number of candidates it kept.
 
 A file is evicted only when S3 holds a verified copy under the exact key. For `binary-assets` and
 `generated-assets`, the key must hold a reference whose SHA-256 matches the local file, and the
@@ -341,7 +366,9 @@ never enter the budget. Files without a verified S3 copy stay local, so the cach
 limit safely; eviction does not backfill.
 
 Callers that hold a `File` across a read must take `acquireCacheLease()` before resolving it and
-close the lease on the same thread after use. Verification runs with no lock held, so readers never
+close the lease on the same thread after use. If a lease or storage operation is active when the job
+reaches a file, verification is skipped entirely and the file is kept, so a busy node does not
+download objects it cannot evict. Otherwise verification runs with no lock held, so readers never
 wait for it. Only the final check and delete take the eviction lock, and they do not wait for it: if
 a lease or storage operation is active at that moment, or the file changed during verification, the
 file is kept for a later run. Sustained activity can therefore defer eviction on that node.
@@ -443,7 +470,7 @@ docker run -d --rm --name binary-cleanup-postgres-test \
   -e POSTGRES_DB=binary_storage_test postgres:16-alpine
 
 ./mvnw test -pl :dotcms-core -Dmaven.build.cache.enabled=false \
-  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest,BinaryAssetCleanupTransactionTest,BinaryAssetCleanupProcessorTest,ContentletBackupStorageGateTest,BinaryFieldCleanupProcessorTest,AssetJobEventSerializationTest,BinaryAssetBackfillCheckpointTest,ImportStarterWorkflowCleanupTest,BinaryAssetBackfillProcessorTest,BinaryAssetBackfillTest,ExportStarterFailureTest \
+  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest,BinaryAssetCleanupTransactionTest,BinaryAssetCleanupProcessorTest,ContentletBackupStorageGateTest,ContentletBackupStorageMissingSourceTest,ContentletBackupStorageFieldArchiveTest,BinaryFieldCleanupProcessorTest,AssetJobEventSerializationTest,BinaryAssetBackfillCheckpointTest,ImportStarterWorkflowCleanupTest,BinaryAssetBackfillProcessorTest,BinaryAssetBackfillTest,ExportStarterFailureTest \
   -Ds3.test.endpoint=http://127.0.0.1:19002 \
   -Ds3.test.jdbc=jdbc:postgresql://127.0.0.1:19003/binary_storage_test
 
@@ -451,20 +478,41 @@ docker stop binary-s3-test binary-cleanup-postgres-test
 ```
 
 The CMS integration checks are registered in `Junit5Suite1` and run against the full integration
-stack:
+stack. Their flag-on cases are skipped unless `s3.cms.enabled=true` is set, and that property must
+match `DOT_FEATURE_FLAG_S3_ASSET_STORAGE`. They need a MinIO bucket of their own, so start the
+same disposable MinIO as above (or keep it running) and create the bucket first. The metadata
+chain must include S3 (`DOT_STORAGE_FILE_METADATA_DEFAULT_CHAIN=FILE_SYSTEM,S3`); without it the
+backup cases fail with "Metadata backfill requires a durable provider in the configured metadata
+chain".
 
 ```sh
+docker run -d --rm --name binary-s3-test \
+  -p 127.0.0.1:19002:9000 \
+  -e MINIO_ROOT_USER=binary-storage-test \
+  -e MINIO_ROOT_PASSWORD=binary-storage-test \
+  cgr.dev/chainguard/minio@sha256:dc455cdd4db6e390b1b26514f15ff37681a777bf8dab41aac445a0259f751e56 \
+  server /data
+
+curl --aws-sigv4 "aws:amz:us-east-1:s3" --user binary-storage-test:binary-storage-test \
+  -X PUT http://127.0.0.1:19002/binary-storage-it
+
 ./mvnw install -pl :dotcms-core --am -DskipTests -Ddocker.skip
 ./mvnw verify -pl :dotcms-integration -Dmaven.build.cache.enabled=false -Dcoreit.test.skip=false \
-  -Dit.test=BinaryAssetStorageIntegrationTest,ContentletBackupStorageTest,SharedAssetStorageIntegrationTest,BinaryAssetStarterRestoreTest
+  -Dit.test=BinaryAssetStorageIntegrationTest,ContentletBackupStorageTest,SharedAssetStorageIntegrationTest,BinaryAssetStarterRestoreTest \
+  -Ds3.cms.enabled=true \
+  -DDOT_FEATURE_FLAG_S3_ASSET_STORAGE=true \
+  -DDOT_STORAGE_FILE_METADATA_DEFAULT_CHAIN=FILE_SYSTEM,S3 \
+  -DDOT_STORAGE_FILE_METADATA_S3_ENDPOINT=http://127.0.0.1:19002 \
+  -DDOT_STORAGE_FILE_METADATA_S3_BUCKET_NAME=binary-storage-it \
+  -DDOT_STORAGE_FILE_METADATA_S3_BUCKET_REGION=us-east-1 \
+  -DDOT_STORAGE_FILE_METADATA_S3_ACCESS_KEY=binary-storage-test \
+  -DDOT_STORAGE_FILE_METADATA_S3_SECRET_ACCESS_KEY=binary-storage-test
+
+docker stop binary-s3-test
 ```
 
-These default to flag-off mode, where the S3 cases are skipped. To run the S3 cases, create a
-bucket in the disposable MinIO (for example `mc mb local/s3-cms-it` inside the container) and add
-`-Dit.test.forkcount=1 -Ds3.cms.enabled=true -DDOT_FEATURE_FLAG_S3_ASSET_STORAGE=true
--DDOT_BINARY_ASSET_STORAGE_TYPE=BINARY_CHAIN -DDOT_STORAGE_FILE_METADATA_DEFAULT_CHAIN=FILE_SYSTEM,S3`
-plus the `DOT_STORAGE_FILE_METADATA_S3_BUCKET_NAME`, `_BUCKET_REGION`, `_ACCESS_KEY`,
-`_SECRET_ACCESS_KEY` and `_ENDPOINT` properties.
+A green build is not proof that these checks ran: confirm `Tests run:` and `Skipped:` in
+`dotcms-integration/target/failsafe-reports/*.txt`.
 
 `BinaryAssetStarterRestoreTest` is an opt-in starter acceptance test that runs in phases against
 the same bucket. Add `-Ds3.starter.restore.enabled=true` and a persistent

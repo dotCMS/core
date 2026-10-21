@@ -85,7 +85,6 @@ class BinaryAssetCleanupTransactionTest {
                 assertEquals(1, count(observer, "job"));
                 assertEquals(1, count(observer, "job_history"));
                 verify(binaries, never()).deleteBinaryPaths(anyString(), anyString(), anyList());
-                verify(binaries, never()).deleteAllBinaries(anyString());
             } finally {
                 writer.rollback();
                 writer.setAutoCommit(true);

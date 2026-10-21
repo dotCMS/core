@@ -5773,6 +5773,32 @@ paths:
       summary: Retrieve whitelisted configuration values
       tags:
       - System Configuration
+  /v1/configuration/dotcmsLogo:
+    get:
+      description: "Returns the /dA/ path of the stock dotCMS login logo. The path\
+        \ can be saved as loginScreenLogo through PUT /api/v1/configuration/branding.\
+        \ Read-only: no content and no company setting is created or changed. Returns\
+        \ 404 when this instance doesn't have the stock logo, or it isn't published,\
+        \ readable by anonymous users, or the stock dotCMS image."
+      operationId: getDotcmsLogo
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Path of the stock dotCMS login logo
+        "401":
+          content:
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
+        "404":
+          content:
+            application/json: {}
+          description: The dotCMS logo is not available on this instance
+      summary: Get the stock dotCMS login logo
+      tags:
+      - System Configuration
   /v1/configuration/license:
     get:
       description: "Returns the title, licensor, change date, change license and full\

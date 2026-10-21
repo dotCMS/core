@@ -71,7 +71,6 @@ class BinaryAssetCleanupProcessorTest {
                     .thenThrow(new DotDataException("database unavailable"));
             assertThrows(DotDataException.class, () -> BinaryAssetCleanupProcessor.enqueue(INODE));
             verify(storage, never()).deleteBinaryPaths(anyString(), anyString(), anyList());
-            verify(storage, never()).deleteAllBinaries(anyString());
         }
     }
 
@@ -126,16 +125,96 @@ class BinaryAssetCleanupProcessorTest {
             verify(storage).deleteBinaryPaths(INODE, "heroImage", List.of(OLD_REVISION));
             verify(storage, never()).deleteBinaryPaths(anyString(), anyString(),
                     argThat(paths -> paths.contains(NEW_REVISION)));
-            verify(storage, never()).deleteAllBinaries(anyString());
         }
     }
 
-    @Test void referencedVersionIsNeverDeleted() throws Exception {
+    private static final String KEPT_REVISION =
+            "a/b/abc123/heroImage/.revisions/33333333-3333-3333-3333-333333333333/kept.png";
+    private static final String LEGACY_BINARY = "a/b/abc123/heroImage/legacy.png";
+    private static final String LEGACY_METADATA = "/a/b/abc123/heroImage-metadata.json";
+
+    /**
+     * Runs the processor against a contentlet row with this inode that exists again, carrying
+     * {@code json}, with storage, metadata and transaction calls mocked.
+     */
+    private void processReturnedInode(final Job job, final String json, final BinaryAssetStorageAPI storage,
+                                      final FileMetadataAPI metadata, final FileAssetAPI files) throws Exception {
+        final Map<String, Object> row = new java.util.HashMap<>();
+        row.put("inode", INODE);
+        row.put("contentlet_as_json", json);
+        final String previousAssets = Config.getStringProperty("ASSET_REAL_PATH", null);
+        Config.setProperty("ASSET_REAL_PATH", root.toString());
         try (var queries = mockConstruction(DotConnect.class, withSettings().defaultAnswer(RETURNS_SELF),
-                     (query, context) -> when(query.loadObjectResults()).thenReturn(List.of(Map.of("inode", INODE))));
+                     (query, context) -> when(query.loadObjectResults()).thenReturn(List.of(row)));
+             var transactions = mockStatic(com.dotmarketing.db.LocalTransaction.class);
              var locator = mockStatic(APILocator.class)) {
+            transactions.when(() -> com.dotmarketing.db.LocalTransaction.wrapReturn(any())).thenAnswer(call ->
+                    ((com.dotcms.util.ReturnableDelegate<?>) call.getArgument(0)).execute());
+            locator.when(APILocator::getBinaryAssetStorageAPI).thenReturn(storage);
+            locator.when(APILocator::getFileMetadataAPI).thenReturn(metadata);
+            locator.when(APILocator::getFileAssetAPI).thenReturn(files);
+            new BinaryAssetCleanupProcessor().process(job);
+        } finally {
+            Config.setProperty("ASSET_REAL_PATH", previousAssets);
+        }
+    }
+
+    @Test void returnedInodeKeepsWhatItReferencesAndDeletesOtherRecordedRevisions() throws Exception {
+        final var storage = mock(BinaryAssetStorageAPI.class);
+        final var metadata = mock(FileMetadataAPI.class);
+        final var files = mock(FileAssetAPI.class);
+        when(files.getRealAssetsRootPath()).thenReturn(root.toString());
+        final Path cache = root.resolve("cache/a/b/abc123/old-image.png");
+        Files.createDirectories(cache.getParent());
+        Files.writeString(cache, "cached pixels");
+        // The filesystem lists metadata in lower case; a custom key in the kept revision's folder.
+        final String keptMetadata = "/" + KEPT_REVISION.toLowerCase() + ".44444444-4444-4444-4444-444444444444"
+                + FileMetadataAPI.METADATA_JSON;
+        final Job job = job(Map.of("inode", INODE,
+                "binaries", List.of(OLD_REVISION, KEPT_REVISION, LEGACY_BINARY),
+                "metadata", List.of(OLD_METADATA, "/" + KEPT_REVISION + FileMetadataAPI.METADATA_JSON,
+                        keptMetadata, LEGACY_METADATA)));
+        // The returned row references one recorded revision and a new one recorded nowhere.
+        final String json = "{\"fields\":{"
+                + "\"heroImage\":{\"type\":\"Binary\",\"value\":\"kept.png\",\"storageKey\":\"" + KEPT_REVISION + "\"},"
+                + "\"attachment\":{\"type\":\"Binary\",\"value\":\"new.png\",\"storageKey\":"
+                + "\"a/b/abc123/attachment/.revisions/55555555-5555-5555-5555-555555555555/new.png\"}}}";
+
+        processReturnedInode(job, json, storage, metadata, files);
+
+        verify(metadata).removeMetadataPaths(INODE, List.of(OLD_METADATA));
+        verify(storage).deleteBinaryPaths(INODE, "heroImage", List.of(OLD_REVISION));
+        verify(storage, times(1)).deleteBinaryPaths(anyString(), anyString(), anyList());
+        verify(storage, never()).deleteGeneratedFiles(anyString());
+        assertTrue(Files.exists(cache), "Legacy cache stays while the inode exists");
+    }
+
+    @Test void returnedInodeWithoutReadableReferencesKeepsEverything() throws Exception {
+        final var storage = mock(BinaryAssetStorageAPI.class);
+        final var metadata = mock(FileMetadataAPI.class);
+        final var files = mock(FileAssetAPI.class);
+        processReturnedInode(job(), null, storage, metadata, files);
+        verify(metadata, never()).removeMetadataPaths(anyString(), argThat(paths -> !paths.isEmpty()));
+        verify(storage, never()).deleteBinaryPaths(anyString(), anyString(), anyList());
+        verify(storage, never()).deleteGeneratedFiles(anyString());
+    }
+
+    @Test void inodeThatDisappearsDuringCleanupIsRetried() throws Exception {
+        // The first query sees the row; the locked re-read finds it gone, so the job retries and
+        // the next run takes the whole-inode path.
+        final var storage = mock(BinaryAssetStorageAPI.class);
+        final var calls = new java.util.concurrent.atomic.AtomicInteger();
+        try (var queries = mockConstruction(DotConnect.class, withSettings().defaultAnswer(RETURNS_SELF),
+                     (query, context) -> when(query.loadObjectResults()).thenAnswer(call ->
+                             calls.getAndIncrement() == 0 ? List.of(Map.of("inode", INODE)) : List.of()));
+             var transactions = mockStatic(com.dotmarketing.db.LocalTransaction.class);
+             var locator = mockStatic(APILocator.class)) {
+            transactions.when(() -> com.dotmarketing.db.LocalTransaction.wrapReturn(any())).thenAnswer(call ->
+                    ((com.dotcms.util.ReturnableDelegate<?>) call.getArgument(0)).execute());
+            locator.when(APILocator::getBinaryAssetStorageAPI).thenReturn(storage);
+            locator.when(APILocator::getFileMetadataAPI).thenReturn(mock(FileMetadataAPI.class));
             assertThrows(JobProcessingException.class, () -> new BinaryAssetCleanupProcessor().process(job()));
-            locator.verify(APILocator::getBinaryAssetStorageAPI, never());
+            verify(storage, never()).deleteBinaryPaths(anyString(), anyString(), anyList());
         }
     }
 

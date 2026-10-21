@@ -14,6 +14,7 @@ import com.dotcms.enterprise.publishing.staticpublishing.AWSS3Configuration;
 import com.dotcms.enterprise.publishing.storage.AWSS3Storage;
 import com.dotcms.enterprise.publishing.storage.Storage;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.storage.binary.BinaryAssetStorageAPI;
 import com.dotcms.storage.repository.FileRepositoryManager;
 import com.dotcms.storage.repository.HashedLocalFileRepositoryManager;
 import com.dotcms.storage.repository.LocalFileRepositoryManager;
@@ -76,8 +77,8 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
 
     private boolean sharesBinaryBytes(final String group) {
         return AssetStorageFeature.isEnabled() && pathEncryptionMode == PathEncryptionMode.NONE
-                && (com.dotcms.storage.binary.BinaryAssetStorageAPI.BINARY_ASSETS_GROUP.equals(group)
-                || com.dotcms.storage.binary.BinaryAssetStorageAPI.GENERATED_ASSETS_GROUP.equals(group));
+                && (BinaryAssetStorageAPI.BINARY_ASSETS_GROUP.equals(group)
+                || BinaryAssetStorageAPI.GENERATED_ASSETS_GROUP.equals(group));
     }
 
     private S3ContentAddressedStorage sharedBytes() { return new S3ContentAddressedStorage(storage, bucketName); }
@@ -398,7 +399,9 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
     @EnterpriseFeature(licenseLevel = LicenseLevel.PLATFORM, errorMsg = INVALID_LICENSE)
     public Object pushFile(final String groupName, final String path, final File file,
                            final Map<String, Serializable> extraMeta) throws DotDataException {
-        if (sharesBinaryBytes(groupName)) return sharedBytes().store(transformReadPath(groupName, path), file, false);
+        if (sharesBinaryBytes(groupName)) {
+            return sharedBytes().store(transformReadPath(groupName, path), file, false);
+        }
         if (!AssetStorageFeature.isEnabled()) {
         final String pathForS3 = transformWritePath(groupName, path, file.getName());
         final Upload upload = this.storage.uploadFile(this.bucketName, pathForS3,
@@ -540,7 +543,9 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
                     .getOrElseThrow(e -> new DotDataException("Unable to allocate an S3 download file", e));
             try {
                 if (sharesBinaryBytes(groupName)) {
-                    if (sharedBytes().retrieve(transformReadPath(groupName, path), download)) return download;
+                    if (sharedBytes().retrieve(transformReadPath(groupName, path), download)) {
+                        return download;
+                    }
                     releaseRetrievedFile(download);
                     return null;
                 }
@@ -815,8 +820,11 @@ public class AmazonS3StoragePersistenceAPIImpl implements StoragePersistenceAPI 
         }
         final String key = transformReadPath(groupName, path);
         if (sharesBinaryBytes(groupName)) {
-            try { return sharedBytes().matches(key, file); }
-            catch (IOException | RuntimeException failure) { throw new DotDataException("Unable to verify shared asset " + path, failure); }
+            try {
+                return sharedBytes().matches(key, file);
+            } catch (IOException | RuntimeException failure) {
+                throw new DotDataException("Unable to verify shared asset " + path, failure);
+            }
         }
         final var object = storage.listFirstObject(bucketName, key);
         if (object == null || !key.equals(object.getKey()) || object.getSize() != file.length()) {
