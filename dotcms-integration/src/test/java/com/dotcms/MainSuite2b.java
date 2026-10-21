@@ -167,6 +167,7 @@ import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionletIntegrationTest;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbortTest;
+import com.dotmarketing.portlets.workflows.ajax.WfTaskAjaxTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
@@ -290,6 +291,7 @@ import org.junit.runners.Suite.SuiteClasses;
         DotStatefulJobTest.class,
         IntegrityDataGenerationJobTest.class,
         BundleAPITest.class,
+        WfTaskAjaxTest.class,
         Task05390MakeRoomForLongerJobDetailTest.class,
         Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class,
         JSONToolTest.class,
