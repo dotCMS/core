@@ -724,10 +724,12 @@ paths:
     put:
       deprecated: true
       description: "Checks whether the current user can lock a contentlet identified\
-        \ by inode or identifier. Returns lock capability information including current\
-        \ lock status and lock owner details. Parameters are passed as semicolon-delimited\
-        \ path segments (e.g., id:abc123/language:1). This endpoint is deprecated\
-        \ - use the v1 ContentResource canLockContent endpoint instead."
+        \ by inode or identifier. Returns whether it can be locked and whether it\
+        \ is locked; when locked, the lock date, and for back-end users also the lock\
+        \ owner's user id (lockedBy) and full name (lockedByName). Parameters are\
+        \ passed as semicolon-delimited path segments (e.g., id:abc123/language:1).\
+        \ This endpoint is deprecated - use the v1 ContentResource canLockContent\
+        \ endpoint instead."
       operationId: canLockContentLegacy
       parameters:
       - description: "Semicolon-delimited parameters (e.g., inode:abc123/language:1/live:true)"
@@ -6660,8 +6662,10 @@ paths:
       - Content
   /v1/content/_canlock/{inodeOrIdentifier}:
     get:
-      description: Checks if the contentlet specified by its inode or identifier can
-        be locked by the current user.
+      description: "Checks if the contentlet specified by its inode or identifier\
+        \ can be locked by the current user, and whether it is locked. When locked,\
+        \ the response includes lockedOn; lockedBy (user id) and lockedByName (full\
+        \ name) are included for back-end users only."
       operationId: canLockContent
       parameters:
       - description: Contentlet inode or identifier
@@ -11687,8 +11691,8 @@ paths:
       - Folders
   /v1/forgotpassword:
     post:
-      description: Sends a password reset email to the specified user. Returns the
-        email address where the reset link was sent.
+      description: Sends a password reset email to the account matching the submitted
+        user ID or email address. Returns the submitted value.
       operationId: forgotPassword
       requestBody:
         content:
@@ -11703,12 +11707,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityForgotPasswordView"
-          description: Password reset email sent successfully
+          description: Request accepted. The entity is the submitted user ID or email
+            address
         "400":
           content:
             application/json: {}
-          description: Bad request - invalid email address or user not found (if configured
-            to show)
+          description: "Bad request - with login by email address, the submitted value\
+            \ is not a valid email address; or user not found (if configured to show)"
         "500":
           content:
             application/json: {}
