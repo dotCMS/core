@@ -48,6 +48,21 @@ public class RoleAjaxTest {
     }
 
     @Test
+    public void getUsersByRole_rejectsCallerWithoutMembershipPrivilege() {
+        final User caller = mock(User.class);
+        when(caller.getUserId()).thenReturn("plain-user");
+
+        try (MockedStatic<DwrUtil> dwrUtil = mockStatic(DwrUtil.class)) {
+            dwrUtil.when(DwrUtil::getLoggedInUser).thenReturn(caller);
+            dwrUtil.when(() -> DwrUtil.validateRoleMembershipPermissions(caller))
+                    .thenThrow(new DotSecurityException("not authorized"));
+
+            assertThrows(DotSecurityException.class,
+                    () -> newRoleAjax().getUsersByRole(new String[] {"some-role"}));
+        }
+    }
+
+    @Test
     public void addUserToRole_rejectsNonAdmin() {
         final User nonAdmin = mock(User.class);
         when(nonAdmin.isAdmin()).thenReturn(false);
