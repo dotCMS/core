@@ -29,6 +29,20 @@ public class AnonymousAccessTest {
         assertEquals("NONE", properties.getProperty(CONTENT_APIS_ALLOW_ANONYMOUS));
     }
 
+    /** Uppercase, lowercase, and mixed-case values must resolve to the same access level. */
+    @Test
+    public void testAccessValuesAreCaseInsensitive() {
+        assertEquals(AnonymousAccess.NONE, AnonymousAccess.from("NONE"));
+        assertEquals(AnonymousAccess.NONE, AnonymousAccess.from("none"));
+        assertEquals(AnonymousAccess.NONE, AnonymousAccess.from("NoNe"));
+        assertEquals(AnonymousAccess.READ, AnonymousAccess.from("READ"));
+        assertEquals(AnonymousAccess.READ, AnonymousAccess.from("read"));
+        assertEquals(AnonymousAccess.READ, AnonymousAccess.from("ReAd"));
+        assertEquals(AnonymousAccess.WRITE, AnonymousAccess.from("WRITE"));
+        assertEquals(AnonymousAccess.WRITE, AnonymousAccess.from("write"));
+        assertEquals(AnonymousAccess.WRITE, AnonymousAccess.from("WrItE"));
+    }
+
     /** A missing property must use the secure fallback, not enable anonymous reads. */
     @Test
     public void testMissingPropertyDisallowsAnonymousAccess() {

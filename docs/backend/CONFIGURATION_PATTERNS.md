@@ -106,7 +106,9 @@ API reads, set `CONTENT_APIS_ALLOW_ANONYMOUS=READ` in your configuration overrid
 `DOT_CONTENT_APIS_ALLOW_ANONYMOUS=READ` in the deployment environment. Anonymous content
 submission requires an explicit `WRITE` opt-in. Existing explicit `NONE`, `READ`, and `WRITE`
 overrides are preserved, and enabling anonymous access does not bypass content permissions.
-Review headless clients and custom VTL endpoints when preparing an upgrade.
+Values are case-insensitive (`none`, `read`, and `write` are accepted); use the documented
+uppercase property/environment variable names. Review headless clients and custom VTL
+endpoints when preparing an upgrade.
 
 ## Configuration Documentation Pattern
 When adding new properties, include:
