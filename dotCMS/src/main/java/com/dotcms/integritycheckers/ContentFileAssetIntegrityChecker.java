@@ -2,11 +2,19 @@ package com.dotcms.integritycheckers;
 
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.storage.AssetStorageFeature;
+import com.dotcms.storage.FetchMetadataParams;
+import com.dotcms.storage.FileMetadataAPI;
+import com.dotcms.storage.StorageKey;
+import com.dotcms.storage.StoragePersistenceProvider;
+import com.dotcms.storage.binary.BinaryAssetCleanupProcessor;
+import com.dotcms.storage.binary.BinaryAssetReference;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
@@ -17,6 +25,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -78,6 +87,25 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
 
     @Override
     public void executeFix(final String key) throws DotDataException, DotSecurityException {
+        if (!AssetStorageFeature.isEnabled()) {
+            executeFixInternal(key);
+            return;
+        }
+        final boolean localTransaction = HibernateUtil.startLocalTransactionIfNeeded();
+        try {
+            executeFixInternal(key);
+            if (localTransaction) {
+                HibernateUtil.commitTransaction();
+            }
+        } catch (DotDataException | DotSecurityException | RuntimeException failure) {
+            if (localTransaction) {
+                HibernateUtil.rollbackTransaction();
+            }
+            throw failure;
+        }
+    }
+
+    private void executeFixInternal(final String key) throws DotDataException, DotSecurityException {
         DotConnect dc = new DotConnect();
         // Get information from IR.
         final String getResultsQuery = new StringBuilder("SELECT ")
@@ -200,6 +228,11 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
         final ContentletJsonAPI contentletJsonAPI = APILocator.getContentletJsonAPI();
 
+        if (AssetStorageFeature.isEnabled()) {
+            new DotConnect().setSQL("select inode from contentlet where inode in (?, ?) order by inode for update")
+                    .addParam(localWorkingInode).addParam(localLiveInode).loadObjectResults();
+        }
+
         User systemUser = APILocator.getUserAPI().getSystemUser();
         Contentlet existingWorkingContentlet = contentletAPI.find(localWorkingInode, systemUser,
                 false);
@@ -249,6 +282,10 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
         workingCopy.setLanguageId(languageId);
         workingCopy.setModDate(new Date());
 
+        if (AssetStorageFeature.isEnabled() && structureTypeId == Structure.STRUCTURE_TYPE_FILEASSET) {
+            copyStoredBinaries(existingWorkingContentlet, workingCopy);
+        }
+
         final String workingCopyJson = Try.of(() -> contentletJsonAPI.toJson(workingCopy))
                 .getOrElseThrow(() -> new DotRuntimeException(
                         String.format("Error converting contentlet to json from local working copy with inode [%s].", localWorkingInode)));
@@ -285,6 +322,10 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
             liveCopy.setInode(remoteLiveInode);
             liveCopy.setLanguageId(languageId);
             liveCopy.setModDate(new Date());
+
+            if (AssetStorageFeature.isEnabled() && structureTypeId == Structure.STRUCTURE_TYPE_FILEASSET) {
+                copyStoredBinaries(existingLiveContentlet, liveCopy);
+            }
 
             final String liveCopyJson = Try.of(() -> contentletJsonAPI.toJson(liveCopy))
                     .getOrElseThrow(() -> new DotDataException(
@@ -467,6 +508,79 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
 
         // Remove the Lucene index for the old page
         cleanIndex(existingWorkingContentlet, existingLiveContentlet);
+        if (AssetStorageFeature.isEnabled() && structureTypeId == Structure.STRUCTURE_TYPE_FILEASSET) {
+            BinaryAssetCleanupProcessor.enqueue(localWorkingInode);
+            if (UtilMethods.isSet(localLiveInode) && UtilMethods.isSet(remoteLiveInode)
+                    && !localLiveInode.equals(localWorkingInode)) {
+                BinaryAssetCleanupProcessor.enqueue(localLiveInode);
+            }
+        }
+    }
+
+    /**
+     * Copies each stored binary and its metadata to new revision keys owned by the repaired content,
+     * before its corrected JSON is published; source cleanup is committed with the repair. The copies
+     * are uploaded immediately, so each one registers a rollback listener that removes it again if
+     * the repair transaction rolls back.
+     *
+     * @param source      the local content whose binaries are copied
+     * @param destination the repaired content that receives the copies
+     * @throws DotDataException if a source, its referenced metadata or a copy cannot be stored
+     */
+    private void copyStoredBinaries(final Contentlet source, final Contentlet destination)
+            throws DotDataException {
+        final var metadata = APILocator.getFileMetadataAPI();
+        final var files = APILocator.getFileStorageAPI();
+        final String group = Config.getStringProperty(StoragePersistenceProvider.METADATA_GROUP_NAME,
+                FileMetadataAPI.DOT_METADATA);
+        for (final var field : source.getContentType().fields(com.dotcms.contenttype.model.field.BinaryField.class)) {
+            if (source.get(field.variable()) == null) {
+                continue;
+            }
+            try {
+                final File original = source.getBinary(field.variable());
+                if (original == null) {
+                    throw new DotDataException("Missing repair source " + source.getInode() + "/" + field.variable());
+                }
+                File copied = APILocator.getBinaryAssetStorageAPI().storeRevision(destination.getInode(),
+                        field.variable(), original.getName(), original);
+                final String revision = BinaryAssetReference.keyOf(copied, destination.getInode(), field.variable());
+                removeOnRollback(revision, () -> APILocator.getBinaryAssetStorageAPI()
+                        .deleteBinaryPaths(destination.getInode(), field.variable(), List.of(revision)));
+                final var attributes = files.retrieveRawMetaData(new StorageKey.Builder().group(group)
+                        .path(metadata.getFileName(source, field.variable()))
+                        .storage(StoragePersistenceProvider.getStorageType()).build());
+                if (attributes != null) {
+                    final String key = BinaryAssetReference.newMetadataKey(copied, destination.getInode(), field.variable());
+                    final var metadataKey = new FetchMetadataParams.Builder().cache(false)
+                            .storageKey(new StorageKey.Builder().group(group).path(key)
+                                    .storage(StoragePersistenceProvider.getStorageType()).build()).build();
+                    removeOnRollback(key, () -> files.removeMetaData(metadataKey));
+                    if (!files.setMetadata(metadataKey, attributes)) {
+                        throw new DotDataException("Unable to copy repair metadata");
+                    }
+                    copied = BinaryAssetReference.withMetadata(copied, destination.getInode(), field.variable(), key);
+                } else if (BinaryAssetReference.metadataKeyOf(original) != null) {
+                    throw new DotDataException("Missing referenced repair metadata");
+                }
+                destination.setBinary(field.variable(), copied);
+            } catch (IOException e) {
+                throw new DotDataException("Unable to copy repair source " + source.getInode(), e);
+            }
+        }
+    }
+
+    /**
+     * Registers a rollback listener that deletes an object a repair uploaded before its transaction
+     * rolled back. A failed deletion is logged rather than thrown, so it cannot mask the rollback.
+     *
+     * @param key    the uploaded object's key, for the log message
+     * @param delete deletes the object
+     */
+    private static void removeOnRollback(final String key, final io.vavr.CheckedRunnable delete) {
+        HibernateUtil.addRollbackListener(() -> Try.run(delete).onFailure(failure -> Logger.warn(
+                ContentFileAssetIntegrityChecker.class, "Unable to remove " + key
+                        + " after the integrity repair rolled back: " + failure.getMessage())));
     }
 
     private void fixFileAssetContainer(final String oldContentletIdentifier, final String newContentletIdentifier,
@@ -521,6 +635,13 @@ public class ContentFileAssetIntegrityChecker extends AbstractIntegrityChecker {
             final int structureTypeId, final String newContentletIdentifier,
             final String remoteInode) throws DotContentletStateException, DotRuntimeException,
             DotSecurityException, DotDataException {
+
+        if (AssetStorageFeature.isEnabled() && structureTypeId == Structure.STRUCTURE_TYPE_FILEASSET) {
+            com.dotmarketing.business.CacheLocator.getContentletCache().remove(remoteInode);
+            final Contentlet repaired = APILocator.getContentletAPI().find(remoteInode, APILocator.systemUser(), false);
+            APILocator.getContentletIndexAPI().addContentToIndex(repaired);
+            return repaired;
+        }
 
         // If its an asset file, move the asset to a new location
         if (structureTypeId == Structure.STRUCTURE_TYPE_FILEASSET) {
