@@ -1,4 +1,4 @@
-<%@page import="org.apache.commons.codec.digest.DigestUtils"%>
+<%@ page import="com.liferay.util.Xss" %><%@page import="org.apache.commons.codec.digest.DigestUtils"%>
 <%@page import="com.dotmarketing.beans.WebAsset"%>
 <%@include file="/html/portlet/ext/workflows/init.jsp"%>
 
@@ -483,7 +483,7 @@ public String getGravatar(String postedBy){
 			        <td>
 			            <strong><%= LanguageUtil.get(pageContext, "Status") %>: </strong>
 			            <%= com.dotmarketing.util.UtilHTML.getStatusIcons(contentlet) %>
-			            <%=step.getName()%>
+			            <%=Xss.encodeForHTML(step.getName())%>
 			        </td>
 			       </tr>
 			       <tr>
