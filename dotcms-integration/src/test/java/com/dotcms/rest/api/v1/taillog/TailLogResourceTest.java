@@ -2,13 +2,23 @@ package com.dotcms.rest.api.v1.taillog;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.rest.api.v1.taillog.TailLogResource.MyTailerListener;
 import com.dotcms.rest.api.v1.taillog.TailLogResource.MyTailerThread;
+import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.WebKeys;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import java.io.BufferedWriter;
@@ -25,6 +35,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import javax.servlet.http.HttpServletRequest;
+import org.apache.commons.io.FileUtils;
 import org.glassfish.jersey.media.sse.EventOutput;
 import org.glassfish.jersey.media.sse.OutboundEvent;
 import org.junit.Assert;
@@ -36,9 +48,20 @@ public class TailLogResourceTest {
     static final String TAILING = "Tailing info from file";
     static final String WRITTEN = "New Line written With Number";
 
+    private static TailLogResource resource;
+    private static User adminUser;
+    private static User nonAdminUser;
+
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+
+        resource = new TailLogResource();
+        adminUser = TestUserUtils.getAdminUser();
+
+        nonAdminUser = new UserDataGen().nextPersisted();
+        APILocator.getRoleAPI().addRoleToUser(
+                APILocator.getRoleAPI().loadBackEndUserRole(), nonAdminUser);
     }
 
     synchronized void writeText(final Writer out, final int index) throws IOException {
@@ -135,6 +158,62 @@ public class TailLogResourceTest {
         assertEquals("keepAlive", name);
         final Boolean bool = (Boolean) data.get("keepAlive");
         assertTrue(bool);
+    }
+
+    /**
+     * Given scenario: a back-end user without the CMS Administrator role calls the tail endpoint
+     * Expected result: the request is rejected before any file is opened
+     */
+    @Test(expected = SecurityException.class)
+    public void test_getLogs_asNonAdmin_throwsSecurity() throws IOException {
+        resource.getLogs(createRequestForUser(nonAdminUser), "dotcms.log", 10);
+    }
+
+    /**
+     * Given scenario: an administrator calls the tail endpoint on a planted {@code .log} file inside
+     *                 an isolated {@code TAIL_LOG_LOG_FOLDER}
+     * Expected result: an open {@link EventOutput} is returned (the tailer thread started); the
+     *                  test closes it so the thread ends
+     */
+    @Test
+    public void test_getLogs_asAdmin_returnsEventOutput() throws IOException {
+        final String originalLogFolder = Config.getStringProperty(
+                "TAIL_LOG_LOG_FOLDER", "./dotsecure/logs/");
+
+        final File tempLogFolder = Files.createTempDirectory("taillog-tail-").toFile();
+        tempLogFolder.deleteOnExit();
+        final File logFile = plantLogFile(tempLogFolder, "admin-ittail.log");
+
+        EventOutput eventOutput = null;
+        try {
+            Config.setProperty("TAIL_LOG_LOG_FOLDER", tempLogFolder.getAbsolutePath());
+
+            eventOutput = resource.getLogs(createRequestForUser(adminUser), logFile.getName(), 10);
+
+            assertNotNull(eventOutput);
+            assertFalse("the tail stream must be open for an administrator", eventOutput.isClosed());
+        } finally {
+            if (eventOutput != null) {
+                eventOutput.close();
+            }
+            Config.setProperty("TAIL_LOG_LOG_FOLDER", originalLogFolder);
+            FileUtils.deleteQuietly(tempLogFolder);
+        }
+    }
+
+    private static HttpServletRequest createRequestForUser(final User user) {
+        final HttpServletRequest request = new MockAttributeRequest(
+                new MockHttpRequestIntegrationTest("localhost", "/").request()
+        ).request();
+        request.setAttribute(WebKeys.USER, user);
+        return request;
+    }
+
+    private static File plantLogFile(final File folder, final String name) throws IOException {
+        final File file = new File(folder, name);
+        Files.writeString(file.toPath(), "test content");
+        file.deleteOnExit();
+        return file;
     }
 
 }
