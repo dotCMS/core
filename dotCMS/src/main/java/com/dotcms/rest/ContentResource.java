@@ -1,5 +1,6 @@
 package com.dotcms.rest;
 
+import com.dotcms.content.filter.ContentFieldFilter;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -9,6 +10,7 @@ import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.xstream.XStreamHandler;
@@ -246,6 +248,9 @@ public class ContentResource {
             if (rememberQuery) {
                 request.getSession().setAttribute(WebKeys.EXECUTED_LUCENE_QUERY, query);
             }
+        if (!ContentFieldFilter.forUser(user).allowsSearch(query, sort)) {
+            throw new BadRequestException(ContentFieldFilter.SEARCH_REJECTED_MESSAGE);
+        }
         String realQuery = query.contains("variant:") ? query : query + " +variant:default";
         realQuery = processQuery(realQuery);
         final SearchView searchView = this.contentHelper.pullContent(request, response, realQuery,
@@ -316,6 +321,10 @@ public class ContentResource {
         paramsMap.put("callback", callback);
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse(paramsMap);
+
+        if (!ContentFieldFilter.forUser(initData.getUser()).allowsSearch(query, sortBy)) {
+            throw new BadRequestException(ContentFieldFilter.SEARCH_REJECTED_MESSAGE);
+        }
 
         try {
             List<ContentletSearch> searchIndex = APILocator.getContentletAPI()
@@ -388,6 +397,10 @@ public class ContentResource {
         paramsMap.put("callback", callback);
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse(paramsMap);
+
+        if (!ContentFieldFilter.forUser(initData.getUser()).allowsSearch(query, null)) {
+            throw new BadRequestException(ContentFieldFilter.SEARCH_REJECTED_MESSAGE);
+        }
 
         try {
             return responseResource.response(Long.toString(
@@ -827,6 +840,11 @@ public class ContentResource {
             return ExceptionMapperUtil.createResponse(null, errorMsg);
         }
 
+        if (!ContentFieldFilter.forUser(user).allowsSearch(query,
+                paramsMap.get(RESTParams.ORDERBY.getValue()))) {
+            return ExceptionMapperUtil.createResponse(null, ContentFieldFilter.SEARCH_REJECTED_MESSAGE);
+        }
+
         final String allCategoriesInfoKey = RESTParams.ALL_CATEGORIES_INFO.getValue().toLowerCase();
         final boolean allCategoriesInfo =
                 UtilMethods.isSet(paramsMap.get(allCategoriesInfoKey)) &&
@@ -1038,17 +1056,19 @@ public class ContentResource {
     }
 
     /**
+     * Builds the map of properties that represents a contentlet in the XML response.
      *
-     * @param contentlet
-     * @param request
-     * @param response
-     * @param render
-     * @param user
-     * @param allCategoriesInfo
-     * @return
-     * @throws DotDataException
-     * @throws IOException
-     * @throws DotSecurityException
+     * @param contentlet        The {@link Contentlet} to represent.
+     * @param request           The current {@link HttpServletRequest}.
+     * @param response          The current {@link HttpServletResponse}.
+     * @param render            {@code "true"} to include the rendered code of a widget.
+     * @param user              The {@link User} the content is returned to.
+     * @param allCategoriesInfo {@code true} to include the key, name and description of every category.
+     * @return The contentlet's properties, with the ones configured in {@link ContentFieldFilter} masked or removed
+     * when the user is neither a CMS administrator nor a back-end user.
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws IOException          An error occurred when generating the printable map.
+     * @throws DotSecurityException The user is not allowed to read the content.
      */
     private Map<String, Object> getContentXML(final Contentlet contentlet,
             final HttpServletRequest request,
@@ -1081,7 +1101,8 @@ public class ContentResource {
         m.put("__icon__", UtilHTML.getIconClass(contentlet));
         m.put("contentTypeIcon", type.icon());
 
-        return m;
+        // Filter last, once every property has been added, so none of them can bypass the masking
+        return ContentFieldFilter.forUser(user).apply(m);
     }
 
     /**
