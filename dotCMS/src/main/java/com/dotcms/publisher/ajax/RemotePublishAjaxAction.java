@@ -29,6 +29,7 @@ import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotcms.publishing.manifest.ManifestReaderFactory;
 import com.dotcms.publishing.manifest.ManifestReason;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
+import com.dotcms.publisher.receiver.BundlePluginAccess;
 import com.dotcms.rest.PushPublisherJob;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -68,6 +69,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
 import java.io.File;
+import org.apache.commons.io.FileUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -691,8 +693,17 @@ public class RemotePublishAjaxAction extends AjaxAction {
             // Write file on FS
             FileUtil.writeToFile( bundle, bundlePath + bundleName );
 
+            final boolean deployAllowed = BundlePluginAccess.canDeployPlugins(getUser());
+            if ( !deployAllowed && BundlePluginAccess.carriesPlugins(new File(bundlePath + bundleName)) ) {
+                FileUtils.deleteQuietly(new File(bundlePath + bundleName));
+                Logger.warn(RemotePublishAjaxAction.class,
+                        "Bundle upload rejected: the user has no access to deploy plugins");
+                response.sendError(401);
+                return;
+            }
+
             if ( !status.getStatus().equals( Status.PUBLISHING_BUNDLE ) ) {
-                PushPublisherJob.triggerPushPublisherJob(bundleName, status);
+                PushPublisherJob.triggerPushPublisherJob(bundleName, status, deployAllowed);
             }
 
             out.print( "<html><head><script>isLoaded = true;</script></head><body><textarea>{'status':'success'}</textarea></body></html>" );

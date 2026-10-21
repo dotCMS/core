@@ -183,7 +183,8 @@ public class BundlePublisherResource {
 
 			if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
 				Logger.debug(BundlePublisherResource.class, "Triggering Push Publisher Job for bundle: " + fileName);
-				PushPublisherJob.triggerPushPublisherJob(fileName, status);
+				// a registered sender is trusted to ship plugins
+				PushPublisherJob.triggerPushPublisherJob(fileName, status, true);
 			}
 
 			return bundle;

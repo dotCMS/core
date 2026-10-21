@@ -19,12 +19,24 @@ import org.quartz.JobExecutionException;
 import org.quartz.Trigger;
 
 public class PushPublisherJob extends DotStatefulJob {
+	private static final String DEPLOY_ALLOWED_KEY = "deployAllowed";
 	private String bundleName;
 	private String endpointId;
 	private String groupId;
 	private PublishAuditStatus status;
 
-    public PublisherConfig processBundle(final String bundleName, final PublishAuditStatus status) {
+    /**
+     * Processes a received bundle with the {@link BundlePublisher}.
+     *
+     * @param bundleName   File name of the received bundle.
+     * @param status       Audit status of the bundle.
+     * @param deployAllowed Whether the bundle may deploy or remove plugin jars. Callers set it from
+     *                     how the bundle arrived; when it is {@code false} the plugin part of the
+     *                     bundle is ignored.
+     * @return The configuration used to process the bundle.
+     */
+    public PublisherConfig processBundle(final String bundleName, final PublishAuditStatus status,
+            final boolean deployAllowed) {
 		//Configure and Invoke the Publisher
 		Logger.info(PushPublisherJob.class, "Started bundle publish process");
 		PushPublishLogger.log(PushPublisherJob.class, "Started bundle publish process", bundleName);
@@ -35,6 +47,7 @@ public class PushPublisherJob extends DotStatefulJob {
 		config.setEndpoint(endpointId);
 		config.setGroupId(groupId);
 		config.setPublishAuditStatus(status);
+		config.put(PublisherConfig.Config.OSGI_DEPLOY_ALLOWED.name(), deployAllowed);
 		try {
 			bundlePublisher.init(config);
 			config = bundlePublisher.process(null);
@@ -49,10 +62,13 @@ public class PushPublisherJob extends DotStatefulJob {
 	}
 
 	/**
-	 * Sends for processing a given bundle to the {@link BundlePublisher}
+	 * Sends for processing a given bundle to the {@link BundlePublisher}. Reads the bundle name, its status and the plugin deployment flag from the
+	 * trigger data and processes the bundle. A trigger without the flag never deploys plugins.
 	 *
 	 * @see PublisherConfig
 	 * @see BundlePublisher
+	 * @param jobContext The Quartz execution context.
+	 * @throws JobExecutionException If the job cannot run.
 	 */
 	@Override
 	public void run(JobExecutionContext jobContext) throws JobExecutionException {
@@ -64,7 +80,9 @@ public class PushPublisherJob extends DotStatefulJob {
 		final String bundleName = (String) executionData.get("bundleName");
 		final PublishAuditStatus status = (PublishAuditStatus) executionData.get("status");
 
-		processBundle(bundleName, status);
+		// a job without the flag (for example queued by an older version) never deploys plugins
+		final boolean deployAllowed = Boolean.TRUE.equals(executionData.get(DEPLOY_ALLOWED_KEY));
+		processBundle(bundleName, status, deployAllowed);
 	}
 
 	/**
@@ -72,13 +90,15 @@ public class PushPublisherJob extends DotStatefulJob {
 	 *
 	 * @param bundleName Bundle file name
 	 * @param status PublishAuditStatus
+	 * @param deployAllowed Whether the bundle may deploy or remove plugin jars; see
+	 *                      {@link #processBundle(String, PublishAuditStatus, boolean)}
 	 */
 	public static void triggerPushPublisherJob(final String bundleName,
-			final PublishAuditStatus status) {
+			final PublishAuditStatus status, final boolean deployAllowed) {
 		Logger.debug(PushPublisherJob.class, "Triggering Push Publisher Job for bundle: " + bundleName);
 		Logger.debug(PushPublisherJob.class, "Status: " + status.getStatus().name());
 		final ImmutableMap<String, Serializable> nextExecutionData = ImmutableMap
-				.of("bundleName", bundleName, "status", status);
+				.of("bundleName", bundleName, "status", status, DEPLOY_ALLOWED_KEY, deployAllowed);
 
 		try {
 			DotStatefulJob.enqueueTrigger(nextExecutionData, PushPublisherJob.class);

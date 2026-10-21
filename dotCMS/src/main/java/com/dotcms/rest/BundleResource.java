@@ -45,6 +45,9 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.FileUtil;
+import com.dotcms.publisher.receiver.BundlePluginAccess;
+import com.dotcms.rest.exception.SecurityException;
+import org.apache.commons.io.FileUtils;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -972,6 +975,38 @@ public class BundleResource {
         }
     }
     
+    /**
+     * Checks that a user who uploaded a bundle file may bring in the plugins it carries.
+     * If the bundle has a plugins folder and the user has no access to the plugins portlet, the
+     * stored file is removed and the request is rejected.
+     *
+     * @param user    The user that uploaded the bundle.
+     * @param archive The stored bundle file.
+     * @return Whether the bundle may deploy plugins, to be passed on to the bundle processing.
+     * @throws SecurityException with 401 if the bundle carries plugins and the user cannot deploy them.
+     */
+    private boolean checkPluginAccess(final User user, final File archive) {
+        final boolean deployAllowed = BundlePluginAccess.canDeployPlugins(user);
+        if (!deployAllowed && BundlePluginAccess.carriesPlugins(archive)) {
+            FileUtils.deleteQuietly(archive);
+            Logger.warn(this, "Bundle upload rejected: the user has no access to deploy plugins");
+            throw new SecurityException(user.getFullName() + ":" + user.getEmailAddress(),
+                    Response.Status.UNAUTHORIZED);
+        }
+        return deployAllowed;
+    }
+
+    /**
+     * Receives a bundle file and processes it right away. The caller needs access to the
+     * publishing queue; if the bundle carries plugins the caller also needs access to the plugins
+     * portlet.
+     *
+     * @param request   The current request.
+     * @param response  The current response.
+     * @param multipart The uploaded bundle file.
+     * @return The bundle name and the resulting publishing status.
+     * @throws DotPublisherException If the audit of the bundle cannot be updated.
+     */
     @Path("/sync")
     @POST
     @JSONP
@@ -985,6 +1020,7 @@ public class BundleResource {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
+                .requiredPortlet("publishing-queue")
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .requireLicense(true)
@@ -1007,6 +1043,9 @@ public class BundleResource {
 
                 FileUtil.writeToFile(inputStream, bundlePath + bundleName);
 
+                final boolean deployAllowed = this.checkPluginAccess(initData.getUser(),
+                        new File(bundlePath + bundleName));
+
                 final String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
                 final String endpointId   = initData.getUser().getUserId();
                 response.setContentType("text/html; charset=utf-8");
@@ -1014,7 +1053,7 @@ public class BundleResource {
                         .getInstance().updateAuditTable(endpointId, endpointId, bundleFolder);
 
                 final PublisherConfig config = !previousStatus.getStatus().equals(Status.PUBLISHING_BUNDLE)?
-                        new PushPublisherJob().processBundle(bundleName, previousStatus): null;
+                        new PushPublisherJob().processBundle(bundleName, previousStatus, deployAllowed): null;
 
                 final String finalStatus = config != null ?
                         config.getPublishAuditStatus().getStatus().name():
@@ -1032,6 +1071,16 @@ public class BundleResource {
         return Response.ok().build();
     } // uploadBundleSync.
 
+    /**
+     * Receives a bundle file and processes it in the background. Same access rules as
+     * {@link #uploadBundleSync(HttpServletRequest, HttpServletResponse, FormDataMultiPart)}.
+     *
+     * @param request       The current request.
+     * @param response      The current response.
+     * @param asyncResponse Resumed with the bundle name and the resulting publishing status.
+     * @param multipart     The uploaded bundle file.
+     * @throws DotPublisherException If the audit of the bundle cannot be updated.
+     */
     @POST
     @JSONP
     @NoCache
@@ -1044,6 +1093,7 @@ public class BundleResource {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
+                .requiredPortlet("publishing-queue")
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .requireLicense(true)
@@ -1065,6 +1115,9 @@ public class BundleResource {
 
                 FileUtil.writeToFile(inputStream, bundlePath + bundleName);
 
+                final boolean deployAllowed = this.checkPluginAccess(initData.getUser(),
+                        new File(bundlePath + bundleName));
+
                 final String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
                 final String endpointId = initData.getUser().getUserId();
                 response.setContentType("text/html; charset=utf-8");
@@ -1078,7 +1131,7 @@ public class BundleResource {
                     dotSubmitter.execute(() -> {
 
                         final PublisherConfig config = new PushPublisherJob()
-                                .processBundle(bundleName, previousStatus);
+                                .processBundle(bundleName, previousStatus, deployAllowed);
 
                         final String finalStatus =
                                 config != null ? config.getPublishAuditStatus().getStatus().name()
