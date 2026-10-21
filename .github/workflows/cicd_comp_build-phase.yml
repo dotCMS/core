@@ -226,6 +226,15 @@ jobs:
             ls -1 "$HOME/.m2/repository/com/dotcms/dotcms-core/" 2>/dev/null || true
             exit 1
           fi
+          # Historical tags keep their standalone SAML pin; only integrated source
+          # lineages produce a bundle matching the core release version.
+          if [[ -f independent-projects/core-plugins/saml-plugin/pom.xml ]]; then
+            dir="$HOME/.m2/repository/com/dotcms/samlbundle/com.dotcms.samlbundle/$version"
+            if [[ ! -f "$dir/com.dotcms.samlbundle-$version.pom" || ! -f "$dir/com.dotcms.samlbundle-$version.jar" ]]; then
+              echo "::error::SAML $version was not installed; refusing to deploy images with an incomplete release"
+              exit 1
+            fi
+          fi
           echo "Release coordinates present: $version"
 
       # Record who produced each cache entry. Nothing in an S3 bucket says which

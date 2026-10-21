@@ -7,10 +7,9 @@
 #
 # This began life as the TDD "Red" suite for Phase 1 of #37607 and is now the
 # regression suite for it: every section is green on main and should stay that
-# way. A non-zero exit means something regressed. Section 12 is the SAML
-# release-integration Red suite for #38104: it fails until that lands. The
-# sections are independent, so a failure names the behaviour that broke rather
-# than just a count.
+# way. A non-zero exit means something regressed. Section 12 covers the SAML
+# release integration (#38104). The sections are independent, so a failure names
+# the behaviour that broke rather than just a count.
 #
 # Two kinds of assertion:
 #
@@ -806,14 +805,14 @@ block_has "$BUILD_PHASE" "Verify release coordinates were installed" 'dotcms-cor
 # publisher/credentials, a CI JVM suite, and the two real fail-closed gates
 # (build-coordinate tripwire and release validation) extended to require it.
 #
-# The saml-plugin import is not in the tree yet, so the module/wiring assertions
-# below fail (via `bad`) rather than aborting the rest of the suite.
+# A missing module is reported as an assertion failure rather than aborting the suite.
 echo "== 12. SAML plugin is built, bundled and validated with the release =="
 
 SAML_POM="$REPO_ROOT/independent-projects/core-plugins/saml-plugin/pom.xml"
 CORE_PLUGINS_POM="$REPO_ROOT/independent-projects/core-plugins/pom.xml"
 SYSTEM_BUNDLES_POM="$REPO_ROOT/osgi-base/system-bundles/pom.xml"
 TEST_MATRIX="$REPO_ROOT/.github/test-matrix.yml"
+TEST_PHASE="$REPO_ROOT/.github/workflows/cicd_comp_test-phase.yml"
 SAML_COORD_RE='com\.dotcms\.samlbundle:com\.dotcms\.samlbundle'
 SAML_RELEASE_VERSION="25.02.16-01"
 
@@ -891,7 +890,7 @@ fi
 extract_run_body "$BUILD_PHASE" "Verify release coordinates were installed" > "$WORKDIR/saml-tripwire.sh"
 trip_root="$WORKDIR/saml-trip"
 trip_home="$WORKDIR/saml-trip-home"
-mkdir -p "$trip_root/.mvn" "$trip_home/.m2/repository"
+mkdir -p "$trip_root/.mvn" "$trip_home/.m2/repository" "$trip_root/independent-projects/core-plugins/saml-plugin"
 printf -- '-Dprod=true\n-Drevision=%s\n-Dchangelist=\n' "$SAML_RELEASE_VERSION" > "$trip_root/.mvn/maven.config"
 
 tripwire_seed() {  # kind, version
@@ -925,10 +924,16 @@ tripwire_case() {  # desc, raw suffix ("java-25" or empty), kind, expect
   local v="$SAML_RELEASE_VERSION"
   [[ -n "$raw" ]] && v="$v-$raw"
   rm -rf "$trip_home/.m2/repository"; mkdir -p "$trip_home/.m2/repository"
+  if [[ "$kind" == legacy ]]; then
+    rm -f "$trip_root/independent-projects/core-plugins/saml-plugin/pom.xml"
+    tripwire_seed missing "$v"
+  else
+    : > "$trip_root/independent-projects/core-plugins/saml-plugin/pom.xml"
+  fi
   if [[ "$kind" == primary-only ]]; then
     tripwire_seed correct "$SAML_RELEASE_VERSION"
     tripwire_seed missing "$v"
-  else
+  elif [[ "$kind" != legacy ]]; then
     tripwire_seed "$kind" "$v"
   fi
   SUFFIX="$raw" HOME="$trip_home" \
@@ -950,6 +955,8 @@ if [[ -s "$WORKDIR/saml-tripwire.sh" ]]; then
   tripwire_case "tripwire rejects an unsuffixed SAML build (java-25)" "java-25" primary-only nonzero
   tripwire_case "tripwire rejects sources-only SAML (java-25)" "java-25" sources-only nonzero
   tripwire_case "tripwire accepts a correct SAML build (java-25)" "java-25" correct zero
+  tripwire_case "tripwire preserves historical tags without the SAML module" "" legacy zero
+  tripwire_case "tripwire preserves historical Java-variant tags" "java-25" legacy zero
 else
   bad "build tripwire body is extractable" "step not found in $(rel "$BUILD_PHASE")"
 fi
@@ -988,8 +995,8 @@ saml_validation_seed() {  # kind, version
   esac
 }
 
-saml_validation_case() {  # desc, kind, expect, optional version
-  local desc="$1" kind="$2" expect="$3" v="${4:-$SAML_RELEASE_VERSION}" rc=0
+saml_validation_case() {  # desc, kind, expect, optional version and source checkout
+  local desc="$1" kind="$2" expect="$3" v="${4:-$SAML_RELEASE_VERSION}" cwd="${5:-$REPO_ROOT}" rc=0
   rm -rf "$saml_repo"; mkdir -p "$saml_repo"
   if [[ "$kind" == primary-only ]]; then
     saml_validation_seed correct "$SAML_RELEASE_VERSION"
@@ -1001,7 +1008,7 @@ saml_validation_case() {  # desc, kind, expect, optional version
   # built-in default, not a value the test supplies.
   ( unset REQUIRED_COORDINATES
     VERSION="$v" MAVEN_REPO="$saml_repo" \
-    run_body "$WORKDIR/saml-validate.sh" "$WORKDIR/saml-v.out" ) || rc=$?
+    run_body "$WORKDIR/saml-validate.sh" "$WORKDIR/saml-v.out" "$cwd" ) || rc=$?
   if [[ "$expect" == nonzero && $rc -ne 0 ]] || [[ "$expect" == zero && $rc -eq 0 ]]; then
     ok "$desc"
   else
@@ -1017,8 +1024,24 @@ if [[ -s "$WORKDIR/saml-validate.sh" ]]; then
   saml_validation_case "validation default accepts a complete core+web+SAML set" correct zero
   saml_validation_case "validation rejects unsuffixed SAML for a Java variant" primary-only nonzero "$SAML_RELEASE_VERSION-java-25"
   saml_validation_case "validation accepts matching Java-variant SAML" correct zero "$SAML_RELEASE_VERSION-java-25"
+  mkdir -p "$WORKDIR/historical-source"
+  saml_validation_case "validation preserves historical tags without the SAML module" missing zero "$SAML_RELEASE_VERSION" "$WORKDIR/historical-source"
+  saml_validation_case "validation preserves historical Java-variant tags" missing zero "$SAML_RELEASE_VERSION-java-25" "$WORKDIR/historical-source"
 else
   bad "release validation body is extractable" "step not found in $(rel "$RELEASE_PHASE")"
+fi
+
+block_has_if "$TEST_PHASE" "Install native libvips (image engine parity tests)" "matrix.name == 'JVM Unit Tests'" \
+  "native libvips setup stays with core tests, not the SAML suite"
+
+SAML_SRC="${SAML_POM%/pom.xml}/src/main/java"
+if [[ -d "$SAML_SRC" ]]; then
+  lacks "$SAML_SRC/com/dotcms/saml/osgi/Activator.java" 'System\.(out|err)\.' \
+    "SAML startup diagnostics use the application logger"
+  has "$SAML_SRC/com/dotcms/saml/osgi/Activator.java" 'context\.getBundle\(\)\.getVersion\(\)' \
+    "SAML startup reports the actual bundle version, not a standalone version pin"
+  lacks "$SAML_SRC/org/opensaml/xml/util/Base64.java" 'System\.(out|err)\.' \
+    "legacy decoder diagnostics use the application logger"
 fi
 
 # ---------------------------------------------------------------------- done --
