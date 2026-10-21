@@ -1,6 +1,8 @@
 package com.dotcms.graphql;
 
+import com.dotcms.variant.VariantAPI;
 import com.dotcms.visitor.domain.Visitor;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -13,13 +15,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 /**
  * Derives the cache key under which {@link GraphqlCacheWebInterceptor} stores a GraphQL response.
@@ -32,9 +29,10 @@ import java.util.stream.Collectors;
  *     <li>the request body (the GraphQL query, variables and operation name)</li>
  *     <li>the caller: the {@code Authorization} and {@code DOTAUTH} headers, the remember-me
  *     cookie and the user logged into the session, or {@code anonymous} when none is present</li>
- *     <li>the server name the request was addressed to and every request parameter, which cover
- *     the {@code Host}, {@code language_id}, {@code variantName}, persona and {@code mode}
- *     selectors among others</li>
+ *     <li>the server name the request was addressed to and the selector parameters the servlet
+ *     reads: {@code Host}, {@code host_id}, {@code language_id}, the page language,
+ *     {@code variantName}, the persona and {@code mode}. Any other parameter is ignored, so a
+ *     caller cannot mint entries by varying parameters the servlet never looks at</li>
  *     <li>the session attributes the servlet reads: the selected language when it is not the
  *     default one, the time machine date, the selected site, the page mode and the visitor's
  *     persona</li>
@@ -51,14 +49,21 @@ final class GraphqlCacheKey {
     private static final String TIME_MACHINE_DATE = "tm_date";
     private static final String TIME_MACHINE_LANGUAGE = "tm_lang";
     private static final String LANGUAGE_ID_PARAM = "language_id";
+    private static final String HOST_ID_PARAM = "host_id";
 
     /**
-     * Parameters that steer the cache itself and must not partition it.
+     * The request parameters the servlet resolves site, language, variant, persona and page mode
+     * from. Only these take part in the key; parameter names are case-sensitive, as the servlet
+     * reads them.
      */
-    private static final Set<String> CACHE_CONTROL_PARAMS = Set.of(
-            GraphqlCacheWebInterceptor.GRAPHQL_CACHE_TTL_PARAM,
-            GraphqlCacheWebInterceptor.GRAPHQL_CACHE_KEY_PARAM,
-            GraphqlCacheWebInterceptor.GRAPHQL_CACHE_REFRESH_PARAM);
+    private static final List<String> SELECTOR_PARAMS = List.of(
+            Host.HOST_VELOCITY_VAR_NAME,
+            HOST_ID_PARAM,
+            LANGUAGE_ID_PARAM,
+            WebKeys.HTMLPAGE_LANGUAGE,
+            VariantAPI.VARIANT_KEY,
+            WebKeys.CMS_PERSONA_PARAMETER,
+            WebKeys.PAGE_MODE_PARAMETER);
 
     /**
      * Session attributes, other than the language, the logged-in user and the visitor, that change
@@ -192,18 +197,8 @@ final class GraphqlCacheKey {
 
     private static void appendParameters(final StringBuilder canonical,
             final HttpServletRequest request) {
-        final Map<String, String[]> parameters = request.getParameterMap();
-        if (parameters == null || parameters.isEmpty()) {
-            return;
-        }
-        // Sorted by name so the key does not depend on the order the parameters were sent in.
-        final List<String> names = parameters.keySet().stream()
-                .filter(Objects::nonNull)
-                .filter(name -> !CACHE_CONTROL_PARAMS.contains(name.toLowerCase(Locale.ROOT)))
-                .sorted()
-                .collect(Collectors.toList());
-        for (final String name : names) {
-            final String[] values = parameters.get(name);
+        for (final String name : SELECTOR_PARAMS) {
+            final String[] values = request.getParameterValues(name);
             append(canonical, "param." + name,
                     values == null ? null : String.join("\u0000", Arrays.asList(values)));
         }

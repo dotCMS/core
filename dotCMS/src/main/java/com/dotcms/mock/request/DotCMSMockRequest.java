@@ -128,8 +128,8 @@ public class DotCMSMockRequest implements HttpServletRequest {
     }
 
     @Override
-    public String[] getParameterValues(String s) {
-        return new String[0];
+    public String[] getParameterValues(final String name) {
+        return paramMap.get(name);
     }
 
     @Override

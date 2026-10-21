@@ -196,19 +196,36 @@ public class GraphqlCacheKeyTest extends UnitTestBase {
 
     /**
      * Method to test: {@link GraphqlCacheKey#from(HttpServletRequest, String, Optional)}
-     * Given Scenario: the cache control parameters are sent with different values
+     * Given Scenario: the cache control parameters and parameters the servlet never reads are sent
      * ExpectedResult: they do not partition the cache, while a client key does
      */
     @Test
-    public void cacheControlParametersDoNotChangeTheKey() {
+    public void unknownParametersDoNotChangeTheKey() {
         final GraphqlCacheKey plain = key(request());
         final GraphqlCacheKey withControls = key(requestWithParams(
                 orderedParams("dotcachettl", "600", "DotCacheRefresh", "true")));
+        final GraphqlCacheKey withJunk = key(requestWithParams(
+                orderedParams("x", "1", "qid", "abc", "host", "lower-case-is-not-the-selector")));
         final GraphqlCacheKey withClientKey = GraphqlCacheKey.from(request(), BODY,
                 Optional.of("home"), () -> DEFAULT_LANGUAGE_ID);
 
         assertEquals(plain.value(), withControls.value());
+        assertEquals(plain.value(), withJunk.value());
         assertNotEquals(plain.value(), withClientKey.value());
+    }
+
+    /**
+     * Method to test: {@link GraphqlCacheKey#from(HttpServletRequest, String, Optional)}
+     * Given Scenario: each selector parameter the servlet reads is sent on its own
+     * ExpectedResult: every one of them gets its own key
+     */
+    @Test
+    public void everySelectorParameterChangesTheKey() {
+        final String plain = key(request()).value();
+        for (final String name : new String[] {"Host", "host_id", "language_id",
+                WebKeys.HTMLPAGE_LANGUAGE, "variantName", WebKeys.CMS_PERSONA_PARAMETER, "mode"}) {
+            assertNotEquals(name, plain, key(requestWithParams(Map.of(name, "value"))).value());
+        }
     }
 
     /**
@@ -328,7 +345,10 @@ public class GraphqlCacheKeyTest extends UnitTestBase {
         params.forEach((name, value) -> parameterMap.put(name, new String[] {value}));
         final HttpServletRequest request = request();
         when(request.getParameterMap()).thenReturn(parameterMap);
-        params.forEach((name, value) -> when(request.getParameter(name)).thenReturn(value));
+        params.forEach((name, value) -> {
+            when(request.getParameter(name)).thenReturn(value);
+            when(request.getParameterValues(name)).thenReturn(new String[] {value});
+        });
         return request;
     }
 

@@ -216,8 +216,9 @@ cache.graphqlquerycache.graceperiod=60
 
 Entries are keyed on the server (`GraphqlCacheKey`) from the request body plus everything the
 servlet resolves from the request: the caller (auth headers, remember-me cookie or session user,
-or anonymous), the server name, the request parameters (site, language, variant, persona, page
-mode selectors) and the session attributes that drive those selectors. Different callers never
+or anonymous), the server name, the selector parameters the servlet reads (`Host`, `host_id`,
+`language_id`, the page language, `variantName`, the persona and `mode`; other parameters are
+ignored) and the session attributes that drive those selectors. Different callers never
 share an entry; anonymous callers share entries only among themselves. Bodies that carry a
 mutation operation are never cached.
 
