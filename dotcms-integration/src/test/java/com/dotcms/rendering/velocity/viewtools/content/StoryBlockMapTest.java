@@ -149,7 +149,7 @@ public class StoryBlockMapTest extends IntegrationTestBase {
 
         final Host   host     = Try.of(()->APILocator.getHostAPI().findDefaultHost(
                 APILocator.systemUser(), false)).getOrNull();
-        final String hostname = null == host? host.getHostname():"dotcms.com"; // fake host
+        final String hostname = null != host ? host.getHostname() : "dotcms.com"; // fake host
         final HttpServletRequest requestProxy = new FakeHttpRequest(hostname, null).request();
         final HttpServletResponse responseProxy = new BaseResponse().response();
         final Context context = VelocityUtil.getInstance().getContext(requestProxy, responseProxy);
