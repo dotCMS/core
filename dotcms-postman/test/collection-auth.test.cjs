@@ -530,3 +530,23 @@ test('Add-Remove render postscripts pass an authorized 200 and fail a 401 on the
     assert.match(denied[0].error.message, /status 200/, label(r));
   });
 });
+
+// PageResource.render rejects an unauthenticated caller before host, page, variant, mode or
+// permission resolution, so every positive (200) /api/v1/page/render request across the
+// runnable inventory must carry a real effective Bearer. Walk all collections so a new fixture
+// cannot silently rely on an ambient cookie jar, an undefined token or a request-level noauth.
+const protectedRenderPositives = requests.filter((r) =>
+  /\/api\/v1\/page\/render(?![A-Za-z])/.test(url(r)) &&
+  /\.status\(200\)/.test((r.node.event || []).map(eventCode).join('\n')));
+test('every positive protected page-render request carries an effective Bearer, never noauth/undefined/cookie', () => {
+  assert.ok(protectedRenderPositives.length >= 34, 'Do not pass by dropping positive render coverage');
+  const violations = protectedRenderPositives.filter((r) => {
+    if (r.auth?.type === 'bearer') {
+      const token = resolve(value(r.auth, 'token'), effectiveVariables(r));
+      return !token || /\{\{/.test(token);
+    }
+    return !manualAuth(r).some((h) => /^Bearer\s+\S+$/i.test(resolve(h.value, effectiveVariables(r))));
+  });
+  assert.equal(violations.length, 0,
+    `Positive /api/v1/page/render requests need an effective Bearer:\n${violations.map(label).join('\n')}`);
+});
