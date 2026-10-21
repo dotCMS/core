@@ -18,6 +18,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -50,8 +51,6 @@ import org.quartz.JobExecutionContext;
  *
  */
 public class CMSMaintenanceAjax {
-
-    private static final String MAINTENANCE_PORTLET_ID = "maintenance";
 
     /**
      * Returns the progress of the full reindex that is currently running.
@@ -419,7 +418,7 @@ public class CMSMaintenanceAjax {
                     user.getUserId()));
             throw new DotSecurityException("Maintenance routines require a CMS administrator");
         }
-        if (!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(MAINTENANCE_PORTLET_ID, user)) {
+        if (!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.MAINTENANCE.toString(), user)) {
             SecurityLogger.logInfo(CMSMaintenanceAjax.class, String.format(
                     "User [%s] does not have the Maintenance portlet, which maintenance routines require",
                     user.getUserId()));

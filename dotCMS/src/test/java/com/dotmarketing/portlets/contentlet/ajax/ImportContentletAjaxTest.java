@@ -46,6 +46,9 @@ class ImportContentletAjaxTest {
 
     private static final long IMPORT_ID = 4242L;
     private static final String CALLER_ID = "back-end-user";
+    /** Text of the data error a failing database read raises, as the driver words it. */
+    private static final String DATABASE_ERROR_TEXT =
+            "org.postgresql.util.PSQLException: ERROR: relation \"import_audit\" does not exist";
 
     private final HttpServletRequest request = mock(HttpServletRequest.class);
     private final UserWebAPI userWebAPI = mock(UserWebAPI.class);
@@ -89,7 +92,7 @@ class ImportContentletAjaxTest {
                             ? List.of() : List.of(Map.of("userid", importOwner));
                     when(mock.loadObjectResults()).thenAnswer(invocation -> {
                         if (ownerLookupFails) {
-                            throw new DotDataException("the import audit table could not be read");
+                            throw new DotDataException(DATABASE_ERROR_TEXT);
                         }
                         return rows;
                     });
@@ -270,8 +273,9 @@ class ImportContentletAjaxTest {
      * Given: a user who is not a CMS administrator, and an import audit table that cannot be read
      * when the owner of the import is looked up
      * When: cancelImport is called
-     * Then: the data error reaches the caller as a DotDataException, not as a denial: the import
-     * is not cancelled and nothing is written to the security log
+     * Then: the data error reaches the caller as a DotDataException, not as a denial, with a fixed
+     * message instead of the database text; the import is not cancelled and nothing is written to
+     * the security log
      */
     @Test
     void cancelImport_ownerLookupDataErrorIsNotReportedAsDenial() throws Exception {
@@ -279,7 +283,10 @@ class ImportContentletAjaxTest {
         importOwner = CALLER_ID;
         ownerLookupFails = true;
 
-        assertThrows(DotDataException.class, () -> new ImportContentletAjax().cancelImport(IMPORT_ID));
+        final DotDataException thrown = assertThrows(DotDataException.class,
+                () -> new ImportContentletAjax().cancelImport(IMPORT_ID));
+        assertFalse(thrown.getMessage().contains(DATABASE_ERROR_TEXT),
+                "the database text must not reach the caller, got: " + thrown.getMessage());
         assertImportNotCancelled();
         securityLogger.verifyNoInteractions();
     }
@@ -288,8 +295,8 @@ class ImportContentletAjaxTest {
      * Given: a user who is not a CMS administrator, and an import audit table that cannot be read
      * when the owner of the import is looked up
      * When: checkImportStatus is called
-     * Then: the data error reaches the caller as a DotDataException instead of the import being
-     * reported as finished, and nothing is written to the security log
+     * Then: the data error reaches the caller as a DotDataException with a fixed message, instead
+     * of the import being reported as finished, and nothing is written to the security log
      */
     @Test
     void checkImportStatus_ownerLookupDataErrorIsNotReportedAsFinished() throws Exception {
@@ -297,8 +304,10 @@ class ImportContentletAjaxTest {
         importOwner = CALLER_ID;
         ownerLookupFails = true;
 
-        assertThrows(DotDataException.class,
+        final DotDataException thrown = assertThrows(DotDataException.class,
                 () -> new ImportContentletAjax().checkImportStatus(IMPORT_ID));
+        assertFalse(thrown.getMessage().contains(DATABASE_ERROR_TEXT),
+                "the database text must not reach the caller, got: " + thrown.getMessage());
         securityLogger.verifyNoInteractions();
     }
 

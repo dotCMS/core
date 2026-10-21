@@ -705,15 +705,19 @@ class StructureAjaxTest {
      * data error (not a missing type)
      * When: checkDependencies is called
      * Then: the data error reaches the caller instead of a size of zero, which the delete dialog
-     * would read as "no container uses this type"; the containers are not looked up and nothing
-     * is written to the security log
+     * would read as "no container uses this type", with a fixed message instead of the database
+     * text; the containers are not looked up and nothing is written to the security log
      */
     @Test
     void checkDependencies_typeLookupDataErrorIsReportedToTheCaller() throws Exception {
         givenPermissionOnTypeA(PERMISSION_READ, true);
-        when(contentTypeAPI.find(TYPE_A)).thenThrow(new DotDataException("content type could not be loaded"));
+        final String databaseText = "org.postgresql.util.PSQLException: ERROR: relation \"structure\" does not exist";
+        when(contentTypeAPI.find(TYPE_A)).thenThrow(new DotDataException(databaseText));
 
-        assertThrows(DotDataException.class, () -> new StructureAjax().checkDependencies(TYPE_A));
+        final DotDataException thrown = assertThrows(DotDataException.class,
+                () -> new StructureAjax().checkDependencies(TYPE_A));
+        assertFalse(thrown.getMessage().contains(databaseText),
+                "the database text must not reach the caller, got: " + thrown.getMessage());
 
         verify(containerAPI, never()).findContainersForStructure(anyString(), anyBoolean());
         verify(containerAPI, never()).findContainersForStructure(anyString());

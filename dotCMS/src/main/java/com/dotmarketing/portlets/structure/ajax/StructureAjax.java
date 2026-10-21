@@ -517,9 +517,7 @@ public class StructureAjax {
 		final User user = DwrUtil.getLoggedInUser();
 		final Company company = PublicCompanyFactory.getDefaultCompany();
 		try {
-			final ContentType type = FieldReorderHelper.reorder(user, structureInode,
-					sortOrdersByFieldInode(inodeList));
-			CacheLocator.getContentTypeCache().remove(new StructureTransformer(type).asStructure());
+			FieldReorderHelper.reorder(user, structureInode, sortOrdersByFieldInode(inodeList));
 
 			return LanguageUtil.get(company.getCompanyId(), company.getLocale(),
 					"message.structure.reorderfield");
@@ -624,12 +622,8 @@ public class StructureAjax {
 	 *
 	 * @param id inode of the content type
 	 * @return the content type properties, or {@code null}
-	 * @throws DotDataException     declared by the signature; not thrown by the current
-	 *                              implementation
-	 * @throws DotSecurityException declared by the signature; not thrown by the current
-	 *                              implementation
 	 */
-	public Map<String, Object> fetchByIdentity(String id) throws DotDataException, DotSecurityException {
+	public Map<String, Object> fetchByIdentity(String id) {
 		if (!canRead(loggedInUser(), id)) {
 			return null;
 		}
@@ -646,7 +640,8 @@ public class StructureAjax {
 	 * zero, and the containers are not looked up. The containers are looked up with the inode of
 	 * the content type that was loaded for the READ check. A failure to load the content type is
 	 * thrown, not answered with a size of zero, because the delete dialog reads zero as "no
-	 * container uses this type".
+	 * container uses this type". The cause is logged, and the exception carries a fixed message,
+	 * as DWR sends the message to the page.
 	 *
 	 * @param structureInode inode of the content type
 	 * @return a map with the {@code containers} list and its {@code size}
@@ -659,7 +654,14 @@ public class StructureAjax {
 
 		Map<Object,Object> result = new HashMap<>();
 		List<Map<String,String>> containersList = new ArrayList<>();
-		final ContentType readableType = loadReadableType(loggedInUser(), structureInode);
+		final ContentType readableType;
+		try {
+			readableType = loadReadableType(loggedInUser(), structureInode);
+		} catch (final DotDataException e) {
+			Logger.error(StructureAjax.class,
+					"The content type could not be loaded to list the containers that use it", e);
+			throw new DotDataException("The content type could not be loaded");
+		}
 		if (null == readableType) {
 			result.put("containers", containersList);
 			result.put("size", 0);
@@ -726,10 +728,12 @@ public class StructureAjax {
 	/**
 	 * Loads a content type the user may read. The type is loaded with
 	 * {@code ContentTypeAPI.find}, the same READ check {@link #getKeyStructureFields(String)} and
-	 * {@link #getStructureCategories(String)} rely on; for content types it honours front-end
-	 * roles, unlike the older check in {@link #getStructureDetails(String)}.
-	 * {@link #getCategoriesTree(String, String)} does not use it, as that method also serves
-	 * front-end sessions and applies its own front-end role rule.
+	 * {@link #getStructureCategories(String)} rely on. That check honours front-end roles, unlike
+	 * the older check in {@link #getStructureDetails(String)}: {@code APILocator.getContentTypeAPI(user)}
+	 * is created with {@code respectFrontendRoles=false}, but {@code ContentTypeAPIImpl#find}
+	 * checks READ with the three-argument {@code PermissionAPI#doesUserHavePermission}, which
+	 * respects front-end roles. {@link #getCategoriesTree(String, String)} does not use it, as
+	 * that method also serves front-end sessions and applies its own front-end role rule.
 	 * <p>No user, a blank or unknown id, a type the user cannot read, and a failure to load the
 	 * type all answer {@code null}. Only a type the user cannot read is a denial and writes one
 	 * security log line. A failure to load the type is logged as a warning of this class, not as

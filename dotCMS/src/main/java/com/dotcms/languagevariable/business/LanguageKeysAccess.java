@@ -4,6 +4,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.model.User;
 
@@ -15,12 +16,6 @@ import com.liferay.portal.model.User;
  * that manage language keys.
  */
 public final class LanguageKeysAccess {
-
-    /** Id of the Languages portlet. */
-    public static final String LANGUAGES_PORTLET_ID = "languages";
-
-    /** Id of the Locales portlet. */
-    public static final String LOCALES_PORTLET_ID = "locales";
 
     private LanguageKeysAccess() {
         throw new IllegalStateException("Utility class");
@@ -40,16 +35,16 @@ public final class LanguageKeysAccess {
 
         if (null != user) {
             final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
-            if (layoutAPI.doesUserHaveAccessToPortlet(LANGUAGES_PORTLET_ID, user)
-                    || layoutAPI.doesUserHaveAccessToPortlet(LOCALES_PORTLET_ID, user)) {
+            if (layoutAPI.doesUserHaveAccessToPortlet(PortletID.LANGUAGES.toString(), user)
+                    || layoutAPI.doesUserHaveAccessToPortlet(PortletID.LOCALES.toString(), user)) {
                 return;
             }
         }
 
         SecurityLogger.logInfo(LanguageKeysAccess.class, String.format(
                 "User [%s] does not have access to the [%s] or the [%s] Portlet, required to save language keys",
-                null == user ? "[not logged in]" : user.getUserId(), LANGUAGES_PORTLET_ID,
-                LOCALES_PORTLET_ID));
+                null == user ? "[not logged in]" : user.getUserId(), PortletID.LANGUAGES,
+                PortletID.LOCALES));
         throw new DotSecurityException(
                 "Saving language keys requires access to the Languages or the Locales portlet");
     }

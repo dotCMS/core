@@ -63,7 +63,7 @@ public final class FieldReorderHelper {
      * @param user               the user asking for the new order
      * @param contentTypeId      id (inode) of the content type whose fields are reordered
      * @param sortOrderByFieldId new sort order per field id, as sent by the client
-     * @return the content type whose fields were reordered, so callers can clear their caches
+     * @return the content type whose fields were reordered
      * @throws DotSecurityException  when there is no user, the content type does not exist, the
      *                               user cannot edit its permissions, or a field does not belong to
      *                               it
@@ -93,7 +93,7 @@ public final class FieldReorderHelper {
      * @param user               the user asking for the new order
      * @param sortOrderByFieldId new sort order per field id, as sent by the client; must not be
      *                           empty
-     * @return the content type whose fields were reordered, so callers can clear their caches
+     * @return the content type whose fields were reordered
      * @throws DotSecurityException  when there is no user, no field is sent, the first field does
      *                               not exist, the user cannot edit the permissions of its content
      *                               type, or another field does not belong to that type
@@ -124,7 +124,8 @@ public final class FieldReorderHelper {
 
     /**
      * Returns the id of the content type a field belongs to. A field that does not exist is
-     * rejected like a field of another content type; any other failure to load it is a data error.
+     * rejected like a content type the user cannot edit, so the answer does not tell whether the
+     * field exists; any other failure to load it is a data error.
      */
     private static String contentTypeIdOf(final User user, final String fieldId)
             throws DotSecurityException, DotDataException {
@@ -133,10 +134,10 @@ public final class FieldReorderHelper {
         try {
             field = APILocator.getContentTypeFieldAPI().find(fieldId);
         } catch (final NotFoundInDbException e) {
-            throw deny(user, FIELDS_NOT_OF_TYPE);
+            throw deny(user, TYPE_NOT_EDITABLE);
         }
         if (null == field) {
-            throw deny(user, FIELDS_NOT_OF_TYPE);
+            throw deny(user, TYPE_NOT_EDITABLE);
         }
         return field.contentTypeId();
     }

@@ -4,6 +4,7 @@ import com.dotmarketing.business.ajax.DwrUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.action.ImportAuditUtil;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -72,7 +73,9 @@ public class ImportContentletAjax {
 	 * @param user     the logged-in {@link User}
 	 * @param importId the import id
 	 * @return {@code true} if the user can manage the import
-	 * @throws DotDataException if the user who started the import cannot be read
+	 * @throws DotDataException if the user who started the import cannot be read; the cause is
+	 *                          logged and the exception carries a fixed message, as DWR sends the
+	 *                          message to the page
 	 */
 	private boolean canManageImport(final User user, final Long importId) throws DotDataException {
 		if (importId == null) {
@@ -81,9 +84,14 @@ public class ImportContentletAjax {
 		if (user.isAdmin()) {
 			return true;
 		}
-		final String ownerId = ImportAuditUtil.findImportOwner(importId);
-		final String callerId = user.getUserId();
-		return ownerId != null && callerId != null && ownerId.equals(callerId.trim());
+		final String ownerId;
+		try {
+			ownerId = ImportAuditUtil.findImportOwner(importId);
+		} catch (final DotDataException e) {
+			Logger.error(ImportContentletAjax.class, "The user who started the import could not be read", e);
+			throw new DotDataException("The import could not be checked");
+		}
+		return ownerId != null && ownerId.equals(user.getUserId());
 	}
 
 }
