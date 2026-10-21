@@ -37,6 +37,7 @@ export const DEFAULT_CONFIG: DotAuthConfig = {
         claimLastName: 'family_name',
         claimGroups: 'groups',
         autoProvision: true,
+        trustEmailWithoutVerifiedClaim: false,
         syncOnLogin: true,
         defaultRoles: [],
         roleBehavior: 'sync-all',
@@ -154,6 +155,10 @@ export function fromView(view: DotAuthConfigView): DotAuthConfig {
         claimFirstName: String(values.firstNameClaim ?? config.oidc.claimFirstName),
         claimLastName: String(values.lastNameClaim ?? config.oidc.claimLastName),
         autoProvision: booleanValue(values.autoProvision, config.oidc.autoProvision),
+        trustEmailWithoutVerifiedClaim: booleanValue(
+            values.trustEmailWithoutVerifiedClaim,
+            config.oidc.trustEmailWithoutVerifiedClaim ?? false
+        ),
         syncOnLogin: true,
         defaultRoles: splitList(values.extraRoles),
         roleBehavior: fromBuildRolesStrategy(values.buildRolesStrategy),
@@ -244,6 +249,7 @@ export function toPayload(config: DotAuthConfig, siteId: string): DotAuthConfigP
             firstNameClaim: config.oidc.claimFirstName || undefined,
             lastNameClaim: config.oidc.claimLastName || undefined,
             autoProvision: config.oidc.autoProvision,
+            trustEmailWithoutVerifiedClaim: config.oidc.trustEmailWithoutVerifiedClaim ?? false,
             groupMappings: JSON.stringify(config.oidc.groupMappings),
             extraRoles: config.oidc.defaultRoles.join(','),
             buildRolesStrategy: toBuildRoles(config.oidc.roleBehavior),
