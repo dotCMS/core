@@ -5,6 +5,7 @@ import com.dotcms.rendering.js.proxy.JsUser;
 import com.dotcms.rendering.js.JsViewContextAware;
 import com.dotcms.rendering.js.JsViewTool;
 import com.dotcms.rendering.velocity.viewtools.CMSUsersWebAPI;
+import com.dotcms.rendering.velocity.viewtools.util.UserCopies;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
@@ -21,6 +22,8 @@ import java.util.List;
 
 /**
  * Wraps the CMSUsersWebAPI (cmsuser) into the JS context.
+ * Looked-up accounts are wrapped around detached copies without credential fields, so scripts
+ * never hold the cached user record.
  * @author jsanca
  */
 public class UserJsViewTool implements JsViewTool, JsViewContextAware {
@@ -36,7 +39,7 @@ public class UserJsViewTool implements JsViewTool, JsViewContextAware {
 	public JsUser getUserByEmail(final String email) {
 		try {
 			final User user = APILocator.getUserAPI().loadByUserByEmail(email, APILocator.systemUser(), false);
-			return null != user? new JsUser(user): null;
+			return null != user? new JsUser(UserCopies.withoutCredentials(user)): null;
 		} catch (final Exception e) {
 			Logger.error(UserJsViewTool.class, e.getMessage(), e);
 			return null;
@@ -57,7 +60,7 @@ public class UserJsViewTool implements JsViewTool, JsViewContextAware {
 		}
 		try {
 			final User user = APILocator.getUserAPI().loadUserById(userId, APILocator.systemUser(), false);
-			return null != user? new JsUser(user): null;
+			return null != user? new JsUser(UserCopies.withoutCredentials(user)): null;
 		} catch (final Exception e) {
 			Logger.error(UserJsViewTool.class, e.getMessage(), e);
 			return null;
@@ -96,7 +99,8 @@ public class UserJsViewTool implements JsViewTool, JsViewContextAware {
 		final List<JsUser> users = new ArrayList<>();
 		for (final String userId : userIds) {
 			try {
-				users.add(new JsUser(APILocator.getUserAPI().loadUserById(userId, APILocator.systemUser(), true)));
+				users.add(new JsUser(UserCopies.withoutCredentials(
+						APILocator.getUserAPI().loadUserById(userId, APILocator.systemUser(), true))));
 			} catch (final Exception e) {
 				Logger.error(this, e.getMessage(), e);
 			}

@@ -13,6 +13,7 @@ import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rendering.velocity.viewtools.bean.UserProfile;
+import com.dotcms.rendering.velocity.viewtools.util.UserCopies;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
@@ -129,7 +130,7 @@ public class CMSUsersWebAPI implements ViewTool {
 				loggedInUser = (User) session.getAttribute(WebKeys.CMS_USER);
 			}
 		}
-		return loggedInUser == null ? null : detachedCopyWithoutCredentials(loggedInUser);
+		return UserCopies.withoutCredentials(loggedInUser);
 	}
 
 
@@ -290,28 +291,9 @@ public class CMSUsersWebAPI implements ViewTool {
 			return new UserProfile(user);
 		}
 		// another account's login addresses are not needed by templates
-		final User copy = detachedCopyWithoutCredentials(user);
+		final User copy = UserCopies.withoutCredentials(user);
 		copy.setLoginIP(null);
 		copy.setLastLoginIP(null);
-		return copy;
-	}
-
-	/**
-	 * Copies a user so that templates never hold the cached or session record. The copy keeps
-	 * the profile fields, the additional info (as its own map) and the modification date, and has
-	 * the password, the password-reset token and the remember-me token cleared.
-	 *
-	 * @param user the cached or session account
-	 * @return a detached copy without credential fields
-	 */
-	private static User detachedCopyWithoutCredentials(final User user) {
-		final User copy = (User) user.clone();
-		copy.setPassword(null);
-		copy.setIcqId(null);
-		copy.setRememberMeToken(null);
-		// clone() rebuilds the user without these two
-		copy.setAdditionalInfo(user.getAdditionalInfo() == null ? null : new HashMap<>(user.getAdditionalInfo()));
-		copy.setModificationDate(user.getModificationDate());
 		return copy;
 	}
 
