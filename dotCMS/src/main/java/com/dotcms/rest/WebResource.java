@@ -804,12 +804,19 @@ public  class WebResource {
             throw new SecurityException("Username and credential authentication is disabled",
                     Response.Status.UNAUTHORIZED);
         }
-        final Optional<User> tokenUser = BasicAuthentication.authenticateApiToken(username, password, ip);
-        if (tokenUser.isPresent()) {
-            return tokenUser.get();
-        }
-        if (mode != Mode.ALL) {
-            throw new SecurityException("Invalid API token credentials", Response.Status.UNAUTHORIZED);
+        // In ALL mode a credential that cannot be a compact JWS (API JWTs always have three
+        // dot-separated segments) goes straight to the legacy password pipeline, so an ordinary
+        // password never reaches the JWT verifier and its misleading "JWT Failed" audit entries.
+        // A JWT-shaped credential is still fully verified, and a verification failure still falls
+        // back to the legacy password login below. JWT_TOKEN mode always verifies.
+        if (mode == Mode.JWT_TOKEN || isCompactJwtShape(password)) {
+            final Optional<User> tokenUser = BasicAuthentication.authenticateApiToken(username, password, ip);
+            if (tokenUser.isPresent()) {
+                return tokenUser.get();
+            }
+            if (mode != Mode.ALL) {
+                throw new SecurityException("Invalid API token credentials", Response.Status.UNAUTHORIZED);
+            }
         }
 
         if(StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password)) { // providing login and password so let's try to authenticate
@@ -844,6 +851,20 @@ public  class WebResource {
         }
 
         return user;
+    }
+
+    /**
+     * Returns {@code true} when the credential has the compact JWS shape produced by the API token
+     * factory: exactly three dot-separated segments. This is only a cheap routing test to keep
+     * ordinary passwords out of the JWT verifier; the shape is never treated as proof that the
+     * credential is a valid token. A password that happens to contain exactly two dots is still
+     * routed to the verifier and falls back to password login when verification fails.
+     *
+     * @param credential the submitted secret
+     * @return {@code true} when the secret contains exactly two dot separators
+     */
+    private static boolean isCompactJwtShape(final String credential) {
+        return credential != null && StringUtils.countMatches(credential, ".") == 2;
     }
 
     /**
