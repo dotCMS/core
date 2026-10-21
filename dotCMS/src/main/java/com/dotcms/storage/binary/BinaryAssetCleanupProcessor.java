@@ -14,14 +14,20 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.liferay.util.FileUtil;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import javax.enterprise.context.Dependent;
 
 /** Cleanup intent is committed with the content deletion and survives failed S3 requests/restarts. */
@@ -30,6 +36,8 @@ import javax.enterprise.context.Dependent;
 @ExponentialBackoffRetryPolicy
 public class BinaryAssetCleanupProcessor implements JobProcessor, Validator {
     public static final String QUEUE = "binaryAssetCleanup";
+    private static final String REVISIONS = "/.revisions/";
+    private static final ObjectMapper JSON = new ObjectMapper();
 
     /**
      * Records the cleanup of a deleted inode's binaries and metadata in the caller's deletion
@@ -104,15 +112,18 @@ public class BinaryAssetCleanupProcessor implements JobProcessor, Validator {
     }
 
     /**
-     * Deletes the binaries and metadata recorded for a deleted inode, refusing while any content
-     * version with that inode exists. Metadata goes first, then each recorded binary path, then the
-     * inode's renditions and legacy image cache. Nothing outside the recorded inventory is deleted, so
-     * revisions uploaded after the deletion survive. Each step tolerates paths that are already gone,
-     * so a retry after a partial failure finishes the work.
+     * Deletes the binaries and metadata recorded for a deleted inode. Metadata goes first, then each
+     * recorded binary path, then the inode's renditions and legacy image cache. Nothing outside the
+     * recorded inventory is deleted, so revisions uploaded after the deletion survive. Each step
+     * tolerates paths that are already gone, so a retry after a partial failure finishes the work.
+     *
+     * <p>A content version with the same inode can exist again by the time the job runs, for example
+     * when push publishing re-creates it with the sender's inode. The job then deletes only the
+     * recorded revision files that the returned row does not reference and keeps everything else
+     * (see {@link #cleanReturnedInode}), and it completes instead of retrying until it fails.</p>
      *
      * @param job the cleanup job, carrying {@code inode}, {@code binaries} and {@code metadata}
-     * @throws JobProcessingException if the flag is off, the version exists, or a deletion fails;
-     *                                the queue retries it
+     * @throws JobProcessingException if the flag is off or a deletion fails; the queue retries it
      */
     @Override
     @CloseDBIfOpened
@@ -128,7 +139,11 @@ public class BinaryAssetCleanupProcessor implements JobProcessor, Validator {
             final List<String> metadataPaths = strings(job.parameters().get("metadata"));
             if (!new DotConnect().setSQL("select inode from contentlet where inode = ?")
                     .addParam(inode).loadObjectResults().isEmpty()) {
-                throw new JobProcessingException(job.id(), "Content version still exists: " + inode);
+                LocalTransaction.wrapReturn(() -> {
+                    cleanReturnedInode(inode, binaryPaths, metadataPaths);
+                    return null;
+                });
+                return;
             }
             final BinaryAssetStorageAPI binaries = APILocator.getBinaryAssetStorageAPI();
             APILocator.getFileMetadataAPI().removeMetadataPaths(inode, metadataPaths);
@@ -142,9 +157,120 @@ public class BinaryAssetCleanupProcessor implements JobProcessor, Validator {
             if (legacyCache.exists()) {
                 throw new DotDataException("Unable to remove legacy cache for " + inode);
             }
-        } catch (DotDataException | RuntimeException e) {
+        } catch (Exception e) {
             throw new JobProcessingException(job.id(), "Unable to clean binary assets for " + inode, e);
         }
+    }
+
+    /**
+     * Cleans up after an inode that exists again. Locks the returned row for the rest of the
+     * transaction, so a writer that is changing it right now finishes first and its references are
+     * the ones read here, and no new reference can be written while the files are deleted. Then
+     * deletes the recorded revision binaries ({@code .revisions/<uuid>/...}) and the recorded metadata
+     * inside those revision folders, except any folder the row references. Recorded files outside
+     * revision folders (older-layout binaries and metadata), renditions and the legacy image cache
+     * are all kept, because the returned row may be using them.
+     *
+     * <p>Revision keys contain a fresh UUID and are never reused by a check-in, so a revision the
+     * row does not reference now can only be referenced again if a row with that exact key is
+     * restored by hand.</p>
+     *
+     * @param inode         the inode that exists again
+     * @param binaryPaths   the binary paths recorded when the inode was deleted
+     * @param metadataPaths the metadata paths recorded when the inode was deleted
+     * @throws DotDataException if the row was deleted again meanwhile (the job retries and then takes
+     *                          the whole-inode path) or a deletion fails
+     */
+    private static void cleanReturnedInode(final String inode, final List<String> binaryPaths,
+                                           final List<String> metadataPaths) throws DotDataException {
+        final var rows = new DotConnect().setSQL("select contentlet_as_json from contentlet where inode = ? for update")
+                .addParam(inode).loadObjectResults();
+        if (rows.isEmpty()) {
+            throw new DotDataException("Content version " + inode + " was deleted again during cleanup");
+        }
+        final Object json = rows.getFirst().get("contentlet_as_json");
+        final Set<String> referenced;
+        try {
+            referenced = json == null || json.toString().isBlank() ? null : referencedRevisionFolders(json.toString());
+        } catch (IOException unreadable) {
+            Logger.warn(BinaryAssetCleanupProcessor.class, "Content version " + inode
+                    + " exists again but its stored references cannot be read; keeping all recorded files");
+            return;
+        }
+        if (referenced == null) {
+            Logger.warn(BinaryAssetCleanupProcessor.class, "Content version " + inode
+                    + " exists again without stored references; keeping all recorded files");
+            return;
+        }
+        final List<String> binaries = binaryPaths.stream()
+                .filter(path -> isUnreferencedRevision(path, referenced)).toList();
+        final List<String> metadata = metadataPaths.stream()
+                .filter(path -> isUnreferencedRevision(path, referenced)).toList();
+        Logger.info(BinaryAssetCleanupProcessor.class, "Content version " + inode + " exists again: deleting "
+                + binaries.size() + " unreferenced revision file(s) and " + metadata.size() + " metadata file(s), keeping "
+                + (binaryPaths.size() - binaries.size() + metadataPaths.size() - metadata.size())
+                + " recorded file(s) it references or that are not revisions");
+        APILocator.getFileMetadataAPI().removeMetadataPaths(inode, metadata);
+        final BinaryAssetStorageAPI storage = APILocator.getBinaryAssetStorageAPI();
+        for (final Map.Entry<String, List<String>> field : byField(inode, binaries).entrySet()) {
+            storage.deleteBinaryPaths(inode, field.getKey(), field.getValue());
+        }
+    }
+
+    /**
+     * Collects the revision folders a row references through any field's {@code storageKey} or
+     * {@code metadataStorageKey}. The JSON is scanned without validating field types, so a key the
+     * row mentions anywhere is kept.
+     *
+     * @param json the row's {@code contentlet_as_json}
+     * @return the referenced revision folders, in lower case
+     * @throws IOException if the JSON cannot be parsed
+     */
+    private static Set<String> referencedRevisionFolders(final String json) throws IOException {
+        final Set<String> folders = new HashSet<>();
+        final var fields = JSON.readTree(json).path("fields").elements();
+        while (fields.hasNext()) {
+            final var field = fields.next();
+            for (final String name : List.of("storageKey", "metadataStorageKey")) {
+                final String folder = revisionFolder(field.path(name).asText(""));
+                if (folder != null) {
+                    folders.add(folder);
+                }
+            }
+        }
+        return folders;
+    }
+
+    /**
+     * Tells whether a recorded path is a revision file whose folder the returned row does not
+     * reference. Anything that is not inside a revision folder is kept.
+     *
+     * @param path       a recorded binary or metadata path
+     * @param referenced the revision folders the row references, in lower case
+     * @return {@code true} when the path may be deleted
+     */
+    private static boolean isUnreferencedRevision(final String path, final Set<String> referenced) {
+        final String folder = revisionFolder(path);
+        return folder != null && !referenced.contains(folder);
+    }
+
+    /**
+     * Returns the revision folder ({@code a/b/<inode>/<field>/.revisions/<uuid>/}) a binary key or
+     * metadata path belongs to. A revision's metadata files live in that same folder. The result is
+     * in lower case because the filesystem stores metadata paths in lower case, and comparing that
+     * way only ever keeps more.
+     *
+     * @param path a binary key, or a metadata path with or without a leading {@code /}
+     * @return the folder in lower case, or {@code null} when the path is not inside a revision folder
+     */
+    private static String revisionFolder(final String path) {
+        final String relative = path.startsWith("/") ? path.substring(1) : path;
+        final int revisions = relative.indexOf(REVISIONS);
+        if (revisions < 0) {
+            return null;
+        }
+        final int end = relative.indexOf('/', revisions + REVISIONS.length());
+        return end < 0 ? null : relative.substring(0, end + 1).toLowerCase(Locale.ROOT);
     }
 
     /**

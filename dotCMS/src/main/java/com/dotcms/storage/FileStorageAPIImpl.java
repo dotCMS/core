@@ -15,6 +15,7 @@ import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.MetadataCache;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
@@ -24,8 +25,10 @@ import com.google.common.collect.ImmutableSortedMap;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.io.File;
+import java.io.IOException;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
+import java.nio.file.NoSuchFileException;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -158,8 +161,8 @@ public class FileStorageAPIImpl implements FileStorageAPI {
 
 
         } catch (Exception e) {
-            if (AssetStorageFeature.isEnabled() && e instanceof com.dotmarketing.exception.DotRuntimeException) {
-                throw (com.dotmarketing.exception.DotRuntimeException) e;
+            if (AssetStorageFeature.isEnabled() && e instanceof DotRuntimeException) {
+                throw (DotRuntimeException) e;
             }
             Logger.error(FileStorageAPIImpl.class, "Exception generating full metadata", e);
             return Collections.emptyMap();
@@ -307,7 +310,7 @@ public class FileStorageAPIImpl implements FileStorageAPI {
      * @param binary     the binary to read
      * @param generation the metadata generation to run
      * @return the generated metadata
-     * @throws com.dotmarketing.exception.DotRuntimeException if the binary could not be restored
+     * @throws DotRuntimeException if the binary could not be restored
      */
     private Map<String, Serializable> withLocalBinary(final File binary,
             final Supplier<Map<String, Serializable>> generation) {
@@ -317,10 +320,10 @@ public class FileStorageAPIImpl implements FileStorageAPI {
         final var assets = APILocator.getBinaryAssetStorageAPI();
         try (var lease = assets.acquireCacheLease(); var input = assets.openLocalFile(binary)) {
             return generation.get();
-        } catch (final java.nio.file.NoSuchFileException absent) {
+        } catch (final NoSuchFileException absent) {
             return generation.get();
-        } catch (final java.io.IOException | DotDataException failure) {
-            throw new com.dotmarketing.exception.DotRuntimeException(
+        } catch (final IOException | DotDataException failure) {
+            throw new DotRuntimeException(
                     "Unable to restore binary for metadata: " + binary, failure);
         }
     }

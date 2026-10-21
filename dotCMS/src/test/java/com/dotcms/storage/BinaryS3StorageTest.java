@@ -292,7 +292,7 @@ class BinaryS3StorageTest {
                 writer.createStatement().execute("update contentlet set contentlet_as_json = '{}'");
                 writer.commit();
                 assertNull(contentApi.getBinaryFile("abc123", "HeroImage"));
-                contentApi.deleteAllBinaries("abc123");
+                contentApi.deleteBinaryPaths("abc123", "HeroImage", contentApi.listBinaryPaths("abc123"));
                 assertTrue(client.listObjectsV2(bucket, GROUP + "/a/b/abc123/").getObjectSummaries().isEmpty());
             } finally {
                 writer.rollback();
@@ -336,8 +336,7 @@ class BinaryS3StorageTest {
                     AmazonS3StoragePersistenceAPIImpl.PathEncryptionMode.NONE);
             final var binaries = new BinaryAssetStorageAPIImpl(new ChainableStoragePersistenceAPI(
                     new JsonWriterDelegate(), List.of(fs, remote), mock(Chainable404StorageCache.class)));
-            final File source = Files.writeString(root.resolve("role-upload"), "temporary role credentials").toFile();
-            binaries.storeBinary("abc123", "MixedField", "Role.TXT", source);
+            storeLegacy(binaries, "abc123", "MixedField", "Role.TXT", "temporary role credentials");
             final String firstAccess = credentials.getCredentials().getAWSAccessKeyId();
             assertFalse(credentials.getCredentials().getSessionToken().isEmpty());
             credentials.refresh();
@@ -346,7 +345,7 @@ class BinaryS3StorageTest {
             assertTrue(binaries.evictLocalFile(cached));
             assertEquals("temporary role credentials", Files.readString(
                     binaries.getBinaryFile("abc123", "MixedField", "Role.TXT").toPath()));
-            binaries.deleteBinary("abc123", "MixedField");
+            binaries.deleteBinaryPaths("abc123", "MixedField", List.of("a/b/abc123/MixedField/Role.TXT"));
             assertTrue(client.listObjectsV2(bucket, GROUP + "/a/b/abc123/MixedField/").getObjectSummaries().isEmpty());
         } finally {
             roleStorage.shutdownTransferManager();
@@ -378,14 +377,13 @@ class BinaryS3StorageTest {
             configuredStorage = S3StorageConfigurationTest.storage(configured);
             final var binaries = new BinaryAssetStorageAPIImpl(new ChainableStoragePersistenceAPI(
                     new JsonWriterDelegate(), List.of(fs, configured), mock(Chainable404StorageCache.class)));
-            final File source = Files.writeString(root.resolve("source.txt"), "SDK credential chain").toFile();
-            binaries.storeBinary("abc123", "MixedField", "Mixed.TXT", source);
+            storeLegacy(binaries, "abc123", "MixedField", "Mixed.TXT", "SDK credential chain");
             final File cached = binaries.getBinaryFile("abc123", "MixedField", "Mixed.TXT");
             assertTrue(binaries.evictLocalFile(cached));
             assertFalse(cached.exists());
             assertEquals("SDK credential chain", Files.readString(
                     binaries.getBinaryFile("abc123", "MixedField", "Mixed.TXT").toPath()));
-            binaries.deleteBinary("abc123", "MixedField");
+            binaries.deleteBinaryPaths("abc123", "MixedField", List.of("a/b/abc123/MixedField/Mixed.TXT"));
             assertTrue(client.listObjectsV2(bucket, GROUP + "/a/b/abc123/MixedField/").getObjectSummaries().isEmpty());
             assertNull(binaries.getBinaryFile("abc123", "MixedField", "Mixed.TXT"));
         } finally {
@@ -397,39 +395,20 @@ class BinaryS3StorageTest {
     }
 
     @Test
-    void uploadEvictRetrieveCopyAndDeleteMixedCaseBinary() throws Exception {
-        final File source = Files.writeString(root.resolve("temporary-upload.tmp"), "binary payload").toFile();
+    void backfillEvictAndRetrieveMixedCaseBinary() throws Exception {
         final String path = "a/b/abc123/HeroImage/MyReport.PDF";
-        api.storeBinary("abc123", "HeroImage", "MyReport.PDF", source);
+        storeLegacy(api, "abc123", "HeroImage", "MyReport.PDF", "binary payload");
 
         assertTrue(client.doesObjectExist(bucket, GROUP + "/" + path));
         assertEquals("binary payload", readStoredBinary(path));
         assertEquals(List.of("MyReport.PDF"), List.of(root.resolve("a/b/abc123/HeroImage").toFile().list()));
         assertTrue(api.evictLocalFile(root.resolve(path).toFile()));
         assertFalse(Files.exists(root.resolve(path)));
-        assertTrue(api.existsBinary("abc123", "HeroImage"));
 
         final File restored = api.getBinaryFile("abc123", "HeroImage");
         assertTrue(Files.isSameFile(root.resolve(path), restored.toPath()));
         assertEquals("MyReport.PDF", restored.getName());
         assertEquals("binary payload", Files.readString(restored.toPath()));
-        api.copyBinary("abc123", "de456", "HeroImage", "MyReport.PDF");
-        assertTrue(client.doesObjectExist(bucket, GROUP + "/d/e/de456/HeroImage/MyReport.PDF"));
-
-        // A remote-only sibling must be deleted even though the first file is cached.
-        client.putObject(bucket, GROUP + "/a/b/abc123/HeroImage/nested/Second.TXT", "second");
-        client.putObject(bucket, GROUP + "/a/b/abc123/HeroImageExtra/Keep.TXT", "keep");
-        api.deleteBinary("abc123", "HeroImage");
-        assertTrue(client.listObjectsV2(bucket, GROUP + "/a/b/abc123/HeroImage/").getObjectSummaries().isEmpty());
-        assertFalse(Files.exists(root.resolve(path)));
-        assertFalse(api.existsBinary("abc123", "HeroImage"));
-        assertNull(api.getBinaryFile("abc123", "HeroImage", "MyReport.PDF"));
-        assertNull(api.getBinaryFile("abc123", "HeroImage"));
-        assertTrue(client.doesObjectExist(bucket, GROUP + "/a/b/abc123/HeroImageExtra/Keep.TXT"));
-        api.deleteAllBinaries("abc123");
-        api.deleteAllBinaries("de456");
-        assertTrue(client.listObjectsV2(bucket, GROUP + "/a/b/abc123/").getObjectSummaries().isEmpty());
-        assertTrue(client.listObjectsV2(bucket, GROUP + "/d/e/de456/").getObjectSummaries().isEmpty());
     }
 
     @Test
@@ -556,8 +535,7 @@ class BinaryS3StorageTest {
 
     @Test
     void activeConsumerDefersEvictionWithoutBlockingOtherReaders() throws Exception {
-        final Path upload = Files.writeString(root.resolve("source.txt"), "leased bytes");
-        api.storeBinary("abc123", "HeroImage", "MixedCase.Txt", upload.toFile());
+        storeLegacy(api, "abc123", "HeroImage", "MixedCase.Txt", "leased bytes");
         final File binary = api.getBinaryFile("abc123", "HeroImage", "MixedCase.Txt");
         final var acquired = new java.util.concurrent.CountDownLatch(1);
         final var consume = new java.util.concurrent.CountDownLatch(1);
@@ -587,8 +565,7 @@ class BinaryS3StorageTest {
     @Test
     void physicalPathOpeningRestoresLegacyAndRevisionFiles() throws Exception {
         final File upload = Files.writeString(root.resolve("input.txt"), "template bytes").toFile();
-        api.storeBinary("abc123", "MixedField", "Theme.CSS", upload);
-        final File legacy = api.getBinaryFile("abc123", "MixedField", "Theme.CSS");
+        final File legacy = storeLegacy(api, "abc123", "MixedField", "Theme.CSS", "template bytes");
         final File revision = api.storeRevision("abc123", "MixedField", "Theme.CSS", upload);
         for (final File file : List.of(legacy, revision)) {
             assertTrue(api.evictLocalFile(file));
@@ -607,8 +584,9 @@ class BinaryS3StorageTest {
         for (int i = 0; i < 1005; i++) {
             client.putObject(bucket, prefix + i + ".txt", "data");
         }
-        assertEquals(1005, s3.listObjectPaths(GROUP, "a/b/abc123/Files").size());
-        api.deleteBinary("abc123", "Files");
+        final List<String> paths = s3.listObjectPaths(GROUP, "a/b/abc123/Files");
+        assertEquals(1005, paths.size());
+        api.deleteBinaryPaths("abc123", "Files", paths);
         assertTrue(client.listObjectsV2(bucket, prefix).getObjectSummaries().isEmpty());
     }
 
@@ -803,6 +781,19 @@ class BinaryS3StorageTest {
         metadata.deleteObjectReference("metadata", path);
         assertFalse(client.doesObjectExist(bucket, expectedKey));
     }
+    /**
+     * Writes a binary at its {@code inode/field/name} cache path and backfills it to S3, the way an
+     * existing filesystem binary reaches durable storage.
+     */
+    private File storeLegacy(final BinaryAssetStorageAPI binaries, final String inode, final String field,
+                             final String name, final String content) throws Exception {
+        final Path local = root.resolve(inode.charAt(0) + "/" + inode.charAt(1) + "/" + inode + "/" + field + "/" + name);
+        Files.createDirectories(local.getParent());
+        Files.writeString(local, content);
+        assertTrue(binaries.backfillBinary(inode, field, local.toFile()));
+        return local.toFile();
+    }
+
     private String readStoredBinary(String path) throws Exception {
         final File file = s3.pullFile(GROUP, path);
         try { return Files.readString(file.toPath()); }
@@ -830,11 +821,11 @@ class BinaryS3StorageTest {
         assertEquals("shared immutable bytes", client.getObjectAsString(bucket, blobKey));
         assertTrue(api.evictLocalFile(first));
         assertTrue(api.evictLocalFile(second));
-        api.deleteBinary("abc123", "HeroImage");
+        api.deleteBinaryPaths("abc123", "HeroImage", List.of(firstKey));
         assertEquals("shared immutable bytes", Files.readString(api.getRevisionFile("def456", "Attachment", secondKey).toPath()));
         assertFalse(client.doesObjectExist(bucket, GROUP + "/" + firstKey));
         assertTrue(client.doesObjectExist(bucket, blobKey));
-        api.deleteBinary("def456", "Attachment");
+        api.deleteBinaryPaths("def456", "Attachment", List.of(secondKey));
         assertTrue(client.doesObjectExist(bucket, blobKey), "Shared blobs are retained until reference-aware reclamation is implemented");
     }
 

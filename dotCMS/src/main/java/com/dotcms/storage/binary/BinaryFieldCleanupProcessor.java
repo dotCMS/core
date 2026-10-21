@@ -23,6 +23,7 @@ import com.dotmarketing.util.Config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -136,9 +137,16 @@ public class BinaryFieldCleanupProcessor implements JobProcessor, Validator {
      * current transaction: it uploads a verified recovery ZIP of the row's field bytes and metadata,
      * removes the field from the row's JSON, and records the per-inode cleanup job.
      *
+     * <p>A file the row points to that is already gone does not stop the cleanup. If the referenced
+     * binary is not in the storage listing, or the referenced metadata exists neither locally nor in
+     * S3, it is logged, listed in the archive's {@code missing.json}, and left out of the per-inode
+     * job's inventory, so that job neither deletes nor expects it. The row is then cleared like any
+     * other and the cursor moves on. A storage or listing error, a listed file that disappears before
+     * it is archived, or an archive S3 does not confirm still fails the row, and the job retries it.</p>
+     *
      * @param row   the locked row, with {@code inode}, {@code identifier} and {@code contentlet_as_json}
      * @param field the removed field's variable name
-     * @throws Exception if the archive cannot be verified or the row cannot be updated
+     * @throws Exception if storage fails, the archive cannot be verified or the row cannot be updated
      */
     static void archiveRow(final Map<String, Object> row, final String field) throws Exception {
         final String inode = row.get("inode").toString();
@@ -154,10 +162,14 @@ public class BinaryFieldCleanupProcessor implements JobProcessor, Validator {
         final List<String> binaries = binaryAPI.listBinaryPaths(inode).stream()
                 .filter(path -> path.startsWith(owner + "/")).toList();
         final var reference = BinaryAssetReference.fromJson(document.path("fields").path(field), inode, field);
+        final List<Map<String, String>> missing = new ArrayList<>();
         if (reference != null) {
             final String expected = reference.storageKey() == null
                     ? owner + "/" + reference.fileName() : reference.storageKey();
-            if (!binaries.contains(expected)) throw new DotDataException("Missing binary before field backup: " + expected);
+            // The listing succeeded and does not contain it, so the binary is gone everywhere.
+            if (!binaries.contains(expected)) {
+                missing.add(ContentletBackupStorage.missingEntry(inode, "binary", field, "binary-assets/" + expected));
+            }
         }
         final Set<String> metadata = new LinkedHashSet<>();
         final Set<String> parents = new LinkedHashSet<>();
@@ -175,10 +187,18 @@ public class BinaryFieldCleanupProcessor implements JobProcessor, Validator {
                 if (ownsMetadata(owner, absolute)) metadata.add(absolute);
             }
         }
-        if (reference != null && reference.metadataStorageKey() != null) metadata.add(reference.metadataStorageKey());
+        if (reference != null && reference.metadataStorageKey() != null && !metadata.contains(reference.metadataStorageKey())) {
+            // Not listed under that spelling: keep it if it can still be read, otherwise it is gone.
+            final String key = reference.metadataStorageKey();
+            if (ContentletBackupStorage.rawMetadata(key) != null) {
+                metadata.add(key);
+            } else {
+                missing.add(ContentletBackupStorage.missingEntry(inode, "metadata", field, "dotmetadata/" + key.substring(1)));
+            }
+        }
         if (binaries.isEmpty() && metadata.isEmpty() && reference == null) return;
         final String backup = ContentletBackupStorage.getInstance().storeField(
-                row.get("identifier").toString(), inode, json, binaries, List.copyOf(metadata));
+                row.get("identifier").toString(), inode, json, binaries, List.copyOf(metadata), missing);
         ((ObjectNode) document.path("fields")).remove(field);
         new DotConnect().setSQL("update contentlet set contentlet_as_json = ?::jsonb where inode = ?")
                 .addParam(JSON.writeValueAsString(document)).addParam(inode).loadResult();

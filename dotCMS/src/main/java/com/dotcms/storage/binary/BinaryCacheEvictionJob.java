@@ -1,32 +1,32 @@
 package com.dotcms.storage.binary;
 
+import com.dotcms.storage.AssetStorageFeature;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.business.APILocator;
 import java.util.function.Supplier;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
-import org.quartz.JobExecutionContext;
-import org.quartz.JobExecutionException;
-import org.quartz.StatefulJob;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Stream;
 
 /**
- * Quartz job that evicts the oldest binary files from the local FS cache when
- * it exceeds a configurable size threshold. Only active when the S3 asset storage flag is on,
- * where the local filesystem is a cache layer backed by S3 as the durable store.
+ * Evicts binary files from this node's local FS cache when it exceeds a configurable size
+ * threshold. {@code DotInitScheduler} runs it on a node-local thread. Only active when the S3 asset
+ * storage flag is on, where the local filesystem is a cache layer backed by S3 as the durable store.
  *
- * <p>Eviction uses a least-recently-modified (LRM) strategy: files are sorted by
- * {@code lastModified} timestamp and the oldest files are deleted first until
- * total cache size is at or below the threshold. Files modified within the
- * configured minimum age window are protected from eviction.</p>
+ * <p>Eviction is least-recently-read: files are sorted by access time and the least recently read
+ * are deleted first until total cache size is at or below the threshold. {@link BinaryAssetStorageAPIImpl}
+ * sets the access time explicitly whenever it hands a cached file to a reader, so the order holds on
+ * {@code noatime} mounts; it leaves the modification time alone because HTTP ETags are built from it.
+ * Files read or written within the configured minimum age window are protected from eviction.</p>
  *
  * <p>The job only walks binary asset inode directories (single-char prefix
  * structure), not the entire asset root which contains metadata, thumbnails,
@@ -41,7 +41,7 @@ import java.util.stream.Stream;
  *         (no default — job only runs when explicitly configured)</li>
  * </ul>
  */
-public class BinaryCacheEvictionJob implements StatefulJob {
+public class BinaryCacheEvictionJob implements Runnable {
 
     public static final String BINARY_CACHE_MAX_SIZE_MB_PROP = "BINARY_CACHE_MAX_SIZE_MB";
     public static final long BINARY_CACHE_MAX_SIZE_MB_DEFAULT = 5000; // 5GB
@@ -64,10 +64,14 @@ public class BinaryCacheEvictionJob implements StatefulJob {
         this.binaryStorage = binaryStorage;
     }
 
+    /**
+     * Runs one eviction pass over this node's local cache. Does nothing with the flag off or while the
+     * cache is within its size limit.
+     */
     @Override
-    public void execute(final JobExecutionContext ctx) throws JobExecutionException {
+    public void run() {
 
-        if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+        if (!AssetStorageFeature.isEnabled()) {
             return;
         }
 
@@ -114,8 +118,8 @@ public class BinaryCacheEvictionJob implements StatefulJob {
             return;
         }
 
-        // Sort by lastModified ascending (oldest first)
-        files.sort(Comparator.comparingLong(f -> f.lastModified));
+        // Least recently read first. Reads set the access time explicitly; writes leave it at creation.
+        files.sort(Comparator.comparingLong(f -> f.lastRead));
 
         int evictedCount = 0;
         long freedBytes = 0;
@@ -125,8 +129,8 @@ public class BinaryCacheEvictionJob implements StatefulJob {
                 break;
             }
 
-            // Skip files newer than min age
-            if ((now - fileInfo.lastModified) < minAgeMillis) {
+            // Skip files read or written within the minimum age
+            if ((now - fileInfo.lastRead) < minAgeMillis) {
                 continue;
             }
 
@@ -145,6 +149,13 @@ public class BinaryCacheEvictionJob implements StatefulJob {
                         "BinaryCacheEvictionJob: failed to delete %s: %s",
                         fileInfo.path, e.getMessage()));
             }
+        }
+
+        if (evictedCount == 0 && totalBytes > thresholdBytes) {
+            Logger.warn(this, String.format(
+                    "BinaryCacheEvictionJob: cache is over its limit but all %d candidates were kept "
+                            + "(too recent, in use, changed, or without a verified S3 copy); it is not shrinking",
+                    files.size()));
         }
 
         final long durationMs = System.currentTimeMillis() - startTime;
@@ -171,8 +182,17 @@ public class BinaryCacheEvictionJob implements StatefulJob {
         return collectBinaryAssetFiles(assetRoot, false);
     }
 
+    /**
+     * Collects evictable files under the asset root, or with {@code generated} set, completed
+     * renditions under the dotGenerated root.
+     *
+     * @param assetRoot the root directory to walk
+     * @param generated whether the root is the dotGenerated root
+     * @return list of FileInfo for all evictable files found
+     * @throws IOException if the directory walk fails
+     */
     private List<FileInfo> collectBinaryAssetFiles(final File assetRoot, final boolean generated) throws IOException {
-        final boolean s3 = com.dotcms.storage.AssetStorageFeature.isEnabled();
+        final boolean s3 = AssetStorageFeature.isEnabled();
         final List<FileInfo> files = new ArrayList<>();
 
         if (!assetRoot.exists() || !assetRoot.isDirectory()) {
@@ -198,17 +218,20 @@ public class BinaryCacheEvictionJob implements StatefulJob {
 
             for (final File l2 : level2Dirs) {
                 // Immutable revisions add two levels: inode/field/.revisions/revision/file.
-                final int depth = com.dotcms.storage.AssetStorageFeature.isEnabled() ? 5 : 3;
+                final int depth = AssetStorageFeature.isEnabled() ? 5 : 3;
                 try (final Stream<Path> walk = Files.walk(l2.toPath(), depth)) {
                     walk.filter(path -> !Files.isSymbolicLink(path) && Files.isRegularFile(path))
                             .filter(path -> !s3 || BinaryAssetStorageAPIImpl.isEvictableAssetPath(
                                     assetRoot.toPath().relativize(path), generated))
                             .forEach(path -> {
                                 try {
+                                    final BasicFileAttributes attributes =
+                                            Files.readAttributes(path, BasicFileAttributes.class);
                                     files.add(new FileInfo(
                                             path,
-                                            Files.size(path),
-                                            Files.getLastModifiedTime(path).toMillis()));
+                                            attributes.size(),
+                                            attributes.lastModifiedTime().toMillis(),
+                                            attributes.lastAccessTime().toMillis()));
                                 } catch (final IOException e) {
                                     Logger.warn(this, "Failed to stat file: " + path);
                                 }
@@ -228,11 +251,19 @@ public class BinaryCacheEvictionJob implements StatefulJob {
         final Path path;
         final long size;
         final long lastModified;
+        final long lastRead;
 
-        FileInfo(final Path path, final long size, final long lastModified) {
+        /**
+         * @param path         the file
+         * @param size         the file size in bytes
+         * @param lastModified the modification time, used to detect a change before eviction
+         * @param lastRead     the access time, which orders eviction and applies the minimum age
+         */
+        FileInfo(final Path path, final long size, final long lastModified, final long lastRead) {
             this.path = path;
             this.size = size;
             this.lastModified = lastModified;
+            this.lastRead = lastRead;
         }
     }
 
