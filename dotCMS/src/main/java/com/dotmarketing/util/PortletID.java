@@ -51,6 +51,12 @@ public enum PortletID {
     SITE_BROWSER,
     SITE_SEARCH,
     USERS,
+    /**
+     * Beta-period alias of {@link #USERS}: the Angular Users portlet ships opt-in as
+     * {@code users-beta} (see {@code portlet.xml}). Gates that mean "can administer users" accept
+     * either id while both portlets coexist. Remove when the Angular portlet is promoted.
+     */
+    USERS_BETA("users-beta"),
     VANITY_URLS,
     WEB_EVENT_REGISTRATIONS,
     WEB_FORMS,

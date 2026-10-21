@@ -89,7 +89,8 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
      * Tells whether the calling user receives the full data map of every listed user, or only the
      * {@link #DIRECTORY_KEYS}. The full profile goes to CMS Administrators and to users with access to the Users
      * portlet -- the same bar the Users portlet itself applies -- since that portlet is the one that displays the
-     * account-state fields.
+     * account-state fields. Both the legacy {@link PortletID#USERS} id and the Angular
+     * {@link PortletID#USERS_BETA} id count, so a user-manager on either portlet sees the full list.
      *
      * @param caller The user requesting the list; {@code null} is treated as a caller without privileges.
      *
@@ -101,8 +102,10 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
         if (null == caller) {
             return false;
         }
+        final LayoutAPI layouts = this.layoutAPI.get();
         return caller.isAdmin()
-                || this.layoutAPI.get().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller);
+                || layouts.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller)
+                || layouts.doesUserHaveAccessToPortlet(PortletID.USERS_BETA.toString(), caller);
     }
 
     /**

@@ -395,4 +395,27 @@ public class UserPaginatorTest extends UnitTestBase {
         assertEquals(listed.toMap().keySet(), items.get(0).keySet());
     }
 
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}</li>
+     *     <li><b>Given Scenario:</b> The caller is not a CMS Administrator and lacks the legacy Users portlet, but
+     *     holds the Angular {@code users-beta} portlet — the list the Users portlet UI actually renders.</li>
+     *     <li><b>Expected Result:</b> Each item carries the complete data map, so the portlet's own columns
+     *     ({@code active}, {@code lastLoginDate}) keep rendering.</li>
+     * </ul>
+     */
+    @Test
+    public void testGetItemsWithUsersBetaPortletKeepsFullMap() throws Exception {
+        final User listed = listedUserWithFullMap();
+        final User caller = mock(User.class);
+        when(caller.isAdmin()).thenReturn(false);
+        when(layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller)).thenReturn(false);
+        when(layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS_BETA.toString(), caller)).thenReturn(true);
+
+        final PaginatedArrayList<Map<String, Object>> items = userPaginator.getItems(caller, "filter", 5, 0,
+                null, null, Map.of());
+
+        assertEquals(listed.toMap().keySet(), items.get(0).keySet());
+    }
+
 }
