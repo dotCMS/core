@@ -20,6 +20,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.VelocityUtil;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -31,6 +32,8 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -141,10 +144,11 @@ public class GenericBundleActivatorIntegrationTest {
         final SamlConfigurationService configuration = builder.buildSamlConfigurationService();
         configuration.initService(Collections.emptyMap());
         final MessageObserver observer = Mockito.spy(new DotLoggerMessageObserver());
-        final SamlAuthenticationService authentication = builder.buildAuthenticationService(
-                new DotIdentityProviderConfigurationFactoryImpl(APILocator.getAppsAPI(), APILocator.getHostAPI()),
-                VelocityUtil.getEngine(), observer, configuration);
-        authentication.initService(Collections.emptyMap());
+        final Map<Object, Object> services = samlRegistry("com.dotcms.saml.utils.InstanceUtil", "instanceMap");
+        final Map<Object, Object> handlers = samlRegistry("com.dotcms.saml.service.handler.AssertionResolverHandlerFactory",
+                "assertionResolverHandlerInstancesMap");
+        final Map<Object, Object> previousServices = new HashMap<>(services);
+        final Map<Object, Object> previousHandlers = new HashMap<>(handlers);
 
         final IdentityProviderConfiguration idp = Mockito.mock(IdentityProviderConfiguration.class);
         Mockito.when(idp.isEnabled()).thenReturn(true);
@@ -172,17 +176,45 @@ public class GenericBundleActivatorIntegrationTest {
 
         deleteSamlFixtureReplayRecord();
         try {
+            final SamlAuthenticationService authentication = builder.buildAuthenticationService(
+                    new DotIdentityProviderConfigurationFactoryImpl(APILocator.getAppsAPI(), APILocator.getHostAPI()),
+                    VelocityUtil.getEngine(), observer, configuration);
+            authentication.initService(Collections.emptyMap());
             assertEquals("saml-bundle-it@example.com", authentication.resolveAllAttributes(
                     samlPost(encoded), Mockito.mock(HttpServletResponse.class), idp).get("nameID"));
             assertTrue("Replaying a signed assertion must not authenticate", authentication.resolveAllAttributes(
                     samlPost(encoded), Mockito.mock(HttpServletResponse.class), idp).isEmpty());
             final ArgumentCaptor<Throwable> error = ArgumentCaptor.forClass(Throwable.class);
             Mockito.verify(observer).updateError(Mockito.anyString(), Mockito.anyString(), error.capture());
-            assertEquals("The SAML Assertion '_saml_bundle_it_assertion' has already been used",
+            assertEquals("Rejected SAML Response for IdP 'Installed bundle test IdP': "
+                            + "The SAML Assertion '_saml_bundle_it_assertion' has already been used",
                     error.getValue().getMessage());
         } finally {
+            services.clear();
+            services.putAll(previousServices);
+            handlers.clear();
+            handlers.putAll(previousHandlers);
             deleteSamlFixtureReplayRecord();
         }
+    }
+
+    /**
+     * Accesses a bundle-private registry solely to restore its original contents after the test;
+     * plugin implementation classes must not be added to the integration-test classpath.
+     *
+     * @param className the class in the installed SAML bundle
+     * @param fieldName the static registry field
+     * @return the mutable registry whose contents the builder changes
+     * @throws ReflectiveOperationException if the registry cannot be accessed
+     */
+    @SuppressWarnings("unchecked")
+    private static Map<Object, Object> samlRegistry(final String className, final String fieldName)
+            throws ReflectiveOperationException {
+        final Class<?> type = OSGISystem.getInstance().findBundle(OSGIConstants.BUNDLE_NAME_DOTCMS_SAML)
+                .loadClass(className);
+        final Field registry = type.getDeclaredField(fieldName);
+        registry.setAccessible(true);
+        return (Map<Object, Object>) registry.get(null);
     }
 
     /** Returns the real builder registered by the active, packaged system bundle. */

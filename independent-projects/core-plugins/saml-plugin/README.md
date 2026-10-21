@@ -54,6 +54,16 @@ references the same `${project.version}` and packages the identical JAR.
 Runs the 92 imported regressions plus two decoder compatibility tests. The Maven build cache must stay disabled so a
 cached module cannot report success without executing them.
 
+Two active integration tests in `GenericBundleActivatorIntegrationTest` also exercise the
+packaged bundle: startup/service registration at the Tika release version, and a signed
+HTTP-POST response accepted once then rejected by the database-backed replay check.
+They use local signed fixtures, not an external IdP, and run in `MainSuite2b`.
+
+```bash
+./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false \
+  -Dit.test=GenericBundleActivatorIntegrationTest -Dmaven.build.cache.enabled=false
+```
+
 ## Authentication
 
 This integration does not rewrite the reviewed upstream authentication code. It brings

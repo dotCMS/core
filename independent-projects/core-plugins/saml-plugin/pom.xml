@@ -430,9 +430,11 @@
                         <Bundle-Activator>com.dotcms.saml.osgi.Activator</Bundle-Activator>
                         <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
                         <DynamicImport-Package>*</DynamicImport-Package>
+                        <!-- Felix exports the JDK's javax.sql package at version 0.0.0. -->
                         <Import-Package>
                             !org.opensaml.*,
                             javax.annotation;version=0.0.0,
+                            javax.sql;version=0.0.0,
                             *;version=0.1
                         </Import-Package>
                         <Embed-Dependency>*;scope=compile;inline=false</Embed-Dependency>
