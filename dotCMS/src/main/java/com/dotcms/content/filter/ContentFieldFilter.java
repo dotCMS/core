@@ -7,7 +7,9 @@ import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,8 +66,14 @@ public final class ContentFieldFilter {
     /** Comma-separated contentlet properties removed from the response. Empty by default. */
     public static final String FIELDS_TO_HIDE_PROPERTY = "CONTENT_API_FIELDS_TO_HIDE";
 
-    /** The message returned to a caller whose query or sort names a masked or hidden property. */
-    public static final String SEARCH_REJECTED_MESSAGE =
+    /**
+     * {@code Language.properties} key of the message returned to a caller whose query or sort names a masked or
+     * hidden property.
+     */
+    public static final String SEARCH_REJECTED_MESSAGE_KEY = "content.api.error.search.restricted.field";
+
+    /** The message used when {@link #SEARCH_REJECTED_MESSAGE_KEY} cannot be resolved. */
+    static final String SEARCH_REJECTED_DEFAULT_MESSAGE =
             "The query or sort references a content property that is not available to this user";
 
     /**
@@ -99,12 +107,12 @@ public final class ContentFieldFilter {
 
     private final Set<String> fieldsToMask;
     private final Set<String> fieldsToHide;
-    private final String userId;
+    private final User user;
 
-    private ContentFieldFilter(final Set<String> fieldsToMask, final Set<String> fieldsToHide, final String userId) {
+    private ContentFieldFilter(final Set<String> fieldsToMask, final Set<String> fieldsToHide, final User user) {
         this.fieldsToMask = fieldsToMask;
         this.fieldsToHide = fieldsToHide;
-        this.userId = userId;
+        this.user = user;
     }
 
     /**
@@ -121,7 +129,7 @@ public final class ContentFieldFilter {
         if ((toMask.isEmpty() && toHide.isEmpty()) || isTrusted(user)) {
             return NO_OP;
         }
-        return new ContentFieldFilter(toMask, toHide, null == user ? null : user.getUserId());
+        return new ContentFieldFilter(toMask, toHide, user);
     }
 
     /**
@@ -175,10 +183,35 @@ public final class ContentFieldFilter {
         restricted.addAll(fieldsToHide);
         if (queryReferences(luceneQuery, restricted) || sortReferences(sortBy, restricted)) {
             SecurityLogger.logInfo(ContentFieldFilter.class,
-                    () -> "Search on a masked or hidden content property refused for user: " + userId);
+                    () -> "Search on a masked or hidden content property refused for user: "
+                            + (null == user ? null : user.getUserId()));
             return false;
         }
         return true;
+    }
+
+    /**
+     * Returns the message to send to a caller whose search was refused by {@link #allowsSearch(String, String)},
+     * in the language of that caller's profile. Anonymous callers get the default language. When the message
+     * cannot be resolved, the English text is returned.
+     *
+     * @return the message explaining why the search was refused
+     */
+    public String searchRejectedMessage() {
+        return localizedOrDefault(Try.of(() -> LanguageUtil.get(user, SEARCH_REJECTED_MESSAGE_KEY)).getOrNull());
+    }
+
+    /**
+     * Picks the localized search-refused message, or the English text when the lookup failed or only gave the
+     * key back, which is what {@link LanguageUtil} does for a key it does not know.
+     *
+     * @param localized the result of the message lookup; may be {@code null}
+     * @return the message to send
+     */
+    static String localizedOrDefault(final String localized) {
+        return UtilMethods.isSet(localized) && !SEARCH_REJECTED_MESSAGE_KEY.equals(localized)
+                ? localized
+                : SEARCH_REJECTED_DEFAULT_MESSAGE;
     }
 
     /**

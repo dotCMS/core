@@ -165,4 +165,17 @@ public class ContentFieldFilterTest {
         assertFalse(ContentFieldFilter.isTrusted(frontend));
     }
 
+    /**
+     * Given the result of looking up the search-refused message, when it is a translation it is used as is,
+     * and when the lookup failed or only gave the key back, the English text is used instead.
+     */
+    @Test
+    public void test_localizedOrDefault_fallsBackToEnglishText() {
+        assertEquals("Consulta no permitida", ContentFieldFilter.localizedOrDefault("Consulta no permitida"));
+        assertEquals(ContentFieldFilter.SEARCH_REJECTED_DEFAULT_MESSAGE,
+                ContentFieldFilter.localizedOrDefault(ContentFieldFilter.SEARCH_REJECTED_MESSAGE_KEY));
+        assertEquals(ContentFieldFilter.SEARCH_REJECTED_DEFAULT_MESSAGE, ContentFieldFilter.localizedOrDefault(null));
+        assertEquals(ContentFieldFilter.SEARCH_REJECTED_DEFAULT_MESSAGE, ContentFieldFilter.localizedOrDefault(""));
+    }
+
 }

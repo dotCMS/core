@@ -248,8 +248,9 @@ public class ContentResource {
             if (rememberQuery) {
                 request.getSession().setAttribute(WebKeys.EXECUTED_LUCENE_QUERY, query);
             }
-        if (!ContentFieldFilter.forUser(user).allowsSearch(query, sort)) {
-            throw new BadRequestException(ContentFieldFilter.SEARCH_REJECTED_MESSAGE);
+        final ContentFieldFilter fieldFilter = ContentFieldFilter.forUser(user);
+        if (!fieldFilter.allowsSearch(query, sort)) {
+            throw new BadRequestException(fieldFilter.searchRejectedMessage());
         }
         String realQuery = query.contains("variant:") ? query : query + " +variant:default";
         realQuery = processQuery(realQuery);
@@ -322,8 +323,9 @@ public class ContentResource {
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse(paramsMap);
 
-        if (!ContentFieldFilter.forUser(initData.getUser()).allowsSearch(query, sortBy)) {
-            throw new BadRequestException(ContentFieldFilter.SEARCH_REJECTED_MESSAGE);
+        final ContentFieldFilter fieldFilter = ContentFieldFilter.forUser(initData.getUser());
+        if (!fieldFilter.allowsSearch(query, sortBy)) {
+            throw new BadRequestException(fieldFilter.searchRejectedMessage());
         }
 
         try {
@@ -398,8 +400,9 @@ public class ContentResource {
         //Creating an utility response object
         ResourceResponse responseResource = new ResourceResponse(paramsMap);
 
-        if (!ContentFieldFilter.forUser(initData.getUser()).allowsSearch(query, null)) {
-            throw new BadRequestException(ContentFieldFilter.SEARCH_REJECTED_MESSAGE);
+        final ContentFieldFilter fieldFilter = ContentFieldFilter.forUser(initData.getUser());
+        if (!fieldFilter.allowsSearch(query, null)) {
+            throw new BadRequestException(fieldFilter.searchRejectedMessage());
         }
 
         try {
@@ -840,9 +843,9 @@ public class ContentResource {
             return ExceptionMapperUtil.createResponse(null, errorMsg);
         }
 
-        if (!ContentFieldFilter.forUser(user).allowsSearch(query,
-                paramsMap.get(RESTParams.ORDERBY.getValue()))) {
-            return ExceptionMapperUtil.createResponse(null, ContentFieldFilter.SEARCH_REJECTED_MESSAGE);
+        final ContentFieldFilter fieldFilter = ContentFieldFilter.forUser(user);
+        if (!fieldFilter.allowsSearch(query, paramsMap.get(RESTParams.ORDERBY.getValue()))) {
+            return ExceptionMapperUtil.createResponse(null, fieldFilter.searchRejectedMessage());
         }
 
         final String allCategoriesInfoKey = RESTParams.ALL_CATEGORIES_INFO.getValue().toLowerCase();

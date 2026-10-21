@@ -2022,7 +2022,8 @@ public class ContentResourceTest extends IntegrationTestBase {
      * {@link ContentResource#search(HttpServletRequest, HttpServletResponse, boolean, SearchForm)}
      * Given scenario: the field filter is configured and an anonymous caller queries or sorts by a masked
      * property, which would let them recover its value.
-     * Expected result: the anonymous caller gets a 400, while an administrator can still run the query.
+     * Expected result: the anonymous caller gets a 400 with a readable message, never the raw message key, while
+     * an administrator can still run the query.
      */
     @Test
     public void test_search_fieldFilterConfigured_rejectsQueriesOnRestrictedFieldsForAnonymousUsers() throws Exception {
@@ -2034,9 +2035,13 @@ public class ContentResourceTest extends IntegrationTestBase {
             final ContentResource contentResource = new ContentResource();
             final User anonymous = userAPI.getAnonymousUser();
 
-            assertEquals(Status.BAD_REQUEST.getStatusCode(), contentResource.getContent(
-                    createHttpRequest(null, anonymous), mock(HttpServletResponse.class),
-                    "/query/" + query).getStatus());
+            final Response rejected = contentResource.getContent(createHttpRequest(null, anonymous),
+                    mock(HttpServletResponse.class), "/query/" + query);
+            assertEquals(Status.BAD_REQUEST.getStatusCode(), rejected.getStatus());
+            final String body = String.valueOf(rejected.getEntity());
+            assertFalse("the raw message key must not reach the caller: " + body,
+                    body.contains(ContentFieldFilter.SEARCH_REJECTED_MESSAGE_KEY));
+            assertTrue(body, body.contains("not available to this user"));
             assertEquals(Status.BAD_REQUEST.getStatusCode(), contentResource.getContent(
                     createHttpRequest(null, anonymous), mock(HttpServletResponse.class),
                     "/query/+contentType:" + fixture.contentType.variable() + "/orderby/owner").getStatus());
