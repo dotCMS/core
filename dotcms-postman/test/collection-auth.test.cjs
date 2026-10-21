@@ -531,22 +531,32 @@ test('Add-Remove render postscripts pass an authorized 200 and fail a 401 on the
   });
 });
 
-// PageResource.render rejects an unauthenticated caller before host, page, variant, mode or
-// permission resolution, so every positive (200) /api/v1/page/render request across the
-// runnable inventory must carry a real effective Bearer. Walk all collections so a new fixture
-// cannot silently rely on an ambient cookie jar, an undefined token or a request-level noauth.
-const protectedRenderPositives = requests.filter((r) =>
-  /\/api\/v1\/page\/render(?![A-Za-z])/.test(url(r)) &&
-  /\.status\(200\)/.test((r.node.event || []).map(eventCode).join('\n')));
-test('every positive protected page-render request carries an effective Bearer, never noauth/undefined/cookie', () => {
-  assert.ok(protectedRenderPositives.length >= 34, 'Do not pass by dropping positive render coverage');
-  const violations = protectedRenderPositives.filter((r) => {
-    if (r.auth?.type === 'bearer') {
-      const token = resolve(value(r.auth, 'token'), effectiveVariables(r));
-      return !token || /\{\{/.test(token);
-    }
-    return !manualAuth(r).some((h) => /^Bearer\s+\S+$/i.test(resolve(h.value, effectiveVariables(r))));
+// PageResource's json, render and renderHTML routes authenticate before page/mode resolution.
+// Only the three explicit authentication negatives may omit credentials; cookies are not a substitute.
+const protectedPageRequests = requests.filter((r) =>
+  /\/api\/v1\/page\/(?:json|render(?:HTML)?)(?![A-Za-z])/.test(url(r)));
+const pageAuthNegatives = [
+  'JSON [api/v1/page/json] / Using Actual Page URIs / Get Page Metadata With Invalid User',
+  'Render [api/v1/page/render] / Using Actual Page URIs / Get Page Metadata With Invalid User',
+  'Render HTML [/api/v1/page/renderHTML] / UserAuthenticationValidation',
+].map((names) => find('PagesResourceTests.json', names));
+test('protected page APIs carry an effective resolved Bearer except explicit anonymous 401 tests', () => {
+  assert.ok(protectedPageRequests.length >= 61, 'Do not pass by dropping protected page API coverage');
+  assert.equal(protectedPageRequests.filter((r) => pageAuthNegatives.includes(r)).length, 3);
+  for (const r of pageAuthNegatives) {
+    assert.equal(r.auth?.type, 'noauth', label(r));
+    assert.equal(manualAuth(r).length, 0, label(r));
+    assert.match((r.node.event || []).map(eventCode).join('\n'), /\.status\(401\)/, label(r));
+  }
+  const violations = protectedPageRequests.filter((r) => !pageAuthNegatives.includes(r)).filter((r) => {
+    const headers = manualAuth(r);
+    if (headers.length) return headers.some((h) => {
+      const header = resolve(h.value, effectiveVariables(r));
+      return !/^Bearer\s+\S+$/i.test(header) || /\{\{/.test(header);
+    });
+    const token = resolve(value(r.auth, 'token'), effectiveVariables(r));
+    return r.auth?.type !== 'bearer' || !/^\S+$/.test(token) || /\{\{/.test(token);
   });
   assert.equal(violations.length, 0,
-    `Positive /api/v1/page/render requests need an effective Bearer:\n${violations.map(label).join('\n')}`);
+    `Protected page API requests need an effective Bearer:\n${violations.map(label).join('\n')}`);
 });
