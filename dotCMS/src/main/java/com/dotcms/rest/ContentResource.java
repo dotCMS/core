@@ -245,9 +245,10 @@ public class ContentResource {
             userForPull = APILocator.getUserAPI().loadUserById(userToPullID, APILocator.systemUser(),true);
         }
 
-            if (rememberQuery) {
-                request.getSession().setAttribute(WebKeys.EXECUTED_LUCENE_QUERY, query);
-            }
+        if (rememberQuery) {
+            request.getSession().setAttribute(WebKeys.EXECUTED_LUCENE_QUERY, query);
+        }
+
         final ContentFieldFilter fieldFilter = ContentFieldFilter.forUser(user);
         if (!fieldFilter.allowsSearch(query, sort)) {
             throw new BadRequestException(fieldFilter.searchRejectedMessage());
