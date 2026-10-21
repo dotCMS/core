@@ -61,10 +61,6 @@ inputs:
     description: 'Cache the SonarQube files'
     required: false
     default: 'false'
-  require-main:
-    description: 'Require the main tag to run this action'
-    required: true
-    default: 'false'
   dotcms-license:
     description: 'The license key for dotCMS'
     required: false
@@ -161,7 +157,6 @@ runs:
       uses: ./.github/actions/core-cicd/prepare-runner
       with:
         cleanup-runner: ${{ inputs.cleanup-runner }}
-        require-main: ${{ inputs.require-main }}
         java-version: ${{ inputs.java-version }}
         require-graalvm: ${{ inputs.native || inputs.require-graalvm }}
         graalvm-version: ${{ inputs.graalvm-version }}
