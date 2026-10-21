@@ -462,8 +462,9 @@ describe('DotContentDriveDialogImportComponent', () => {
         beforeEach(() => {
             setup(['1']);
             previewJob = new Subject<DotImportJob>();
+            // The factory's mocks are shared by every test; start each one clean.
+            importService.preview.mockClear();
             importService.preview.mockReturnValue(previewJob.asObservable());
-            // The factory's confirm mock is shared by every test; start each one clean.
             vi.mocked(spectator.inject(DotAlertConfirmService).confirm).mockClear();
             fillForm();
         });
@@ -600,6 +601,68 @@ describe('DotContentDriveDialogImportComponent', () => {
 
             expect(spectator.query(byTestId('import-preview'))).toBeFalsy();
             expect(spectator.query(byTestId('import-preview-btn'))).toBeTruthy();
+        });
+
+        /** Developer feedback (2026-10-16): the file must not change under a running preview. */
+        it('locks the CSV file while the preview runs', () => {
+            clickTestId('import-preview-btn');
+
+            expect(spectator.query(FileUpload)?.disabled).toBe(true);
+            const button = (testId: string) =>
+                spectator.query(byTestId(testId))?.querySelector('button');
+            expect(button('import-file-replace')?.disabled).toBe(true);
+            expect(button('import-file-clear')?.disabled).toBe(true);
+
+            spectator.component.onFileClear();
+            expect(form().file.value).toBeTruthy();
+        });
+
+        it('unlocks the CSV file once the preview arrives and the user goes back', () => {
+            runPreview();
+            clickTestId('import-preview-back');
+
+            expect(spectator.query(FileUpload)?.disabled).toBe(false);
+        });
+
+        /**
+         * Developer feedback (2026-10-16): going back and previewing the same file and options
+         * again shows the result already waited for, instead of a second wait.
+         */
+        it('shows the last preview again when nothing changed', () => {
+            runPreview();
+            clickTestId('import-preview-back');
+
+            clickTestId('import-preview-btn');
+
+            expect(importService.preview).toHaveBeenCalledTimes(1);
+            expect(spectator.query(byTestId('import-preview'))).toBeTruthy();
+            expect(text('import-summary-will-import')).toContain('4');
+        });
+
+        it('previews again when an option changed', () => {
+            runPreview();
+            clickTestId('import-preview-back');
+            form().fields.setValue([]);
+            spectator.detectChanges();
+            previewJob = new Subject<DotImportJob>();
+            importService.preview.mockReturnValue(previewJob.asObservable());
+
+            clickTestId('import-preview-btn');
+
+            expect(importService.preview).toHaveBeenCalledTimes(2);
+        });
+
+        it('previews again when the file changed', () => {
+            runPreview();
+            clickTestId('import-preview-back');
+            form().file.setValue(new File(['title\nOther'], 'other.csv', { type: 'text/csv' }));
+            spectator.detectChanges();
+            previewJob = new Subject<DotImportJob>();
+            importService.preview.mockReturnValue(previewJob.asObservable());
+
+            clickTestId('import-preview-btn');
+
+            expect(importService.preview).toHaveBeenCalledTimes(2);
         });
 
         it('goes back to the form with the inputs kept', () => {

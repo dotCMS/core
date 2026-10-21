@@ -130,6 +130,12 @@ export class DotContentDriveDialogImportComponent {
     readonly #alertConfirmService = inject(DotAlertConfirmService);
     readonly #destroyRef = inject(DestroyRef);
     #previewRequest?: Subscription;
+    /**
+     * The last successful preview and what it was asked for, so previewing the same file and
+     * options again shows it without a second wait. Compared by value: going back to the form makes
+     * the shared selector hand its value back, which must not count as a change.
+     */
+    #lastPreview: { file: File; form: string; job: DotImportJob } | null = null;
 
     readonly importForm = this.#formBuilder.group({
         contentType: this.#formBuilder.control<string | null>(null, Validators.required),
@@ -169,6 +175,8 @@ export class DotContentDriveDialogImportComponent {
     readonly $submitted = signal(false);
     /** Where the dialog is. */
     readonly $step = signal<DotImportStep>('form');
+    /** Whether a preview is running, during which the file can't be replaced or removed. */
+    readonly $previewing = computed(() => this.$step() === 'previewing');
     /**
      * Why the last preview or import couldn't run, in the server's words (#37896, US5). Shown in
      * the dialog, with every input kept, so the user can fix the form or the file and try again.
@@ -354,6 +362,10 @@ export class DotContentDriveDialogImportComponent {
      * @param event the file upload's selection
      */
     onFileSelect(event: FileSelectEvent): void {
+        if (this.$previewing()) {
+            return;
+        }
+
         const file = event.currentFiles?.[0] ?? null;
         this.importForm.controls.file.setValue(file);
         this.#readFileMeta(file);
@@ -361,6 +373,10 @@ export class DotContentDriveDialogImportComponent {
 
     /** Forgets the picked CSV. */
     onFileClear(): void {
+        if (this.$previewing()) {
+            return;
+        }
+
         this.importForm.controls.file.setValue(null);
         this.$fileMeta.set(null);
     }
@@ -436,13 +452,25 @@ export class DotContentDriveDialogImportComponent {
         }
 
         const { file } = this.importForm.getRawValue();
-        this.#previewRequest?.unsubscribe();
+        const form = this.#requestForm();
+        const formKey = JSON.stringify(form);
         this.$error.set(null);
+
+        // Nothing changed since the last preview: show it again rather than wait a second time.
+        const last = this.#lastPreview;
+        if (last && last.file === file && last.form === formKey) {
+            this.$preview.set(last.job);
+            this.$step.set('preview');
+
+            return;
+        }
+
+        this.#previewRequest?.unsubscribe();
         this.$step.set('previewing');
         // Locked, not hidden: the user sees what is being previewed while it runs.
         this.importForm.disable({ emitEvent: false });
         this.#previewRequest = this.#importService
-            .preview(file as File, this.#requestForm())
+            .preview(file as File, form)
             .pipe(finalize(() => this.importForm.enable({ emitEvent: false })))
             .subscribe({
                 next: (job) => {
@@ -452,6 +480,7 @@ export class DotContentDriveDialogImportComponent {
                         return;
                     }
 
+                    this.#lastPreview = { file: file as File, form: formKey, job };
                     this.$preview.set(job);
                     this.$step.set('preview');
                 },

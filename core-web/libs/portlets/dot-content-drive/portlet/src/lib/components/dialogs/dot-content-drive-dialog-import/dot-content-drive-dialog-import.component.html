@@ -348,6 +348,7 @@
                             content: { style: { padding: '0', border: '0' } }
                         }"
                         data-testid="import-file-input"
+                        [disabled]="$previewing()"
                         (onSelect)="onFileSelect($event)"
                         (onClear)="onFileClear()">
                         <ng-template #header />
@@ -384,6 +385,7 @@
                                             severity="secondary"
                                             size="small"
                                             data-testid="import-file-replace"
+                                            [disabled]="$previewing()"
                                             [label]="'content-drive.import.file.replace' | dm"
                                             (onClick)="fileUpload.choose()" />
                                         <p-button
@@ -391,6 +393,7 @@
                                             severity="secondary"
                                             icon="pi pi-times"
                                             data-testid="import-file-clear"
+                                            [disabled]="$previewing()"
                                             [attr.aria-label]="
                                                 'content-drive.import.file.clear' | dm
                                             "
