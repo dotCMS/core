@@ -107,6 +107,10 @@ public class BundleResourceTest {
             UserDataGen.remove(user, Boolean.TRUE);
         }
         createdUsers.clear();
+        for (final Layout layout : createdLayouts) {
+            Try.run(() -> APILocator.getLayoutAPI().removeLayout(layout));
+        }
+        createdLayouts.clear();
     }
 
     /**
@@ -553,5 +557,184 @@ public class BundleResourceTest {
                 .pushDate(new Date())
                 .publisher(PushPublisher.class)
                 .nextPersisted();
+    }
+
+    private static final List<Layout> createdLayouts = new ArrayList<>();
+
+    private static User backendUserWithPortlets(final String... portletIds) throws Exception {
+        final User user = newBackendUser();
+        if (portletIds.length > 0) {
+            final Layout layout = new LayoutDataGen().portletIds(portletIds).nextPersisted();
+            createdLayouts.add(layout);
+            APILocator.getRoleAPI().addLayoutToRole(layout, APILocator.getRoleAPI().getUserRole(user));
+        }
+        return user;
+    }
+
+    private static byte[] bundleArchive(final String jarName, final boolean withPlugin) {
+        try {
+            return buildBundleArchive(jarName, withPlugin);
+        } catch (final java.io.IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static byte[] buildBundleArchive(final String jarName, final boolean withPlugin)
+            throws java.io.IOException {
+        final java.io.ByteArrayOutputStream bytes = new java.io.ByteArrayOutputStream();
+        try (org.apache.commons.compress.archivers.tar.TarArchiveOutputStream tar =
+                new org.apache.commons.compress.archivers.tar.TarArchiveOutputStream(
+                        new java.util.zip.GZIPOutputStream(bytes))) {
+            final Map<String, byte[]> entries = new java.util.LinkedHashMap<>();
+            entries.put("bundle.xml", "<com.dotcms.publisher.pusher.PushPublisherConfig/>".getBytes());
+            if (withPlugin) {
+                entries.put("osgiBundles/" + jarName, "not a real jar".getBytes());
+                entries.put("osgiBundles/" + jarName + ".descriptor.osgi.json",
+                        ("{\"operation\":\"PUBLISH\",\"jarName\":\"" + jarName + "\"}").getBytes());
+            }
+            for (final Map.Entry<String, byte[]> item : entries.entrySet()) {
+                final org.apache.commons.compress.archivers.tar.TarArchiveEntry entry =
+                        new org.apache.commons.compress.archivers.tar.TarArchiveEntry(item.getKey());
+                entry.setSize(item.getValue().length);
+                tar.putArchiveEntry(entry);
+                tar.write(item.getValue());
+                tar.closeArchiveEntry();
+            }
+        }
+        return bytes.toByteArray();
+    }
+
+    private static FormDataMultiPart multipartWith(final String fileName, final byte[] content) {
+        final BodyPart bodyPart = mock(BodyPart.class);
+        when(bodyPart.getEntity()).thenReturn(new java.io.ByteArrayInputStream(content));
+        final ContentDisposition meta = mock(ContentDisposition.class);
+        when(bodyPart.getContentDisposition()).thenReturn(meta);
+        when(meta.getFileName()).thenReturn(fileName);
+        final FormDataMultiPart multipart = mock(FormDataMultiPart.class);
+        when(multipart.getBodyParts()).thenReturn(list(bodyPart));
+        return multipart;
+    }
+
+    private static int statusOf(final Runnable call) {
+        try {
+            call.run();
+            return 200;
+        } catch (final javax.ws.rs.WebApplicationException e) {
+            return e.getResponse().getStatus();
+        }
+    }
+
+    /**
+     * Method to Test: {@link BundleResource#uploadBundleSync} and
+     * {@link BundleResource#uploadBundleAsync}
+     * Given: a back-end user without the publishing queue portlet
+     * When: they upload a bundle on either endpoint
+     * Should: be rejected with 401, the same answer as the sibling endpoints, and no archive is
+     * written to the bundles folder.
+     */
+    @Test
+    public void test_upload_withoutPublishingQueuePortlet_isRejectedWith401() throws Exception {
+        final User user = backendUserWithPortlets();
+        final String fileName = "zz-gate-" + System.currentTimeMillis() + ".tar.gz";
+        final File written = new File(com.dotmarketing.util.ConfigUtils.getBundlePath(), fileName);
+
+        final int syncStatus = statusOf(() -> {
+            try {
+                bundleResource.uploadBundleSync(mockRequestFor(user), response,
+                        multipartWith(fileName, bundleArchive("unused.jar", false)));
+            } catch (final DotPublisherException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        final int asyncStatus = statusOf(() -> {
+            try {
+                bundleResource.uploadBundleAsync(mockRequestFor(user), response,
+                        new MockAsyncResponse(arg -> true, arg -> true),
+                        multipartWith(fileName, bundleArchive("unused.jar", false)));
+            } catch (final DotPublisherException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        try {
+            assertEquals(401, syncStatus);
+            assertEquals(401, asyncStatus);
+            assertFalse("no archive may be written for a rejected upload", written.exists());
+        } finally {
+            org.apache.commons.io.FileUtils.deleteQuietly(written);
+        }
+    }
+
+    /**
+     * Method to Test: {@link BundleResource#uploadBundleSync}
+     * Given: a back-end user with the publishing queue portlet but without the plugins portlet
+     * When: they upload a bundle that carries a plugin jar
+     * Should: be rejected with 401, no jar reaches the plugin upload folder, and the stored archive
+     * is removed.
+     */
+    @Test
+    public void test_upload_withPluginAndWithoutPluginsPortlet_isRejectedWith401() throws Exception {
+        final User user = backendUserWithPortlets("publishing-queue");
+        final String id = "zz-plugin-" + System.currentTimeMillis();
+        final String jarName = id + ".jar";
+        final File uploadFolder = new File(org.apache.felix.framework.OSGIUtil.getInstance().getFelixUploadPath());
+        uploadFolder.mkdirs();
+        final File archive = new File(com.dotmarketing.util.ConfigUtils.getBundlePath(), id + ".tar.gz");
+
+        final int status = statusOf(() -> {
+            try {
+                bundleResource.uploadBundleSync(mockRequestFor(user), response,
+                        multipartWith(id + ".tar.gz", bundleArchive(jarName, true)));
+            } catch (final DotPublisherException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        try {
+            assertEquals(401, status);
+            assertFalse("no jar may reach the plugin upload folder", new File(uploadFolder, jarName).exists());
+            assertFalse("the stored archive must be removed", archive.exists());
+        } finally {
+            org.apache.commons.io.FileUtils.deleteQuietly(new File(uploadFolder, jarName));
+            org.apache.commons.io.FileUtils.deleteQuietly(new File(
+                    org.apache.felix.framework.OSGIUtil.getInstance().getFelixDeployPath(), jarName));
+            org.apache.commons.io.FileUtils.deleteQuietly(archive);
+            org.apache.commons.io.FileUtils.deleteQuietly(new File(com.dotmarketing.util.ConfigUtils.getBundlePath(), id));
+        }
+    }
+
+    /**
+     * Method to Test: {@link BundleResource#uploadBundleSync}
+     * Given: a back-end user with both the publishing queue and the plugins portlets
+     * When: they upload a bundle that carries a plugin jar
+     * Should: not be rejected by the access checks, so legitimate uploads keep working. What
+     * happens to the jar afterwards is covered by the receiver and handler tests.
+     */
+    @Test
+    public void test_upload_withBothPortlets_isNotRejected() throws Exception {
+        final User user = backendUserWithPortlets("publishing-queue", "dynamic-plugins");
+        final String id = "zz-allowed-" + System.currentTimeMillis();
+        final String jarName = id + ".jar";
+        final File uploadFolder = new File(org.apache.felix.framework.OSGIUtil.getInstance().getFelixUploadPath());
+        uploadFolder.mkdirs();
+
+        final int status = statusOf(() -> {
+            try {
+                bundleResource.uploadBundleSync(mockRequestFor(user), response,
+                        multipartWith(id + ".tar.gz", bundleArchive(jarName, true)));
+            } catch (final DotPublisherException e) {
+                throw new RuntimeException(e);
+            }
+        });
+
+        try {
+            assertEquals(200, status);
+        } finally {
+            org.apache.commons.io.FileUtils.deleteQuietly(new File(uploadFolder, jarName));
+            org.apache.commons.io.FileUtils.deleteQuietly(new File(
+                    org.apache.felix.framework.OSGIUtil.getInstance().getFelixDeployPath(), jarName));
+            org.apache.commons.io.FileUtils.deleteQuietly(new File(com.dotmarketing.util.ConfigUtils.getBundlePath(), id + ".tar.gz"));
+            org.apache.commons.io.FileUtils.deleteQuietly(new File(com.dotmarketing.util.ConfigUtils.getBundlePath(), id));
+        }
     }
 }
