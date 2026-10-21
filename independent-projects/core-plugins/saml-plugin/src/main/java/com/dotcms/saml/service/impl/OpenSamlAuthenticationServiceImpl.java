@@ -144,7 +144,7 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         try {
 
             if (EndpointHostRedirect.redirectIfNeeded(request, response,
-                    this.getAssertionConsumerUrl(request, identityProviderConfiguration))) {
+                    this.getAssertionConsumerUrl(request, identityProviderConfiguration), relayState)) {
 
                 this.messageObserver.updateDebug(this.getClass().getName(), "Login for IdP '"
                         + identityProviderConfiguration.getIdpName() + "' started on another host; redirected to the endpoint host");
@@ -158,7 +158,11 @@ public class OpenSamlAuthenticationServiceImpl implements SamlAuthenticationServ
         final AuthenticationHandler authenticationHandler =
                 this.authenticationResolverHandlerFactory.getAuthenticationHandlerForSite(identityProviderConfiguration);
 
-        authenticationHandler.handle(request, response, identityProviderConfiguration, relayState);
+        // The endpoint host has a separate session; the callback still validates this destination against allowed hosts.
+        final String forwardedRelayState = null != request.getParameter(EndpointHostRedirect.MARKER_PARAMETER)
+                ? request.getParameter("RelayState") : null;
+        authenticationHandler.handle(request, response, identityProviderConfiguration,
+                StringUtils.isNotBlank(forwardedRelayState) ? forwardedRelayState : relayState);
     }
 
     /** The configured assertion consumer URL, or null when it can't be built (the handler then reports it). */

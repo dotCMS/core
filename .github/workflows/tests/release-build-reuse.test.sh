@@ -967,6 +967,14 @@ fi
 block_has "$RELEASE_PHASE" validate-release-artifacts "$SAML_COORD_RE" \
   "release validation requires the SAML coordinate"
 extract_run_body "$RELEASE_PHASE" validate-release-artifacts > "$WORKDIR/saml-validate.sh"
+# Exercise the actual step env as well as its fallback, without repository variables.
+saml_required_coordinates="$(step_block "$RELEASE_PHASE" validate-release-artifacts | awk '
+  /^[[:space:]]+REQUIRED_COORDINATES:/ {
+    sub(/^[[:space:]]+REQUIRED_COORDINATES:[[:space:]]*/, "")
+    sub(/\$\{\{[[:space:]]*vars\.RELEASE_REQUIRED_COORDINATES[[:space:]]*\}\}/, "")
+    print; exit
+  }
+')"
 saml_repo="$WORKDIR/saml-validate-repo"
 
 saml_validation_seed() {  # kind, version
@@ -995,8 +1003,9 @@ saml_validation_seed() {  # kind, version
   esac
 }
 
-saml_validation_case() {  # desc, kind, expect, optional version and source checkout
+saml_validation_case() {  # desc, kind, expect, optional version, source checkout and coordinates source
   local desc="$1" kind="$2" expect="$3" v="${4:-$SAML_RELEASE_VERSION}" cwd="${5:-$REPO_ROOT}" rc=0
+  local coordinates_source="${6:-default}"
   rm -rf "$saml_repo"; mkdir -p "$saml_repo"
   if [[ "$kind" == primary-only ]]; then
     saml_validation_seed correct "$SAML_RELEASE_VERSION"
@@ -1004,9 +1013,10 @@ saml_validation_case() {  # desc, kind, expect, optional version and source chec
   else
     saml_validation_seed "$kind" "$v"
   fi
-  # REQUIRED_COORDINATES unset on purpose: this exercises the step's own
-  # built-in default, not a value the test supplies.
   ( unset REQUIRED_COORDINATES
+    if [[ "$coordinates_source" == workflow ]]; then
+      export REQUIRED_COORDINATES="$saml_required_coordinates"
+    fi
     VERSION="$v" MAVEN_REPO="$saml_repo" \
     run_body "$WORKDIR/saml-validate.sh" "$WORKDIR/saml-v.out" "$cwd" ) || rc=$?
   if [[ "$expect" == nonzero && $rc -ne 0 ]] || [[ "$expect" == zero && $rc -eq 0 ]]; then
@@ -1018,6 +1028,13 @@ saml_validation_case() {  # desc, kind, expect, optional version and source chec
 
 if [[ -s "$WORKDIR/saml-validate.sh" ]]; then
   ok "release validation body is extractable"
+  if [[ -n "$saml_required_coordinates" ]]; then
+    ok "release validation workflow coordinates are extractable"
+  else
+    bad "release validation workflow coordinates are extractable" "REQUIRED_COORDINATES env is missing"
+  fi
+  saml_validation_case "validation workflow env rejects core+web without SAML" missing nonzero "" "" workflow
+  saml_validation_case "validation workflow env accepts a complete set" correct zero "" "" workflow
   saml_validation_case "validation default rejects core+web without SAML" missing nonzero
   saml_validation_case "validation default rejects wrong-version SAML" wrong-version nonzero
   saml_validation_case "validation default rejects sources-only SAML" sources-only nonzero

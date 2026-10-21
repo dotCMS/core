@@ -7,6 +7,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Locale;
 
 /**
@@ -44,6 +46,21 @@ public final class EndpointHostRedirect {
      */
     public static boolean redirectIfNeeded(final HttpServletRequest request, final HttpServletResponse response,
                                            final String assertionConsumerUrl) throws IOException {
+        return redirectIfNeeded(request, response, assertionConsumerUrl, null);
+    }
+
+    /**
+     * Moves login to the endpoint host, carrying the computed destination across the host's separate session.
+     *
+     * @param request the request starting login
+     * @param response the response receiving the redirect
+     * @param assertionConsumerUrl the configured assertion consumer URL
+     * @param relayState the already computed destination, or null when none is configured
+     * @return true when login must continue on the endpoint host instead
+     * @throws IOException when the redirect cannot be sent
+     */
+    public static boolean redirectIfNeeded(final HttpServletRequest request, final HttpServletResponse response,
+                                           final String assertionConsumerUrl, final String relayState) throws IOException {
 
         if (null != request.getParameter(MARKER_PARAMETER)) {
             return false;
@@ -57,7 +74,8 @@ public final class EndpointHostRedirect {
         }
 
         response.sendRedirect(assertionConsumerUrl + (assertionConsumerUrl.contains("?") ? "&" : "?")
-                + MARKER_PARAMETER + "=1");
+                + MARKER_PARAMETER + "=1"
+                + (StringUtils.isBlank(relayState) ? "" : "&RelayState=" + URLEncoder.encode(relayState, StandardCharsets.UTF_8)));
         return true;
     }
 
