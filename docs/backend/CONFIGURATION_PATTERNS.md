@@ -108,7 +108,9 @@ submission requires an explicit `WRITE` opt-in. Existing explicit `NONE`, `READ`
 overrides are preserved, and enabling anonymous access does not bypass content permissions.
 Values are case-insensitive (`none`, `read`, and `write` are accepted); use the documented
 uppercase property/environment variable names. Review headless clients and custom VTL
-endpoints when preparing an upgrade.
+endpoints when preparing an upgrade. Servers providing public content feeds, including an
+announcements feed, must explicitly opt into `READ`; instances merely consuming a remote
+public feed do not need to enable anonymous access themselves.
 
 ## Configuration Documentation Pattern
 When adding new properties, include:
