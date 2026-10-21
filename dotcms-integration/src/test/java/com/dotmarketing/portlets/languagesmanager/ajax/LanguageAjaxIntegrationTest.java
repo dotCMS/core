@@ -24,6 +24,7 @@ import com.liferay.portal.model.User;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -32,8 +33,8 @@ import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
- * Integration tests for {@link LanguageAjax#saveKeys(String, String, List, List, List)} with real
- * roles and layouts: only a user with the Languages or the Locales portlet can save language keys.
+ * Integration tests for {@link LanguageAjax} with real roles and layouts: only a user with the
+ * Languages or the Locales portlet can save or read language keys.
  */
 public class LanguageAjaxIntegrationTest {
 
@@ -131,6 +132,37 @@ public class LanguageAjaxIntegrationTest {
                 Collections.emptyList(), Collections.emptyList());
 
         assertEquals(Optional.of(VALUE), storedValue());
+    }
+
+    /**
+     * Method to test: {@link LanguageAjax#getPaginatedLanguageKeys(String, String, int, String)},
+     * the call the language keys page makes
+     * Given: a back-end user with neither the Languages nor the Locales portlet
+     * Expected: DotSecurityException
+     */
+    @Test
+    public void getPaginatedLanguageKeys_requiresLanguagesOrLocalesPortlet() {
+        dwrContext.loginAs(userWithoutPortlet);
+
+        assertThrows(DotSecurityException.class, () -> new LanguageAjax().getPaginatedLanguageKeys(
+                language.getLanguageCode(), language.getCountryCode(), 1, ""));
+    }
+
+    /**
+     * Method to test: {@link LanguageAjax#getPaginatedLanguageKeys(String, String, int, String)},
+     * the call the language keys page makes
+     * Given: a back-end user with the Languages portlet
+     * Expected: the counters row, with at least one key for the default language
+     */
+    @Test
+    public void getPaginatedLanguageKeys_allowsLanguagesPortlet() throws Exception {
+        dwrContext.loginAs(languagesPortletUser);
+
+        final List<Map<String, Object>> page = new LanguageAjax().getPaginatedLanguageKeys(
+                language.getLanguageCode(), language.getCountryCode(), 1, "");
+
+        assertTrue("the default language must have keys, got " + page.get(0),
+                ((Number) page.get(0).get("total")).longValue() > 0);
     }
 
     private static User backendUser(final String label) throws DotDataException {

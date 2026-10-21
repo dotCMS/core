@@ -9,11 +9,10 @@ import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.model.User;
 
 /**
- * Access rule for saving language keys from the legacy language keys page. Both legacy entry
- * points that save keys (the DWR {@code LanguageAjax.saveKeys} call and the Struts
- * {@code edit_language_keys} action with {@code cmd=save}) use this class, so the rule lives in
- * one place: the user must have access to the Languages or the Locales portlet, the two tools
- * that manage language keys.
+ * Access rule for reading and saving language keys from the legacy language keys page. The DWR
+ * {@code LanguageAjax} calls that read or save keys and the Struts {@code edit_language_keys}
+ * action with {@code cmd=save} use this class, so the rule lives in one place: the user must have
+ * access to the Languages or the Locales portlet, the two tools that manage language keys.
  */
 public final class LanguageKeysAccess {
 
@@ -22,11 +21,11 @@ public final class LanguageKeysAccess {
     }
 
     /**
-     * Checks that the user may save language keys: they must have access to the Languages or the
-     * Locales portlet. A rejected request is written once to the security log with the user id
-     * only, however many portlets were checked, and the exception carries a fixed message.
+     * Checks that the user may read or save language keys: they must have access to the Languages
+     * or the Locales portlet. A rejected request is written once to the security log with the user
+     * id only, however many portlets were checked, and the exception carries a fixed message.
      *
-     * @param user the user saving the keys; {@code null} is rejected
+     * @param user the user reading or saving the keys; {@code null} is rejected
      * @throws DotSecurityException if there is no user, or the user has access to neither portlet
      * @throws DotDataException     if the user's portlets cannot be loaded
      */
@@ -42,10 +41,10 @@ public final class LanguageKeysAccess {
         }
 
         SecurityLogger.logInfo(LanguageKeysAccess.class, String.format(
-                "User [%s] does not have access to the [%s] or the [%s] Portlet, required to save language keys",
+                "User [%s] does not have access to the [%s] or the [%s] Portlet, required for language keys",
                 null == user ? "[not logged in]" : user.getUserId(), PortletID.LANGUAGES,
                 PortletID.LOCALES));
         throw new DotSecurityException(
-                "Saving language keys requires access to the Languages or the Locales portlet");
+                "Language keys require access to the Languages or the Locales portlet");
     }
 }

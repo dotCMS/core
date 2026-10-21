@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.languagesmanager.ajax;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.RETURNS_DEFAULTS;
@@ -21,6 +22,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -32,16 +34,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.MockedStatic;
 
 /**
- * Unit tests for the access rules of {@link LanguageAjax}: saving language keys requires the
- * Languages or the Locales portlet. The logged-in user comes from a mocked DWR request and every
- * collaborator is mocked.
+ * Unit tests for the access rules of {@link LanguageAjax}: reading or saving language keys
+ * requires the Languages or the Locales portlet. The logged-in user comes from a mocked DWR
+ * request and every collaborator is mocked.
  */
 class LanguageAjaxTest {
 
@@ -176,5 +182,88 @@ class LanguageAjaxTest {
 
         assertEquals(1, securityLoggerCalls.stream().filter(name -> name.startsWith("log")).count(),
                 "one security log entry per denial, got " + securityLoggerCalls);
+    }
+
+    /** A call to one of the methods that read language keys. */
+    @FunctionalInterface
+    interface KeyReader {
+        List<?> read(LanguageAjax ajax) throws Exception;
+    }
+
+    static Stream<Arguments> keyReaders() {
+        return Stream.of(
+                Arguments.of("getLanguageKeys(code)", (KeyReader) ajax -> ajax.getLanguageKeys("en")),
+                Arguments.of("getLanguageKeys(code, country)",
+                        (KeyReader) ajax -> ajax.getLanguageKeys("en", "US")),
+                Arguments.of("getPaginatedLanguageKeys(code, page)",
+                        (KeyReader) ajax -> ajax.getPaginatedLanguageKeys("en", 1)),
+                Arguments.of("getPaginatedLanguageKeys(code, country, page, filter)",
+                        (KeyReader) ajax -> ajax.getPaginatedLanguageKeys("en", "US", 1, "")));
+    }
+
+    /** One stored key, returned by every language key lookup of the language API. */
+    private void givenStoredKey() {
+        final List<LanguageKey> keys = List.of(new LanguageKey("en", "US", "greeting", "Hello"));
+        when(languageAPI.getLanguageKeys("en")).thenReturn(keys);
+        when(languageAPI.getLanguageKeys("en", null)).thenReturn(keys);
+        when(languageAPI.getLanguageKeys("en", "US")).thenReturn(keys);
+    }
+
+    /**
+     * Given: a back-end user with neither the Languages nor the Locales portlet
+     * When: each method that reads language keys is called
+     * Then: a DotSecurityException is thrown, no key is read and the denial is recorded once in
+     * the security log
+     */
+    @ParameterizedTest(name = "{0}")
+    @MethodSource("keyReaders")
+    void keyReads_requireLanguagesOrLocalesPortlet(final String method, final KeyReader reader)
+            throws Exception {
+        givenPortlets(false, false);
+        givenStoredKey();
+
+        assertThrows(DotSecurityException.class, () -> reader.read(new LanguageAjax()),
+                method + " must not return keys to a user with neither portlet");
+
+        verify(languageAPI, never()).getLanguageKeys(anyString());
+        verify(languageAPI, never()).getLanguageKeys(anyString(), any());
+        assertEquals(1, securityLoggerCalls.stream().filter(name -> name.startsWith("log")).count(),
+                "one security log entry per denial, got " + securityLoggerCalls);
+    }
+
+    /**
+     * Given: a back-end user with the Languages portlet only
+     * When: getLanguageKeys is called, with and without a country
+     * Then: the stored keys are returned
+     */
+    @Test
+    void getLanguageKeys_allowsLanguagesPortlet() throws Exception {
+        givenPortlets(true, false);
+        givenStoredKey();
+        final LanguageAjax languageAjax = new LanguageAjax();
+
+        assertEquals("greeting", languageAjax.getLanguageKeys("en").get(0).getKey());
+        assertEquals("greeting", languageAjax.getLanguageKeys("en", "US").get(0).getKey());
+    }
+
+    /**
+     * Given: a back-end user with the Locales portlet only
+     * When: getPaginatedLanguageKeys is called, with and without a country and filter
+     * Then: the counters row is followed by the stored key
+     */
+    @Test
+    void getPaginatedLanguageKeys_allowsLocalesPortlet() throws Exception {
+        givenPortlets(false, true);
+        givenStoredKey();
+        final LanguageAjax languageAjax = new LanguageAjax();
+
+        final List<Map<String, Object>> page = languageAjax.getPaginatedLanguageKeys("en", 1);
+        assertEquals(1L, page.get(0).get("total"));
+        assertEquals("greeting", page.get(1).get("key"));
+
+        final List<Map<String, Object>> filtered =
+                languageAjax.getPaginatedLanguageKeys("en", "US", 1, "greet");
+        assertEquals(1L, filtered.get(0).get("total"));
+        assertEquals("greeting", filtered.get(1).get("key"));
     }
 }
