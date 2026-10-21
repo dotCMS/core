@@ -5,6 +5,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
 import java.util.Collection;
 import java.util.Collections;
@@ -494,6 +495,6 @@ public class DotCMSMockRequest implements HttpServletRequest {
     }
 
     public void setContent(String content) {
-        this.content = content.getBytes();
+        this.content = content.getBytes(StandardCharsets.UTF_8);
     }
 }

@@ -12,12 +12,14 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Derives the cache key under which {@link GraphqlCacheWebInterceptor} stores a GraphQL response.
@@ -194,13 +196,14 @@ final class GraphqlCacheKey {
         if (parameters == null || parameters.isEmpty()) {
             return;
         }
-        final Map<String, String[]> sorted = new TreeMap<>(parameters);
-        for (final Map.Entry<String, String[]> entry : sorted.entrySet()) {
-            final String name = entry.getKey();
-            if (name == null || CACHE_CONTROL_PARAMS.contains(name.toLowerCase(Locale.ROOT))) {
-                continue;
-            }
-            final String[] values = entry.getValue();
+        // Sorted by name so the key does not depend on the order the parameters were sent in.
+        final List<String> names = parameters.keySet().stream()
+                .filter(Objects::nonNull)
+                .filter(name -> !CACHE_CONTROL_PARAMS.contains(name.toLowerCase(Locale.ROOT)))
+                .sorted()
+                .collect(Collectors.toList());
+        for (final String name : names) {
+            final String[] values = parameters.get(name);
             append(canonical, "param." + name,
                     values == null ? null : String.join("\u0000", Arrays.asList(values)));
         }

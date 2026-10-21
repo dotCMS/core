@@ -88,6 +88,7 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
      */
     private static final Pattern MUTATION_OPERATION =
             Pattern.compile("(?:^|[^A-Za-z0-9_]|\\\\[nrt])mutation\\b");
+    private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final int LOCK_STRIPES = 256;
     private static final Object[] LOCKS = new Object[LOCK_STRIPES];
 
@@ -166,8 +167,12 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
     }
 
     /**
-     * Picks the monitor that serializes the first execution for a key. Keys are spread over a fixed
-     * set of stripes, so no per-key object has to be kept (or interned) for the lifetime of the JVM.
+     * Picks the monitor under which the cache is re-checked for a key before the request is let
+     * through: a response stored by a concurrent request in the meantime is then served instead
+     * of executing the query again. The execution itself and the store in {@link #afterIntercept}
+     * happen later in the chain, outside the monitor, so concurrent first requests for a key can
+     * still each execute. Keys are spread over a fixed set of stripes, so no per-key object has to
+     * be kept (or interned) for the lifetime of the JVM.
      *
      * @param key the cache key
      * @return the stripe to synchronize on
@@ -294,16 +299,17 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
         if(response.getStatus() == HttpServletResponse.SC_OK && response instanceof MockHttpWriterCaptureResponse
                 && UtilMethods.isSet(cacheKey)) {
             final MockHttpWriterCaptureResponse mockResponse = (MockHttpWriterCaptureResponse) response;
-            response.setHeader("x-graphql-cache", "miss, writing to cache");
             final String graphqlResponse = mockResponse.writer.toString();
-
-            Try.run(() -> mockResponse.originalResponse.getWriter().write(graphqlResponse));
 
             final boolean bypassCache = Boolean.TRUE.equals(request.getAttribute(GRAPHQL_BYPASS_CACHE));
             final boolean credentialed = Boolean.TRUE.equals(request.getAttribute(GRAPHQL_CACHE_CREDENTIALED));
             final int cacheTTL = getCacheTTL(request);
+            final boolean store = !bypassCache && hasData(graphqlResponse);
 
-            if(!bypassCache && hasData(graphqlResponse)) {
+            response.setHeader("x-graphql-cache", store ? "miss, writing to cache" : "miss");
+            Try.run(() -> mockResponse.originalResponse.getWriter().write(graphqlResponse));
+
+            if(store) {
                 graphCache.put(cacheKey, graphqlResponse, cacheTTL);
             }
 
@@ -326,7 +332,7 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
      * @return true when the body is a JSON object with data
      */
     private static boolean hasData(final String graphqlResponse) {
-        final Map<String,Object> map = Try.of(()->new ObjectMapper()
+        final Map<String,Object> map = Try.of(()-> MAPPER
                 .readValue(graphqlResponse, Map.class)).getOrNull();
         return map != null && map.get("data") != null;
     }
