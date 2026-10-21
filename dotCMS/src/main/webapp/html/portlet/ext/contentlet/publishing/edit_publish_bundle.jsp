@@ -97,10 +97,11 @@
                     <%= LanguageUtil.get(pageContext, "id") %>:
                 </td>
                 <td style="white-space: nowrap;" >
-                    <div style="padding-left:5px;padding-bottom:10px;"><%if(bundle.bundleTgzExists()){%><a href="/api/bundle/_download/<%=bundle.getId()%>" target="_blank"><%} %>
+                    <% final boolean bundleTgzExists = bundle.bundleTgzExists(); %>
+                    <div style="padding-left:5px;padding-bottom:10px;"><%if(bundleTgzExists){%><a href="/api/bundle/_download/<%=bundle.getId()%>" target="_blank"><%} %>
                     <%=bundle.getId() %></a></div> 
                     <div  style="padding-left:5px;padding-bottom:10px;">
-                        <%if(bundle.bundleTgzExists()){%>
+                        <%if(bundleTgzExists){%>
 
                                 (<%= LanguageUtil.get(pageContext, "Download") %>)
                              </a>

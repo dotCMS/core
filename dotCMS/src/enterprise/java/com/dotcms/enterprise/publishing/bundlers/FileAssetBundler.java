@@ -24,6 +24,7 @@ import com.dotcms.publishing.IPublisher;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.publishing.output.BundleOutput;
+import com.dotcms.storage.binary.BinaryAssetStorageAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -323,6 +324,21 @@ public class FileAssetBundler implements IBundler {
 		}
 	}
 	
+	/**
+	 * Writes one File Asset into the bundle for one language: its XML descriptor (except for static
+	 * publishing) and a copy of its binary file, or removes them when an incremental live-only bundle
+	 * no longer includes the asset. Files already in the bundle with the same modification date are
+	 * left alone.
+	 *
+	 * @param host             the {@link Host} the File Asset lives in
+	 * @param languageId       the language folder to write the asset under
+	 * @param output           the bundle being written
+	 * @param fileAssetWrapper the File Asset with its version info and identifier
+	 * @throws IOException          if the asset's binary file is missing or cannot be copied, which
+	 *                              fails the bundle so it can be retried
+	 * @throws DotDataException     if the binary file cannot be looked up
+	 * @throws DotSecurityException if the asset cannot be read
+	 */
 	private void writeFileToDisk(Host host, String languageId, BundleOutput output, FileAssetWrapper fileAssetWrapper)
 			throws IOException, DotDataException, DotSecurityException {
 
@@ -371,13 +387,27 @@ public class FileAssetBundler implements IBundler {
 		else {
 		    //only write if changed
 			if(!output.exists(filePath) || output.lastModified(filePath) != cal.getTimeInMillis()){
-				File oldAsset = new File(APILocator.getFileAssetAPI().getRealAssetPathIgnoreExtensionCase(fileAssetWrapper.getAsset().getInode(), fileAssetWrapper.getAsset().getUnderlyingFileName()));
-				if(output.exists(filePath)) {
-					output.delete(filePath);
-				}
+				// With S3 asset storage on, the cache lease keeps the binary from being evicted
+				// between finding it and copying it. A null resource is allowed and never closed.
+				try (BinaryAssetStorageAPI.CacheLease lease = com.dotcms.storage.AssetStorageFeature.isEnabled()
+						? APILocator.getBinaryAssetStorageAPI().acquireCacheLease() : null) {
+					final File oldAsset = com.dotcms.storage.AssetStorageFeature.isEnabled()
+							? APILocator.getBinaryAssetStorageAPI().getBinaryFile(fileAssetWrapper.getAsset().getInode(), FileAssetAPI.BINARY_FIELD)
+							: new File(APILocator.getFileAssetAPI().getRealAssetPathIgnoreExtensionCase(fileAssetWrapper.getAsset().getInode(), fileAssetWrapper.getAsset().getUnderlyingFileName()));
+					if (oldAsset == null) {
+						// Fail the bundle, as a missing source file does with the flag off, so it can be retried.
+						throw new IOException(String.format(
+								"Binary file not found for File Asset inode '%s' (underlying name: '%s')",
+								fileAssetWrapper.getAsset().getInode(),
+								fileAssetWrapper.getAsset().getUnderlyingFileName()));
+					}
+					if(output.exists(filePath)) {
+						output.delete(filePath);
+					}
 
-				FileUtil.copyFile(oldAsset, output.getFile(filePath), true);
-				output.setLastModified(filePath, cal.getTimeInMillis());
+					FileUtil.copyFile(oldAsset, output.getFile(filePath), true);
+					output.setLastModified(filePath, cal.getTimeInMillis());
+				}
 			}
 		}		
 	}

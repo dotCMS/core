@@ -102,7 +102,8 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
     private String normalizePath(final String groupName, final String path) {
         return AssetStorageFeature.isEnabled()
                 && (BinaryAssetStorageAPI.BINARY_ASSETS_GROUP.equals(groupName)
-                || BinaryAssetStorageAPI.GENERATED_ASSETS_GROUP.equals(groupName))
+                || BinaryAssetStorageAPI.GENERATED_ASSETS_GROUP.equals(groupName)
+                || com.dotcms.publishing.output.BundleArchiveStorage.GROUP.equals(groupName))
                 ? path : path.toLowerCase();
     }
 

@@ -88,10 +88,15 @@ public class Bundle {
 	}
 
 	/**
-	 * Checks if the bundle was already generated based on the id: BUNDLE_ID.tar.gz
+	 * Checks if the bundle was already generated based on the id: BUNDLE_ID.tar.gz. The bundle
+	 * pages use this to decide whether to show download links. With S3 asset storage on, a storage
+	 * failure is logged and reported as false so the page still renders.
 	 * @return boolean - true if the bundle exists.
 	 */
 	public boolean bundleTgzExists() {
+	    if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+	        return com.dotcms.publishing.output.BundleArchiveStorage.getInstance().existsForDisplay(id);
+	    }
 	    
 	    return Try.of(()->new File(  ConfigUtils.getBundlePath() + File.separator + id + ".tar.gz" ).exists()).getOrElse(false);
 	    

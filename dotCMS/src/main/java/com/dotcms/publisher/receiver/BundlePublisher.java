@@ -199,7 +199,9 @@ public class BundlePublisher extends Publisher {
             // Extract file to a directory
             InputStream bundleIS = null;
             try {
-                bundleIS = Files.newInputStream(Paths.get(bundlePath + bundleName));
+                bundleIS = com.dotcms.storage.AssetStorageFeature.isEnabled()
+                        ? Files.newInputStream(com.dotcms.publishing.output.TarGzipBundleOutput.getBundleTarGzipFile(bundleID).toPath())
+                        : Files.newInputStream(Paths.get(bundlePath + bundleName));
                 untar(bundleIS, folderOut.getAbsolutePath() + File.separator + bundleName, bundleName);
             } finally {
                 CloseUtils.closeQuietly(bundleIS);

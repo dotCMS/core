@@ -162,7 +162,9 @@ public class PushPublisher extends Publisher {
 			File bundleRoot = BundlerUtil.getBundleRoot(this.config.getName(), false);
 			final List<File> list = new ArrayList<>(1);
 			list.add(bundleRoot);
-			File bundleFile = new File(bundleRoot + ".tar.gz");
+			File bundleFile = com.dotcms.storage.AssetStorageFeature.isEnabled()
+					? com.dotcms.publishing.output.TarGzipBundleOutput.getBundleTarGzipFile(this.config.getId())
+					: new File(bundleRoot + ".tar.gz");
 
 			List<Environment> environments = APILocator.getEnvironmentAPI().findEnvironmentsByBundleId(this.config.getId());
 
