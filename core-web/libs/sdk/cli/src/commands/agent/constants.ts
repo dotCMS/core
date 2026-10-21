@@ -14,7 +14,8 @@ export const ENTRY_KEY = 'dotcms';
 export const MCP_SERVER_PACKAGE = '@dotcms/mcp-server@latest';
 
 /**
- * Exactly the names `runtimeFromEnv()` reads in apps/mcp-server/src/lib/runtime.ts.
+ * Exactly the names the MCP server reads — its dotCMS connection in
+ * apps/mcp-server/src/lib/tools.ts.
  * NOT `DOTCMS_TOKEN` — that mistake yields a server that starts and then fails every call,
  * which is the failure the connection check (FR-024a) exists to catch.
  */
