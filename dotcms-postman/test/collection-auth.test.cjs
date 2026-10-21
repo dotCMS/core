@@ -531,8 +531,7 @@ test('Add-Remove render postscripts pass an authorized 200 and fail a 401 on the
   });
 });
 
-// PageResource's json, render and renderHTML routes authenticate before page/mode resolution.
-// Only the three explicit authentication negatives may omit credentials; cookies are not a substitute.
+// Keep protected page fixtures independent of the login cookie formerly created by Basic setup.
 const protectedPageRequests = requests.filter((r) =>
   /\/api\/v1\/page\/(?:json|render(?:HTML)?)(?![A-Za-z])/.test(url(r)));
 const pageAuthNegatives = [
