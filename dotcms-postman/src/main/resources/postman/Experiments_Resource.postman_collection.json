@@ -338,6 +338,47 @@
             "description": "Fire any action using the actionId\n\nOptional: If you pass ?inode={inode}, you don't need body here.\n\n@Path(\"/actions/{actionId}/fire\")"
           },
           "response": []
+        },
+        {
+          "name": "pre_configureAnalyticsApp",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Analytics App configured for CI\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {"key": "username", "value": "admin@dotcms.com", "type": "string"},
+                {"key": "password", "value": "admin", "type": "string"}
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {"key": "Content-Type", "value": "application/json", "type": "text"}
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"siteAuth\":{\"value\":\"ci-test-site-auth\"},\"bearerToken\":{\"value\":\"ci-test-bearer-token\"},\"persistenceMode\":{\"value\":\"readwrite\"}}",
+              "options": {"raw": {"language": "json"}}
+            },
+            "url": {
+              "raw": "{{serverURL}}/api/v1/apps/dotContentAnalytics-config/SYSTEM_HOST",
+              "host": ["{{serverURL}}"],
+              "path": ["api", "v1", "apps", "dotContentAnalytics-config", "SYSTEM_HOST"]
+            },
+            "description": "Configures the Content Analytics App at SYSTEM_HOST level with CI test credentials so that _start and /results endpoints pass the isAppConfigured() gate. Fake credentials are sufficient — the gate only checks that siteAuth and bearerToken are non-blank."
+          },
+          "response": []
         }
       ]
     },

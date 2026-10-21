@@ -1,5 +1,5 @@
 import { patchState, signalState } from '@ngrx/signals';
-import { EMPTY, Observable, fromEvent, of } from 'rxjs';
+import { EMPTY, Observable, forkJoin, fromEvent, of } from 'rxjs';
 
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { NgClass, NgStyle } from '@angular/common';
@@ -32,7 +32,6 @@ import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { PopoverModule } from 'primeng/popover';
 import { ProgressBarModule } from 'primeng/progressbar';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TabsModule } from 'primeng/tabs';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
@@ -63,14 +62,17 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     DotEditContentDialogComponent,
-    DotEditContentSidePanelComponent,
-    EditContentDialogData
+    DotSourceEditorRequest,
+    EditContentDialogData,
+    loadDotEditContentSidePanel,
+    loadDotSourceEditorSidePanel,
+    toSourceEditorRequest
 } from '@dotcms/edit-content';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { StyleEditorFormSchema, __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
-import { DotCopyContentModalService, DotMessagePipe } from '@dotcms/ui';
+import { DotCopyContentModalService, DotMessagePipe, injectSidePanel } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
 import { getContentletsInContainer } from '@dotcms/uve/internal';
 
@@ -183,9 +185,7 @@ const MESSAGE_KEY = {
         PopoverModule,
         TooltipModule,
         DotMessagePipe,
-        DotUveDeviceControlsComponent,
-        DotEditContentSidePanelComponent,
-        ProgressSpinnerModule
+        DotUveDeviceControlsComponent
     ],
     providers: [
         DotPaletteListStore,
@@ -308,9 +308,17 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     /**
      * Drives the Edit Content side panel: the content to open (create/edit) or `null` when closed.
-     * Only used when {@link $sidePanelEnabled} is on; the template renders the panel while set.
+     * Only used when {@link $sidePanelEnabled} is on; the panel is open while it is set (see the
+     * constructor).
      */
     protected readonly $editContentPanel = signal<EditContentDialogData | null>(null);
+
+    /**
+     * Drives the Edit Code side panel: the VTL file whose source is open in Monaco, or `null`
+     * when closed. Set from the contentlet tools' VTL menu (see {@link handleEditVTL}); the panel is
+     * open while it is set (see the constructor).
+     */
+    protected readonly $sourceEditorPanel = signal<DotSourceEditorRequest | null>(null);
 
     /**
      * Feature flag: when on, the editor opens in the side panel; when off, it opens in the centered
@@ -602,6 +610,30 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             this.uveStore.viewSetIframeSize({ width, height });
         });
     });
+
+    constructor() {
+        // The Edit Content side panel, open while `$editContentPanel` is set. Post-save work runs
+        // through the request's `onContentSaved`/`onCancel` callbacks; closing clears the request.
+        // Loaded on its first open, so the editor stays out of this portlet's chunk.
+        injectSidePanel(this.$editContentPanel, {
+            component: loadDotEditContentSidePanel,
+            heading: (data) => data.title ?? '',
+            inputs: (data) => ({ data }),
+            closed: () => this.$editContentPanel.set(null)
+        });
+
+        // The Edit Code side panel, open while `$sourceEditorPanel` is set. A save writes the
+        // file's working version, which edit mode renders, so the page reloads to show it; the
+        // panel then closes itself. Loaded on its first open, so Monaco stays out of this
+        // portlet's chunk.
+        injectSidePanel(this.$sourceEditorPanel, {
+            component: loadDotSourceEditorSidePanel,
+            heading: (request) => request.title,
+            inputs: (request) => ({ request }),
+            outputs: { saved: () => this.reloadPage() },
+            closed: () => this.$sourceEditorPanel.set(null)
+        });
+    }
 
     /**
      * Handle right sidebar tab changes
@@ -1702,30 +1734,48 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Handles the edit of a VTL file. `VTLFile` only carries `inode`/`name` (it comes from the
-     * client's postMessage payload), not `contentType`, so `openContentForEdit`'s flag check can't
-     * run on it directly — the full contentlet is resolved by inode first. Falls back to the legacy
-     * dialog if that lookup fails (network/permissions), matching this codebase's established
-     * "swallow the error, keep editing working via the legacy editor" fallback pattern.
+     * Handles the edit of a VTL file: opens its source in Monaco, in the Edit Code side panel.
+     *
+     * `VTLFile` only carries `inode`/`name` (it comes from the client's postMessage payload), so the
+     * full contentlet is resolved by inode first: `toSourceEditorRequest` needs its type, extension
+     * and name to decide whether the source editor handles it. Who may edit the source is decided
+     * before opening, by the same rule as Content Drive's row menu, from the server's lock answer
+     * fetched alongside.
+     *
+     * A file the source editor does not handle, or one the user cannot edit, goes to the content
+     * editor as before, which shows what the user may see. Falls back to the legacy dialog if the
+     * file lookup fails (network/permissions), matching this codebase's established "swallow the
+     * error, keep editing working via the legacy editor" fallback pattern.
      *
      * @param {VTLFile} vtlFile - The VTL file to be edited.
      * @memberof EditEmaEditorComponent
      */
     handleEditVTL(vtlFile: VTLFile) {
-        this.dotContentletService
-            .getContentletByInode(vtlFile.inode)
+        forkJoin({
+            contentlet: this.dotContentletService.getContentletByInode(vtlFile.inode),
+            // A failed lock check is an unknown answer, so it reads as "cannot edit the source".
+            lock: this.dotContentletService.canLock(vtlFile.inode).pipe(catchError(() => of(null)))
+        })
             .pipe(
                 take(1),
                 takeUntilDestroyed(this.destroyRef),
                 catchError(() => of(null))
             )
-            .subscribe((contentlet) => {
-                if (!contentlet) {
+            .subscribe((result) => {
+                if (!result) {
                     this.dialog?.editVTLContentlet(vtlFile);
                     return;
                 }
 
-                this.openContentForEdit(contentlet);
+                const { contentlet, lock } = result;
+                const request = lock ? toSourceEditorRequest(contentlet, lock) : null;
+
+                if (!request) {
+                    this.openContentForEdit(contentlet);
+                    return;
+                }
+
+                this.$sourceEditorPanel.set(request);
             });
     }
 
