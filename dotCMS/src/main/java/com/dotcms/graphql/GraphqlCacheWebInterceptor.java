@@ -14,8 +14,12 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
+import graphql.language.Document;
+import graphql.language.OperationDefinition;
+import graphql.parser.Parser;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
@@ -27,9 +31,9 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Pattern;
 
 import static com.dotcms.graphql.GraphQLCache.GRAPHQL_CACHE_RESULTS_CONFIG_PROPERTY;
 import static com.dotcms.util.HttpRequestDataUtil.getHeaderCaseInsensitive;
@@ -47,7 +51,7 @@ import static com.dotcms.util.HttpRequestDataUtil.getParamCaseInsensitive;
  * <p>
  * It takes the following parameters from the request, which can be sent as query params or headers:
  * <p>
- * Bodies that carry a mutation operation and introspection queries always bypass the cache.
+ * Bodies that run a mutation operation and introspection queries always bypass the cache.
  * <p>
  * <code>dotcachettl</code>: amount of time in seconds to cache the response for if not already in cache, otherwise it will be ignored.
  * Values above <code>cache.graphqlquerycache.maxseconds</code> are capped to that maximum.
@@ -78,16 +82,6 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
     static final int GRAPHQL_CACHE_MAX_TTL_DEFAULT = 3600;
     private static final String API_CALL = "/api/v1/graphql";
     private static final String INTROSPECTION_OPERATION_NAME = "\"operationName\":\"IntrospectionQuery\"";
-    /**
-     * Matches a body that carries a mutation operation. Mutations are never cached nor replayed in
-     * the background, because serving a stored response, or re-executing them on a refresh, would
-     * skip or repeat a write. The check is conservative: any body that mentions the keyword is
-     * treated as a mutation, which only costs it the cache. The body is JSON, so a line break
-     * before the keyword arrives as the two characters <code>\n</code>; those escapes count as
-     * separators too.
-     */
-    private static final Pattern MUTATION_OPERATION =
-            Pattern.compile("(?:^|[^A-Za-z0-9_]|\\\\[nrt])mutation\\b");
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private static final int LOCK_STRIPES = 256;
     private static final Object[] LOCKS = new Object[LOCK_STRIPES];
@@ -182,13 +176,49 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
     }
 
     /**
-     * Whether the request body carries a mutation operation.
+     * Whether the request body executes a mutation. Mutations are never cached nor replayed in the
+     * background, because serving a stored response, or re-executing them on a refresh, would skip
+     * or repeat a write. The body is parsed as the servlet does: a JSON object (or an array of
+     * them, for a batch) whose <code>query</code> is a GraphQL document and whose optional
+     * <code>operationName</code> picks the operation to run; a body that is not JSON is taken as
+     * the document itself. Only the operation keyword counts, so the word in a string literal or a
+     * variable value does not. A body that cannot be parsed is treated as a mutation: it will not
+     * execute anyway, and this keeps it out of the cache.
      *
      * @param body the raw request body
-     * @return true when the body mentions a mutation
+     * @return true when the body runs a mutation, or cannot be read
      */
     static boolean isMutation(final String body) {
-        return MUTATION_OPERATION.matcher(body).find();
+        return Try.of(() -> {
+            final JsonNode root = Try.of(() -> MAPPER.readTree(body)).getOrNull();
+            if (root == null || !root.isContainerNode()) {
+                return runsMutation(body, null);
+            }
+            final Iterable<JsonNode> requests = root.isArray() ? root : List.of(root);
+            for (final JsonNode request : requests) {
+                final String query = request.path("query").asText(null);
+                final String operationName = request.path("operationName").asText(null);
+                if (UtilMethods.isSet(query) && runsMutation(query, operationName)) {
+                    return true;
+                }
+            }
+            return false;
+        }).getOrElse(true);
+    }
+
+    /**
+     * Whether the operation a document would run is a mutation.
+     *
+     * @param query         the GraphQL document
+     * @param operationName the operation to run, or null for the document's only operation
+     * @return true when that operation is a mutation
+     */
+    private static boolean runsMutation(final String query, final String operationName) {
+        final Document document = new Parser().parseDocument(query);
+        return document.getDefinitionsOfType(OperationDefinition.class).stream()
+                .filter(operation -> UtilMethods.isNotSet(operationName)
+                        || operationName.equals(operation.getName()))
+                .anyMatch(operation -> operation.getOperation() == OperationDefinition.Operation.MUTATION);
     }
 
     private Optional<String> getAndRefresh(final HttpRequestReaderWrapper wrapper,

@@ -21,7 +21,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.visitor.filter.logger.VisitorLoggerTest.class,
         com.dotcms.visitor.filter.characteristics.VisitorCharacterTest.class,
         com.dotcms.graphql.business.GraphqlAPITest.class,
-        com.dotcms.graphql.GraphqlCacheWebInterceptorIntegrationTest.class,
         com.dotcms.graphql.business.AssetFieldValueContractTest.class,
         com.dotcms.graphql.business.AssetSubtypeAccessTest.class,
         com.dotcms.graphql.business.AssetTypeHierarchyTest.class,
@@ -109,7 +108,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.StoryBlockMarkdownPopulatorTest.class,
         com.dotcms.content.elasticsearch.business.ContentletDestroyIndexRemovalTest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexPartialFailurePhaseTest.class,
-        com.dotcms.content.elasticsearch.business.ContentletIndexProviderSkipTest.class
+        com.dotcms.content.elasticsearch.business.ContentletIndexProviderSkipTest.class,
+        com.dotcms.graphql.GraphqlCacheWebInterceptorIntegrationTest.class
 })
 
 public class MainSuite1b {

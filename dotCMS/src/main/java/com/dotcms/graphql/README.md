@@ -219,8 +219,9 @@ servlet resolves from the request: the caller (auth headers, remember-me cookie 
 or anonymous), the server name, the selector parameters the servlet reads (`Host`, `host_id`,
 `language_id`, the page language, `variantName`, the persona and `mode`; other parameters are
 ignored) and the session attributes that drive those selectors. Different callers never
-share an entry; anonymous callers share entries only among themselves. Bodies that carry a
-mutation operation are never cached.
+share an entry; anonymous callers share entries only among themselves. Bodies that run a
+mutation operation are never cached (the document is parsed, so the word in a literal or a variable
+does not count).
 
 Because entries are partitioned per caller and context, sites that serve many authenticated
 tokens, languages, variants or personas hold more entries than before; raise

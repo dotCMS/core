@@ -58,18 +58,50 @@ public class GraphqlCacheWebInterceptorTest {
 
     /**
      * Method to test: {@link GraphqlCacheWebInterceptor#isMutation(String)}
-     * Given Scenario: bodies with and without a mutation operation
-     * ExpectedResult: only bodies that carry the mutation keyword are flagged
+     * Given Scenario: bodies that run a mutation, as a single operation, as the selected one of
+     * several, as a raw document and inside a batch
+     * ExpectedResult: all of them are flagged
      */
     @Test
-    public void isMutation_flagsMutationBodiesOnly() {
+    public void isMutation_flagsBodiesThatRunAMutation() {
         assertTrue(GraphqlCacheWebInterceptor.isMutation(
                 "{\"query\":\"mutation { publish(id: \\\"1\\\") { title } }\"}"));
         assertTrue(GraphqlCacheWebInterceptor.isMutation(
                 "{\"query\":\"query Pages { page(url: \\\"/\\\") { title } }\\nmutation Publish { publish(id: \\\"1\\\") { title } }\",\"operationName\":\"Publish\"}"));
+        assertTrue(GraphqlCacheWebInterceptor.isMutation(
+                "mutation { publish(id: \"1\") { title } }"));
+        assertTrue(GraphqlCacheWebInterceptor.isMutation(
+                "[{\"query\":\"{ BlogCollection { title } }\"},{\"query\":\"mutation { publish(id: \\\"1\\\") { title } }\"}]"));
+    }
+
+    /**
+     * Method to test: {@link GraphqlCacheWebInterceptor#isMutation(String)}
+     * Given Scenario: queries, including ones that carry the word in a literal, a variable or an
+     * unselected operation
+     * ExpectedResult: none of them is flagged
+     */
+    @Test
+    public void isMutation_ignoresQueriesThatOnlyMentionTheWord() {
         assertFalse(GraphqlCacheWebInterceptor.isMutation(
                 "{\"query\":\"{ BlogCollection { title } }\"}"));
         assertFalse(GraphqlCacheWebInterceptor.isMutation(
-                "{\"query\":\"{ BlogCollection(query: \\\"+title:mutations\\\") { title } }\"}"));
+                "{\"query\":\"{ BlogCollection(query: \\\"+title:mutation\\\") { title } }\"}"));
+        assertFalse(GraphqlCacheWebInterceptor.isMutation(
+                "{\"query\":\"query Search($text: String) { BlogCollection(query: $text) { title } }\",\"variables\":{\"text\":\"mutation\"}}"));
+        assertFalse(GraphqlCacheWebInterceptor.isMutation(
+                "{\"query\":\"query Pages { page(url: \\\"/\\\") { title } }\\nmutation Publish { publish(id: \\\"1\\\") { title } }\",\"operationName\":\"Pages\"}"));
+        assertFalse(GraphqlCacheWebInterceptor.isMutation(
+                "{ mutation: BlogCollection { title } }"));
+    }
+
+    /**
+     * Method to test: {@link GraphqlCacheWebInterceptor#isMutation(String)}
+     * Given Scenario: a body that is not a GraphQL document
+     * ExpectedResult: it is kept out of the cache
+     */
+    @Test
+    public void isMutation_flagsUnparseableBodies() {
+        assertTrue(GraphqlCacheWebInterceptor.isMutation("{\"query\":\"{ Blog\"}"));
+        assertTrue(GraphqlCacheWebInterceptor.isMutation("not a document"));
     }
 }
