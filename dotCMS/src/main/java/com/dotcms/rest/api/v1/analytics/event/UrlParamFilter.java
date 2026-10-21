@@ -21,12 +21,12 @@ import java.util.regex.Pattern;
  * Reduces the page URL fields of Content Analytics events to an allowlist of query parameters
  * before the events are forwarded to the analytics backend.
  *
- * <p>For every event in the ingest body, {@code data.page.url}, {@code data.page.doc_search} and
- * {@code data.page.doc_hash} keep only the query parameters whose name is allowed; params are
- * separated by {@code &}, {@code ;} or a further {@code ?}. Values of allowed params are kept as
- * sent. The standard campaign parameters and ad click ids ({@link #DEFAULT_ALLOWED_PARAMS}) are
- * always allowed; more names can be
- * added for the whole instance ({@value #ALLOWED_PARAMS_PROPERTY}) or per site (the
+ * <p>For every event in the ingest body, {@code data.page.url}, {@code data.page.doc_search},
+ * {@code data.page.doc_hash} and the clicked link's {@code data.element.href} keep only the query
+ * parameters whose name is allowed; params are separated by {@code &}, {@code ;} or a further
+ * {@code ?}. Values of allowed params are kept as sent. The standard campaign parameters and ad
+ * click ids ({@link #DEFAULT_ALLOWED_PARAMS}) are always allowed; more names can be added for the
+ * whole instance ({@value #ALLOWED_PARAMS_PROPERTY}) or per site (the
  * {@value ContentAnalyticsUtil#ALLOWED_URL_PARAMS_KEY} field of the Content Analytics App). A site
  * can turn filtering off with the {@value ContentAnalyticsUtil#FILTER_URL_PARAMS_KEY} App field.
  *
@@ -34,7 +34,8 @@ import java.util.regex.Pattern;
  * fragment such as {@code #/products/42?tab=2} keeps {@code #/products/42} and filters the
  * parameters after the {@code ?}, while a fragment made only of parameters
  * ({@code #a=1&b=2}) is filtered like a query string. A route starts with {@code /} or
- * {@code !/} and is kept even when a segment contains {@code =}.
+ * {@code !/}; it ends at its first {@code &} or {@code ;}, and a segment containing {@code =} is
+ * removed with everything after it ({@code #/catalog/color=red} keeps {@code #/catalog}).
  *
  * <p>All methods work on plain strings and never throw on unexpected input: a value that cannot be
  * interpreted is filtered as far as possible. Field names are matched regardless of case; an array
@@ -65,6 +66,8 @@ public final class UrlParamFilter {
     private static final String DOC_SEARCH_KEY = "doc_search";
     private static final String DOC_HASH_KEY = "doc_hash";
     private static final String DOC_PATH_KEY = "doc_path";
+    private static final String ELEMENT_KEY = "element";
+    private static final String HREF_KEY = "href";
 
     /** A {@code ;jsessionid=...} path segment, up to the next {@code /} or {@code ;}. */
     private static final Pattern SESSION_ID_SEGMENT = Pattern.compile("(?i);jsessionid=[^/;]*");
@@ -123,6 +126,8 @@ public final class UrlParamFilter {
      *     numbers, booleans and {@code null} are left as they are;</li>
      *     <li>every other field is left untouched.</li>
      * </ul>
+     * The {@code href} of an {@code events[].data.element} object goes through {@link #filterUrl}
+     * as well (an array or object becomes {@code ""}).
      * An event whose {@code data} or {@code page} is present but is not an object (an array or a
      * string, for example) is removed from the batch. Other unexpected shapes are skipped.
      *
@@ -157,8 +162,9 @@ public final class UrlParamFilter {
      * Removes user info ({@code user:password@} before the host) and {@code ;jsessionid=...} path
      * segments from the page URL fields of every event, in place, keeping query parameters and
      * fragments as they are. Used for sites that turned query-parameter filtering off: these two
-     * parts are removed either way. Keys are matched regardless of case; {@code url} and
-     * {@code doc_path} strings are handled, and nothing else is changed or removed.
+     * parts are removed either way. Keys are matched regardless of case; {@code page.url},
+     * {@code page.doc_path} and {@code element.href} strings are handled, and nothing else is
+     * changed or removed.
      *
      * @param body the parsed ingest body; may be {@code null}
      */
@@ -185,6 +191,18 @@ public final class UrlParamFilter {
                             removePageUserInfoAndSessionIds(pageMap);
                         }
                     }
+                    for (final Object element : valuesIgnoreCase((Map<?, ?>) data, ELEMENT_KEY)) {
+                        if (element instanceof Map) {
+                            for (final Map.Entry<?, ?> entry : ((Map<?, ?>) element).entrySet()) {
+                                if (entry.getKey() instanceof String && entry.getValue() instanceof String
+                                        && HREF_KEY.equalsIgnoreCase((String) entry.getKey())) {
+                                    @SuppressWarnings("unchecked")
+                                    final Map.Entry<Object, Object> hrefEntry = (Map.Entry<Object, Object>) entry;
+                                    hrefEntry.setValue(removeUserInfoAndSessionId((String) entry.getValue()));
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -199,12 +217,20 @@ public final class UrlParamFilter {
             final String key = ((String) entry.getKey()).toLowerCase(Locale.ROOT);
             final String value = (String) entry.getValue();
             if (URL_KEY.equals(key)) {
-                final int end = firstIndexOf(value, '?', '#');
-                entry.setValue(filterPath(removeUserInfo(value.substring(0, end))) + value.substring(end));
+                entry.setValue(removeUserInfoAndSessionId(value));
             } else if (DOC_PATH_KEY.equals(key)) {
                 entry.setValue(filterPath(value));
             }
         }
+    }
+
+    /**
+     * Removes user info and {@code ;jsessionid} segments from the part of a URL before its query
+     * or fragment, keeping the query and fragment as they are.
+     */
+    private static String removeUserInfoAndSessionId(final String url) {
+        final int end = firstIndexOf(url, '?', '#');
+        return filterPath(removeUserInfo(url.substring(0, end))) + url.substring(end);
     }
 
     /** Returns the index of the first of the two characters in {@code value}, or its length. */
@@ -246,8 +272,33 @@ public final class UrlParamFilter {
                 final Map<Object, Object> pageMap = (Map<Object, Object>) page;
                 filterPage(pageMap, allowed);
             }
+            for (final Object element : valuesIgnoreCase((Map<?, ?>) data, ELEMENT_KEY)) {
+                if (element instanceof Map) {
+                    @SuppressWarnings("unchecked")
+                    final Map<Object, Object> elementMap = (Map<Object, Object>) element;
+                    filterElementHref(elementMap, allowed);
+                }
+            }
         }
         return true;
+    }
+
+    /**
+     * Filters the {@code href} of a clicked element like a page {@code url}, matching the key
+     * regardless of case. An array or object becomes {@code ""}; other values are left as they are.
+     */
+    private static void filterElementHref(final Map<Object, Object> element, final Set<String> allowed) {
+        for (final Map.Entry<Object, Object> entry : element.entrySet()) {
+            if (!(entry.getKey() instanceof String) || !HREF_KEY.equalsIgnoreCase((String) entry.getKey())) {
+                continue;
+            }
+            final Object value = entry.getValue();
+            if (value instanceof String) {
+                entry.setValue(filterUrl((String) value, allowed));
+            } else if (value instanceof Map || value instanceof List) {
+                entry.setValue("");
+            }
+        }
     }
 
     /**
@@ -374,8 +425,10 @@ public final class UrlParamFilter {
      * <ul>
      *     <li>when the route contains {@code =} and does not start with {@code /} or {@code !/},
      *     the whole fragment is a list of parameters and is filtered like a query string;</li>
-     *     <li>otherwise the route is kept as it is (hash routes, plain anchors) and the query after
-     *     it keeps only the allowed parameters.</li>
+     *     <li>otherwise the route is kept (plain anchors as they are; routes starting with
+     *     {@code /} or {@code !/} up to their first {@code &} or {@code ;} and without the first
+     *     segment containing {@code =} and what follows it) and the query after it keeps only the
+     *     allowed parameters.</li>
      * </ul>
      * A leading {@code #} is kept when something remains.
      *
@@ -398,10 +451,30 @@ public final class UrlParamFilter {
         if (route.contains("=") && !route.startsWith("/") && !route.startsWith("!/")) {
             kept = filterPairs(body, allowed);
         } else {
+            final String keptRoute = route.startsWith("/") || route.startsWith("!/") ? trimRoute(route) : route;
             final String query = queryIndex >= 0 ? filterPairs(body.substring(queryIndex + 1), allowed) : "";
-            kept = route + (query.isEmpty() ? "" : "?" + query);
+            kept = keptRoute + (query.isEmpty() ? "" : "?" + query);
         }
         return kept.isEmpty() ? "" : (hasPrefix ? "#" : "") + kept;
+    }
+
+    /**
+     * Shortens a hash route that starts with {@code /} or {@code !/}: it ends at its first
+     * {@code &} or {@code ;}, and the first {@code /}-segment containing {@code =} is removed with
+     * everything after it. {@code /catalog/color=red} becomes {@code /catalog}, {@code /a=1&b=2}
+     * becomes {@code /}, and {@code !/a=1} becomes {@code !/}.
+     */
+    private static String trimRoute(final String route) {
+        final int pairEnd = firstIndexOf(route, '&', ';');
+        String trimmed = route.substring(0, pairEnd);
+        final int equalsIndex = trimmed.indexOf('=');
+        if (equalsIndex >= 0) {
+            trimmed = trimmed.substring(0, trimmed.lastIndexOf('/', equalsIndex));
+            if (trimmed.isEmpty() || "!".equals(trimmed)) {
+                trimmed += "/";
+            }
+        }
+        return trimmed;
     }
 
     /**

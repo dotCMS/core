@@ -422,31 +422,48 @@ class UrlParamFilterTest {
 
     /**
      * Method to test: {@link UrlParamFilter#filterFragment}
-     * Given scenario: hash routes with an {@code =} inside a segment:
-     * {@code #/catalog/color=red?utm_source=x}, {@code #/products;id=42}, {@code #!/p;id=1} and
-     * {@code #/r=1?a=1}.
-     * Expected result: the route is kept and only its query is filtered:
-     * {@code #/catalog/color=red?utm_source=x}, {@code #/products;id=42}, {@code #!/p;id=1} and
-     * {@code #/r=1}.
+     * Given scenario: hash routes with parameter-like segments:
+     * {@code #/catalog/color=red?utm_source=x}, {@code #/products;id=42}, {@code #!/p;id=1},
+     * {@code #/r=1?a=1}, {@code #!/verify/k=abc} and {@code #/reset&m=x}.
+     * Expected result: the route is kept up to the first {@code &} or {@code ;}, without the
+     * first segment containing {@code =} and everything after it; its query is still filtered:
+     * {@code #/catalog?utm_source=x}, {@code #/products}, {@code #!/p}, {@code #/},
+     * {@code #!/verify} and {@code #/reset}.
      */
     @Test
-    void filterFragment_routeWithEqualsInSegment_isKept() {
-        assertEquals("#/catalog/color=red?utm_source=x",
+    void filterFragment_routeWithParameterSegment_keepsRouteUpToIt() {
+        assertEquals("#/catalog?utm_source=x",
                 UrlParamFilter.filterFragment("#/catalog/color=red?utm_source=x", DEFAULTS));
-        assertEquals("#/products;id=42", UrlParamFilter.filterFragment("#/products;id=42", DEFAULTS));
-        assertEquals("#!/p;id=1", UrlParamFilter.filterFragment("#!/p;id=1", DEFAULTS));
-        assertEquals("#/r=1", UrlParamFilter.filterFragment("#/r=1?a=1", DEFAULTS));
+        assertEquals("#/products", UrlParamFilter.filterFragment("#/products;id=42", DEFAULTS));
+        assertEquals("#!/p", UrlParamFilter.filterFragment("#!/p;id=1", DEFAULTS));
+        assertEquals("#/", UrlParamFilter.filterFragment("#/r=1?a=1", DEFAULTS));
+        assertEquals("#!/verify", UrlParamFilter.filterFragment("#!/verify/k=abc", DEFAULTS));
+        assertEquals("#/reset", UrlParamFilter.filterFragment("#/reset&m=x", DEFAULTS));
+    }
+
+    /**
+     * Method to test: {@link UrlParamFilter#filterFragment}
+     * Given scenario: a slash route made only of pairs, {@code #/k=x&t=Bearer} and
+     * {@code #!/k=x&t=Bearer}.
+     * Expected result: {@code #/} and {@code #!/}; no pair is kept.
+     */
+    @Test
+    void filterFragment_slashRouteOfPairs_keepsOnlyRoot() {
+        assertEquals("#/", UrlParamFilter.filterFragment("#/k=x&t=Bearer", DEFAULTS));
+        assertEquals("#!/", UrlParamFilter.filterFragment("#!/k=x&t=Bearer", DEFAULTS));
     }
 
     /**
      * Method to test: {@link UrlParamFilter#filterUrl}
-     * Given scenario: {@code https://h/p?a=1#/catalog/color=red}.
-     * Expected result: {@code https://h/p#/catalog/color=red}; the hash route is kept.
+     * Given scenario: {@code https://h/p?a=1#/catalog/color=red} and
+     * {@code https://h/p#/k=x&t=Bearer}.
+     * Expected result: {@code https://h/p#/catalog} and {@code https://h/p#/}.
      */
     @Test
-    void filterUrl_hashRouteWithEqualsInSegment_isKept() {
-        assertEquals("https://h/p#/catalog/color=red",
+    void filterUrl_hashRouteWithParameterSegment_keepsRouteUpToIt() {
+        assertEquals("https://h/p#/catalog",
                 UrlParamFilter.filterUrl("https://h/p?a=1#/catalog/color=red", DEFAULTS));
+        assertEquals("https://h/p#/", UrlParamFilter.filterUrl("https://h/p#/k=x&t=Bearer", DEFAULTS));
     }
 
     /**
@@ -859,6 +876,46 @@ class UrlParamFilterTest {
         assertEquals("https://h/p", wellFormedPage.get("url"));
     }
 
+    /**
+     * Method to test: {@link UrlParamFilter#filterEventPages}
+     * Given scenario: content_click events whose element has {@code href}
+     * {@code /t?y=2&utm_source=s#k=v}, {@code HREF} {@code https://u@h/t;jsessionid=A1?y=2}, and
+     * {@code href} as an array; plus element {@code text} {@code go?y=2}.
+     * Expected result: {@code /t?utm_source=s}, {@code https://h/t}, {@code ""}; the text is
+     * unchanged.
+     */
+    @Test
+    void filterEventPages_elementHref_isFiltered() {
+        final Map<String, Object> first = element("/t?y=2&utm_source=s#k=v");
+        first.put("text", "go?y=2");
+        final Map<String, Object> second = new LinkedHashMap<>();
+        second.put("HREF", "https://u@h/t;jsessionid=A1?y=2");
+        final Map<String, Object> third = new LinkedHashMap<>();
+        third.put("href", new ArrayList<>(List.of("/t?y=2")));
+
+        UrlParamFilter.filterEventPages(body(clickEvent(first), clickEvent(second), clickEvent(third)), DEFAULTS);
+
+        assertEquals("/t?utm_source=s", first.get("href"));
+        assertEquals("go?y=2", first.get("text"));
+        assertEquals("https://h/t", second.get("HREF"));
+        assertEquals("", third.get("href"));
+    }
+
+    /**
+     * Method to test: {@link UrlParamFilter#removeUserInfoAndSessionIds}
+     * Given scenario: a content_click event whose element href is
+     * {@code https://u@h/t;jsessionid=A1?y=2#k=v}.
+     * Expected result: {@code https://h/t?y=2#k=v}; query and fragment are kept.
+     */
+    @Test
+    void removeUserInfoAndSessionIds_elementHref_userInfoAndSessionIdRemoved() {
+        final Map<String, Object> element = element("https://u@h/t;jsessionid=A1?y=2#k=v");
+
+        UrlParamFilter.removeUserInfoAndSessionIds(body(clickEvent(element)));
+
+        assertEquals("https://h/t?y=2#k=v", element.get("href"));
+    }
+
     // --- removeUserInfoAndSessionIds ----------------------------------------------------------------
 
     /**
@@ -984,6 +1041,20 @@ class UrlParamFilterTest {
         final Map<String, Object> event = new LinkedHashMap<>();
         event.put("event_type", type);
         event.put("data", data);
+        return event;
+    }
+
+    private static Map<String, Object> element(final String href) {
+        final Map<String, Object> element = new LinkedHashMap<>();
+        element.put("href", href);
+        return element;
+    }
+
+    private static Map<String, Object> clickEvent(final Map<String, Object> element) {
+        final Map<String, Object> event = event("content_click", page("https://h/p"));
+        @SuppressWarnings("unchecked")
+        final Map<String, Object> data = (Map<String, Object>) event.get("data");
+        data.put("element", element);
         return event;
     }
 
