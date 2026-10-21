@@ -15,6 +15,8 @@ import org.glassfish.jersey.server.ContainerRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Optional;
 
 /**
@@ -133,13 +135,30 @@ public enum AuthCredentialPushPublishUtil {
         }
 
         final String token = getTokenFromRequest(request);
-        final boolean matches = token.equals( key.get() );
+        final boolean matches = keyMatches(token, key.get());
         if (!matches) {
             Logger.debug(AuthCredentialPushPublishUtil.class, () -> String.format(
                     "Push publish key does not match the one set for endpoint: %s",
                     publishingEndPoint.getServerName()));
         }
         return matches ? Optional.of(publishingEndPoint) : Optional.empty();
+    }
+
+    /**
+     * Checks whether the key sent by a remote server in a push publish request is the same as
+     * the key configured for its endpoint. Both values are compared as UTF-8 bytes with
+     * {@link MessageDigest#isEqual(byte[], byte[])}.
+     *
+     * @param requestKey  the key read from the request's {@code Authorization} header
+     * @param endpointKey the key configured for the endpoint
+     * @return {@code true} if both keys are set and identical, {@code false} otherwise
+     */
+    static boolean keyMatches(final String requestKey, final String endpointKey) {
+        if (requestKey == null || endpointKey == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(requestKey.getBytes(StandardCharsets.UTF_8),
+                endpointKey.getBytes(StandardCharsets.UTF_8));
     }
 
     private String getTokenFromRequest(final HttpServletRequest request) {
