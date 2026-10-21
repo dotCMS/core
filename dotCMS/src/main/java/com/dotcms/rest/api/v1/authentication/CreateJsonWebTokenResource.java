@@ -74,7 +74,6 @@ import static java.util.Collections.EMPTY_MAP;
 @Tag(name = "Authentication")
 public class CreateJsonWebTokenResource implements Serializable {
 
-    private final static int JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS_DEFAULT_VALUE = 30;
     private final UserLocalManager         userLocalManager;
     private final LoginServiceAPI loginService;
     private final ResponseUtil             responseUtil;
@@ -218,7 +217,7 @@ public class CreateJsonWebTokenResource implements Serializable {
 
         final int jsonWebTokenMaxAllowedExpirationDay =
                 Config.getIntProperty(LoginServiceAPI.JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS,
-                        JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS_DEFAULT_VALUE);
+                        LoginServiceAPI.JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS_DEFAULT);
 
         final int maxAllowedExpirationDays =
                 (jsonWebTokenMaxAllowedExpirationDay > 0 && (expirationDays > jsonWebTokenMaxAllowedExpirationDay))?

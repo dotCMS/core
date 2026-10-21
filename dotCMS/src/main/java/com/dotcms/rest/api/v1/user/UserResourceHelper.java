@@ -250,13 +250,11 @@ public class UserResourceHelper implements Serializable {
 	}
 
 	/**
-	 * Check if the user has the LOGIN_AS role.
-	 *
-	 * @param user
-	 * @throws DotDataException if the user doesn't have the Login_AS Role.
-	 */
-	/**
 	 * Determines whether the given user has the Administrator or the CMS Administrator role.
+	 *
+	 * @param user the user to check
+	 * @return {@code true} when the user holds either role
+	 * @throws DotDataException if the roles cannot be loaded
 	 */
 	private boolean isAdministrator(final User user) throws DotDataException {
 		final Role administratorRole = this.roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.ADMINISTRATOR);
@@ -264,6 +262,12 @@ public class UserResourceHelper implements Serializable {
 				|| this.roleAPI.doesUserHaveRole(user, this.roleAPI.loadCMSAdminRole());
 	}
 
+	/**
+	 * Check if the user has the LOGIN_AS role.
+	 *
+	 * @param user
+	 * @throws DotDataException if the user doesn't have the Login_AS Role.
+	 */
 	private void checkLoginAsRole(User user) throws DotDataException {
 		final Role loginAsRole = this.roleAPI.findRoleByFQN(Role.SYSTEM + " --> " + Role.LOGIN_AS);
 		if (!this.roleAPI.doesUserHaveRole(user, loginAsRole)) {

@@ -44,13 +44,7 @@ public class ApiTokenAPI {
    public final static String TOKEN_404_STR = "TOKEN_404";
    public final static String TOKEN_PREFIX  = "api";
 
-    /**
-     * Default maximum lifetime, in days, of a newly issued API token. Overridden by the
-     * {@link LoginServiceAPI#JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS} property; a value of zero
-     * or less disables the limit.
-     */
-    public static final int API_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS_DEFAULT = 365;
-   
+
     private final ApiTokenCache cache;
     private final ApiTokenSQL   sql;
 
@@ -359,14 +353,15 @@ public class ApiTokenAPI {
 
     /**
      * Returns the maximum lifetime, in days, allowed for a newly issued API token, as set by the
-     * {@link LoginServiceAPI#JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS} property. A value of zero
-     * or less means no limit.
+     * {@link LoginServiceAPI#JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS} property, or
+     * {@link LoginServiceAPI#JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS_DEFAULT} when it is not
+     * set. A value of zero or less means no limit.
      *
      * @return the maximum number of days a new token can be valid for
      */
     public static int getMaxAllowedExpirationDays() {
         return Config.getIntProperty(LoginServiceAPI.JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS,
-                API_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS_DEFAULT);
+                LoginServiceAPI.JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS_DEFAULT);
     }
 
     /**

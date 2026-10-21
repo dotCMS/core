@@ -33,6 +33,13 @@ public interface LoginServiceAPI extends Serializable {
     // max expiration day allowed for a json web token
     public static final String JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS = "json.web.token.max.allowed.expiration.days";
 
+    /**
+     * Value used for {@link #JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS} when the property is not
+     * set anywhere. Every reader of the property must fall back to this same number, so that the
+     * current and the deprecated token endpoints cap new tokens at the same lifetime.
+     */
+    public static final int JSON_WEB_TOKEN_MAX_ALLOWED_EXPIRATION_DAYS_DEFAULT = 365;
+
     public final static Lazy<Integer> JWT_TOKEN_MAX_AGE_DAYS = Lazy.of(() -> Config.getIntProperty(
             JSON_WEB_TOKEN_DAYS_MAX_AGE,
             JSON_WEB_TOKEN_DAYS_MAX_AGE_DEFAULT));
