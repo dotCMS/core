@@ -10,6 +10,7 @@ import { Mock, vi } from 'vitest';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ConfirmationService } from 'primeng/api';
+import { Dialog } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
@@ -229,6 +230,14 @@ describe('DotUsersApiTokensTabComponent', () => {
             expect(usersService.getApiTokens).toHaveBeenCalledTimes(2);
             expect(spectator.component['$revealVisible']()).toBe(true);
             expect(spectator.component['$revealJwt']()).toBe('new-jwt');
+        });
+
+        it('should not let Escape or the X dismiss the reveal dialog, only Accept', () => {
+            const dialog = spectator.queryAll(Dialog).find((d) => d.header === 'API token');
+
+            expect(dialog).toBeDefined();
+            expect(dialog?.closable).toBe(false);
+            expect(dialog?.closeOnEscape).toBe(false);
         });
     });
 });
