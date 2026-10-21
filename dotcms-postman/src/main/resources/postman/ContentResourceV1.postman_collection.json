@@ -353,7 +353,7 @@
                   "script": {
                     "exec": [
                       "pm.test(\"Response text contains the expected error message\", function () {",
-                      "    pm.expect(pm.response.text()).to.include(\"CONTENT_APIS_ALLOW_ANONYMOUS permission exceeded - system set to READ but WRITE was required\");",
+                      "    pm.expect(pm.response.text()).to.include(\"CONTENT_APIS_ALLOW_ANONYMOUS permission denied\");",
                       "});",
                       ""
                     ],
@@ -1305,7 +1305,7 @@
                     "exec": [
                       "// Test to check for the response text",
                       "pm.test(\"Response text is as expected\", function () {",
-                      "    pm.expect(pm.response.text()).to.include(\"CONTENT_APIS_ALLOW_ANONYMOUS permission exceeded - system set to READ but WRITE was required\");",
+                      "    pm.expect(pm.response.text()).to.include(\"CONTENT_APIS_ALLOW_ANONYMOUS permission denied\");",
                       "});"
                     ],
                     "type": "text/javascript",

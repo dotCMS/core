@@ -27,15 +27,13 @@ public enum AnonymousAccess {
   public final static String CONTENT_APIS_ALLOW_ANONYMOUS="CONTENT_APIS_ALLOW_ANONYMOUS";
   
   /**
-   * this will be used as the default setting for
-   * rest endpoints that can respect anonymous permissions
-   * e.g. content read/write.
-   * Endpoints that are explictly for backend use ignore this value
-   * all together
-   * @return
+   * Returns the configured anonymous access level for content APIs, defaulting to NONE.
+   * Backend-only endpoints do not use this setting.
+   *
+   * @return the configured {@link AnonymousAccess}, or {@link #NONE} when absent or invalid
    */
   public static AnonymousAccess systemSetting() {
-    return from(Config.getStringProperty(CONTENT_APIS_ALLOW_ANONYMOUS,"READ"));
+    return from(Config.getStringProperty(CONTENT_APIS_ALLOW_ANONYMOUS, "NONE"));
   }
   
   

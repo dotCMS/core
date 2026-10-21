@@ -112,4 +112,4 @@ Feature: Checking JSON Attributes
     And header Content-Type = 'application/json'
     When method post
     Then status 401
-    And match response contains 'CONTENT_APIS_ALLOW_ANONYMOUS permission exceeded'
+    And match response contains 'CONTENT_APIS_ALLOW_ANONYMOUS permission denied'
