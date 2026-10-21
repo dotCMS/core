@@ -40,6 +40,7 @@ import org.junit.runners.Suite;
         TimeMachineUtilTest.class,
         ImportContentletsActionSmokeTest.class,
         TreeFactoryTest.class,
+        com.dotmarketing.webdav.DotWebdavTempPathContainmentTest.class,
 })
 public class MainSuite3a {
 }

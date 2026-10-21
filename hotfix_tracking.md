@@ -59,3 +59,4 @@ Release-25.07.10 LTS
 53. https://github.com/dotCMS/core/pull/37474 : fix(network): handle IPv6 addresses in IPUtils checks #37474
 53. https://github.com/dotCMS/core/pull/37474 : fix(network): handle IPv6 addresses in IPUtils checks #37474
 54. https://github.com/dotCMS/core/pull/37549 : fix(velocity): harden SecureIntrospector restricted-class coverage #37549
+55. https://github.com/dotCMS/core/pull/37947 : fix(webdav): confine temp storage writes to the temp directory #37947
