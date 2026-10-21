@@ -459,3 +459,74 @@ test('non-admin actors are retained rather than replaced with the runner admin J
     }
   }
 });
+
+// PageResource.render rejects a caller with no authenticated user before host, page,
+// variant, mode or permission resolution (see the 401 OpenAPI contract). The collection
+// builds the admin page and experiment through Bearer setup, so its four positive variant
+// renders must keep the same admin Bearer; an ambient cookie is not part of the contract.
+const renderPositives = [
+  'To specific variants / render page with DEFAULT variant',
+  'To specific variants / render page with new variant',
+  'To specific variants / Render again after Add/remove',
+  'To specific variants / Render again after Add/remove DEFAULT variant',
+].map((names) => find('Add-Remove_Contentlet_from_a_Page.postman_collection.json', names));
+
+test('Add-Remove render positives resolve to the effective admin Bearer, with no manual override', () => {
+  assert.equal(renderPositives.length, 4, 'Keep exactly the four positive variant renders');
+  for (const r of renderPositives) {
+    assert.equal(r.auth?.type, 'bearer', label(r));
+    assert.equal(value(r.auth, 'token'), '{{jwt}}', label(r));
+    assert.equal(resolve(value(r.auth, 'token'), effectiveVariables(r)), 'synthetic.runner.jwt', label(r));
+    assert.equal(manualAuth(r).length, 0, `Do not override the render auth with a manual header: ${label(r)}`);
+  }
+});
+
+// Run the real render postscripts against a faithful 200/401 pair. The 401 payload is
+// deliberately identical to the 200 one so only the status assertion can reject it; a
+// TypeError here would mean the mock, not the assertion, produced the failure.
+function runRenderScript(r, status, body) {
+  const failures = [];
+  const response = {
+    status,
+    json: () => body,
+    to: { have: { status: (expected) => assert.equal(status, expected,
+      `expected status ${expected} but got ${status}`) } },
+  };
+  const contains = (text, expected) => assert.ok(String(text).includes(expected),
+    `expected ${JSON.stringify(text)} to contain ${JSON.stringify(expected)}`);
+  const pm = {
+    response,
+    test: (name, fn) => { try { fn(); } catch (error) { failures.push({ name, error }); } },
+    expect: (actual) => {
+      const negative = (expected) => assert.ok(!String(actual).includes(expected),
+        `expected ${JSON.stringify(actual)} not to contain ${JSON.stringify(expected)}`);
+      return {
+        to: { contains: (expected) => contains(actual, expected), not: { contains: negative } },
+        not: { to: { contains: negative } },
+      };
+    },
+  };
+  for (const event of (r.node.event || []).filter((e) => e.listen === 'test')) {
+    vm.runInNewContext(eventCode(event), { pm });
+  }
+  return failures;
+}
+
+test('Add-Remove render postscripts pass an authorized 200 and fail a 401 on the status assertion', () => {
+  const rendered = [
+    'content_1 content_2 content_3',
+    'content_1 content_2 content_3',
+    'content_1 content_4',
+    'content_1 content_2 content_3',
+  ];
+  renderPositives.forEach((r, i) => {
+    const body = { entity: { page: { rendered: rendered[i] } } };
+    const passed = runRenderScript(r, 200, body);
+    assert.equal(passed.length, 0, `Authorized render must satisfy its own postscript: ${label(r)}: ${passed.map((f) => f.error.message).join('; ')}`);
+    const denied = runRenderScript(r, 401, body);
+    assert.equal(denied.length, 1, `A 401 must trip the render status assertion: ${label(r)}`);
+    assert.ok(!(denied[0].error instanceof TypeError),
+      `The 401 must fail the status assertion, not a mock TypeError: ${label(r)}`);
+    assert.match(denied[0].error.message, /status 200/, label(r));
+  });
+});
