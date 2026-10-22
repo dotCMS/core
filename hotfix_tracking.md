@@ -61,3 +61,4 @@ Release-25.07.10 LTS
 55. https://github.com/dotCMS/core/pull/37947 : fix(webdav): confine temp storage writes to the temp directory #37947
 56. https://github.com/dotCMS/core/pull/38101 : fix(rest): require admin and Maintenance portlet to tail log files #38101
 57. https://github.com/dotCMS/core/issues/37592 : Remove pgjdbc-ng and PostgresPubSubImpl (superseded by JDBCPubSubImpl) #37592
+58. https://github.com/dotCMS/core/pull/37626 : chore(deps): bump six libraries with published security fixes #37626
