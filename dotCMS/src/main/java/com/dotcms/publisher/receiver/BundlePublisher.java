@@ -227,8 +227,8 @@ public class BundlePublisher extends Publisher {
                 bundleMetaDataFile = new BundleMetaDataFile(finalBundlePath);
                 assetsDetails = bundleMetaDataFile.getAssetsDetails();
             } catch (Exception e) {
+                // the failure is logged once, by the handler of the whole bundle below
                 metadataFailed = true;
-                Logger.error(BundlePublisher.class, "Unable to get assets list from received bundle with ID '" + bundleName + "': " + e.getMessage(), e);
                 throw e;
             }
 

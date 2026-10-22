@@ -15,6 +15,8 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.environment.business.EnvironmentAPI;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
+import com.dotcms.publisher.receiver.BundleOrigin;
+import com.dotcms.publisher.receiver.BundlePluginAccess;
 import com.dotcms.publisher.util.PublisherUtil;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.DotPublishingException;
@@ -29,7 +31,6 @@ import com.dotcms.publishing.manifest.ManifestItem.ManifestInfo;
 import com.dotcms.publishing.manifest.ManifestReaderFactory;
 import com.dotcms.publishing.manifest.ManifestReason;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
-import com.dotcms.publisher.receiver.BundlePluginAccess;
 import com.dotcms.rest.PushPublisherJob;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -63,13 +64,13 @@ import org.apache.commons.fileupload.FileItemFactory;
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.apache.commons.io.FileUtils;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
 import java.io.File;
-import org.apache.commons.io.FileUtils;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -688,13 +689,12 @@ public class RemotePublishAjaxAction extends AjaxAction {
             String bundleFolder = bundleName.substring( 0, bundleName.indexOf( ".tar.gz" ) );
             String endpointId = getUser().getUserId();
             response.setContentType( "text/html; charset=utf-8" );
-            status = PublishAuditAPI.getInstance().updateAuditTable( endpointId, endpointId, bundleFolder );
 
             // Write file on FS
             FileUtil.writeToFile( bundle, bundlePath + bundleName );
 
-            final boolean deployAllowed = BundlePluginAccess.canDeployPlugins(getUser());
-            if ( !deployAllowed && BundlePluginAccess.carriesPlugins(new File(bundlePath + bundleName)) ) {
+            if ( !BundlePluginAccess.canDeployPlugins(getUser())
+                    && BundlePluginAccess.carriesPlugins(new File(bundlePath + bundleName)) ) {
                 FileUtils.deleteQuietly(new File(bundlePath + bundleName));
                 Logger.warn(RemotePublishAjaxAction.class,
                         "Bundle upload rejected: the user has no access to deploy plugins");
@@ -702,8 +702,10 @@ public class RemotePublishAjaxAction extends AjaxAction {
                 return;
             }
 
+            status = PublishAuditAPI.getInstance().updateAuditTable( endpointId, endpointId, bundleFolder );
+
             if ( !status.getStatus().equals( Status.PUBLISHING_BUNDLE ) ) {
-                PushPublisherJob.triggerPushPublisherJob(bundleName, status, deployAllowed);
+                PushPublisherJob.triggerPushPublisherJob(bundleName, status, BundleOrigin.USER_UPLOAD, endpointId);
             }
 
             out.print( "<html><head><script>isLoaded = true;</script></head><body><textarea>{'status':'success'}</textarea></body></html>" );

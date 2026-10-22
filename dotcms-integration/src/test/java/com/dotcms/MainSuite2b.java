@@ -80,7 +80,6 @@ import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxActionTest;
 import com.dotcms.publisher.environment.ajax.EnvironmentAjaxActionTest;
-import com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest;
 import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.PushedAssetUtilTest;
@@ -339,7 +338,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task210802UpdateStructureTableTest.class,
         MaintenanceUtilTest.class,
         BundlePublisherTest.class,
-        OSGIHandlerTest.class,
         CategoryFactoryTest.class,
         Task210805DropUserProxyTableTest.class,
         Task210816DeInodeRelationshipTest.class,

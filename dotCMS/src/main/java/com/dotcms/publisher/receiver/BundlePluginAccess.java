@@ -1,6 +1,7 @@
 package com.dotcms.publisher.receiver;
 
 import com.dotcms.enterprise.publishing.remote.bundler.OSGIBundler;
+import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
@@ -15,8 +16,9 @@ import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 
 /**
- * Decides who may bring plugin jars in through a bundle file uploaded by a logged-in user.
- * Plugins are installed from the plugins portlet; a bundle upload must not be a way around it.
+ * Plugin jars in an uploaded bundle need the same access as installing them from the plugins
+ * portlet. This class decides, from how a bundle arrived, whether its plugin jars may be
+ * deployed, and lists a bundle file to see whether it carries any.
  */
 public final class BundlePluginAccess {
 
@@ -37,6 +39,39 @@ public final class BundlePluginAccess {
     public static boolean canDeployPlugins(final User user) {
         return user != null && Try.of(() -> APILocator.getLayoutAPI()
                 .doesUserHaveAccessToPortlet(PLUGINS_PORTLET, user)).getOrElse(false);
+    }
+
+    /**
+     * Tells whether the plugins of a received bundle may be deployed, from how the bundle arrived:
+     * a bundle from a registered sender may; a user upload may only if the uploader still has
+     * access to the plugins portlet; anything else (no origin recorded, an unknown origin, an
+     * uploader that cannot be found) may not.
+     *
+     * @param config The configuration of the bundle being processed.
+     * @return {@code true} if the plugins of the bundle may be deployed.
+     */
+    public static boolean mayDeployPlugins(final PublisherConfig config) {
+        final BundleOrigin origin = parseOrigin(config.get(PublisherConfig.Config.BUNDLE_ORIGIN.name()));
+        if (origin == BundleOrigin.REGISTERED_SENDER) {
+            return true;
+        }
+        if (origin == BundleOrigin.USER_UPLOAD) {
+            final Object uploaderId = config.get(PublisherConfig.Config.UPLOADED_BY.name());
+            return uploaderId instanceof String && canDeployPlugins(Try.of(() -> APILocator.getUserAPI()
+                    .loadUserById((String) uploaderId)).getOrNull());
+        }
+        return false;
+    }
+
+    /**
+     * Reads a bundle origin from a stored value.
+     *
+     * @param value The stored value, normally the name of a {@link BundleOrigin}.
+     * @return The origin, or {@code null} if the value is missing or not a known origin.
+     */
+    public static BundleOrigin parseOrigin(final Object value) {
+        return value == null ? null
+                : Try.of(() -> BundleOrigin.valueOf(value.toString())).getOrNull();
     }
 
     /**

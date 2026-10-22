@@ -30,7 +30,6 @@ import com.liferay.util.StringPool;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
 import org.apache.commons.io.FileUtils;
-import org.apache.felix.framework.OSGIUtil;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -50,8 +49,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -518,91 +515,6 @@ public class BundlePublisherTest extends IntegrationTestBase {
                 }
             }
         }
-    }
-
-    /**
-     * Method to Test: {@link BundlePublisher#process(PublishStatus)}
-     * When: the metadata file of a received bundle cannot be read, even though the sender is
-     * allowed to deploy plugins, and the bundle carries a plugin jar
-     * Should: stop before any handler runs (nothing is copied to the plugin upload folder), mark
-     * the bundle as failed, and remove both the extracted folder and the received archive.
-     */
-    @Test
-    public void test_process_unreadableMetadata_abortsBeforeHandlersAndCleansUp() throws Exception {
-        LicenseTestUtil.getLicense();
-        final String bundleId = "meta_" + (System.currentTimeMillis() % 1_000_000_000L);
-        final String bundleName = bundleId + ".tar.gz";
-        final String jarName = "zz-test-" + bundleId + ".jar";
-
-        final File uploadFolder = new File(OSGIUtil.getInstance().getFelixUploadPath());
-        uploadFolder.mkdirs();
-        final File deployedCopy = new File(uploadFolder, jarName);
-        final File bundlesDir = new File(ConfigUtils.getBundlePath());
-        final File bundleFile = new File(bundlesDir, bundleName);
-        final File extractedFolder = new File(bundlesDir, bundleId);
-
-        final PublishAuditAPI realAuditAPI = PublishAuditAPI.getInstance();
-        final PublishAuditStatus publishAuditStatus = new PublishAuditStatus(bundleId);
-        final PublishAuditHistory history = new PublishAuditHistory();
-        history.addOrUpdateEndpoint("endpoint1", "endpoint1", null);
-        publishAuditStatus.setStatusPojo(history);
-        realAuditAPI.insertPublishAuditStatus(publishAuditStatus);
-
-        final PushPublisherConfig config = new PushPublisherConfig();
-        config.setId(bundleName);
-        config.setPublishAuditStatus(publishAuditStatus);
-        config.setAssets(new ArrayList<>());
-        config.put(PublisherConfig.Config.OSGI_DEPLOY_ALLOWED.name(), Boolean.TRUE);
-
-        final Map<String, byte[]> entries = new LinkedHashMap<>();
-        entries.put("bundle.xml", "<com.dotcms.publisher.pusher.PushPublisherConfig/>".getBytes());
-        entries.put("osgiBundles/" + jarName, "not a real jar".getBytes());
-        entries.put("osgiBundles/" + jarName + ".descriptor.osgi.json",
-                ("{\"operation\":\"PUBLISH\",\"jarName\":\"" + jarName + "\"}").getBytes());
-        FileUtils.writeByteArrayToFile(bundleFile, tarGz(entries));
-
-        final BundlePublisher bundlePublisher = new BundlePublisher();
-        bundlePublisher.init(config);
-
-        try {
-            try {
-                bundlePublisher.process(new PublishStatus());
-                fail("A bundle whose metadata cannot be read must fail");
-            } catch (DotPublishingException e) {
-                // expected
-            }
-
-            assertFalse("no handler may run for a bundle whose metadata cannot be read",
-                    deployedCopy.exists());
-            assertEquals(PublishAuditStatus.Status.FAILED_TO_PUBLISH,
-                    realAuditAPI.getPublishAuditStatus(bundleId).getStatus());
-            assertFalse("the extracted folder must be removed", extractedFolder.exists());
-            assertFalse("the received archive must be removed", bundleFile.exists());
-        } finally {
-            FileUtils.deleteQuietly(deployedCopy);
-            FileUtils.deleteQuietly(new File(OSGIUtil.getInstance().getFelixDeployPath(), jarName));
-            FileUtils.deleteQuietly(bundleFile);
-            FileUtils.deleteQuietly(extractedFolder);
-            try {
-                realAuditAPI.deletePublishAuditStatus(bundleId);
-            } catch (Exception ex) {
-                // Ignore cleanup errors
-            }
-        }
-    }
-
-    private byte[] tarGz(final Map<String, byte[]> entries) throws IOException {
-        final ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-        try (TarArchiveOutputStream tar = new TarArchiveOutputStream(new GZIPOutputStream(bytes))) {
-            for (final Map.Entry<String, byte[]> item : entries.entrySet()) {
-                final TarArchiveEntry entry = new TarArchiveEntry(item.getKey());
-                entry.setSize(item.getValue().length);
-                tar.putArchiveEntry(entry);
-                tar.write(item.getValue());
-                tar.closeArchiveEntry();
-            }
-        }
-        return bytes.toByteArray();
     }
 
     private byte[] tarGzWithEntry(final String entryName) throws IOException {

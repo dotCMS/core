@@ -14,6 +14,7 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.remote.bundler.OSGIBundler;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publisher.pusher.wrapper.OSGIWrapper;
+import com.dotcms.publisher.receiver.BundlePluginAccess;
 import com.dotcms.publisher.receiver.handler.IHandler;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.PublisherConfig;
@@ -53,8 +54,8 @@ public class OSGIHandler implements IHandler {
      * Method that will verify if a given bundler contains inside it osgi bundles, if it does this method
      * will copy them inside the felix load folder.
      * <p>Nothing is copied or removed unless the bundle was received in a way that allows plugin
-     * deployment (see {@link PublisherConfig.Config#OSGI_DEPLOY_ALLOWED}); a bundle with no such
-     * flag is treated as not allowed. The jar name in each descriptor must be a plain file name
+     * deployment (see {@link BundlePluginAccess#mayDeployPlugins(PublisherConfig)}); a bundle whose
+     * origin is not recorded is treated as not allowed. The jar name in each descriptor must be a plain file name
      * that resolves to a regular file inside the expected folder, otherwise the whole bundle fails.
      *
      * @param bundleFolder Folder where the bundle was extracted.
@@ -78,7 +79,7 @@ public class OSGIHandler implements IHandler {
         //Verify if on this bundler we shipped some bundles
         if ( bundlerOSGIFolder.exists() ) {
 
-            if ( !Boolean.TRUE.equals( config.get( PublisherConfig.Config.OSGI_DEPLOY_ALLOWED.name() ) ) ) {
+            if ( !BundlePluginAccess.mayDeployPlugins( config ) ) {
                 Logger.warn( this, "Plugins in the bundle were ignored: this bundle may not deploy plugins" );
                 return;
             }

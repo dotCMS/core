@@ -5,10 +5,17 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.LayoutDataGen;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.publisher.receiver.BundleOrigin;
 import com.dotcms.publisher.pusher.PushPublisherConfig;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Layout;
 import com.dotmarketing.util.UUIDGenerator;
+import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -33,6 +40,8 @@ public class OSGIHandlerTest extends IntegrationTestBase {
     private static final String DESCRIPTOR_SUFFIX = ".jar.descriptor.osgi.json";
 
     private final List<File> toDelete = new ArrayList<>();
+    private final List<User> users = new ArrayList<>();
+    private final List<Layout> layouts = new ArrayList<>();
     private File uploadFolder;
     private File deployFolder;
 
@@ -45,6 +54,23 @@ public class OSGIHandlerTest extends IntegrationTestBase {
     public void cleanup() {
         toDelete.forEach(FileUtils::deleteQuietly);
         toDelete.clear();
+        users.forEach(user -> Try.run(() -> UserDataGen.remove(user, Boolean.TRUE)));
+        users.clear();
+        layouts.forEach(layout -> Try.run(() -> APILocator.getLayoutAPI().removeLayout(layout)));
+        layouts.clear();
+    }
+
+    private User backendUserWithPortlets(final String... portletIds) throws Exception {
+        final User user = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole())
+                .nextPersisted();
+        users.add(user);
+        if (portletIds.length > 0) {
+            final Layout layout = new LayoutDataGen().portletIds(portletIds).nextPersisted();
+            layouts.add(layout);
+            APILocator.getRoleAPI().addLayoutToRole(layout, APILocator.getRoleAPI().getUserRole(user));
+        }
+        return user;
     }
 
     private void initFolders() {
@@ -73,22 +99,29 @@ public class OSGIHandlerTest extends IntegrationTestBase {
                 json.getBytes(StandardCharsets.UTF_8));
     }
 
-    private static PublisherConfig config(final Boolean deployAllowed) {
+    private static PublisherConfig config(final BundleOrigin origin, final String uploaderId) {
         final PublisherConfig config = new PushPublisherConfig();
         config.setId(uniqueName() + ".tar.gz");
-        if (deployAllowed != null) {
-            config.put(PublisherConfig.Config.OSGI_DEPLOY_ALLOWED.name(), deployAllowed);
+        if (origin != null) {
+            config.put(PublisherConfig.Config.BUNDLE_ORIGIN.name(), origin.name());
+        }
+        if (uploaderId != null) {
+            config.put(PublisherConfig.Config.UPLOADED_BY.name(), uploaderId);
         }
         return config;
     }
 
+    private static PublisherConfig senderConfig() {
+        return config(BundleOrigin.REGISTERED_SENDER, null);
+    }
+
     /**
      * Method to Test: {@link OSGIHandler#handle(File)}
-     * When: the bundle publishes a jar and the deployment flag is not set (unknown origin)
+     * When: the bundle publishes a jar and its origin is not recorded (unknown origin)
      * Should: copy nothing into the plugin upload folder.
      */
     @Test
-    public void test_publish_withoutDeployFlag_copiesNothing() throws Exception {
+    public void test_publish_withUnknownOrigin_copiesNothing() throws Exception {
         initFolders();
         final File bundleFolder = newBundleFolder();
         final String jarName = uniqueName() + ".jar";
@@ -96,7 +129,7 @@ public class OSGIHandlerTest extends IntegrationTestBase {
         writeDescriptor(bundleFolder, "PUBLISH", jarName);
         toDelete.add(new File(uploadFolder, jarName));
 
-        new OSGIHandler(config(null)).handle(bundleFolder);
+        new OSGIHandler(config(null, null)).handle(bundleFolder);
 
         assertFalse("no jar may be deployed when the origin is unknown",
                 new File(uploadFolder, jarName).exists());
@@ -104,12 +137,12 @@ public class OSGIHandlerTest extends IntegrationTestBase {
 
     /**
      * Method to Test: {@link OSGIHandler#handle(File)}
-     * When: the bundle publishes a jar and the deployment flag is explicitly false (a user upload
-     * without the plugins permission)
+     * When: the bundle publishes a jar and it was uploaded by a user without access to the plugins
+     * portlet
      * Should: copy nothing into the plugin upload folder.
      */
     @Test
-    public void test_publish_withDeployFlagFalse_copiesNothing() throws Exception {
+    public void test_publish_uploadedByUserWithoutPluginsPortlet_copiesNothing() throws Exception {
         initFolders();
         final File bundleFolder = newBundleFolder();
         final String jarName = uniqueName() + ".jar";
@@ -117,14 +150,16 @@ public class OSGIHandlerTest extends IntegrationTestBase {
         writeDescriptor(bundleFolder, "PUBLISH", jarName);
         toDelete.add(new File(uploadFolder, jarName));
 
-        new OSGIHandler(config(Boolean.FALSE)).handle(bundleFolder);
+        new OSGIHandler(config(BundleOrigin.USER_UPLOAD, backendUserWithPortlets("publishing-queue").getUserId()))
+                .handle(bundleFolder);
 
         assertFalse(new File(uploadFolder, jarName).exists());
     }
 
     /**
      * Method to Test: {@link OSGIHandler#handle(File)}
-     * When: the bundle unpublishes a jar and the deployment flag is not allowed
+     * When: the bundle unpublishes a jar and it was uploaded by a user without access to the
+     * plugins portlet
      * Should: leave the deployed jar in place.
      */
     @Test
@@ -137,19 +172,19 @@ public class OSGIHandlerTest extends IntegrationTestBase {
         toDelete.add(deployed);
         writeDescriptor(bundleFolder, "UNPUBLISH", jarName);
 
-        new OSGIHandler(config(Boolean.FALSE)).handle(bundleFolder);
+        new OSGIHandler(config(BundleOrigin.USER_UPLOAD, backendUserWithPortlets().getUserId()))
+                .handle(bundleFolder);
 
         assertTrue("the deployed jar must survive", deployed.exists());
     }
 
     /**
      * Method to Test: {@link OSGIHandler#handle(File)}
-     * When: the deployment flag is allowed (token-authenticated sender, or a user who holds the
-     * plugins permission) and the jar name is a plain file name
+     * When: the bundle comes from a registered sender and the jar name is a plain file name
      * Should: still copy the jar into the plugin upload folder, so legitimate pushes keep working.
      */
     @Test
-    public void test_publish_withDeployFlagTrue_copiesJar() throws Exception {
+    public void test_publish_fromRegisteredSender_copiesJar() throws Exception {
         initFolders();
         final File bundleFolder = newBundleFolder();
         final String jarName = uniqueName() + ".jar";
@@ -158,9 +193,50 @@ public class OSGIHandlerTest extends IntegrationTestBase {
         toDelete.add(new File(uploadFolder, jarName));
         toDelete.add(new File(deployFolder, jarName));
 
-        new OSGIHandler(config(Boolean.TRUE)).handle(bundleFolder);
+        new OSGIHandler(senderConfig()).handle(bundleFolder);
 
         assertTrue(new File(uploadFolder, jarName).exists());
+    }
+
+    /**
+     * Method to Test: {@link OSGIHandler#handle(File)}
+     * When: the bundle was uploaded by a user who has access to the plugins portlet
+     * Should: copy the jar into the plugin upload folder.
+     */
+    @Test
+    public void test_publish_uploadedByUserWithPluginsPortlet_copiesJar() throws Exception {
+        initFolders();
+        final File bundleFolder = newBundleFolder();
+        final String jarName = uniqueName() + ".jar";
+        Files.write(new File(bundleFolder, "osgiBundles/" + jarName).toPath(), "not a real jar".getBytes());
+        writeDescriptor(bundleFolder, "PUBLISH", jarName);
+        toDelete.add(new File(uploadFolder, jarName));
+        toDelete.add(new File(deployFolder, jarName));
+
+        new OSGIHandler(config(BundleOrigin.USER_UPLOAD,
+                backendUserWithPortlets("dynamic-plugins").getUserId())).handle(bundleFolder);
+
+        assertTrue(new File(uploadFolder, jarName).exists());
+    }
+
+    /**
+     * Method to Test: {@link OSGIHandler#handle(File)}
+     * When: the bundle is recorded as a user upload but the user cannot be found
+     * Should: copy nothing, since the permission cannot be confirmed.
+     */
+    @Test
+    public void test_publish_uploadedByUnknownUser_copiesNothing() throws Exception {
+        initFolders();
+        final File bundleFolder = newBundleFolder();
+        final String jarName = uniqueName() + ".jar";
+        Files.write(new File(bundleFolder, "osgiBundles/" + jarName).toPath(), "not a real jar".getBytes());
+        writeDescriptor(bundleFolder, "PUBLISH", jarName);
+        toDelete.add(new File(uploadFolder, jarName));
+
+        new OSGIHandler(config(BundleOrigin.USER_UPLOAD, "no-such-user-" + uniqueName()))
+                .handle(bundleFolder);
+
+        assertFalse(new File(uploadFolder, jarName).exists());
     }
 
     /**
@@ -188,7 +264,7 @@ public class OSGIHandlerTest extends IntegrationTestBase {
             writeDescriptor(bundleFolder, "PUBLISH", badName);
 
             assertThrows("PUBLISH with jar name '" + badName + "' must fail the bundle",
-                    Exception.class, () -> new OSGIHandler(config(Boolean.TRUE)).handle(bundleFolder));
+                    Exception.class, () -> new OSGIHandler(senderConfig()).handle(bundleFolder));
             assertFalse("nothing may be copied for jar name '" + badName + "'",
                     new File(uploadFolder, outside.getName()).exists());
         }
@@ -218,8 +294,8 @@ public class OSGIHandlerTest extends IntegrationTestBase {
         writeDescriptor(dirBundle, "PUBLISH", dirName);
         toDelete.add(new File(uploadFolder, dirName));
 
-        assertThrows(Exception.class, () -> new OSGIHandler(config(Boolean.TRUE)).handle(linkBundle));
-        assertThrows(Exception.class, () -> new OSGIHandler(config(Boolean.TRUE)).handle(dirBundle));
+        assertThrows(Exception.class, () -> new OSGIHandler(senderConfig()).handle(linkBundle));
+        assertThrows(Exception.class, () -> new OSGIHandler(senderConfig()).handle(dirBundle));
         assertFalse(new File(uploadFolder, linkName).exists());
         assertFalse(new File(uploadFolder, dirName).exists());
     }
@@ -254,7 +330,7 @@ public class OSGIHandlerTest extends IntegrationTestBase {
             writeDescriptor(bundleFolder, "UNPUBLISH", badName);
 
             assertThrows("UNPUBLISH with jar name '" + badName + "' must fail the bundle",
-                    Exception.class, () -> new OSGIHandler(config(Boolean.TRUE)).handle(bundleFolder));
+                    Exception.class, () -> new OSGIHandler(senderConfig()).handle(bundleFolder));
             assertTrue("the file outside the load folder must survive '" + badName + "'",
                     sentinel.exists());
         }
@@ -275,18 +351,18 @@ public class OSGIHandlerTest extends IntegrationTestBase {
         final File bundleFolder = newBundleFolder();
         writeDescriptor(bundleFolder, "UNPUBLISH", dirName);
 
-        assertThrows(Exception.class, () -> new OSGIHandler(config(Boolean.TRUE)).handle(bundleFolder));
+        assertThrows(Exception.class, () -> new OSGIHandler(senderConfig()).handle(bundleFolder));
         assertTrue(dir.toFile().exists());
     }
 
     /**
      * Method to Test: {@link OSGIHandler#handle(File)}
-     * When: the deployment flag is allowed and an UNPUBLISH descriptor names a plain jar file in
-     * the load folder
+     * When: the bundle comes from a registered sender and an UNPUBLISH descriptor names a plain jar
+     * file in the load folder
      * Should: still remove it, so legitimate unpublish keeps working.
      */
     @Test
-    public void test_unpublish_withDeployFlagTrue_removesJar() throws Exception {
+    public void test_unpublish_fromRegisteredSender_removesJar() throws Exception {
         initFolders();
         final String jarName = uniqueName() + ".jar";
         final File deployed = new File(deployFolder, jarName);
@@ -295,7 +371,7 @@ public class OSGIHandlerTest extends IntegrationTestBase {
         final File bundleFolder = newBundleFolder();
         writeDescriptor(bundleFolder, "UNPUBLISH", jarName);
 
-        new OSGIHandler(config(Boolean.TRUE)).handle(bundleFolder);
+        new OSGIHandler(senderConfig()).handle(bundleFolder);
 
         assertFalse(deployed.exists());
     }
