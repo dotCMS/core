@@ -104,7 +104,8 @@ import org.junit.runners.Suite.SuiteClasses;
         MaintenanceResourceIntegrationTest.class,
         FolderHandlerTest.class,
         ContentAnalyticsPersistenceModeIT.class,
-        EventAnalyticsProxyResourceIntegrationTest.class
+        EventAnalyticsProxyResourceIntegrationTest.class,
+        com.dotmarketing.portlets.contentlet.action.ExportContentletsToCSVTest.class
 })
 public class MainSuite2a {
 

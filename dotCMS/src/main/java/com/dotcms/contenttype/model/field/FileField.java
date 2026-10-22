@@ -2,7 +2,6 @@ package com.dotcms.contenttype.model.field;
 
 import static com.dotcms.util.CollectionsUtils.list;
 
-import com.dotcms.business.Unexportable;
 import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.content.model.type.FileFieldType;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -17,7 +16,6 @@ import org.immutables.value.Value;
 @JsonSerialize(as = ImmutableFileField.class)
 @JsonDeserialize(as = ImmutableFileField.class)
 @Value.Immutable
-@Unexportable
 public abstract class FileField extends Field {
 
 	@Override
