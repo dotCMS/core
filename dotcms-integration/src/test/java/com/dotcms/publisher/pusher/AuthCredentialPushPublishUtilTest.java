@@ -80,6 +80,37 @@ public class AuthCredentialPushPublishUtilTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link AuthCredentialPushPublishUtil#processAuthHeader(HttpServletRequest)}
+     * Given Scenario: The sender presents a token that has not run out but has been revoked.
+     * ExpectedResult: The token is reported as invalid and not as expired, since requesting a new
+     *                 token is not what the user needs to hear about a revoked one.
+     */
+    @Test
+    public void test_processAuthHeader_revokedToken_isReportedAsInvalid() throws Exception {
+
+        final User admin = TestUserUtils.getAdminUser();
+        final ApiTokenAPI apiTokenAPI = APILocator.getApiTokenAPI();
+
+        final ApiToken token = apiTokenAPI.persistApiToken(ApiToken.builder()
+                .withUser(admin)
+                .withExpires(Date.from(Instant.now().plusSeconds(3600)))
+                .withIssueDate(new Date())
+                .withRequestingUserId(admin.getUserId())
+                .withRequestingIp(LOCAL_IP)
+                .withClaims(Map.of("label", "pp-revoked-test"))
+                .build(), admin);
+
+        final String jwt = apiTokenAPI.getJWT(token, admin);
+        assertTrue(apiTokenAPI.revokeToken(token, admin));
+
+        final PushPublishAuthenticationToken result =
+                AuthCredentialPushPublishUtil.INSTANCE.processAuthHeader(requestWithBearer(jwt));
+
+        assertTrue("A revoked token must be reported as invalid", result.isTokenInvalid());
+        assertFalse("A revoked token must not be reported as expired", result.isTokenExpired());
+    }
+
+    /**
+     * Method to test: {@link AuthCredentialPushPublishUtil#processAuthHeader(HttpServletRequest)}
      * Given Scenario: The sender presents something that is not a token this receiver issued.
      * ExpectedResult: The token is reported as invalid and not as expired.
      */

@@ -306,7 +306,8 @@ public class JsonWebTokenFactory implements Serializable {
 
             if(apiToken.isRevoked()) {
                 IncorrectClaimException claimException = new IncorrectClaimException( jws.getHeader(), body, "API Token Revoked:" + apiToken.revoked);
-                claimException.setClaimName(Claims.EXPIRATION);
+                // a revoked token is no longer valid, which is not the same as having expired
+                claimException.setClaimName(Claims.SUBJECT);
                 claimException.setClaimValue(apiToken.revoked);
                 throw claimException;
                 
