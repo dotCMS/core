@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.cmsmaintenance.action;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -8,6 +9,7 @@ import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.cmsmaintenance.struts.CmsMaintenanceForm;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import java.util.Map;
 import org.junit.BeforeClass;
@@ -35,6 +37,18 @@ public class ViewCMSMaintenanceActionTest extends IntegrationTestBase {
                 new ViewCMSMaintenanceAction().searchAndReplace(nonAdmin, form);
 
         assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void searchAndReplace_adminSession_runs() throws Exception {
+        final CmsMaintenanceForm form = new CmsMaintenanceForm();
+        form.setSearchString("ZZNOMATCH_" + UUIDGenerator.generateUuid());
+        form.setReplaceString("ZZNOMATCH_REPLACEMENT");
+
+        final Map<String, String> result =
+                new ViewCMSMaintenanceAction().searchAndReplace(APILocator.systemUser(), form);
+
+        assertEquals("message", result.get("type"));
     }
 
     @Test
