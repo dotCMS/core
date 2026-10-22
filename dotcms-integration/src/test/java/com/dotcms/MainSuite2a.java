@@ -107,6 +107,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentAnalyticsPersistenceModeIT.class,
         EventAnalyticsProxyResourceIntegrationTest.class,
         GenericBundleActivatorIntegrationTest.class,
+        com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest.class,
+        com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class,
         com.dotcms.rendering.velocity.WidgetRendererTest.class,
         CMSUserToolTest.class,
         UserJsViewToolTest.class
