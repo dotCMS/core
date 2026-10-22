@@ -14,6 +14,7 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -70,7 +71,8 @@ public class VariantResource {
     )
     public Response promote(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @Parameter(description = "Name of the variant to promote") @PathParam("variantName") final String variantName) throws DotDataException {
+            @Parameter(description = "Name of the variant to promote") @PathParam("variantName") final String variantName)
+            throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = getInitData(request, response);
         final User user = initData.getUser();
@@ -138,11 +140,21 @@ public class VariantResource {
         return new ResponseEntityVariantView(variant);
     }
 
+    /**
+     * Authenticates the request. Variants are an Experiments concept, so besides being a
+     * back-end user the caller needs access to the Experiments tool (CMS Administrators always
+     * qualify). Per-content permissions are enforced by {@link com.dotcms.variant.VariantAPI}.
+     *
+     * @param request  the current {@link HttpServletRequest}
+     * @param response the current {@link HttpServletResponse}
+     * @return the resolved {@link InitDataObject} carrying the authenticated {@link User}
+     */
     private InitDataObject getInitData(final HttpServletRequest request,
             final HttpServletResponse response) {
         return new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requiredPortlet(PortletID.EXPERIMENTS.toString())
                 .rejectWhenNoUser(true)
                 .init();
     }

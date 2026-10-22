@@ -8,9 +8,11 @@ import com.dotcms.util.DotPreconditions;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 
@@ -25,10 +27,12 @@ import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Set;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -198,9 +202,20 @@ public class VariantAPIImpl implements VariantAPI {
         return variantFactory.getVariants();
     }
 
+    /**
+     * Implementation for {@link VariantAPI#promote(Variant, User)}. Permissions on every affected
+     * contentlet and page are verified up front, before any version or layout is touched, so a
+     * refusal never leaves the DEFAULT variant half promoted.
+     *
+     * @param variant the {@link Variant} to promote
+     * @param user    the {@link User} promoting it
+     * @throws DotDataException     when the variant does not exist or a copy fails
+     * @throws DotSecurityException when the user lacks permission on any affected content or page
+     */
     @WrapInTransaction
     @Override
-    public void promote(final Variant variant, final User user) throws DotDataException {
+    public void promote(final Variant variant, final User user)
+            throws DotDataException, DotSecurityException {
 
         DotPreconditions.checkArgument(!variant.name().equals(DEFAULT_VARIANT.name()),
                 "DEFAULT variant can not be promoted");
@@ -214,10 +229,14 @@ public class VariantAPIImpl implements VariantAPI {
 
         DotPreconditions.checkArgument(!variantFromDatabase.archived(), "An archived Variant can not be promoted");
 
-        APILocator.getVersionableAPI().findAllByVariant(variantFromDatabase).stream()
-                .forEach(contentletVersionInfo -> promoteToDefault(user, contentletVersionInfo));
-
+        final List<ContentletVersionInfo> versionInfos =
+                APILocator.getVersionableAPI().findAllByVariant(variantFromDatabase);
         final List<MultiTree> variantMultiTrees = multiTreeAPI.getMultiTrees(variant);
+
+        validatePromotePermissions(variantFromDatabase, versionInfos, variantMultiTrees, user);
+
+        versionInfos.forEach(contentletVersionInfo -> promoteToDefault(user, contentletVersionInfo));
+
         variantMultiTrees.stream().map(MultiTree::getHtmlPage)
                 .forEach(pageId -> deleteMultiTree(VariantAPI.DEFAULT_VARIANT, pageId));
 
@@ -228,6 +247,76 @@ public class VariantAPIImpl implements VariantAPI {
 
 
         }
+    }
+
+    /**
+     * Checks that the user may replace everything the promotion is about to replace: PUBLISH on
+     * each contentlet that has a live version in the variant (its DEFAULT live version gets
+     * replaced), EDIT on each contentlet that only has a working version in it, and PUBLISH on
+     * each page whose DEFAULT layout the variant's multi-tree rows are going to overwrite. Pages
+     * are checked through a {@link PermissionableProxy}, the way the Experiments API does it.
+     * The system user and CMS Administrators pass every check.
+     *
+     * @param variant           the {@link Variant} being promoted, for logging
+     * @param versionInfos      the {@link ContentletVersionInfo} rows that exist in the variant
+     * @param variantMultiTrees the {@link MultiTree} rows that exist in the variant
+     * @param user              the {@link User} promoting the variant
+     * @throws DotDataException     when a contentlet or permission lookup fails
+     * @throws DotSecurityException when the user lacks any of the required permissions
+     */
+    private void validatePromotePermissions(final Variant variant,
+            final List<ContentletVersionInfo> versionInfos,
+            final List<MultiTree> variantMultiTrees,
+            final User user) throws DotDataException, DotSecurityException {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final User systemUser = APILocator.systemUser();
+
+        for (final ContentletVersionInfo versionInfo : versionInfos) {
+            final boolean hasLive = UtilMethods.isSet(versionInfo.getLiveInode());
+            final int required = hasLive ? PermissionAPI.PERMISSION_PUBLISH
+                    : PermissionAPI.PERMISSION_EDIT;
+            final Contentlet contentlet = APILocator.getContentletAPI()
+                    .find(versionInfo.getWorkingInode(), systemUser, false);
+            if (contentlet == null) {
+                continue;
+            }
+            if (!permissionAPI.doesUserHavePermission(contentlet, required, user, false)) {
+                throw deny(variant, user, (hasLive ? "publish" : "edit") + " contentlet "
+                        + versionInfo.getIdentifier());
+            }
+        }
+
+        final Set<String> pageIds = new HashSet<>();
+        for (final MultiTree multiTree : variantMultiTrees) {
+            if (!pageIds.add(multiTree.getHtmlPage())) {
+                continue;
+            }
+            final PermissionableProxy page = new PermissionableProxy();
+            page.setIdentifier(multiTree.getHtmlPage());
+            page.setType("htmlpage");
+            if (!permissionAPI.doesUserHavePermission(page, PermissionAPI.PERMISSION_PUBLISH,
+                    user, false)) {
+                throw deny(variant, user, "publish page " + multiTree.getHtmlPage());
+            }
+        }
+    }
+
+    /**
+     * Builds, and logs, the exception for a refused promotion.
+     *
+     * @param variant the {@link Variant} that was being promoted
+     * @param user    the {@link User} who was refused
+     * @param what    which permission was missing, in plain words
+     * @return the {@link DotSecurityException} to throw
+     */
+    private DotSecurityException deny(final Variant variant, final User user, final String what) {
+        final String userId = user != null ? user.getUserId() : "Unknown";
+        final String message = String.format(
+                "User %s doesn't have permission to %s, required to promote Variant `%s`",
+                userId, what, variant.name());
+        Logger.warn(this, message);
+        return new DotSecurityException(message);
     }
 
     @NotNull

@@ -2,6 +2,7 @@ package com.dotcms.variant;
 
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Optional;
@@ -74,9 +75,14 @@ public interface VariantAPI {
      *
      * Also this new copies are going to be the LIVE version of the DEFAULT {@link Variant}.
      *
-     * @param variant
-     * @param user to check permissions
-     * @throws DotDataException
+     * Before anything is copied the user must hold PUBLISH on every contentlet that has a live
+     * version in the Variant, EDIT on every contentlet that only has a working version in it,
+     * and PUBLISH on every page whose layout the Variant changes. The system user always passes.
+     *
+     * @param variant the {@link Variant} to promote
+     * @param user the {@link User} promoting it, used to check permissions
+     * @throws DotDataException when the variant does not exist or a copy fails
+     * @throws DotSecurityException when the user lacks permission on any affected content or page
      */
-    void promote(final Variant variant, final User user) throws DotDataException;
+    void promote(final Variant variant, final User user) throws DotDataException, DotSecurityException;
 }
