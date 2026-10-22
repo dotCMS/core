@@ -8,6 +8,7 @@ import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -27,6 +28,7 @@ import com.dotcms.publishing.manifest.ManifestUtil;
 import com.dotcms.publishing.output.TarGzipBundleOutput;
 import org.apache.commons.io.IOUtils;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.system.permission.AssetPermissionHelper;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.NotFoundException;
@@ -34,12 +36,16 @@ import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.rest.param.ISODateParam;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
@@ -51,12 +57,14 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.vavr.CheckedFunction0;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.Reader;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.StreamingOutput;
 import org.apache.commons.lang.StringEscapeUtils;
@@ -103,6 +111,8 @@ public class BundleResource {
     private final WebResource            webResource            = new WebResource();
     private final BundleAPI              bundleAPI              = APILocator.getBundleAPI();
     private final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
+    private final AssetPermissionHelper  assetPermissionHelper  =
+            CDIUtils.getBean(AssetPermissionHelper.class).orElseGet(AssetPermissionHelper::new);
 
     private final PublishQueueElementTransformer publishQueueElementTransformer =
             new PublishQueueElementTransformer();
@@ -324,6 +334,7 @@ public class BundleResource {
                 return responseResource.response( "false" );
 			}
 
+			checkCanEditAsset(initData.getUser(), assetId);
 			APILocator.getPushedAssetsAPI().deletePushedAssets(assetId);
 
 		} catch (DotDataException e) {
@@ -358,6 +369,7 @@ public class BundleResource {
                 return responseResource.response( "false" );
 			}
 
+			checkCanManageEnvironments(initData.getUser());
 			APILocator.getPushedAssetsAPI().deletePushedAssetsByEnvironment(environmentId);
 
 		} catch (DotDataException e) {
@@ -366,6 +378,71 @@ public class BundleResource {
 		}
 
         return responseResource.response( "true" );
+	}
+
+	/**
+	 * Makes sure the user may delete the push history of an asset. Administrators always can;
+	 * anyone else needs publish permission on the asset.
+	 *
+	 * @param user    the user making the request
+	 * @param assetId the id of the asset whose push history is being deleted
+	 * @throws DotDataException   if the permissions cannot be read
+	 * @throws NotFoundException  if the id does not match any supported asset
+	 * @throws ForbiddenException if the user does not have publish permission on the asset
+	 */
+	private void checkCanEditAsset(final User user, final String assetId) throws DotDataException {
+		if (user.isAdmin()) {
+			return;
+		}
+		final Permissionable asset = findPermissionable(assetId);
+		if (asset == null) {
+			throw new NotFoundException(String.format("Asset '%s' was not found", assetId));
+		}
+		if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+			throw new ForbiddenException(String.format(
+					"User '%s' is not allowed to delete the push history of asset '%s'",
+					user.getUserId(), assetId));
+		}
+	}
+
+	/**
+	 * Finds the asset a push history entry belongs to. Content types, menu links, categories,
+	 * folders, sites, contentlets, templates and containers are supported, tried in that order.
+	 *
+	 * @param assetId the id the push history is recorded under
+	 * @return the asset, or {@code null} when the id matches none of the supported types
+	 */
+	private Permissionable findPermissionable(final String assetId) {
+		final User systemUser = APILocator.systemUser();
+		return Stream.<CheckedFunction0<Permissionable>>of(
+						() -> APILocator.getContentTypeAPI(systemUser).find(assetId),
+						() -> APILocator.getMenuLinkAPI().findWorkingLinkById(assetId, systemUser, false),
+						() -> APILocator.getCategoryAPI().find(assetId, systemUser, false),
+						() -> assetPermissionHelper.resolveAsset(assetId))
+				.map(lookup -> Try.of(lookup).getOrNull())
+				.filter(Objects::nonNull)
+				.findFirst()
+				.orElse(null);
+	}
+
+	/**
+	 * Makes sure the user may delete the push history of a publishing environment. Administrators
+	 * and users with access to the Configuration tool, where environments are managed, can.
+	 *
+	 * @param user the user making the request
+	 * @throws DotDataException   if the user's tools cannot be read
+	 * @throws ForbiddenException if the user is not allowed
+	 */
+	private void checkCanManageEnvironments(final User user) throws DotDataException {
+		final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+		final boolean canManage = user.isAdmin()
+				|| layoutAPI.doesUserHaveAccessToPortlet(PortletID.CONFIGURATION.toString(), user)
+				|| layoutAPI.doesUserHaveAccessToPortlet(PortletID.CONFIGURATION_BETA.toString(), user);
+		if (!canManage) {
+			throw new ForbiddenException(String.format(
+					"User '%s' is not allowed to delete the push history of an environment",
+					user.getUserId()));
+		}
 	}
 
     /**

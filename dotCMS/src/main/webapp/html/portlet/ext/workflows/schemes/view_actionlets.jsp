@@ -1,4 +1,4 @@
-<%@page import="com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet"%>
+<%@ page import="com.liferay.util.Xss" %><%@page import="com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowActionClass"%>
 <%@page import="java.util.Set"%>
 <%@page import="com.liferay.portal.model.User"%>
@@ -48,10 +48,10 @@
 		actionAdmin.actionlets = new Array();
 		mainAdmin.resetCrumbTrail();
 		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Workflows")%>", "/html/portlet/ext/workflows/schemes/view_schemes.jsp");
-		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Scheme")%> : <%=(scheme.isArchived()) ? "<strike>" :""%><%=scheme.getName()%><%=(scheme.isArchived()) ? "</strike>" :""%>", stepAdmin.baseJsp  + "?schemeId=<%=schemeId%>");
+		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Scheme")%> : <%=(scheme.isArchived()) ? "<strike>" :""%><%=Xss.encodeForJavaScript(Xss.encodeForHTML(scheme.getName()))%><%=(scheme.isArchived()) ? "</strike>" :""%>", stepAdmin.baseJsp  + "?schemeId=<%=Xss.encodeForJavaScript(schemeId)%>");
 		
-		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Step")%> : <%=step.getName()%>", stepAdmin.baseJsp + "?schemeId=<%=schemeId%>");
-		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Action")%>", actionAdmin.baseJsp + "?stepId=<%=stepId%>" );
+		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Step")%> : <%=Xss.encodeForJavaScript(Xss.encodeForHTML(step.getName()))%>", stepAdmin.baseJsp + "?schemeId=<%=Xss.encodeForJavaScript(schemeId)%>");
+		mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Action")%>", actionAdmin.baseJsp + "?stepId=<%=Xss.encodeForJavaScript(stepId)%>" );
 		mainAdmin.refreshCrumbtrail();	
 
 		
@@ -195,7 +195,7 @@
 							<%if(steps !=null){
 								for(WorkflowStep s : steps){ %>
 								<option value="<%=s.getId() %>"
-									<%=(action != null && s.getId().equals(action.getNextStep())) ? "selected='true'" : "" %>><%=s.getName() %></option>
+									<%=(action != null && s.getId().equals(action.getNextStep())) ? "selected='true'" : "" %>><%=Xss.encodeForHTML(s.getName())%></option>
 								<%}%>
 							<% }%>
 					</select></td>
@@ -228,7 +228,7 @@
 					<%for(WorkflowActionClass subaction : subActions){ %>
 						<tr class="dojoDndItem" id="id_<%=subaction.getId()%>">
 							<td class="wfXBox showPointer" onclick="actionAdmin.deleteAction('<%=subaction.getId()%>')"><span class="deleteIcon"></span></td>
-							<td onClick="actionAdmin.viewAction('<%=subaction.getId() %>');" class="showPointer"><%=subaction.getName() %></td>
+							<td onClick="actionAdmin.viewAction('<%=subaction.getId() %>');" class="showPointer"><%=Xss.encodeForHTML(subaction.getName())%></td>
 						</tr>
 					<%} %>
 				</table>
@@ -242,7 +242,7 @@
 		</button>
 			&nbsp;
 		<button dojoType="dijit.form.Button"
-			onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=schemeId%>")'
+			onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=Xss.encodeForJavaScript(schemeId)%>")'
 			iconClass="cancelIcon">
 			<%=LanguageUtil.get(pageContext, "Cancel")%>
 		</button>

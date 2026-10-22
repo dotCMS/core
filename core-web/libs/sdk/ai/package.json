@@ -8,6 +8,7 @@
         "directory": "core-web/libs/sdk/ai"
     },
     "dependencies": {
+        "@dotcms/types": "latest",
         "tslib": "^2.3.0",
         "zod": "^4.1.9"
     },
@@ -23,30 +24,37 @@
             "default": "./runtime.cjs.js"
         },
         "./sandbox": {
-            "module": "./runtime.esm.js",
-            "types": "./src/sandbox/index.d.ts",
-            "import": "./runtime.cjs.mjs",
-            "default": "./runtime.cjs.js"
+            "module": "./sandbox.esm.js",
+            "types": "./sandbox.d.ts",
+            "import": "./sandbox.cjs.mjs",
+            "default": "./sandbox.cjs.js"
         },
         "./adapter": {
-            "module": "./runtime.esm.js",
-            "types": "./src/adapter/index.d.ts",
-            "import": "./runtime.cjs.mjs",
-            "default": "./runtime.cjs.js"
+            "module": "./adapter.esm.js",
+            "types": "./adapter.d.ts",
+            "import": "./adapter.cjs.mjs",
+            "default": "./adapter.cjs.js"
         },
         "./spec": {
             "module": "./spec.esm.js",
-            "types": "./src/spec/index.d.ts",
-            "import": "./spec.cjs.js",
+            "types": "./spec.d.ts",
+            "import": "./spec.cjs.mjs",
             "default": "./spec.cjs.js"
+        },
+        "./tools": {
+            "module": "./tools.esm.js",
+            "types": "./tools.d.ts",
+            "import": "./tools.cjs.mjs",
+            "default": "./tools.cjs.js"
         }
     },
     "typesVersions": {
         "*": {
             "runtime": ["./runtime.d.ts"],
-            "sandbox": ["./src/sandbox/index.d.ts"],
-            "adapter": ["./src/adapter/index.d.ts"],
-            "spec": ["./src/spec/index.d.ts"]
+            "sandbox": ["./sandbox.d.ts"],
+            "adapter": ["./adapter.d.ts"],
+            "spec": ["./spec.d.ts"],
+            "tools": ["./tools.d.ts"]
         }
     },
     "keywords": [
@@ -57,6 +65,7 @@
         "agentic",
         "runtime",
         "sandbox",
+        "tools",
         "MCP",
         "model-context-protocol"
     ],
