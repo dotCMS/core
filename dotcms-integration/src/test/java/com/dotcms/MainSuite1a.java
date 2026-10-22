@@ -80,6 +80,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.languagevariable.business.LanguageVariableAPITest.class,
         com.dotcms.publishing.PublisherAPITest.class,
         com.dotcms.publishing.remote.RemoteReceiverLanguageResolutionTest.class,
+        com.dotcms.publishing.remote.RemoteReceiverRelationshipsFilterTest.class,
         com.dotcms.cluster.business.ServerAPIImplTest.class,
         com.dotcms.cache.KeyValueCacheImplTest.class,
         com.dotcms.enterprise.publishing.remote.handler.RuleBundlerHandlerTest.class,
