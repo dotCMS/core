@@ -184,11 +184,18 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Adds a filter like "Only Selected Items" that the test bundles reference by key. It must not
+     * become the default filter or replace the existing ones, as other tests in the same suite
+     * push with the default filter and expect dependencies to be included.
+     */
     private FilterDescriptor createFilterWithoutRelationships() {
         return new FilterDescriptorDataGen()
                 .key("onlySelectedItems_" + System.currentTimeMillis() + ".yml")
                 .dependencies(false)
                 .relationships(false)
+                .defaultFilter(false)
+                .clearFilterList(false)
                 .nextPersisted();
     }
 
