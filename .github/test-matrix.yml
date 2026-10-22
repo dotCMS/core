@@ -26,6 +26,9 @@ test_types:
       - name: "JVM Unit Tests"
         maven_args: "test -Dprod -pl :dotcms-core"
         stage_name: "JVM Tests"
+      - name: "SAML Plugin Tests"
+        maven_args: "test -Dprod -pl :com.dotcms.samlbundle -Dmaven.build.cache.enabled=false"
+        stage_name: "SAML Tests"
 
   cli:
     condition_input: cli

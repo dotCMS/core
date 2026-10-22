@@ -409,7 +409,8 @@ public class UserResource implements Serializable {
 	 *                         on it.
 	 * @param permission       The permission type that Users may have on the previous asset.
 	 * @param roleKeys         Optional Role keys -- repeatable and/or comma-separated -- that restrict the results to
-	 *                         Users holding any of them, e.g. {@code roleKey=DOTCMS_BACK_END_USER}.
+	 *                         Users holding any of them, e.g. {@code roleKey=DOTCMS_BACK_END_USER}. Filtering by
+	 *                         role reveals who holds it, so it takes the same privilege as {@code includeRoles}.
 	 * @param includeRoles     Opt-in flag. When {@code true}, every returned User carries a {@code roles} list with
 	 *                         its <b>directly assigned</b> Roles -- inherited Roles and the User's personal Role are
 	 *                         excluded -- as {@code {id, name, roleKey}} entries. Defaults to {@code false}, in which
@@ -463,7 +464,7 @@ public class UserResource implements Serializable {
 						   @Parameter(description = "Include default user in results") @QueryParam(UserPaginator.INCLUDE_DEFAULT) boolean includeDefault,
 						   @Parameter(description = "Asset inode for permission-based filtering") @QueryParam(UserPaginator.ASSET_INODE_PARAM) String assetInode,
 						   @Parameter(description = "Permission type for asset-based filtering") @QueryParam(UserPaginator.PERMISSION_PARAM) int permission,
-						   @Parameter(description = "Role key(s) to restrict results to users holding any of them; repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER") @QueryParam(UserPaginator.ROLE_KEY_PARAM) final List<String> roleKeys,
+						   @Parameter(description = "Role key(s) to restrict results to users holding any of them; repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER. Requires CMS Administrator or Roles+Users portlet access (403 otherwise)") @QueryParam(UserPaginator.ROLE_KEY_PARAM) final List<String> roleKeys,
 						   @Parameter(description = "When true, each user carries a `roles` array of its directly assigned roles as {id, name, roleKey}; inherited roles and the user's personal role are excluded. Requires CMS Administrator or Roles+Users portlet access (403 otherwise). Defaults to false (payload unchanged)") @DefaultValue("false") @QueryParam(UserPaginator.INCLUDE_ROLES_PARAM) final boolean includeRoles)
 			throws DotDataException {
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -485,6 +486,12 @@ public class UserResource implements Serializable {
 			extraParams.put(UserPaginator.ROLES_PARAM, roles);
 		}
 		final User user = initData.getUser();
+		if (UtilMethods.isSet(roles) && !this.isRoleAdministrator(user)) {
+			// Filtering by role reveals who holds it: same privilege as includeRoles
+			final String message = USER_MSG + user.getUserId() + " does not have permissions to filter users by role";
+			Logger.error(this, message);
+			throw new ForbiddenException(message);
+		}
 		// Only set when requested: extra params are echoed into the Link header, and the default response must stay
 		// identical to the pre-flag one
 		if (includeRoles) {

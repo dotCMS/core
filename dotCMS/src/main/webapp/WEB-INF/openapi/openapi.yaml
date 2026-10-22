@@ -3503,9 +3503,11 @@ paths:
   /v1/analytics/content/event:
     post:
       description: "Validates the site_auth field in the JSON body via SiteAuthValidator,\
-        \ resolves the active site, injects site_id into context, and asynchronously\
-        \ forwards the body to {DOT_ANALYTICS_BASE_URL}/v1/event/ingest. The dotCMS-side\
-        \ path is a fixed match; the upstream sub-path is not caller-controllable."
+        \ resolves the active site, adds site_id to context, cleans each event's page\
+        \ and link URL fields (allowlisted query parameters only, no user info or\
+        \ session ids; events with a malformed data or page object are dropped), and\
+        \ asynchronously forwards the body to {DOT_ANALYTICS_BASE_URL}/v1/event/ingest.\
+        \ The dotCMS-side path is a fixed match; the upstream sub-path is not caller-controllable."
       operationId: proxyAnalyticsEventRequest
       requestBody:
         content:
@@ -16715,8 +16717,10 @@ paths:
       - Roles
   /v1/roles/{roleid}/rolehierarchyanduserroles:
     get:
-      description: Load the user and roles by role id with optional hierarchy and
-        filtering
+      description: "Load the user and roles by role id with optional hierarchy and\
+        \ filtering. The caller must be an administrator, have access to both the\
+        \ Roles and the Users portlets, or hold a workflow action that assigns to\
+        \ the role."
       operationId: loadUsersAndRolesByRoleId
       parameters:
       - description: Role ID
@@ -16754,7 +16758,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - backend user required
+          description: Forbidden - membership privilege or an assigning workflow action
+            required
         "404":
           content:
             application/json: {}
@@ -16822,9 +16827,9 @@ paths:
       - Roles
     get:
       description: "Returns the paginated list of users directly granted the given\
-        \ role. CMS Administrators and users with the Users portlet receive the full\
-        \ user map; other callers receive the directory fields (id, names, email address\
-        \ and gravatar). Grants inherited through the role hierarchy are not included."
+        \ role, using the standard user serialization (email address included). Grants\
+        \ inherited through the role hierarchy are not included. The caller must be\
+        \ an administrator or have access to both the Roles and the Users portlets."
       operationId: loadUsersByRoleId
       parameters:
       - description: Id of the role to list users for
@@ -16882,7 +16887,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - roles portlet access required
+          description: "Forbidden - administrator, or Roles and Users portlet access,\
+            \ required"
         "404":
           content:
             application/json: {}
@@ -19811,7 +19817,8 @@ paths:
           type: integer
           format: int32
       - description: "Role key(s) to restrict results to users holding any of them;\
-          \ repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER"
+          \ repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER.\
+          \ Requires CMS Administrator or Roles+Users portlet access (403 otherwise)"
         in: query
         name: roleKey
         schema:

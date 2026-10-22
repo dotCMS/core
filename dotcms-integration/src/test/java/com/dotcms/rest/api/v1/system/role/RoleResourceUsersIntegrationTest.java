@@ -3,19 +3,27 @@ package com.dotcms.rest.api.v1.system.role;
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.WorkflowActionDataGen;
+import com.dotcms.datagen.WorkflowDataGen;
+import com.dotcms.datagen.WorkflowStepDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.Layout;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DoesNotExistException;
-import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import org.junit.AfterClass;
@@ -24,16 +32,17 @@ import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -56,17 +65,6 @@ public class RoleResourceUsersIntegrationTest {
 
     private static final List<Role> rolesToClean = new ArrayList<>();
     private static final List<User> usersToClean = new ArrayList<>();
-    private static final List<Layout> layoutsToClean = new ArrayList<>();
-
-    /** Keys every caller gets for each listed user: enough to identify and display the user. */
-    private static final Set<String> DIRECTORY_KEYS = Set.of("userId", "id", "firstName", "lastName",
-            "fullName", "name", "emailAddress", "emailaddress", "gravitar", "type");
-
-    /** Keys of the full profile that only Users-portlet holders and CMS Administrators get. */
-    private static final Set<String> FULL_PROFILE_ONLY_KEYS = Set.of("lastLoginIP", "lastLoginDate",
-            "failedLoginAttempts", "admin", "passwordExpired", "passwordReset", "passwordExpirationDate",
-            "hasConsoleAccess", "active", "backendUser", "frontendUser", "additionalInfo", "createDate",
-            "modificationDate");
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -82,9 +80,6 @@ public class RoleResourceUsersIntegrationTest {
         // children were created after their parents, so remove in reverse creation order
         Collections.reverse(rolesToClean);
         rolesToClean.forEach(RoleDataGen::remove);
-        for (final Layout layout : layoutsToClean) {
-            APILocator.getLayoutAPI().removeLayout(layout);
-        }
         // the deletions above cleared the global role cache; resolve the back-end role again
         // so the next suite class's REST auth check never starts against a cold cache
         APILocator.getRoleAPI().loadBackEndUserRole();
@@ -107,26 +102,18 @@ public class RoleResourceUsersIntegrationTest {
                         .request());
     }
 
-    private static HttpServletRequest mockAdminRequest() {
-        return mockRequestAs("admin@dotcms.com", "admin");
+    private static HttpServletRequest requestFor(final User user) {
+        final MockSessionRequest request = baseRequest();
+        request.getSession().setAttribute(
+                com.liferay.portal.util.WebKeys.USER_ID, user.getUserId());
+        return request.request();
     }
 
-    /** A request authenticated (Basic) as the given user. */
-    private static HttpServletRequest mockRequestAs(final String email, final String password) {
+    private static HttpServletRequest mockAdminRequest() {
         final MockHeaderRequest request = new MockHeaderRequest(baseRequest().request());
         request.setHeader("Authorization",
-                "Basic " + Base64.getEncoder().encodeToString((email + ":" + password).getBytes()));
+                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
         return request;
-    }
-
-    /** A persisted role whose layout grants the given portlet, registered for cleanup. */
-    private static Role roleWithPortlet(final String tag, final PortletID portlet) throws Exception {
-        final Role role = track(new RoleDataGen().key(tag).nextPersisted());
-        final Layout layout = new LayoutDataGen().name("Layout " + tag).portletIds(portlet.toString())
-                .nextPersisted();
-        layoutsToClean.add(layout);
-        APILocator.getRoleAPI().addLayoutToRole(layout, role);
-        return role;
     }
 
     private static ResponseEntityPaginatedDataView loadUsers(final String roleId,
@@ -314,39 +301,6 @@ public class RoleResourceUsersIntegrationTest {
     }
 
     /**
-     * A back-end caller who holds the Roles portlet but neither the Users portlet nor CMS Administrator
-     * access may list a role's users, yet receives only the directory fields -- id, names, email and
-     * gravatar -- not the account-state fields the Users portlet displays.
-     */
-    @Test
-    public void rolesPortletOnlyCaller_getsDirectoryFieldsOnly() throws Exception {
-        final String unique = "roleusersdir" + System.currentTimeMillis();
-        final String password = "pw" + unique;
-        final Role rolesPortlet = roleWithPortlet(unique, PortletID.ROLES);
-        final User caller = track(new UserDataGen().firstName(unique).password(password)
-                .roles(rolesPortlet, roleAPI.loadBackEndUserRole()).nextPersisted());
-        assertFalse("precondition: caller must not be an admin", caller.isAdmin());
-        assertFalse("precondition: caller must lack Users portlet access",
-                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller));
-
-        final Role role = track(new RoleDataGen().nextPersisted());
-        track(new UserDataGen().firstName(unique + "Granted").roles(role).nextPersisted());
-
-        final ResponseEntityPaginatedDataView view = resource.loadUsersByRoleId(
-                mockRequestAs(caller.getEmailAddress(), password), new MockHttpResponse(),
-                role.getId(), null, 1, 40, null, "ASC");
-        final List<Map<String, Object>> userMaps = users(view);
-        assertFalse("the granted user must be listed", userMaps.isEmpty());
-        for (final Map<String, Object> userMap : userMaps) {
-            assertTrue("directory keys must be present: " + userMap.keySet(),
-                    userMap.keySet().containsAll(DIRECTORY_KEYS));
-            for (final String key : FULL_PROFILE_ONLY_KEYS) {
-                assertFalse("must not carry account-state key '" + key + "'", userMap.containsKey(key));
-            }
-        }
-    }
-
-    /**
      * A backend user without access to the roles portlet is rejected.
      */
     @Test(expected = com.dotcms.rest.exception.SecurityException.class)
@@ -361,5 +315,103 @@ public class RoleResourceUsersIntegrationTest {
 
         resource.loadUsersByRoleId(request.request(), new MockHttpResponse(),
                 role.getId(), null, 1, 40, null, "ASC");
+    }
+
+    /**
+     * A backend user who can open the Roles portlet but not the Users portlet is not allowed
+     * to see who holds a role: membership carries user details, so it takes the same privilege
+     * as reading a user's roles.
+     */
+    @Test(expected = ForbiddenException.class)
+    public void rolesPortletWithoutUsersPortlet_isForbidden() throws Exception {
+        final Role role = track(new RoleDataGen().nextPersisted());
+        final Layout rolesLayout = new LayoutDataGen().portletIds("roles").nextPersisted();
+        final Role portletRole = track(new RoleDataGen().layout(rolesLayout).nextPersisted());
+        final User limited = track(new UserDataGen()
+                .roles(roleAPI.loadBackEndUserRole(), portletRole).nextPersisted());
+
+        resource.loadUsersByRoleId(requestFor(limited), new MockHttpResponse(),
+                role.getId(), null, 1, 40, null, "ASC");
+    }
+
+    /**
+     * A backend user who is not an administrator but holds both the Roles and the Users
+     * portlets can still list a role's members.
+     */
+    @Test
+    public void rolesAndUsersPortlets_canListMembers() throws Exception {
+        final Role role = track(new RoleDataGen().nextPersisted());
+        final User member = track(new UserDataGen().roles(role).nextPersisted());
+        final Layout layout = new LayoutDataGen().portletIds("roles", "users").nextPersisted();
+        final Role portletRole = track(new RoleDataGen().layout(layout).nextPersisted());
+        final User delegate = track(new UserDataGen()
+                .roles(roleAPI.loadBackEndUserRole(), portletRole).nextPersisted());
+
+        final ResponseEntityPaginatedDataView view = resource.loadUsersByRoleId(
+                requestFor(delegate), new MockHttpResponse(),
+                role.getId(), null, 1, 40, null, "ASC");
+
+        assertTrue(userIds(view).contains(member.getUserId()));
+    }
+
+    // ==================== GET /v1/roles/{roleid}/rolehierarchyanduserroles ====================
+
+    /**
+     * A back-end user with no portlets and no workflow action that assigns to the role cannot
+     * read the role's hierarchy and members.
+     */
+    @Test(expected = ForbiddenException.class)
+    public void hierarchy_plainBackendUser_isForbidden() throws Exception {
+        final Role role = track(new RoleDataGen().nextPersisted());
+        final User plain = track(new UserDataGen()
+                .roles(roleAPI.loadBackEndUserRole()).nextPersisted());
+
+        resource.loadUsersAndRolesByRoleId(requestFor(plain), new MockHttpResponse(),
+                role.getId(), false, null);
+    }
+
+    /**
+     * A back-end user who may use a workflow action that assigns work to the role must be able
+     * to pick an assignee, so the role's members stay visible to them.
+     */
+    @Test
+    public void hierarchy_assignerOfTheRole_isAllowed() throws Exception {
+        final Role role = track(new RoleDataGen().nextPersisted());
+        track(new UserDataGen().roles(role).nextPersisted());
+        final Role assignerRole = track(new RoleDataGen().nextPersisted());
+        final User assigner = track(new UserDataGen()
+                .roles(roleAPI.loadBackEndUserRole(), assignerRole).nextPersisted());
+
+        final WorkflowScheme scheme = new WorkflowDataGen().nextPersisted();
+        final WorkflowStep step = new WorkflowStepDataGen(scheme.getId()).nextPersisted();
+        final WorkflowAction action = new WorkflowActionDataGen(scheme.getId(), step.getId())
+                .nextAssign(role.getId()).nextPersisted();
+        APILocator.getPermissionAPI().save(
+                new Permission(action.getId(), assignerRole.getId(), PermissionAPI.PERMISSION_USE),
+                action, APILocator.systemUser(), false);
+
+        final Response response = resource.loadUsersAndRolesByRoleId(requestFor(assigner),
+                new MockHttpResponse(), role.getId(), false, null);
+
+        assertEquals(200, response.getStatus());
+        assertNotNull(response.getEntity());
+    }
+
+    /**
+     * A back-end user who may read role membership (Roles plus Users portlets) can read the
+     * role's hierarchy and members.
+     */
+    @Test
+    public void hierarchy_rolesAndUsersPortlets_isAllowed() throws Exception {
+        final Role role = track(new RoleDataGen().nextPersisted());
+        final Layout layout = new LayoutDataGen().portletIds("roles", "users").nextPersisted();
+        final Role portletRole = track(new RoleDataGen().layout(layout).nextPersisted());
+        final User delegate = track(new UserDataGen()
+                .roles(roleAPI.loadBackEndUserRole(), portletRole).nextPersisted());
+
+        final Response response = resource.loadUsersAndRolesByRoleId(requestFor(delegate),
+                new MockHttpResponse(), role.getId(), false, null);
+
+        assertEquals(200, response.getStatus());
     }
 }
