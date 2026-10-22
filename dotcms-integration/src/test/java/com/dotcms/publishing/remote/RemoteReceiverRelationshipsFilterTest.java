@@ -17,7 +17,6 @@ import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FieldRelationshipDataGen;
 import com.dotcms.datagen.FilterDescriptorDataGen;
-import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditAPI;
@@ -28,6 +27,7 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.receiver.BundlePublisher;
 import com.dotcms.publishing.FilterDescriptor;
+import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -46,9 +46,11 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.MultiMessageResourcesFactory;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -63,6 +65,11 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
     private static Host host;
     private static User adminUser;
 
+    // Test data to remove once all tests ran. Content Types are removed with their contentlets
+    private static final List<ContentType> contentTypes = new ArrayList<>();
+    private static final List<String> filterKeys = new ArrayList<>();
+    private static final List<PreparedBundle> bundles = new ArrayList<>();
+
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -73,8 +80,32 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
 
         LicenseTestUtil.getLicense();
 
-        host = new SiteDataGen().nextPersisted();
+        host = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
         adminUser = TestUserUtils.getAdminUser();
+    }
+
+    @AfterClass
+    public static void cleanup() throws Exception {
+        for (final PreparedBundle bundle : bundles) {
+            PublisherTestUtil.cleanBundleEndpointEnv(bundle.bundle, bundle.endpoint, bundle.environment);
+            bundle.file.delete();
+        }
+
+        // The test filters only live in memory, so drop them from the list without reloading it from
+        // disk, which would also drop the in-memory filters added by other tests in the suite. Only
+        // an admin gets the complete list back, which is required to rebuild it
+        if (adminUser.isAdmin()) {
+            final List<FilterDescriptor> otherFilters = new ArrayList<>(
+                    APILocator.getPublisherAPI().getFiltersDescriptorsByRole(adminUser));
+            otherFilters.removeIf(filter -> filterKeys.contains(filter.getKey()));
+            PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).clearFilterDescriptorList();
+            otherFilters.forEach(APILocator.getPublisherAPI()::addFilterDescriptor);
+        }
+
+        // The Article types hold the Relationships Fields, so they go first
+        for (int i = contentTypes.size() - 1; i >= 0; i--) {
+            ContentTypeDataGen.remove(contentTypes.get(i));
+        }
     }
 
     /**
@@ -163,6 +194,8 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
                 .cardinality(RELATIONSHIP_CARDINALITY.MANY_TO_ONE)
                 .nextPersisted();
         articleType = findContentType(articleType);
+        contentTypes.add(authorType);
+        contentTypes.add(articleType);
         final String relationshipFieldVar = articleType.fields(RelationshipField.class).get(0).variable();
 
         final Contentlet author = new ContentletDataGen(authorType).host(host)
@@ -190,13 +223,15 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
      * push with the default filter and expect dependencies to be included.
      */
     private FilterDescriptor createFilterWithoutRelationships() {
-        return new FilterDescriptorDataGen()
+        final FilterDescriptor filter = new FilterDescriptorDataGen()
                 .key("onlySelectedItems_" + System.currentTimeMillis() + ".yml")
                 .dependencies(false)
                 .relationships(false)
                 .defaultFilter(false)
                 .clearFilterList(false)
                 .nextPersisted();
+        filterKeys.add(filter.getKey());
+        return filter;
     }
 
     private PreparedBundle generateBundleFor(final Contentlet contentlet, final FilterDescriptor filter)
@@ -213,7 +248,9 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
         final Map<String, Object> bundleData = generateBundle(bundle.getId(), Operation.PUBLISH);
         final File file = File.class.cast(bundleData.get(PublisherTestUtil.FILE));
         assertNotNull(file);
-        return new PreparedBundle(file, endpoint);
+        final PreparedBundle preparedBundle = new PreparedBundle(file, bundle, endpoint, environment);
+        bundles.add(preparedBundle);
+        return preparedBundle;
     }
 
     private void processBundle(final PreparedBundle bundle) throws Exception {
@@ -273,11 +310,16 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
     private static final class PreparedBundle {
 
         final File file;
+        final Bundle bundle;
         final PublishingEndPoint endpoint;
+        final Environment environment;
 
-        PreparedBundle(final File file, final PublishingEndPoint endpoint) {
+        PreparedBundle(final File file, final Bundle bundle, final PublishingEndPoint endpoint,
+                final Environment environment) {
             this.file = file;
+            this.bundle = bundle;
             this.endpoint = endpoint;
+            this.environment = environment;
         }
 
     }

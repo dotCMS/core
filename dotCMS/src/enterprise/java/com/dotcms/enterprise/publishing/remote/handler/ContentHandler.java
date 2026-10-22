@@ -890,7 +890,10 @@ public class ContentHandler implements IHandler {
 			// Brand-new content has no relationships in the receiver yet, so there's nothing to
 			// preserve: add the ones in the bundle WITHOUT cleaning any trees. Otherwise, new
 			// content pushed with a filter such as "Only Selected Items" would lose its references
-			// to related content that already lives in the receiver
+			// to related content that already lives in the receiver.
+			// NOTE: this relies on ContentBundler always adding the tree rows of the content to the
+			// bundle, regardless of the filter. If the bundle ever stops sending them when
+			// relationships is false, new content will silently lose its relationships again
 			Logger.debug(this, () -> "Adding the bundle relationships of new content: " + identifier);
 			this.regenerateTree(wrapper, remoteLocalLanguages.getLeft());
 		}
