@@ -194,6 +194,53 @@ public class ContentletCheckinDestinationPermissionTest {
 
     /**
      * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}
+     * Given Scenario: The type lives on the System Host and the new contentlet is placed on the
+     *                 default site by a user who only has WRITE on the type.
+     * ExpectedResult: The contentlet is created; the default site is the type's default
+     *                 placement, so no Add Children is needed there.
+     */
+    @Test
+    public void checkinOnDefaultSiteWithTypeWriteOnly_shouldSucceed() throws Exception {
+        final Host defaultSite = APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(),
+                false);
+
+        final Contentlet saved = checkinAs(limitedUser, false, defaultSite, null);
+
+        assertEquals(defaultSite.getIdentifier(), saved.getHost());
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}
+     * Given Scenario: A type that lives on the site without Add Children; the user only has WRITE
+     *                 on that type and places content on that same site, then inside one of its
+     *                 folders.
+     * ExpectedResult: The site itself is the type's default placement and succeeds; the folder is
+     *                 a chosen destination and is denied.
+     */
+    @Test
+    public void checkinOnTheTypesOwnSite_shouldNotRequireAddChildren() throws Exception {
+        final ContentType siteType = new ContentTypeDataGen().host(otherSite)
+                .field(new FieldDataGen().type(TextField.class).name("title")
+                        .velocityVarName("title").next())
+                .nextPersisted();
+        try {
+            grant(siteType, limitedRole, TYPE_WRITE);
+
+            final Contentlet saved = contentletAPI.checkin(new ContentletDataGen(siteType)
+                    .host(otherSite).setProperty("title", "on own site").next(), limitedUser,
+                    false);
+            assertEquals(otherSite.getIdentifier(), saved.getHost());
+
+            assertDenied(() -> contentletAPI.checkin(new ContentletDataGen(siteType)
+                    .host(otherSite).folder(otherFolder).setProperty("title", "in folder").next(),
+                    limitedUser, false));
+        } finally {
+            ContentTypeDataGen.remove(siteType, true);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}
      * Given Scenario: An existing contentlet on the site without Add Children is edited by a user
      *                 who has WRITE on that contentlet.
      * ExpectedResult: The edit succeeds; the destination check only applies to new contentlets.
