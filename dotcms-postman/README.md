@@ -11,10 +11,13 @@ suppressed because assertion/debug output can contain token values; inspect the
 JUnit report locally for detailed failures and treat those reports as sensitive.
 
 Ordinary authenticated requests use Bearer `{{jwt}}`; anonymous and invalid-token
-requests retain their own auth. Workflow starter users `chris`/`bill` are resolved
-by exact email to canonical IDs before receiving separate API tokens. Created
-scripting/limited users receive tokens for the ID returned by user creation, not
-an admin token. Their fixture roles and existing response assertions are retained.
+requests retain their own auth. Workflow users `chris`/`bill` are resolved by exact
+email before receiving separate API tokens. If absent from the empty starter,
+they are created with random passwords and the backend role; only their new personal
+roles receive the layout containing `workflow-schemes`. Existing users and roles are
+not changed. Use a disposable test server: newly created fixture users persist.
+Created scripting/limited users receive tokens for the ID returned by user creation,
+not an admin token. Their fixture roles and existing response assertions are retained.
 
 For standalone Postman imports, set **environment** `serverURL` and a pre-issued
 **API token** `jwt`. Collections no longer fall back to password Basic; standalone
@@ -37,7 +40,7 @@ separate server for each compatibility command; the Maven property is forwarded
 to that server as `DOT_ALLOW_BASIC_AUTH`.
 
 ```sh
-# Existing 13 DAV operations, using username + matching API JWT as the Basic password.
+# All 24 DAV operations (including temp COPY/MOVE), using username + API JWT as the Basic password.
 # REST setup remains Bearer; a real-password REST denial distinguishes JWT_TOKEN from ALL.
 ./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false \
   -Dpostman.basic.auth.mode=JWT_TOKEN \

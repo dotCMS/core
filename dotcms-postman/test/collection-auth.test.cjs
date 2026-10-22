@@ -249,6 +249,87 @@ test('workflow resolves exact starter emails and provisions canonical chris/bill
   for (const request of sent) assert.equal(request.header.Authorization, 'Bearer synthetic.runner.jwt');
 });
 
+for (const fixture of [
+  { name: 'empty starter', existing: [] },
+  { name: 'existing Chris and missing Bill', existing: ['chris'] },
+  { name: 'malformed user lookup', existing: ['chris'], failure: 'lookup' },
+  { name: 'ambiguous user lookup', existing: ['chris'], failure: 'ambiguous' },
+  { name: 'failed user creation', existing: ['chris'], failure: 'create' },
+  { name: 'missing new-user identity', existing: ['chris'], failure: 'identity' },
+  { name: 'missing workflow layout', existing: ['chris'], failure: 'layout' },
+  { name: 'failed personal-role grant', existing: ['chris'], failure: 'grant' },
+]) {
+  test(`workflow bootstrap handles ${fixture.name} without elevating or changing existing actors`, async () => {
+    const vars = { jwt: 'synthetic.runner.jwt', serverURL: 'http://dotcms.invalid' };
+    const created = [], grants = [], subjects = [], sent = [];
+    const scope = { get: (key) => vars[key], set: (key, value) => { vars[key] = value; },
+      replaceIn: () => '00000000-0000-4000-8000-000000000001' };
+    const pm = { environment: scope, collectionVariables: scope, variables: scope,
+      sendRequest(request, callback) {
+        sent.push(request);
+        const url = new URL(request.url);
+        const body = request.body?.raw ? JSON.parse(request.body.raw) : undefined;
+        let code = 200, entity;
+        if (url.pathname === '/api/v1/users/filter') {
+          const email = url.searchParams.get('query');
+          const actor = email.split('@')[0];
+          entity = [{}, { emailAddress: null }, ...(fixture.existing.includes(actor) ?
+            [{ id: `existing-${actor}-id`, emailAddress: email, roles: [{ id: 'keep-existing-role' }] }] : [])];
+          if (actor === 'bill' && fixture.failure === 'lookup') entity = {};
+          if (actor === 'bill' && fixture.failure === 'ambiguous') entity =
+            [{ id: 'bill-one', emailAddress: email }, { id: 'bill-two', emailAddress: email }];
+        } else if (url.pathname === '/api/v1/users' && request.method === 'POST') {
+          created.push(body);
+          const actor = body.email.split('@')[0];
+          entity = fixture.failure === 'identity' ? {} :
+            { userID: `created-${actor}-id`, roleId: `personal-${actor}-role` };
+          if (fixture.failure === 'create') code = 500;
+        } else if (url.pathname === '/api/v1/roles/layouts' && request.method === 'GET') {
+          entity = [{ id: 'admin-layout', portletIds: ['roles', 'users'] },
+            ...(fixture.failure === 'layout' ? [] : [{ id: 'workflow-layout', portletIds: ['workflow-schemes'] }])];
+        } else if (url.pathname === '/api/v1/roles/layouts' && request.method === 'POST') {
+          grants.push(body);
+          entity = { savedLayouts: true };
+          if (fixture.failure === 'grant') code = 403;
+        } else if (url.pathname === '/api/v1/apitoken' && request.method === 'POST') {
+          subjects.push(body.userId);
+          entity = { jwt: `synthetic.${body.userId}.jwt` };
+        } else assert.fail(`Unexpected fixture mutation: ${request.method} ${url.pathname}`);
+        callback(null, { code, json: () => ({ entity }) });
+      },
+    };
+    const bootstrap = scripts.find((s) => s.file === 'Workflow_Resource_Tests.json' &&
+      s.names.length === 0 && s.event.listen === 'prerequest');
+    const execute = async () => vm.runInNewContext(eventCode(bootstrap.event), { pm, encodeURIComponent });
+    if (fixture.failure) {
+      await assert.rejects(execute);
+      assert.equal(created.length, ['lookup', 'ambiguous'].includes(fixture.failure) ? 0 : 1,
+        'Create only when the lookup unambiguously proves the actor is missing');
+      assert.equal(vars.billJwt, undefined, 'Never fall back to the runner token after setup fails');
+      assert.ok(!subjects.includes('created-bill-id'), 'Do not issue a token before the new actor has workflow access');
+    } else {
+      await execute();
+      const missing = ['chris', 'bill'].filter((actor) => !fixture.existing.includes(actor));
+      assert.deepEqual(created.map((body) => body.email).sort(), missing.map((actor) => `${actor}@dotcms.com`).sort());
+      for (const body of created) {
+        assert.deepEqual(body.roles, ['DOTCMS_BACK_END_USER'], 'New actors are backend users, never administrators');
+        assert.ok(body.password && body.password !== 'admin', 'Do not create a known-password account');
+      }
+      assert.deepEqual(grants.map((body) => body.roleId).sort(), missing.map((actor) => `personal-${actor}-role`).sort());
+      for (const grant of grants) assert.deepEqual(grant.layoutIds, ['workflow-layout']);
+      for (const actor of ['chris', 'bill']) {
+        const id = `${fixture.existing.includes(actor) ? 'existing' : 'created'}-${actor}-id`;
+        assert.ok(subjects.includes(id), 'Mint for the returned canonical identity');
+        assert.equal(vars[`${actor}Jwt`], `synthetic.${id}.jwt`);
+      }
+      const calls = sent.length;
+      await execute();
+      assert.equal(sent.length, calls, 'Reuse the collection-owned actor tokens without reprovisioning');
+    }
+    for (const request of sent) assert.equal(request.header.Authorization, 'Bearer synthetic.runner.jwt');
+  });
+}
+
 test('valid-Basic-vs-required-JWT negatives remain Basic and assert 401 (ALL-only boundary)', () => {
   for (const [file, names] of jwtOnlyNegatives) {
     const r = find(file, names);
