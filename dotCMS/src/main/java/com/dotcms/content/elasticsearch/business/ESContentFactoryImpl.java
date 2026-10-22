@@ -1723,18 +1723,32 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	   updateUserReferences(userToReplace,systemUser.getUserId(), systemUser );
 	}
 
-        /**
-         * Method will replace user references of the given User in Contentlets
-         * with the replacement user id
-         * @param userToReplace the user to replace
-         * @param replacementUserId Replacement User Id
-         * @param user the user requesting the operation
-         * @exception DotDataException There is a data inconsistency
-         * @throws DotSecurityException
-         */
+    /**
+     * Replaces every reference to {@code userToReplace} in {@code contentlet.mod_user} and
+     * {@code contentlet_version_info.locked_by} with {@code replacementUserId}, and keeps the
+     * caches on every node and the search index consistent with that rewrite.
+     * <p>
+     * The affected rows are enumerated from the database <b>before</b> the rewrite (afterwards
+     * they are indistinguishable from the replacement user's own content), so the set of cached
+     * objects to evict and documents to reindex never depends on what the search index happens
+     * to return (issue #37116). Eviction runs in a synchronous commit listener, so by the time
+     * the caller's transaction returns no node serves the deleted user's id any more. The reindex
+     * stays asynchronous and notifies {@code user} when it ends.
+     *
+     * @param userToReplace     the user whose references will be replaced
+     * @param replacementUserId the id of the user that takes over those references
+     * @param user              the user requesting the operation
+     * @throws DotDataException     There is a data inconsistency
+     * @throws DotSecurityException The user cannot perform the operation
+     */
 	public void updateUserReferences(final User userToReplace, final String replacementUserId, final User user) throws DotDataException, DotStateException, DotSecurityException {
         final DotConnect dc = new DotConnect();
         try {
+            final List<String> inodesToRefresh =
+                    findCurrentInodesModifiedBy(userToReplace.getUserId());
+            final List<Map<String, Object>> versionInfosLockedBy =
+                    findVersionInfosLockedBy(userToReplace.getUserId());
+
             dc.setSQL("UPDATE contentlet SET mod_user = ? WHERE mod_user = ?");
             dc.addParam(replacementUserId);
             dc.addParam(userToReplace.getUserId());
@@ -1745,10 +1759,10 @@ public class ESContentFactoryImpl implements ContentletFactory {
             dc.addParam(userToReplace.getUserId());
             dc.loadResult();
 
-            HibernateUtil.addCommitListener(() -> {
-                reindexReplacedUserContent(userToReplace, user, true);
-                reindexReplacedUserContent(userToReplace, user, false);
-            });
+            HibernateUtil.addSyncCommitListener(() ->
+                    evictReplacedUserReferences(inodesToRefresh, versionInfosLockedBy));
+            HibernateUtil.addCommitListener(() ->
+                    reindexReplacedUserContent(userToReplace, user, inodesToRefresh));
         } catch (DotDataException e) {
             Logger.error(this.getClass(),e.getMessage(),e);
             throw new DotDataException(e.getMessage(), e);
@@ -1756,48 +1770,127 @@ public class ESContentFactoryImpl implements ContentletFactory {
     }
 
     /**
-     * Performs a re-indexation of contents whose user references have been updated with a new
-     * user ID. This change requires contents to be re-indexed for them to have the correct
-     * information. The Inodes of such contentlets are stored in a temporary table.
+     * Lists the inodes of every working or live Contentlet version last modified by
+     * {@code userId}. Only current versions are returned: those are the ones the index holds
+     * and the ones listings serve from cache, and bounding the result to them keeps the list
+     * proportional to the amount of current content rather than to the full version history.
+     * Both legs of the union resolve through the {@code idx_contentlet_vi_working} and
+     * {@code idx_contentlet_vi_live} indexes.
+     *
+     * @param userId the user whose current content versions are wanted
+     * @return the distinct inodes, possibly empty, never {@code null}
+     * @throws DotDataException the query failed
+     */
+    private List<String> findCurrentInodesModifiedBy(final String userId) throws DotDataException {
+        final DotConnect dc = new DotConnect();
+        dc.setSQL("SELECT cvi.working_inode AS inode FROM contentlet c "
+                + "JOIN contentlet_version_info cvi ON cvi.working_inode = c.inode "
+                + "WHERE c.mod_user = ? "
+                + "UNION "
+                + "SELECT cvi.live_inode AS inode FROM contentlet c "
+                + "JOIN contentlet_version_info cvi ON cvi.live_inode = c.inode "
+                + "WHERE c.mod_user = ?");
+        dc.addParam(userId);
+        dc.addParam(userId);
+        return dc.loadObjectResults().stream()
+                .map(row -> (String) row.get("inode"))
+                .filter(UtilMethods::isSet)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Lists the version-info rows currently locked by {@code userId}, as maps with the
+     * {@code identifier}, {@code lang} and {@code variant_id} columns, so the matching
+     * {@link ContentletVersionInfo} cache entries can be evicted once the lock holder changes.
+     *
+     * @param userId the user holding the locks
+     * @return the matching rows, possibly empty, never {@code null}
+     * @throws DotDataException the query failed
+     */
+    private List<Map<String, Object>> findVersionInfosLockedBy(final String userId)
+            throws DotDataException {
+        final DotConnect dc = new DotConnect();
+        dc.setSQL("SELECT identifier, lang, variant_id FROM contentlet_version_info "
+                + "WHERE locked_by = ?");
+        dc.addParam(userId);
+        return dc.loadObjectResults();
+    }
+
+    /**
+     * Drops from the caches every object that still carries the replaced user's id: the
+     * Contentlets in {@code inodes}, the {@link ContentletVersionInfo} entries in
+     * {@code versionInfosLockedBy}, and the whole Site cache. Sites are Contentlets but are
+     * served from their own cache keyed by id and name, so the inode evictions never reach
+     * them; they are few and cheap to reload, so the cache is cleared rather than searched.
+     * Runs synchronously at commit so the caller's transaction does not return while any
+     * node can still serve the stale id; cache removals propagate to the other nodes through
+     * the cache transport like any other eviction.
+     *
+     * @param inodes               the current Contentlet versions the replaced user modified
+     * @param versionInfosLockedBy the version-info rows the replaced user had locked
+     */
+    private void evictReplacedUserReferences(final List<String> inodes,
+            final List<Map<String, Object>> versionInfosLockedBy) {
+        try {
+            for (final String inode : inodes) {
+                contentletCache.remove(inode);
+            }
+            final IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
+            for (final Map<String, Object> row : versionInfosLockedBy) {
+                final Object variantId = row.get("variant_id");
+                identifierCache.removeContentletVersionInfoToCache(
+                        (String) row.get("identifier"),
+                        ((Number) row.get("lang")).longValue(),
+                        null != variantId ? variantId.toString() : DEFAULT_VARIANT.name());
+            }
+            CacheLocator.getHostCache().clearCache();
+        } catch (final Exception e) {
+            Logger.error(this, String.format("Unable to evict cached references to a replaced "
+                    + "user (%d contentlets, %d locks). Flush the caches to clear them.",
+                    inodes.size(), versionInfosLockedBy.size()), e);
+        }
+    }
+
+    /**
+     * Reloads the given working/live Contentlets from the database, now carrying the
+     * replacement user id, and re-indexes them in batches of 100. Runs after commit so the
+     * reload sees the rewritten rows. The inodes come from the database enumeration done
+     * before the rewrite rather than from an index query, so content the index had lost track
+     * of is reindexed too. A Contentlet deleted between enumeration and this run is skipped.
      *
      * @param userToReplace The user whose references will be removed.
      * @param user          The user performing this operation.
-     * @param working
+     * @param inodes        The current Contentlet versions to reload and reindex.
      */
-    private void reindexReplacedUserContent(final User userToReplace, final User user, final boolean working) {
+    private void reindexReplacedUserContent(final User userToReplace, final User user,
+            final List<String> inodes) {
         final NotificationAPI notificationAPI = APILocator.getNotificationAPI();
 
         try {
-            final StringBuilder luceneQuery = new StringBuilder();
-            luceneQuery.append(working?" +working:true":" +live:true")
-                    .append(" +modUser:").append(userToReplace.getUserId());
-            final int limit = 0;
-            final int offset = -1;
-            final List<ContentletSearch> contentlets = APILocator.getContentletAPI().searchIndex
-                    (luceneQuery.toString(), limit, offset, null, user, false);
-            long totalCount;
-
-            if (UtilMethods.isSet(contentlets)) {
+            if (UtilMethods.isSet(inodes)) {
                 final ContentletIndexAPIImpl indexAPI = new ContentletIndexAPIImpl();
+                final IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
                 List<Contentlet> contentToIndex = new ArrayList<>();
-                totalCount = contentlets.size();
+                final int totalCount = inodes.size();
                 final int batchSize = 100;
                 int completed = 0;
-                int counter = 1;
-                for (final ContentletSearch indexedContentlet : contentlets) {
+                for (final String inode : inodes) {
                     // IMPORTANT: Remove contentlet from cache first
-                    contentletCache.remove(indexedContentlet.getInode());
+                    contentletCache.remove(inode);
 
-                    final Contentlet content = find(indexedContentlet.getInode());
+                    final Contentlet content = find(inode);
+                    if (null == content) {
+                        continue;
+                    }
 
-                    IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
-                    identifierCache.removeContentletVersionInfoToCache(content.getIdentifier(), content.getLanguageId());
+                    identifierCache.removeContentletVersionInfoToCache(content.getIdentifier(),
+                            content.getLanguageId(), content.getVariantId());
                     identifierCache.removeFromCacheByIdentifier(content.getIdentifier());
 
                     contentToIndex.add(content);
-                    if (counter % batchSize == 0) {
+                    if (contentToIndex.size() >= batchSize) {
                         indexAPI.addContentToIndex(contentToIndex);
-                        completed += batchSize;
+                        completed += contentToIndex.size();
                         contentToIndex = new ArrayList<>();
                         Logger.info(this, String.format(
                                 "Reindexing related content after deletion of user '%s/%s'. Completed: %d out of %d",
@@ -1806,7 +1899,6 @@ public class ESContentFactoryImpl implements ContentletFactory {
                                 completed,
                                 totalCount
                         ));
-                        counter++;
                     }
                 }
                 // index remaining records if any
