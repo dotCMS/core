@@ -284,6 +284,12 @@ public class UserServiceFactory implements Serializable {
 		 * Resolves the {@code showUsers} filter of the legacy Users portlet into the ID of the Role every
 		 * returned User must hold: {@code backEnd}, {@code frontEnd} or {@code cmsAdmin}. Any other value,
 		 * including the default {@code all}, applies no Role filter.
+		 * <p>
+		 * These filters are open to anyone who can use the legacy Users portlet, which
+		 * {@link com.dotmarketing.portlets.user.ajax.UserAjax#getUsersList} already checks. That is a lower bar than
+		 * the {@code roleKey} / {@code roleId} filters of {@code GET /api/v1/users/filter}, which also require CMS
+		 * Administrator or the Roles portlet. The difference is intended: the legacy portlet already lets the same
+		 * Users view and edit every User's Roles, so filtering by Role there shows nothing new.
 		 *
 		 * @param showUserType The {@code showUsers} value sent by the portlet.
 		 *
