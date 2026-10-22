@@ -3,7 +3,6 @@ package com.dotcms.rest.api.v1.user;
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
-import com.dotmarketing.business.Layout;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotmarketing.business.RoleAPI;
