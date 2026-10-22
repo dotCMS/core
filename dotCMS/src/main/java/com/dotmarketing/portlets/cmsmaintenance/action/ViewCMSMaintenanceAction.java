@@ -11,12 +11,11 @@ import com.dotcms.repackage.javax.portlet.WindowState;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
 import com.dotmarketing.portlets.cmsmaintenance.struts.CmsMaintenanceForm;
@@ -206,7 +205,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		} //Manage all the search and replace Task
 		else if(cmd.equals("searchandreplace")){
 			Logger.info(this, "Running Search & Replace");
-			Map<String,String> result = searchAndReplace(ccf);
+			Map<String,String> result = searchAndReplace(_getUser(req), ccf);
 			if(result.get("type") != null){
 				if(result.get("type").equals("message")){
 					message = "Search and Replace complete <br>" + result.get("message");
@@ -222,13 +221,19 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		else if(cmd.equals("fixAssetsInconsistencies")){
            // this one NOT
 		} else if(cmd.equals("deleteSystemJob")) {
-            _deleteScheduler(req);
+            if (isAuthorizedAdmin(_getUser(req))) {
+                _deleteScheduler(req);
+            } else {
+                Logger.warn(this, "Rejected deleteSystemJob: user is not a CMS administrator");
+            }
         }
 		//Not being used this is being called using ajax
 		else if(cmd.equals("dropoldassets")){
 
-			Logger.info(this, "Running Drop old Assets");
-			if(_dropAssetOldVersions(ccf) >= 0){
+			if (!isAuthorizedAdmin(_getUser(req))) {
+				Logger.warn(this, "Rejected dropoldassets: user is not a CMS administrator");
+			} else if(_dropAssetOldVersions(ccf) >= 0){
+				Logger.info(this, "Running Drop old Assets");
 				message = "message.cmsmaintenance.dropoldassets.sucessfully";
 			}else{
 				errorMessage = "message.cmsmaintenance.dropoldassets.failed";
@@ -407,42 +412,54 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		}
 	}
 
-	private Map<String,String> searchAndReplace(CmsMaintenanceForm form) throws DotDataException{
+	/**
+	 * Runs the database search-and-replace requested by the maintenance screen. Only a logged-in
+	 * CMS administrator may run it; the operation rewrites content, containers, templates, field
+	 * values and links across the whole instance.
+	 *
+	 * @param sessionUser the user making the request, resolved from the session
+	 * @param form        the search-and-replace parameters
+	 * @return a map carrying the outcome message when the operation ran, or an empty map when the
+	 *         user is not allowed to run it
+	 */
+	@VisibleForTesting
+	Map<String,String> searchAndReplace(final User sessionUser, final CmsMaintenanceForm form) {
 
-		String message="";
-		Map<String,String> messageResult = new HashMap<>();
-		boolean isAdmin = false;
+		final Map<String,String> messageResult = new HashMap<>();
 
-		if (UtilMethods.isSet(form.getUserId())) {
-			try {
-				if (APILocator.getUserAPI().isCMSAdmin(APILocator.getUserAPI().loadUserById(form.getUserId(),APILocator.getUserAPI().getSystemUser(),false))) {
-					isAdmin = true;
-				}
-			} catch (NoSuchUserException e) {
-				Logger.error(ViewCMSMaintenanceAction.class,"USER DOESN'T EXIST" + e.getMessage(),e);
-				message = "Cannot find user";
-			} catch (DotSecurityException e) {
-				message = "Failed to check for permissions";
-				Logger.error(ViewCMSMaintenanceAction.class,e.getMessage(),e);
-			}
-		}else{
-			message = "User not passed";
-			Logger.error(ViewCMSMaintenanceAction.class,"No UserId Passed");
+		if (!isAuthorizedAdmin(sessionUser)) {
+			Logger.warn(ViewCMSMaintenanceAction.class,
+					"Rejected search-and-replace: user is not a CMS administrator");
+			return messageResult;
 		}
 
-		if (isAdmin) {
-			String searchString = form.getSearchString();
-			String replaceString = form.getReplaceString();
-			boolean DBerrorFound = MaintenanceUtil.DBSearchAndReplace(searchString, replaceString);
-			if(DBerrorFound){
-				message = "Search/Replace Finished with Errors.  See Log for more info";
-			}else{
-				message = "Search/Replace Finished Successful";
-			}
-			messageResult.put("type", "message");
-			messageResult.put("message", message);
-		}
+		final String searchString = form.getSearchString();
+		final String replaceString = form.getReplaceString();
+		final boolean DBerrorFound = MaintenanceUtil.DBSearchAndReplace(searchString, replaceString);
+		final String message = DBerrorFound
+				? "Search/Replace Finished with Errors.  See Log for more info"
+				: "Search/Replace Finished Successful";
+		messageResult.put("type", "message");
+		messageResult.put("message", message);
 		return messageResult;
+	}
+
+	/**
+	 * Tells whether the given session user is a CMS administrator, the authority required by the
+	 * destructive maintenance operations.
+	 *
+	 * @param sessionUser the user resolved from the session, may be {@code null}
+	 * @return {@code true} only when the user exists and holds the CMS administrator role
+	 */
+	@VisibleForTesting
+	boolean isAuthorizedAdmin(final User sessionUser) {
+		try {
+			return sessionUser != null && APILocator.getUserAPI().isCMSAdmin(sessionUser);
+		} catch (DotDataException e) {
+			Logger.error(ViewCMSMaintenanceAction.class,
+					"Could not resolve administrator role: " + e.getMessage(), e);
+			return false;
+		}
 	}
 
 
