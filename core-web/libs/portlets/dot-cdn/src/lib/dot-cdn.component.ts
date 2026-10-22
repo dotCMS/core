@@ -2,7 +2,7 @@ import { ChartOptions } from 'chart.js';
 import { Observable } from 'rxjs';
 
 import { AsyncPipe, NgStyle } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import {
     FormsModule,
     ReactiveFormsModule,
@@ -45,24 +45,19 @@ import { DotCDNStore } from './dot-cdn.store';
     ],
     providers: [DotCDNStore]
 })
-export class DotCDNComponent implements OnInit {
+export class DotCDNComponent {
     private fb = inject(UntypedFormBuilder);
     private dotCdnStore = inject(DotCDNStore);
 
-    purgeZoneForm: UntypedFormGroup;
+    purgeZoneForm: UntypedFormGroup = this.fb.group({
+        purgeUrlsTextArea: ''
+    });
     vm$: Observable<Omit<DotCDNState, 'isPurgeUrlsLoading' | 'isPurgeZoneLoading'>> =
         this.dotCdnStore.vm$;
     vmPurgeLoaders$: Observable<Pick<DotCDNState, 'isPurgeUrlsLoading' | 'isPurgeZoneLoading'>> =
         this.dotCdnStore.vmPurgeLoaders$;
     chartHeight = '25rem';
-    options: CdnChartOptions;
-
-    ngOnInit(): void {
-        this.setChartOptions();
-        this.purgeZoneForm = this.fb.group({
-            purgeUrlsTextArea: ''
-        });
-    }
+    options: CdnChartOptions = this.buildChartOptions();
 
     onFilterChange(filter: CdnDateFilter): void {
         this.dotCdnStore.loadStats(filter);
@@ -73,9 +68,8 @@ export class DotCDNComponent implements OnInit {
     }
 
     purgeUrls(): void {
-        const urls: string[] = this.purgeZoneForm
-            .get('purgeUrlsTextArea')
-            .value.split('\n')
+        const urls: string[] = this.purgeZoneForm.value.purgeUrlsTextArea
+            .split('\n')
             .map((url: string) => url.trim());
 
         this.dotCdnStore
@@ -86,7 +80,7 @@ export class DotCDNComponent implements OnInit {
             });
     }
 
-    private setChartOptions(): void {
+    private buildChartOptions(): CdnChartOptions {
         const bandwidthOptions: ChartOptions = {
             responsive: true,
             plugins: {
@@ -109,8 +103,8 @@ export class DotCDNComponent implements OnInit {
                 y: {
                     beginAtZero: true,
                     ticks: {
-                        callback: function (value: number): string {
-                            return value.toLocaleString('en-US');
+                        callback: function (value: string | number): string {
+                            return Number(value).toLocaleString('en-US');
                         }
                     }
                 }
@@ -140,8 +134,8 @@ export class DotCDNComponent implements OnInit {
                     beginAtZero: true,
                     ticks: {
                         precision: 0,
-                        callback: function (value: number): string {
-                            return value.toLocaleString('en-US');
+                        callback: function (value: string | number): string {
+                            return Number(value).toLocaleString('en-US');
                         }
                     }
                 }
@@ -169,7 +163,7 @@ export class DotCDNComponent implements OnInit {
                     beginAtZero: true,
                     max: 100,
                     ticks: {
-                        callback: (value: number): string => `${value}%`
+                        callback: (value: string | number): string => `${value}%`
                     }
                 }
             }
@@ -191,13 +185,14 @@ export class DotCDNComponent implements OnInit {
                     beginAtZero: true,
                     ticks: {
                         precision: 0,
-                        callback: (value: number): string => value.toLocaleString('en-US')
+                        callback: (value: string | number): string =>
+                            Number(value).toLocaleString('en-US')
                     }
                 }
             }
         };
 
-        this.options = {
+        return {
             bandwidthUsedChart: bandwidthOptions,
             requestsServedChart: requestOptions,
             cacheHitRateChart: cacheHitRateOptions,
