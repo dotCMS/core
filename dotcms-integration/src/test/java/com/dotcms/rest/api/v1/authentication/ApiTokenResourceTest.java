@@ -70,8 +70,9 @@ public class ApiTokenResourceTest {
      * Method to test: {@link ApiTokenResource#issueApiToken}
      * Given Scenario: the caller asks for a token restricted to a network, but the value is not
      *                 CIDR notation (a bare address, or a mask out of range).
-     * ExpectedResult: HTTP 400 and no token is issued. Before, the unparseable value was mapped to
-     *                 {@code null} and the token came back with no IP restriction at all.
+     * ExpectedResult: HTTP 400 and no token is issued. A network the server cannot parse is never
+     *                 silently dropped, so the caller cannot end up with a token that is less
+     *                 restricted than the one they asked for.
      */
     @Test
     public void test_issueApiToken_invalidNetwork_isRejected() throws DotDataException, DotSecurityException {

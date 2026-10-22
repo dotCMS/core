@@ -495,7 +495,7 @@
 								<td>
 									<input dojoType="dijit.form.DateTextBox" type="text"
 										   name="expiresDate" id="expiresDate"
-										   value='<%=DateTimeFormatter.ofPattern("uuuu-MM-dd").format(LocalDate.now().plus(3, ChronoUnit.YEARS))%>'/>
+										   value='<%=DateTimeFormatter.ofPattern("uuuu-MM-dd").format(LocalDate.now().plus(1, ChronoUnit.YEARS))%>'/>
 								</td>
 							</tr>
 

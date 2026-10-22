@@ -378,7 +378,12 @@ public class ApiTokenAPI {
             return requestedExpireDate;
         }
         final Date maxExpireDate = Date.from(Instant.now().plus(maxDays, ChronoUnit.DAYS));
-        if (requestedExpireDate == null || requestedExpireDate.after(maxExpireDate)) {
+        if (requestedExpireDate == null) {
+            Logger.info(ApiTokenAPI.class, "No expiration date requested for the API token; using the "
+                    + "maximum allowed lifetime of " + maxDays + " days (" + maxExpireDate + ")");
+            return maxExpireDate;
+        }
+        if (requestedExpireDate.after(maxExpireDate)) {
             Logger.info(ApiTokenAPI.class, "Requested API token expiration date " + requestedExpireDate
                     + " exceeds the maximum allowed lifetime of " + maxDays + " days; using "
                     + maxExpireDate + " instead");
