@@ -171,6 +171,11 @@ describe('DotUsersListStore', () => {
         });
 
         it('retries without includeRoles when the backend gates the flag with 403', () => {
+            // Settle the flag to `true` first, so the assertion below proves the change
+            store.loadUsers();
+            expect(store.canFilterByRole()).toBe(true);
+            usersService.getUsersPaginated.mockClear();
+
             usersService.getUsersPaginated
                 .mockReturnValueOnce(
                     throwError(
@@ -202,6 +207,11 @@ describe('DotUsersListStore', () => {
         });
 
         it('does NOT retry on non-403 errors — they bubble up to the error state', () => {
+            // Settle the flag to `true` first, so the assertion below proves it is left alone
+            store.loadUsers();
+            expect(store.canFilterByRole()).toBe(true);
+            usersService.getUsersPaginated.mockClear();
+
             usersService.getUsersPaginated.mockReturnValueOnce(
                 throwError(
                     () =>
@@ -217,8 +227,8 @@ describe('DotUsersListStore', () => {
 
             expect(usersService.getUsersPaginated).toHaveBeenCalledTimes(1);
             expect(store.status()).toBe(ComponentStatus.ERROR);
-            // A non-403 error says nothing about the gate: the flag keeps its initial value.
-            expect(store.canFilterByRole()).toBe(false);
+            // A non-403 error says nothing about the gate: the flag keeps its previous value.
+            expect(store.canFilterByRole()).toBe(true);
         });
 
         it('offers role filters only once a load has succeeded with includeRoles', () => {
@@ -249,6 +259,11 @@ describe('DotUsersListStore', () => {
         });
 
         it('drops a gated role filter together with includeRoles when the backend answers 403', () => {
+            // Settle the flag to `true` first, so the assertion below proves the change
+            store.loadUsers();
+            expect(store.canFilterByRole()).toBe(true);
+            usersService.getUsersPaginated.mockClear();
+
             usersService.getUsersPaginated
                 .mockReturnValueOnce(
                     throwError(
@@ -279,6 +294,11 @@ describe('DotUsersListStore', () => {
         });
 
         it('drops an access-role filter too on the 403 retry', () => {
+            // Settle the flag to `true` first, so the assertion below proves the change
+            store.loadUsers();
+            expect(store.canFilterByRole()).toBe(true);
+            usersService.getUsersPaginated.mockClear();
+
             usersService.getUsersPaginated
                 .mockReturnValueOnce(
                     throwError(
@@ -296,6 +316,34 @@ describe('DotUsersListStore', () => {
             );
             expect(store.roleFilter()).toBe('');
             expect(store.canFilterByRole()).toBe(false);
+        });
+
+        it('keeps the current page on the 403 retry when no role filter is set', () => {
+            usersService.getUsersPaginated
+                .mockReturnValueOnce(
+                    throwError(
+                        () => new HttpErrorResponse({ status: 403, statusText: 'Forbidden' })
+                    )
+                )
+                .mockReturnValueOnce(of(MOCK_RESPONSE));
+
+            store.applyLazyLoad({
+                page: 3,
+                rows: 20,
+                sortField: 'lastLoginDate',
+                sortOrder: 'DESC'
+            });
+
+            expect(usersService.getUsersPaginated).toHaveBeenCalledTimes(2);
+            expect(usersService.getUsersPaginated).toHaveBeenNthCalledWith(
+                1,
+                expect.objectContaining({ page: 3, includeRoles: true })
+            );
+            expect(usersService.getUsersPaginated).toHaveBeenNthCalledWith(
+                2,
+                expect.objectContaining({ page: 3, includeRoles: false })
+            );
+            expect(store.page()).toBe(3);
         });
     });
 

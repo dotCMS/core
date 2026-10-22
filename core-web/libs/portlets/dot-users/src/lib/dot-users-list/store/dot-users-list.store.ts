@@ -53,10 +53,11 @@ export interface DotUsersListState {
     /**
      * Whether the viewer may filter by role at all, the Back-end /
      * Front-end access roles included. The backend gates every role
-     * filter exactly like `includeRoles`, so every list load settles it:
+     * filter exactly like `includeRoles`, so list loads keep it current:
      * a load that succeeds with the flag sets it `true`, one that falls
-     * back on the gate's 403 sets it `false`. Starts `false` so the
-     * filter is not offered before the first load has answered.
+     * back on the gate's 403 sets it `false`, and any other error leaves
+     * it unchanged. Starts `false` so the filter is not offered before
+     * the first load has answered.
      */
     canFilterByRole: boolean;
     sortField: string;
@@ -116,10 +117,10 @@ function buildFilterParams(store: ListQueryStoreSnapshot, includeRoles = true) {
 
 /**
  * Runs the list request with `includeRoles=true`. When it succeeds,
- * `onRolesAllowed` records that the viewer passes the gate. On the
- * specific 403 the #37236 gate raises (viewer lacks CMS Administrator
- * or the Roles + Users portlets), retries once with the params
- * `onRolesForbidden` returns — the caller's chance to drop everything
+ * `onRolesAllowed` records that the viewer passes the gate. On a 403
+ * for a request with `includeRoles=true`, which is taken to mean the
+ * viewer lacks CMS Administrator or the Roles + Users portlets (the
+ * #37236 gate), retries once with the params `onRolesForbidden` returns — the caller's chance to drop everything
  * that gate covers (the flag and any gated role filter). Everything
  * else — 4xx on filter/paging inputs, 5xx, network errors — is
  * re-thrown for the caller's `catchError` to surface via
