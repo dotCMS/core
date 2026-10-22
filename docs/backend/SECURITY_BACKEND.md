@@ -174,6 +174,23 @@ public Response secureEndpoint(HttpServletRequest request, HttpServletResponse r
 }
 ```
 
+### Anonymous Access to REST APIs
+
+Two config keys decide whether a request with no credentials (the anonymous user) may reach a REST endpoint.
+
+- `CONTENT_APIS_ALLOW_ANONYMOUS` (`NONE | READ | WRITE`, default `READ`) is the global setting. Endpoints that opt in to anonymous callers through `WebResource.InitBuilder.requiredAnonAccess(...)` or the deprecated `init(..., rejectWhenNoUser=false, ...)` overloads follow it: the content API (legacy and v1), GraphQL, the Elasticsearch search API, tags, languages, content types and fields, widgets (`/api/widget`), and content relationships (`/api/v1/contentrelationships`). Anonymous writes (workflow fire, temp-file upload, legacy content save) also call `requiredAnonAccess(AnonymousAccess.WRITE)`, so they need `WRITE`; `READ` is not enough.
+- `SCRIPTING_APIS_ALLOW_ANONYMOUS` (`true | false`, default `false`) covers only the file-based scripting endpoints, `/api/vtl/{folder}` (`VTLResource`) and `/api/js/{folder}` (`JsResource`). When `true`, anonymous callers can reach them even if the global key is `NONE`; when the global key already allows anonymous reads, they are reachable as before. Anonymous requests get `401` only when the global key is `NONE` and this key is `false`. The script runs as the anonymous user, so permission-checked tools such as `$dotcontent` see only what that user can read; tools that do not check permissions behave as they would for any caller, so review what an endpoint outputs before opening it. This lets a site keep the built-in APIs closed while serving its own published endpoints. The key applies to every HTTP method (GET, POST, PUT, PATCH and DELETE), not only reads. To keep an endpoint read-only, publish only its `get.vtl` / `get.js`, or remove anonymous read permission from the other method files.
+
+The `/api/vtl/dynamic` and `/api/js/dynamic` endpoints run code the caller sends, so the scripting key does not cover them; they follow the global key like every other endpoint. Authenticated users are unaffected by either key.
+
+There is no `REST_API_REJECT_WITH_NO_USER` setting. An endpoint that must never accept anonymous callers says so in code with `.rejectWhenNoUser(true)` on the `InitBuilder` (as in the pattern above); `InitBuilder` already defaults to rejecting anonymous callers unless `requiredAnonAccess(...)` is set.
+
+**Velocity Secrets in scripting endpoints:** Velocity Secrets (`$dotsecrets`) can be read from the file-based `/api/vtl` and `/api/js` endpoints, including by anonymous callers, when the user who last edited the endpoint's script file (for example `get.vtl` or `get.js`) has the Scripting Developer role. This matches how secrets work in page content. If the file's last editor doesn't have that role, the requesting user must have it instead, so anonymous calls can't read secrets. Code posted to the `/dynamic` endpoints comes from the caller, so there only the requesting user's role counts, and setting `secrets.scripting.enabled=false` still turns secrets off everywhere.
+
+For `/api/js`, the editor of the entry file (`get.js`, `post.js`, and so on) is what counts, including for any modules it imports.
+
+**Warning:** never evaluate request input (Velocity `#evaluate`, JavaScript `eval`) in an endpoint whose file was last edited by a Scripting Developer. Code evaluated on the fly has no file of its own, so it runs with the editor's access to secrets, and an anonymous caller could send `$dotsecrets.get('anyKey')` and get the value back.
+
 ### Permission Validation Pattern
 ```java
 import com.dotmarketing.business.APILocator;

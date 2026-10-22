@@ -31,6 +31,28 @@ import java.util.Optional;
  */
 public class SecretTool implements ViewTool {
 
+	/**
+	 * Request attribute holding the file asset whose code is running on the file-based
+	 * {@code /api/vtl} and {@code /api/js} endpoints. Set it only through
+	 * {@link #setScriptingFile(HttpServletRequest, Contentlet)}.
+	 */
+	public static final String SCRIPTING_FILE_ATTRIBUTE = SecretTool.class.getName() + ".scriptingFile";
+
+	/**
+	 * Wraps the scripting file so that only Java code can create the attribute value. Scripts can
+	 * call {@code $request.setAttribute(...)} and can get hold of a {@link Contentlet}, but they
+	 * cannot construct this type, so they cannot borrow another user's file as their identity.
+	 */
+	private record ScriptingFile(Contentlet contentlet) { }
+
+	/**
+	 * Template name Velocity reports when nothing has been pushed, as in the {@code /api/js} context.
+	 * Velocity has no constant for it: {@code InternalContextBase.getCurrentTemplateName()} returns
+	 * this literal, so keep the two in step. The {@code /api/js} secrets tests in
+	 * {@code ScriptingAnonymousAccessIntegrationTest} fail if it changes.
+	 */
+	private static final String NO_TEMPLATE_NAME = "<undef>";
+
 	private Context context;
 	private HttpServletRequest request;
 
@@ -180,8 +202,29 @@ public class SecretTool implements ViewTool {
     } // canUserEvaluate.
 
 	/**
-	 * Checks whether the User who last edited the Contentlet rendering the Secrets has the
-	 * specified dotCMS Role or not.
+	 * Records the file asset whose code the current request is about to run, so that the Secrets
+	 * check can use that file's last editor. Only callers running a stored file asset should use
+	 * this; the {@code /dynamic} endpoints run caller-supplied code and must not.
+	 * <p>
+	 * Code evaluated on the fly inside the file, such as Velocity {@code #evaluate} or JavaScript
+	 * {@code eval}, has no file name of its own and so also runs with this file's editor. Never
+	 * evaluate request input in an endpoint whose file was last edited by a Scripting Developer,
+	 * or an anonymous caller could read any secret.
+	 *
+	 * @param request The current HTTP request.
+	 * @param file    The file asset {@link Contentlet} holding the script.
+	 */
+	public static void setScriptingFile(final HttpServletRequest request, final Contentlet file) {
+		request.setAttribute(SCRIPTING_FILE_ATTRIBUTE, new ScriptingFile(file));
+	}
+
+	/**
+	 * Checks whether the User who last edited the code rendering the Secrets has the specified
+	 * dotCMS Role or not. The code is identified by the current Velocity template name (pages,
+	 * containers, templates and parsed files). When there is no template name, as for the file run
+	 * by the {@code /api/vtl} and {@code /api/js} endpoints, the scripting file recorded through
+	 * {@link #setScriptingFile(HttpServletRequest, Contentlet)} is used instead. Nested evaluations
+	 * such as {@code $render.eval} carry their own name and never inherit the file's editor.
 	 *
 	 * @param role The {@link Role} that will be checked.
 	 *
@@ -190,13 +233,19 @@ public class SecretTool implements ViewTool {
 	private boolean checkRoleFromLastModUser(final Role role) {
 		final InternalContextAdapterImpl internalContextAdapter = new InternalContextAdapterImpl(context);
 		final String resourcePath = internalContextAdapter.getCurrentTemplateName();
-		boolean hasRole = false;
-		if (UtilMethods.isSet(resourcePath)) {
+		Versionable versionable = null;
+		if (!UtilMethods.isSet(resourcePath) || NO_TEMPLATE_NAME.equals(resourcePath)) {
+			// top-level code with no template name: only a scripting file recorded by Java code counts
+			if (null != this.request
+					&& this.request.getAttribute(SCRIPTING_FILE_ATTRIBUTE) instanceof ScriptingFile scriptingFile) {
+				versionable = scriptingFile.contentlet();
+			}
+		} else {
 			String contentletInode = StringPool.BLANK;
 			try {
 
 				contentletInode = CMSUrlUtil.getInstance().getInodeFromUrlPath(resourcePath);
-				Versionable versionable = APILocator.getContentletAPI().find(contentletInode, APILocator.systemUser(), true);
+				versionable = APILocator.getContentletAPI().find(contentletInode, APILocator.systemUser(), true);
 
 				if (null == versionable) {
 					versionable = APILocator.getContainerAPI().getLiveContainerById(contentletInode, APILocator.systemUser(), true);
@@ -205,11 +254,6 @@ public class SecretTool implements ViewTool {
 				if (null == versionable) {
 					versionable = APILocator.getTemplateAPI().findLiveTemplate(contentletInode, APILocator.systemUser(), true);
 				}
-
-				if (null != versionable) {
-					final User lastModifiedUser = APILocator.getUserAPI().loadUserById(versionable.getModUser(), APILocator.systemUser(), true);
-					hasRole = APILocator.getRoleAPI().doesUserHaveRole(lastModifiedUser, role);
-				}
 			} catch (final Exception e) {
 				Logger.warnAndDebug(SecretTool.class, String.format("Failed to find last " +
 						"modification user from Retrieved ID '%s' in URL Path '%s': %s",
@@ -217,7 +261,19 @@ public class SecretTool implements ViewTool {
 						ExceptionUtil.getErrorMessage(e)), e);
 			}
 		}
-		return hasRole;
+
+		if (null == versionable) {
+			return false;
+		}
+		try {
+			final User lastModifiedUser = APILocator.getUserAPI().loadUserById(versionable.getModUser(), APILocator.systemUser(), true);
+			return APILocator.getRoleAPI().doesUserHaveRole(lastModifiedUser, role);
+		} catch (final Exception e) {
+			Logger.warnAndDebug(SecretTool.class, String.format("Failed to check the last " +
+					"modification user '%s' of '%s': %s", versionable.getModUser(), resourcePath,
+					ExceptionUtil.getErrorMessage(e)), e);
+			return false;
+		}
 	}
 
 }

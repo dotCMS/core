@@ -10,6 +10,7 @@ import com.dotcms.rendering.util.ScriptingUtil;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.exception.DotToolException;
 import com.dotmarketing.util.json.JSONException;
+import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.PATCH;
 import com.dotcms.rest.WebResource;
@@ -17,6 +18,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.HTTPMethod;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
@@ -602,6 +604,13 @@ public class VTLResource {
         }
     }
 
+    /**
+     * Authenticates the caller, then runs the Velocity script for the request and returns its output.
+     * Anonymous callers are allowed when the global {@link AnonymousAccess#systemSetting()} permits
+     * them; for the file-based endpoints, {@link AnonymousAccess#scriptingEndpointsAllowAnonymous()}
+     * also lets them in when the global setting is {@code NONE}. The {@code /dynamic} endpoints
+     * follow the global setting only.
+     */
     private Response processRequest(final HttpServletRequest request, final HttpServletResponse response,
                                     final UriInfo uriInfo, final String folderName,
                                     final String pathParam,
@@ -614,8 +623,21 @@ public class VTLResource {
 
             ScriptingUtil.getInstance().validateBodyMap(bodyMap, httpMethod);
 
-            final InitDataObject initDataObject = this.webResource.init
-                    (null, request, response, false, null);
+            final WebResource.InitBuilder initBuilder = new WebResource.InitBuilder(this.webResource)
+                    .requestAndResponse(request, response);
+            if (!dynamic && AnonymousAccess.scriptingEndpointsAllowAnonymous()) {
+                initBuilder.authCheckOptions(WebResource.AuthCheckOptions.SKIP_CHECK_ANONYMOUS_PERMISSIONS);
+            } else {
+                initBuilder.requiredAnonAccess(AnonymousAccess.systemSetting());
+            }
+            final InitDataObject initDataObject;
+            try {
+                initDataObject = initBuilder.init();
+            } catch (final SecurityException e) {
+                // unauthenticated callers can trigger this at will, so keep it out of the error log
+                Logger.debug(this, () -> "Rejected VTL endpoint request: " + e.getMessage());
+                return ResponseUtil.mapExceptionResponse(e);
+            }
 
             final User user = initDataObject.getUser();
 
