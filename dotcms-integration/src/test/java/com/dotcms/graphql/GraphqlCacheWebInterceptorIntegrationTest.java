@@ -14,6 +14,7 @@ import com.dotcms.mock.response.MockHttpStatusResponse;
 import com.dotcms.mock.response.MockHttpWriterCaptureResponse;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.util.WebKeys;
 import java.io.IOException;
@@ -231,6 +232,32 @@ public class GraphqlCacheWebInterceptorIntegrationTest {
 
     /**
      * Method to test: {@link GraphqlCacheWebInterceptor#afterIntercept}
+     * Given Scenario: a request carries a credential the servlet does not accept, so it is served
+     * as anonymous
+     * ExpectedResult: nothing is stored under that credential, and the anonymous entry is untouched
+     */
+    @Test
+    public void unresolvedCredentialIsNotCached() throws IOException {
+        final String body = uniqueBody();
+
+        final Served anonymous = serve(anonymousRequest(body));
+        final Served garbageFirst = serve(anonymousRequest(body)
+                .withHeader("Authorization", "Garbage " + UUID.randomUUID())
+                .resolvedAs(UserAPI.CMS_ANON_USER_ID));
+        final Served garbageAgain = serve(anonymousRequest(body)
+                .withHeader("Authorization", "Garbage " + UUID.randomUUID())
+                .resolvedAs(UserAPI.CMS_ANON_USER_ID));
+        final Served anonymousAgain = serve(anonymousRequest(body));
+
+        assertFalse(anonymous.hit);
+        assertFalse(garbageFirst.hit);
+        assertFalse(garbageAgain.hit);
+        assertTrue(anonymousAgain.hit);
+        assertEquals(anonymous.body, anonymousAgain.body);
+    }
+
+    /**
+     * Method to test: {@link GraphqlCacheWebInterceptor#afterIntercept}
      * Given Scenario: the servlet answers without a data member
      * ExpectedResult: nothing is cached
      */
@@ -274,8 +301,9 @@ public class GraphqlCacheWebInterceptorIntegrationTest {
 
     /**
      * Runs one request through the interceptor. On a hit the cached body is written straight to
-     * the response. On a miss the servlet is simulated by writing {@code servletBody} with a 200
-     * status, after which {@code afterIntercept} stores it.
+     * the response. On a miss the servlet is simulated by leaving the resolved user id on the
+     * request and writing {@code servletBody} with a 200 status, after which
+     * {@code afterIntercept} stores it.
      */
     private static Served serve(final RequestBuilder builder, final String servletBody) throws IOException {
         final GraphqlCacheWebInterceptor interceptor = new GraphqlCacheWebInterceptor();
@@ -287,6 +315,7 @@ public class GraphqlCacheWebInterceptorIntegrationTest {
             return new Served(true, liveResponse.writer.toString());
         }
 
+        result.getRequest().setAttribute(WebKeys.USER_ID, builder.resolvedUserId());
         final HttpServletResponse wrapped = result.getResponse();
         wrapped.setStatus(HttpServletResponse.SC_OK);
         wrapped.getWriter().write(servletBody);
@@ -310,10 +339,28 @@ public class GraphqlCacheWebInterceptorIntegrationTest {
         private final Map<String, String> headers = new HashMap<>();
         private final Map<String, String[]> params = new HashMap<>();
         private String serverName = "demo.dotcms.com";
+        private String resolvedUserId;
 
         RequestBuilder(final String body, final MockSession session) {
             this.body = body;
             this.session = session;
+        }
+
+        /**
+         * The user the simulated servlet resolves: by default a real user when the request carries
+         * a credential, the anonymous user otherwise.
+         */
+        RequestBuilder resolvedAs(final String userId) {
+            this.resolvedUserId = userId;
+            return this;
+        }
+
+        String resolvedUserId() {
+            if (resolvedUserId != null) {
+                return resolvedUserId;
+            }
+            return headers.containsKey("Authorization") || session != null
+                    ? "dotcms.org.1" : UserAPI.CMS_ANON_USER_ID;
         }
 
         RequestBuilder withHeader(final String name, final String value) {

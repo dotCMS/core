@@ -155,12 +155,12 @@ public class DotCMSMockRequest implements HttpServletRequest {
 
     @Override
     public String getHeader(final String name) {
-        return headers.get(name);
+        return name == null ? null : headers.get(name);
     }
 
     @Override
     public Enumeration<String> getHeaders(final String name) {
-        final String value = headers.get(name);
+        final String value = getHeader(name);
         return Collections.enumeration(value == null ? Collections.emptyList() : Collections.singletonList(value));
     }
 
@@ -455,7 +455,9 @@ public class DotCMSMockRequest implements HttpServletRequest {
     }
 
     public void addHeader(final String name, final String value) {
-        this.headers.put(name, value);
+        if (name != null) {
+            this.headers.put(name, value);
+        }
     }
 
     public void setRequestURI(final String uri) {

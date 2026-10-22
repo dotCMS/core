@@ -11,6 +11,7 @@ import com.dotcms.mock.response.DotCMSMockResponse;
 import com.dotcms.mock.response.MockHttpStatusResponse;
 import com.dotcms.mock.response.MockHttpWriterCaptureResponse;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -136,7 +137,7 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
         Optional<String> graphResponseFromCache = bypassCache
                 ? Optional.empty()
                 : refreshKey(requestIn) && cacheKey.isReplayable()
-                        ? getAndRefresh(wrapper, syncKey, cacheTTL)
+                        ? getAndRefresh(wrapper, syncKey, cacheTTL, cacheKey.isCredentialed())
                         : graphCache.get(syncKey);
 
         if (graphResponseFromCache.isPresent()) {
@@ -222,12 +223,12 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
     }
 
     private Optional<String> getAndRefresh(final HttpRequestReaderWrapper wrapper,
-            final String syncKey, final int cacheTTL) {
+            final String syncKey, final int cacheTTL, final boolean credentialed) {
         // copy request
         final DotCMSMockRequest requestCopy = getRequestCopy(wrapper);
 
         return graphCache.getAndRefresh(syncKey, ()
-                        -> processGraphQLRequest(requestCopy),
+                        -> processGraphQLRequest(requestCopy, credentialed),
                 cacheTTL);
     }
 
@@ -334,7 +335,10 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
             final boolean bypassCache = Boolean.TRUE.equals(request.getAttribute(GRAPHQL_BYPASS_CACHE));
             final boolean credentialed = Boolean.TRUE.equals(request.getAttribute(GRAPHQL_CACHE_CREDENTIALED));
             final int cacheTTL = getCacheTTL(request);
-            final boolean store = !bypassCache && hasData(graphqlResponse);
+            // A credential the servlet could not resolve to a user (an unknown scheme, say) is
+            // served as anonymous; storing that would let a caller mint an entry per header value.
+            final boolean store = !bypassCache && hasData(graphqlResponse)
+                    && (!credentialed || resolvedToUser(request));
 
             response.setHeader("x-graphql-cache", store ? "miss, writing to cache" : "miss");
             Try.run(() -> mockResponse.originalResponse.getWriter().write(graphqlResponse));
@@ -355,6 +359,20 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
     }
 
     /**
+     * Whether the servlet resolved the request to an actual user. The servlet leaves the id of the
+     * user it resolved on the request; the anonymous user, or no id at all, means the credential
+     * the request carried was not accepted.
+     *
+     * @param request the request after the servlet ran
+     * @return true when a real user was resolved
+     */
+    static boolean resolvedToUser(final HttpServletRequest request) {
+        final Object userId = request.getAttribute(com.liferay.portal.util.WebKeys.USER_ID);
+        return userId instanceof String && UtilMethods.isSet((String) userId)
+                && !UserAPI.CMS_ANON_USER_ID.equals(userId);
+    }
+
+    /**
      * Whether a GraphQL response body carries a non-null <code>data</code> member. Only such
      * responses are worth caching.
      *
@@ -369,13 +387,14 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
 
     /**
      * Replays the request against the GraphQL servlet on a detached response and returns the
-     * body, or an empty string when the execution did not succeed, so that the cache keeps the
-     * previous entry instead of storing an error.
+     * body, or an empty string when the execution did not succeed or a credential was not
+     * resolved to a user, so that the cache keeps the previous entry instead of storing an error.
      *
-     * @param request the request copy to replay
+     * @param request      the request copy to replay
+     * @param credentialed whether the original request carried a credential
      * @return the response body, or empty when it must not be cached
      */
-    private String processGraphQLRequest(final HttpServletRequest request)  {
+    private String processGraphQLRequest(final HttpServletRequest request, final boolean credentialed)  {
         try {
             graphQLHttpServlet.init();
         } catch (ServletException e) {
@@ -385,7 +404,8 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
                 new MockHttpStatusResponse(new DotCMSMockResponse()));
         graphQLHttpServlet.doPost(request, mockHttpResponse);
         final String graphqlResponse = mockHttpResponse.writer.toString();
-        if (mockHttpResponse.getStatus() != HttpServletResponse.SC_OK || !hasData(graphqlResponse)) {
+        if (mockHttpResponse.getStatus() != HttpServletResponse.SC_OK || !hasData(graphqlResponse)
+                || (credentialed && !resolvedToUser(request))) {
             Logger.debug(this, () -> "Background refresh did not produce a cacheable response, keeping the current entry");
             return "";
         }

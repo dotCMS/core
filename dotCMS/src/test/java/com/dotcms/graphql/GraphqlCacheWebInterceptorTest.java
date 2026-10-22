@@ -3,11 +3,16 @@ package com.dotcms.graphql;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
+import com.dotmarketing.business.UserAPI;
+import com.liferay.portal.util.WebKeys;
+import javax.servlet.http.HttpServletRequest;
 import org.junit.Test;
 
 /**
- * Tests for the TTL handling in {@link GraphqlCacheWebInterceptor}.
+ * Tests for the TTL, mutation and resolved-user handling in {@link GraphqlCacheWebInterceptor}.
  */
 public class GraphqlCacheWebInterceptorTest {
 
@@ -92,6 +97,23 @@ public class GraphqlCacheWebInterceptorTest {
                 "{\"query\":\"query Pages { page(url: \\\"/\\\") { title } }\\nmutation Publish { publish(id: \\\"1\\\") { title } }\",\"operationName\":\"Pages\"}"));
         assertFalse(GraphqlCacheWebInterceptor.isMutation(
                 "{ mutation: BlogCollection { title } }"));
+    }
+
+    /**
+     * Method to test: {@link GraphqlCacheWebInterceptor#resolvedToUser(HttpServletRequest)}
+     * Given Scenario: the servlet left no user, the anonymous user, or a real user on the request
+     * ExpectedResult: only the real user counts as resolved
+     */
+    @Test
+    public void resolvedToUser_requiresARealUser() {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        assertFalse(GraphqlCacheWebInterceptor.resolvedToUser(request));
+
+        when(request.getAttribute(WebKeys.USER_ID)).thenReturn(UserAPI.CMS_ANON_USER_ID);
+        assertFalse(GraphqlCacheWebInterceptor.resolvedToUser(request));
+
+        when(request.getAttribute(WebKeys.USER_ID)).thenReturn("dotcms.org.1");
+        assertTrue(GraphqlCacheWebInterceptor.resolvedToUser(request));
     }
 
     /**
