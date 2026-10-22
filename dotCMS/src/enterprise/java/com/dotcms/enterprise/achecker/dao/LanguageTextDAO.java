@@ -13,6 +13,7 @@ package com.dotcms.enterprise.achecker.dao;
 
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import com.dotcms.enterprise.achecker.model.LanguageTextBean;
@@ -32,6 +33,16 @@ public class LanguageTextDAO extends BaseDAO {
 
 	public LanguageTextDAO() throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
 		super();
+	}
+
+	/**
+	 * Creates a DAO that runs its queries through the given {@link DAO}. Mainly for tests, where
+	 * the {@link DAO} can point at a throw-away database.
+	 *
+	 * @param dao the {@link DAO} that runs the queries
+	 */
+	public LanguageTextDAO(final DAO dao) {
+		super(dao);
 	}
 
 //	/**
@@ -112,97 +123,78 @@ public class LanguageTextDAO extends BaseDAO {
 //	}
 	
 	/**
-	* Return message text of given term and language
-	* @access  public
-	* @param   term : language term
-	*          lang : language code
-	* @return  table rows
-	* @author  Cindy Qi Li
-	*/
+	 * Returns the message rows (variable {@code _msgs}) for the given term and language.
+	 *
+	 * @param term the language term; sent to the database as a bound value
+	 * @param lang the language code, for example {@code eng}; sent to the database as a bound value
+	 * @return the matching rows, keyed by lower-cased column name
+	 * @throws SQLException if the query fails
+	 */
 	public List<Map<String, Object>>   getMsgByTermAndLang(String term, String lang)  throws SQLException 
 	{
-//		global $addslashes;
-//		
-//		$term = $addslashes($term);
-//		$lang = $addslashes($lang);
-		
-		String sql =  "SELECT * FROM "+tablePrefix+"language_text WHERE term='" +term +"'  AND variable=_msgs  AND language_code='"+lang+"' ORDER BY variable";
-		return execute(sql);
+		String sql =  "SELECT * FROM "+tablePrefix+"language_text WHERE term = ? AND variable = '_msgs' AND language_code = ? ORDER BY variable";
+		return execute(sql, term, lang);
   }
 
 	/**
-	* Return text of given term and language
-	* @access  public
-	* @param   term : language term
-	*          lang : language code
-	* @return  table rows
-	* @author  Cindy Qi Li
-	*/
+	 * Returns the text stored for the given term in the given language.
+	 *
+	 * @param term the language term; sent to the database as a bound value
+	 * @param lang the language code, for example {@code eng}; sent to the database as a bound value
+	 * @return the first matching row, or {@code null} when the term has no text in that language
+	 * @throws Exception if the query fails
+	 */
 	public LanguageTextBean getByTermAndLang(String term, String lang)  throws Exception 
 	{
-//		global $addslashes;
-//		
-//		$term = $addslashes($term);
-//		$lang = $addslashes($lang);
-		
-		String sql = "SELECT * FROM "+tablePrefix+"language_text 	WHERE term='"+term +"' AND language_code='"+lang+"' ORDER BY variable";
+		String sql = "SELECT * FROM "+tablePrefix+"language_text WHERE term = ? AND language_code = ? ORDER BY variable";
 
-		return executeOne(LanguageTextBean.class,  sql);
+		return executeOne(LanguageTextBean.class, sql, term, lang);
   	}
 
 	/**
-	* Return rows of handbook rows by matching given text and language
-	* @access  public
-	* @param   term : language term
-	*          lang : language code
-	* @return  table rows
-	* @author  Cindy Qi Li
-	*/
+	 * Returns the handbook rows of the given language whose text contains the given text,
+	 * ignoring letter case. The text is matched with {@code LIKE}, so a {@code %} or {@code _} in
+	 * it still acts as a wildcard. A {@code null} text is treated as an empty text and therefore
+	 * matches every handbook row of the language.
+	 *
+	 * @param text the text to look for; sent to the database as a bound value
+	 * @param lang the language code, for example {@code eng}; sent to the database as a bound value
+	 * @return the matching rows
+	 * @throws Exception if the query fails
+	 */
 	public List<LanguageTextBean>   getHelpByMatchingText(String text, String lang)  throws Exception 
 	{
-//		global $addslashes;
-		text = text.toLowerCase();
-//		$text = $addslashes(strtolower($text));
-//		$lang = $addslashes($lang);
-		
-		String sql = "SELECT * FROM "+tablePrefix+"language_text WHERE term like 'AC_HELP_%' AND lower(cast(text as char)) like '%"+text+"%' AND language_code='"+lang+"' ORDER BY variable";
-		return execute(LanguageTextBean.class ,sql);
+		String sql = "SELECT * FROM "+tablePrefix+"language_text WHERE term like 'AC_HELP_%' AND lower(cast(text as char)) like ? AND language_code = ? ORDER BY variable";
+		final String searchText = text == null ? "" : text.toLowerCase(Locale.ROOT);
+		return execute(LanguageTextBean.class, sql, "%" + searchText + "%", lang);
   	}
 
-  	/**
-	* Return all template info of given language
-	* @access  public
-	* @param   lang : language code
-	* @return  table rows
-	* @author  Cindy Qi Li
-	*/
+	/**
+	 * Returns every text row of the given language, ordered by variable and term.
+	 *
+	 * @param lang the language code, for example {@code eng}; sent to the database as a bound value
+	 * @return the rows of that language
+	 * @throws Exception if the query fails
+	 */
 	public List<LanguageTextBean> getAllByLang(String lang)  throws Exception 
 	{
-//		global $addslashes;
-//		
-//		$lang = $addslashes($lang);
-		
-		String sql = "SELECT * FROM "+tablePrefix+"language_text WHERE language_code='"+lang+"' ORDER BY variable, term ASC";
+		String sql = "SELECT * FROM "+tablePrefix+"language_text WHERE language_code = ? ORDER BY variable, term ASC";
 
-		return execute(LanguageTextBean.class,  sql);
+		return execute(LanguageTextBean.class, sql, lang);
 	}
 
-  	/**
-	* Return all template info of given language
-	* @access  public
-	* @param   lang : language code
-	* @return  table rows
-	* @author  Cindy Qi Li
-	*/
+	/**
+	 * Returns the template rows (variable {@code _template}) of the given language.
+	 *
+	 * @param lang the language code, for example {@code eng}; sent to the database as a bound value
+	 * @return the template rows of that language
+	 * @throws Exception if the query fails
+	 */
 	public List<LanguageTextBean>  getAllTemplateByLang(String lang)  throws Exception 
 	{
-//		global $addslashes;
-//		
-//		$lang = $addslashes($lang);
-		
-		String sql = "SELECT * FROM "+tablePrefix+"language_text 	WHERE language_code='"+lang+"' AND variable='_template'  ORDER BY variable ASC";
+		String sql = "SELECT * FROM "+tablePrefix+"language_text WHERE language_code = ? AND variable = '_template' ORDER BY variable ASC";
 
-		return execute(LanguageTextBean.class , sql);
+		return execute(LanguageTextBean.class, sql, lang);
 	}
 
 //	/**

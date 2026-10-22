@@ -6,6 +6,7 @@
  */
 package com.dotmarketing.portlets.languagesmanager.action;
 
+import com.dotcms.languagevariable.business.LanguageKeysAccess;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
@@ -13,6 +14,7 @@ import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -103,8 +105,30 @@ public class EditLanguageKeysAction extends DotPortletAction {
     }
 
 
+    /**
+     * Saves the language keys posted by the language keys page for the selected language.
+     * <p>Only a user with access to the Languages or the Locales portlet can save keys, checked by
+     * {@link LanguageKeysAccess#requireLanguagesOrLocalesPortlet} before any posted value is read.
+     * A rejected request saves nothing, adds the {@code message.insufficient.permissions.to.save}
+     * error message and returns {@code false}, so, as with an invalid key name, the user stays on
+     * the language keys page.</p>
+     *
+     * @param req    - The HTTP Request wrapper.
+     * @param res    - The HTTP Response wrapper.
+     * @param config - The configuration parameters for this portlet.
+     * @param form   - The form containing the information selected by the user in the UI.
+     * @return {@code true} if the keys were saved, {@code false} if the request was rejected or a
+     *         key name is invalid
+     * @throws Exception An error occurred when saving the keys.
+     */
     private boolean _save(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form)
         throws Exception {
+        try {
+            LanguageKeysAccess.requireLanguagesOrLocalesPortlet(_getUser(req));
+        } catch (final DotSecurityException e) {
+            SessionMessages.add(req, "error", "message.insufficient.permissions.to.save");
+            return false;
+        }
 		Pattern p = Pattern.compile("[A-Za-z0-9-_\\.]+");
     	Language lang = (Language) req.getAttribute(WebKeys.LANGUAGE_MANAGER_LANGUAGE);
     	int numberOfKeys = Integer.parseInt(req.getParameter("keys"));

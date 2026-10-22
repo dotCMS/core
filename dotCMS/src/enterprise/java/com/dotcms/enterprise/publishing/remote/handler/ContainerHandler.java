@@ -31,6 +31,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
+import com.dotmarketing.portlets.containers.business.ContainerSortBy;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.util.InodeUtils;
@@ -158,6 +159,8 @@ public class ContainerHandler implements IHandler {
           // save if it doesn't exists
           final Container existing = containerAPI.find(container.getInode(), systemUser, false);
           if (UtilMethods.isEmpty(()->existing.getIdentifier())) {
+            // The bundle may carry a value stored before it was validated on the sender
+            ContainerSortBy.resetIfUnsupported(container);
             containerAPI.save(container, containerWrapper.getCsList(), localHost, systemUser, false);
             PushPublishLogger.log(getClass(), PushPublishHandler.CONTAINER, PushPublishAction.PUBLISH_CREATE, container.getIdentifier(),
                 container.getInode(), container.getName(), config.getId());
