@@ -2472,6 +2472,19 @@ CREATE TABLE system_event_cursor (
     CONSTRAINT pk_system_event_cursor PRIMARY KEY (server_id)
 );
 
+-- Login attempt counts and locks per account and source (client address, 'webdav:' + address, or
+-- '*' for the account-wide count), shared by every node of a cluster.
+CREATE TABLE login_lockout (
+    user_id      VARCHAR(100) NOT NULL,
+    source       VARCHAR(100) NOT NULL,
+    failures     INT          NOT NULL,
+    window_start BIGINT       NOT NULL,
+    locked_until BIGINT       NOT NULL,
+    mod_date     TIMESTAMPTZ  NOT NULL,
+    CONSTRAINT pk_login_lockout PRIMARY KEY (user_id, source)
+);
+CREATE INDEX idx_login_lockout_window ON login_lockout (window_start);
+
 --Content Types improvement
 CREATE INDEX idx_lower_structure_name ON structure (LOWER(velocity_var_name));
 

@@ -147,4 +147,11 @@ public interface FeatureFlagName {
      * customer data has been migrated to CAEM.
      */
     String FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS = "FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS";
+
+    /**
+     * Login lockout after repeated failed logins ({@link com.dotcms.auth.LoginLockout}): per account and
+     * client address, plus an account-wide limit. The tuning values ({@code AUTH_LOCKOUT_*}) are read
+     * separately.
+     */
+    String FEATURE_FLAG_AUTH_LOGIN_LOCKOUT = "FEATURE_FLAG_AUTH_LOGIN_LOCKOUT";
 }
