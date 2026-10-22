@@ -144,7 +144,9 @@ public class BundlePublisher extends Publisher {
      * {@link PublisherConfig#getId()}, must be a plain file name ending in
      * {@code .tar.gz} whose stem is itself a plain segment; otherwise this method fails before
      * updating the audit table or touching the bundles directory, since that stem is later used
-     * on its own to build the bundle's working folder.
+     * on its own to build the bundle's working folder. If the bundle's metadata cannot be read,
+     * no handler runs: the bundle is marked as failed and both the extracted folder and the
+     * received archive are removed.
      *
      * @param status - Current status of the publishing process.
      * @return This bundle configuration ({@link PublisherConfig}).
@@ -205,6 +207,7 @@ public class BundlePublisher extends Publisher {
 
         Map<String, String> assetsDetails = null;
         BundleMetaDataFile bundleMetaDataFile = null;
+        boolean metadataFailed = false;
 
         try {
 
@@ -224,7 +227,9 @@ public class BundlePublisher extends Publisher {
                 bundleMetaDataFile = new BundleMetaDataFile(finalBundlePath);
                 assetsDetails = bundleMetaDataFile.getAssetsDetails();
             } catch (Exception e) {
-                Logger.error(BundlePublisher.class, "Unable to get assets list from received bundle with ID '" + bundleName + "': " + e.getMessage(), e);
+                // the failure is logged once, by the handler of the whole bundle below
+                metadataFailed = true;
+                throw e;
             }
 
             HibernateUtil.startTransaction();
@@ -253,6 +258,11 @@ public class BundlePublisher extends Publisher {
                 Logger.error(BundlePublisher.class, e.getMessage(), e1);
             }
             Logger.error(BundlePublisher.class, "Error publishing bundle with ID '" + bundleName + "': " + e.getMessage(), e);
+
+            if (metadataFailed) {
+                FileUtil.deltree(folderOut);
+                FileUtils.deleteQuietly(new File(bundlePath + bundleName));
+            }
 
             //Update audit
             try {
