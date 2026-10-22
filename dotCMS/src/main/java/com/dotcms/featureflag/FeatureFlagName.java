@@ -158,6 +158,17 @@ public interface FeatureFlagName {
     String FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS = "FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS";
 
     /**
+     * Lets users with the Apps portlet change and read Apps configuration, upload app descriptors
+     * and remove apps, as they could before Apps configuration became an administrator setting.
+     * Off by default; kept for one release for installations that delegated Apps configuration to
+     * non-administrator roles.
+     *
+     * @see com.dotcms.security.apps.AppsAPIImpl
+     */
+    String FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION =
+            "FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION";
+
+    /**
      * Makes the {@code $cmsuser} Velocity tool's lookups ({@code getUserByEmail},
      * {@code getUserByUserId}, {@code getAllUsersInGroup}) return read-only
      * {@code UserProfile} objects. On by default: when the flag is not set, it is treated as
