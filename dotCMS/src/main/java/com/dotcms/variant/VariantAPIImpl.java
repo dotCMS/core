@@ -13,6 +13,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 
@@ -27,12 +28,12 @@ import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -269,37 +270,81 @@ public class VariantAPIImpl implements VariantAPI {
             final List<MultiTree> variantMultiTrees,
             final User user) throws DotDataException, DotSecurityException {
 
+        // split the variant's contentlets by the permission the promotion needs on them
+        final Set<String> workingInodesWithLive = versionInfos.stream()
+                .filter(info -> UtilMethods.isSet(info.getLiveInode()))
+                .map(ContentletVersionInfo::getWorkingInode)
+                .collect(Collectors.toSet());
+        final List<String> workingInodes = versionInfos.stream()
+                .map(ContentletVersionInfo::getWorkingInode)
+                .filter(UtilMethods::isSet)
+                .collect(Collectors.toList());
+        final List<Contentlet> contentlets = workingInodes.isEmpty() ? List.of()
+                : APILocator.getContentletAPI().findContentlets(workingInodes);
+        final Map<Boolean, List<Contentlet>> byHasLive = contentlets.stream()
+                .collect(Collectors.partitioningBy(
+                        contentlet -> workingInodesWithLive.contains(contentlet.getInode())));
+
+        final Optional<Contentlet> unpublishable = firstWithoutPermission(byHasLive.get(true),
+                PermissionAPI.PERMISSION_PUBLISH, user);
+        if (unpublishable.isPresent()) {
+            throw deny(variant, user, "publish contentlet " + unpublishable.get().getIdentifier());
+        }
+        final Optional<Contentlet> uneditable = firstWithoutPermission(byHasLive.get(false),
+                PermissionAPI.PERMISSION_EDIT, user);
+        if (uneditable.isPresent()) {
+            throw deny(variant, user, "edit contentlet " + uneditable.get().getIdentifier());
+        }
+
+        final List<PermissionableProxy> pages = variantMultiTrees.stream()
+                .map(MultiTree::getHtmlPage)
+                .distinct()
+                .map(pageId -> {
+                    final PermissionableProxy page = new PermissionableProxy();
+                    page.setIdentifier(pageId);
+                    page.setType("htmlpage");
+                    return page;
+                })
+                .collect(Collectors.toList());
+
+        final Optional<PermissionableProxy> unpublishablePage = firstWithoutPermission(pages,
+                PermissionAPI.PERMISSION_PUBLISH, user);
+        if (unpublishablePage.isPresent()) {
+            throw deny(variant, user, "publish page " + unpublishablePage.get().getIdentifier());
+        }
+    }
+
+    /**
+     * Finds the first item the user lacks the given permission on. The whole list is resolved
+     * in one batch query first; only the items that query leaves out are re-checked one by one,
+     * because the batch lookup reads the {@code permission_reference} table, which is filled in
+     * lazily, while the scalar check also walks the inheritance chain. On the normal path, where
+     * everything is permitted, that means a single round-trip.
+     *
+     * @param items      the {@link Permissionable} items to check
+     * @param permission the permission bit required on every item
+     * @param user       the {@link User} to check for
+     * @param <P>        the item type
+     * @return the first item without the permission, or empty when the user holds it on all
+     * @throws DotDataException     when a permission lookup fails
+     * @throws DotSecurityException when the batch lookup refuses the user
+     */
+    private <P extends Permissionable> Optional<P> firstWithoutPermission(final List<P> items,
+            final int permission, final User user) throws DotDataException, DotSecurityException {
+
+        if (items == null || items.isEmpty()) {
+            return Optional.empty();
+        }
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-        final User systemUser = APILocator.systemUser();
-
-        for (final ContentletVersionInfo versionInfo : versionInfos) {
-            final boolean hasLive = UtilMethods.isSet(versionInfo.getLiveInode());
-            final int required = hasLive ? PermissionAPI.PERMISSION_PUBLISH
-                    : PermissionAPI.PERMISSION_EDIT;
-            final Contentlet contentlet = APILocator.getContentletAPI()
-                    .find(versionInfo.getWorkingInode(), systemUser, false);
-            if (contentlet == null) {
-                continue;
-            }
-            if (!permissionAPI.doesUserHavePermission(contentlet, required, user, false)) {
-                throw deny(variant, user, (hasLive ? "publish" : "edit") + " contentlet "
-                        + versionInfo.getIdentifier());
+        final Set<String> permitted = permissionAPI.filterCollection(items, permission, user, false)
+                .stream().map(Permissionable::getPermissionId).collect(Collectors.toSet());
+        for (final P item : items) {
+            if (!permitted.contains(item.getPermissionId())
+                    && !permissionAPI.doesUserHavePermission(item, permission, user, false)) {
+                return Optional.of(item);
             }
         }
-
-        final Set<String> pageIds = new HashSet<>();
-        for (final MultiTree multiTree : variantMultiTrees) {
-            if (!pageIds.add(multiTree.getHtmlPage())) {
-                continue;
-            }
-            final PermissionableProxy page = new PermissionableProxy();
-            page.setIdentifier(multiTree.getHtmlPage());
-            page.setType("htmlpage");
-            if (!permissionAPI.doesUserHavePermission(page, PermissionAPI.PERMISSION_PUBLISH,
-                    user, false)) {
-                throw deny(variant, user, "publish page " + multiTree.getHtmlPage());
-            }
-        }
+        return Optional.empty();
     }
 
     /**
