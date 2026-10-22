@@ -104,7 +104,8 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderHandlerTest.class,
         ContentAnalyticsPersistenceModeIT.class,
         EventAnalyticsProxyResourceIntegrationTest.class,
-        GenericBundleActivatorIntegrationTest.class
+        GenericBundleActivatorIntegrationTest.class,
+        com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionIntegrationTest.class
 })
 public class MainSuite2a {
 
