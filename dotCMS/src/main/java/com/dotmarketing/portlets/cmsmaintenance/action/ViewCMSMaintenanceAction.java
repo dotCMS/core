@@ -27,6 +27,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.Parameter;
 import com.dotmarketing.util.TrashUtils;
@@ -204,7 +205,6 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			downloadRemainingRecordsAsCsv(response);
 		} //Manage all the search and replace Task
 		else if(cmd.equals("searchandreplace")){
-			Logger.info(this, "Running Search & Replace");
 			Map<String,String> result = searchAndReplace(_getUser(req), ccf);
 			if(result.get("type") != null){
 				if(result.get("type").equals("message")){
@@ -215,28 +215,36 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				_deleteFiles(com.dotmarketing.util.WebKeys.Cache.CACHE_LIVE_FILES);
 				_deleteFiles(com.dotmarketing.util.WebKeys.Cache.CACHE_WORKING_FILES);
 				_flush(com.dotmarketing.util.WebKeys.Cache.CACHE_ALL_CACHES);
+			} else {
+				errorMessage = NOT_AUTHORIZED_MESSAGE;
 			}
 		}
 		//Not being used this is being called using ajax
 		else if(cmd.equals("fixAssetsInconsistencies")){
            // this one NOT
 		} else if(cmd.equals("deleteSystemJob")) {
-            if (isAuthorizedAdmin(_getUser(req))) {
+            final User maintenanceUser = _getUser(req);
+            if (isAuthorizedAdmin(maintenanceUser)) {
                 _deleteScheduler(req);
             } else {
-                Logger.warn(this, "Rejected deleteSystemJob: user is not a CMS administrator");
+                errorMessage = NOT_AUTHORIZED_MESSAGE;
+                logUnauthorizedMaintenance(maintenanceUser, "deleteSystemJob");
             }
         }
 		//Not being used this is being called using ajax
 		else if(cmd.equals("dropoldassets")){
 
-			if (!isAuthorizedAdmin(_getUser(req))) {
-				Logger.warn(this, "Rejected dropoldassets: user is not a CMS administrator");
-			} else if(_dropAssetOldVersions(ccf) >= 0){
+			final User maintenanceUser = _getUser(req);
+			if (!isAuthorizedAdmin(maintenanceUser)) {
+				errorMessage = NOT_AUTHORIZED_MESSAGE;
+				logUnauthorizedMaintenance(maintenanceUser, "dropoldassets");
+			} else {
 				Logger.info(this, "Running Drop old Assets");
-				message = "message.cmsmaintenance.dropoldassets.sucessfully";
-			}else{
-				errorMessage = "message.cmsmaintenance.dropoldassets.failed";
+				if (_dropAssetOldVersions(ccf) >= 0) {
+					message = "message.cmsmaintenance.dropoldassets.sucessfully";
+				} else {
+					errorMessage = "message.cmsmaintenance.dropoldassets.failed";
+				}
 			}
 
 		}
@@ -428,11 +436,11 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		final Map<String,String> messageResult = new HashMap<>();
 
 		if (!isAuthorizedAdmin(sessionUser)) {
-			Logger.warn(ViewCMSMaintenanceAction.class,
-					"Rejected search-and-replace: user is not a CMS administrator");
+			logUnauthorizedMaintenance(sessionUser, "search and replace");
 			return messageResult;
 		}
 
+		Logger.info(this, "Running Search & Replace");
 		final String searchString = form.getSearchString();
 		final String replaceString = form.getReplaceString();
 		final boolean DBerrorFound = MaintenanceUtil.DBSearchAndReplace(searchString, replaceString);
@@ -452,7 +460,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	 * @return {@code true} only when the user exists and holds the CMS administrator role
 	 */
 	@VisibleForTesting
-	boolean isAuthorizedAdmin(final User sessionUser) {
+	static boolean isAuthorizedAdmin(final User sessionUser) {
 		try {
 			return sessionUser != null && APILocator.getUserAPI().isCMSAdmin(sessionUser);
 		} catch (DotDataException e) {
@@ -460,6 +468,22 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 					"Could not resolve administrator role: " + e.getMessage(), e);
 			return false;
 		}
+	}
+
+	private static final String NOT_AUTHORIZED_MESSAGE =
+			"You are not authorized to perform this maintenance operation.";
+
+	/**
+	 * Records a rejected maintenance operation in the security log, naming the user, so the
+	 * refusal can be audited later.
+	 *
+	 * @param sessionUser the user that was rejected, may be {@code null}
+	 * @param operation   the maintenance operation that was refused
+	 */
+	private static void logUnauthorizedMaintenance(final User sessionUser, final String operation) {
+		SecurityLogger.logInfo(ViewCMSMaintenanceAction.class, String.format(
+				"User [%s] is not a CMS administrator; rejected maintenance operation: %s",
+				sessionUser != null ? sessionUser.getUserId() : "unknown", operation));
 	}
 
 
