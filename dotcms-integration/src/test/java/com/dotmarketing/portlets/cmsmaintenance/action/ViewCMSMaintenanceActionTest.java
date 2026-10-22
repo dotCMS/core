@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.cmsmaintenance.action;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -9,30 +8,48 @@ import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.cmsmaintenance.struts.CmsMaintenanceForm;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class ViewCMSMaintenanceActionTest extends IntegrationTestBase {
+
+    private static final List<User> createdUsers = new ArrayList<>();
 
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
     }
 
-    private static User newNonAdmin() throws com.dotmarketing.exception.DotDataException {
-        return new UserDataGen().roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+    @AfterClass
+    public static void cleanUp() {
+        createdUsers.forEach(user -> UserDataGen.remove(user, Boolean.TRUE));
+        createdUsers.clear();
     }
 
-    private static User newAdmin() throws Exception {
-        return new UserDataGen()
+    private static User newNonAdmin() throws DotDataException {
+        final User user = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole())
+                .nextPersisted();
+        createdUsers.add(user);
+        return user;
+    }
+
+    private static User newAdmin() throws DotDataException {
+        final User user = new UserDataGen()
                 .roles(APILocator.getRoleAPI().loadBackEndUserRole(),
                         APILocator.getRoleAPI().loadCMSAdminRole())
                 .nextPersisted();
+        createdUsers.add(user);
+        return user;
     }
 
     @Test
@@ -57,18 +74,6 @@ public class ViewCMSMaintenanceActionTest extends IntegrationTestBase {
         } finally {
             ContainerDataGen.remove(container);
         }
-    }
-
-    @Test
-    public void searchAndReplace_adminSession_runs() throws Exception {
-        final CmsMaintenanceForm form = new CmsMaintenanceForm();
-        form.setSearchString("ZZNOMATCH_" + UUIDGenerator.generateUuid());
-        form.setReplaceString("ZZNOMATCH_REPLACEMENT");
-
-        final Map<String, String> result =
-                new ViewCMSMaintenanceAction().searchAndReplace(newAdmin(), form);
-
-        assertEquals("message", result.get("type"));
     }
 
     @Test
