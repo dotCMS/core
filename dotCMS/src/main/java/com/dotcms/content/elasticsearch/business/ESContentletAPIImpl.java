@@ -6959,8 +6959,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * Verifies the user may save the given contentlet. An existing contentlet needs WRITE on
      * itself. A new contentlet needs WRITE on its content type and, unless
      * {@link FeatureFlagName#FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK} is off,
-     * "Can Add Children" on the folder or site it is being placed in when that is not the type's
-     * default placement (see {@link #checkDestinationPermission(Contentlet, boolean, User)}).
+     * "Can Add Children" or WRITE on the folder or site it is being placed in when that is not
+     * the type's default placement (see
+     * {@link #checkDestinationPermission(Contentlet, boolean, User)}).
      *
      * @param contentlet           the {@link Contentlet} about to be checked in
      * @param respectFrontendRoles whether front-end roles (anonymous, logged-in site user) count
@@ -6992,10 +6993,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * Requires "Can Add Children" on the place a new contentlet is going to live in when that
-     * place was chosen rather than being where the content type puts its content anyway. This
-     * is the rule the content editor applies when a site or folder is picked and that
-     * {@link #move(Contentlet, User, Host, Folder, boolean)} applies to the destination folder.
+     * Requires a grant on the place a new contentlet is going to live in, "Can Add Children" or
+     * WRITE, when that place was chosen rather than being where the content type puts its
+     * content anyway. "Can Add Children" is the rule the content editor applies when a site or
+     * folder is picked and that {@link #move(Contentlet, User, Host, Folder, boolean)} applies to
+     * the destination folder; WRITE on the destination is accepted as well, since a user who may
+     * change a site's content may add to it.
      * <p>
      * The destination is resolved like {@link Contentlet#getParentPermissionable()}: the folder
      * when one other than the System Folder is set, otherwise the site when one other than the
@@ -7009,7 +7012,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @param contentlet           the new {@link Contentlet}, before it has an identifier
      * @param respectFrontendRoles whether front-end roles count towards the permission
      * @param user                 the {@link User} performing the checkin
-     * @throws DotSecurityException when the user lacks "Can Add Children" on the destination
+     * @throws DotSecurityException when the user has neither "Can Add Children" nor WRITE on the
+     *                              destination
      * @throws DotDataException     when the folder or site lookup fails
      */
     private void checkDestinationPermission(final Contentlet contentlet,
@@ -7051,10 +7055,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         if (!permissionAPI.doesUserHavePermission(destination,
-                PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)) {
+                PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)
+                && !permissionAPI.doesUserHavePermission(destination,
+                PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
             final String userId = user != null ? user.getUserId() : "Unknown";
-            final String message = "User: " + userId + " doesn't have Add Children permissions on "
-                    + destinationLabel + " to create the Contentlet";
+            final String message = "User: " + userId
+                    + " doesn't have Add Children or Write permissions on " + destinationLabel
+                    + " to create the Contentlet";
             Logger.warn(this, message);
             throw new DotSecurityException(message);
         }

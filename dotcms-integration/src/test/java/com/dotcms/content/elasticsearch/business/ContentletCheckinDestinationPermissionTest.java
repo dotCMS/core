@@ -56,6 +56,7 @@ public class ContentletCheckinDestinationPermissionTest {
     private static ContentletAPI contentletAPI;
     private static PermissionAPI permissionAPI;
     private static Host grantedSite;
+    private static Host writeOnlySite;
     private static Host otherSite;
     private static Folder grantedFolder;
     private static Folder otherFolder;
@@ -72,6 +73,7 @@ public class ContentletCheckinDestinationPermissionTest {
         permissionAPI = APILocator.getPermissionAPI();
 
         grantedSite = new SiteDataGen().nextPersisted();
+        writeOnlySite = new SiteDataGen().nextPersisted();
         otherSite = new SiteDataGen().nextPersisted();
         grantedFolder = new FolderDataGen().site(grantedSite).nextPersisted();
         otherFolder = new FolderDataGen().site(otherSite).nextPersisted();
@@ -88,10 +90,12 @@ public class ContentletCheckinDestinationPermissionTest {
                 .roles(limitedRole, APILocator.getRoleAPI().loadBackEndUserRole())
                 .nextPersisted();
 
-        // WRITE on the type everywhere, but Add Children only on the first site and its folder
+        // WRITE on the type everywhere; Add Children on the first site and its folder, WRITE
+        // alone on the second site, READ alone on the third
         grant(contentType, limitedRole, TYPE_WRITE);
         grant(grantedSite, limitedRole, ADD_CHILDREN_ON_SITE);
         grant(grantedFolder, limitedRole, ADD_CHILDREN_ON_SITE);
+        grant(writeOnlySite, limitedRole, TYPE_WRITE);
         grant(otherSite, limitedRole, PermissionAPI.PERMISSION_READ);
         grant(otherFolder, limitedRole, PermissionAPI.PERMISSION_READ);
     }
@@ -115,6 +119,7 @@ public class ContentletCheckinDestinationPermissionTest {
             FolderDataGen.remove(otherFolder);
         }
         removeSite(grantedSite);
+        removeSite(writeOnlySite);
         removeSite(otherSite);
     }
 
@@ -147,8 +152,21 @@ public class ContentletCheckinDestinationPermissionTest {
 
     /**
      * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}
-     * Given Scenario: The user has WRITE on the type but no Add Children on the site the new
-     *                 contentlet is placed in.
+     * Given Scenario: The user has WRITE on the type and WRITE, but not Add Children, on the site
+     *                 the new contentlet is placed in.
+     * ExpectedResult: The contentlet is created; WRITE on the destination is enough.
+     */
+    @Test
+    public void checkinOnSiteWithWriteOnly_shouldSucceed() throws Exception {
+        final Contentlet saved = checkinAs(limitedUser, false, writeOnlySite, null);
+
+        assertEquals(writeOnlySite.getIdentifier(), saved.getHost());
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}
+     * Given Scenario: The user has WRITE on the type but neither Add Children nor WRITE on the
+     *                 site the new contentlet is placed in.
      * ExpectedResult: A {@link DotSecurityException}, and nothing is created on that site.
      */
     @Test

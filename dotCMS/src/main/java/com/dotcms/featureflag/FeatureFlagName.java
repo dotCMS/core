@@ -42,8 +42,8 @@ public interface FeatureFlagName {
      * Kill switch for the destination check on new-content checkin. On by default: creating a
      * contentlet somewhere other than where its content type places content by default (the
      * type's own folder or site, or the default site for a type on the System Host) requires,
-     * besides WRITE on the content type, "Can Add Children" on that folder or site, the same
-     * requirement the content editor and the move operation already enforce. Off: only the
+     * besides WRITE on the content type, "Can Add Children" or WRITE on that folder or site; the
+     * former is what the content editor and the move operation already enforce. Off: only the
      * content-type WRITE check runs, as before. Default placements, content on the System Host,
      * Host contentlets themselves, existing contentlets and the system user are not affected
      * either way. Environment form:
