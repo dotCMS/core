@@ -84,6 +84,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
@@ -260,6 +261,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private static Lazy<Boolean> FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION = Lazy.of(() ->
             Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION, true));
+    /**
+     * Whether a new contentlet also needs "Can Add Children" on its destination folder or site,
+     * see {@link FeatureFlagName#FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK}. Read on every
+     * call rather than cached so integration tests can toggle it at runtime; the lookup is a map
+     * read, not I/O.
+     */
+    private static boolean isCheckinDestinationPermissionCheckEnabled() {
+        return Config.getBooleanProperty(
+                FeatureFlagName.FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK, true);
+    }
     private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT = "Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
     private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
@@ -6944,6 +6955,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return binaryHandled;
     }
 
+    /**
+     * Verifies the user may save the given contentlet. An existing contentlet needs WRITE on
+     * itself. A new contentlet needs WRITE on its content type and, unless
+     * {@link FeatureFlagName#FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK} is off,
+     * "Can Add Children" on the folder or site it is being placed in (see
+     * {@link #checkDestinationPermission(Contentlet, boolean, User)}).
+     *
+     * @param contentlet           the {@link Contentlet} about to be checked in
+     * @param respectFrontendRoles whether front-end roles (anonymous, logged-in site user) count
+     * @param user                 the {@link User} performing the checkin
+     * @throws DotSecurityException when the user lacks any of the required permissions
+     * @throws DotDataException     when a permission or asset lookup fails
+     */
     private void checkPermission(
             final Contentlet contentlet,
             final boolean respectFrontendRoles,
@@ -6956,9 +6980,72 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     user, respectFrontendRoles)) {
                 this.throwSecurityException(contentlet, user);
             }
-        } else if (!permissionAPI.doesUserHavePermission(contentlet.getContentType(),
-                PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
-            this.throwSecurityException(contentlet, user);
+        } else {
+            if (!permissionAPI.doesUserHavePermission(contentlet.getContentType(),
+                    PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+                this.throwSecurityException(contentlet, user);
+            }
+            if (isCheckinDestinationPermissionCheckEnabled()) {
+                checkDestinationPermission(contentlet, respectFrontendRoles, user);
+            }
+        }
+    }
+
+    /**
+     * Requires "Can Add Children" on the place a new contentlet is going to live in, the same
+     * rule the content editor applies when a site or folder is picked and that
+     * {@link #move(Contentlet, User, Host, Folder, boolean)} applies to the destination folder.
+     * The destination is resolved like {@link Contentlet#getParentPermissionable()}: the folder
+     * when one other than the System Folder is set, otherwise the site when one other than the
+     * System Host is set. Content with neither (placed on the System Host), Host contentlets,
+     * and destinations that cannot be loaded are left to the content-type check and to
+     * validation, so this never turns a validation error into a permission error.
+     *
+     * @param contentlet           the new {@link Contentlet}, before it has an identifier
+     * @param respectFrontendRoles whether front-end roles count towards the permission
+     * @param user                 the {@link User} performing the checkin
+     * @throws DotSecurityException when the user lacks "Can Add Children" on the destination
+     * @throws DotDataException     when the folder or site lookup fails
+     */
+    private void checkDestinationPermission(final Contentlet contentlet,
+            final boolean respectFrontendRoles,
+            final User user) throws DotDataException, DotSecurityException {
+
+        final ContentType type = contentlet.getContentType();
+        if (type != null && Host.HOST_VELOCITY_VAR_NAME.equalsIgnoreCase(type.variable())) {
+            return;
+        }
+
+        Permissionable destination = null;
+        String destinationLabel = null;
+        try {
+            if (InodeUtils.isSet(contentlet.getFolder())
+                    && !FolderAPI.SYSTEM_FOLDER.equals(contentlet.getFolder())) {
+                destination = APILocator.getFolderAPI()
+                        .find(contentlet.getFolder(), APILocator.systemUser(), false);
+                destinationLabel = "folder " + contentlet.getFolder();
+            } else if (InodeUtils.isSet(contentlet.getHost())
+                    && !Host.SYSTEM_HOST.equals(contentlet.getHost())) {
+                destination = APILocator.getHostAPI()
+                        .find(contentlet.getHost(), APILocator.systemUser(), false);
+                destinationLabel = "site " + contentlet.getHost();
+            }
+        } catch (final DotSecurityException e) {
+            // the lookup runs as the system user, so this cannot happen in practice
+            throw new DotDataException(e.getMessage(), e);
+        }
+
+        if (destination == null || !UtilMethods.isSet(destination.getPermissionId())) {
+            return;
+        }
+
+        if (!permissionAPI.doesUserHavePermission(destination,
+                PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)) {
+            final String userId = user != null ? user.getUserId() : "Unknown";
+            final String message = "User: " + userId + " doesn't have Add Children permissions on "
+                    + destinationLabel + " to create the Contentlet";
+            Logger.warn(this, message);
+            throw new DotSecurityException(message);
         }
     }
 

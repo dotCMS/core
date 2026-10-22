@@ -38,6 +38,17 @@ public interface FeatureFlagName {
     // Unique Fields
     String FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION = "FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION";
 
+    /**
+     * Kill switch for the destination check on new-content checkin. On by default: creating a
+     * contentlet requires, besides WRITE on its content type, "Can Add Children" on the folder or
+     * site the contentlet is being placed in, the same requirement the content editor and the
+     * move operation already enforce. Off: only the content-type WRITE check runs, as before.
+     * Content placed on the System Host, Host contentlets themselves, existing contentlets and
+     * the system user are not affected either way. Environment form:
+     * {@code DOT_FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK}.
+     */
+    String FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK = "FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK";
+
     // others
     String FULLSCREEN_FIELD_FEATURE_FLAG = "content.edit.ui.fullscreen";
 
