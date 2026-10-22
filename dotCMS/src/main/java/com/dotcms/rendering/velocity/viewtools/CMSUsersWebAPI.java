@@ -2,7 +2,6 @@ package com.dotcms.rendering.velocity.viewtools;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
@@ -11,9 +10,6 @@ import javax.servlet.http.HttpSession;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
-import com.dotcms.featureflag.FeatureFlagName;
-import com.dotcms.rendering.velocity.viewtools.bean.UserProfile;
-import com.dotcms.rendering.velocity.viewtools.util.UserCopies;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.beans.UserProxy;
 import com.dotmarketing.business.APILocator;
@@ -24,7 +20,7 @@ import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Config;
+import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -34,24 +30,31 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 
 /**
- * The {@code $cmsuser} Velocity tool: user lookups and role checks for templates.
+ * User lookups and role checks, kept for Java callers such as OSGi plugins, with the same
+ * signatures as before.
  *
- * <p>Looked-up accounts are returned as read-only {@link UserProfile} objects while the
- * {@link FeatureFlagName#FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES} feature flag is on (the default).
- * Installations whose templates pass looked-up accounts to methods that require a {@link User}
- * can turn the flag off; lookups then return detached {@link User} copies with the credential
- * fields cleared. Only turn it off when templates need it, because those copies are accepted
- * wherever a {@link User} is.
+ * <p>Templates no longer use this class: {@code $cmsuser} is provided by {@link CMSUserTool}, which
+ * hands templates read-only user profiles. Java code should move to {@link CMSUserTool} or to
+ * {@code APILocator.getUserAPI()}.
  *
- * <p>{@link #getLoggedInUser(HttpServletRequest)} always returns a {@link User}, because templates
- * pass the requester to methods that require one, but as a detached copy without the credential
- * fields rather than the object held by the session.
+ * @deprecated use {@link CMSUserTool} for templates, or {@code APILocator.getUserAPI()} from Java
  */
+@Deprecated
 public class CMSUsersWebAPI implements ViewTool {
 
 	private HttpServletRequest request;
 	Context ctx;
 	User user = null;
+
+	private CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+
+	public CategoryAPI getCategoryAPI() {
+		return categoryAPI;
+	}
+
+	public void setCategoryAPI(CategoryAPI categoryAPI) {
+		this.categoryAPI = categoryAPI;
+	}
 
 	public void init(Object obj) {
 		ViewContext context = (ViewContext) obj;
@@ -68,16 +71,13 @@ public class CMSUsersWebAPI implements ViewTool {
 	}
 
 	/**
-	 * Looks up an account by email address.
-	 *
-	 * @param email the email address of the account
-	 * @return a read-only {@link UserProfile} of the account (a detached {@link User} copy
-	 *         without credential fields when the read-only profiles flag is off), or
-	 *         {@code null} if no account matches
+	 * @param email
+	 * @return
 	 */
-	public Object getUserByEmail(final String email) {
+
+	public User getUserByEmail(String email) {
 		try {
-			return forTemplate(APILocator.getUserAPI().loadByUserByEmail(email, APILocator.getUserAPI().getSystemUser(), false));
+			return APILocator.getUserAPI().loadByUserByEmail(email, APILocator.getUserAPI().getSystemUser(), false);
 		} catch (Exception e) {
 			Logger.error(CMSUsersWebAPI.class,e.getMessage(), e);
 			return null;
@@ -93,17 +93,16 @@ public class CMSUsersWebAPI implements ViewTool {
 
 
 	/**
-	 * Looks up an account by user id.
-	 *
-	 * @param userId the id of the account
-	 * @return a read-only {@link UserProfile} of the account (a detached {@link User} copy
-	 *         without credential fields when the read-only profiles flag is off), or
-	 *         {@code null} if no account matches
+	 * get User by user id
+	 * 
+	 * @param userId
+	 *            userid of the user to be obtained
+	 * @return User
 	 */
-	public Object getUserByUserId(final String userId) {
+	public User getUserByUserId(String userId) {
 		if (UtilMethods.isSet(userId)) {
 			try{
-				return forTemplate(APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false));
+				return APILocator.getUserAPI().loadUserById(userId,APILocator.getUserAPI().getSystemUser(),false);
 			} catch (Exception e1) {
 				Logger.error(CMSUsersWebAPI.class,e1.getMessage(), e1);
 				return null;
@@ -114,14 +113,12 @@ public class CMSUsersWebAPI implements ViewTool {
 	}
 
 	/**
-	 * Returns the user making the request: the back-end user, or else the front-end user held by
-	 * the session.
-	 *
-	 * @param request the current request
-	 * @return a detached copy of the requester without the password, password-reset and
-	 *         remember-me tokens, or {@code null} if nobody is logged in
+	 * Retrieves the logged user from session
+	 * 
+	 * @param request
+	 * @return
 	 */
-	public User getLoggedInUser(final HttpServletRequest request) {
+	public User getLoggedInUser(HttpServletRequest request) {
 		User loggedInUser = PortalUtil.getUser(request);//back-end user
 
 		if(!UtilMethods.isSet(loggedInUser)){
@@ -130,7 +127,7 @@ public class CMSUsersWebAPI implements ViewTool {
 				loggedInUser = (User) session.getAttribute(WebKeys.CMS_USER);
 			}
 		}
-		return UserCopies.withoutCredentials(loggedInUser);
+		return loggedInUser;
 	}
 
 
@@ -138,16 +135,14 @@ public class CMSUsersWebAPI implements ViewTool {
 
 
 	/**
-	 * Lists the accounts that hold the given role.
-	 *
-	 * @param groupId the id of the role
-	 * @return read-only {@link UserProfile} objects for the accounts (detached {@link User}
-	 *         copies without credential fields when the read-only profiles flag is off)
+	 * This method return a list of users with the specified group
+	 * @param groupId compare string
+	 * @return List<User>
 	 * @deprecated will now return a list of roles
 	 */
-	public List<Object> getAllUsersInGroup(final String groupId) {
+	public List<User> getAllUsersInGroup(String groupId) {
 		List<String> uids;
-		List<Object> ret = new ArrayList<>();
+		List<User> ret = new ArrayList<>();
 		try {
 			uids = APILocator.getRoleAPI().findUserIdsForRole(APILocator.getRoleAPI().loadRoleById(groupId));
 		} catch (Exception e1) {
@@ -157,7 +152,7 @@ public class CMSUsersWebAPI implements ViewTool {
 		
 		for (String userId : uids) {
 			try {
-				ret.add(forTemplate(APILocator.getUserAPI().loadUserById(userId, APILocator.getUserAPI().getSystemUser(), true)));
+				ret.add(APILocator.getUserAPI().loadUserById(userId, APILocator.getUserAPI().getSystemUser(), true));
 			} catch (Exception e1) {
 				Logger.error(this, e1.getMessage(), e1);
 			}	
@@ -167,31 +162,24 @@ public class CMSUsersWebAPI implements ViewTool {
 
 
 	/**
-	 * Returns the roles held by the given account.
-	 *
-	 * @param user a {@link User} or a {@link UserProfile} returned by this tool's lookups
-	 * @return the roles of the account
+	 * This method return all the groups joined by the specified user
+	 * @param user User
+	 * @return List<Group>
 	 */
-	public List<Role> getUserGroups(final Object user) {
+	public List<Role> getUserGroups(User user) {
 		return getUserRoles(user);
 	}
 
 
 
 	/**
-	 * Returns the roles held by the given account.
-	 *
-	 * @param user a {@link User} or a {@link UserProfile} returned by this tool's lookups
-	 * @return the roles of the account, an empty list if no account is given, or {@code null}
-	 *         if the roles cannot be loaded
+	 * This method return all the roles joined by the specified user
+	 * @param user User
+	 * @return List<Role>
 	 */
-	public List<Role> getUserRoles(final Object user) {
-		final String userId = userIdOf(user);
-		if (userId == null) {
-			return Collections.emptyList();
-		}
+	public List<Role> getUserRoles(User user) {
 		try {
-			return APILocator.getRoleAPI().loadRolesForUser(userId);
+			return APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage(), e);
 			return null;
@@ -200,22 +188,21 @@ public class CMSUsersWebAPI implements ViewTool {
 
 
 	/**
-	 * Checks whether the given account holds the role with the given name.
-	 *
-	 * @param user a {@link User} or a {@link UserProfile} returned by this tool's lookups
-	 * @param roleName the name of the role
-	 * @return {@code true} if the account holds the role
+	 * This method return true|false if the user has
+	 * a specific role
+	 * @param user User
+	 * @param roleName String the name of the role
+	 * @return List<Role>
 	 */
-	public boolean isUserRole(final Object user, final String roleName) {
+	public boolean isUserRole(User user, String roleName) {
 		boolean retVal = false;
-		final String userId = userIdOf(user);
-		if(roleName == null || userId == null){
+		if(roleName == null){
 			return retVal;
 		}
 
 		List<Role> roles;
 		try {
-			roles = APILocator.getRoleAPI().loadRolesForUser(userId);
+			roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
 		} catch (DotDataException e) {
 			Logger.error(this, e.getMessage(), e);
 			return retVal;
@@ -244,57 +231,18 @@ public class CMSUsersWebAPI implements ViewTool {
 	
 	
 	/**
-	 * Checks whether the given account holds the CMS Administrator role.
-	 *
-	 * @param user a {@link User} or a {@link UserProfile} returned by this tool's lookups
-	 * @return {@code true} if the account is a CMS Administrator
+	 * This method return true|false if the user has
+	 * a CMSAdmin role
+	 * @param user User
+	 * 
 	 */
-	public boolean isCMSAdmin(final Object user) {
-		if (user instanceof UserProfile) {
-			return ((UserProfile) user).isAdmin();
+	public boolean isCMSAdmin(User user) {
+		if(user==null) {
+		    return false;
 		}
-		if (user instanceof User) {
-			return ((User) user).isAdmin();
-		}
-		return false;
-	}
-
-	/**
-	 * Resolves the user id of an account passed in by a template.
-	 *
-	 * @param user a {@link User}, a {@link UserProfile}, or anything else
-	 * @return the user id, or {@code null} if {@code user} is not an account
-	 */
-	private static String userIdOf(final Object user) {
-		if (user instanceof UserProfile) {
-			return ((UserProfile) user).getUserId();
-		}
-		if (user instanceof User) {
-			return ((User) user).getUserId();
-		}
-		return null;
-	}
-
-	/**
-	 * Prepares a looked-up account for a template: a read-only {@link UserProfile} while
-	 * {@link FeatureFlagName#FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES} is on (the default), or a
-	 * detached {@link User} copy without credential fields when it is off.
-	 *
-	 * @param user the looked-up account, may be {@code null}
-	 * @return the object handed to the template, or {@code null}
-	 */
-	private static Object forTemplate(final User user) {
-		if (user == null) {
-			return null;
-		}
-		if (Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES, true)) {
-			return new UserProfile(user);
-		}
-		// another account's login addresses are not needed by templates
-		final User copy = UserCopies.withoutCredentials(user);
-		copy.setLoginIP(null);
-		copy.setLastLoginIP(null);
-		return copy;
-	}
-
+		return user.isAdmin();
+	}	
+	
+	
+	
 }

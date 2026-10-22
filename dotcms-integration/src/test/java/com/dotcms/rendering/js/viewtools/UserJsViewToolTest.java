@@ -16,6 +16,7 @@ import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import java.util.List;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -49,6 +50,15 @@ public class UserJsViewToolTest {
         // a pending password-reset token is stored on the user record
         lookedUpUser.setIcqId("reset-" + UUIDGenerator.generateUuid());
         APILocator.getUserAPI().save(lookedUpUser, APILocator.systemUser(), false);
+    }
+
+    /**
+     * Removes the user and the role created for these tests.
+     */
+    @AfterClass
+    public static void cleanupTestData() {
+        UserDataGen.remove(lookedUpUser);
+        RoleDataGen.remove(lookedUpUserRole);
     }
 
     /**

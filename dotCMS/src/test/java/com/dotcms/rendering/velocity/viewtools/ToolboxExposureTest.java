@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -11,7 +12,9 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.XMLConstants;
@@ -21,6 +24,7 @@ import org.apache.velocity.tools.view.tools.ViewTool;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 /**
@@ -36,15 +40,19 @@ public class ToolboxExposureTest {
 
     private static final String TOOLBOX_PATH = "src/main/webapp/WEB-INF/toolbox.xml";
 
+    /** The template tool bound as {@code $cmsuser}. */
+    private static final String CMS_USER_TOOL = "com.dotcms.rendering.velocity.viewtools.CMSUserTool";
+
     /**
      * Methods allowed to return a {@link User} because they resolve the current requester, never
      * an arbitrary account.
      */
     private static final Set<String> CURRENT_REQUESTER_ACCESSORS = Set.of(
-            CMSUsersWebAPI.class.getName() + "#getLoggedInUser",
+            CMS_USER_TOOL + "#getLoggedInUser",
             WebAPI.class.getName() + "#getLoggedUser");
 
     private static List<Class<?>> toolClasses;
+    private static Map<String, String> classNameByKey;
 
     @BeforeClass
     public static void loadToolbox() throws Exception {
@@ -54,15 +62,29 @@ public class ToolboxExposureTest {
         final DocumentBuilder builder = factory.newDocumentBuilder();
         final Document toolbox = builder.parse(new File(TOOLBOX_PATH));
 
-        final NodeList classNodes = toolbox.getElementsByTagName("class");
+        final NodeList toolNodes = toolbox.getElementsByTagName("tool");
         toolClasses = new ArrayList<>();
-        for (int i = 0; i < classNodes.getLength(); i++) {
-            final String className = classNodes.item(i).getTextContent().trim();
+        classNameByKey = new HashMap<>();
+        for (int i = 0; i < toolNodes.getLength(); i++) {
+            final Element tool = (Element) toolNodes.item(i);
+            final String key = tool.getElementsByTagName("key").item(0).getTextContent().trim();
+            final String className = tool.getElementsByTagName("class").item(0).getTextContent().trim();
+            classNameByKey.put(key, className);
             // load without initializing: some tools wire services in static initializers
             toolClasses.add(Class.forName(className, false, ToolboxExposureTest.class.getClassLoader()));
         }
         assertFalse("No tools found in " + TOOLBOX_PATH, toolClasses.isEmpty());
-        assertTrue("Toolbox should bind the cmsuser tool", toolClasses.contains(CMSUsersWebAPI.class));
+    }
+
+    /**
+     * {@code $cmsuser} is provided by the template tool {@code CMSUserTool}. {@code CMSUsersWebAPI}
+     * keeps its Java signatures for plugins and is no longer bound to templates.
+     */
+    @Test
+    public void cmsuser_is_bound_to_the_template_tool() {
+        assertEquals(CMS_USER_TOOL, classNameByKey.get("cmsuser"));
+        assertFalse("CMSUsersWebAPI must not be bound to templates",
+                classNameByKey.containsValue(CMSUsersWebAPI.class.getName()));
     }
 
     /**

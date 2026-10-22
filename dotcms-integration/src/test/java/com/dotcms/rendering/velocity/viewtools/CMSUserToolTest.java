@@ -28,11 +28,12 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.apache.velocity.context.Context;
 import org.apache.velocity.tools.view.context.ViewContext;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Integration test for the {@code $cmsuser} Velocity tool ({@link CMSUsersWebAPI}).
+ * Integration test for the {@code $cmsuser} Velocity tool ({@link CMSUserTool}).
  *
  * <p>The user lookups ({@code getUserByEmail}, {@code getUserByUserId},
  * {@code getAllUsersInGroup}) give templates a read-only profile of the account: the display
@@ -45,7 +46,7 @@ import org.junit.Test;
  * <p>{@code getLoggedInUser} keeps returning a {@link User}, because templates pass the requester to
  * methods that require one, but as a detached copy without the credential fields.
  */
-public class CMSUsersWebAPITest {
+public class CMSUserToolTest {
 
     private static final String READ_ONLY_PROFILES_FLAG = FeatureFlagName.FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES;
 
@@ -95,6 +96,17 @@ public class CMSUsersWebAPITest {
     }
 
     /**
+     * Removes the users and the role created for these tests.
+     */
+    @AfterClass
+    public static void cleanupTestData() {
+        UserDataGen.remove(requester);
+        UserDataGen.remove(adminUser);
+        UserDataGen.remove(profiledUser);
+        RoleDataGen.remove(profiledUserRole);
+    }
+
+    /**
      * Builds a request made by {@code user}, logged in through the session.
      */
     private static HttpServletRequest requestFor(final User user) {
@@ -110,12 +122,12 @@ public class CMSUsersWebAPITest {
     /**
      * Builds the tool the way the toolbox does for the given request.
      */
-    private static CMSUsersWebAPI cmsUserTool(final HttpServletRequest request) {
+    private static CMSUserTool cmsUserTool(final HttpServletRequest request) {
         final ViewContext viewContext = mock(ViewContext.class);
         when(viewContext.getRequest()).thenReturn(request);
         when(viewContext.getVelocityContext()).thenReturn(VelocityUtil.getBasicContext());
 
-        final CMSUsersWebAPI tool = new CMSUsersWebAPI();
+        final CMSUserTool tool = new CMSUserTool();
         tool.init(viewContext);
         return tool;
     }
@@ -123,7 +135,7 @@ public class CMSUsersWebAPITest {
     /**
      * Builds the tool the way the toolbox does for a request made by {@code user}.
      */
-    private static CMSUsersWebAPI cmsUserTool(final User user) {
+    private static CMSUserTool cmsUserTool(final User user) {
         return cmsUserTool(requestFor(user));
     }
 
@@ -195,7 +207,7 @@ public class CMSUsersWebAPITest {
     public void getAllUsersInGroup_returns_read_only_profiles() {
         final List<?> members = cmsUserTool(requester).getAllUsersInGroup(profiledUserRole.getId());
         assertEquals(1, members.size());
-        members.forEach(CMSUsersWebAPITest::assertReadOnlyProfile);
+        members.forEach(CMSUserToolTest::assertReadOnlyProfile);
     }
 
     /**
@@ -258,7 +270,7 @@ public class CMSUsersWebAPITest {
         final String flagValue = Config.getStringProperty(READ_ONLY_PROFILES_FLAG, null);
         Config.setProperty(READ_ONLY_PROFILES_FLAG, false);
         try {
-            final CMSUsersWebAPI tool = cmsUserTool(requester);
+            final CMSUserTool tool = cmsUserTool(requester);
 
             assertDetachedCopyWithoutCredentials(tool.getUserByEmail(profiledUser.getEmailAddress()), profiledUser);
             assertDetachedCopyWithoutCredentials(tool.getUserByUserId(profiledUser.getUserId()), profiledUser);

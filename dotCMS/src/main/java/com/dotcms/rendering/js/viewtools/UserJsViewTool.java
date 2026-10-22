@@ -4,7 +4,7 @@ import com.dotcms.rendering.js.proxy.JsRole;
 import com.dotcms.rendering.js.proxy.JsUser;
 import com.dotcms.rendering.js.JsViewContextAware;
 import com.dotcms.rendering.js.JsViewTool;
-import com.dotcms.rendering.velocity.viewtools.CMSUsersWebAPI;
+import com.dotcms.rendering.velocity.viewtools.CMSUserTool;
 import com.dotcms.rendering.velocity.viewtools.util.UserCopies;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
@@ -21,14 +21,14 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Wraps the CMSUsersWebAPI (cmsuser) into the JS context.
+ * Wraps the CMSUserTool (cmsuser) into the JS context.
  * Looked-up accounts are wrapped around detached copies without credential fields, so scripts
  * never hold the cached user record.
  * @author jsanca
  */
 public class UserJsViewTool implements JsViewTool, JsViewContextAware {
 
-	private CMSUsersWebAPI cmsUsersWebAPI = new CMSUsersWebAPI();
+	private final CMSUserTool cmsUserTool = new CMSUserTool();
 
 	@HostAccess.Export
 	/**
@@ -75,7 +75,7 @@ public class UserJsViewTool implements JsViewTool, JsViewContextAware {
 	 * @return
 	 */
 	public JsUser getLoggedInUser(final HttpServletRequest request) {
-		final User user = this.cmsUsersWebAPI.getLoggedInUser(request);
+		final User user = this.cmsUserTool.getLoggedInUser(request);
 		return null != user? new JsUser(user): null;
 	}
 
@@ -116,7 +116,7 @@ public class UserJsViewTool implements JsViewTool, JsViewContextAware {
 	 */
 	public List<JsRole> getUserGroups(final User user) {
 
-		final List<Role> roles = this.cmsUsersWebAPI.getUserGroups(user);
+		final List<Role> roles = this.cmsUserTool.getUserGroups(user);
 		return UtilMethods.isSet(roles)?
 				roles.stream().map(JsRole::new).collect(java.util.stream.Collectors.toList()): Collections.emptyList();
 	}
@@ -129,7 +129,7 @@ public class UserJsViewTool implements JsViewTool, JsViewContextAware {
 	 */
 	public List<JsRole> getUserRoles(final User user) {
 
-		final List<Role> roles = this.cmsUsersWebAPI.getUserRoles(user);
+		final List<Role> roles = this.cmsUserTool.getUserRoles(user);
 		return UtilMethods.isSet(roles)?
 				roles.stream().map(JsRole::new).collect(java.util.stream.Collectors.toList()): Collections.emptyList();
 	}
@@ -144,7 +144,7 @@ public class UserJsViewTool implements JsViewTool, JsViewContextAware {
 	 */
 	public boolean isUserRole(final User user, final String roleName) {
 
-		return this.cmsUsersWebAPI.isUserRole(user, roleName);
+		return this.cmsUserTool.isUserRole(user, roleName);
 	}
 
 	@HostAccess.Export
@@ -157,7 +157,7 @@ public class UserJsViewTool implements JsViewTool, JsViewContextAware {
 	 */
 	public boolean hasRole(final String roleKey) throws DotDataException {
 
-		return this.cmsUsersWebAPI.hasRole(roleKey);
+		return this.cmsUserTool.hasRole(roleKey);
 	}
 
 	@HostAccess.Export
@@ -169,13 +169,13 @@ public class UserJsViewTool implements JsViewTool, JsViewContextAware {
 	 */
 	public boolean isCMSAdmin(final User user) {
 
-		return this.cmsUsersWebAPI.isCMSAdmin(user);
+		return this.cmsUserTool.isCMSAdmin(user);
 	}
 
 	@Override
 	public void setViewContext(final ViewContext viewContext) {
 
-		cmsUsersWebAPI.init(viewContext);
+		cmsUserTool.init(viewContext);
 	}
 
 	@Override
