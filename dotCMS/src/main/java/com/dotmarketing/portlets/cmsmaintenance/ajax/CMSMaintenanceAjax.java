@@ -238,9 +238,6 @@ public class CMSMaintenanceAjax {
 	 *
 	 * @param List
 	 *            - The list of Identifiers as Strings.
-	 * @param userId
-	 *            - Not used. The Maintenance portlet still sends it, so it stays in the
-	 *            signature; the deletion runs as the logged-in user.
 	 * @return A String array of information that provides the user with the
 	 *         results of performing this action.
 	 * @throws PortalException
@@ -253,7 +250,7 @@ public class CMSMaintenanceAjax {
 	 *             The logged-in user is not a CMS administrator with access to the
 	 *             Maintenance portlet, or cannot delete the content.
 	 */
-	public String deleteContentletsFromIdList(String List, String userId) throws PortalException, SystemException, DotDataException,DotSecurityException {
+	public String deleteContentletsFromIdList(String List) throws PortalException, SystemException, DotDataException,DotSecurityException {
 		final User user = requireAdminWithMaintenancePortlet();
 		List<String> conditionletWithErrors = new ArrayList<>();
 		ContentletAPI conAPI = APILocator.getContentletAPI();

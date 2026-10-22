@@ -28,8 +28,8 @@ import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
-import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.Parameter;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.TrashUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -50,9 +50,7 @@ import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.zip.ZipOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.jsp.PageContext;
@@ -204,21 +202,6 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			HttpServletResponse response = resImpl.getHttpServletResponse();
 			downloadRemainingRecordsAsCsv(response);
 		} //Manage all the search and replace Task
-		else if(cmd.equals("searchandreplace")){
-			Map<String,String> result = searchAndReplace(_getUser(req), ccf);
-			if(result.get("type") != null){
-				if(result.get("type").equals("message")){
-					message = "Search and Replace complete <br>" + result.get("message");
-				} else {
-					errorMessage = "Search and Replace complete <br>" + result.get("message");
-				}
-				_deleteFiles(com.dotmarketing.util.WebKeys.Cache.CACHE_LIVE_FILES);
-				_deleteFiles(com.dotmarketing.util.WebKeys.Cache.CACHE_WORKING_FILES);
-				_flush(com.dotmarketing.util.WebKeys.Cache.CACHE_ALL_CACHES);
-			} else {
-				errorMessage = NOT_AUTHORIZED_MESSAGE;
-			}
-		}
 		//Not being used this is being called using ajax
 		else if(cmd.equals("fixAssetsInconsistencies")){
            // this one NOT
@@ -418,38 +401,6 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			req.setAttribute(WebKeys.Cache.CACHE_NUMBER_LIVE_FILES, liveCount);
 			req.setAttribute(WebKeys.Cache.CACHE_NUMBER_WORKING_FILES, workingCount);
 		}
-	}
-
-	/**
-	 * Runs the database search-and-replace requested by the maintenance screen. Only a logged-in
-	 * CMS administrator may run it; the operation rewrites content, containers, templates, field
-	 * values and links across the whole instance.
-	 *
-	 * @param sessionUser the user making the request, resolved from the session
-	 * @param form        the search-and-replace parameters
-	 * @return a map carrying the outcome message when the operation ran, or an empty map when the
-	 *         user is not allowed to run it
-	 */
-	@VisibleForTesting
-	Map<String,String> searchAndReplace(final User sessionUser, final CmsMaintenanceForm form) {
-
-		final Map<String,String> messageResult = new HashMap<>();
-
-		if (!isAuthorizedAdmin(sessionUser)) {
-			logUnauthorizedMaintenance(sessionUser, "search and replace");
-			return messageResult;
-		}
-
-		Logger.info(this, "Running Search & Replace");
-		final String searchString = form.getSearchString();
-		final String replaceString = form.getReplaceString();
-		final boolean DBerrorFound = MaintenanceUtil.DBSearchAndReplace(searchString, replaceString);
-		final String message = DBerrorFound
-				? "Search/Replace Finished with Errors.  See Log for more info"
-				: "Search/Replace Finished Successful";
-		messageResult.put("type", "message");
-		messageResult.put("message", message);
-		return messageResult;
 	}
 
 	/**

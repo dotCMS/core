@@ -415,14 +415,24 @@ function doReplace () {
     	return;
   }
   if (confirm ("<%= LanguageUtil.get(pageContext,"Are-you-sure") %>")) {
-  	form = document.getElementById('cmsMaintenanceForm');
-	var action = "<portlet:actionURL>";
-	action += "<portlet:param name='struts_action' value='/ext/cmsmaintenance/view_cms_maintenance' />";
-	action += "<portlet:param name='cmd' value='searchandreplace' />";
-	action += "</portlet:actionURL>";
-	form.cmd.value="searchandreplace";
-	form.action = action
-	form.submit();
+	fetch('/api/v1/maintenance/_searchAndReplace', {
+		method: 'POST',
+		cache: 'no-cache',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({
+			searchString: document.getElementById("searchString").value,
+			replaceString: document.getElementById("replaceString").value
+		})
+	})
+	.then(response => response.json().then(data => ({ ok: response.ok, data: data })))
+	.then(result => {
+		if (result.ok && result.data.entity && !result.data.entity.hasErrors) {
+			alert("<%= LanguageUtil.get(pageContext,"Search-and-Replace-Finished") %>");
+		} else {
+			alert("<%= LanguageUtil.get(pageContext,"Search-and-Replace-Finished-with-Errors") %>");
+		}
+	})
+	.catch(() => alert("<%= LanguageUtil.get(pageContext,"Search-and-Replace-Finished-with-Errors") %>"));
   }
 }
 
@@ -534,7 +544,7 @@ function doDeleteContentlets(){
 	  if(confirm("<%= LanguageUtil.get(pageContext,"Do-you-want-to-delete-this-contentlet-s") %>")){
 		 	$("deleteContentletMessage").innerHTML= '<font face="Arial" size="2" color="#ff0000><b><%= LanguageUtil.get(pageContext,"Process-in-progress-deleting-contentlets") %></b></font>';
 		 	$("deleteContentletButton").disabled = true;
-			CMSMaintenanceAjax.deleteContentletsFromIdList(document.getElementById('contentIdsList').value, document.getElementById('userId').value, doDeleteContentletsCallback);
+			CMSMaintenanceAjax.deleteContentletsFromIdList(document.getElementById('contentIdsList').value, doDeleteContentletsCallback);
 		}
 }
 
@@ -1310,7 +1320,6 @@ dd.leftdl {
 	<div id="mainTabContainer" dojoType="dijit.layout.TabContainer" dolayout="false">
 
     <html:form styleId="cmsMaintenanceForm" method="POST" action="/ext/cmsmaintenance/view_cms_maintenance" enctype="multipart/form-data">
-        <input type="hidden" name="userId"  id="userId" value="<%=user.getUserId()%>">
         <input type="hidden" name="referer" value="<%=referer%>">
         <input type="hidden" name="cacheName" id="cacheName">
         <input type="hidden" name="systemJobName" id="systemJobName">

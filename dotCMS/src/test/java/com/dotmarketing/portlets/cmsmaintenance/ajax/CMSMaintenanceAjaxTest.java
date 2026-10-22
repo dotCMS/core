@@ -312,7 +312,7 @@ class CMSMaintenanceAjaxTest {
                 Arguments.of("optimizeIndices", (MaintenanceCall) CMSMaintenanceAjax::optimizeIndices),
                 Arguments.of("flushIndiciesCache", (MaintenanceCall) CMSMaintenanceAjax::flushIndiciesCache),
                 Arguments.of("fixAssetsInconsistencies", (MaintenanceCall) CMSMaintenanceAjax::fixAssetsInconsistencies),
-                Arguments.of("deleteContentletsFromIdList", (MaintenanceCall) ajax -> ajax.deleteContentletsFromIdList("id-1", "back-end-user")));
+                Arguments.of("deleteContentletsFromIdList", (MaintenanceCall) ajax -> ajax.deleteContentletsFromIdList("id-1")));
     }
 
     /**
@@ -425,25 +425,21 @@ class CMSMaintenanceAjaxTest {
     }
 
     /**
-     * Given: a CMS administrator with the Maintenance portlet and a userId argument naming another user
+     * Given: a CMS administrator with the Maintenance portlet
      * When: deleteContentletsFromIdList is called
-     * Then: the content is destroyed as the session user and the other user is never looked up
+     * Then: the content is destroyed as the session user
      */
     @Test
     void deleteContentletsFromIdList_usesSessionUser() throws Exception {
         final User sessionUser = givenLoggedInUser(true, true);
-        final User otherUser = mock(User.class);
-        userLocalManager.when(() -> UserLocalManagerUtil.getUserById("other-user")).thenReturn(otherUser);
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.getIdentifier()).thenReturn("id-1");
         when(contentletAPI.getSiblings("id-1")).thenReturn(List.of(contentlet));
         when(contentletAPI.destroy(any(Contentlet.class), any(User.class), anyBoolean())).thenReturn(true);
 
-        new CMSMaintenanceAjax().deleteContentletsFromIdList("id-1", "other-user");
+        new CMSMaintenanceAjax().deleteContentletsFromIdList("id-1");
 
         verify(contentletAPI).destroy(contentlet, sessionUser, true);
-        verify(contentletAPI, never()).destroy(any(Contentlet.class), eq(otherUser), anyBoolean());
-        userLocalManager.verify(() -> UserLocalManagerUtil.getUserById(anyString()), never());
     }
 
     /**
