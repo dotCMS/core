@@ -4,6 +4,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.OSGIBundler;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.BufferedInputStream;
@@ -23,7 +24,7 @@ import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 public final class BundlePluginAccess {
 
     /** Portlet that gives access to installing plugins. */
-    public static final String PLUGINS_PORTLET = "dynamic-plugins";
+    public static final String PLUGINS_PORTLET = PortletID.DYNAMIC_PLUGINS.toString();
 
     private BundlePluginAccess() {
     }
@@ -80,8 +81,9 @@ public final class BundlePluginAccess {
      * segments that resolves into the plugins folder counts.
      *
      * @param archive The {@code .tar.gz} bundle file.
-     * @return {@code true} if at least one entry sits in the plugins folder; {@code false} if none
-     * does or if the archive cannot be read (it then fails later, when it is processed).
+     * @return {@code true} if at least one entry sits in the plugins folder or if the archive
+     * cannot be read, so that an archive that cannot be listed is treated as carrying plugins;
+     * {@code false} if it was read and none does.
      */
     public static boolean carriesPlugins(final File archive) {
         try (TarArchiveInputStream tar = new TarArchiveInputStream(new GZIPInputStream(
@@ -101,7 +103,9 @@ public final class BundlePluginAccess {
             }
         } catch (final IOException e) {
             Logger.warn(BundlePluginAccess.class,
-                    "The bundle archive could not be listed: " + e.getMessage());
+                    "The bundle archive could not be listed, treating it as carrying plugins: "
+                            + e.getMessage());
+            return true;
         }
         return false;
     }

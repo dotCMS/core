@@ -1,6 +1,5 @@
 package com.dotcms.publisher.receiver;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -83,12 +82,13 @@ public class BundlePluginAccessTest {
     /**
      * Method to Test: {@link BundlePluginAccess#carriesPlugins(File)}
      * When: the file is not a readable archive
-     * Should: return false instead of failing; the bundle fails later when it is processed.
+     * Should: return true, so an archive that cannot be listed is treated as carrying plugins and
+     * only users with access to the plugins portlet get past the early check.
      */
     @Test
-    public void test_carriesPlugins_unreadableArchive_returnsFalse() throws IOException {
+    public void test_carriesPlugins_unreadableArchive_returnsTrue() throws IOException {
         archive = Files.createTempFile("bundle", ".tar.gz").toFile();
         Files.write(archive.toPath(), "not an archive".getBytes(StandardCharsets.UTF_8));
-        assertEquals(false, BundlePluginAccess.carriesPlugins(archive));
+        assertTrue(BundlePluginAccess.carriesPlugins(archive));
     }
 }
