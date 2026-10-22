@@ -397,7 +397,9 @@ public class ContentHelper {
      * @param user              The {@link User} performing this action.
      * @param allCategoriesInfo If information about Categories must be included, set to {@code true}.
      *
-     * @return The representation of the Contentlet as a {@link JSONObject}.
+     * @return The representation of the Contentlet as a {@link JSONObject}, with the properties configured in
+     * {@link ContentFieldFilter} masked or removed when the user is neither a CMS administrator nor a back-end
+     * user.
      *
      * @throws JSONException        An error occurred when generating the JSON object.
      * @throws IOException          An error occurred when generating the printable Contentlet map.

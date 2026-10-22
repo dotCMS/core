@@ -31,8 +31,12 @@ import java.util.stream.Collectors;
 /**
  * Masks or removes configurable contentlet properties from the content returned to callers that are
  * neither CMS administrators nor back-end users, such as anonymous visitors of a headless site or
- * logged-in front-end users. It is applied by the legacy Content API ({@code /api/content}) and is
- * meant to be reused by any other endpoint that serializes contentlets.
+ * logged-in front-end users.
+ * <p>
+ * <strong>Scope:</strong> responses are filtered only by the legacy Content API ({@code /api/content}).
+ * Other endpoints that return contentlets, such as {@code /api/v1/content}, the Page API and GraphQL, still
+ * return these properties unchanged; they are meant to reuse this class. The {@code catchall} exclusion
+ * described below applies at index time, so it covers every search endpoint.
  * <p>
  * Two configuration properties drive it. Both are comma-separated lists of property names, matched
  * without regard to case, and both are empty by default, in which case no response is changed:
@@ -40,7 +44,8 @@ import java.util.stream.Collectors;
  *     <li>{@value #FIELDS_TO_MASK_PROPERTY} (environment variable
  *     {@code DOT_CONTENT_API_FIELDS_TO_MASK}): the values of these properties are partially masked,
  *     so {@code john@example.com} is returned as {@code j*****n.e*****m}. A value given as a nested
- *     object or a list, such as a user, keeps its shape and has every value inside it masked.</li>
+ *     object or a list, such as a user, keeps its shape and has every value inside it masked. Masking
+ *     does not protect values from a small or predictable set; see {@link #mask(String)}.</li>
  *     <li>{@value #FIELDS_TO_HIDE_PROPERTY} (environment variable
  *     {@code DOT_CONTENT_API_FIELDS_TO_HIDE}): these properties are removed from the response. A
  *     property listed in both is removed.</li>
@@ -287,6 +292,10 @@ public final class ContentFieldFilter {
      * Masks a text value, keeping the first and last characters of each part: {@code john@example.com}
      * becomes {@code j*****n.e*****m} and {@code dotcms.org.1} becomes {@code d*****1}. A part shorter
      * than four characters is masked completely. Masking an already masked value never reveals more of it.
+     * <p>
+     * This hides a value from casual viewing, not from enumeration: anyone can mask a guessed value and
+     * compare, so a value from a small or predictable set, such as {@code dotcms.org.1} or
+     * {@code dotcms.org.2}, can still be told apart. Hide such properties instead of masking them.
      *
      * @param value the text to mask; may be {@code null}
      * @return the masked text

@@ -844,11 +844,6 @@ public class ContentResource {
             return ExceptionMapperUtil.createResponse(null, errorMsg);
         }
 
-        final ContentFieldFilter fieldFilter = ContentFieldFilter.forUser(user);
-        if (!fieldFilter.allowsSearch(query, paramsMap.get(RESTParams.ORDERBY.getValue()))) {
-            return ExceptionMapperUtil.createResponse(null, fieldFilter.searchRejectedMessage());
-        }
-
         final String allCategoriesInfoKey = RESTParams.ALL_CATEGORIES_INFO.getValue().toLowerCase();
         final boolean allCategoriesInfo =
                 UtilMethods.isSet(paramsMap.get(allCategoriesInfoKey)) &&
@@ -869,6 +864,13 @@ public class ContentResource {
         type = UtilMethods.isSet(type) ? type : "json";
         final String relatedOrder = UtilMethods.isSet(orderBy) ? orderBy: null;
         orderBy = UtilMethods.isSet(orderBy) ? orderBy : "modDate desc";
+
+        // Only a query or related-content lookup searches the index; an id or inode lookup ignores query and orderby
+        final boolean searchesIndex = !idPassed && !inodePassed && (queryPassed || UtilMethods.isSet(related));
+        final ContentFieldFilter fieldFilter = ContentFieldFilter.forUser(user);
+        if (searchesIndex && !fieldFilter.allowsSearch(query, relatedOrder)) {
+            return ExceptionMapperUtil.createResponse(null, fieldFilter.searchRejectedMessage());
+        }
 
         try {
             if (idPassed) {
