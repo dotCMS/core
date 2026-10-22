@@ -60,6 +60,11 @@ const davPaths = [
   'Upload files to the folder / Validate the empty file has been created', 'Update file / Update the file',
   'Update file / Validate file has been updated', 'Delete file / Delete the file', 'Delete file / Validate file has been deleted',
   'Delete the folder / Delete the folder', 'Delete the folder / Validate folder has been deleted',
+  ...['Create the folder', 'Create a temp folder', 'Upload a file into the temp folder',
+    'Copy to a dot-dot destination is rejected', 'Move to a dot-dot destination is rejected',
+    'Validate the source is still in place', 'Copy to a plain name', 'Validate the copy has the source content',
+    'Move to a plain name', 'Validate the moved file exists', 'Delete the folder']
+    .map((name) => `Copy and move in temp storage / ${name}`),
 ];
 const isDavCompatibility = (r) => path.basename(r.file) === 'WebDav.postman_collection.json' &&
   davPaths.includes(r.names.join(' / ')) && /\/webdav\//i.test(url(r));
@@ -291,7 +296,7 @@ test('ALL/JWT_TOKEN compatibility is outside ordinary discovery; NONE retains me
 
 test('DAV CRUD keeps username/API-JWT auth, REST setup uses Bearer, no conflicting header', () => {
   const dav = davPaths.map((names) => find('WebDav.postman_collection.json', names));
-  assert.equal(dav.length, 13, 'Keep all DAV operations, not just NONE denials');
+  assert.equal(dav.length, 24, 'Keep all DAV operations, not just NONE denials');
   for (const r of dav) {
     assert.equal(r.auth?.type, 'basic', label(r));
     assert.equal(value(r.auth, 'username').toLowerCase(), 'admin@dotcms.com');

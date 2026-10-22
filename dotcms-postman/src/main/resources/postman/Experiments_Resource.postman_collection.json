@@ -318,10 +318,13 @@
           ],
           "request": {
             "auth": {
-              "type": "basic",
-              "basic": [
-                {"key": "username", "value": "admin@dotcms.com", "type": "string"},
-                {"key": "password", "value": "admin", "type": "string"}
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt}}",
+                  "type": "string"
+                }
               ]
             },
             "method": "POST",
