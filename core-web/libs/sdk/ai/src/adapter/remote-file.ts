@@ -1,11 +1,6 @@
 import { lookup as dnsLookup } from 'node:dns/promises';
-import {
-    request as httpRequest,
-    type ClientRequest,
-    type IncomingMessage,
-    type RequestOptions as HttpRequestOptions
-} from 'node:http';
-import { request as httpsRequest } from 'node:https';
+import { request as httpRequest, type ClientRequest, type IncomingMessage } from 'node:http';
+import { request as httpsRequest, type RequestOptions as HttpsRequestOptions } from 'node:https';
 import { BlockList, isIP } from 'node:net';
 import { createBrotliDecompress, createGunzip, createInflate } from 'node:zlib';
 
@@ -42,11 +37,11 @@ export type AddressResolver = (hostname: string) => Promise<ResolvedAddress[]>;
 /**
  * Opens the HTTP(S) request. Defaults to `node:http` / `node:https`. Replaceable for tests.
  * `options` carries the address to connect to (`hostname`, `port`) and the name for TLS
- * (`servername`) and the `Host` header.
+ * (`servername`, meaningful to `node:https` only) and the `Host` header.
  */
 export type RequestTransport = (
     url: URL,
-    options: HttpRequestOptions,
+    options: HttpsRequestOptions,
     onResponse: (response: IncomingMessage) => void
 ) => ClientRequest;
 
@@ -283,7 +278,7 @@ export async function fetchRemoteFile(
     const hostname = bareHostname(url);
     // `hostname` (not `host`) is what the socket connects to when a URL is also given: the
     // URL's own host name would otherwise win and be resolved a second time.
-    const requestOptions: HttpRequestOptions = {
+    const requestOptions: HttpsRequestOptions = {
         method: 'GET',
         hostname: address,
         port: url.port || (secure ? 443 : 80),

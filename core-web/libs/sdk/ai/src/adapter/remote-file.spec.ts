@@ -19,11 +19,8 @@ import {
     ValidationError
 } from '../sandbox/errors';
 
-import type {
-    ClientRequest,
-    IncomingMessage,
-    RequestOptions as HttpRequestOptions
-} from 'node:http';
+import type { ClientRequest, IncomingMessage } from 'node:http';
+import type { RequestOptions as HttpsRequestOptions } from 'node:https';
 
 /**
  * Remote file descriptors (`formData` fields with a `url`) are downloaded on the host.
@@ -198,7 +195,7 @@ interface FakeRequest extends EventEmitter {
  * `destroy()` without an error emits ECONNRESET, as Node's `ClientRequest` does.
  */
 function fakeTransport(reply: Reply = {}) {
-    const calls: { url: URL; options: HttpRequestOptions }[] = [];
+    const calls: { url: URL; options: HttpsRequestOptions }[] = [];
     const requests: FakeRequest[] = [];
     const transport: RequestTransport = (url, options, onResponse) => {
         if (reply.throwSync) {
