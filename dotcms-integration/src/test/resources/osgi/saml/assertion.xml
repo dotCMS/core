@@ -1,0 +1,19 @@
+<!-- Synthetic test fixture, valid 2020-2120 so no private key or clock override is needed. Do not reformat signed XML. --><saml:Assertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" ID="_saml_bundle_it_assertion" IssueInstant="2020-01-01T00:00:00Z" Version="2.0">
+  <saml:Issuer>https://saml-it.example/idp</saml:Issuer>
+  <ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference URI="#_saml_bundle_it_assertion"><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><ds:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>fpiQJdgyNnUZjZK0RaPHPNsTo8GGEwj0RoHIMTfFhJ0=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>QUPpu9diMPhfrCp0JZ5G6C5uUND1v6ucTMj5LT7IYF48A/bMtZX5shXF9o5A8MIzzFHYWH/EZIvC&#13;
+fuLbbusm7qrJzK3MO9gwMYB5GQ6L+KitDCBB0Nxn3am7Ny7Xy5qonbF1AGAp4FrfXLh/7lAjqIJJ&#13;
+h6ExPipq3uhFbL8JHX4d9q/5Mij+RELQh4Kvu/SfUKxKgnC5uPtopgGFEMAI7zZaETNtgxQUyuOU&#13;
++dbgsTo2+3SG48AET8eCypwZaU96sa/CX4rNLkJw1Jrjr6PvhLFjXmDi3h2O24XEME/MtDyVE6uy&#13;
+5Ek/UCvlC5U5zoZVPfnrobyniXl/nJdVo8F1qA==</ds:SignatureValue></ds:Signature><saml:Subject>
+    <saml:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress">saml-bundle-it@example.com</saml:NameID>
+    <saml:SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer">
+      <saml:SubjectConfirmationData InResponseTo="_saml_bundle_it_request" NotOnOrAfter="2120-01-01T00:00:00Z" Recipient="https://saml-it.example/dotsaml/login/bundle-it"/>
+    </saml:SubjectConfirmation>
+  </saml:Subject>
+  <saml:Conditions NotBefore="2020-01-01T00:00:00Z" NotOnOrAfter="2120-01-01T00:00:00Z">
+    <saml:AudienceRestriction><saml:Audience>https://saml-it.example/sp</saml:Audience></saml:AudienceRestriction>
+  </saml:Conditions>
+  <saml:AuthnStatement AuthnInstant="2020-01-01T00:00:00Z" SessionIndex="_saml_bundle_it_session">
+    <saml:AuthnContext><saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport</saml:AuthnContextClassRef></saml:AuthnContext>
+  </saml:AuthnStatement>
+</saml:Assertion>

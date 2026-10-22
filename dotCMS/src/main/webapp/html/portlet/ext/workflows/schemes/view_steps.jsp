@@ -1,4 +1,4 @@
-<%@page import="com.dotcms.contenttype.model.type.ContentType"%>
+<%@ page import="com.liferay.util.Xss" %><%@page import="com.dotcms.contenttype.model.type.ContentType"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.workflows.business.WorkflowAPI"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
@@ -205,8 +205,7 @@
 			<input type="hidden" name="cmd" value="save">
 			<input type="hidden" name="schemeId" value="<%=UtilMethods.webifyString(scheme.getId())%>">
 			<div onClick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');" class="showPointer" >
-			     <h2 style="border-bottom:dotted 1px gray;"><%=UtilMethods.webifyString(scheme.getName())%></h2>
-			     <!--  <%=UtilMethods.webifyString(scheme.getDescription())%> -->
+			     <h2 style="border-bottom:dotted 1px gray;"><%=UtilMethods.webifyString(Xss.encodeForHTML(scheme.getName()))%></h2>
 			</div>
             <div class="showPointer" href="#" onclick="schemeAdmin.showAddEdit('<%=scheme.getId()%>');">
                 <i class="fa fa-pencil" aria-hidden="true"></i>
@@ -240,7 +239,7 @@
 
 <!-- Workflow Steps -->
 <div class="board-wrapper">
-<div style="display:block; padding-left:35px;padding-bottom:10px;color: gray;"><%=UtilMethods.webifyString(scheme.getDescription())%></div>
+<div style="display:block; padding-left:35px;padding-bottom:10px;color: gray;"><%=UtilMethods.webifyString(Xss.encodeForHTML(scheme.getDescription()))%></div>
 	<div class="board-main-content">
 		<div class="board-canvas">
 			<div class="" id="wfStepInDragContainer">
