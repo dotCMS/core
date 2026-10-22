@@ -184,6 +184,33 @@ public class ContainerResourceDependenciesIntegrationTest {
 
     /**
      * Method to test: {@link ContainerResource#getContainerDependencies}
+     * Given Scenario: a back-end user who can read the container and a template that uses it,
+     * while that template also uses a second container the user cannot read
+     * ExpectedResult: 200 listing the template; the other container does not fail the lookup
+     */
+    @Test
+    public void listsATemplateThatAlsoUsesAContainerTheUserCannotRead() throws Exception {
+        final Host site = freshSite();
+        final Container container = persistContainer(site, "Readable " + System.currentTimeMillis());
+        final Container other = persistContainer(site, "Hidden " + System.currentTimeMillis());
+        final Template template = new TemplateDataGen().site(site).title("Both " + System.currentTimeMillis())
+                .drawed(true).withContainer(container, "1").withContainer(other, "2").nextPersisted();
+        templates.add(template);
+        final User limitedUser = user(TestUserUtils.getBackendRole());
+        grantRead(limitedUser, container);
+        grantRead(limitedUser, template);
+
+        final Response result = resource.getContainerDependencies(
+                request(limitedUser.getEmailAddress()), response, container.getInode());
+
+        assertEquals(Response.Status.OK.getStatusCode(), result.getStatus());
+        final ContainerDependenciesView view = entity(result);
+        assertEquals(1, view.templates().size());
+        assertEquals(template.getIdentifier(), view.templates().get(0).identifier());
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#getContainerDependencies}
      * Given Scenario: a user holding only the front-end role, with READ on the container
      * ExpectedResult: the request is rejected because the endpoint requires a back-end user
      */

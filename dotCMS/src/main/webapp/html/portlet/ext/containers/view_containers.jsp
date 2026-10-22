@@ -161,12 +161,16 @@ function findContainerInUse(inodes, index, callback) {
 		return response.json();
 	}).then(function(json) {
 		var dependencies = json.entity;
-		if (dependencies && dependencies.templates && dependencies.templates.length > 0) {
+		if (!dependencies || !Array.isArray(dependencies.templates)) {
+			throw new Error('Unexpected response shape');
+		}
+		if (dependencies.templates.length > 0) {
 			callback(dependencies);
 		} else {
 			findContainerInUse(inodes, index + 1, callback);
 		}
-	}).catch(function() {
+	}).catch(function(error) {
+		console.error('Container dependency lookup failed', error);
 		showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "an-unexpected-system-error-occurred")) %>');
 	});
 }

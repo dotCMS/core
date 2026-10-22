@@ -1108,8 +1108,8 @@ public class ContainerResource implements Serializable {
     @Operation(
             operationId = "getContainerDependencies",
             summary = "Lists the templates that use a container",
-            description = "Returns the working version of the container (inode, identifier, title) and the " +
-                    "templates, readable by the requesting user, whose layout references it. The list is " +
+            description = "Returns the container (inode, identifier, title; the working version when looked up " +
+                    "by identifier or folder path) and the templates, readable by the requesting user, that use it. The list is " +
                     "empty when no template uses the container. Intended to be checked before deleting a container. " +
                     "Requires a back-end user. A drawn template is listed when its layout references the container; " +
                     "an advanced template only when the container holds content.",
