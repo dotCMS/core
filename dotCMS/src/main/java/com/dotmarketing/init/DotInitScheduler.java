@@ -6,11 +6,13 @@ import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.job.system.event.DeleteOldSystemEventsJob;
 import com.dotcms.job.system.event.SystemEventsJob;
 import com.dotcms.publisher.business.PublisherQueueJob;
+import com.dotcms.storage.AssetStorageFeature;
 import com.dotcms.telemetry.job.MetricsStatsJob;
 import com.dotcms.workflow.EscalationThread;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.quartz.job.AccessTokenRenewJob;
+import com.dotcms.storage.binary.BinaryCacheEvictionJob;
 import com.dotmarketing.quartz.job.BinaryCleanupJob;
 import com.dotmarketing.quartz.job.CleanUnDeletedUsersJob;
 import com.dotmarketing.quartz.job.DeleteInactiveLiveWorkingIndicesJob;
@@ -26,6 +28,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import io.vavr.control.Try;
+import org.quartz.CronExpression;
 import org.quartz.CronTrigger;
 import org.quartz.Job;
 import org.quartz.JobDetail;
@@ -33,7 +36,13 @@ import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 
 import java.util.Calendar;
+import java.util.Date;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.dotmarketing.util.WebKeys.DOTCMS_DISABLE_WEBSOCKET_PROTOCOL;
 
@@ -49,6 +58,16 @@ public class DotInitScheduler {
 
 	public static final String DOTCMS_JOB_GROUP_NAME = "dotcms_jobs";
 	public static final String CRON_EXPRESSION_EVERY_5_MINUTES = "0 */5 * ? * *";
+
+	// Cache eviction can run for minutes, so it gets its own daemon thread rather than a shared pool slot.
+	private static final ScheduledExecutorService BINARY_CACHE_EVICTION_EXECUTOR =
+			Executors.newSingleThreadScheduledExecutor(runnable -> {
+				final Thread thread = new Thread(runnable, "binary-cache-eviction");
+				thread.setDaemon(true);
+				return thread;
+			});
+	private static final AtomicReference<ScheduledFuture<?>> BINARY_CACHE_EVICTION_RUN = new AtomicReference<>();
+	private static final AtomicLong BINARY_CACHE_EVICTION_GENERATION = new AtomicLong();
 
 	private static void deleteOldJobs() throws DotDataException {
 		// remove unused old jobs
@@ -145,6 +164,22 @@ public class DotInitScheduler {
 				if ((job = sched.getJobDetail("BinaryCleanupJob", DOTCMS_JOB_GROUP_NAME)) != null) {
 					sched.deleteJob("BinaryCleanupJob", DOTCMS_JOB_GROUP_NAME);
 				}
+			}
+
+			// Binary Cache Eviction Job (S3 asset storage only). It trims this node's local asset cache, so it
+			// runs on every node from its own node-local thread; the clustered Quartz store would fire it
+			// on only one node per run.
+            if(AssetStorageFeature.isEnabled() && UtilMethods.isSet(Config.getStringProperty(BinaryCacheEvictionJob.BINARY_CACHE_EVICTION_CRON_PROP, null))) {
+				try {
+					calendar = Calendar.getInstance();
+					calendar.add(Calendar.MINUTE, 10);
+					startBinaryCacheEviction(new CronExpression(Config.getStringProperty(BinaryCacheEvictionJob.BINARY_CACHE_EVICTION_CRON_PROP)),
+							calendar.getTime());
+				} catch (Exception e) {
+					Logger.error(DotInitScheduler.class, e.getMessage(),e);
+				}
+			} else if (AssetStorageFeature.isEnabled()) {
+				Logger.info(DotInitScheduler.class, "BinaryCacheEvictionJob schedule disabled (no BINARY_CACHE_EVICTION_CRON set)");
 			}
 
 			final String publishQueueJobName = "PublishQueueJob";
@@ -576,6 +611,58 @@ private static void addDeleteOldSiteSearchIndicesJob (final Scheduler scheduler)
 				Logger.warn(DotInitScheduler.class, e.toString());
             }
         }
+	}
+
+	/**
+	 * Starts this node's {@link BinaryCacheEvictionJob} schedule, cancelling any schedule started earlier
+	 * so that calling {@link #start()} again never leaves two chains of runs.
+	 *
+	 * @param cron  the parsed {@code BINARY_CACHE_EVICTION_CRON} expression
+	 * @param first the time after which the first run may start
+	 */
+	private static void startBinaryCacheEviction(final CronExpression cron, final Date first) {
+		final long generation = BINARY_CACHE_EVICTION_GENERATION.incrementAndGet();
+		final ScheduledFuture<?> previous = BINARY_CACHE_EVICTION_RUN.getAndSet(
+				scheduleBinaryCacheEviction(cron, first, generation));
+		if (previous != null) {
+			previous.cancel(false);
+		}
+	}
+
+	/**
+	 * Schedules the next run of {@link BinaryCacheEvictionJob} on this node's eviction thread, at the
+	 * first time the cron expression allows after {@code after}. A run can take minutes, so it has its own
+	 * thread instead of a slot in the shared scheduled pool. Each run schedules the following one when it
+	 * finishes, so runs never overlap, and fire times missed during a long run are skipped rather than
+	 * queued. A chain from an earlier generation, because the schedule was restarted, stops.
+	 *
+	 * @param cron       the parsed {@code BINARY_CACHE_EVICTION_CRON} expression
+	 * @param after      the time after which the next run may start
+	 * @param generation the generation of the chain this run belongs to
+	 * @return the scheduled run, or {@code null} when the chain has stopped
+	 */
+	private static ScheduledFuture<?> scheduleBinaryCacheEviction(final CronExpression cron, final Date after,
+			final long generation) {
+		if (BINARY_CACHE_EVICTION_GENERATION.get() != generation) {
+			return null;
+		}
+		final Date next = cron.getNextValidTimeAfter(after);
+		if (next == null) {
+			Logger.warn(DotInitScheduler.class, "BinaryCacheEvictionJob cron expression has no future run: " + cron);
+			return null;
+		}
+		return BINARY_CACHE_EVICTION_EXECUTOR.schedule(() -> {
+			try {
+				new BinaryCacheEvictionJob().run();
+			} catch (final Exception e) {
+				Logger.warnAndDebug(DotInitScheduler.class, e);
+			} finally {
+				final ScheduledFuture<?> following = scheduleBinaryCacheEviction(cron, new Date(), generation);
+				if (following != null) {
+					BINARY_CACHE_EVICTION_RUN.set(following);
+				}
+			}
+		}, Math.max(0, next.getTime() - System.currentTimeMillis()), TimeUnit.MILLISECONDS);
 	}
 
    private static void addServerHeartbeatJob () {

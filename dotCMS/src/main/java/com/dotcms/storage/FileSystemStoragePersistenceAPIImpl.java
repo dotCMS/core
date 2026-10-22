@@ -3,6 +3,7 @@ package com.dotcms.storage;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.lock.IdentifierStripedLock;
 import com.dotcms.enterprise.achecker.parsing.EmptyIterable;
+import com.dotcms.storage.binary.BinaryAssetStorageAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -23,6 +24,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -30,6 +32,7 @@ import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Future;
 import java.util.stream.Stream;
@@ -45,6 +48,8 @@ import java.util.stream.Stream;
  * @author jsanca
  */
 public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAPI {
+
+    public static final String GROUP_DIRECTORY = "groupDirectory";
 
     private static final String DEFAULT_ROOT = "root";
     private static final String THE_BUCKET_NAME_S_DOES_NOT_HAVE_ANY_FILE_MAPPED = "The bucketName: `%s`, does not have any files mapped";
@@ -75,7 +80,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
      * @param groupName {@link String} bucket name
      * @param folder {@link File}
      */
-    void addGroupMapping(final String groupName, final File folder) {
+    public void addGroupMapping(final String groupName, final File folder) {
 
         if (!folder.isDirectory() || !folder.exists() || !folder.canWrite()) {
             throw new IllegalArgumentException(String.format(
@@ -84,6 +89,21 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         }
         groups.put(groupName.toLowerCase(), folder);
         Logger.debug(this, () -> String.format("Registering new group '%s' mapped to folder '%s' ",groupName, folder));
+    }
+
+    /**
+     * Maps a storage key to its path on disk. Keys are lowercased, as they always have been, except
+     * in the groups that keep mixed-case names while S3 asset storage is enabled.
+     *
+     * @param groupName the group the key belongs to
+     * @param path      the storage key
+     * @return the path to use under the group's folder
+     */
+    private String normalizePath(final String groupName, final String path) {
+        return AssetStorageFeature.isEnabled()
+                && (BinaryAssetStorageAPI.BINARY_ASSETS_GROUP.equals(groupName)
+                || BinaryAssetStorageAPI.GENERATED_ASSETS_GROUP.equals(groupName))
+                ? path : path.toLowerCase();
     }
 
     @Override
@@ -101,7 +121,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         }
         final File groupDir = groups.get(groupNameLC);
         try {
-           return Paths.get(groupDir.getCanonicalPath(), path.toLowerCase()).toFile().exists();
+           return Paths.get(groupDir.getCanonicalPath(), normalizePath(groupName, path)).toFile().exists();
         }catch(IOException e){
             throw new DotDataException(e.getMessage(), e);
         }
@@ -114,8 +134,20 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
     @Override
     public boolean createGroup(final String groupName, final Map<String, Object> extraOptions) throws DotDataException {
+        if (extraOptions != null && extraOptions.get(GROUP_DIRECTORY) instanceof File) {
+            addGroupMapping(groupName, (File) extraOptions.get(GROUP_DIRECTORY));
+            return true;
+        }
         final String groupNameLC = groupName.toLowerCase();
         final File groupNamePath = this.groups.get(groupNameLC);
+        if (AssetStorageFeature.isEnabled() && groupNamePath != null) {
+            try {
+                Files.createDirectories(groupNamePath.toPath());
+                return true;
+            } catch (IOException e) {
+                throw new DotDataException("Unable to create mapped storage directory " + groupNamePath, e);
+            }
+        }
         if (null != groupNamePath && groupNamePath.exists() && groupNamePath.isAbsolute()) {
             return true;
         }
@@ -148,7 +180,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
 
     @Override
     public boolean deleteObjectAndReferences(final String groupName, final String path) throws DotDataException {
-        return new File(groups.get(groupName.toLowerCase()), path.toLowerCase()).delete();
+        return new File(groups.get(groupName.toLowerCase()), normalizePath(groupName, path)).delete();
     }
 
     @Override
@@ -162,6 +194,19 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return new ImmutableList.Builder<String>().addAll(groups.keySet()).build();
     }
 
+    /**
+     * Copies a file into the group's folder under the given path. With S3 asset storage enabled the
+     * copy is staged in a uniquely named sibling file and atomically moved into place. The staged
+     * file is created with an ordinary write, so it gets the process umask exactly like the
+     * flag-off path; a temp file would be owner-only and lock out group readers.
+     *
+     * @param groupName the group to write into
+     * @param path      the storage key inside the group
+     * @param file      the file to copy
+     * @param extraMeta unused by this implementation
+     * @return {@code true} once the file is stored
+     * @throws DotDataException if the copy fails
+     */
     @Override
     public Object pushFile(final String groupName,
             final String path,
@@ -179,8 +224,25 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         if (null != file && file.exists() && file.canRead() && groupDir.canWrite()) {
 
             try {
-                final File destBucketFile = Paths.get(groupDir.getCanonicalPath(), path.toLowerCase()).toFile();
-                FileUtils.copyFile(file, destBucketFile);
+                final File destBucketFile = Paths.get(groupDir.getCanonicalPath(), normalizePath(groupName, path)).toFile();
+                if (!AssetStorageFeature.isEnabled()) {
+                    FileUtils.copyFile(file, destBucketFile);
+                } else if (!file.getCanonicalFile().equals(destBucketFile.getCanonicalFile())) {
+                    final Path destination = destBucketFile.toPath();
+                    Files.createDirectories(destination.getParent());
+                    final Path staged = destination.resolveSibling(".restore-" + UUID.randomUUID() + ".tmp");
+                    try {
+                        Files.copy(file.toPath(), staged, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                        try {
+                            Files.move(staged, destination, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                                    java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                        } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                            Files.move(staged, destination, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                        }
+                    } finally {
+                        Files.deleteIfExists(staged);
+                    }
+                }
             } catch (IOException e) {
                 Logger.error(FileSystemStoragePersistenceAPIImpl.class, e.getMessage(), e);
                 throw new DotDataException(e.getMessage(), e);
@@ -195,6 +257,20 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return true;
     }
 
+    /**
+     * Writes an object into the group's folder under the given path using the writer delegate. With
+     * S3 asset storage enabled the object is written to a uniquely named sibling file and atomically
+     * moved into place, always replacing what is there. The staged file is created with an ordinary
+     * output stream, so it gets the process umask exactly like the flag-off path.
+     *
+     * @param groupName      the group to write into
+     * @param path           the storage key inside the group
+     * @param writerDelegate writes the object to the stream
+     * @param object         the object to write
+     * @param extraMeta      unused by this implementation
+     * @return {@code true} once the object is stored
+     * @throws DotDataException if the write fails
+     */
     @Override
     public Object pushObject(final String groupName, final String path,
             final ObjectWriterDelegate writerDelegate,
@@ -214,7 +290,27 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                 return lockManager.tryLock("fs_" + groupName + path,
                         () -> {
 
-                            final File destBucketFile = Paths.get(groupDir.getCanonicalPath(),path.toLowerCase()).toFile();
+                            final File destBucketFile = Paths.get(groupDir.getCanonicalPath(),normalizePath(groupName, path)).toFile();
+
+                            if (AssetStorageFeature.isEnabled()) {
+                                final Path destination = destBucketFile.toPath();
+                                Files.createDirectories(destination.getParent());
+                                final Path staged = destination.resolveSibling(".metadata-" + UUID.randomUUID() + ".tmp");
+                                try {
+                                    try (OutputStream outputStream = FileUtil.createOutputStream(staged, contentMetadataCompressor.get())) {
+                                        writerDelegate.write(outputStream, object);
+                                    }
+                                    try {
+                                        Files.move(staged, destination, java.nio.file.StandardCopyOption.ATOMIC_MOVE,
+                                                java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                    } catch (java.nio.file.AtomicMoveNotSupportedException e) {
+                                        Files.move(staged, destination, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+                                    }
+                                    return true;
+                                } finally {
+                                    Files.deleteIfExists(staged);
+                                }
+                            }
 
                             // someone else already wrote the file meanwhile waiting for the lock
                             // so, I do not need to write it again
@@ -281,8 +377,37 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         );
     }
 
+    /**
+     * Returns the stored file for the path. With S3 asset storage on, an unmapped group or a missing
+     * file returns {@code null} so the chain can try the next provider, and a path that is not a
+     * regular file fails. With it off, a missing group or file throws
+     * {@link IllegalArgumentException} as before.
+     *
+     * @param groupName the group to read from
+     * @param path      the object's path
+     * @return the stored file, or {@code null} when the flag is on and it is absent
+     * @throws DotDataException if the file cannot be read
+     */
     @Override
     public File pullFile(final String groupName, final String path) throws DotDataException {
+
+        if (AssetStorageFeature.isEnabled()) {
+            final File groupDir = groups.get(groupName.toLowerCase());
+            if (groupDir == null) {
+                return null;
+            }
+            try {
+                final Path file = Paths.get(groupDir.getCanonicalPath(), normalizePath(groupName, path));
+                if (!Files.readAttributes(file, java.nio.file.attribute.BasicFileAttributes.class).isRegularFile()) {
+                    throw new IOException("Stored binary is not a regular file: " + file);
+                }
+                return file.toFile();
+            } catch (NoSuchFileException absent) {
+                return null;
+            } catch (IOException e) {
+                throw new DotDataException("Unable to read stored binary " + path, e);
+            }
+        }
 
         if (!this.existsGroup(groupName)) {
 
@@ -293,7 +418,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         try {
             final File groupDir = groups.get(groupName.toLowerCase());
             if (groupDir.canRead()) {
-                final File destBucketFile = Paths.get(groupDir.getCanonicalPath(), path.toLowerCase()).toFile();
+                final File destBucketFile = Paths.get(groupDir.getCanonicalPath(), normalizePath(groupName, path)).toFile();
                 if (destBucketFile.exists()) {
                     clientFile = destBucketFile;
                 } else {
@@ -311,9 +436,51 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
         return clientFile;
     }
 
+    /**
+     * Reads and deserializes the stored object for the path. With S3 asset storage on, an unmapped
+     * group or a missing file returns {@code null}. A file that opens but cannot be decoded, such as
+     * a zero-length or truncated file or one not in the configured {@code CONTENT_METADATA_COMPRESSOR}
+     * format, is kept and reported as {@link UnreadableStoredObjectException}, so the chain can
+     * replace it from durable storage and nothing treats it as absent and regenerates it. A file
+     * that cannot be opened throws {@link DotDataException}.
+     * With the flag off, a corrupt file is deleted and an empty map is returned, and a missing group
+     * or file throws {@link IllegalArgumentException}, as before.
+     *
+     * @param groupName      the group to read from
+     * @param path           the object's path
+     * @param readerDelegate deserializes the stored value
+     * @return the object, or {@code null} when the flag is on and the file is absent
+     * @throws UnreadableStoredObjectException if the flag is on and the file cannot be deserialized
+     * @throws DotDataException if the flag is on and the file cannot be read
+     */
     @Override
     public Object pullObject(final String groupName, final String path,
             final ObjectReaderDelegate readerDelegate) throws DotDataException {
+
+        if (AssetStorageFeature.isEnabled()) {
+            final File groupDir = groups.get(groupName.toLowerCase());
+            if (groupDir == null) {
+                return null;
+            }
+            final Path file;
+            try {
+                file = Paths.get(groupDir.getCanonicalPath(), normalizePath(groupName, path));
+            } catch (IOException e) {
+                throw new DotDataException("Unable to read stored object " + path, e);
+            }
+            try (InputStream input = FileUtil.createInputStream(file, contentMetadataCompressor.get())) {
+                return readerDelegate.read(input);
+            } catch (NoSuchFileException absent) {
+                return null;
+            } catch (FileSystemException e) {
+                // Opening the file failed (permissions, too many open files, ...): an I/O problem, not corruption.
+                throw new DotDataException("Unable to read stored object " + path, e);
+            } catch (IOException corrupt) {
+                // The file opened but could not be decoded (bad compression header, truncated or invalid
+                // contents). Keep it: the chain replaces it from durable storage, or the read fails.
+                throw new UnreadableStoredObjectException("Unable to read stored object " + path, corrupt);
+            }
+        }
 
         Object object;
         if (!this.existsGroup(groupName)) {
@@ -328,7 +495,7 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
             File file = null;
 
             try {
-                file = Paths.get(groupDir.getCanonicalPath(), path.toLowerCase()).toFile();
+                file = Paths.get(groupDir.getCanonicalPath(), normalizePath(groupName, path)).toFile();
                 // Assume the file is there and open it directly — a failed open reports absence
                 // without the extra stat of an exists() pre-check, which is a hang risk on
                 // network-backed storage (issue #36498).
@@ -424,6 +591,66 @@ public class FileSystemStoragePersistenceAPIImpl implements StoragePersistenceAP
                     countFiles(value, count);
                 }
             }
+        }
+    }
+
+    /**
+     * Lists the stored files under a prefix, relative to the group folder. The prefix is mapped to
+     * disk the same way keys are when they are written, so a prefix in any letter case finds them.
+     *
+     * @param groupName  the group to list
+     * @param pathPrefix the key prefix
+     * @return the matching paths as stored on disk, or an empty list
+     * @throws DotDataException if the folder cannot be resolved or walked
+     */
+    @Override
+    public List<String> listObjectPaths(final String groupName,
+                                        final String pathPrefix) throws DotDataException {
+
+        final String groupNameLC = groupName.toLowerCase();
+        if (!existsGroup(groupNameLC)) {
+            return List.of();
+        }
+
+        final File groupDir = groups.get(groupNameLC);
+        final Path prefixDir;
+        try {
+            // Keys are stored through normalizePath, so the prefix must be resolved the same way.
+            prefixDir = Paths.get(groupDir.getCanonicalPath(), normalizePath(groupName, pathPrefix));
+        } catch (final IOException e) {
+            throw new DotDataException(
+                    "Failed to resolve prefix path for group '" + groupName + "': " + e.getMessage(), e);
+        }
+
+        // Path traversal guard: ensure resolved path stays within group root
+        try {
+            if (!prefixDir.toRealPath().startsWith(groupDir.toPath().toRealPath())) {
+                throw new IllegalArgumentException(
+                        "Path prefix escapes group root: " + pathPrefix);
+            }
+        } catch (final java.nio.file.NoSuchFileException e) {
+            // Directory does not exist — no objects to list
+            return List.of();
+        } catch (final IOException e) {
+            throw new DotDataException(
+                    "Failed to validate prefix path for group '" + groupName + "': " + e.getMessage(), e);
+        }
+
+        if (!prefixDir.toFile().exists() || !prefixDir.toFile().isDirectory()) {
+            return List.of();
+        }
+
+        try (final Stream<Path> walk = Files.walk(prefixDir)) {
+            final Path groupRoot = groupDir.getCanonicalFile().toPath();
+            return walk
+                    .filter(Files::isRegularFile)
+                    .map(groupRoot::relativize)
+                    .map(Path::toString)
+                    .collect(java.util.stream.Collectors.toList());
+        } catch (final IOException e) {
+            throw new DotDataException(
+                    "Failed to list objects under prefix '" + pathPrefix
+                    + "' in group '" + groupName + "': " + e.getMessage(), e);
         }
     }
 

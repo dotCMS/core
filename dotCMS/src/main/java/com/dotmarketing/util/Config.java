@@ -27,6 +27,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -52,6 +53,8 @@ public class Config {
     public static final AtomicBoolean isWatching = new AtomicBoolean(false);
 
     public static final Map<String, String> testOverrideTracker = new ConcurrentHashMap<>();
+
+    private static final Map<String, List<Runnable>> overrideCallbacks = new ConcurrentHashMap<>();
 
     private static final Set<String> environmentSetKeys = ConcurrentHashMap.newKeySet();
 
@@ -782,18 +785,37 @@ public class Config {
     }
 
     /**
-     * @param key
-     * @param value
+     * Overrides a property in memory. When the {@code DOT_}-prefixed form of the key is already
+     * present, that form is overridden instead. Afterwards, runs the callbacks registered with
+     * {@link #onOverride(String, Runnable)} for the key exactly as it was passed in.
+     *
+     * @param key   the property name
+     * @param value the new value
      */
     public static void setProperty(String key, Object value) {
         if (props != null) {
+            final List<Runnable> callbacks = overrideCallbacks.getOrDefault(key, List.of());
             if(props.containsKey(envKey(key))) {
                 key = envKey(key);
             }
             trackOverrides(key, value);
             Logger.info(Config.class, "Setting property: " + key + " to " + value);
             props.setProperty(key, value);
+            callbacks.forEach(Runnable::run);
         }
+    }
+
+    /**
+     * Registers a callback that runs after {@link #setProperty(String, Object)} overrides the given
+     * key in memory. Lets code that caches a property, for example a flag read once per process,
+     * forget that value when a test switches it. Property file reloads and system table changes do
+     * not run the callback.
+     *
+     * @param key      the property name, as callers pass it to {@code setProperty}
+     * @param callback the action to run after each in-memory override of that key
+     */
+    public static void onOverride(final String key, final Runnable callback) {
+        overrideCallbacks.computeIfAbsent(key, k -> new CopyOnWriteArrayList<>()).add(callback);
     }
 
     private static void trackOverrides(String key, Object value) {
