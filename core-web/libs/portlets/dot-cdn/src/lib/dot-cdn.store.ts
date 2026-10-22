@@ -1,12 +1,12 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { tapResponse } from '@ngrx/operators';
 import { format, subDays } from 'date-fns';
-import { Observable, of } from 'rxjs';
+import { EMPTY, Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { finalize, mergeMap, switchMap } from 'rxjs/operators';
+import { catchError, finalize, mergeMap, switchMap } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 
@@ -159,6 +159,11 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
         return loading$.pipe(
             switchMap(() =>
                 this.dotCdnService.purgeCache(urls).pipe(
+                    catchError((error: HttpErrorResponse) => {
+                        this.httpErrorManager.handle(error);
+
+                        return EMPTY;
+                    }),
                     finalize(() =>
                         this.dispatchLoading({
                             loadingState: LoadingState.LOADED,
