@@ -16,13 +16,14 @@ import com.dotcms.content.index.domain.AggregationBucket;
 import com.dotcms.content.index.domain.ContentSearchResponse;
 import com.dotcms.content.index.domain.ContentSearchResults;
 import com.dotcms.content.index.domain.IndexBulkRequest;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Map;
@@ -460,36 +461,43 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Given scenario: the same hidden document as above, searched by a non-admin user with a request
-     * body that carries an extra top-level {@code "permissions:"} key.
-     * Expected: the permission filter is still injected, so the document is never returned. The
-     * extra key is not part of the search DSL, so OpenSearch may also reject the request; either
-     * outcome is acceptable, returning the hidden document is not.
+     * Given scenario: a non-admin user runs a raw query, once with a plain body and once with a
+     * body that carries an extra top-level key.
+     * Expected: the permission filter is injected in both cases — what the caller puts in the body
+     * takes no part in the decision. The assertion is made on the body that would be sent to the
+     * engine, because a body with an unknown top-level key never runs: OpenSearch rejects it while
+     * parsing, so observing hits cannot tell a filtered query from a rejected one.
      */
     @Test
-    public void test_searchRaw_nonAdminUser_extraTopLevelKey_isStillFiltered() throws Exception {
-
-        final String unheldRoleId = "unheld-role-key-" + RUN_ID;
-        final String docId = "perm-key-hidden-" + RUN_ID + "_1_default";
-        final String docJson =
-                "{\"identifier\":\"perm-key-hidden-" + RUN_ID + "\","
-                + "\"inode\":\"perm-key-hidden-inode-" + RUN_ID + "\","
-                + "\"live\":true,"
-                + "\"contenttype\":\"testtype\","
-                + "\"permissions\":\"P" + unheldRoleId + ".1P \"}";
-        indexDocument(physicalWorking, docId, docJson);
+    public void test_applyPermissionsFilter_nonAdminUser_alwaysInjectsPermissions() throws Exception {
 
         final User limitedUser = new UserDataGen().nextPersisted();
-        final String query = "{\"permissions:\":\"x\",\"query\":{\"match_all\":{}}}";
 
-        try {
-            final ContentSearchResponse limitedResp =
-                    osSearchAPI.searchRaw(query, false, limitedUser, false);
-            assertEquals("Non-admin user must NOT see a document they lack read permission on",
-                    0L, limitedResp.hits().getTotalHits().value());
-        } catch (final DotStateException e) {
-            Logger.info(this, "Request with an unknown top-level key was rejected: " + e.getMessage());
+        for (final String body : new String[] {
+                "{\"query\":{\"match_all\":{}}}",
+                "{\"permissions:\":\"x\",\"query\":{\"match_all\":{}}}"}) {
+
+            final JSONObject filtered = OSSearchAPIImpl.applyPermissionsFilter(
+                    new JSONObject(body), limitedUser, false);
+            final String query = filtered.getJSONObject("query").toString();
+
+            assertTrue("The query sent for " + body + " must carry the permission filter: " + query,
+                    query.contains("+owner:" + limitedUser.getUserId()));
         }
+    }
+
+    /**
+     * Given scenario: an administrator runs the same raw query.
+     * Expected: the query reaches the engine as the caller wrote it — administrators are not
+     * filtered.
+     */
+    @Test
+    public void test_applyPermissionsFilter_adminUser_queryIsUntouched() throws Exception {
+
+        final JSONObject filtered = OSSearchAPIImpl.applyPermissionsFilter(
+                new JSONObject("{\"query\":{\"match_all\":{}}}"), TestUserUtils.getAdminUser(), false);
+
+        assertEquals("{\"match_all\":{}}", filtered.getJSONObject("query").toString());
     }
 
     // =======================================================================
