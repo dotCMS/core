@@ -130,6 +130,70 @@ public class UserResourceIntegrationTest {
         return request;
     }
 
+    /**
+     * A request authenticated as the given user through the session, with no Authorization
+     * header, for callers that are not the admin.
+     */
+    private static HttpServletRequest requestFor(final User asUser) {
+        final MockHeaderRequest request = new MockHeaderRequest(
+                new MockSessionRequest(
+                        new MockAttributeRequest(new MockHttpRequestIntegrationTest(host.getHostname(), "/").request())
+                                .request())
+                        .request());
+        request.getSession().setAttribute(com.liferay.portal.util.WebKeys.USER_ID, asUser.getUserId());
+        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST, host);
+        request.getSession().setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, host.getIdentifier());
+        return request;
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: A back-end user with no portlets filters the user list by a role key.
+     * ExpectedResult: Forbidden. Filtering by role reveals who holds it, so it takes the same
+     * privilege as {@code includeRoles}.
+     */
+    @Test(expected = ForbiddenException.class)
+    public void test_filter_byRoleKey_plainBackendUser_isForbidden() throws Exception {
+        final String unique = "rkPlain" + System.currentTimeMillis();
+        final Role role = new RoleDataGen().key(unique + "Key").nextPersisted();
+        final User plain = new UserDataGen().roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        rolesToClean.add(role);
+        usersToClean.add(plain);
+
+        resource.filter(requestFor(plain), response, unique, 0, 40, null, "ASC",
+                false, false, null, 0, List.of(role.getRoleKey()), null, false);
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: A back-end user with the Roles and Users portlets, not an administrator,
+     * filters by a role key that one user holds.
+     * ExpectedResult: 200 with the granted user listed.
+     */
+    @Test
+    public void test_filter_byRoleKey_rolesAndUsersPortlets_isAllowed() throws Exception {
+        final String unique = "rkDelegate" + System.currentTimeMillis();
+        final Role role = new RoleDataGen().key(unique + "Key").nextPersisted();
+        final User granted = new UserDataGen().firstName(unique).roles(role).nextPersisted();
+        final Layout layout = new LayoutDataGen().portletIds("roles", "users").nextPersisted();
+        final Role portletRole = new RoleDataGen().layout(layout).nextPersisted();
+        final User delegate = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole(), portletRole).nextPersisted();
+        rolesToClean.add(role);
+        rolesToClean.add(portletRole);
+        usersToClean.add(granted);
+        usersToClean.add(delegate);
+
+        final Response resourceResponse = resource.filter(requestFor(delegate), response, unique, 0, 40,
+                null, "ASC", false, false, null, 0, List.of(role.getRoleKey()), null, false);
+
+        assertEquals(200, resourceResponse.getStatus());
+        @SuppressWarnings("unchecked")
+        final List<Map<String, Object>> userMaps = (List<Map<String, Object>>)
+                ((ResponseEntityView<Object>) resourceResponse.getEntity()).getEntity();
+        assertTrue(userMaps.stream().anyMatch(map -> granted.getUserId().equals(map.get("userId"))));
+    }
+
     private void loginAs() throws Exception {
         final LoginAsForm loginAsForm = new LoginAsForm.Builder().userId(user.getUserId()).build();
         request = mockRequest();
@@ -244,30 +308,23 @@ public class UserResourceIntegrationTest {
     /**
      * Method to test: {@link UserResource#filter}
      * Given Scenario: A plain back-end user -- not a CMS Administrator and without Roles+Users
-     * portlet access -- filters the list by role: by the Back-end access role key alone; by the
-     * CMS Administrator role key; by the CMS Administrator role ID; by the Back-end key combined
-     * with the CMS Administrator key; by the Back-end key combined with a role ID; and by a key
-     * that matches no Role.
-     * ExpectedResult: The Back-end access filter alone keeps working (200, caller listed), since it
-     * only mirrors the {@code backendUser} flag every item already carries. Every other combination
-     * is rejected with a {@link ForbiddenException} (403), the unknown key and ID included.
+     * portlet access -- filters the list by role: by the Back-end access role key; by the Front-end
+     * access role key; by the CMS Administrator role key; by the CMS Administrator role ID; by the
+     * Back-end key combined with the CMS Administrator key; by the Back-end key combined with a
+     * role ID; and by a key and an ID that match no Role.
+     * ExpectedResult: Every combination is rejected with a {@link ForbiddenException} (403), the
+     * access roles and the unknown key and ID included: filtering by role reveals who holds it.
      */
     @Test
-    public void test_filter_byRole_plainBackendUser_onlyAccessRolesAllowed() throws Exception {
+    public void test_filter_byRole_plainBackendUser_everyRoleFilterForbidden() throws Exception {
         final String suffix = uniq();
         final String password = "pw" + suffix;
         final User caller = plainBackendCaller("plainrolefilter" + suffix, password);
 
-        final Response allowed = resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
-                caller.getUserId(), 1, 40, null, "ASC", false, false, null, 0,
-                List.of(Role.DOTCMS_BACK_END_USER), null, false);
-        assertEquals("the Back-end access filter must keep working for any back-end user",
-                Status.OK.getStatusCode(), allowed.getStatus());
-        assertNotNull("the caller holds the Back-end role, so it must be listed",
-                itemFor(items(allowed), caller.getUserId()));
-
         final String cmsAdminRoleId = APILocator.getRoleAPI().loadCMSAdminRole().getId();
         final Map<String, List<String>[]> forbidden = new java.util.LinkedHashMap<>();
+        forbidden.put("Back-end key", pair(List.of(Role.DOTCMS_BACK_END_USER), null));
+        forbidden.put("Front-end key", pair(List.of(Role.DOTCMS_FRONT_END_USER), null));
         forbidden.put("CMS Administrator key", pair(List.of(Role.CMS_ADMINISTRATOR_ROLE), null));
         forbidden.put("CMS Administrator id", pair(null, List.of(cmsAdminRoleId)));
         forbidden.put("Back-end key + CMS Administrator key",

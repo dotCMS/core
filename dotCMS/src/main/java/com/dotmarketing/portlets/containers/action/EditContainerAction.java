@@ -43,6 +43,8 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
+import com.dotmarketing.exception.DotDataValidationException;
+import com.dotmarketing.portlets.containers.business.ContainerSortBy;
 import com.liferay.portal.struts.ActionException;
 import com.liferay.portal.util.Constants;
 import com.liferay.portlet.ActionRequestImpl;
@@ -61,7 +63,12 @@ import org.apache.commons.beanutils.BeanUtils;
 /**
  * Portlet action used to maintain the containers
  * @author Maria
+ * @deprecated Containers are created, edited, copied and published through the REST API
+ * ({@code /api/v1/containers}, see {@code ContainerResource}) and the Angular container editor.
+ * This Struts action belongs to the legacy JSP portlet, which has no caller in the current UI; it
+ * is kept only so existing URLs keep working and will be removed in a future version.
  */
+@Deprecated
 public class EditContainerAction extends DotPortletAction implements
 		DotPortletActionInterface {
 
@@ -522,6 +529,12 @@ public class EditContainerAction extends DotPortletAction implements
 				SessionMessages.add(httpReq, "message", "message.insufficient.permissions.to.save");
 				throw new ActionException(WebKeys.USER_PERMISSIONS_EXCEPTION);
 			}
+		}
+
+		// Only a supported "sort contentlets by" value can be stored on a container
+		if (!ContainerSortBy.isSupported(container.getSortContentletsBy())) {
+			throw new DotDataValidationException(
+					"sortContentletsBy must be one of the supported sort columns");
 		}
 
 		// Current associated templates

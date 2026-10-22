@@ -248,9 +248,9 @@
                                 <argument>nx</argument>
                                 <argument>format:check</argument>
                                 <!-- Explicit base. Without it nx falls back to nx.json defaultBase
-                                     ("main"), i.e. a LOCAL branch that only exists when a job passes
-                                     require-main=true to prepare-runner. origin/main is always there
-                                     after a fetch-depth:0 checkout, so this runs anywhere. -->
+                                     ("main"), i.e. a LOCAL branch that no CI job creates any more.
+                                     origin/main is always there after a fetch-depth:0 checkout, so
+                                     this runs anywhere. -->
                                 <argument>--base=${git.origin.branch}</argument>
                             </arguments>
                         </configuration>
