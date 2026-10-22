@@ -951,7 +951,7 @@ public class UserResource implements Serializable {
 	@Operation(
 	    operationId = "createUser",
 	    summary = "Create user",
-	    description = "Creates a new user. Requires admin privileges or access to Users and Roles portlets. FirstName, LastName, Email and Password are required"
+	    description = "Creates a new user. Requires a CMS Administrator. FirstName, LastName, Email and Password are required"
 	)
 	@ApiResponses(value = {
 	    @ApiResponse(responseCode = "200",
@@ -965,7 +965,7 @@ public class UserResource implements Serializable {
 	                description = "Unauthorized - authentication required",
 	                content = @Content(mediaType = "application/json")),
 	    @ApiResponse(responseCode = "403",
-	                description = "Forbidden - insufficient permissions to create users. Granting roles, including the default one, requires a CMS Administrator",
+	                description = "Forbidden - only a CMS Administrator can create users",
 	                content = @Content(mediaType = "application/json")),
 	    @ApiResponse(responseCode = "409",
 	                description = "Conflict - user already exists",
@@ -992,32 +992,26 @@ public class UserResource implements Serializable {
 				.rejectWhenNoUser(true)
 				.init().getUser();
 
-		final boolean isRoleAdministrator = modUser.isAdmin() ||
-				(
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-				);
+		// creating users requires a CMS Administrator; checked before anything is written
+		if (!modUser.isAdmin()) {
+			throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to create users");
+		}
 
         if (!UtilMethods.isSet(createUserForm.getPassword())) {
             throw new IllegalArgumentException("Password can not be null");
         }
 
-		if (isRoleAdministrator) {
-
-			final User userToUpdated = this.createNewUser(
-					modUser, createUserForm);
-			final Role role = APILocator.getRoleAPI().getUserRole(userToUpdated);
-			return Response.ok(new ResponseEntityView<>(Map.of(USER_ID, userToUpdated.getUserId(), "roleId", role.getId(),
-					"user", userToUpdated.toMap()))).build(); // 200
-		}
-
-		throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to create users");
+		final User userToUpdated = this.createNewUser(
+				modUser, createUserForm);
+		final Role role = APILocator.getRoleAPI().getUserRole(userToUpdated);
+		return Response.ok(new ResponseEntityView<>(Map.of(USER_ID, userToUpdated.getUserId(), "roleId", role.getId(),
+				"user", userToUpdated.toMap()))).build(); // 200
 	} // create.
 
 	/**
 	 * Creates a user from the payload and grants the requested roles, or the Front-end User role when
-	 * none are sent. Granting roles requires a CMS Administrator; this is checked before the user is
-	 * created, so a refused request creates nothing.
+	 * none are sent. Only a CMS Administrator can create users; {@link #create} checks this before
+	 * calling this method, so nothing is written for any other caller.
 	 *
 	 * @param modUser        The user performing the request.
 	 * @param createUserForm The payload.
@@ -1051,12 +1045,6 @@ public class UserResource implements Serializable {
 			}
 			rolesToGrant.add(role);
 		}
-
-		// validated before the user is created, so a refused request creates nothing
-		final User newUser = new User();
-		newUser.setUserId(userId);
-		this.roleAPI.checkUserRolesChange(modUser, newUser,
-				rolesToGrant.stream().filter(Role::isEditUsers).collect(Collectors.toList()), List.of());
 
 		final User user = this.userAPI.createUser(userId, createUserForm.getEmail());
 

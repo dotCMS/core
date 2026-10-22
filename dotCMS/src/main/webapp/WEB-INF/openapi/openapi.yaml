@@ -19512,8 +19512,8 @@ paths:
       - Usage
   /v1/users:
     post:
-      description: "Creates a new user. Requires admin privileges or access to Users\
-        \ and Roles portlets. FirstName, LastName, Email and Password are required"
+      description: "Creates a new user. Requires a CMS Administrator. FirstName, LastName,\
+        \ Email and Password are required"
       operationId: createUser
       requestBody:
         content:
@@ -19540,8 +19540,7 @@ paths:
         "403":
           content:
             application/json: {}
-          description: "Forbidden - insufficient permissions to create users. Granting\
-            \ roles, including the default one, requires a CMS Administrator"
+          description: Forbidden - only a CMS Administrator can create users
         "409":
           content:
             application/json: {}

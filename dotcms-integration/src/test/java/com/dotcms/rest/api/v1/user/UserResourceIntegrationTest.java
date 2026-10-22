@@ -1132,14 +1132,14 @@ public class UserResourceIntegrationTest {
      * Method to test: {@link UserResource#create(HttpServletRequest, HttpServletResponse, UserForm)}
      * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator creates a
      * user with the CMS Administrator role.
-     * Expected Result: {@link DotSecurityException} (403); no user is created.
+     * Expected Result: {@link ForbiddenException} (403) before anything is written; no user is created.
      */
     @Test
     public void test_create_nonAdminWithAdministratorRole_forbidden() throws Exception {
         final User manager = newUserManager();
         final String newUserId = "createdbymanager-" + uniq();
 
-        assertThrows(DotSecurityException.class, () -> resource.create(requestAs(manager), response,
+        assertThrows(ForbiddenException.class, () -> resource.create(requestAs(manager), response,
                 createFormFor(newUserId).roles(List.of(Role.DOTCMS_BACK_END_USER, Role.CMS_ADMINISTRATOR_ROLE))
                         .build()));
 
@@ -1151,15 +1151,54 @@ public class UserResourceIntegrationTest {
      * Method to test: {@link UserResource#create(HttpServletRequest, HttpServletResponse, UserForm)}
      * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator creates a
      * user without the roles field (the default Front-end User role applies).
-     * Expected Result: {@link DotSecurityException} (403); no user is created.
+     * Expected Result: {@link ForbiddenException} (403) before anything is written; no user is created.
      */
     @Test
     public void test_create_nonAdminWithDefaultRole_forbidden() throws Exception {
         final User manager = newUserManager();
         final String newUserId = "createdbymanager-" + uniq();
 
-        assertThrows(DotSecurityException.class,
+        assertThrows(ForbiddenException.class,
                 () -> resource.create(requestAs(manager), response, createFormFor(newUserId).build()));
+
+        assertThrows(com.dotmarketing.business.NoSuchUserException.class,
+                () -> APILocator.getUserAPI().loadUserById(newUserId));
+    }
+
+    /**
+     * Method to test: {@link UserResource#create(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator creates a
+     * user whose only role entry matches no role.
+     * Expected Result: {@link ForbiddenException} (403) before anything is written; no user is created.
+     */
+    @Test
+    public void test_create_nonAdminWithUnknownRoleOnly_forbiddenAndNoUserCreated() throws Exception {
+        final User manager = newUserManager();
+        final String newUserId = "createdbymanager-" + uniq();
+
+        assertThrows(ForbiddenException.class, () -> resource.create(requestAs(manager), response,
+                createFormFor(newUserId).roles(List.of("no-such-role-" + uniq())).build()));
+
+        assertThrows(com.dotmarketing.business.NoSuchUserException.class,
+                () -> APILocator.getUserAPI().loadUserById(newUserId));
+    }
+
+    /**
+     * Method to test: {@link UserResource#create(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user with the Users and Roles tools who is not a CMS Administrator creates a
+     * user whose only role cannot be assigned to users (editUsers = false).
+     * Expected Result: {@link ForbiddenException} (403) before anything is written; no user is created.
+     */
+    @Test
+    public void test_create_nonAdminWithNonAssignableRoleOnly_forbiddenAndNoUserCreated() throws Exception {
+        final User manager = newUserManager();
+        final Role notAssignable = new RoleDataGen().key("notassignable" + uniq()).editUsers(false)
+                .nextPersisted();
+        rolesToClean.add(notAssignable);
+        final String newUserId = "createdbymanager-" + uniq();
+
+        assertThrows(ForbiddenException.class, () -> resource.create(requestAs(manager), response,
+                createFormFor(newUserId).roles(List.of(notAssignable.getRoleKey())).build()));
 
         assertThrows(com.dotmarketing.business.NoSuchUserException.class,
                 () -> APILocator.getUserAPI().loadUserById(newUserId));
