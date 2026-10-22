@@ -16,6 +16,7 @@ import { MessageModule } from 'primeng/message';
 import { DotLocalstorageService, DotMessageService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import {
+    DASHBOARD_TAB_LIST,
     DotAnalyticsDashboardStore,
     DotAnalyticsService,
     TIME_RANGE_OPTIONS
@@ -156,6 +157,31 @@ describe('DotAnalyticsDashboardComponent', () => {
             store = spectator.fixture.debugElement.injector.get(DotAnalyticsDashboardStore);
 
             expect(store.currentTab()).toBe('conversions');
+        });
+
+        // Regression: with routed tabs and no [value] binding, PrimeNG cannot track selection
+        // and every p-tab renders aria-selected="true", so a screen reader announces all three
+        // as selected. Assert the count rather than a single tab, because the defect is that
+        // *more than one* reports selected, which an assertion on the active tab alone passes
+        // straight through.
+        it('should report aria-selected on only the tab matching the route', () => {
+            spectator = createComponent({
+                firstChild: {
+                    snapshot: { url: [new UrlSegment('pageview', {})] }
+                }
+            });
+            spectator.detectChanges();
+
+            const tabs = spectator.queryAll('p-tab');
+            const selected = tabs.filter((tab) => tab.getAttribute('aria-selected') === 'true');
+
+            expect(tabs).toHaveLength(DASHBOARD_TAB_LIST.length);
+            expect(selected).toHaveLength(1);
+            // Positional rather than by label: the Router and DotMessagePipe are both mocked
+            // here, so the rendered tab text is empty and routerLink resolves to nothing.
+            expect(tabs.indexOf(selected[0])).toBe(
+                DASHBOARD_TAB_LIST.findIndex((tab) => tab.id === 'pageview')
+            );
         });
     });
 

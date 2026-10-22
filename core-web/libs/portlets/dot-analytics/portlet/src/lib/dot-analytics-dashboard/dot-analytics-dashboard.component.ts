@@ -2,14 +2,7 @@ import { filter, startWith } from 'rxjs';
 
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import {
-    ActivatedRoute,
-    NavigationEnd,
-    Router,
-    RouterLink,
-    RouterLinkActive,
-    RouterOutlet
-} from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 import { DividerModule } from 'primeng/divider';
@@ -35,7 +28,6 @@ const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-bann
     imports: [
         RouterOutlet,
         RouterLink,
-        RouterLinkActive,
         ButtonModule,
         MessageModule,
         TabsModule,
@@ -51,6 +43,14 @@ const HIDE_ANALYTICS_MESSAGE_BANNER_KEY = 'analytics-dashboard-hide-message-bann
 /**
  * Root analytics dashboard component. Manages tab navigation, time range filters,
  * and the Engagement, Pageview, and Conversions tabs.
+ *
+ * Tabs are routed rather than value-driven, so each one is bookmarkable and only the active
+ * tab's component is instantiated. `[value]` is still bound on `<p-tabs>` and each `<p-tab>`,
+ * even though nothing reads it for navigation: PrimeNG derives `aria-selected` from it, and
+ * without it every tab renders `aria-selected="true"` and a screen reader announces all three
+ * as selected. Navigation comes from `routerLink`; `[value]` exists so the accessibility state
+ * is truthful, and PrimeNG applies `p-tab-active` itself once it can track selection, which is
+ * why `routerLinkActive` is no longer needed to supply that class.
  */
 export default class DotAnalyticsDashboardComponent {
     /** Analytics dashboard store providing data and actions */
