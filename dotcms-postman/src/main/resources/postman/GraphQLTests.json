@@ -3137,7 +3137,7 @@
 							"response": []
 						},
 						{
-							"name": "Containers Property is Returned With Anon User",
+							"name": "Containers Property is Returned With Authenticated User",
 							"event": [
 								{
 									"listen": "test",
@@ -3145,7 +3145,7 @@
 										"exec": [
 											"let checker = (arr, target) => target.every(v => arr.includes(v));",
 											"",
-											"pm.test(\"'containers' includes all properties (with Anon User)\", function () {",
+											"pm.test(\"'containers' includes all properties (with Authenticated User)\", function () {",
 											"    var jsonData = pm.response.json();",
 											"    var containers = jsonData.data.page.containers;",
 											"    var container1 = containers[0];",
@@ -3168,9 +3168,6 @@
 								}
 							},
 							"request": {
-								"auth": {
-									"type": "noauth"
-								},
 								"method": "POST",
 								"header": [
 									{
@@ -3758,29 +3755,24 @@
 						},
 						{
 							"name": "GivenRequestByURI_Page_EditMode_WithoutAuth",
+							"protocolProfileBehavior": {
+								"disableCookies": true
+							},
 							"event": [
 								{
 									"listen": "test",
 									"script": {
 										"exec": [
-											"pm.test(\"Status code is 200\", function () {",
-											"    pm.response.to.have.status(200);",
+											"pm.test(\"Anonymous GraphQL requests are rejected by default\", function () {",
+											"    pm.response.to.have.status(401);",
 											"});",
 											"",
-											"pm.test(\"Response contains errors and correct error message\", function () {",
-											"    var jsonData = pm.response.json();",
-											"    console.log(jsonData)",
-											"    pm.expect(jsonData.errors, 'FAILED:[jsonData.errors]').to.be.an('array').that.is.not.empty;",
-											"",
-											"    var error = jsonData.errors[0];",
-											"    pm.expect(error.message, 'FAILED:[error.message]').to.equal(\"Exception while fetching data (/page) : Unauthorized: You do not have the necessary permissions to request this page in edit mode.\");",
-											"});",
-											"",
-											"pm.test(\"Page data is null\", function () {",
-											"    var jsonData = pm.response.json();",
-											"    pm.expect(jsonData.data.page, 'FAILED:[jsonData.data.page]').to.be.null;",
-											"});",
-											""
+											"pm.test(\"No content is returned to anonymous callers\", function () {",
+											"    const body = pm.response.text();",
+											"    pm.expect(body).to.contains(\"Unauthorized\");",
+											"    pm.expect(body).not.to.contains(\"CONTENT_APIS_ALLOW_ANONYMOUS\");",
+											"    pm.expect(body).not.to.match(/\"data\"\\s*:/);",
+											"});"
 										],
 										"type": "text/javascript",
 										"packages": {}
@@ -12416,15 +12408,15 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
+									"pm.test(\"Anonymous GraphQL requests are rejected by default\", function () {",
+									"    pm.response.to.have.status(401);",
 									"});",
 									"",
-									"pm.test(\"Has Multiple validation errors \", function () {",
-									"    const jsonData = pm.response.json();    ",
-									"    console.log(jsonData.errors);  ",
-									"    pm.expect(jsonData.errors.length).greaterThan(0);",
-									"     pm.expect(jsonData.data).eqls(null);",
+									"pm.test(\"No content is returned to anonymous callers\", function () {",
+									"    const body = pm.response.text();",
+									"    pm.expect(body).to.contains(\"Unauthorized\");",
+									"    pm.expect(body).not.to.contains(\"CONTENT_APIS_ALLOW_ANONYMOUS\");",
+									"    pm.expect(body).not.to.match(/\"data\"\\s*:/);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -12441,7 +12433,8 @@
 						}
 					],
 					"protocolProfileBehavior": {
-						"disabledSystemHeaders": {}
+						"disabledSystemHeaders": {},
+						"disableCookies": true
 					},
 					"request": {
 						"auth": {

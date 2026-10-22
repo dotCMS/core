@@ -422,7 +422,6 @@ test('List directories resolves its expected href from the hostName variable, no
 
 test('representative noauth/invalid/expired/custom-token requests are not elevated to admin', () => {
   const anonymous = [
-    ['GraphQLTests.json', 'Page API / Checking Layout and Container Properties / Containers Property is Returned With Anon User'],
     ['GraphQLTests.json', 'Page API / Checking Exception Messages / GivenRequestByURI_Page_EditMode_WithoutAuth'],
     ['GraphQLTests.json', 'Disallow Introspection Query / Introspection Query Anonymous Request'],
     ...['list sections', 'create section', 'update section', 'delete section', 'reorder', 'set tools'].map((name) =>
@@ -431,6 +430,10 @@ test('representative noauth/invalid/expired/custom-token requests are not elevat
     ['Integrity_Checker_JWT_Token_Test.postman_collection.json', 'generate / fail_not_token_sent / request_integrity_generate'],
   ];
   for (const [file, names] of anonymous) assert.equal(find(file, names).auth?.type, 'noauth', names);
+  const containers = find('GraphQLTests.json',
+    'Page API / Checking Layout and Container Properties / Containers Property is Returned With Authenticated User');
+  assert.equal(containers.auth?.type, 'bearer');
+  assert.equal(value(containers.auth, 'token'), '{{jwt}}');
   for (const [file, names, token] of [
     ['Push_Publish_JWT_Token_Test.postman_collection.json', 'expired_token / request_pp', '{{token}}'],
     ['Push_Publish_JWT_Token_Test.postman_collection.json', 'fail_not_valid_token / request_pp', 'not_valid_token'],
@@ -596,6 +599,7 @@ function runRenderScript(r, status, body) {
   const response = {
     status,
     json: () => body,
+    text: () => typeof body === 'string' ? body : JSON.stringify(body),
     to: { have: { status: (expected) => assert.equal(status, expected,
       `expected status ${expected} but got ${status}`) } },
   };
@@ -608,8 +612,10 @@ function runRenderScript(r, status, body) {
       const negative = (expected) => assert.ok(!String(actual).includes(expected),
         `expected ${JSON.stringify(actual)} not to contain ${JSON.stringify(expected)}`);
       return {
-        to: { contains: (expected) => contains(actual, expected), not: { contains: negative } },
-        not: { to: { contains: negative } },
+        to: { equal: (expected) => assert.equal(actual, expected),
+          contains: (expected) => contains(actual, expected), not: { contains: negative } },
+        not: { to: { contains: negative,
+          match: (pattern) => assert.ok(!pattern.test(String(actual))) } },
       };
     },
   };
@@ -618,6 +624,24 @@ function runRenderScript(r, status, body) {
   }
   return failures;
 }
+
+test('anonymous GraphQL postscripts require a cookie-free 401 without disclosing auth configuration', () => {
+  for (const names of [
+    'Page API / Checking Exception Messages / GivenRequestByURI_Page_EditMode_WithoutAuth',
+    'Disallow Introspection Query / Introspection Query Anonymous Request',
+  ]) {
+    const r = find('GraphQLTests.json', names);
+    assert.equal(r.auth?.type, 'noauth', label(r));
+    assert.equal(r.node.protocolProfileBehavior?.disableCookies, true, label(r));
+    assert.deepEqual(runRenderScript(r, 401, 'Unauthorized'), [], label(r));
+    assert.ok(runRenderScript(r, 400, '').length > 0, 'Do not retain the old GraphQL 400 workaround');
+    assert.ok(runRenderScript(r, 200, 'Unauthorized').length > 0, 'Reject successful anonymous access');
+    assert.ok(runRenderScript(r, 401, 'Unauthorized: CONTENT_APIS_ALLOW_ANONYMOUS permission denied').length > 0,
+      'Keep detailed configuration errors out of the public response');
+    assert.ok(runRenderScript(r, 401, '{"data":{"page":{}},"errors":[{"message":"Unauthorized"}]}').length > 0,
+      'Do not return GraphQL data alongside an anonymous denial');
+  }
+});
 
 test('Add-Remove render postscripts pass an authorized 200 and fail a 401 on the status assertion', () => {
   const rendered = [
