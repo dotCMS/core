@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
@@ -93,7 +94,8 @@ public class DotCDNResource {
     /**
      * This endpoint is to purgeCache of the CDN.
      * You can purge the entire cache by setting the invalidateAll to true
-     * Or you can purge specific urls by sending them in a Array.
+     * Or you can purge specific urls by sending them in a Array. Each url is a path starting with
+     * "/", or a full url on the site's CDN domain; a url on any other host is rejected.
      *
      * The hostId property is to get the AppSecret Configuration. If the hostId is not send will
      * try to get it from the session.
@@ -145,12 +147,23 @@ public class DotCDNResource {
                     new DotCDNPurgeResponse(cdnApi.invalidateAll(), true))).build();
         }
 
-        final List<String> urls = validateUrls(invalidationForm.getUrls());
+        final List<String> urls = validateUrls(invalidationForm.getUrls(), cdnApi);
         return Response.ok(new ResponseEntityDotCDNPurgeView(
                 new DotCDNPurgeResponse(cdnApi.invalidate(urls), false))).build();
     }
 
-    private List<String> validateUrls(final List<String> urls) {
+    /**
+     * Checks the URLs to purge and reduces each one to the path it names on the CDN domain.
+     * Each entry must be a path starting with {@code /}, or a full URL on the CDN domain, which is
+     * reduced to its path. A URL on any other host is rejected, so what reaches the CDN is always a
+     * path on the configured domain.
+     *
+     * @param urls the URLs sent by the caller
+     * @param cdnApi the {@link DotCDNAPI} of the site being purged, which knows the CDN domain
+     * @return the paths to purge
+     * @throws BadRequestException if there are none, too many, or one is blank or not allowed
+     */
+    private List<String> validateUrls(final List<String> urls, final DotCDNAPI cdnApi) {
         if (!UtilMethods.isSet(urls)) {
             throw new BadRequestException("At least one URL is required");
         }
@@ -170,13 +183,16 @@ public class DotCDNResource {
             throw new BadRequestException("Purge URLs cannot be blank");
         }
 
+        final List<String> paths = new ArrayList<>();
         for (final String url : normalizedUrls) {
-            if (!isValidPurgeUrl(url)) {
+            final String path = cdnApi.toCdnPath(url).orElse(null);
+            if (path == null || !isValidPurgeUrl(path)) {
                 throw new BadRequestException("Invalid purge URL: " + url);
             }
+            paths.add(path);
         }
 
-        return normalizedUrls;
+        return paths;
     }
 
     private boolean isValidPurgeUrl(final String url) {
