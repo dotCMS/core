@@ -83,10 +83,10 @@ jobs:
           FORCE: ${{ inputs.force }}
           MODE: ${{ inputs.mode }}
         run: |
-          EXTRA=""
-          if [ "$FORCE" = "true" ]; then EXTRA="$EXTRA --force"; fi
+          EXTRA=()
+          if [ "$FORCE" = "true" ]; then EXTRA+=(--force); fi
           if [ "$MODE" = "apply" ]; then
-            EXTRA="$EXTRA --apply"
+            EXTRA+=(--apply)
           else
             echo "::notice::DRY-RUN — printing the plan only. Nothing in the registry will change. Re-dispatch with mode=apply to make it real."
           fi
@@ -95,7 +95,7 @@ jobs:
             --action "$ACTION" \
             --version "$VERSION" \
             --track "$TRACK" \
-            $EXTRA
+            "${EXTRA[@]}"
       - name: Retitle GitHub Release
         id: title
         if: (inputs.action == 'taint' || inputs.action == 'untaint') && inputs.repo == 'dotcms/dotcms'
