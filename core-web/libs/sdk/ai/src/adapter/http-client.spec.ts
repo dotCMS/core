@@ -296,7 +296,7 @@ describe('createApiAdapter formData', () => {
         request.catch(() => undefined);
     });
 
-    it('passes the download\'s own abort error through, reason included', async () => {
+    it("passes the download's own abort error through, reason included", async () => {
         const controller = new AbortController();
         const downloadAborted = new AbortError(
             'Download of "https://cdn.example.com/f.txt" was aborted: sandbox torn down'
