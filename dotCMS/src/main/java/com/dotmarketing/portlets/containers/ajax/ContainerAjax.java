@@ -17,17 +17,13 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.structure.model.Structure;
-import com.dotmarketing.portlets.templates.business.TemplateAPI;
-import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
-import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
-import io.vavr.control.Try;
 
 import javax.servlet.http.HttpServletRequest;
 import java.util.*;
@@ -238,123 +234,5 @@ public class ContainerAjax {
 
 		return resultList;
 	}
-
-    /**
-     * Verifies if the specified comma-separated list of Container Inodes are present in any Template under any Site in
-     * dotCMS.
-     *
-     * @param containerInode The list of Container Inodes that will be verified.
-     *
-     * @return If the Containers are in at least one Template, a formatted message with Container and Template
-     * information will be returned. Otherwise, a {@code null} will be returned.
-     *
-     * @throws DotDataException     An error occurred when interacting with the data source.
-     * @throws DotSecurityException The logged-in user does not have the required permissions to perform this action.
-     * @throws PortalException      Failed to check the currently logged-in user.
-     * @throws SystemException      Failed to check the currently logged-in user.
-     */
-    public String checkDependencies(final String containerInode) throws DotDataException, DotSecurityException, PortalException, SystemException {
-		final HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-		final User user = userWebAPI.getLoggedInUser(req);
-		final boolean respectFrontendRoles = userWebAPI.isLoggedToFrontend(req);
-		final String[] inodesArray = containerInode.split(",");
-		String templateInfo = null;
-        final TemplateAPI templateAPI = APILocator.getTemplateAPI();
-		for (final String contInode : inodesArray) {
-			final Container container = (Container) InodeFactory.getInode(contInode, Container.class);
-			final List<Template> templates = templateAPI.findTemplates(user, true, null, null, null, null, null, 0, -1, null);
-			templateInfo = checkTemplatesUsedByContainer(templates, container, user, respectFrontendRoles);
-			if (UtilMethods.isSet(templateInfo)) {
-				final String containerDependencyResults = formatContainerDependencyMsg(container, templateInfo, user);
-				return UtilMethods.isSet(containerDependencyResults) ? containerDependencyResults : null;
-			}
-		}
-		return UtilMethods.isSet(templateInfo) ? templateInfo : null;
-		}
-
-    /**
-     * Utility method that puts together the information message displayed to the user when a Container is being used by
-     * at least one Template in the system.
-     *
-     * @param container    The {@link Container} that is being verified.
-     * @param templateInfo Basic Template information for the user to determine what Templates are still using the
-     *                     Container.
-     *
-     * @return The formatted message that will be displayed to the user.
-     */
-	private String formatContainerDependencyMsg(final Container container, final String templateInfo, final User user)
-			throws LanguageException {
-		final StringBuilder msg = new StringBuilder();
-		msg.append(LanguageUtil.get(user, "container-used-templates"));
-		msg.append("<br/><br/>");
-		msg.append(LanguageUtil.get(user, "Container")).append(":<br/>");
-		msg.append("<ul><li>").append("<b>").append(container.getTitle()).append("</b>").append("</li></ul>").append
-				("<br/>");
-		msg.append(LanguageUtil.get(user, "templates")).append(":<br/>");
-		msg.append("<ul>");
-		msg.append(templateInfo);
-		msg.append("</ul>");
-		return msg.toString();
-	}
-	
-    /**
-     * Verifies if the given Container exists in any of the list of provided Templates. This is commonly used by the
-     * Container deletion operation in order to prevent users from deleting Containers that are currently in use.
-     *
-     * @param templates            The List of {@link Template} objects that need to be checked.
-     * @param container            The {@link Container} that will be verified.
-     * @param user                 The {@link User} performing this action.
-     * @param respectFrontendRoles If front-end roles will be take in count for this operation (which means this is
-     *                             being called from the front-end), set to {@code true}. Otherwise, set to {@code
-     *                             false}.
-     *
-     * @return The list of Templates, if any, that have a reference to the specified Container.
-     *
-     * @throws DotSecurityException The specified user does not have the correct permissions to perform this action.
-     * @throws DotDataException     An error occurred when interacting with the data source.
-     */
-    private String checkTemplatesUsedByContainer(final List<Template> templates, final Container container, final User user, final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
-		final TemplateAPI templateAPI = APILocator.getTemplateAPI();
-		final StringBuilder names = new StringBuilder();
-		String result;
-		for (final Template template : templates) {
-			final List<Container> containers = templateAPI.getContainersInTemplate(template, user, respectFrontendRoles);
-			if (containers.contains(container)) {
-				names.append(getTemplateInfo(template, user, respectFrontendRoles));
-			}
-		}
-		result = names.toString();
-		return result;
-	}
-	
-    /**
-     * Utility method that puts together useful Template information when a Container is being used in such a Template.
-     *
-     * @param template             The {@link Template} whose basic information will be retrieved.
-     * @param user                 The {@link User} performing this action.
-     * @param respectFrontendRoles If front-end roles will be take in count for this operation (which means this is
-     *                             being called from the front-end), set to {@code true}. Otherwise, set to {@code
-     *                             false}.
-     *
-     * @return The basic information for the provided Template.
-     */
-    private String getTemplateInfo(final Template template, final User user, final boolean respectFrontendRoles) {
-        final String siteIdError = "- Site not available -";
-        final String templateIdError = "- Identifier not found -";
-        String siteName;
-        final String templateTitle = template.getTitle();
-        final Identifier templateId = Try.of(() -> APILocator.getIdentifierAPI().find(template.getIdentifier()))
-                .getOrNull();
-        if (null == templateId || !UtilMethods.isSet(templateId.getId())) {
-            siteName = templateIdError;
-        } else {
-            final Host site = Try.of(() -> APILocator.getHostAPI().find(templateId.getHostId(), user,
-                    respectFrontendRoles)).getOrNull();
-            siteName = null == site || !UtilMethods.isSet(site.getIdentifier()) ? siteIdError : site.getHostname();
-        }
-        final String templateInfo = String.format("<li><b>%s ( %s ) under Site %s</b></li>", templateTitle, template
-                .getIdentifier(), siteName);
-        return templateInfo;
-    }
 
 }

@@ -104,7 +104,8 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderHandlerTest.class,
         ContentAnalyticsPersistenceModeIT.class,
         EventAnalyticsProxyResourceIntegrationTest.class,
-        GenericBundleActivatorIntegrationTest.class
+        GenericBundleActivatorIntegrationTest.class,
+        com.dotcms.rest.api.v1.container.ContainerResourceDependenciesIntegrationTest.class
 })
 public class MainSuite2a {
 

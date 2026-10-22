@@ -6409,6 +6409,42 @@ paths:
       summary: Removes content from a container
       tags:
       - Containers
+  /v1/containers/dependencies:
+    get:
+      description: "Returns the working version of the container (inode, identifier,\
+        \ title) and the templates, readable by the requesting user, whose layout\
+        \ references it. The list is empty when no template uses the container. Intended\
+        \ to be checked before deleting a container. Requires a back-end user. A drawn\
+        \ template is listed when its layout references the container; an advanced\
+        \ template only when the container holds content."
+      operationId: getContainerDependencies
+      parameters:
+      - description: "Container identifier, inode or folder path"
+        in: query
+        name: containerId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContainerDependenciesView"
+          description: Container data and the templates that use it
+        "400":
+          description: Bad request - Container ID is required
+        "401":
+          description: Unauthorized - User not authenticated or not a back-end user
+        "403":
+          description: Forbidden - User lacks read permission on the container
+        "404":
+          description: Container not found
+        "500":
+          description: Internal server error
+      summary: Lists the templates that use a container
+      tags:
+      - Containers
   /v1/containers/form/{formId}:
     get:
       description: "Returns HTML content for a form rendered within the specified\
@@ -27461,6 +27497,24 @@ components:
           type: string
         working:
           type: boolean
+    ContainerDependenciesView:
+      type: object
+      description: A container and the templates that use it
+      properties:
+        identifier:
+          type: string
+          description: Container identifier
+        inode:
+          type: string
+          description: Container inode
+        templates:
+          type: array
+          description: Templates that use the container; empty when none does
+          items:
+            $ref: "#/components/schemas/TemplateDependencyView"
+        title:
+          type: string
+          description: "Container title, as saved"
     ContainerEntry:
       type: object
       properties:
@@ -34578,6 +34632,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityContainerDependenciesView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/ContainerDependenciesView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityContainerObjectMapView:
       type: object
       properties:
@@ -40144,6 +40221,24 @@ components:
           type: string
         working:
           type: boolean
+    TemplateDependencyView:
+      type: object
+      description: A template that uses the container
+      properties:
+        identifier:
+          type: string
+          description: Template identifier
+        inode:
+          type: string
+          description: Template inode
+        siteName:
+          type: string
+          description: Host name of the template's site; null when the site is not
+            resolvable for the requesting user
+          nullable: true
+        title:
+          type: string
+          description: "Template title, as saved"
     TemplateForm:
       type: object
       description: Form used to create or update a Template in dotCMS. A Template

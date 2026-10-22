@@ -12,8 +12,6 @@
 <%@ page import="com.dotmarketing.beans.Identifier" %>
 
 
-<script type='text/javascript' src='/dwr/interface/ContainerAjax.js'></script>
-
 <%
 	Boolean hostChanged = (Boolean) request.getAttribute(com.dotmarketing.util.WebKeys.CONTAINER_HOST_CHANGED);
 	int pageNumber = 1;
@@ -141,24 +139,41 @@ function togglePublish(){
 }
 
 function delContainer(inode, referer, isFromMenu) {
-
-	var callMetaData = {
-			  callback:handleDepResponse,
-			  arg: inode + '|' + referer + '|' + isFromMenu,
-			   // specify an argument to pass to the callback and exceptionHandler
-			};
-
-	ContainerAjax.checkDependencies(inode, callMetaData);
+	var inodes = String(inode).split(',').filter(function(x){ return x.length > 0; });
+	findContainerInUse(inodes, 0, function(dependencies) {
+		handleDepResponse(dependencies, inode, referer, isFromMenu);
+	});
 }
 
-function handleDepResponse(data, arg1) {
-	var params = arg1.split('|');
-	var inode = params[0];
-	var referer = params[1];
-	var isFromMenu = params[2] == 'true';
+/* Asks the REST API, one container at a time, which templates use it; stops at the first container in use */
+function findContainerInUse(inodes, index, callback) {
+	if (index >= inodes.length) {
+		callback(null);
+		return;
+	}
+	fetch('/api/v1/containers/dependencies?containerId=' + encodeURIComponent(inodes[index]), {
+		credentials: 'same-origin',
+		headers: { 'Accept': 'application/json' }
+	}).then(function(response) {
+		if (!response.ok) {
+			throw new Error('HTTP ' + response.status);
+		}
+		return response.json();
+	}).then(function(json) {
+		var dependencies = json.entity;
+		if (dependencies && dependencies.templates && dependencies.templates.length > 0) {
+			callback(dependencies);
+		} else {
+			findContainerInUse(inodes, index + 1, callback);
+		}
+	}).catch(function() {
+		showDotCMSErrorMessage('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "an-unexpected-system-error-occurred")) %>');
+	});
+}
 
-	if(data!=null) {
-		dojo.byId("depDiv").innerHTML = "<br />" + data;
+function handleDepResponse(dependencies, inode, referer, isFromMenu) {
+	if(dependencies != null) {
+		renderContainerDependencies(dependencies);
 		dijit.byId("dependenciesDialog").show();
 	}else if(isFromMenu){
 		processDelete(inode, referer);
@@ -168,6 +183,41 @@ function handleDepResponse(data, arg1) {
 		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="full_delete_list" /></portlet:actionURL>';
 		submitForm(form);
 	}
+}
+
+/* Builds the dependencies dialog from text nodes: titles are shown as typed */
+function renderContainerDependencies(dependencies) {
+	var depDiv = dojo.byId("depDiv");
+	depDiv.replaceChildren();
+	depDiv.appendChild(document.createElement('br'));
+	depDiv.appendChild(document.createTextNode('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "container-used-templates")) %>'));
+	depDiv.appendChild(document.createElement('br'));
+	depDiv.appendChild(document.createElement('br'));
+	depDiv.appendChild(document.createTextNode('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Container")) %>:'));
+	depDiv.appendChild(document.createElement('br'));
+	var containerList = document.createElement('ul');
+	containerList.appendChild(boldListItem(dependencies.title));
+	depDiv.appendChild(containerList);
+	depDiv.appendChild(document.createElement('br'));
+	depDiv.appendChild(document.createTextNode('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "templates")) %>:'));
+	depDiv.appendChild(document.createElement('br'));
+	var templateList = document.createElement('ul');
+	dependencies.templates.forEach(function(template) {
+		var label = template.title + ' ( ' + template.identifier + ' )';
+		if (template.siteName) {
+			label += ' under Site ' + template.siteName;
+		}
+		templateList.appendChild(boldListItem(label));
+	});
+	depDiv.appendChild(templateList);
+}
+
+function boldListItem(text) {
+	var item = document.createElement('li');
+	var bold = document.createElement('b');
+	bold.textContent = text;
+	item.appendChild(bold);
+	return item;
 }
 
 function processDelete(inode, referer) {
