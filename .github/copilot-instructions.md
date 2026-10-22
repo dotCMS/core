@@ -79,8 +79,9 @@ just build-no-docker            # Same as: ./mvnw clean install -DskipTests -Ddo
 ### Backend Testing Strategy
 
 **CI suite placement (required):** a new integration-test class goes in the **last `MainSuite*`**
-of the current set, with the import alphabetized and the entry appended at the **end** of its
-`@SuiteClasses` list; a new method in an existing class stays with its class. Compatibility
+of the current set — highest group number, then highest shard letter (`MainSuite3a` today), not
+plain alphabetical order — with the import alphabetized and the entry appended at the **end** of
+its `@SuiteClasses` list; a new method in an existing class stays with its class. Compatibility
 decides first — a JUnit 5 test belongs in `Junit5Suite*` and a test needing a live OpenSearch
 cluster in `OpenSearchUpgradeSuite`. Follow [Integration Tests → Registering Tests in a MainSuite](../docs/testing/INTEGRATION_TESTS.md#registering-tests-in-a-mainsuite-ci-gate).
 CI runtimes are compared only to decide whether a **new** shard is due, not to place a test.

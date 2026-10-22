@@ -62,7 +62,15 @@ CI** — green build, zero coverage. This is easy to miss because the class runs
 **Placement rule: a new integration-test class goes in the last `MainSuite*` of the current
 set** — `MainSuite3a` at the time of writing. Read
 `dotcms-integration/src/test/java/com/dotcms/MainSuite*.java` for the current set rather than
-trusting that name: the set grows, and the rule follows whatever sorts last.
+trusting that name: the set grows, and the rule follows whatever is last at the time.
+
+**"Last" means the highest group number, and within that number the highest letter.** The names
+are a group number plus a shard letter, so the order is `MainSuite1a` → `MainSuite1b` →
+`MainSuite2a` → `MainSuite2b` → `MainSuite3a`, and the next shard is `MainSuite3b` or
+`MainSuite4a` depending on how it is opened. Do not read the list as plain text sorted
+alphabetically: once the set reaches two digits, `MainSuite10a` sorts *before* `MainSuite1a`
+character by character, which would hide the newest shard exactly when the set has grown enough
+for this rule to matter.
 
 The reason it is the last one and not a measured one: the wall clock of the PR build is set by
 the **slowest** suite, so adding to the emptiest shard costs nothing at all until that shard stops
