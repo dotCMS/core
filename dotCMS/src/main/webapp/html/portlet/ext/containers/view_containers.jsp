@@ -12,7 +12,6 @@
 <%@ page import="com.dotmarketing.beans.Identifier" %>
 
 
-<script type='text/javascript' src='/dwr/interface/ContainerAjax.js'></script>
 
 <%
 	Boolean hostChanged = (Boolean) request.getAttribute(com.dotmarketing.util.WebKeys.CONTAINER_HOST_CHANGED);
@@ -141,24 +140,23 @@ function togglePublish(){
 }
 
 function delContainer(inode, referer, isFromMenu) {
+	var params = new URLSearchParams();
+	inode.split(',').forEach(containerInode => params.append('containerInode', containerInode));
 
-	var callMetaData = {
-			  callback:handleDepResponse,
-			  arg: inode + '|' + referer + '|' + isFromMenu,
-			   // specify an argument to pass to the callback and exceptionHandler
-			};
-
-	ContainerAjax.checkDependencies(inode, callMetaData);
+	fetch('/api/v1/containers/dependencies?' + params.toString())
+	.then(res => {
+		if (!res.ok) {
+			throw new Error(res.statusText);
+		}
+		return res.json();
+	})
+	.then(data => handleDepResponse(data.entity, inode, referer, isFromMenu))
+	.catch(() => alert('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "an-unexpected-system-error-occurred")) %>'));
 }
 
-function handleDepResponse(data, arg1) {
-	var params = arg1.split('|');
-	var inode = params[0];
-	var referer = params[1];
-	var isFromMenu = params[2] == 'true';
-
-	if(data!=null) {
-		dojo.byId("depDiv").innerHTML = "<br />" + data;
+function handleDepResponse(dependencies, inode, referer, isFromMenu) {
+	if(dependencies.length > 0) {
+		showDependencies(dependencies);
 		dijit.byId("dependenciesDialog").show();
 	}else if(isFromMenu){
 		processDelete(inode, referer);
@@ -168,6 +166,34 @@ function handleDepResponse(data, arg1) {
 		form.action = '<portlet:actionURL><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="full_delete_list" /></portlet:actionURL>';
 		submitForm(form);
 	}
+}
+
+// The dialog is built from text nodes only, so container and template titles are always shown as plain text
+function showDependencies(dependencies) {
+	var depDiv = dojo.byId("depDiv");
+	depDiv.textContent = '';
+	depDiv.appendChild(document.createElement('br'));
+	depDiv.appendChild(document.createTextNode('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "container-used-templates")) %>'));
+	dependencies.forEach(dependency => {
+		appendLabeledList(depDiv, '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Container")) %>', [dependency.title]);
+		appendLabeledList(depDiv, '<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "templates")) %>', dependency.templates.map(template =>
+			template.title + ' ( ' + template.identifier + ' ) under Site ' + (template.siteName || '- Site not available -')));
+	});
+}
+
+function appendLabeledList(parent, label, items) {
+	parent.appendChild(document.createElement('br'));
+	parent.appendChild(document.createElement('br'));
+	parent.appendChild(document.createTextNode(label + ':'));
+	var list = document.createElement('ul');
+	items.forEach(item => {
+		var bold = document.createElement('b');
+		bold.textContent = item;
+		var listItem = document.createElement('li');
+		listItem.appendChild(bold);
+		list.appendChild(listItem);
+	});
+	parent.appendChild(list);
 }
 
 function processDelete(inode, referer) {

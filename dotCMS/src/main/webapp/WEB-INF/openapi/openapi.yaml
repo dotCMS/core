@@ -6409,6 +6409,41 @@ paths:
       summary: Removes content from a container
       tags:
       - Containers
+  /v1/containers/dependencies:
+    get:
+      description: "For each container inode, returns the container title and the\
+        \ templates the user can read that still use it. Containers that no template\
+        \ uses are left out, so an empty list means none of them is in use. The user\
+        \ must have Read permission on every container."
+      operationId: getContainerDependencies
+      parameters:
+      - description: Inode of a container to check. Repeat the parameter to check
+          several containers.
+        in: query
+        name: containerInode
+        required: true
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContainerDependenciesView"
+          description: "Containers in use, each with its dependent templates"
+        "400":
+          description: Bad request - At least one container inode is required
+        "401":
+          description: Unauthorized - User not authenticated
+        "403":
+          description: Forbidden - User lacks Read permission on a container
+        "404":
+          description: Container not found
+      summary: Lists the templates that use the given containers
+      tags:
+      - Containers
   /v1/containers/form/{formId}:
     get:
       description: "Returns HTML content for a form rendered within the specified\
@@ -27461,6 +27496,19 @@ components:
           type: string
         working:
           type: boolean
+    ContainerDependenciesView:
+      type: object
+      properties:
+        identifier:
+          type: string
+        inode:
+          type: string
+        templates:
+          type: array
+          items:
+            $ref: "#/components/schemas/DependentTemplateView"
+        title:
+          type: string
     ContainerEntry:
       type: object
       properties:
@@ -28594,6 +28642,15 @@ components:
       - key
       - params
       - siteId
+    DependentTemplateView:
+      type: object
+      properties:
+        identifier:
+          type: string
+        siteName:
+          type: string
+        title:
+          type: string
     DifferenceData:
       type: object
       properties:
@@ -34560,6 +34617,31 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/CompanyConfigView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityContainerDependenciesView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContainerDependenciesView"
         errors:
           type: array
           items:

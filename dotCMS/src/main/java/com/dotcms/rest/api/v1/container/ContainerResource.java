@@ -28,6 +28,7 @@ import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionLevel;
@@ -46,6 +47,8 @@ import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.templates.business.TemplateAPI;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.HostUtil;
@@ -65,6 +68,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.vavr.control.Try;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
@@ -73,6 +77,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -1063,6 +1068,110 @@ public class ContainerResource implements Serializable {
         }
 
         return Response.ok(new ResponseEntityView(new ContainerView(container))).build();
+    }
+
+    /**
+     * Lists the Templates that still use each of the given Containers, so that the user can be
+     * told why a Container cannot be deleted yet. Only the Templates the user is allowed to read
+     * are checked, and only the Containers used by at least one of them are returned, so an
+     * empty list means none of the Containers is in use.
+     *
+     * @param request         The current {@link HttpServletRequest}.
+     * @param response        The current {@link HttpServletResponse}.
+     * @param containerInodes The inodes of the Containers to check.
+     *
+     * @return The Containers that are in use, each with the Templates that use it.
+     *
+     * @throws DotDataException     An error occurred when interacting with the data source.
+     * @throws DotSecurityException The user cannot read one of the Containers being checked, or
+     *                              one of the Containers referenced by a readable Template.
+     */
+    @GET
+    @Path("/dependencies")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getContainerDependencies",
+            summary = "Lists the templates that use the given containers",
+            description = "For each container inode, returns the container title and the templates the user can read " +
+                    "that still use it. Containers that no template uses are left out, so an empty list means none " +
+                    "of them is in use. The user must have Read permission on every container.",
+            tags = {"Containers"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Containers in use, each with its dependent templates",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityContainerDependenciesView.class))),
+                    @ApiResponse(responseCode = "400", description = "Bad request - At least one container inode is required"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks Read permission on a container"),
+                    @ApiResponse(responseCode = "404", description = "Container not found")
+            }
+    )
+    public ResponseEntityContainerDependenciesView getDependencies(@Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @Parameter(description = "Inode of a container to check. Repeat the parameter to check several containers.", required = true)
+            @QueryParam("containerInode") final List<String> containerInodes) throws DotDataException, DotSecurityException {
+
+        final User user = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response).requiredBackendUser(true)
+                .rejectWhenNoUser(true).init().getUser();
+
+        DotPreconditions.checkArgument(UtilMethods.isSet(containerInodes),
+                MessageConstants.CONTAINER_INODE_IS_REQUIRED);
+
+        final Map<Container, List<DependentTemplateView>> dependentTemplates = new LinkedHashMap<>();
+        for (final String containerInode : containerInodes) {
+
+            final Container container = this.containerAPI.find(containerInode, user, false);
+            if (null == container || UtilMethods.isNotSet(container.getIdentifier())) {
+
+                throw new DoesNotExistException(MessageConstants.CONTAINER_INODE_WITH + containerInode + MessageConstants.DOES_NOT_EXIST);
+            }
+            dependentTemplates.put(container, new ArrayList<>());
+        }
+
+        // Only the working Templates the user can read, archived ones included
+        final TemplateAPI templateAPI = APILocator.getTemplateAPI();
+        for (final Template template : templateAPI.findTemplates(user, true, null, null, null, null, null, 0, -1, null)) {
+
+            final List<Container> containersInTemplate = templateAPI.getContainersInTemplate(template, user, false);
+            for (final Map.Entry<Container, List<DependentTemplateView>> entry : dependentTemplates.entrySet()) {
+
+                if (containersInTemplate.contains(entry.getKey())) {
+
+                    entry.getValue().add(new DependentTemplateView(template.getIdentifier(),
+                            template.getTitle(), this.getSiteName(template, user)));
+                }
+            }
+        }
+
+        final List<ContainerDependenciesView> dependencies = new ArrayList<>();
+        dependentTemplates.forEach((container, templates) -> {
+            if (!templates.isEmpty()) {
+                dependencies.add(new ContainerDependenciesView(container, templates));
+            }
+        });
+        return new ResponseEntityContainerDependenciesView(dependencies);
+    }
+
+    /**
+     * Returns the name of the Site a Template lives in.
+     *
+     * @param template The {@link Template} whose Site is needed.
+     * @param user     The {@link User} performing this action.
+     *
+     * @return The Site name, or {@code null} when the Site cannot be found or the user is not
+     * allowed to read it.
+     */
+    private String getSiteName(final Template template, final User user) {
+        final Identifier identifier = Try.of(() -> APILocator.getIdentifierAPI().find(template.getIdentifier()))
+                .getOrNull();
+        if (null == identifier || !UtilMethods.isSet(identifier.getId())) {
+            return null;
+        }
+        final Host site = Try.of(() -> APILocator.getHostAPI().find(identifier.getHostId(), user, false))
+                .getOrNull();
+        return null == site || !UtilMethods.isSet(site.getIdentifier()) ? null : site.getHostname();
     }
 
     /**

@@ -19,5 +19,7 @@ public class MessageConstants {
     public static final  String DOES_NOT_EXIST = " does not exist";
     public static final  String CONTAINER_ID_IS_REQUIRED = "The container id is required";
     public static final  String CONTAINER_ID_WITH = "Container with Id: ";
+    public static final  String CONTAINER_INODE_IS_REQUIRED = "At least one container inode is required";
+    public static final  String CONTAINER_INODE_WITH = "Container with Inode: ";
 
 }
