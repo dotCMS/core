@@ -86,8 +86,8 @@ describe('DotUsersFilterByComponent', () => {
         expect(store.setRoleFilter).toHaveBeenCalledWith(USERS_FILTER_ALL);
     });
 
-    it('should offer the access options plus CMS Administrator when the viewer may filter by role', () => {
-        const options = spectator.component['$options']();
+    it('should offer the access options plus CMS Administrator', () => {
+        const options = spectator.component['options'];
 
         expect(options).toEqual([
             { value: USERS_FILTER_ALL, label: 'All access' },
@@ -108,12 +108,10 @@ describe('DotUsersFilterByComponent', () => {
         expect(spectator.component['$selections']()).toEqual(['CMS Administrator']);
     });
 
-    it('should hide the CMS Administrator option once the viewer is known not to be allowed', () => {
+    it('should hide the chip once the viewer is known not to be allowed to filter by role', () => {
         canFilterByRole.set(false);
         spectator.detectChanges();
 
-        const values = spectator.component['$options']().map((option) => option.value);
-
-        expect(values).toEqual([USERS_FILTER_ALL, USERS_FILTER_BACKEND, USERS_FILTER_FRONTEND]);
+        expect(spectator.query(byTestId('users-filter-by-chip'))).toBeNull();
     });
 });

@@ -38,19 +38,6 @@ export const USERS_FILTER_BACKEND = 'DOTCMS_BACK_END_USER';
 export const USERS_FILTER_FRONTEND = 'DOTCMS_FRONT_END_USER';
 export const USERS_FILTER_CMS_ADMIN = 'CMS Administrator';
 
-/**
- * The Back-end / Front-end filters only mirror flags every row already
- * carries, so the backend accepts them from any viewer; every other role
- * filter is gated like `includeRoles`.
- */
-export function isAccessRoleFilter(roleFilter: string): boolean {
-    return (
-        roleFilter === USERS_FILTER_ALL ||
-        roleFilter === USERS_FILTER_BACKEND ||
-        roleFilter === USERS_FILTER_FRONTEND
-    );
-}
-
 export interface DotUsersListState {
     users: DotUserListItem[];
     selectedUsers: DotUserListItem[];
@@ -64,12 +51,12 @@ export interface DotUsersListState {
      */
     roleFilter: string;
     /**
-     * Whether the viewer may filter by roles other than the Back-end /
-     * Front-end access roles (e.g. CMS Administrator). The backend gates
-     * those filters exactly like `includeRoles`, so every list load
-     * settles it: a load that succeeds with the flag sets it `true`, one
-     * that falls back on the gate's 403 sets it `false`. Starts `false`
-     * so the option is not offered before the first load has answered.
+     * Whether the viewer may filter by role at all, the Back-end /
+     * Front-end access roles included. The backend gates every role
+     * filter exactly like `includeRoles`, so every list load settles it:
+     * a load that succeeds with the flag sets it `true`, one that falls
+     * back on the gate's 403 sets it `false`. Starts `false` so the
+     * filter is not offered before the first load has answered.
      */
     canFilterByRole: boolean;
     sortField: string;
@@ -166,13 +153,12 @@ export const DotUsersListStore = signalStore(
 
         /**
          * Called on the gate's 403: records that this viewer may not
-         * filter by role membership, drops a gated role filter (and goes
-         * back to page 1, as any filter change does) and rebuilds the
-         * params without the flag for the retry.
+         * filter by role, drops any role filter (and goes back to page 1,
+         * as any filter change does) and rebuilds the params without the
+         * flag for the retry.
          */
         const paramsAfterRolesForbidden = () => {
-            const roleFilter = store.roleFilter();
-            if (isAccessRoleFilter(roleFilter)) {
+            if (store.roleFilter() === USERS_FILTER_ALL) {
                 patchState(store, { canFilterByRole: false });
             } else {
                 patchState(store, {

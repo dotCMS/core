@@ -45,7 +45,14 @@ export class DotUsersFilterByComponent {
     protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
     protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
 
-    readonly #accessOptions: FilterOption[] = [
+    /**
+     * Whether the chip is shown. Every role filter, the access roles included,
+     * is gated like `includeRoles`, so the backend answers 403 for anyone the
+     * store has not cleared.
+     */
+    protected readonly $canFilterByRole = this.#store.canFilterByRole;
+
+    protected readonly options: FilterOption[] = [
         {
             value: USERS_FILTER_ALL,
             label: this.#dotMessageService.get('users.filter.all-access')
@@ -57,24 +64,12 @@ export class DotUsersFilterByComponent {
         {
             value: USERS_FILTER_FRONTEND,
             label: this.#dotMessageService.get('users.access.frontend')
+        },
+        {
+            value: USERS_FILTER_CMS_ADMIN,
+            label: this.#dotMessageService.get('users.access.cms-admin')
         }
     ];
-
-    readonly #cmsAdminOption: FilterOption = {
-        value: USERS_FILTER_CMS_ADMIN,
-        label: this.#dotMessageService.get('users.access.cms-admin')
-    };
-
-    /**
-     * Listbox options. CMS Administrator is offered only while the store
-     * says the viewer may filter by role membership; the backend answers
-     * 403 for anyone else.
-     */
-    protected readonly $options = computed<FilterOption[]>(() =>
-        this.#store.canFilterByRole()
-            ? [...this.#accessOptions, this.#cmsAdminOption]
-            : this.#accessOptions
-    );
 
     /** Two-way bound to the listbox. Kept in sync with the store's roleFilter. */
     protected readonly $selectedValue = linkedSignal<string>(() => this.#store.roleFilter());
@@ -87,7 +82,7 @@ export class DotUsersFilterByComponent {
     protected readonly $selections = computed(() => {
         const value = this.$selectedValue();
         if (!value) return [];
-        const option = this.$options().find((opt) => opt.value === value);
+        const option = this.options.find((opt) => opt.value === value);
 
         return option ? [option.label] : [];
     });

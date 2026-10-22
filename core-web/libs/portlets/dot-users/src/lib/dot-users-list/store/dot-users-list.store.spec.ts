@@ -278,7 +278,7 @@ describe('DotUsersListStore', () => {
             expect(store.status()).toBe(ComponentStatus.LOADED);
         });
 
-        it('keeps an access-role filter on the 403 retry', () => {
+        it('drops an access-role filter too on the 403 retry', () => {
             usersService.getUsersPaginated
                 .mockReturnValueOnce(
                     throwError(
@@ -289,11 +289,12 @@ describe('DotUsersListStore', () => {
 
             store.setRoleFilter('DOTCMS_BACK_END_USER');
 
+            // The access roles are gated like every other role filter
             expect(usersService.getUsersPaginated).toHaveBeenNthCalledWith(
                 2,
-                expect.objectContaining({ roleKey: 'DOTCMS_BACK_END_USER', includeRoles: false })
+                expect.objectContaining({ roleKey: undefined, includeRoles: false, page: 1 })
             );
-            expect(store.roleFilter()).toBe('DOTCMS_BACK_END_USER');
+            expect(store.roleFilter()).toBe('');
             expect(store.canFilterByRole()).toBe(false);
         });
     });
