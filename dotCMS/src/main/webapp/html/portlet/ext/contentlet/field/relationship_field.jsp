@@ -697,7 +697,7 @@
 						if (fieldName === "id"){
 							fieldCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(
 									item,
-									<%= relationJsName%>EscapeHtml(item["siblings"][0][fieldName] || item["siblings"][0][fieldName.toUpperCase()] || item[fieldName] || ""));
+									<%= relationJsName%>EscapeHtml(item["siblings"]?.[0]?.[fieldName] || item["siblings"]?.[0]?.[fieldName.toUpperCase()] || item[fieldName] || ""));
 						} else {
 							fieldCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(
 									item,
