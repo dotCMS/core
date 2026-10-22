@@ -48,7 +48,23 @@ public interface DotCDNAPI {
     DotCDNStats getStats(final String dateFromStr, final String dateToStr, final boolean hourly);
 
     /**
-     * Logic to invalidate the List of urls.
+     * Reduces a URL to the path (and query) it names on this CDN's configured domain.
+     *
+     * <p>A path such as {@code /images/logo.png} is returned as it is. A full URL, with or without
+     * a scheme, is reduced to its path when its host is the configured CDN domain, so
+     * {@code https://cdn.example.com/images/*} becomes {@code /images/*}. The hosts are compared,
+     * not the text, so {@code https://cdn.example.com.other.net/x} is not on {@code cdn.example.com}.
+     *
+     * @param url a path, or a URL that may be on the CDN domain
+     * @return the path on the CDN domain, or empty when the URL is on any other host or is not a
+     *         valid URL
+     */
+    Optional<String> toCdnPath(final String url);
+
+    /**
+     * Logic to invalidate the List of urls. Each URL is a path, or a URL on the CDN domain (see
+     * {@link #toCdnPath(String)}), and is purged on the configured CDN domain. A URL on any other
+     * host is skipped and counted as a failure.
      * @param urls List of url to invalidate
      * @return true if all the urls were purged successfully, false if one or more failed.
      */

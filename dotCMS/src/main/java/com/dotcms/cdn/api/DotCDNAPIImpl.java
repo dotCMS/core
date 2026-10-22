@@ -24,6 +24,7 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URLEncoder;
 import java.time.Instant;
 import java.time.ZoneOffset;
@@ -37,13 +38,17 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class DotCDNAPIImpl implements DotCDNAPI {
 
+    private static final Pattern URL_WITH_SCHEME = Pattern.compile("^[a-zA-Z][a-zA-Z0-9+.-]*://");
+
     private final String accessKey;
     private final long pullZoneId;
     private final String cdnDomain;
+    private final String cdnHost;
 
     /**
      * Method to load the app secrets into the variables.
@@ -66,6 +71,44 @@ public class DotCDNAPIImpl implements DotCDNAPI {
         this.cdnDomain = appSecrets.get().getSecrets().get(CDNConstants.DOT_CDN_DOMAIN).getString();
         this.pullZoneId = Long.parseLong(
                 appSecrets.get().getSecrets().get(CDNConstants.DOT_CDN_ZONEID).getString());
+        this.cdnHost = hostOf(this.cdnDomain);
+    }
+
+    /**
+     * Gets the host out of a URL or a bare domain, as the CDN domain can be configured either way.
+     *
+     * @param domain a URL such as {@code https://cdn.example.com}, or a bare {@code cdn.example.com}
+     * @return the host, or null when it cannot be read
+     */
+    private static String hostOf(final String domain) {
+        final String asUrl = URL_WITH_SCHEME.matcher(domain).find() ? domain : "//" + domain;
+        return Try.of(() -> new URI(asUrl).getHost()).getOrNull();
+    }
+
+    private boolean isCdnHost(final String host) {
+        return cdnHost != null && cdnHost.equalsIgnoreCase(host);
+    }
+
+    @Override
+    public Optional<String> toCdnPath(final String url) {
+        if (URL_WITH_SCHEME.matcher(url).find()) {
+            final URI uri = Try.of(() -> new URI(url)).getOrNull();
+            if (uri == null || !isCdnHost(uri.getHost())
+                    || !("http".equalsIgnoreCase(uri.getScheme())
+                    || "https".equalsIgnoreCase(uri.getScheme()))) {
+                return Optional.empty();
+            }
+            final String path = UtilMethods.isSet(uri.getRawPath()) ? uri.getRawPath() : "/";
+            return Optional.of(uri.getRawQuery() == null ? path : path + "?" + uri.getRawQuery());
+        }
+
+        // No scheme: a path, or the CDN domain followed by a path, like demo.example.com/page
+        final String firstSegment = url.split("[/?]", 2)[0];
+        if (!url.startsWith("/") && isCdnHost(firstSegment)) {
+            final String rest = url.substring(firstSegment.length());
+            return Optional.of(rest.startsWith("/") ? rest : "/" + rest);
+        }
+        return Optional.of(url);
     }
 
     /**
@@ -311,7 +354,9 @@ public class DotCDNAPIImpl implements DotCDNAPI {
     }
 
     /**
-     * Logic to invalidate the List of urls.
+     * Logic to invalidate the List of urls. Each URL is a path, or a URL on the CDN domain (see
+     * {@link #toCdnPath(String)}), and is purged on the configured CDN domain. A URL on any other
+     * host is skipped and counted as a failure.
      * @param urls List of url to invalidate
      * @return true if all the urls were purged successfully, false if one or more failed.
      */
@@ -320,9 +365,16 @@ public class DotCDNAPIImpl implements DotCDNAPI {
         boolean results = true;
         for (final String url : urls) {
 
-            final String urlToPurge = url.startsWith(cdnDomain) ? url :
-                    url.startsWith("/") ? cdnDomain + url :
-                            cdnDomain + "/" + url;
+            final Optional<String> cdnPath = toCdnPath(url);
+            if (!cdnPath.isPresent()) {
+                Logger.warn(this.getClass().getName(),
+                        "Purge skipped, the URL is not on the CDN domain " + cdnDomain + ": " + url);
+                results = false;
+                continue;
+            }
+
+            final String path = cdnPath.get();
+            final String urlToPurge = cdnDomain + (path.startsWith("/") ? path : "/" + path);
 
             Logger.debug(this.getClass().getName(), "Purging URL: " + urlToPurge);
 
