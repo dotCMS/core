@@ -8,6 +8,7 @@ import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.cmsmaintenance.struts.CmsMaintenanceForm;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -67,10 +68,12 @@ public class ViewCMSMaintenanceActionTest extends IntegrationTestBase {
                     new ViewCMSMaintenanceAction().searchAndReplace(nonAdmin, form);
 
             assertTrue(result.isEmpty());
-            final Container reloaded = APILocator.getContainerAPI()
-                    .getWorkingContainerById(container.getIdentifier(), APILocator.systemUser(), false);
-            assertTrue(reloaded.getCode().contains(marker));
-            assertFalse(reloaded.getCode().contains(marker + "_CHANGED"));
+            final String storedCode = new DotConnect()
+                    .setSQL("select code from dot_containers where inode = ?")
+                    .addParam(container.getInode())
+                    .getString("code");
+            assertTrue(storedCode.contains(marker));
+            assertFalse(storedCode.contains(marker + "_CHANGED"));
         } finally {
             ContainerDataGen.remove(container);
         }
