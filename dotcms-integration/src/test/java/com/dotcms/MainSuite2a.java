@@ -4,7 +4,6 @@ import com.dotcms.ai.workflow.OpenAIAutoTagActionletTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
-import com.dotcms.dotpubsub.PostgresPubSubImplTest;
 import com.dotcms.ema.EMAWebInterceptorTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.junit.MainBaseSuite;
