@@ -61,7 +61,7 @@ public class JsFileSystem implements FileSystem {
      * Supplies the source text of an {@code /application/} module.
      */
     @FunctionalInterface
-    public interface ModuleSource {
+    interface ModuleSource {
 
         /**
          * Reads the source text of a module.
@@ -200,14 +200,18 @@ public class JsFileSystem implements FileSystem {
         return Paths.get(path);
     }
 
-    /*
-     * there is not file system to parse the dotcms sintax for sites, such as //site/path
-     * so we have to convert it to a valid path by replacing the // by a /dot-site-token/
-     * So later methods will know the path is for a site.
+    /**
+     * Turns a site-qualified path, such as {@code //site/path}, into a path the file system can parse: only the
+     * leading {@link HostUtil#HOST_INDICATOR} is replaced with {@link #DOT_SITE_TOKEN}, so later checks know the path
+     * names a site. A double slash further along the path is left as is, and the parsed path collapses it into a
+     * single separator.
+     *
+     * @param path a path that starts with {@link HostUtil#HOST_INDICATOR}
+     * @return the parsed path, which the path rule then checks like any other
      */
     private Path prefixHostScheme(final String path) {
 
-        final String convertedPath = path.replace(HostUtil.HOST_INDICATOR, DOT_SITE_TOKEN);
+        final String convertedPath = DOT_SITE_TOKEN + path.substring(HostUtil.HOST_INDICATOR.length());
         return Paths.get(convertedPath);
     }
 

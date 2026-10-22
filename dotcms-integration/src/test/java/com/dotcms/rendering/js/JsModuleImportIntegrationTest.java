@@ -47,13 +47,12 @@ import org.junit.Test;
  * content-backed module source of {@link JsFileSystem} (its default constructor) against real sites, folders and file
  * assets.
  * <p>
- * Scripts run in a GraalJS context built with the same options as {@code JsEngine#buildContext} and a
- * {@code new JsFileSystem()}, rather than through {@link JsEngine#eval}. {@code eval} first preloads the server's
- * {@code WEB-INF/javascript} sources through the servlet context, and the servlet context used by the integration
- * environment answers no real path for the {@code WEB-INF/javascript/modules} folder, which is not part of the web
- * application, so {@code eval} stops before the script runs. The module loading path under test (module path
- * handling, site and file asset lookup, binary read and its cache) is the same in both cases, because
- * {@code JsEngine} hands the engine that same file system.
+ * Scripts run in a GraalJS context built by the engine's own context builder, {@code JsEngine#buildContext}, with a
+ * content-backed {@code new JsFileSystem()}. The tests still do not call {@link JsEngine#eval}: {@code eval} first
+ * preloads the server's {@code WEB-INF/javascript} sources through the servlet context, and the servlet context used
+ * by the integration environment does not provide them, so {@code eval} stops before the script runs. The module
+ * loading path under test (module path handling, site and file asset lookup, binary read and its cache) is the same
+ * in both cases, because {@code JsEngine} builds its contexts with that same builder and file system.
  * <p>
  * No request is bound to the test thread while a script runs, so an {@code /application/} path without a site name
  * resolves on the default site.
@@ -90,7 +89,11 @@ public class JsModuleImportIntegrationTest extends IntegrationTestBase {
     @AfterClass
     public static void cleanUp() {
         for (final Contentlet module : createdModules) {
-            ContentletDataGen.destroy(module);
+            try {
+                ContentletDataGen.destroy(module);
+            } catch (final Exception e) {
+                Logger.warn(JsModuleImportIntegrationTest.class, "Could not remove a test module", e);
+            }
         }
 
         for (final Folder folder : createdFolders) {
@@ -347,34 +350,18 @@ public class JsModuleImportIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Runs an asynchronous expression in a GraalJS context built the way the JavaScript engine builds it, with a
-     * content-backed {@link JsFileSystem}, and returns {@code RESOLVED <value>} or {@code REJECTED <error>}.
+     * Runs an asynchronous expression in a GraalJS context built by {@code JsEngine#buildContext}, with a
+     * content-backed {@link JsFileSystem} and without full host access, and returns {@code RESOLVED <value>} or
+     * {@code REJECTED <error>}.
      *
      * @param expression a JavaScript expression that may use {@code await}
      * @return the outcome of the expression as text
      */
     private static String runAsync(final String expression) {
-        try (Context context = newContext()) {
+        try (Context context = JsEngine.buildContext(new JsFileSystem(), false)) {
             context.eval(Source.create("js", "(async () => { try { globalThis.result = 'RESOLVED ' + ("
                     + expression + "); } catch (e) { globalThis.result = 'REJECTED ' + e; } })();"));
             return context.eval("js", "String(globalThis.result)").asString();
         }
-    }
-
-    /**
-     * Builds a context with the same options as {@code JsEngine#buildContext}, using a {@link JsFileSystem} that
-     * reads modules from the content repository.
-     *
-     * @return a new GraalJS {@link Context}
-     */
-    @SuppressWarnings("deprecation")
-    private static Context newContext() {
-        return Context.newBuilder("js")
-                .allowIO(true)
-                .allowExperimentalOptions(true)
-                .option("js.esm-eval-returns-exports", "true")
-                .option("engine.WarnInterpreterOnly", "false")
-                .fileSystem(new JsFileSystem())
-                .build();
     }
 }

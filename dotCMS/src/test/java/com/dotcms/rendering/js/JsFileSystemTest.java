@@ -148,6 +148,26 @@ public class JsFileSystemTest {
     }
 
     @Test
+    public void siteSegmentOnlyAtTheStartIsConverted() {
+        // Given a module source that holds /application/js/b.mjs for site-b.test
+        final StubModuleSource source = new StubModuleSource()
+                .with("site-b.test", "/application/js/b.mjs", "export const v = 'B';");
+        final JsFileSystem fileSystem = new JsFileSystem(source);
+
+        // When //site-b.test/application/js//b.mjs, which has a second double slash before the file name, is parsed,
+        // resolved and read
+        final Path realPath = assertDoesNotThrow(
+                () -> fileSystem.toRealPath(fileSystem.parsePath("//site-b.test/application/js//b.mjs")));
+        final String content = assertDoesNotThrow(() -> read(fileSystem, realPath));
+
+        // Then only the leading double slash becomes the site token, the second one collapses into a single slash,
+        // and the module source is asked for site-b.test and /application/js/b.mjs
+        assertEquals("/dot-site-token/site-b.test/application/js/b.mjs", realPath.toString());
+        assertEquals("export const v = 'B';", content);
+        assertEquals(List.of(StubModuleSource.key("site-b.test", "/application/js/b.mjs")), source.requests());
+    }
+
+    @Test
     public void newByteChannelRefusesFileSystemPath() throws IOException {
         // Given an existing temporary file under the file storage folder
         final Path file = writeFile(STORAGE_FOLDER + "/a/b/x.mjs", "export const v = 'FILE';");
@@ -219,7 +239,8 @@ public class JsFileSystemTest {
 
     @Test
     public void pathWithUnicodeLineSeparatorIsRefused() {
-        // Given /application/ paths with a line separator (U+2028) and a next-line character (U+0085) in a segment
+        // Given /application/ paths with a line separator (U+2028), a next-line character (U+0085) and a paragraph
+        // separator (U+2029) in a segment
         final StubModuleSource source = new StubModuleSource();
         final JsFileSystem fileSystem = new JsFileSystem(source);
 
@@ -230,7 +251,7 @@ public class JsFileSystemTest {
         assertThrows(IllegalArgumentException.class,
                 () -> fileSystem.toRealPath(Paths.get("/application/js/a\u0085b.mjs")));
         assertThrows(IllegalArgumentException.class,
-                () -> fileSystem.toRealPath(Paths.get("/application/js/a b.mjs")));
+                () -> fileSystem.toRealPath(Paths.get("/application/js/a\u2029b.mjs")));
         assertTrue(source.requests().isEmpty());
     }
 
@@ -781,17 +802,11 @@ public class JsFileSystemTest {
     }
 
     /**
-     * Builds a context with the same options as {@code JsEngine#buildContext}, using the given file system.
+     * Builds a context through {@link JsEngine#buildContext(JsFileSystem, boolean)} with the given file system and
+     * the default host access.
      */
-    @SuppressWarnings("deprecation")
     private static Context newContext(final JsFileSystem fileSystem) {
-        return Context.newBuilder("js")
-                .allowIO(true)
-                .allowExperimentalOptions(true)
-                .option("js.esm-eval-returns-exports", "true")
-                .option("engine.WarnInterpreterOnly", "false")
-                .fileSystem(fileSystem)
-                .build();
+        return JsEngine.buildContext(fileSystem, false);
     }
 
     /**
