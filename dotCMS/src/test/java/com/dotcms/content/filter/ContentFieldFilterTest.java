@@ -14,6 +14,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import org.junit.Test;
 
 /**
@@ -131,6 +132,28 @@ public class ContentFieldFilterTest {
         assertFalse(ContentFieldFilter.sortReferences("modDate desc", RESTRICTED));
         assertFalse(ContentFieldFilter.sortReferences("title asc, score", RESTRICTED));
         assertFalse(ContentFieldFilter.sortReferences(null, RESTRICTED));
+    }
+
+    /**
+     * Given the keys of an index document, when the ones to leave out of catchall are picked, then every
+     * key that holds a restricted property is picked, whatever its variant, and no other key is.
+     */
+    @Test
+    public void test_catchallExclusion_picksEveryIndexVariantOfRestrictedFields() {
+        final Predicate<String> excluded = ContentFieldFilter.catchallExclusion(Set.of("moduser", "publishuser", "ssn"));
+        assertTrue(excluded.test("moduser"));
+        assertTrue(excluded.test("moduser_dotraw"));
+        assertTrue(excluded.test("syspublishuser"));
+        assertTrue(excluded.test("employee.ssn"));
+        assertTrue(excluded.test("employee.ssn_text"));
+        assertTrue(excluded.test("employee.ssn_sha256"));
+        assertFalse(excluded.test("owner"));
+        assertFalse(excluded.test("ownercanread"));
+        assertFalse(excluded.test("employee.ssnissuer"));
+        assertFalse(excluded.test("title"));
+        assertFalse(excluded.test("identifier"));
+
+        assertFalse(ContentFieldFilter.catchallExclusion(Set.of()).test("moduser"));
     }
 
     /**

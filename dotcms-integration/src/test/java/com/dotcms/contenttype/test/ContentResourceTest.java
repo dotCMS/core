@@ -32,6 +32,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
@@ -2059,5 +2060,85 @@ public class ContentResourceTest extends IntegrationTestBase {
             clearFieldFilter();
             deleteContentTypes(List.of(fixture.contentType));
         }
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getContent(HttpServletRequest, HttpServletResponse, String)}, over the
+     * catchall field built when content is indexed
+     * Given scenario: the user properties are masked before content is indexed, and a caller searches catchall for
+     * the ID of the user who last edited it, exactly and with a trailing wildcard, as an attacker would to rebuild it.
+     * Expected result: neither the anonymous caller nor an administrator finds the content that way, while the
+     * administrator still finds it by naming the field; content indexed with nothing configured is found through
+     * catchall as before.
+     */
+    @Test
+    public void test_search_fieldFilterConfigured_keepsRestrictedValuesOutOfCatchall() throws Exception {
+        // A user ID no other indexed value starts with ("system" is not one), and without hyphens, which would keep
+        // the wildcard query from matching it at all
+        final User author = new UserDataGen().id("catchalluser" + System.nanoTime()).active(true)
+                .emailAddress("catchall" + System.nanoTime() + "@dotcms.com")
+                .skinId(UUIDGenerator.generateUuid())
+                .password("password" + System.currentTimeMillis()).roles(roleAPI.loadCMSAdminRole()).nextPersisted();
+        final String userId = author.getUserId().toLowerCase();
+        final String prefix = userId.substring(0, userId.length() - 1) + "*";
+
+        clearFieldFilter();
+        final FilteredContentFixture indexedUnfiltered = createFilteredContentFixture();
+        republishAs(indexedUnfiltered.parent, author);
+        Config.setProperty(ContentFieldFilter.FIELDS_TO_MASK_PROPERTY, "modUser,owner,publishUser,wfCreatedBy");
+        final FilteredContentFixture indexedFiltered = createFilteredContentFixture();
+        republishAs(indexedFiltered.parent, author);
+        try {
+
+            for (final String term : List.of(userId, prefix)) {
+                assertEquals("catchall must not hold " + term, 0, countFound(userAPI.getAnonymousUser(),
+                        indexedFiltered, "+catchall:" + term));
+                assertEquals("catchall must not hold " + term, 0, countFound(TestUserUtils.getAdminUser(),
+                        indexedFiltered, "+catchall:" + term));
+                assertEquals("content indexed with nothing configured keeps " + term + " in catchall", 1,
+                        countFound(TestUserUtils.getAdminUser(), indexedUnfiltered, "+catchall:" + term));
+            }
+            assertEquals(1, countFound(TestUserUtils.getAdminUser(), indexedFiltered, "+modUser:" + userId));
+        } finally {
+            clearFieldFilter();
+            deleteContentTypes(List.of(indexedUnfiltered.contentType, indexedFiltered.contentType));
+        }
+    }
+
+    /**
+     * Saves and publishes a new version of a contentlet as the given user, who becomes its modUser and publishUser,
+     * and waits for it to be indexed.
+     *
+     * @param contentlet the contentlet to save again
+     * @param author the user saving it
+     * @throws Exception if the contentlet cannot be saved or published
+     */
+    private void republishAs(final Contentlet contentlet, final User author) throws Exception {
+        final Contentlet draft = contentletAPI.checkout(contentlet.getInode(), author, false);
+        draft.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+        draft.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        final Contentlet saved = contentletAPI.checkin(draft, author, false);
+        saved.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+        saved.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        contentletAPI.publish(saved, author, false);
+    }
+
+    /**
+     * Counts the contentlets the given user finds with GET /api/content/query, limited to the parent of a fixture.
+     *
+     * @param caller the user running the query
+     * @param fixture the content to look for
+     * @param clause the Lucene clause to add to the query
+     * @return the number of contentlets found
+     * @throws Exception if the call fails
+     */
+    private int countFound(final User caller, final FilteredContentFixture fixture, final String clause)
+            throws Exception {
+        final Response endpointResponse = new ContentResource().getContent(createHttpRequest(null, caller),
+                mock(HttpServletResponse.class), "/query/+contentType:" + fixture.contentType.variable()
+                        + " +identifier:" + fixture.parent.getIdentifier() + " " + clause);
+        assertEquals(String.valueOf(endpointResponse.getEntity()), Status.OK.getStatusCode(),
+                endpointResponse.getStatus());
+        return new JSONObject(endpointResponse.getEntity().toString()).getJSONArray("contentlets").length();
     }
 }

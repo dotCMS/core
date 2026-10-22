@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -53,10 +54,19 @@ import java.util.stream.Collectors;
  * <p>
  * Masking a value in the response does not stop a caller from searching on it, so a Lucene query or
  * sort clause from a filtered caller that names a configured property is refused; see
- * {@link #allowsSearch(String, String)}. One gap remains: every indexed value is also copied into the
- * {@code catchall} field, so a filtered caller can still confirm a value they already know by
- * searching for it without a field name. For the user properties the index only holds user IDs, not
- * names nor email addresses; a custom field holding sensitive data, however, stays searchable that way.
+ * {@link #allowsSearch(String, String)}. A value can also be searched without naming its field, because
+ * every indexed value is copied into the {@code catchall} field, which is also the field searched by a
+ * query term without a field name. Wildcard queries on it would let a caller rebuild a value one
+ * character at a time, so the configured properties are left out of {@code catchall} when content is
+ * indexed; see {@link #catchallExclusion()}. Two consequences follow:
+ * <ul>
+ *     <li>It only applies to content indexed after the properties are set, so content must be
+ *     reindexed after setting or changing them.</li>
+ *     <li>It applies to every user: CMS administrators and back-end users can still search these
+ *     properties by naming them, e.g. {@code +modUser:dotcms.org.1}, but not without a field name.</li>
+ * </ul>
+ * Other index fields may hold the same values, such as the user IDs in the workflow fields
+ * {@code wfCreatedBy} and {@code wfAssign}; list them too to keep them out of searches.
  */
 public final class ContentFieldFilter {
 
@@ -191,6 +201,30 @@ public final class ContentFieldFilter {
     }
 
     /**
+     * Returns a test telling which index fields must be left out of the {@code catchall} field: the ones
+     * that stand for a masked or hidden property, including their {@code Type.field}, {@code sys} prefix,
+     * {@code _dotraw}, {@code _text} and {@code _sha256} variants. Used when content is indexed, whoever
+     * will search it.
+     *
+     * @return a test on lower-cased index field names; always {@code false} when nothing is configured
+     */
+    public static Predicate<String> catchallExclusion() {
+        final Set<String> restricted = new LinkedHashSet<>(readFields(FIELDS_TO_MASK_PROPERTY));
+        restricted.addAll(readFields(FIELDS_TO_HIDE_PROPERTY));
+        return catchallExclusion(restricted);
+    }
+
+    /**
+     * Returns a test telling whether an index field stands for one of the given properties.
+     *
+     * @param fields lower-cased property names
+     * @return a test on index field names; always {@code false} when there are no properties
+     */
+    static Predicate<String> catchallExclusion(final Set<String> fields) {
+        return fields.isEmpty() ? indexField -> false : indexField -> refersTo(indexField, fields);
+    }
+
+    /**
      * Returns the message to send to a caller whose search was refused by {@link #allowsSearch(String, String)},
      * in the language of that caller's profile. Anonymous callers get the default language. When the message
      * cannot be resolved, the English text is returned.
@@ -308,9 +342,9 @@ public final class ContentFieldFilter {
     }
 
     /**
-     * Tells whether one search field name stands for one of the given properties.
+     * Tells whether one search or index field name stands for one of the given properties.
      *
-     * @param searchField a field name taken from a query or sort
+     * @param searchField a field name taken from a query, a sort or an index document
      * @param fields lower-cased property names
      * @return {@code true} when it does
      */
