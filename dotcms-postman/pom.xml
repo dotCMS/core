@@ -65,6 +65,17 @@
                         </configuration>
                     </execution>
                     <execution>
+                        <id>run node unit tests</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <phase>test</phase>
+                        <configuration>
+                            <skip>${postman.test.skip}</skip>
+                            <commandlineArgs>run test</commandlineArgs>
+                        </configuration>
+                    </execution>
+                    <execution>
                         <id>run node script</id>
                         <goals>
                             <goal>exec</goal>

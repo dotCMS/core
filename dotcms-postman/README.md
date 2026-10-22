@@ -60,6 +60,10 @@ jobs must use these directory/collection selections and independent server modes
 
 ## Focused local checks
 
+Maven runs both Node regression files in the `test` phase whenever Postman tests are enabled
+(`-Dpostman.test.skip=false`), before starting the live test server. Postman CI shards disable
+the Maven build cache so neither these guards nor the live collections can be skipped.
+
 ```sh
 # No packages or running dotCMS needed; use the repository-pinned Node 22 binary.
 installs/node/node --test dotcms-postman/test/*.test.cjs

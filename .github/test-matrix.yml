@@ -105,8 +105,8 @@ test_types:
       needs_node: true
       # Base command for all Postman tests
       base_maven_args: >-
-        verify -pl :dotcms-postman 
-        -Dpostman.test.skip=false
+        verify -pl :dotcms-postman
+        -Dpostman.test.skip=false -Dmaven.build.cache.enabled=false
     suites:
       # AI and ML related tests
       - name: "Postman Tests - AI"
@@ -144,13 +144,13 @@ test_types:
       - name: "Postman Tests - WebDAV API JWT"
         collection: "WebDav.postman_collection"
         base_maven_args: >-
-          verify -pl :dotcms-postman -Dpostman.test.skip=false
+          verify -pl :dotcms-postman -Dpostman.test.skip=false -Dmaven.build.cache.enabled=false
           -Dpostman.basic.auth.mode=JWT_TOKEN
           -Dpostman.collection.dir=src/main/resources/postman/compatibility/jwt-token
       - name: "Postman Tests - Basic Compatibility"
         collection: "Push_Publish_JWT_Token_Test.postman_collection,Integrity_Checker_JWT_Token_Test.postman_collection"
         base_maven_args: >-
-          verify -pl :dotcms-postman -Dpostman.test.skip=false
+          verify -pl :dotcms-postman -Dpostman.test.skip=false -Dmaven.build.cache.enabled=false
           -Dpostman.basic.auth.mode=ALL
           -Dpostman.collection.dir=src/main/resources/postman/compatibility/all
 

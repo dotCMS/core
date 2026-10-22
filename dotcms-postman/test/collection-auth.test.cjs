@@ -131,6 +131,26 @@ test('Maven defers failed CLI exit until Docker stop and JaCoCo dump have run', 
   assert.match(pom, /<id>stop<\/id>[\s\S]*?<phase>verify<\/phase>/);
 });
 
+test('Postman CI executes runner and migration guards before live collections without caching them', () => {
+  const moduleRoot = path.resolve(__dirname, '..');
+  const manifest = JSON.parse(readFileSync(path.join(moduleRoot, 'package.json'), 'utf8'));
+  assert.equal(manifest.scripts.test, 'node --test test/*.test.cjs');
+  const pom = readFileSync(path.join(moduleRoot, 'pom.xml'), 'utf8');
+  const execution = pom.split('<execution>').find((entry) => entry.includes('<id>run node unit tests</id>'))
+    ?.split('</execution>')[0];
+  assert.ok(execution, 'Bind the existing Node guards into the Postman Maven lifecycle');
+  assert.match(execution, /<phase>test<\/phase>/);
+  assert.match(execution, /<commandlineArgs>run test<\/commandlineArgs>/);
+  assert.match(execution, /<skip>\$\{postman\.test\.skip\}<\/skip>/);
+  const matrix = readFileSync(path.resolve(moduleRoot, '../.github/test-matrix.yml'), 'utf8');
+  const postman = matrix.split('  postman:')[1]?.split('\n  karate:')[0] || '';
+  const commands = [...postman.matchAll(/base_maven_args: >-\n((?: {8,}.*\n)+)/g)]
+    .map((match) => match[1]);
+  assert.ok(commands.length >= 3, 'Cover the ordinary defaults and both compatibility server commands');
+  for (const command of commands) assert.match(command, /-Dmaven\.build\.cache\.enabled=false/,
+    'The cache must not skip the guard execution or live Postman tests');
+});
+
 test('ordinary effective auth and manual headers have no password-Basic dependency', () => {
   assert.ok(requests.length >= 2915, 'Do not pass by silently dropping collections or requests');
   const violations = requests.filter((r) => {
