@@ -65,11 +65,15 @@ public class UserResourceIntegrationTest {
     // test's REST auth check into a spurious 401.
     private static final List<Role> rolesToClean = new ArrayList<>();
     private static final List<User> usersToClean = new ArrayList<>();
+    private static final List<Layout> layoutsToClean = new ArrayList<>();
 
     @AfterClass
     public static void cleanUpFilterFixtures() throws Exception {
         usersToClean.forEach(UserDataGen::remove);
         rolesToClean.forEach(RoleDataGen::remove);
+        for (final Layout layout : layoutsToClean) {
+            APILocator.getLayoutAPI().removeLayout(layout);
+        }
         // the deletions above cleared the global role cache; resolve the back-end role again
         // so the next suite class's REST auth check never starts against a cold cache
         APILocator.getRoleAPI().loadBackEndUserRole();
@@ -748,6 +752,7 @@ public class UserResourceIntegrationTest {
         rolesToClean.add(role);
         final Layout layout = new LayoutDataGen().name("Layout " + tag).portletIds(portlet.toString())
                 .nextPersisted();
+        layoutsToClean.add(layout);
         APILocator.getRoleAPI().addLayoutToRole(layout, role);
         return role;
     }

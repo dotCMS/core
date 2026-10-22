@@ -16822,8 +16822,9 @@ paths:
       - Roles
     get:
       description: "Returns the paginated list of users directly granted the given\
-        \ role, using the standard user serialization (email address included). Grants\
-        \ inherited through the role hierarchy are not included."
+        \ role. CMS Administrators and users with the Users portlet receive the full\
+        \ user map; other callers receive the directory fields (id, names, email address\
+        \ and gravatar). Grants inherited through the role hierarchy are not included."
       operationId: loadUsersByRoleId
       parameters:
       - description: Id of the role to list users for

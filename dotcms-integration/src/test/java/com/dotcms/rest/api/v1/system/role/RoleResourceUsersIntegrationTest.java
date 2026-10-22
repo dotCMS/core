@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.system.role;
 
+import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -10,9 +11,11 @@ import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import org.junit.AfterClass;
@@ -26,6 +29,7 @@ import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -52,6 +56,17 @@ public class RoleResourceUsersIntegrationTest {
 
     private static final List<Role> rolesToClean = new ArrayList<>();
     private static final List<User> usersToClean = new ArrayList<>();
+    private static final List<Layout> layoutsToClean = new ArrayList<>();
+
+    /** Keys every caller gets for each listed user: enough to identify and display the user. */
+    private static final Set<String> DIRECTORY_KEYS = Set.of("userId", "id", "firstName", "lastName",
+            "fullName", "name", "emailAddress", "emailaddress", "gravitar", "type");
+
+    /** Keys of the full profile that only Users-portlet holders and CMS Administrators get. */
+    private static final Set<String> FULL_PROFILE_ONLY_KEYS = Set.of("lastLoginIP", "lastLoginDate",
+            "failedLoginAttempts", "admin", "passwordExpired", "passwordReset", "passwordExpirationDate",
+            "hasConsoleAccess", "active", "backendUser", "frontendUser", "additionalInfo", "createDate",
+            "modificationDate");
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -67,6 +82,9 @@ public class RoleResourceUsersIntegrationTest {
         // children were created after their parents, so remove in reverse creation order
         Collections.reverse(rolesToClean);
         rolesToClean.forEach(RoleDataGen::remove);
+        for (final Layout layout : layoutsToClean) {
+            APILocator.getLayoutAPI().removeLayout(layout);
+        }
         // the deletions above cleared the global role cache; resolve the back-end role again
         // so the next suite class's REST auth check never starts against a cold cache
         APILocator.getRoleAPI().loadBackEndUserRole();
@@ -90,10 +108,25 @@ public class RoleResourceUsersIntegrationTest {
     }
 
     private static HttpServletRequest mockAdminRequest() {
+        return mockRequestAs("admin@dotcms.com", "admin");
+    }
+
+    /** A request authenticated (Basic) as the given user. */
+    private static HttpServletRequest mockRequestAs(final String email, final String password) {
         final MockHeaderRequest request = new MockHeaderRequest(baseRequest().request());
         request.setHeader("Authorization",
-                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+                "Basic " + Base64.getEncoder().encodeToString((email + ":" + password).getBytes()));
         return request;
+    }
+
+    /** A persisted role whose layout grants the given portlet, registered for cleanup. */
+    private static Role roleWithPortlet(final String tag, final PortletID portlet) throws Exception {
+        final Role role = track(new RoleDataGen().key(tag).nextPersisted());
+        final Layout layout = new LayoutDataGen().name("Layout " + tag).portletIds(portlet.toString())
+                .nextPersisted();
+        layoutsToClean.add(layout);
+        APILocator.getRoleAPI().addLayoutToRole(layout, role);
+        return role;
     }
 
     private static ResponseEntityPaginatedDataView loadUsers(final String roleId,
@@ -278,6 +311,39 @@ public class RoleResourceUsersIntegrationTest {
     @Test(expected = DoesNotExistException.class)
     public void missingRole_throwsDoesNotExist() throws Exception {
         loadUsers(UUIDGenerator.generateUuid(), null, 1, 40);
+    }
+
+    /**
+     * A back-end caller who holds the Roles portlet but neither the Users portlet nor CMS Administrator
+     * access may list a role's users, yet receives only the directory fields -- id, names, email and
+     * gravatar -- not the account-state fields the Users portlet displays.
+     */
+    @Test
+    public void rolesPortletOnlyCaller_getsDirectoryFieldsOnly() throws Exception {
+        final String unique = "roleusersdir" + System.currentTimeMillis();
+        final String password = "pw" + unique;
+        final Role rolesPortlet = roleWithPortlet(unique, PortletID.ROLES);
+        final User caller = track(new UserDataGen().firstName(unique).password(password)
+                .roles(rolesPortlet, roleAPI.loadBackEndUserRole()).nextPersisted());
+        assertFalse("precondition: caller must not be an admin", caller.isAdmin());
+        assertFalse("precondition: caller must lack Users portlet access",
+                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller));
+
+        final Role role = track(new RoleDataGen().nextPersisted());
+        track(new UserDataGen().firstName(unique + "Granted").roles(role).nextPersisted());
+
+        final ResponseEntityPaginatedDataView view = resource.loadUsersByRoleId(
+                mockRequestAs(caller.getEmailAddress(), password), new MockHttpResponse(),
+                role.getId(), null, 1, 40, null, "ASC");
+        final List<Map<String, Object>> userMaps = users(view);
+        assertFalse("the granted user must be listed", userMaps.isEmpty());
+        for (final Map<String, Object> userMap : userMaps) {
+            assertTrue("directory keys must be present: " + userMap.keySet(),
+                    userMap.keySet().containsAll(DIRECTORY_KEYS));
+            for (final String key : FULL_PROFILE_ONLY_KEYS) {
+                assertFalse("must not carry account-state key '" + key + "'", userMap.containsKey(key));
+            }
+        }
     }
 
     /**

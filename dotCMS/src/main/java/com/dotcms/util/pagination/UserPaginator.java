@@ -88,9 +88,14 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
     /**
      * Tells whether the calling user receives the full data map of every listed user, or only the
      * {@link #DIRECTORY_KEYS}. The full profile goes to CMS Administrators and to users with access to the Users
-     * portlet -- the same bar the Users portlet itself applies -- since that portlet is the one that displays the
-     * account-state fields. Both the legacy {@link PortletID#USERS} id and the Angular
-     * {@link PortletID#USERS_BETA} id count, so a user-manager on either portlet sees the full list.
+     * portlet, the portlet that displays the account-state fields; both the legacy {@link PortletID#USERS} id and
+     * the Angular {@link PortletID#USERS_BETA} id count, so a user-manager on either portlet sees the full list.
+     * <p>This matches the legacy Users-portlet DWR calls, which gate on the Users portlet alone. It is, by design, a
+     * lower bar than the one the single-user endpoints in {@code UserResource} ({@code findUserById}, the
+     * {@code includeRoles} option) apply -- those also require the Roles portlet -- so a caller holding the Users
+     * portlet but not the Roles portlet sees the full list here, yet cannot read an individual user there.</p>
+     * <p>CMS Administrators short-circuit before the {@link LayoutAPI} supplier is ever resolved; only non-admin
+     * callers trigger a portlet lookup.</p>
      *
      * @param caller The user requesting the list; {@code null} is treated as a caller without privileges.
      *
@@ -102,9 +107,11 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
         if (null == caller) {
             return false;
         }
+        if (caller.isAdmin()) {
+            return true;
+        }
         final LayoutAPI layouts = this.layoutAPI.get();
-        return caller.isAdmin()
-                || layouts.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller)
+        return layouts.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller)
                 || layouts.doesUserHaveAccessToPortlet(PortletID.USERS_BETA.toString(), caller);
     }
 

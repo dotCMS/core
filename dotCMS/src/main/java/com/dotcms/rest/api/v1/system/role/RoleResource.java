@@ -837,9 +837,10 @@ public class RoleResource implements Serializable {
 	@Operation(
 		operationId = "loadUsersByRoleId",
 		summary = "Get the users directly granted a role",
-		description = "Returns the paginated list of users directly granted the given role, "
-				+ "using the standard user serialization (email address included). Grants "
-				+ "inherited through the role hierarchy are not included."
+		description = "Returns the paginated list of users directly granted the given role. CMS "
+				+ "Administrators and users with the Users portlet receive the full user map; other callers "
+				+ "receive the directory fields (id, names, email address and gravatar). Grants inherited "
+				+ "through the role hierarchy are not included."
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200",
