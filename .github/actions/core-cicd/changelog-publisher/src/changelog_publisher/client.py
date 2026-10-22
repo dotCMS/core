@@ -1,8 +1,9 @@
-"""HTTP client for the corpsites-headless dotCMS backend.
+"""HTTP client for the dev-site authoring (auth) dotCMS instance.
 
 Read side (`_search`) locates an existing `Dotcmsbuilds` entry by version; write side
-(`fire`) fires the System Workflow Publish action to create/update-and-publish it. The
-bearer token is read once from the environment and never logged (Constitution II/III).
+(`fire`) fires the configured workflow action (Push Publish, auth → prod, in CI) to
+create/update-and-publish it. The bearer token is read once from the environment and
+never logged (Constitution II/III).
 """
 from __future__ import annotations
 
@@ -19,8 +20,11 @@ BASE_URL = os.environ.get("DOTCMS_DEVSITE_URL", "").rstrip("/")
 TOKEN_ENV = "DOTCMS_DEVSITE_RELEASENOTES_TOKEN"
 _TIMEOUT = 30
 
-# System Workflow Publish action (no approval step → firing publishes live). See data-model.md D5.
-PUBLISH_ACTION_ID = "b9d89c80-3d88-4311-8365-187323c96436"
+# Workflow action fired for every write. In CI this is the Push Publish action on the
+# auth instance (publishes locally, then pushes to prod). It comes from the
+# DOTCMS_DEVSITE_RELEASENOTES_ACTION repo variable and is never hardcoded.
+ACTION_ENV = "DOTCMS_DEVSITE_RELEASENOTES_ACTION"
+PUBLISH_ACTION_ID = os.environ.get(ACTION_ENV, "").strip()
 
 log = logging.getLogger("changelog_publisher.client")
 
@@ -39,20 +43,31 @@ class SearchHit:
 
 
 class CorpsitesClient:
-    """Thin wrapper over the corpsites Workflow/Content REST API.
+    """Thin wrapper over the auth instance's Workflow/Content REST API.
 
     The token is read once at construction. It is sent only as the Authorization header
     and is never logged or echoed.
     """
 
-    def __init__(self, token: str | None = None, base_url: str | None = None) -> None:
+    def __init__(
+        self,
+        token: str | None = None,
+        base_url: str | None = None,
+        action_id: str | None = None,
+    ) -> None:
         token = token if token is not None else os.environ.get(TOKEN_ENV)
         if not token:
             raise RuntimeError(f"{TOKEN_ENV} is not set")
         base_url = base_url or BASE_URL  # resolved at call time, not def time
         if not base_url:
             raise RuntimeError("DOTCMS_DEVSITE_URL is not set")
+        # Required like the URL: an unset repo variable renders as "" in Actions, and a
+        # silent fallback could publish on auth only and never reach prod.
+        action_id = (action_id or PUBLISH_ACTION_ID).strip()
+        if not action_id:
+            raise RuntimeError(f"{ACTION_ENV} is not set")
         self.base_url = base_url.rstrip("/")
+        self.action_id = action_id
         self.session = requests.Session()
         self.session.headers.update({"Authorization": f"Bearer {token}"})
 
@@ -96,7 +111,7 @@ class CorpsitesClient:
         ))
 
     def fire(self, contentlet: dict, *, apply: bool) -> None:
-        """Fire the System Workflow Publish action with the given contentlet payload.
+        """Fire the configured workflow action with the given contentlet payload.
 
         Dry-run (apply=False) logs the intended action and issues no request — the
         `evergreen-tracks` safety convention.
@@ -105,9 +120,9 @@ class CorpsitesClient:
         if not apply:
             log.info("DRY-RUN would fire Publish for %s", minor)
             return
-        log.info("firing Publish for %s", minor)
+        log.info("firing Publish for %s (action %s)", minor, self.action_id)
         resp = self.session.put(
-            f"{self.base_url}/api/v1/workflow/actions/{PUBLISH_ACTION_ID}/fire",
+            f"{self.base_url}/api/v1/workflow/actions/{self.action_id}/fire",
             json={"contentlet": contentlet},
             timeout=_TIMEOUT,
         )

@@ -2,8 +2,9 @@
 # Changelog Site Publish Phase (Reusable Component)
 #
 # Publishes the release's changelog to the public changelog on dev.dotcms.com by upserting
-# a Dotcmsbuilds contentlet on the corpsites-headless backend and firing the System
-# Workflow Publish action (goes live with no approval step).
+# a Dotcmsbuilds contentlet on the dev-site authoring (auth) instance and firing the
+# configured workflow action — Push Publish, which publishes on auth and then pushes the
+# change to prod. Content flows auth → prod; nothing is written to prod directly.
 #
 # There is NO generation in this phase: the GitHub release body (already written by the
 # ai-release-notes phase from the shared editorial template) IS the changelog content —
@@ -49,9 +50,9 @@ on:
         type: string
         default: 'CE1TBQU00'  # #dot-releases (public). Pass an override to post elsewhere.
     secrets:
-      DOTCMS_DEVSITE_RELEASENOTES_TOKEN:
+      DOTCMS_DEVSITEAUTH_RELEASENOTES_TOKEN:
         required: true
-        description: 'Service-account bearer token for the corpsites-headless backend'
+        description: 'Service-account bearer token for the dev-site authoring (auth) instance'
       SLACK_BOT_TOKEN:
         required: true
         description: 'Slack bot token for #dot-releases failure/skip notifications'
@@ -109,11 +110,15 @@ jobs:
         id: publish
         working-directory: .github/actions/core-cicd/changelog-publisher
         env:
-          # Backend URL is a repo variable (not hardcoded in this public repo — PR review):
-          # a backend migration is a variable change, not a code change.
-          DOTCMS_DEVSITE_URL: ${{ vars.DOTCMS_DEVSITE_URL }}
+          # Writes go to the auth instance, never to prod directly. The URL is a repo variable
+          # (not hardcoded in this public repo — PR review), shared with issue_autodoc.yml.
+          # The tool's env names stay DOTCMS_DEVSITE_*; only the source changes.
+          DOTCMS_DEVSITE_URL: ${{ vars.AUTODOC_DOTCMS_BASE_URL }}
           # Read once by the tool; never echoed to logs / GITHUB_OUTPUT / step summary.
-          DOTCMS_DEVSITE_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITE_RELEASENOTES_TOKEN }}
+          DOTCMS_DEVSITE_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITEAUTH_RELEASENOTES_TOKEN }}
+          # Workflow action to fire: Push Publish on auth (publishes there, then pushes to
+          # prod). Required — the tool fails if it is unset rather than falling back.
+          DOTCMS_DEVSITE_RELEASENOTES_ACTION: ${{ vars.DOTCMS_DEVSITE_RELEASENOTES_ACTION }}
           # Service-account modUser id for human-edit protection (FR-011). --force is never
           # passed here — override is a manual operator re-run only.
           DOTCMS_DEVSITE_RELEASENOTES_ACCOUNT: ${{ vars.DOTCMS_DEVSITE_RELEASENOTES_ACCOUNT }}

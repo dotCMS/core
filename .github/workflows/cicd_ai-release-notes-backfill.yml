@@ -112,6 +112,6 @@ jobs:
       docker_tags: ${{ needs.resolve-site-inputs.outputs.docker_tags }}
       released_date: ${{ needs.resolve-site-inputs.outputs.released_date }}
     secrets:
-      DOTCMS_DEVSITE_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITE_RELEASENOTES_TOKEN }}
+      DOTCMS_DEVSITEAUTH_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITEAUTH_RELEASENOTES_TOKEN }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
       CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
