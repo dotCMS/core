@@ -49,6 +49,15 @@ public class DotCDNInvalidateActionlet extends WorkFlowActionlet {
                 + "e.g. /dA/$contentlet.identifier/* or /dA/$contentlet.shortyInode/*";
     }
 
+    /**
+     * Purges the contentlet's CDN URLs, plus any extra URLs set on the action, when dotCDN is
+     * configured for the contentlet's site. The purge runs on a background thread, so a failure is
+     * logged and never fails the workflow action.
+     *
+     * @param processor the {@link WorkflowProcessor} holding the contentlet the action runs on
+     * @param params the action's parameters: whether to purge the contentlet, and extra URLs
+     * @throws WorkflowActionFailureException if the action cannot be executed
+     */
     @Override
     public void executeAction(WorkflowProcessor processor,
             Map<String, WorkflowActionClassParameter> params)
@@ -79,7 +88,8 @@ public class DotCDNInvalidateActionlet extends WorkFlowActionlet {
             urlsToPurge.addAll(parseUrlsParam(purgeUrls));
         }
 
-        Logger.info(this, "PurgeContentlet: " + isPurgeContentlet);
+        Logger.debug(this, () -> "dotCDN purge for contentlet " + contentlet.getIdentifier()
+                + ", purge the contentlet itself: " + isPurgeContentlet);
         if (isPurgeContentlet) {
             DotConcurrentFactory.getInstance().getSubmitter().submit(() -> {
                 Try.of(() -> cdnApi.invalidateContentlet(contentlet, urlsToPurge))
