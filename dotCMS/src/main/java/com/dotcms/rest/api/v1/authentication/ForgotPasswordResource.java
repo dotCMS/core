@@ -87,7 +87,8 @@ public class ForgotPasswordResource implements Serializable {
      * <p>
      * Every request whose value is accepted gets the same 200 response carrying the submitted
      * value, whether or not an account matches and whether or not the reset could be completed. With
-     * login by email address, a value that is not an email address is rejected with 400. When
+     * login by email address, a value that is not an email address is rejected with 400, as is a
+     * request with no body. When
      * {@code CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD} is enabled, an unknown account
      * is reported with 400.
      *
@@ -125,8 +126,14 @@ public class ForgotPasswordResource implements Serializable {
                                                     content = @Content(schema = @Schema(implementation = ForgotPasswordForm.class)))
                                          final ForgotPasswordForm forgotPasswordForm) {
 
+        if (null == forgotPasswordForm) {
+
+            return ExceptionMapperUtil.createResponse("A request body with a userId is required",
+                    Response.Status.BAD_REQUEST);
+        }
+
         Response res;
-        final String submittedValue = null != forgotPasswordForm ? forgotPasswordForm.getUserId() : null;
+        final String submittedValue = forgotPasswordForm.getUserId();
         final Locale locale = LocaleUtil.getLocale(request);
 
         try {

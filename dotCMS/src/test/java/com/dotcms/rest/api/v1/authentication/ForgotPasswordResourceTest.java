@@ -351,11 +351,38 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
     }
 
     /**
+     * Given a request with no body,
+     * when a reset is requested,
+     * then the request is rejected with 400.
+     */
+    @Test
+    public void emptyBody_isRejected() throws Exception {
+
+        final Response response = requestReset(Company.AUTH_TYPE_EA, (ForgotPasswordForm) null,
+                mock(UserLocalManager.class), mock(UserService.class));
+
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), response.getStatus());
+    }
+
+    /**
      * Calls the resource for the given login type and submitted value, with
      * {@code CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD} set to its default (false) for the
      * duration of the call and restored afterwards.
      */
     private Response requestReset(final String authType, final String submittedValue,
+                                  final UserLocalManager userLocalManager,
+                                  final UserService userService) throws Exception {
+
+        return requestReset(authType, new ForgotPasswordForm.Builder().userId(submittedValue).build(),
+                userLocalManager, userService);
+    }
+
+    /**
+     * Calls the resource for the given login type and form (may be {@code null}), with
+     * {@code CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD} set to its default (false) for the
+     * duration of the call and restored afterwards.
+     */
+    private Response requestReset(final String authType, final ForgotPasswordForm form,
                                   final UserLocalManager userLocalManager,
                                   final UserService userService) throws Exception {
 
@@ -384,8 +411,7 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
             Config.setProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, false);
 
             return new ForgotPasswordResource(userLocalManager, userService, companyAPI, ResponseUtil.INSTANCE)
-                    .forgotPassword(request, mock(HttpServletResponse.class),
-                            new ForgotPasswordForm.Builder().userId(submittedValue).build());
+                    .forgotPassword(request, mock(HttpServletResponse.class), form);
         } finally {
             Config.setProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, previousDisplayFlag);
             Config.CONTEXT = null;
