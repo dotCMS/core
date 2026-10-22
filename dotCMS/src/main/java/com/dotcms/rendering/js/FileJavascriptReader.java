@@ -1,7 +1,7 @@
 package com.dotcms.rendering.js;
 
 import com.dotcms.rendering.util.ScriptingReaderParams;
-import com.dotcms.rendering.velocity.viewtools.SecretTool;
+import com.dotcms.rendering.velocity.viewtools.ScriptingFileAttribute;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -52,7 +52,7 @@ public class FileJavascriptReader implements JavascriptReader {
                 null != currentLanguage? currentLanguage: APILocator.getLanguageAPI().getDefaultLanguage(),
                 pageMode, params.getUser());
         // lets $dotsecrets check the file's last editor, as it does for page content
-        SecretTool.setScriptingFile(params.getRequest(), jsFile);
+        ScriptingFileAttribute.set(params.getRequest(), jsFile);
         return new InputStreamReader(APILocator.getFileAssetAPI().fromContentlet(jsFile).getInputStream());
     }
 

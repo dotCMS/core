@@ -176,7 +176,7 @@ public class SecretToolTest {
         when(roleAPI.loadRoleByKey(Role.SCRIPTING_DEVELOPER)).thenReturn(mock(Role.class));
         final Contentlet spoofed = mock(Contentlet.class);
         when(spoofed.getModUser()).thenReturn("scripter");
-        when(request.getAttribute(SecretTool.SCRIPTING_FILE_ATTRIBUTE)).thenReturn(spoofed);
+        when(request.getAttribute(ScriptingFileAttribute.ATTRIBUTE)).thenReturn(spoofed);
 
         assertThrows(SecurityException.class, () -> secretTool.canUserEvaluate());
         verify(userAPI, never()).loadUserById(any(), any(), any(Boolean.class));
@@ -236,7 +236,7 @@ public class SecretToolTest {
 
     /**
      * Sets up an anonymous request whose scripting file, recorded through
-     * {@link SecretTool#setScriptingFile}, was last edited by the given user id.
+     * {@link ScriptingFileAttribute#set}, was last edited by the given user id.
      *
      * @param modUserId id of the file's last editor
      * @return the mocked Scripting Developer role
@@ -250,10 +250,10 @@ public class SecretToolTest {
 
         final Contentlet file = mock(Contentlet.class);
         when(file.getModUser()).thenReturn(modUserId);
-        SecretTool.setScriptingFile(request, file);
+        ScriptingFileAttribute.set(request, file);
         final ArgumentCaptor<Object> attribute = ArgumentCaptor.forClass(Object.class);
-        verify(request).setAttribute(eq(SecretTool.SCRIPTING_FILE_ATTRIBUTE), attribute.capture());
-        when(request.getAttribute(SecretTool.SCRIPTING_FILE_ATTRIBUTE)).thenReturn(attribute.getValue());
+        verify(request).setAttribute(eq(ScriptingFileAttribute.ATTRIBUTE), attribute.capture());
+        when(request.getAttribute(ScriptingFileAttribute.ATTRIBUTE)).thenReturn(attribute.getValue());
         return scriptingRole;
     }
 }
