@@ -70,7 +70,12 @@ export class DotCDNComponent {
     purgeUrls(): void {
         const urls: string[] = this.purgeZoneForm.value.purgeUrlsTextArea
             .split('\n')
-            .map((url: string) => url.trim());
+            .map((url: string) => url.trim())
+            .filter((url: string) => url.length > 0);
+
+        if (urls.length === 0) {
+            return;
+        }
 
         this.dotCdnStore
             .purgeCDNCache(urls)
