@@ -543,7 +543,6 @@ import org.junit.runners.Suite.SuiteClasses;
         FileAssetAPIImplIntegrationTest.class,
         FileAssetFactoryIntegrationTest.class,
         UserResourceIntegrationTest.class,
-        UserServiceFactoryTest.class,
         IntegrationResourceLinkTest.class,
         HashBuilderTest.class,
         LanguageUtilTest.class,
@@ -590,6 +589,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.languagesmanager.ajax.LanguageAjaxIntegrationTest.class,
         com.dotmarketing.business.ajax.RoleAjaxLayoutsIntegrationTest.class,
         com.dotmarketing.portlets.languagesmanager.action.EditLanguageKeysActionTest.class,
+        UserServiceFactoryTest.class,
 })
 
 public class MainSuite2b {
