@@ -57,7 +57,10 @@ export interface DotUsersListState {
      * a load that succeeds with the flag sets it `true`, one that falls
      * back on the gate's 403 sets it `false`, and any other error leaves
      * it unchanged. Starts `false` so the filter is not offered before
-     * the first load has answered.
+     * the first load has answered. Once the gate has refused, later loads
+     * stop asking for the flag, so a privilege granted meanwhile shows up
+     * the next time the list is opened (the store lives with the list
+     * component), as the portlet menu itself only updates on reload.
      */
     canFilterByRole: boolean;
     sortField: string;
@@ -116,8 +119,8 @@ function buildFilterParams(store: ListQueryStoreSnapshot, includeRoles = true) {
 }
 
 /**
- * Runs the list request with `includeRoles=true`. When it succeeds,
- * `onRolesAllowed` records that the viewer passes the gate. On a 403
+ * Runs the list request. When a request with `includeRoles=true`
+ * succeeds, `onRolesAllowed` records that the viewer passes the gate. On a 403
  * for a request with `includeRoles=true`, which is taken to mean the
  * viewer lacks CMS Administrator or the Roles + Users portlets (the
  * #37236 gate), retries once with the params `onRolesForbidden` returns — the caller's chance to drop everything
@@ -133,7 +136,11 @@ function fetchUsersPage(
     onRolesForbidden: () => ReturnType<typeof buildFilterParams>
 ): Observable<DotCMSAPIResponse<DotUserListItem[]>> {
     return usersService.getUsersPaginated(params).pipe(
-        tap(() => onRolesAllowed()),
+        tap(() => {
+            if (params.includeRoles) {
+                onRolesAllowed();
+            }
+        }),
         catchError((error: unknown) => {
             if (params.includeRoles && error instanceof HttpErrorResponse && error.status === 403) {
                 return usersService.getUsersPaginated(onRolesForbidden());
@@ -153,12 +160,19 @@ export const DotUsersListStore = signalStore(
         const messageService = inject(DotMessageService);
 
         /**
+         * Set once the gate has answered 403, so later loads skip
+         * `includeRoles` instead of being refused and retried every time.
+         */
+        let rolesForbidden = false;
+
+        /**
          * Called on the gate's 403: records that this viewer may not
          * filter by role, drops any role filter (and goes back to page 1,
          * as any filter change does) and rebuilds the params without the
          * flag for the retry.
          */
         const paramsAfterRolesForbidden = () => {
+            rolesForbidden = true;
             if (store.roleFilter() === USERS_FILTER_ALL) {
                 patchState(store, { canFilterByRole: false });
             } else {
@@ -185,7 +199,7 @@ export const DotUsersListStore = signalStore(
                 switchMap(() =>
                     fetchUsersPage(
                         usersService,
-                        buildFilterParams(store),
+                        buildFilterParams(store, !rolesForbidden),
                         () => patchState(store, { canFilterByRole: true }),
                         paramsAfterRolesForbidden
                     ).pipe(

@@ -318,6 +318,35 @@ describe('DotUsersListStore', () => {
             expect(store.canFilterByRole()).toBe(false);
         });
 
+        it('stops asking for includeRoles once the backend has answered 403', () => {
+            usersService.getUsersPaginated
+                .mockReturnValueOnce(
+                    throwError(
+                        () => new HttpErrorResponse({ status: 403, statusText: 'Forbidden' })
+                    )
+                )
+                .mockReturnValueOnce(of(MOCK_RESPONSE));
+
+            store.loadUsers();
+            usersService.getUsersPaginated.mockClear();
+
+            store.applyLazyLoad({
+                page: 2,
+                rows: 20,
+                sortField: 'lastLoginDate',
+                sortOrder: 'DESC'
+            });
+
+            // One request without the flag: no 403 and no retry
+            expect(usersService.getUsersPaginated).toHaveBeenCalledTimes(1);
+            expect(usersService.getUsersPaginated).toHaveBeenCalledWith(
+                expect.objectContaining({ page: 2, includeRoles: false })
+            );
+            // A success without the flag says nothing about the gate
+            expect(store.canFilterByRole()).toBe(false);
+            expect(store.status()).toBe(ComponentStatus.LOADED);
+        });
+
         it('keeps the current page on the 403 retry when no role filter is set', () => {
             usersService.getUsersPaginated
                 .mockReturnValueOnce(
