@@ -7,8 +7,9 @@
 #
 # This began life as the TDD "Red" suite for Phase 1 of #37607 and is now the
 # regression suite for it: every section is green on main and should stay that
-# way. A non-zero exit means something regressed. The sections are independent,
-# so a failure names the behaviour that broke rather than just a count.
+# way. A non-zero exit means something regressed. Section 12 covers the SAML
+# release integration (#38104). The sections are independent, so a failure names
+# the behaviour that broke rather than just a count.
 #
 # Two kinds of assertion:
 #
@@ -147,8 +148,9 @@ extract_run_body() {
     # A new step ends the search: an `id:` on a uses-only step (no run:) must not
     # fall through and extract the next step run block.
     /^[[:space:]]*-[[:space:]]/ { if (collecting) exit; found = 0 }
-    # `id:` may sit on the list dash ("- id: run-maven-build") or alone.
-    $0 ~ "^[[:space:]]*-?[[:space:]]*id:[[:space:]]*" want "[[:space:]]*$" { found = 1; next }
+    # `id:` may sit on the list dash ("- id: run-maven-build") or alone. Some
+    # steps (the release-coordinate tripwire) carry no id, so `name:` selects too.
+    $0 ~ "^[[:space:]]*-?[[:space:]]*(id|name):[[:space:]]*" want "[[:space:]]*$" { found = 1; next }
     found && !collecting && /^[[:space:]]*run:[[:space:]]*\|[[:space:]]*$/ {
       match($0, /^[[:space:]]*/); run_indent = RLENGTH; collecting = 1; next
     }
@@ -170,10 +172,12 @@ extract_run_body() {
 # not inherit the previous case's value. Returns the body status, and callers
 # assert it — a body that dies on an un-substituted ${{ }} writes nothing, and
 # "empty" must never be allowed to read as "correct".
-# $1 = path to body, $2 = GITHUB_OUTPUT.
+# $1 = path to body, $2 = GITHUB_OUTPUT, $3 = cwd (defaults to the repo root so
+# a body that reads .sdkmanrc sees the real project file).
 run_body() {
   : > "$2"
-  ( cd "$REPO_ROOT" \
+  local cwd="${3:-$REPO_ROOT}"
+  ( cd "$cwd" \
     && GITHUB_OUTPUT="$2" GITHUB_ENV="$WORKDIR/gh_env" \
        bash "$1" ) >/dev/null 2>&1
 }
@@ -407,13 +411,13 @@ else
 fi
 
 # ==================================================== 7. Release workflows opt ==
-echo "== 7. release workflows take the suffix from the build =="
-# The opt-in assertions (generate-test-image: false, release-build: true,
-# reuse-build-artifacts: true, docker-cache-scope-prefix) deliberately live with
-# the commit that flips them on, not here. Asserting a flag is set is only
-# meaningful next to the change that sets it.
+echo "== 7. release workflows: suffix single-source and opt-in =="
 for wf in "$RELEASE_WF" "$VARIANT_WF"; do
   name="$(basename "$wf")"
+  has "$wf" 'generate-test-image: false'    "$name skips the unused test image"
+  has "$wf" 'generate-build-classes: false' "$name skips the unused build classes"
+  has "$wf" 'release-build: true'           "$name builds publication-ready coordinates on the first install"
+  has "$wf" 'docker-cache-scope-prefix:'    "$name isolates its Docker cache scope"
   # The suffix must come from the build in BOTH consumers, not be re-derived
   # independently per job. A single occurrence would still pass a bare `has`
   # check, which is exactly the three-derivations divergence this fixes.
@@ -762,6 +766,300 @@ else
 fi
 
 mv "$WORKDIR/mvnrun/.mvn/maven.config.bak" "$WORKDIR/mvnrun/.mvn/maven.config"
+
+# ================================ 11. release opt-in hardening (Part B) ==
+echo "== 11. the opt-in has an escape hatch and an early tripwire =="
+
+# Hardcoding reuse-build-artifacts: true in cicd_7 left no way back to
+# rebuild-then-publish without editing the workflow — needed when releasing a tag
+# cut before release-build existed, where the tag's own maven-job installs
+# unsuffixed coordinates and validation would block the publish.
+#
+# Asserted on the whole file, not via step_block: `release` here is a JOB, not a
+# step, so there is no step block to match.
+default_reuse_input="$(input_default "$VARIANT_WF" reuse-build-artifacts 6)"
+if [[ "$default_reuse_input" == "true" ]]; then
+  ok "cicd_7 exposes reuse-build-artifacts as a dispatch input defaulting to true"
+else
+  bad "cicd_7 exposes reuse-build-artifacts as a dispatch input defaulting to true" \
+      "got '$default_reuse_input'"
+fi
+has "$VARIANT_WF" 'reuse-build-artifacts: \$\{\{ inputs\.reuse-build-artifacts \}\}' \
+  "cicd_7 release job honours the input rather than hardcoding true"
+has "$RELEASE_WF" 'reuse-build-artifacts: true' \
+  "cicd_6 sets reuse-build-artifacts (it creates its own tag from main, so no escape hatch needed)"
+
+# The tripwire belongs in the build job: validation in the release phase runs
+# AFTER deployment has pushed images, so on its own it cannot prevent a bad
+# release from shipping images.
+block_has_if "$BUILD_PHASE" "Verify release coordinates were installed" 'release-build == true' \
+  "the coordinate tripwire is in the build job, gated on release-build"
+block_has "$BUILD_PHASE" "Verify release coordinates were installed" 'dotcms-core-\$version\.jar' \
+  "the tripwire asserts the exact expected primary artifact"
+
+# ================================================= 12. SAML ships with core ==
+# Issue #38104. SAML used to be released separately, so a core release could
+# ship an older bundle than the one under review. It is now built from source
+# under the core version like Tika: a reactor module inheriting the CI-friendly
+# version, a system-bundles dependency on that same version, the existing
+# publisher/credentials, a CI JVM suite, and the two real fail-closed gates
+# (build-coordinate tripwire and release validation) extended to require it.
+#
+# A missing module is reported as an assertion failure rather than aborting the suite.
+echo "== 12. SAML plugin is built, bundled and validated with the release =="
+
+SAML_POM="$REPO_ROOT/independent-projects/core-plugins/saml-plugin/pom.xml"
+CORE_PLUGINS_POM="$REPO_ROOT/independent-projects/core-plugins/pom.xml"
+SYSTEM_BUNDLES_POM="$REPO_ROOT/osgi-base/system-bundles/pom.xml"
+TEST_MATRIX="$REPO_ROOT/.github/test-matrix.yml"
+TEST_PHASE="$REPO_ROOT/.github/workflows/cicd_comp_test-phase.yml"
+SAML_COORD_RE='com\.dotcms\.samlbundle:com\.dotcms\.samlbundle'
+SAML_RELEASE_VERSION="25.02.16-01"
+
+# 12a. The module and its reactor registration.
+if [[ -f "$SAML_POM" ]]; then
+  ok "SAML plugin module pom exists ($(rel "$SAML_POM"))"
+  has "$SAML_POM" '<groupId>com\.dotcms\.samlbundle</groupId>' \
+    "SAML module keeps the com.dotcms.samlbundle groupId"
+  has "$SAML_POM" '<artifactId>com\.dotcms\.samlbundle</artifactId>' \
+    "SAML module keeps the com.dotcms.samlbundle artifactId"
+  has "$SAML_POM" '\$\{revision\}\$\{sha1\}\$\{changelist\}' \
+    "SAML module inherits the CI-friendly project version"
+  has "$SAML_POM" '<packaging>bundle</packaging>' \
+    "SAML is still packaged as an OSGi bundle"
+  has "$SAML_POM" '<Bundle-SymbolicName>\$\{project.artifactId\}</Bundle-SymbolicName>' \
+    "SAML preserves its OSGi symbolic name"
+  has "$SAML_POM" '<Bundle-Activator>com\.dotcms\.saml\.osgi\.Activator</Bundle-Activator>' \
+    "SAML preserves its existing activator"
+else
+  bad "SAML plugin module pom exists" "missing $(rel "$SAML_POM")"
+fi
+
+has "$CORE_PLUGINS_POM" '<module>saml-plugin</module>' \
+  "core-plugins reactor registers the saml-plugin module"
+
+# 12b. system-bundles must depend on the core version, not a pinned SAML release.
+saml_bundle_version() {
+  awk '
+    /<artifactId>com\.dotcms\.samlbundle<\/artifactId>/ { found = 1 }
+    found && /<version>/ { sub(/.*<version>/, ""); sub(/<\/version>.*/, ""); print; exit }
+  ' "$SYSTEM_BUNDLES_POM"
+}
+if [[ "$(saml_bundle_version)" == '${project.version}' ]]; then
+  ok "system-bundles references SAML at \${project.version}"
+else
+  bad "system-bundles references SAML at \${project.version}" \
+      "got '$(saml_bundle_version)', expected the core version"
+fi
+
+# 12c. SAML rides the existing publisher and its existing credentials.
+block_has "$RELEASE_PHASE" "Publish Release Artifacts to S3" 'MAVEN_BUNNY_RW_USERNAME' \
+  "release publish keeps the existing Bunny username secret"
+block_has "$RELEASE_PHASE" "Publish Release Artifacts to S3" 'MAVEN_BUNNY_RW_PASSWORD' \
+  "release publish keeps the existing Bunny password secret"
+block_has "$RELEASE_PHASE" "Publish Release Artifacts to S3" 'publish-to-s3/publish\.sh maven' \
+  "release publish uses the same generic publisher for SAML"
+lacks "$RELEASE_PHASE" 'secrets\.[A-Za-z_]*[Ss][Aa][Mm][Ll]' \
+  "release phase needs no SAML-specific secret"
+
+# 12d. CI must actually run the imported SAML tests, and not let the Maven build
+# cache satisfy the suite without executing it (a cached module reports no tests).
+jvm_section="$(awk '
+  /^  [a-zA-Z0-9_-]+:[[:space:]]*$/ {
+    if (started) exit
+    if ($0 ~ /^  jvm:[[:space:]]*$/) started = 1
+  }
+  started { print }
+' "$TEST_MATRIX")"
+saml_suite_line="$(grep -E -- 'maven_args:.*:com\.dotcms\.samlbundle' <<<"$jvm_section" | head -n1)"
+if [[ -n "$saml_suite_line" ]]; then
+  ok "CI runs the SAML plugin tests in the JVM suite"
+  if grep -q 'maven\.build\.cache\.enabled=false' <<<"$saml_suite_line"; then
+    ok "the SAML suite disables the Maven build cache"
+  else
+    bad "the SAML suite disables the Maven build cache" "maven_args: $saml_suite_line"
+  fi
+else
+  bad "CI runs the SAML plugin tests in the JVM suite" \
+      "no maven_args with :com.dotcms.samlbundle in the jvm section of $(rel "$TEST_MATRIX")"
+  bad "the SAML suite disables the Maven build cache" "suite absent"
+fi
+
+# 12e. Build tripwire (real shell): with core installed but SAML missing, wrong
+# versioned, or only a -sources.jar, the build must fail before images ship.
+extract_run_body "$BUILD_PHASE" "Verify release coordinates were installed" > "$WORKDIR/saml-tripwire.sh"
+trip_root="$WORKDIR/saml-trip"
+trip_home="$WORKDIR/saml-trip-home"
+mkdir -p "$trip_root/.mvn" "$trip_home/.m2/repository" "$trip_root/independent-projects/core-plugins/saml-plugin"
+printf -- '-Dprod=true\n-Drevision=%s\n-Dchangelist=\n' "$SAML_RELEASE_VERSION" > "$trip_root/.mvn/maven.config"
+
+tripwire_seed() {  # kind, version
+  local base="$trip_home/.m2/repository" kind="$1" v="$2" d
+  # core is installed and correct in every case: the point is that a missing or
+  # bad SAML must still fail even though core alone satisfied the old check.
+  mkdir -p "$base/com/dotcms/dotcms-core/$v"
+  : > "$base/com/dotcms/dotcms-core/$v/dotcms-core-$v.pom"
+  : > "$base/com/dotcms/dotcms-core/$v/dotcms-core-$v.jar"
+  d="$base/com/dotcms/samlbundle/com.dotcms.samlbundle/$v"
+  case "$kind" in
+    missing) ;;
+    wrong-version)
+      d="$base/com/dotcms/samlbundle/com.dotcms.samlbundle/26.08.21"
+      mkdir -p "$d"
+      : > "$d/com.dotcms.samlbundle-26.08.21.pom"
+      : > "$d/com.dotcms.samlbundle-26.08.21.jar" ;;
+    sources-only)
+      mkdir -p "$d"
+      : > "$d/com.dotcms.samlbundle-$v.pom"
+      : > "$d/com.dotcms.samlbundle-$v-sources.jar" ;;
+    correct)
+      mkdir -p "$d"
+      : > "$d/com.dotcms.samlbundle-$v.pom"
+      : > "$d/com.dotcms.samlbundle-$v.jar" ;;
+  esac
+}
+
+tripwire_case() {  # desc, raw suffix ("java-25" or empty), kind, expect
+  local desc="$1" raw="$2" kind="$3" expect="$4" rc=0
+  local v="$SAML_RELEASE_VERSION"
+  [[ -n "$raw" ]] && v="$v-$raw"
+  rm -rf "$trip_home/.m2/repository"; mkdir -p "$trip_home/.m2/repository"
+  if [[ "$kind" == legacy ]]; then
+    rm -f "$trip_root/independent-projects/core-plugins/saml-plugin/pom.xml"
+    tripwire_seed missing "$v"
+  else
+    : > "$trip_root/independent-projects/core-plugins/saml-plugin/pom.xml"
+  fi
+  if [[ "$kind" == primary-only ]]; then
+    tripwire_seed correct "$SAML_RELEASE_VERSION"
+    tripwire_seed missing "$v"
+  elif [[ "$kind" != legacy ]]; then
+    tripwire_seed "$kind" "$v"
+  fi
+  SUFFIX="$raw" HOME="$trip_home" \
+    run_body "$WORKDIR/saml-tripwire.sh" "$WORKDIR/saml-trip.out" "$trip_root" || rc=$?
+  if [[ "$expect" == nonzero && $rc -ne 0 ]] || [[ "$expect" == zero && $rc -eq 0 ]]; then
+    ok "$desc"
+  else
+    bad "$desc" "expected exit $expect, got $rc"
+  fi
+}
+
+if [[ -s "$WORKDIR/saml-tripwire.sh" ]]; then
+  ok "build tripwire body is extractable"
+  tripwire_case "tripwire rejects missing SAML although core is installed" "" missing nonzero
+  tripwire_case "tripwire rejects wrong-version SAML" "" wrong-version nonzero
+  tripwire_case "tripwire rejects sources-only SAML" "" sources-only nonzero
+  tripwire_case "tripwire accepts a correct SAML build (primary)" "" correct zero
+  tripwire_case "tripwire rejects missing SAML (java-25)" "java-25" missing nonzero
+  tripwire_case "tripwire rejects an unsuffixed SAML build (java-25)" "java-25" primary-only nonzero
+  tripwire_case "tripwire rejects sources-only SAML (java-25)" "java-25" sources-only nonzero
+  tripwire_case "tripwire accepts a correct SAML build (java-25)" "java-25" correct zero
+  tripwire_case "tripwire preserves historical tags without the SAML module" "" legacy zero
+  tripwire_case "tripwire preserves historical Java-variant tags" "java-25" legacy zero
+else
+  bad "build tripwire body is extractable" "step not found in $(rel "$BUILD_PHASE")"
+fi
+
+# 12f. Release validation (real shell): the built-in default must fail when
+# core+web are present but SAML is missing, wrong-versioned or sources-only, and
+# pass only for a complete set.
+block_has "$RELEASE_PHASE" validate-release-artifacts "$SAML_COORD_RE" \
+  "release validation requires the SAML coordinate"
+extract_run_body "$RELEASE_PHASE" validate-release-artifacts > "$WORKDIR/saml-validate.sh"
+# Exercise the actual step env as well as its fallback, without repository variables.
+saml_required_coordinates="$(step_block "$RELEASE_PHASE" validate-release-artifacts | awk '
+  /^[[:space:]]+REQUIRED_COORDINATES:/ {
+    sub(/^[[:space:]]+REQUIRED_COORDINATES:[[:space:]]*/, "")
+    sub(/\$\{\{[[:space:]]*vars\.RELEASE_REQUIRED_COORDINATES[[:space:]]*\}\}/, "")
+    print; exit
+  }
+')"
+saml_repo="$WORKDIR/saml-validate-repo"
+
+saml_validation_seed() {  # kind, version
+  local base="$saml_repo" kind="$1" v="$2" d
+  mkdir -p "$base/com/dotcms/dotcms-core/$v" "$base/com/dotcms/dotcms-core-web/$v"
+  : > "$base/com/dotcms/dotcms-core/$v/dotcms-core-$v.pom"
+  : > "$base/com/dotcms/dotcms-core/$v/dotcms-core-$v.jar"
+  : > "$base/com/dotcms/dotcms-core-web/$v/dotcms-core-web-$v.pom"
+  : > "$base/com/dotcms/dotcms-core-web/$v/dotcms-core-web-$v.war"
+  d="$base/com/dotcms/samlbundle/com.dotcms.samlbundle/$v"
+  case "$kind" in
+    missing) ;;
+    wrong-version)
+      d="$base/com/dotcms/samlbundle/com.dotcms.samlbundle/26.08.21"
+      mkdir -p "$d"
+      : > "$d/com.dotcms.samlbundle-26.08.21.pom"
+      : > "$d/com.dotcms.samlbundle-26.08.21.jar" ;;
+    sources-only)
+      mkdir -p "$d"
+      : > "$d/com.dotcms.samlbundle-$v.pom"
+      : > "$d/com.dotcms.samlbundle-$v-sources.jar" ;;
+    correct)
+      mkdir -p "$d"
+      : > "$d/com.dotcms.samlbundle-$v.pom"
+      : > "$d/com.dotcms.samlbundle-$v.jar" ;;
+  esac
+}
+
+saml_validation_case() {  # desc, kind, expect, optional version, source checkout and coordinates source
+  local desc="$1" kind="$2" expect="$3" v="${4:-$SAML_RELEASE_VERSION}" cwd="${5:-$REPO_ROOT}" rc=0
+  local coordinates_source="${6:-default}"
+  rm -rf "$saml_repo"; mkdir -p "$saml_repo"
+  if [[ "$kind" == primary-only ]]; then
+    saml_validation_seed correct "$SAML_RELEASE_VERSION"
+    saml_validation_seed missing "$v"
+  else
+    saml_validation_seed "$kind" "$v"
+  fi
+  ( unset REQUIRED_COORDINATES
+    if [[ "$coordinates_source" == workflow ]]; then
+      export REQUIRED_COORDINATES="$saml_required_coordinates"
+    fi
+    VERSION="$v" MAVEN_REPO="$saml_repo" \
+    run_body "$WORKDIR/saml-validate.sh" "$WORKDIR/saml-v.out" "$cwd" ) || rc=$?
+  if [[ "$expect" == nonzero && $rc -ne 0 ]] || [[ "$expect" == zero && $rc -eq 0 ]]; then
+    ok "$desc"
+  else
+    bad "$desc" "expected exit $expect, got $rc"
+  fi
+}
+
+if [[ -s "$WORKDIR/saml-validate.sh" ]]; then
+  ok "release validation body is extractable"
+  if [[ -n "$saml_required_coordinates" ]]; then
+    ok "release validation workflow coordinates are extractable"
+  else
+    bad "release validation workflow coordinates are extractable" "REQUIRED_COORDINATES env is missing"
+  fi
+  saml_validation_case "validation workflow env rejects core+web without SAML" missing nonzero "" "" workflow
+  saml_validation_case "validation workflow env accepts a complete set" correct zero "" "" workflow
+  saml_validation_case "validation default rejects core+web without SAML" missing nonzero
+  saml_validation_case "validation default rejects wrong-version SAML" wrong-version nonzero
+  saml_validation_case "validation default rejects sources-only SAML" sources-only nonzero
+  saml_validation_case "validation default accepts a complete core+web+SAML set" correct zero
+  saml_validation_case "validation rejects unsuffixed SAML for a Java variant" primary-only nonzero "$SAML_RELEASE_VERSION-java-25"
+  saml_validation_case "validation accepts matching Java-variant SAML" correct zero "$SAML_RELEASE_VERSION-java-25"
+  mkdir -p "$WORKDIR/historical-source"
+  saml_validation_case "validation preserves historical tags without the SAML module" missing zero "$SAML_RELEASE_VERSION" "$WORKDIR/historical-source"
+  saml_validation_case "validation preserves historical Java-variant tags" missing zero "$SAML_RELEASE_VERSION-java-25" "$WORKDIR/historical-source"
+else
+  bad "release validation body is extractable" "step not found in $(rel "$RELEASE_PHASE")"
+fi
+
+block_has_if "$TEST_PHASE" "Install native libvips (image engine parity tests)" "matrix.name == 'JVM Unit Tests'" \
+  "native libvips setup stays with core tests, not the SAML suite"
+
+SAML_SRC="${SAML_POM%/pom.xml}/src/main/java"
+if [[ -d "$SAML_SRC" ]]; then
+  lacks "$SAML_SRC/com/dotcms/saml/osgi/Activator.java" 'System\.(out|err)\.' \
+    "SAML startup diagnostics use the application logger"
+  has "$SAML_SRC/com/dotcms/saml/osgi/Activator.java" 'context\.getBundle\(\)\.getVersion\(\)' \
+    "SAML startup reports the actual bundle version, not a standalone version pin"
+  lacks "$SAML_SRC/org/opensaml/xml/util/Base64.java" 'System\.(out|err)\.' \
+    "legacy decoder diagnostics use the application logger"
+fi
 
 # ---------------------------------------------------------------------- done --
 echo

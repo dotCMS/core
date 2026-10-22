@@ -14,6 +14,24 @@
                     (ngModelChange)="onChange('autoProvision', $event)" />
             </div>
         </div>
+        @if (showEmailLinking()) {
+            <div class="field">
+                <label>
+                    {{ 'dotauth.field.trustEmailWithoutVerifiedClaim' | dm }}
+                    <i
+                        class="label-tip pi pi-question-circle"
+                        data-testid="trust-email-tip"
+                        [pTooltip]="'dotauth.tooltip.trustEmailWithoutVerifiedClaim' | dm"
+                        tooltipPosition="top"></i>
+                </label>
+                <div class="toggle-row flex items-center gap-2.5">
+                    <p-toggleswitch
+                        data-testid="trust-email-toggle"
+                        [ngModel]="config().trustEmailWithoutVerifiedClaim ?? false"
+                        (ngModelChange)="onChange('trustEmailWithoutVerifiedClaim', $event)" />
+                </div>
+            </div>
+        }
         @if (showSync()) {
             <div class="field">
                 <label>

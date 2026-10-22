@@ -16,6 +16,7 @@ import java.util.Map;
 
 import com.dotcms.enterprise.achecker.dao.LanguageTextDAO;
 import com.dotcms.enterprise.achecker.model.LanguageTextBean;
+import com.dotmarketing.util.Logger;
 
 public class LanguageUtility {
 	
@@ -25,18 +26,17 @@ public class LanguageUtility {
 	
 	private static LanguageTextDAO dao;
 
+	/**
+	 * Creates the shared {@link LanguageTextDAO} on first use. A failure is logged and leaves the
+	 * DAO unset, so the next call tries again.
+	 */
 	private static void ensureDAO() {
 		if ( dao == null ) {
 			try {
 				dao = new LanguageTextDAO();
-			} catch (InstantiationException e) {
-				e.printStackTrace();
-			} catch (IllegalAccessException e) {
-				e.printStackTrace();
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
-			} catch (SQLException e) {
-				e.printStackTrace();
+			} catch (InstantiationException | IllegalAccessException | ClassNotFoundException | SQLException e) {
+				Logger.error(LanguageUtility.class, "Accessibility Checker language texts are not available: "
+						+ e.getClass().getName());
 			}
 		}
 	}
@@ -53,6 +53,17 @@ public class LanguageUtility {
 		return lang;
 	}
 
+	/**
+	 * Returns the text of the given term in the given language. Texts that are found are cached.
+	 * When the term has no text in that language, or the lookup fails, the term itself is
+	 * returned so callers always get something to display.
+	 *
+	 * @param name the language term
+	 * @param lang the language code; {@code en} is read as {@code eng} and {@code null} means
+	 *             {@code eng}
+	 * @return the localized text, or {@code name} when none is found; {@code null} only when
+	 *         {@code name} is {@code null}
+	 */
 	public static String _AC(String name, String lang) {
 
 		if ( name == null )
@@ -76,7 +87,8 @@ public class LanguageUtility {
 				returnValue =  row.getTextString();				 
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			Logger.error(LanguageUtility.class, "Accessibility Checker language text could not be read: "
+					+ e.getClass().getName());
 		}
 
 		if ( returnValue != null )
