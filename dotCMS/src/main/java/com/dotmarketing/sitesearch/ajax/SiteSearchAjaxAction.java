@@ -18,10 +18,11 @@ import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchPublishStatus;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction;
 import com.dotmarketing.quartz.ScheduledTask;
+import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
@@ -29,11 +30,21 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
-public class SiteSearchAjaxAction extends IndexAjaxAction {
+public class SiteSearchAjaxAction extends AjaxAction {
 
-public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	/**
+	 * Checks that the caller has access to the Site Search portlet and invokes the command named in
+	 * the request. Only the commands declared by this class are served; any other command is
+	 * answered with a 403.
+	 *
+	 * @param request  the current request
+	 * @param response the current response
+	 */
+	@Override
+	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
 
 
@@ -71,13 +82,18 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 
 
 
-			meth = this.getClass().getMethod(cmd, partypes);
+			if (cmd != null && !isDeclaredCommand(cmd, partypes)) {
+				Logger.warn(this.getClass(), "Command not supported by this endpoint: " + cmd);
+				response.sendError(HttpServletResponse.SC_FORBIDDEN);
+				return;
+			}
+			meth = this.getClass().getDeclaredMethod(cmd, partypes);
 
 		} catch (Exception e) {
 
 			try {
 				cmd = "action";
-				meth = this.getClass().getMethod(cmd, partypes);
+				meth = this.getClass().getDeclaredMethod(cmd, partypes);
 			} catch (Exception ex) {
 				Logger.error(this.getClass(), "Trying to run method:" + cmd);
 				Logger.error(this.getClass(), e.getMessage(), e.getCause());
@@ -87,13 +103,70 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 		try {
 			meth.invoke(this, arglist);
 		} catch (Exception e) {
-			Logger.error(IndexAjaxAction.class, "Trying to run method:" + cmd);
-			Logger.error(IndexAjaxAction.class, e.getMessage(), e.getCause());
+			Logger.error(SiteSearchAjaxAction.class, "Trying to run method:" + cmd);
+			Logger.error(SiteSearchAjaxAction.class, e.getMessage(), e.getCause());
 			writeError(response, e.getMessage());
 		}
 
 	}
 
+
+	/**
+	 * Tells whether the given command is a method declared by this class, other than
+	 * {@link #service(HttpServletRequest, HttpServletResponse)} itself.
+	 *
+	 * @param cmd      the requested command name
+	 * @param partypes the parameter types every command takes
+	 * @return {@code true} if this class declares the command
+	 */
+	private boolean isDeclaredCommand(final String cmd, final Class<?>[] partypes) {
+		if ("service".equals(cmd)) {
+			return false;
+		}
+		try {
+			this.getClass().getDeclaredMethod(cmd, partypes);
+			return true;
+		} catch (NoSuchMethodException e) {
+			return false;
+		}
+	}
+
+	/**
+	 * Default command, run when the request names no command this class declares. It does nothing.
+	 */
+	@Override
+	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		return;
+	}
+
+	/**
+	 * Writes an error message to the response, translated for the current user when possible.
+	 *
+	 * @param response the current response
+	 * @param error    the message or language key to write
+	 */
+	public void writeError(HttpServletResponse response, String error) throws IOException {
+		String ret = null;
+
+		try {
+			ret = LanguageUtil.get(getUser(), error);
+		} catch (Exception e) {
+			// fall back to the default company locale below
+		}
+		if (ret == null) {
+			try {
+				ret = LanguageUtil.get(PublicCompanyFactory.getDefaultCompanyId(),
+						PublicCompanyFactory.getDefaultCompany().getLocale(), error);
+			} catch (Exception e) {
+				// fall back to the raw message below
+			}
+		}
+		if (ret == null) {
+			ret = error;
+		}
+
+		response.getWriter().println("FAILURE: " + ret);
+	}
 
 	public void createSiteSearchIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException, DotDataException {
 
@@ -257,7 +330,6 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
         response.getWriter().println(json.toString());
 	}
 
-	@Override
     public void getIndexStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
 	    try {
     	    Map<String, String> map = getURIParams();
@@ -275,7 +347,6 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 	    }
     }
 
-	@Override
     public void getNotActiveIndexNames(HttpServletRequest request, HttpServletResponse response) throws IOException {
 	    try {
             // Phase-aware default (issue #36983) — see getIndexStatus above.
@@ -292,7 +363,6 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 	    }
     }
 
-	@Override
     public void indexList(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
             response.setContentType("text/plain");
