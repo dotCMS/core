@@ -18,6 +18,23 @@ export type UploadPlaceholderCopy = {
 
 const PLACEHOLDER_NODE_NAME = 'uploadPlaceholder' as const;
 
+/** HTML attribute carrying the placeholder's temp id, both when serialized and when parsed. */
+const PLACEHOLDER_ID_ATTR = 'data-upload-id';
+/** HTML attribute carrying the placeholder's media kind, both when serialized and when parsed. */
+const PLACEHOLDER_MEDIA_TYPE_ATTR = 'data-media-type';
+
+/**
+ * Serializes a placeholder as the HTML the node's parse rule understands, so a paste
+ * transform can put a placeholder where an image used to be before ProseMirror parses
+ * the clipboard HTML (see `transformPastedDataUrlImages`).
+ *
+ * @param item - Temp id and media type of the placeholder.
+ * @returns A `div` element string carrying the id and media type as data attributes.
+ */
+export function uploadPlaceholderHtml({ id, mediaType }: UploadPlaceholderItem): string {
+    return `<div ${PLACEHOLDER_ID_ATTR}="${id}" ${PLACEHOLDER_MEDIA_TYPE_ATTR}="${mediaType}"></div>`;
+}
+
 /**
  * Locates the document position of an `uploadPlaceholder` node by its `id` attribute.
  *
@@ -109,7 +126,9 @@ function createUploadPlaceholderDom(
  * Atomic block node shown while a file uploads; replaced or removed when the upload finishes.
  *
  * - Not selectable/draggable; `contenteditable="false"` in the node view.
- * - Serializes as a `div` with `data-upload-id` and `data-media-type` for HTML export.
+ * - Serializes as a `div` with `data-upload-id` and `data-media-type` for HTML export, and
+ *   parses that same shape back, which is how {@link uploadPlaceholderHtml} lands in the
+ *   document through the paste pipeline.
  *
  * @param copy - Pre-translated copy provider for the placeholder UI.
  */
@@ -128,12 +147,24 @@ export function createUploadPlaceholderExtension(copy: UploadPlaceholderCopy) {
             };
         },
 
+        parseHTML() {
+            return [
+                {
+                    tag: `div[${PLACEHOLDER_ID_ATTR}]`,
+                    getAttrs: (element: HTMLElement) => ({
+                        id: element.getAttribute(PLACEHOLDER_ID_ATTR),
+                        mediaType: element.getAttribute(PLACEHOLDER_MEDIA_TYPE_ATTR) ?? 'image'
+                    })
+                }
+            ];
+        },
+
         renderHTML({ HTMLAttributes }) {
             return [
                 'div',
                 {
-                    'data-upload-id': HTMLAttributes['id'],
-                    'data-media-type': HTMLAttributes['mediaType']
+                    [PLACEHOLDER_ID_ATTR]: HTMLAttributes['id'],
+                    [PLACEHOLDER_MEDIA_TYPE_ATTR]: HTMLAttributes['mediaType']
                 }
             ];
         },

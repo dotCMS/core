@@ -297,13 +297,20 @@ export class ToolbarComponent implements OnDestroy {
         }
     }
 
-    /** Reads Markdown from the clipboard and inserts it as rich content at the cursor. */
+    /**
+     * Reads Markdown from the clipboard and inserts it as rich content at the cursor.
+     *
+     * The HTML goes through the editor's paste pipeline rather than `insertContent`, so the same
+     * `transformPastedHTML` hooks that serve Cmd+V apply: base64 images are uploaded as dotAssets
+     * instead of being dropped (#38165), and emoji markup is healed.
+     */
     protected async pasteFromMarkdown(): Promise<void> {
         const editor = this.editor();
         try {
             const text = await navigator.clipboard.readText();
             if (!text) return;
-            editor.chain().focus().insertContent(markdownToHtml(text)).run();
+            editor.view.focus();
+            editor.view.pasteHTML(markdownToHtml(text));
         } catch (err) {
             console.warn('Paste from Markdown failed', err);
         }

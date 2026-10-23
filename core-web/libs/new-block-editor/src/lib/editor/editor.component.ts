@@ -44,7 +44,12 @@ import { EditorToolbarStore } from './components/toolbar/editor-toolbar.store';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
 import { syncCharacterStatsFromEditor } from './editor-character-stats';
 import { handleEditorProseMirrorClick } from './editor-chrome-click';
-import { handleMediaDrop } from './editor.utils';
+import {
+    type MediaUploaders,
+    handleMediaDrop,
+    handleMediaPaste,
+    transformPastedDataUrlImages
+} from './editor.utils';
 import { createEditorExtensions } from './extensions/editor-extensions';
 import { type ContentletEditEvent } from './extensions/nodes/contentlet/contentlet.extension';
 import { SELECTION_PRESERVE_KEY } from './extensions/selection-preserve.extension';
@@ -453,6 +458,11 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
      * `customBlocks` field variable. Empty for the fast path.
      */
     private buildEditor(remoteExtensions: AnyExtension[]): Editor {
+        const uploaders: MediaUploaders = {
+            uploadImage: (file) => this.dotUpload.uploadImage(file),
+            uploadVideo: (file) => this.dotUpload.uploadVideo(file),
+            uploadAudio: (file) => this.dotUpload.uploadAudio(file)
+        };
         const editor: Editor = new Editor({
             onCreate: ({ editor }) => syncCharacterStatsFromEditor(editor, this.stats),
             onUpdate: ({ editor }) => {
@@ -479,10 +489,15 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
                         event as DragEvent,
                         slice,
                         moved,
-                        (file) => this.dotUpload.uploadImage(file),
-                        (file) => this.dotUpload.uploadVideo(file),
-                        (file) => this.dotUpload.uploadAudio(file)
+                        uploaders.uploadImage,
+                        uploaders.uploadVideo,
+                        uploaders.uploadAudio
                     ),
+                // Clipboard files and image URLs upload like a drop (#38165). Runs after
+                // `transformPastedHTML`, which has already dealt with base64 images in the HTML.
+                handlePaste: (view, event) => handleMediaPaste(editor, view, event, uploaders),
+                transformPastedHTML: (html) =>
+                    transformPastedDataUrlImages(editor, html, uploaders.uploadImage),
                 handleScrollToSelection: (view) => scrollCaretIntoEditorContainer(view)
             },
             extensions: createEditorExtensions(
