@@ -238,24 +238,25 @@ public class GuidelineSubgroupsDAO extends BaseDAO {
 	}
 	
 	/**
-	* Return array of subgroups info whose name is NOT null, and belong to the given group id
-	* @access  public
-	* @param   $groupID : group id
-	* @return  subgroup id rows : array of subgroup ids, if successful
-	*          false : if not successful
-	* @author  Cindy Qi Li
-	 * @throws SQLException 
-	*/
+	 * Returns the named subgroups of the given group together with their text in the given
+	 * language, sorted by that text.
+	 *
+	 * @param groupID the group id; sent to the database as a bound value
+	 * @param languageCode the 3 letter language code of the text, for example {@code eng}; sent to
+	 *                     the database as a bound value
+	 * @return one row per named subgroup, keyed by lower-cased column name
+	 * @throws SQLException if the query fails
+	 */
 	public List<Map<String, Object>> getNamedSubgroupByGroupID(Long groupID, String languageCode) throws SQLException
 	{
 		String sql = "SELECT * FROM " + tablePrefix + "guideline_subgroups gs, " + tablePrefix + "language_text l";
-        sql += "         WHERE gs.group_id = " + groupID;
+        sql += "         WHERE gs.group_id = ?";
         sql += "           AND gs.name is not NULL";
         sql += "           AND gs.name = l.term";
-        sql += "           AND l.language_code = '" + languageCode + "'";
+        sql += "           AND l.language_code = ?";
         sql += "         ORDER BY l.text";
 
-		return Utility.sortArrayByNumInField(execute(sql), "text");
+		return Utility.sortArrayByNumInField(execute(sql, groupID, languageCode), "text");
 	}
 	
 	/**

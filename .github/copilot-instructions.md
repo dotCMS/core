@@ -78,6 +78,12 @@ just build-no-docker            # Same as: ./mvnw clean install -DskipTests -Ddo
 
 ### Backend Testing Strategy
 
+**CI suite placement (required):** ALL new integration-test coverage, **including methods added
+to existing classes**, MUST go in the shortest-running compatible CI suite, measured across at
+least **3 recent independent PR runs**. Never default to an example, feature grouping, or existing
+class registration. Follow [Integration Tests → Registering Tests in a MainSuite](../docs/testing/INTEGRATION_TESTS.md#registering-tests-in-a-mainsuite-ci-gate)
+and record the timing evidence in the PR.
+
 **Common Test Error - Tests Silently Skipped:**
 ```bash
 # ❌ WRONG - Tests are skipped by default!

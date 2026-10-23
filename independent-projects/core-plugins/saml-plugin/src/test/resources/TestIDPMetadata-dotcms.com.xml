@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata" entityID="https://test.dotcms.com/o/saml2?idpid=xxxx" validUntil="2020-10-17T13:33:53.000Z">
+  <md:IDPSSODescriptor WantAuthnRequestsSigned="false" protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+    <md:KeyDescriptor use="signing">
+      <ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#">
+        <ds:X509Data>
+          <ds:X509Certificate>MIIDdDCCAlygAwIBAgIGAVCATnKoMA0GCSqGSIb3DQEBCwUAMHsxFDASBgNVBAoTC0dvb2dsZSBJ
+bmMuMRYwFAYDVQQHEw1Nb3VudGFpbiBWaWV3MQ8wDQYDVQQDEwZHb29nbGUxGDAWBgNVBAsTD0dv
+b2dsZSBGb3IgV29yazELMAkGA1UEBhMCVVMxEzARBgNVBAgTCkNhbGlmb3JuaWEwHhcNMTUxMDE5
+MTMzMzUzWhcNMjAxMDE3MTMzMzUzWjB7MRQwEgYDVQQKEwtHb29nbGUgSW5jLjEWMBQGA1UEBxMN
+TW91bnRhaW4gVmlldzEPMA0GA1UEAxMGR29vZ2xlMRgwFgYDVQQLEw9Hb29nbGUgRm9yIFdvcmsx
+CzAJBgNVBAYTAlVTMRMwEQYDVQQIEwpDYWxpZm9ybmlhMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8A
+MIIBCgKCAQEAsnO5L5JJy3v9HoEU+BJOfHPq1WZ6K+QABpBL939LZSLmqmOWMAZmdvYs/taupXoh
+s65/2KOXhndNzNtTpIkK7q3i4Cxbvvzu6ZVtXzaJgA8UkipCuhTx1g/6ij9wPw+1VYeDtX0dOTge
+uKge2YYI/n/WqBn+F+dQM/bKdBUCUnSFG/53VepkLi2w6uqTZqxTLAL1feerHLTwLu3RzWcIEL7g
+7+DFKuMFEHizZBPr2bQUuDBnxlfsTlPEEdZUqdF3v+DKH+tS66pMKww/zqSqw10OI+TMHcrB4qJu
+XmceyO+G6epokQT81OOEWBf2t5hKndU17pMFo03R+G5wPbyP4wIDAQABMA0GCSqGSIb3DQEBCwUA
+A4IBAQBaCqqCKIfhzpwfH/pKMTMi3eJ5xF0OQuMGqyTMFvY8X9/ioR9WUrgvqAvMrx5oN419K5J+
+g6D5wyw8y3vwt6CQCMcUM0L+m4wUYfnCSU44VS2nEXMCQQgomkpS1gKPvADVBlGgXfragDhv1Fg/
+phkTJsjOQtyrzEfI7Hc3cdhcw8a80oiz3k7eCSGd+j2dSXBRK2k6Ry7xQ48TlaIv+yKztEoI9Y4P
+XTsY28vuxxE1cX+WNwwJfw+yEG5FMdDBP0hTeQTtRZPLLQiPUR8olQ1Oa+9o5Kc0Wzze1y4q6qTA
+o0Y7JW5CE9cn+9rpIc5KaLpBoPrfz66U0LX44y5kDIDB</ds:X509Certificate>
+        </ds:X509Data>
+      </ds:KeyInfo>
+    </md:KeyDescriptor>
+    <md:NameIDFormat>urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress</md:NameIDFormat>
+    <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://test.dotcms.com/o/saml2/idp?idpid=xxx"/>
+    <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://test.dotcms.com/o/saml2/idp?idpid=xxx"/>
+    <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Location="https://test.dotcms.com/o/saml2/idp/logout?idpid=xxx"/>
+    <md:SingleLogoutService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-POST" Location="https://test.dotcms.com/o/saml2/idp/logout?idpid=xxx"/>
+
+  </md:IDPSSODescriptor>
+</md:EntityDescriptor>

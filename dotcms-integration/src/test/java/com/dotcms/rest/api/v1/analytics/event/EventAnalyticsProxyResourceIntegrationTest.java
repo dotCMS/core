@@ -13,8 +13,11 @@ import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
+import com.dotcms.security.apps.AppDescriptor;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.security.apps.ParamDescriptor;
+import com.dotcms.security.apps.Type;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -22,6 +25,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import com.liferay.util.Base64;
 import org.junit.BeforeClass;
@@ -33,13 +37,16 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Integration tests for {@link EventAnalyticsProxyResource#analyticsHealth}.
+ * Integration tests for {@link EventAnalyticsProxyResource#analyticsHealth} and for the
+ * {@code allowedUrlParams} Content Analytics App field read by {@link UrlParamFilter}.
  *
  * <p>Exercises the real {@link AppsAPI} round-trip so the tests prove that the
  * {@code /analytics/health} endpoint returns the correct {@link Health} state from actual
@@ -158,6 +165,108 @@ public class EventAnalyticsProxyResourceIntegrationTest extends IntegrationTestB
         final ResponseEntityView<Map<String, String>> body =
                 (ResponseEntityView<Map<String, String>>) result.getEntity();
         assertNotNull("entity.health must be present", body.getEntity().get("health"));
+    }
+
+    // --- allowedUrlParams App field ---
+
+    /**
+     * Method to test: {@link AppsAPI#getAppDescriptor(String, User)}
+     * Given scenario: the Content Analytics App descriptor is loaded from
+     *   {@code dotContentAnalytics-config.yml} by a running instance.
+     * Expected result: it exposes an optional {@code STRING} field named
+     *   {@link ContentAnalyticsUtil#ALLOWED_URL_PARAMS_KEY} and an optional {@code BOOL} field named
+     *   {@link ContentAnalyticsUtil#FILTER_URL_PARAMS_KEY}.
+     */
+    @Test
+    public void appDescriptor_exposesOptionalUrlParamFields() throws Exception {
+        final AppDescriptor descriptor = APILocator.getAppsAPI()
+                .getAppDescriptor(ContentAnalyticsUtil.CONTENT_ANALYTICS_APP_KEY,
+                        APILocator.getUserAPI().getSystemUser())
+                .orElseThrow(() -> new AssertionError("Content Analytics App descriptor must load"));
+
+        final ParamDescriptor param = descriptor.getParams().get(ContentAnalyticsUtil.ALLOWED_URL_PARAMS_KEY);
+        assertNotNull("allowedUrlParams must be declared in the App descriptor", param);
+        assertEquals(Type.STRING, param.getType());
+        assertFalse("allowedUrlParams must be optional", param.isRequired());
+
+        final ParamDescriptor filterParam = descriptor.getParams().get(ContentAnalyticsUtil.FILTER_URL_PARAMS_KEY);
+        assertNotNull("filterUrlParams must be declared in the App descriptor", filterParam);
+        assertEquals(Type.BOOL, filterParam.getType());
+        assertFalse("filterUrlParams must be optional", filterParam.isRequired());
+    }
+
+    /**
+     * Method to test: {@link UrlParamFilter#isEnabled} fed by
+     *   {@link ContentAnalyticsUtil#getAppSecrets(Host)}
+     * Given scenario: one site's Content Analytics App is saved through {@link AppsAPI} with
+     *   {@code filterUrlParams=false}; another site is saved without that field.
+     * Expected result: filtering is off for the first site only.
+     */
+    @Test
+    public void isEnabled_siteFieldSavedThroughAppsApi_isPerSite() throws Exception {
+        final Host site = new SiteDataGen().nextPersisted(true);
+        final Host otherSite = new SiteDataGen().nextPersisted(true);
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        try {
+            APILocator.getAppsAPI().saveSecrets(new AppSecrets.Builder()
+                    .withKey(ContentAnalyticsUtil.CONTENT_ANALYTICS_APP_KEY)
+                    .withHiddenSecret(ContentAnalyticsUtil.SITE_AUTH_KEY, "site-auth-value")
+                    .withSecret(ContentAnalyticsUtil.FILTER_URL_PARAMS_KEY, false)
+                    .build(), site, systemUser);
+            APILocator.getAppsAPI().saveSecrets(new AppSecrets.Builder()
+                    .withKey(ContentAnalyticsUtil.CONTENT_ANALYTICS_APP_KEY)
+                    .withHiddenSecret(ContentAnalyticsUtil.SITE_AUTH_KEY, "site-auth-value")
+                    .build(), otherSite, systemUser);
+
+            assertFalse("A site that unchecked the field must not be filtered",
+                    UrlParamFilter.isEnabled(ContentAnalyticsUtil.getAppSecrets(site)));
+            assertTrue("A site without the field must be filtered",
+                    UrlParamFilter.isEnabled(ContentAnalyticsUtil.getAppSecrets(otherSite)));
+        } finally {
+            cleanupSite(site);
+            cleanupSite(otherSite);
+        }
+    }
+
+    /**
+     * Method to test: {@link UrlParamFilter#resolveAllowedParams} fed by
+     *   {@link ContentAnalyticsUtil#getAppSecrets(Host)}
+     * Given scenario: a site's Content Analytics App is saved through {@link AppsAPI} with
+     *   {@code allowedUrlParams=" Lang , page "}.
+     * Expected result: the allowlist resolved from the stored secrets contains the defaults plus
+     *   {@code lang} and {@code page}; another site without the field resolves to the defaults only.
+     */
+    @Test
+    public void resolveAllowedParams_siteFieldSavedThroughAppsApi_isIncluded() throws Exception {
+        final Host site = new SiteDataGen().nextPersisted(true);
+        final Host otherSite = new SiteDataGen().nextPersisted(true);
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        // Pin the instance-wide names to none, so the expected sets don't depend on the environment.
+        final String instanceNames = Config.getStringProperty(UrlParamFilter.ALLOWED_PARAMS_PROPERTY, null);
+        Config.setProperty(UrlParamFilter.ALLOWED_PARAMS_PROPERTY, "");
+        try {
+            final AppSecrets secrets = new AppSecrets.Builder()
+                    .withKey(ContentAnalyticsUtil.CONTENT_ANALYTICS_APP_KEY)
+                    .withHiddenSecret(ContentAnalyticsUtil.SITE_AUTH_KEY, "site-auth-value")
+                    .withSecret(ContentAnalyticsUtil.ALLOWED_URL_PARAMS_KEY, " Lang , page ")
+                    .build();
+            APILocator.getAppsAPI().saveSecrets(secrets, site, systemUser);
+
+            final Set<String> allowed =
+                    UrlParamFilter.resolveAllowedParams(ContentAnalyticsUtil.getAppSecrets(site));
+            assertTrue("Defaults must be kept", allowed.containsAll(UrlParamFilter.DEFAULT_ALLOWED_PARAMS));
+            assertTrue("Site value must be trimmed and lower-cased", allowed.contains("lang"));
+            assertTrue("Every listed name must be added", allowed.contains("page"));
+            assertEquals(UrlParamFilter.DEFAULT_ALLOWED_PARAMS.size() + 2, allowed.size());
+
+            assertEquals("A site without the field must resolve to the defaults only",
+                    UrlParamFilter.DEFAULT_ALLOWED_PARAMS,
+                    UrlParamFilter.resolveAllowedParams(ContentAnalyticsUtil.getAppSecrets(otherSite)));
+        } finally {
+            Config.setProperty(UrlParamFilter.ALLOWED_PARAMS_PROPERTY, instanceNames);
+            cleanupSite(site);
+            cleanupSite(otherSite);
+        }
     }
 
     // --- helpers ---
