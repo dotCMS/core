@@ -104,6 +104,7 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderHandlerTest.class,
         ContentAnalyticsPersistenceModeIT.class,
         EventAnalyticsProxyResourceIntegrationTest.class,
+        com.dotmarketing.portlets.contentlet.action.ExportContentletsToCSVTest.class,
         GenericBundleActivatorIntegrationTest.class,
         com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest.class,
         com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class
