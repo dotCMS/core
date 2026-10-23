@@ -1,6 +1,7 @@
-import { signalStore, withFeature } from '@ngrx/signals';
+import { signalStore, signalStoreFeature, withFeature } from '@ngrx/signals';
 
 import { withBreadcrumbs } from './features/breadcrumb/breadcrumb.feature';
+import { withMenuSelection } from './features/menu/with-menu-selection.feature';
 import { withMenu } from './features/menu/with-menu.feature';
 import { withSite } from './features/with-site/with-site.feature';
 import { withSystem } from './features/with-system/with-system.feature';
@@ -20,7 +21,7 @@ import { withWebSocket } from './features/with-websocket/with-websocket.feature'
  * - `withWebSocket` — system-events WebSocket lifecycle + status
  * - `withSystem` — system configuration management
  * - `withUser` — current authenticated user
- * - `withMenu` / `withBreadcrumbs` — navigation menu state
+ * - `withMenu` / `withBreadcrumbs` / `withMenuSelection` — navigation menu state, trail and highlight
  *
  * Example usage:
  * ```typescript
@@ -47,5 +48,10 @@ export const GlobalStore = signalStore(
     withSite(),
     withUser(),
     withMenu(),
-    withFeature(({ menuItemsEntities }) => withBreadcrumbs(menuItemsEntities))
+    withFeature((menu) =>
+        signalStoreFeature(
+            withBreadcrumbs(menu.menuItemsEntities, menu.openParentMenuId),
+            withMenuSelection(menu)
+        )
+    )
 );

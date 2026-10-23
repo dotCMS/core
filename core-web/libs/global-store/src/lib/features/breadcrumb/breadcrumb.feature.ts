@@ -8,7 +8,7 @@ import {
     withState
 } from '@ngrx/signals';
 
-import { computed, effect, inject, Signal } from '@angular/core';
+import { computed, effect, inject, signal, Signal, untracked } from '@angular/core';
 import { Event, NavigationEnd, Router } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
@@ -18,6 +18,8 @@ import { filter, map } from 'rxjs/operators';
 import { MenuItemEntity } from '@dotcms/dotcms-models';
 
 import { processSpecialRoute, shouldReplaceLastCrumb } from './breadcrumb.utils';
+
+import { resolveMenuItem } from '../menu/menu-resolver';
 
 /**
  * State interface for the Breadcrumb feature.
@@ -59,7 +61,10 @@ const BREADCRUMBS_SESSION_KEY = 'breadcrumbs';
  *
  */
 
-export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
+export function withBreadcrumbs(
+    menuItems: Signal<MenuItemEntity[]>,
+    openParentMenuId: Signal<string | null> = signal(null)
+) {
     return signalStoreFeature(
         withState(initialBreadcrumbState),
         withProps(() => ({
@@ -192,26 +197,18 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                 }
 
                 const breadcrumbs = store.breadcrumbs();
-                const [urlPath, queryString] = url.split('?');
-                const shortMenuId = new URLSearchParams(queryString || '').get('mId');
 
-                const item = menu.find((item) => {
-                    const pathMatches = item.menuLink === urlPath;
-
-                    const hasQueryParams = queryString && queryString.length > 0;
-
-                    // If we have query params but no mId, it's likely an old bookmark - don't match
-                    if (hasQueryParams && !shortMenuId) {
-                        return false;
-                    }
-
-                    // If we have mId, validate both path and parent match
-                    if (shortMenuId) {
-                        return pathMatches && item.parentMenuId.startsWith(shortMenuId);
-                    }
-
-                    // Default: no query params, no mId - match by path only
-                    return pathMatches;
+                // The same rule the highlight and the document title use, including the open group
+                // that breaks a tie between layouts. The trail is not passed: the bookmark-by-label
+                // fallback reads the trail this very call is about to rebuild. Only the exact link
+                // of an item rebuilds the trail; an editor route keeps the crumb it added itself.
+                // The open group is read untracked so toggling a group does not re-run the effect
+                // that calls this.
+                const item = resolveMenuItem({
+                    url,
+                    items: menu,
+                    openParentMenuId: untracked(openParentMenuId),
+                    exactPath: true
                 });
 
                 if (item) {

@@ -1,8 +1,8 @@
-import { Observable, Subject } from 'rxjs';
+import { Subject } from 'rxjs';
 
-import { AsyncPipe } from '@angular/common';
 import {
     Component,
+    computed,
     ElementRef,
     inject,
     input,
@@ -27,10 +27,11 @@ import { InputTextModule } from 'primeng/inputtext';
 import { RadioButtonModule } from 'primeng/radiobutton';
 import { SelectModule } from 'primeng/select';
 
-import { switchMap, take, takeUntil, tap } from 'rxjs/operators';
+import { switchMap, take, takeUntil } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentType, DotDialogActions, DotMenu } from '@dotcms/dotcms-models';
+import { DotCMSContentType, DotDialogActions } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import {
     DotAutofocusDirective,
     DotFieldRequiredDirective,
@@ -42,7 +43,6 @@ import {
     DotAddToMenuService,
     DotCreateCustomTool
 } from '../../../../../api/services/add-to-menu/add-to-menu.service';
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 
 @Component({
     selector: 'dot-add-to-menu',
@@ -58,18 +58,23 @@ import { DotMenuService } from '../../../../../api/services/dot-menu.service';
         DotAutofocusDirective,
         DotFieldValidationMessageComponent,
         DotFieldRequiredDirective,
-        DotMessagePipe,
-        AsyncPipe
+        DotMessagePipe
     ]
 })
 export class DotAddToMenuComponent implements OnInit, OnDestroy, OnChanges {
     fb = inject(UntypedFormBuilder);
     private dotMessageService = inject(DotMessageService);
-    private dotMenuService = inject(DotMenuService);
+    readonly #globalStore = inject(GlobalStore);
     private dotAddToMenuService = inject(DotAddToMenuService);
 
     form: UntypedFormGroup;
-    menu$: Observable<DotMenu[]>;
+    /**
+     * The layouts the tool can be added under: the groups of the navigation, from the one menu
+     * snapshot the bar also shows, so the dropdown and the bar cannot disagree.
+     */
+    readonly $menuOptions = computed(() =>
+        this.#globalStore.menuGroup().map(({ id, label }) => ({ id, label }))
+    );
     placeholder = '';
     dialogShow = false;
     dialogActions: DotDialogActions;
@@ -84,14 +89,18 @@ export class DotAddToMenuComponent implements OnInit, OnDestroy, OnChanges {
     ngOnInit() {
         this.initForm();
         this.setDialogConfig(this.form);
-        this.menu$ = this.dotMenuService.loadMenu(true).pipe(
-            take(1),
-            tap((menu: DotMenu[]) => {
-                this.form.patchValue({
-                    menuOption: menu[0].id
-                });
-            })
-        );
+        // The shell has normally loaded the menu already; this waits for it otherwise. It never asks
+        // the backend for a menu of its own.
+        this.#globalStore
+            .ensureLoaded()
+            .pipe(take(1), takeUntil(this.destroy$))
+            .subscribe(() => {
+                const [firstOption] = this.$menuOptions();
+
+                if (firstOption) {
+                    this.form.patchValue({ menuOption: firstOption.id });
+                }
+            });
     }
 
     ngOnChanges(changes: SimpleChanges): void {
