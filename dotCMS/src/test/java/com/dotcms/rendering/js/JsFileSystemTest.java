@@ -214,6 +214,42 @@ public class JsFileSystemTest {
     }
 
     @Test
+    public void segmentsInsideModuleFolderAreNormalized() {
+        // Given a module source that holds /application/b.mjs for the current site
+        final StubModuleSource source = new StubModuleSource()
+                .with(null, "/application/b.mjs", "export const v = 'B';");
+        final JsFileSystem fileSystem = new JsFileSystem(source);
+
+        // When toRealPath is called with /application/a/../b.mjs and with /application/./b.mjs, and newByteChannel
+        // reads /application/a/../b.mjs
+        final Path fromParentSegment = assertDoesNotThrow(
+                () -> fileSystem.toRealPath(Paths.get("/application/a/../b.mjs")));
+        final Path fromCurrentSegment = assertDoesNotThrow(
+                () -> fileSystem.toRealPath(Paths.get("/application/./b.mjs")));
+        final String content = assertDoesNotThrow(() -> read(fileSystem, Paths.get("/application/a/../b.mjs")));
+
+        // Then both paths resolve to /application/b.mjs and the channel yields the module source text
+        assertEquals("/application/b.mjs", fromParentSegment.toString());
+        assertEquals("/application/b.mjs", fromCurrentSegment.toString());
+        assertEquals("export const v = 'B';", content);
+    }
+
+    @Test
+    public void parentSegmentCrossingSiteTokenIsRefused() {
+        // Given the path /dot-site-token/site-b.test/../application/x.mjs, whose parent segment removes the site name
+        final StubModuleSource source = new StubModuleSource();
+        final JsFileSystem fileSystem = new JsFileSystem(source);
+
+        // When toRealPath is called with it
+        // Then an IllegalArgumentException is thrown, because the normalized path is
+        // /dot-site-token/application/x.mjs, whose module path does not start with /application/, and the module
+        // source is never called
+        assertThrows(IllegalArgumentException.class,
+                () -> fileSystem.toRealPath(Paths.get("/dot-site-token/site-b.test/../application/x.mjs")));
+        assertTrue(source.requests().isEmpty());
+    }
+
+    @Test
     public void pathWithBackslashIsRefused() {
         // Given an /application/ path with a backslash in a segment
         final StubModuleSource source = new StubModuleSource();
@@ -263,6 +299,26 @@ public class JsFileSystemTest {
         // When toRealPath is called without a path
         // Then an IllegalArgumentException is thrown
         assertThrows(IllegalArgumentException.class, () -> fileSystem.toRealPath(null));
+    }
+
+    @Test
+    public void refusedPathKeepsTheMessage() {
+        // Given an absolute path off the module folders, a relative path and an empty path
+        final JsFileSystem fileSystem = new JsFileSystem(new StubModuleSource());
+        final String expectedMessage = "Path is only allowed on: (/javascript/ or /application/)";
+
+        // When toRealPath is called with each
+        final IllegalArgumentException absoluteFailure = assertThrows(IllegalArgumentException.class,
+                () -> fileSystem.toRealPath(Paths.get("/tmp/x.mjs")));
+        final IllegalArgumentException relativeFailure = assertThrows(IllegalArgumentException.class,
+                () -> fileSystem.toRealPath(Paths.get("outside/x.mjs")));
+        final IllegalArgumentException emptyFailure = assertThrows(IllegalArgumentException.class,
+                () -> fileSystem.toRealPath(Paths.get("")));
+
+        // Then every IllegalArgumentException carries the message that names the allowed folders
+        assertEquals(expectedMessage, absoluteFailure.getMessage());
+        assertEquals(expectedMessage, relativeFailure.getMessage());
+        assertEquals(expectedMessage, emptyFailure.getMessage());
     }
 
     @Test
@@ -321,6 +377,20 @@ public class JsFileSystemTest {
     }
 
     @Test
+    public void encodedDotSegmentsAreKeptLiteral() {
+        // Given a module source with no module at /application/js/%2e%2e/x.mjs
+        final StubModuleSource source = new StubModuleSource();
+        final JsFileSystem fileSystem = new JsFileSystem(source);
+
+        // When newByteChannel is called with that path
+        // Then the module source receives the path unchanged, with %2e%2e kept as a folder name, and a
+        // NoSuchFileException is thrown
+        assertThrows(NoSuchFileException.class,
+                () -> read(fileSystem, Paths.get("/application/js/%2e%2e/x.mjs")));
+        assertEquals(List.of(StubModuleSource.key(null, "/application/js/%2e%2e/x.mjs")), source.requests());
+    }
+
+    @Test
     public void siteQualifiedPathOffApplicationIsRefused() {
         // Given the path /dot-site-token/site-b.test/other/x.mjs
         final JsFileSystem fileSystem = new JsFileSystem(new StubModuleSource());
@@ -368,6 +438,24 @@ public class JsFileSystemTest {
         // When toRealPath is called with it
         // Then an IllegalArgumentException is thrown
         assertThrows(IllegalArgumentException.class, () -> fileSystem.toRealPath(Paths.get("/applicationx/a.mjs")));
+    }
+
+    @Test
+    public void pathWithModuleFolderInTheMiddleIsRefused() {
+        // Given the paths /tmp/application/x.mjs and /x/javascript/a.mjs, which name a module folder after another
+        // folder instead of at the start
+        final StubModuleSource source = new StubModuleSource();
+        final JsFileSystem fileSystem = new JsFileSystem(source);
+
+        // When toRealPath is called with each, and newByteChannel is called with the first
+        // Then an IllegalArgumentException is thrown every time and the module source is never called
+        assertThrows(IllegalArgumentException.class,
+                () -> fileSystem.toRealPath(Paths.get("/tmp/application/x.mjs")));
+        assertThrows(IllegalArgumentException.class,
+                () -> fileSystem.toRealPath(Paths.get("/x/javascript/a.mjs")));
+        assertThrows(IllegalArgumentException.class,
+                () -> read(fileSystem, Paths.get("/tmp/application/x.mjs")));
+        assertTrue(source.requests().isEmpty());
     }
 
     @Test
@@ -492,6 +580,37 @@ public class JsFileSystemTest {
         assertEquals("RESOLVED BA", result);
         assertTrue(source.requests().contains(StubModuleSource.key(null, "/application/js/modules/a.mjs")),
                 source.requests().toString());
+    }
+
+    @Test
+    public void engineResolvesParentImportInsideApplicationFolder() {
+        // Given a module source where /application/js/modules/b.mjs imports ../lib/x.mjs
+        final StubModuleSource source = new StubModuleSource()
+                .with(null, "/application/js/modules/b.mjs",
+                        "import { v } from '../lib/x.mjs'; export const w = 'B' + v;")
+                .with(null, "/application/js/lib/x.mjs", "export const v = 'X';");
+        final JsFileSystem fileSystem = new JsFileSystem(source);
+
+        // When a script imports /application/js/modules/b.mjs
+        final String result = runAsync(fileSystem, "(await import('/application/js/modules/b.mjs')).w");
+
+        // Then ../lib/x.mjs resolves to /application/js/lib/x.mjs and the result carries both exports
+        assertEquals("RESOLVED BX", result);
+    }
+
+    @Test
+    public void engineRefusesParentImportAboveApplicationFolder() {
+        // Given a module source where /application/b.mjs imports ../x.mjs, which resolves to /x.mjs
+        final StubModuleSource source = new StubModuleSource()
+                .with(null, "/application/b.mjs", "import { v } from '../x.mjs'; export const w = v;");
+        final JsFileSystem fileSystem = new JsFileSystem(source);
+
+        // When a script imports /application/b.mjs
+        final String result = runAsync(fileSystem, "(await import('/application/b.mjs')).w");
+
+        // Then the import is rejected and the module source is never asked for /x.mjs
+        assertTrue(result.startsWith("REJECTED"), result);
+        assertFalse(source.requests().contains(StubModuleSource.key(null, "/x.mjs")), source.requests().toString());
     }
 
     @Test

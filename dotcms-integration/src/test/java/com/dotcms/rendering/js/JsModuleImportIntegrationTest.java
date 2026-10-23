@@ -257,6 +257,33 @@ public class JsModuleImportIntegrationTest extends IntegrationTestBase {
     }
 
     /**
+     * Checks that a module stops being served once it is archived: after the archive, importing it by the same module
+     * path is rejected without returning its export, and the file system reports the path as not found. The archived
+     * module is still removed after the tests, because it stays in the list of created modules.
+     *
+     * @throws Exception when the test data cannot be created or archived
+     */
+    @Test
+    public void archivedModuleIsNotFound() throws Exception {
+        // Given a module on the default site that has already been imported once
+        final String fileName = "archived-module-" + RUN_ID + ".mjs";
+        final String modulePath = MODULES_FOLDER_PATH + fileName;
+        final String importScript = "(await import('" + modulePath + "')).value";
+        final Contentlet module = createModule(defaultSite, fileName,
+                "export const value = 'ARCHIVED-MODULE-EXPORT';");
+        assertEquals("RESOLVED ARCHIVED-MODULE-EXPORT", runAsync(importScript));
+
+        // When the module is archived by the system user, and a script imports the same module path again
+        ContentletDataGen.archive(module);
+        final String afterArchive = runAsync(importScript);
+
+        // Then the import is rejected without returning the module's export, and the path is reported as not found
+        assertTrue(afterArchive, afterArchive.startsWith("REJECTED"));
+        assertFalse(afterArchive, afterArchive.contains("ARCHIVED-MODULE-EXPORT"));
+        assertEquals(NoSuchFileException.class, openFailure(modulePath));
+    }
+
+    /**
      * Creates a JavaScript module as a working (unpublished) file asset in the {@code /application/js/modules/}
      * folder of a site, and keeps it for removal after the tests.
      *
