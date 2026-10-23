@@ -1229,14 +1229,14 @@ describe('utils functions', () => {
             ).toEqual({ url: '/new-url', language_id: '3' });
         });
 
-        it('should return a null language when the referer carries none', () => {
+        it('should leave the language unset when the referer carries none', () => {
             expect(
                 getLanguageChangePageParams('/test-url', {
                     origin,
                     urlContentMap: undefined,
                     currentUrl: 'test-url'
-                })
-            ).toEqual({ language_id: null });
+                }).language_id
+            ).toBeUndefined();
         });
     });
 

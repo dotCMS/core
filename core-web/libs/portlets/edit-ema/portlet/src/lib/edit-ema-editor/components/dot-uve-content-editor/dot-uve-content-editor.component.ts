@@ -33,6 +33,7 @@ import { DotEmaDialogComponent } from '../../../components/dot-ema-dialog/dot-em
 import { NG_CUSTOM_EVENTS } from '../../../shared/enums';
 import { DialogAction, VTLFile } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { WithPageApiMethods } from '../../../store/features/page-api/withPageApi';
 import { getLanguageChangePageParams } from '../../../utils';
 
 /**
@@ -49,7 +50,13 @@ import { getLanguageChangePageParams } from '../../../utils';
     providers: [DotCopyContentModalService]
 })
 export class DotUveContentEditorComponent {
-    protected readonly uveStore = inject(UVEStore);
+    /**
+     * The UVE store. `withPageApi`'s methods (`pageLoad`, `pageReload`…) reach the store's type
+     * only through an index signature, as plain `Function`, so they are typed through that
+     * feature's own interface.
+     */
+    protected readonly uveStore = inject(UVEStore) as InstanceType<typeof UVEStore> &
+        WithPageApiMethods;
     readonly #events = inject(Events);
     readonly #window = inject(WINDOW);
     readonly #dialogService = inject(DialogService);
@@ -142,13 +149,19 @@ export class DotUveContentEditorComponent {
             }
 
             case NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED: {
-                this.uveStore.pageLoad(
-                    getLanguageChangePageParams(event.detail.payload?.htmlPageReferer, {
-                        origin: this.#window.location.origin,
-                        urlContentMap: this.uveStore.pageAsset()?.urlContentMap,
-                        currentUrl: this.uveStore.pageParams().url
-                    })
-                );
+                const pageParams = this.uveStore.pageParams();
+
+                // With no page loaded there is no page to show in the new language.
+                if (pageParams) {
+                    this.uveStore.pageLoad(
+                        getLanguageChangePageParams(event.detail.payload?.htmlPageReferer, {
+                            origin: this.#window.location.origin,
+                            urlContentMap: this.uveStore.pageAsset()?.urlContentMap,
+                            currentUrl: pageParams.url
+                        })
+                    );
+                }
+
                 break;
             }
         }
@@ -164,7 +177,7 @@ export class DotUveContentEditorComponent {
      * @returns the work the request does, completing when it is done
      */
     #editContent({ contentlet, forkFrom }: DotUveEditContentRequest): Observable<unknown> {
-        const onMultiplePages = Number(contentlet.onNumberOfPages ?? 1) > 1;
+        const onMultiplePages = Number(contentlet['onNumberOfPages'] ?? 1) > 1;
 
         if (!forkFrom || !onMultiplePages) {
             return this.#openContentEditor(contentlet);

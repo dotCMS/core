@@ -584,7 +584,8 @@ describe('DotUveActionsHandlerService – EDIT_CONTENTLET', () => {
             {
                 uveStore: buildMockStore() as unknown as InstanceType<typeof UVEStore>,
                 dialog: { editContentlet } as never,
-                inlineEditingService: null,
+                // Not used by EDIT_CONTENTLET.
+                inlineEditingService: {} as InlineEditService,
                 contentWindow: null,
                 host: 'http://localhost',
                 onCopyContent: vi.fn()

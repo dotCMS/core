@@ -2604,12 +2604,7 @@ describe('EditEmaEditorComponent', () => {
                 it('should keep the content editor in preview mode', () => {
                     // Page Properties opens the new editor in preview mode too, so the content
                     // editor that opens it cannot depend on the mode.
-                    patchState(store, {
-                        pageParams: {
-                            ...(store.pageParams() ?? {}),
-                            mode: UVE_MODE.PREVIEW
-                        } as DotPageApiParams
-                    });
+                    pageApi().pageUpdateParams({ mode: UVE_MODE.PREVIEW });
                     spectator.detectChanges();
 
                     expect(spectator.query(byTestId('uve-content-editor'))).toBeTruthy();

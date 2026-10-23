@@ -118,6 +118,7 @@ import {
     PostMessage
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
+import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
 import { IframeAccessMode, PageType } from '../store/models';
 import {
     TEMPORAL_DRAG_ITEM,
@@ -210,7 +211,13 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         return this.iframeComponent?.iframe;
     }
 
-    protected readonly uveStore = inject(UVEStore);
+    /**
+     * The UVE store. `withPageApi`'s methods (`pageLoad`, `pageReload`…) reach the store's type
+     * only through an index signature, as plain `Function`, so they are typed through that
+     * feature's own interface.
+     */
+    protected readonly uveStore = inject(UVEStore) as InstanceType<typeof UVEStore> &
+        WithPageApiMethods;
 
     /**
      * Right sidebar tab management using NgRx signalState (similar to palette component).
@@ -1384,11 +1391,18 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 this.cd.detectChanges();
             },
             [NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED]: () => {
+                const pageParams = this.uveStore.pageParams();
+
+                // With no page loaded there is no page to show in the new language.
+                if (!pageParams) {
+                    return;
+                }
+
                 this.uveStore.pageLoad(
                     getLanguageChangePageParams(event.detail.payload?.htmlPageReferer, {
                         origin: this.window.location.origin,
                         urlContentMap: this.uveStore.pageAsset()?.urlContentMap,
-                        currentUrl: this.uveStore.pageParams().url
+                        currentUrl: pageParams.url
                     })
                 );
             }

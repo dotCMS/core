@@ -1029,11 +1029,12 @@ export const checkClientHostAccess = (
  * Otherwise, it falls back to the URL extracted from the event.
  *
  * @param {string | undefined} url - The URL extracted from the event.
+ * @param {DotCMSURLContentMap | undefined} urlContentMap - The page's URL map, when it has one.
  * @returns {string | undefined} - The final target URL for navigation, or undefined if none.
  */
 export function getTargetUrl(
     url: string | undefined,
-    urlContentMap: DotCMSURLContentMap
+    urlContentMap: DotCMSURLContentMap | undefined
 ): string | undefined {
     // Return URL from content map or fallback to the provided URL
     return urlContentMap?.URL_MAP_FOR_CONTENT || url;
@@ -1059,7 +1060,8 @@ export function shouldNavigate(targetUrl: string | undefined, currentUrl: string
  * @param {string} options.origin - Where a relative referer resolves from.
  * @param {DotCMSURLContentMap | undefined} options.urlContentMap - The URL map of the page on screen, if any.
  * @param {string} options.currentUrl - The URL of the page on screen.
- * @returns The params for `pageLoad`: the language, plus the URL when the page moved.
+ * @returns The params for `pageLoad`: the language, plus the URL when the page moved. The language
+ * is `undefined` when the referer carries none, which the legacy editor never sends.
  */
 export function getLanguageChangePageParams(
     htmlPageReferer: string,
@@ -1068,10 +1070,10 @@ export function getLanguageChangePageParams(
         urlContentMap,
         currentUrl
     }: { origin: string; urlContentMap: DotCMSURLContentMap | undefined; currentUrl: string }
-): { url?: string; language_id: string | null } {
+): { url?: string; language_id?: string } {
     const url = new URL(htmlPageReferer, origin); // Add base for relative URLs
     const targetUrl = getTargetUrl(url.pathname, urlContentMap);
-    const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language');
+    const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language') ?? undefined;
 
     if (shouldNavigate(targetUrl, currentUrl)) {
         return { url: targetUrl, language_id };
