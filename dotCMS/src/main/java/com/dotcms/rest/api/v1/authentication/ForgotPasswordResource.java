@@ -39,6 +39,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.ws.rs.Consumes;
 
@@ -81,7 +82,8 @@ public class ForgotPasswordResource implements Serializable {
 
     @Operation(
         summary = "Send password reset email",
-        description = "Sends a password reset email to the specified user. Returns the email address where the reset link was sent."
+        description = "Sends a password reset email to the specified user. Returns the email address where the reset link was sent.",
+        security = {}
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
