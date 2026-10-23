@@ -50,14 +50,36 @@ import javax.servlet.ServletContext;
 @Deprecated
 public class PublicCompanyFactory extends CompanyUtil {
 
+	/**
+	 * The default {@link Company}, loaded on first use and kept for the life of the JVM. The row is
+	 * per-install static configuration, and callers such as the language-delete FK recovery in
+	 * {@code LanguageFactoryImpl#deleteLanguageById} localize an error message through
+	 * {@code LanguageUtil#get(String)} while their transaction is already aborted: a fresh
+	 * database read there fails with "current transaction is aborted" and turns a friendly 400
+	 * into a 500 for session-less API-token callers. Failures are never cached, so a read that
+	 * fails before the database is ready is retried on the next call.
+	 */
+	private static volatile Company defaultCompany;
+
+	/**
+	 * Returns the default {@link Company}, caching it after the first successful load.
+	 *
+	 * @return the default {@link Company}.
+	 */
 	public static Company getDefaultCompany() {
-		try {
-
-			return findByPrimaryKey(getDefaultCompanyId());
-
-		} catch (Exception e) {
-			throw new DotRuntimeException("No Company!");
-
+		final Company cached = defaultCompany;
+		if (null != cached) {
+			return cached;
+		}
+		synchronized (PublicCompanyFactory.class) {
+			if (null == defaultCompany) {
+				try {
+					defaultCompany = findByPrimaryKey(getDefaultCompanyId());
+				} catch (final Exception e) {
+					throw new DotRuntimeException("No Company!", e);
+				}
+			}
+			return defaultCompany;
 		}
 	}
 
