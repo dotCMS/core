@@ -159,6 +159,21 @@ export class DotCDNStore extends ComponentStore<DotCDNState> {
         return loading$.pipe(
             switchMap(() =>
                 this.dotCdnService.purgeCache(urls).pipe(
+                    // The server answers HTTP 200 with success:false when any URL failed to purge.
+                    mergeMap((purgeResult: PurgeReturnData) => {
+                        if (purgeResult.success) {
+                            return of(purgeResult);
+                        }
+
+                        this.httpErrorManager.handle(
+                            new HttpErrorResponse({
+                                status: 500,
+                                error: { message: 'One or more URLs could not be purged' }
+                            })
+                        );
+
+                        return EMPTY;
+                    }),
                     catchError((error: HttpErrorResponse) => {
                         this.httpErrorManager.handle(error);
 
