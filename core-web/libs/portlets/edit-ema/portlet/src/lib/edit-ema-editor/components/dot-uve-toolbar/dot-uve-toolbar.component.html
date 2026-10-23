@@ -35,7 +35,7 @@
                     [state]="$deviceSelectorState()"
                     [devices]="$devices()"
                     [isTraditionalPage]="isTraditionalPage()"
-                    (stateChange)="deviceSelectorChange.emit($event)"
+                    (stateChange)="applyDeviceSelectorChange($event)"
                     data-testId="uve-toolbar-device-selector" />
             }
 
