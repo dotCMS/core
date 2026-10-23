@@ -31,7 +31,7 @@ public interface StoryBlockAPI {
     /**
      * Contains the types of Contentlets that can be added to a Story Block field
      */
-    Set<String> allowedTypes = new ImmutableSet.Builder<String>().add("dotContent", "dotImage", "dotVideo").build();
+    Set<String> allowedTypes = new ImmutableSet.Builder<String>().add("dotContent", "dotImage", "dotVideo", "dotAudio").build();
 
     /**
      * Updates all Contentlets referenced in every {@link com.dotcms.contenttype.model.field.StoryBlockField}  of the
@@ -77,6 +77,19 @@ public interface StoryBlockAPI {
      */
     StoryBlockReferenceResult refreshReferences(final Contentlet contentlet, final User user,
                                                 final boolean respectFrontendRoles);
+
+    /**
+     * Applies the read permissions of the user of the current request (anonymous when there is
+     * none) to the Contentlets referenced in every Story Block field of the given Contentlet,
+     * without refreshing them: a reference that user can read keeps the data stored with it, and
+     * any other reference keeps only the keys that identify it. Used where references are not
+     * refreshed on read.
+     *
+     * @param contentlet The Contentlet containing the Story Block field(s). It is modified in place.
+     *
+     * @return The {@link StoryBlockReferenceResult} with the given Contentlet.
+     */
+    StoryBlockReferenceResult limitReferencesToReader(final Contentlet contentlet);
 
     /**
      * Same as {@link #refreshStoryBlockValueReferences(Object, String)}, but the referenced

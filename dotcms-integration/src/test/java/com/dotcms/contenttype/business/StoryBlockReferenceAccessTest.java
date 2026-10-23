@@ -18,14 +18,17 @@ import com.dotcms.datagen.PermissionUtilTest;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import java.util.Arrays;
@@ -241,6 +244,113 @@ public class StoryBlockReferenceAccessTest extends IntegrationTestBase {
         assertCachedRestrictedReferenceIsNotReduced();
     }
 
+    /**
+     * Given scenario: an anonymous reader opens the carrier.
+     * Expected result: the raw companion of the Story Block field ({@code <field>_raw}), which
+     * holds the document as stored, carries the same restricted reference reduced to its keys.
+     */
+    @Test
+    public void anonymousReader_rawCompanionField_getsNoDataForTheRestrictedReference() throws Exception {
+        final Contentlet found = findCarrierAs(anonymous(), true, true);
+
+        final Object raw = found.get(storyBlockField.variable() + "_raw");
+        assertNotNull("precondition: the carrier is loaded with the raw companion field", raw);
+        assertOnlyReferenceKeys(referencesIn(raw).get(restrictedTarget.getIdentifier()));
+    }
+
+    /**
+     * Given scenario: references are not refreshed on cached reads
+     * ({@code REFRESH_BLOCK_EDITOR_REFERENCES=false}). A second carrier references the restricted
+     * contentlet and a public one whose title changed after the carrier was saved. The carrier is
+     * cached, then an anonymous reader opens it.
+     * Expected result: the restricted reference is reduced to its keys, and the public one keeps
+     * the data stored with it (its old title), which shows that it was not refreshed.
+     */
+    @Test
+    public void anonymousReader_withoutRefreshOnCachedReads_getsStoredDataOnlyForReadableReferences()
+            throws Exception {
+        final long language = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final long timestamp = System.currentTimeMillis();
+        final String storedTitle = "stored title " + timestamp;
+        final Contentlet changingTarget = ContentletDataGen.publish(new ContentletDataGen(
+                APILocator.getContentTypeAPI(APILocator.systemUser()).find("webPageContent"))
+                .languageId(language)
+                .setProperty("title", storedTitle)
+                .setProperty("body", "body " + timestamp)
+                .nextPersisted());
+        PermissionUtilTest.addAnonymousUser(changingTarget);
+        final StoryBlockAPI storyBlockAPI = APILocator.getStoryBlockAPI();
+        final Contentlet secondCarrier = ContentletDataGen.publish(new ContentletDataGen(carrierType.id())
+                .languageId(language)
+                .setProperty(storyBlockField.variable(), storyBlockAPI.addContentlet(
+                        storyBlockAPI.addContentlet(BASE_STORY_BLOCK, restrictedTarget), changingTarget).toString())
+                .nextPersisted());
+        PermissionUtilTest.addAnonymousUser(secondCarrier);
+        final Contentlet checkout = ContentletDataGen.checkout(changingTarget);
+        checkout.setProperty("title", "changed title " + timestamp);
+        ContentletDataGen.publish(ContentletDataGen.checkin(checkout));
+
+        final boolean previous = Config.getBooleanProperty("REFRESH_BLOCK_EDITOR_REFERENCES", true);
+        try {
+            CacheLocator.getContentletCache().remove(secondCarrier.getInode());
+            asReader(anonymous(), () -> APILocator.getContentletAPI().find(secondCarrier.getInode(), anonymous(), true));
+            Config.setProperty("REFRESH_BLOCK_EDITOR_REFERENCES", false);
+
+            final Contentlet found = asReader(anonymous(), () -> APILocator.getContentletAPI()
+                    .find(secondCarrier.getInode(), anonymous(), true));
+            final Map<String, Map<String, Object>> references = referencesIn(found.get(storyBlockField.variable()));
+
+            assertOnlyReferenceKeys(references.get(restrictedTarget.getIdentifier()));
+            assertEquals(storedTitle, references.get(changingTarget.getIdentifier()).get("title"));
+        } finally {
+            Config.setProperty("REFRESH_BLOCK_EDITOR_REFERENCES", previous);
+            ContentletDataGen.destroy(secondCarrier);
+            ContentletDataGen.destroy(changingTarget);
+        }
+    }
+
+    /**
+     * Given scenario: the carrier is not cached; an anonymous reader lists the carrier's content
+     * type, which loads the carrier from the database.
+     * Expected result: the shared cache keeps the carrier's stored Story Block.
+     */
+    @Test
+    public void listingTheContentTypeAsAnonymous_doesNotChangeTheCachedCarrier() throws Exception {
+        CacheLocator.getContentletCache().remove(carrier.getInode());
+
+        asReader(anonymous(), () -> APILocator.getContentletAPI()
+                .findByStructure(carrierType.inode(), anonymous(), true, 0, 0));
+
+        assertCachedRestrictedReferenceIsNotReduced();
+    }
+
+    /**
+     * Given scenario: a carrier saved in a variant other than the default one is read, from the
+     * database and then from the cache.
+     * Expected result: both reads report the carrier's variant.
+     */
+    @Test
+    public void carrierInAVariant_keepsItsVariantWhenRead() throws Exception {
+        final Variant variant = new VariantDataGen().nextPersisted();
+        final Contentlet variantCarrier = new ContentletDataGen(carrierType.id())
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .variant(variant)
+                .setProperty(storyBlockField.variable(), carrier.get(storyBlockField.variable()))
+                .nextPersisted();
+        try {
+            CacheLocator.getContentletCache().remove(variantCarrier.getInode());
+            final Contentlet fromDatabase = asReader(anonymous(), () -> APILocator.getContentletAPI()
+                    .find(variantCarrier.getInode(), APILocator.systemUser(), false));
+            final Contentlet fromCache = asReader(anonymous(), () -> APILocator.getContentletAPI()
+                    .find(variantCarrier.getInode(), APILocator.systemUser(), false));
+
+            assertEquals(variant.name(), fromDatabase.getVariantId());
+            assertEquals(variant.name(), fromCache.getVariantId());
+        } finally {
+            ContentletDataGen.destroy(variantCarrier);
+        }
+    }
+
     // ----------------------------------------------------------------------------------- helpers
 
     /** The carrier in the shared cache still holds the restricted reference's stored data. */
@@ -299,10 +409,34 @@ public class StoryBlockReferenceAccessTest extends IntegrationTestBase {
      * @param evictFirst           When {@code true}, the carrier is removed from the cache first so
      *                             the read goes to the database.
      */
-    @SuppressWarnings("unchecked")
     private static Map<String, Map<String, Object>> readCarrierAs(final User reader,
                                                                   final boolean respectFrontendRoles,
                                                                   final boolean evictFirst) throws Exception {
+        return referencesIn(findCarrierAs(reader, respectFrontendRoles, evictFirst)
+                .get(storyBlockField.variable()));
+    }
+
+    /**
+     * Reads the carrier as the given user, with that user set in the current request, and returns
+     * the Contentlet that user gets. See {@link #readCarrierAs(User, boolean, boolean)}.
+     */
+    private static Contentlet findCarrierAs(final User reader, final boolean respectFrontendRoles,
+                                            final boolean evictFirst) throws Exception {
+        return asReader(reader, () -> {
+            if (evictFirst) {
+                CacheLocator.getContentletCache().remove(carrier.getInode());
+            }
+            final Contentlet found = APILocator.getContentletAPI().find(carrier.getInode(), reader, respectFrontendRoles);
+            assertNotNull("the carrier itself must be readable by the reader", found);
+            return found;
+        });
+    }
+
+    /**
+     * Runs {@code read} with the given user set in the current request (no user for anonymous),
+     * restoring the previous request and response afterwards.
+     */
+    private static <T> T asReader(final User reader, final java.util.concurrent.Callable<T> read) throws Exception {
         final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final HttpServletResponse previousResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
         try {
@@ -313,36 +447,37 @@ public class StoryBlockReferenceAccessTest extends IntegrationTestBase {
             }
             HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
             HttpServletResponseThreadLocal.INSTANCE.setResponse(mock(HttpServletResponse.class));
-            if (evictFirst) {
-                CacheLocator.getContentletCache().remove(carrier.getInode());
-            }
-
-            final Contentlet found = APILocator.getContentletAPI().find(carrier.getInode(), reader, respectFrontendRoles);
-            assertNotNull("the carrier itself must be readable by the reader", found);
-            final Object value = found.get(storyBlockField.variable());
-            final List<Map<String, Object>> content =
-                    (List<Map<String, Object>>) APILocator.getStoryBlockAPI().toMap(value).get(StoryBlockAPI.CONTENT_KEY);
-
-            final Map<String, Map<String, Object>> byIdentifier = new java.util.HashMap<>();
-            final List<String> expected = List.of(restrictedTarget.getIdentifier(), publicTarget.getIdentifier());
-            int references = 0;
-            for (final Map<String, Object> node : content) {
-                if (!"dotContent".equals(node.get(StoryBlockAPI.TYPE_KEY))) {
-                    continue;
-                }
-                final Map<String, Object> data = (Map<String, Object>)
-                        ((Map<String, Object>) node.get(StoryBlockAPI.ATTRS_KEY)).get(StoryBlockAPI.DATA_KEY);
-                // A cleared reference has no identifier left: match it by position in the document
-                final String identifier = Optional.ofNullable(data.get(StoryBlockAPI.IDENTIFIER_KEY))
-                        .map(Object::toString).orElse(expected.get(references));
-                byIdentifier.put(identifier, data);
-                references++;
-            }
-            assertTrue("both references must still be present in the document", references == 2);
-            return byIdentifier;
+            return read.call();
         } finally {
             HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
             HttpServletResponseThreadLocal.INSTANCE.setResponse(previousResponse);
         }
+    }
+
+    /**
+     * Returns the {@code attrs.data} map of every content reference in a Story Block value of the
+     * carrier, keyed by the referenced identifier as stored in the carrier.
+     */
+    @SuppressWarnings("unchecked")
+    private static Map<String, Map<String, Object>> referencesIn(final Object storyBlockValue) throws Exception {
+        final List<Map<String, Object>> content = (List<Map<String, Object>>) APILocator.getStoryBlockAPI()
+                .toMap(storyBlockValue).get(StoryBlockAPI.CONTENT_KEY);
+        final Map<String, Map<String, Object>> byIdentifier = new java.util.HashMap<>();
+        final List<String> expected = List.of(restrictedTarget.getIdentifier(), publicTarget.getIdentifier());
+        int references = 0;
+        for (final Map<String, Object> node : content) {
+            if (!"dotContent".equals(node.get(StoryBlockAPI.TYPE_KEY))) {
+                continue;
+            }
+            final Map<String, Object> data = (Map<String, Object>)
+                    ((Map<String, Object>) node.get(StoryBlockAPI.ATTRS_KEY)).get(StoryBlockAPI.DATA_KEY);
+            // A cleared reference has no identifier left: match it by position in the document
+            final String identifier = Optional.ofNullable(data.get(StoryBlockAPI.IDENTIFIER_KEY))
+                    .map(Object::toString).orElse(expected.get(references));
+            byIdentifier.put(identifier, data);
+            references++;
+        }
+        assertTrue("both references must still be present in the document", references == 2);
+        return byIdentifier;
     }
 }

@@ -24,7 +24,6 @@ import com.dotcms.content.model.annotation.IndexLibraryIndependent;
 import com.dotcms.content.model.annotation.IndexRouter;
 import com.dotcms.content.model.annotation.IndexRouter.IndexAccess;
 import com.dotcms.contenttype.business.StoryBlockReferenceResult;
-import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.enterprise.license.LicenseManager;
@@ -137,7 +136,7 @@ import org.apache.commons.lang.StringUtils;
 )
 public class ESContentFactoryImpl implements ContentletFactory {
 
-    private static final boolean REFRESH_BLOCK_EDITOR_REFERENCES = Config.getBooleanProperty("REFRESH_BLOCK_EDITOR_REFERENCES", true);
+    private static final String REFRESH_BLOCK_EDITOR_REFERENCES = "REFRESH_BLOCK_EDITOR_REFERENCES";
     private static final String[] ES_FIELDS = {"inode", "identifier"};
     public static final int ES_TRACK_TOTAL_HITS_DEFAULT = 10000000;
     public static final String ES_TRACK_TOTAL_HITS = "ES_TRACK_TOTAL_HITS";
@@ -907,36 +906,44 @@ public class ESContentFactoryImpl implements ContentletFactory {
      * refreshed for the user of the current request on a <b>copy</b>: the cached instance keeps the
      * Story Block values as they are stored, so what one reader gets never reaches another one.
      *
+     * <p>When {@code REFRESH_BLOCK_EDITOR_REFERENCES} is disabled, cached reads do not refresh the
+     * references, but the reader's READ permission on each of them still decides whether the data
+     * stored with it is returned.</p>
+     *
      * @param storedContentlet The Contentlet as stored and cached.
      * @param alwaysRefresh    If {@code true}, the references are refreshed even when
      *                         {@code REFRESH_BLOCK_EDITOR_REFERENCES} is disabled. Used right after
      *                         loading from the database, where they were always refreshed.
      *
-     * @return The copy with the refreshed references, or the given Contentlet when there is nothing
-     * to refresh.
+     * @return The copy for the reader, or the given Contentlet when it has no Story Block fields.
      */
     private Contentlet hydrateStoryBlocks(final Contentlet storedContentlet, final boolean alwaysRefresh) {
         final ContentType contentType = storedContentlet.getContentType();
-        if ((alwaysRefresh || REFRESH_BLOCK_EDITOR_REFERENCES) && null != contentType
-                && contentType.hasStoryBlockFields()) {
-            final Contentlet readerCopy = new Contentlet(storedContentlet);
-            try {
-                final StoryBlockReferenceResult storyBlockRefreshedResult =
-                        APILocator.getStoryBlockAPI().refreshReferences(readerCopy);
-                if (storyBlockRefreshedResult.isRefreshed()) {
-                    Logger.debug(this, () -> String.format("Refreshed Story Block dependencies for Contentlet: '%s'",
-                            storedContentlet.getIdentifier()));
-                }
-                return (Contentlet) storyBlockRefreshedResult.getValue();
-            } catch (final Exception e) {
-                // Best-effort enrichment, as it was when done while loading from the database
-                Logger.warnAndDebug(this.getClass(), String.format(
-                        "Failed to refresh Story Block references for contentlet '%s': %s",
-                        storedContentlet.getIdentifier(), ExceptionUtil.getErrorMessage(e)), e);
-                return readerCopy;
-            }
+        if (null == contentType || !contentType.hasStoryBlockFields()) {
+            return storedContentlet;
         }
-        return storedContentlet;
+        final Contentlet readerCopy = this.copyForReader(storedContentlet);
+        final StoryBlockReferenceResult result =
+                alwaysRefresh || Config.getBooleanProperty(REFRESH_BLOCK_EDITOR_REFERENCES, true)
+                        ? APILocator.getStoryBlockAPI().refreshReferences(readerCopy)
+                        : APILocator.getStoryBlockAPI().limitReferencesToReader(readerCopy);
+        if (result.isRefreshed()) {
+            Logger.debug(this, () -> String.format("Refreshed Story Block dependencies for Contentlet: '%s'",
+                    storedContentlet.getIdentifier()));
+        }
+        return (Contentlet) result.getValue();
+    }
+
+    /**
+     * Copies a cached {@link Contentlet} for one reader: its properties, plus the state that is not
+     * kept in its property map (variant, index policies).
+     */
+    private Contentlet copyForReader(final Contentlet storedContentlet) {
+        final Contentlet readerCopy = new Contentlet(storedContentlet);
+        readerCopy.setVariantId(storedContentlet.getVariantId());
+        readerCopy.setIndexPolicyDependencies(storedContentlet.getIndexPolicyDependencies());
+        readerCopy.setLowIndexPriority(storedContentlet.isLowIndexPriority());
+        return readerCopy;
     }
 
 	@Override
@@ -1190,13 +1197,10 @@ public class ESContentFactoryImpl implements ContentletFactory {
             dotConnect.setMaxRows(limit);
         }
 
-        List<Contentlet> contentlets = TransformerLocator.createContentletTransformer
-                (dotConnect.loadObjectResults()).asList();
+        final List<Contentlet> contentlets = TransformerLocator.createContentletTransformer
+                (dotConnect.loadObjectResults(), true).asList();
 
-        contentlets.forEach(contentlet ->contentletCache
-                .add(String.valueOf(contentlet.getInode()), contentlet));
-
-        return contentlets;
+        return contentlets.stream().map(this::cacheAndHydrate).collect(Collectors.toList());
     }
 
     @Override
