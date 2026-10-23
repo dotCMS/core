@@ -565,3 +565,13 @@ runs:
         path: |
           **/target/jacoco-report/*.exec
           **/target/*-reports/*.xml
+
+    # Trial instrumentation for #38203: when cleanup-runner is off, record how
+    # full the disk ends up so the job log shows the headroom. Informational only.
+    - name: Report Disk Usage
+      if: always() && inputs.cleanup-runner != 'true'
+      shell: bash
+      run: |
+        echo '# Final disk usage (cleanup-runner disabled)'
+        df -h / || true
+        docker system df || true

@@ -60,6 +60,7 @@ test_types:
   integration:
     condition_input: integration
     defaults:
+      cleanup_runner: false  # #38203
       needs_license: true
       needs_docker: false
       needs_node: false
@@ -100,6 +101,7 @@ test_types:
   postman:
     condition_input: postman
     defaults:
+      cleanup_runner: false  # #38203
       needs_license: true
       needs_docker: true
       needs_node: true

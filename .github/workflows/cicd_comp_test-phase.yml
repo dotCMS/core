@@ -77,6 +77,14 @@ on:
         required: false
         type: string
         default: ''
+      # test-matrix.yml marks which test types MAY skip the cleanup; only callers
+      # that pass true here (PR, merge queue, trunk) actually do. Nightly, LTS and
+      # the sweep share the matrix and keep cleaning up (#38203).
+      skip-runner-cleanup:
+        description: 'Honor cleanup_runner: false from test-matrix.yml (skip the runner disk cleanup for those test types)'
+        required: false
+        type: boolean
+        default: false
     secrets:
       DOTCMS_LICENSE:
         required: true
@@ -129,7 +137,8 @@ jobs:
               'postman': ${{ inputs.postman }},
               'karate': ${{ inputs.karate }},
               'integration': ${{ inputs.integration }},
-              'e2e': ${{ inputs.e2e }}
+              'e2e': ${{ inputs.e2e }},
+              'skip-runner-cleanup': ${{ inputs.skip-runner-cleanup }}
             };
 
             // ES->OS migration phases to sweep. The input accepts a single phase ('2'),
@@ -189,6 +198,11 @@ jobs:
                 delete testEntry.base_maven_args;
                 delete testEntry.test_class;
                 delete testEntry.collection;
+
+                // Only callers that opted in may skip the cleanup the matrix allows.
+                if (!inputs['skip-runner-cleanup']) {
+                  testEntry.cleanup_runner = true;
+                }
 
                 // ES->OS migration phase fan-out: run the integration battery under each
                 // requested phase. Only for integration suites, and never for the OpenSearch
