@@ -143,6 +143,10 @@ inputs:
     description: 'Docker Hub token for authenticated pulls (avoids rate limiting)'
     required: false
     default: ''
+  pre-pull-images:
+    description: 'Space-separated docker.image.<key> property keys from environments/environment.properties (postgres, search, search.upgrade) to pre-pull through mirror.gcr.io with a Docker Hub fallback. Empty disables. Linux only; never fails the job.'
+    required: false
+    default: ''
 outputs:
   # Consumed by the release phase so build, deployment and publication all agree
   # on one suffix instead of each deriving it (which is how the deployment phase
@@ -370,6 +374,16 @@ runs:
       with:
         username: ${{ inputs.docker-io-username }}
         password: ${{ inputs.docker-io-token }}
+
+    # Must follow the login: the Hub fallback uses its credentials (the mirror attempt
+    # deliberately does not). Best effort, the script always exits 0.
+    - name: Pre-pull test images
+      if: ${{ inputs.pre-pull-images != '' && runner.os == 'Linux' }}
+      continue-on-error: true
+      shell: bash
+      env:
+        PRE_PULL_IMAGES: ${{ inputs.pre-pull-images }}
+      run: bash "${{ github.action_path }}/pre-pull-images.sh"
 
     - id: run-maven-build
       name: Run Maven Build

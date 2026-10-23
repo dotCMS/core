@@ -63,6 +63,8 @@ test_types:
       needs_license: true
       needs_docker: false
       needs_node: false
+      # Space-separated docker.image.<key> names pre-pulled by the maven-job action (#38189)
+      pre_pull_images: "postgres search"
       # Base command for all integration tests
       base_maven_args: >-
         verify -Dit.test.forkcount=1 -pl :dotcms-integration
@@ -89,6 +91,7 @@ test_types:
       - name: "Integration Tests - OpenSearch Upgrade Suite"
         test_class: "OpenSearchUpgradeSuite"
         stage_name: "IT Tests OpenSearch Upgrade Suite"
+        pre_pull_images: "postgres search search.upgrade"
         # Override base_maven_args to activate the opensearch-upgrade Maven profile,
         # which starts the opensearch-upgrade Docker container and restricts Failsafe
         # to only run OpenSearchUpgradeSuite (see dotcms-integration/pom.xml:opensearch-upgrade)
@@ -103,6 +106,7 @@ test_types:
       needs_license: true
       needs_docker: true
       needs_node: true
+      pre_pull_images: "postgres search search.upgrade"
       # Base command for all Postman tests
       base_maven_args: >-
         verify -pl :dotcms-postman 
@@ -146,6 +150,7 @@ test_types:
       needs_license: true
       needs_docker: true
       needs_node: true
+      pre_pull_images: "postgres search search.upgrade"
       base_maven_args: >-
         verify -pl :dotcms-test-karate 
         -Dkarate.test.skip=false
@@ -160,6 +165,7 @@ test_types:
       needs_license: true
       needs_docker: true
       needs_node: true
+      pre_pull_images: "postgres search search.upgrade"
       base_maven_args: "verify -De2e.test.skip=false"
     suites:
       - name: "E2E Tests - Nx Playwright 1 of 3"

@@ -203,6 +203,8 @@ jobs:
                   for (const p of phaseList) {
                     matrix.push({
                       ...testEntry,
+                      // Phase sweep starts the OpenSearch 3.x container too.
+                      pre_pull_images: `${testEntry.pre_pull_images || ''} search.upgrade`.trim(),
                       maven_args: `${testEntry.maven_args} -Dopensearch.phase=${p}`,
                       name: `${testEntry.name} [OS Phase ${p}]`,
                       stage_name: `${testEntry.stage_name} - os-phase-${p}`,
@@ -382,3 +384,4 @@ jobs:
           artifact-suffix: ${{ inputs.artifact-suffix }}
           docker-io-username: ${{ secrets.DOCKER_USERNAME }}
           docker-io-token: ${{ secrets.DOCKER_TOKEN }}
+          pre-pull-images: ${{ matrix.pre_pull_images || '' }}
