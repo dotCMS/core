@@ -72,7 +72,7 @@
 	}
 	#revealJwtDialog{
 	   width:400px;
-	   height:320px;
+	   height:380px;
 	}
 
 </style>
@@ -492,10 +492,11 @@
 </div>
 
 <div dojoType="dijit.Dialog" id="revealJwtDialog" title="API Token">
+	<p><%=LanguageUtil.get(pageContext, "users.dialog.tokens.reveal.description")%></p>
 	<textarea class="tokenDivClass" id="revealTokenDiv"></textarea>
 	<div class="buttonRow">
 		<button dojoType="dijit.form.Button" type="button" class=""
-			onClick="dijit.byId('revealJwtDialog').hide();"><%=LanguageUtil.get(pageContext, "close")%></button>
+			onClick="dojo.byId('revealTokenDiv').value=''; dijit.byId('revealJwtDialog').hide();"><%=LanguageUtil.get(pageContext, "close")%></button>
 	</div>
 </div>
 
