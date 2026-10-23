@@ -1,6 +1,5 @@
 package com.dotcms.contenttype.business;
 
-import static com.dotmarketing.util.Constants.DONT_RESPECT_FRONT_END_ROLES;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
@@ -24,6 +23,7 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.ResourceLink;
 import com.dotmarketing.util.Config;
@@ -92,6 +92,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * without flooding them on every read.
      */
     private static final int UNPARSEABLE_VALUE_WARN_INTERVAL_MILLIS = 30_000;
+    /** The keys of a content node's data map that identify the referenced Contentlet. */
+    private static final Set<String> REFERENCE_KEYS = Set.of(IDENTIFIER_KEY, LANGUAGE_ID_KEY);
 
     /**
      * This method hydrates all the Story Block -- a.k.a. Block Editor -- fields within the
@@ -142,8 +144,26 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * {@link Contentlet} with the appropriate hydrated data.
      */
     @Override
-    @CloseDBIfOpened
     public StoryBlockReferenceResult refreshReferences(final Contentlet contentlet) {
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        return this.refreshReferences(contentlet, this.resolveRequestUser(request),
+                PageMode.get(request).respectAnonPerms);
+    }
+
+    /**
+     * Refreshes the Story Block references of the given Contentlet on behalf of the given user.
+     * See {@link StoryBlockAPI#refreshReferences(Contentlet, User, boolean)}.
+     *
+     * @param contentlet           The Contentlet containing the Story Block field(s).
+     * @param user                 The user on whose behalf the referenced Contentlets are read.
+     * @param respectFrontendRoles If {@code true}, front-end roles are taken into account.
+     *
+     * @return The {@link StoryBlockReferenceResult} with the refreshed Contentlet.
+     */
+    @Override
+    @CloseDBIfOpened
+    public StoryBlockReferenceResult refreshReferences(final Contentlet contentlet, final User user,
+                                                       final boolean respectFrontendRoles) {
         final MutableBoolean refreshed = new MutableBoolean(false);
         final boolean inTransaction = DbConnectionFactory.inTransaction();
         final ContentType contentType = null != contentlet ? contentlet.getContentType() : null;
@@ -171,7 +191,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
 
                         if (null != storyBlockValue) {
                             final StoryBlockReferenceResult result =
-                                    this.refreshStoryBlockValueReferences(storyBlockValue, contentlet.getIdentifier());
+                                    this.refreshStoryBlockValueReferences(storyBlockValue, contentlet.getIdentifier(),
+                                            user, respectFrontendRoles);
                             if (result.isRefreshed()) {
                                 refreshed.setTrue();
                                 contentlet.setProperty(field.variable(), result.getValue());
@@ -181,6 +202,65 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                     });
         }
         return new StoryBlockReferenceResult(refreshed.booleanValue(), contentlet);
+    }
+
+    /**
+     * Reduces the data map of a Story Block content node to the keys that identify the referenced
+     * Contentlet ({@code identifier} and {@code languageId}).
+     *
+     * @param dataMap The data map of the content node, modified in place.
+     */
+    private void keepOnlyReferenceKeys(final Map<String, Object> dataMap) {
+        dataMap.keySet().retainAll(REFERENCE_KEYS);
+    }
+
+    /**
+     * Reduces every Contentlet reference in a Story Block document to its reference keys, at any
+     * level of the document. Used for Story Block fields of a referenced Contentlet, whose own
+     * references are not read again.
+     *
+     * @param storyBlockMap The Story Block document as a Map.
+     *
+     * @return The same document, with every reference's data map reduced.
+     */
+    @SuppressWarnings("unchecked")
+    private Map<String, Object> keepOnlyNestedReferenceKeys(final Map<String, Object> storyBlockMap) {
+        final Object contents = storyBlockMap.get(CONTENT_KEY);
+        if (contents instanceof List) {
+            for (final Object content : (List<Object>) contents) {
+                if (!(content instanceof Map)) {
+                    continue;
+                }
+                final Map<String, Object> contentMap = (Map<String, Object>) content;
+                final Object attrs = contentMap.get(ATTRS_KEY);
+                if (allowedTypes.contains(String.valueOf(contentMap.get(TYPE_KEY))) && attrs instanceof Map
+                        && null != ((Map<String, Object>) attrs).get(DATA_KEY)) {
+                    final Object data = ((Map<String, Object>) attrs).get(DATA_KEY);
+                    final Map<String, Object> reduced = new LinkedHashMap<>();
+                    if (data instanceof Map) {
+                        reduced.putAll((Map<String, Object>) data);
+                        this.keepOnlyReferenceKeys(reduced);
+                    }
+                    ((Map<String, Object>) attrs).put(DATA_KEY, reduced);
+                }
+                this.keepOnlyNestedReferenceKeys(contentMap);
+            }
+        }
+        return storyBlockMap;
+    }
+
+    /**
+     * Resolves the user on whose behalf Story Block references are read when the caller did not
+     * provide one: the user logged in the current request, or the anonymous user when there is no
+     * request or no logged-in user.
+     *
+     * @param request The current {@link HttpServletRequest}, possibly {@code null}.
+     *
+     * @return The requesting user, never {@code null}.
+     */
+    private User resolveRequestUser(final HttpServletRequest request) {
+        final User loggedInUser = null != request ? WebAPILocator.getUserWebAPI().getLoggedInUser(request) : null;
+        return null != loggedInUser ? loggedInUser : APILocator.getUserAPI().getAnonymousUserNoThrow();
     }
 
     /**
@@ -202,11 +282,33 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 : Integer.parseInt(MAX_RELATIONSHIP_DEPTH.get());
     }
 
+    @Override
+    public StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue,
+                                                                      final String parentContentletIdentifier) {
+        final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        return this.refreshStoryBlockValueReferences(storyBlockValue, parentContentletIdentifier,
+                this.resolveRequestUser(request), PageMode.get(request).respectAnonPerms);
+    }
+
+    /**
+     * Refreshes the Contentlet references of a Story Block value on behalf of the given user.
+     * See {@link StoryBlockAPI#refreshStoryBlockValueReferences(Object, String, User, boolean)}.
+     *
+     * @param storyBlockValue            The actual value of the Story Block field.
+     * @param parentContentletIdentifier String identifier of the parent contentlet.
+     * @param user                       The user on whose behalf the referenced Contentlets are read.
+     * @param respectFrontendRoles       If {@code true}, front-end roles are taken into account.
+     *
+     * @return An instance of {@link StoryBlockReferenceResult} with the result of the refresh process.
+     */
     @RequestCost(Price.BLOCK_EDITOR_HYDRATION)
     @CloseDBIfOpened
     @Override
     @SuppressWarnings("unchecked")
-    public StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue, final String parentContentletIdentifier) {
+    public StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue,
+                                                                      final String parentContentletIdentifier,
+                                                                      final User user,
+                                                                      final boolean respectFrontendRoles) {
         boolean refreshed;
         if (null != storyBlockValue && isJsonObject(storyBlockValue.toString())) {
             try {
@@ -215,7 +317,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 if (!UtilMethods.isSet(contentsMap) || !(contentsMap instanceof List)) {
                     return new StoryBlockReferenceResult(true, storyBlockValue);
                 }
-                refreshed = isRefreshed(parentContentletIdentifier, (List<Map<String, Object>>) contentsMap);
+                refreshed = isRefreshed(parentContentletIdentifier, (List<Map<String, Object>>) contentsMap,
+                        user, respectFrontendRoles);
                 if (refreshed) {
                     return new StoryBlockReferenceResult(true, this.toJson(blockEditorMap));
                 }
@@ -231,7 +334,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     }
 
     private boolean isRefreshed(final String parentContentletIdentifier,
-                                final List<Map<String, Object>> contentsMap) {
+                                final List<Map<String, Object>> contentsMap,
+                                final User user, final boolean respectFrontendRoles) {
 
         boolean refreshed = false;
         for (final Map<String, Object> contentMap : contentsMap) {
@@ -242,11 +346,13 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                     final String type = contentMap.get(TYPE_KEY).toString();
                     if (allowedTypes.contains(type)) { // if somebody adds a story block to itself, we don't want to refresh it
 
-                        refreshed |= this.refreshStoryBlockMap(contentMap, parentContentletIdentifier);
+                        refreshed |= this.refreshStoryBlockMap(contentMap, parentContentletIdentifier,
+                                user, respectFrontendRoles);
                     } else {
                         final Object nestedContent = contentMap.get(CONTENT_KEY);
                         if (nestedContent instanceof List) {
-                            refreshed |= this.isRefreshed(parentContentletIdentifier, (List<Map<String, Object>>) nestedContent);
+                            refreshed |= this.isRefreshed(parentContentletIdentifier,
+                                    (List<Map<String, Object>>) nestedContent, user, respectFrontendRoles);
                         }
                     }
                 } catch (final Exception e) {
@@ -270,7 +376,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * and {@code true} will be returned.
      */
     @SuppressWarnings("unchecked")
-    private boolean refreshStoryBlockMap(final Map<String, Object> contentMap, final String parentContentletIdentifier) {
+    private boolean refreshStoryBlockMap(final Map<String, Object> contentMap, final String parentContentletIdentifier,
+                                         final User user, final boolean respectFrontendRoles) {
         boolean refreshed  = false;
         final Map<String, Object> attrsMap = (Map<String, Object>) contentMap.get(ATTRS_KEY);
         if (UtilMethods.isSet(attrsMap)) {
@@ -286,7 +393,9 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                         Logger.warnAndDebug(this.getClass(), String.format(
                             "Failed to parse data field as JSON for parent contentlet '%s': %s",
                             parentContentletIdentifier, ExceptionUtil.getErrorMessage(e)), e);
-                        return false;
+                        // The stored value cannot be resolved to a Contentlet, so none of it is returned
+                        attrsMap.put(DATA_KEY, new LinkedHashMap<>());
+                        return true;
                     }
                 } else if (dataValue instanceof Map) {
                     dataMap = (Map<String, Object>) dataValue;
@@ -294,7 +403,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                     Logger.warn(this.getClass(), String.format(
                         "Unexpected data type '%s' for data field in parent contentlet '%s'",
                         dataValue.getClass().getName(), parentContentletIdentifier));
-                    return false;
+                    attrsMap.put(DATA_KEY, new LinkedHashMap<>());
+                    return true;
                 }
 
                 final String identifier = (String) dataMap.get(IDENTIFIER_KEY);
@@ -305,12 +415,15 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                         final Optional<ContentletVersionInfo> versionInfo = APILocator.getVersionableAPI().getContentletVersionInfo(identifier, languageId);
                         if (versionInfo.isPresent()) {
                             final String chosenInode = this.getInodeBasedOnPageMode(versionInfo.get());
-                            this.refreshBlockEditorDataMap(dataMap, chosenInode);
-                            refreshed = true;
+                            this.refreshBlockEditorDataMap(dataMap, chosenInode, user, respectFrontendRoles);
+                        } else {
+                            // No version of the referenced Contentlet to read: only the reference is kept
+                            this.keepOnlyReferenceKeys(dataMap);
                         }
-                    } else {
-                        refreshed = true;
                     }
+                    refreshed = true;
+                    // A data value stored as a JSON string is replaced by the refreshed map
+                    attrsMap.put(DATA_KEY, dataMap);
                 }
             }
         }
@@ -457,6 +570,13 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      *
      * @param contentlet The Contentlet whose properties will be loaded.
      * @param dataMap    The Map where the properties will be stored.
+     */
+    /**
+     * Copies the common properties of a Contentlet (title, inode, state flags, categories, tags,
+     * file links...) into the data map of a Story Block content node.
+     *
+     * @param contentlet The Contentlet whose properties are copied.
+     * @param dataMap    The data map of the content node.
      */
     private void loadCommonContentletProps(final Contentlet contentlet, final Map<String, Object> dataMap) {
         dataMap.put(Contentlet.HOST_NAME, contentlet.getHost());
@@ -652,15 +772,22 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * Refreshes the data map from a referenced Contentlet in the Story Block field with the latest
      * data specified by the live Inode.
      *
-     * @param dataMap The Map containing the Contentlet's properties.
-     * @param inode   The live Inode of the Contentlet whose properties will be copied over to the
-     *                previous data map.
+     * @param dataMap              The Map containing the Contentlet's properties.
+     * @param inode                The live Inode of the Contentlet whose properties will be copied
+     *                             over to the previous data map.
+     * @param user                 The user on whose behalf the Contentlet is read. When the
+     *                             Contentlet cannot be read and refreshed for this user, the data
+     *                             map is reduced to the keys identifying the reference.
+     * @param respectFrontendRoles If {@code true}, front-end roles are taken into account when
+     *                             reading the Contentlet.
      */
-    private void refreshBlockEditorDataMap(final Map<String, Object> dataMap, final String inode) {
+    private void refreshBlockEditorDataMap(final Map<String, Object> dataMap, final String inode,
+                                           final User user, final boolean respectFrontendRoles) {
         final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         // If 'true', it means that the parent Block Editor is being processed, and not its
         // potential child contents
         final boolean isCurrentDepthEmpty = request.getAttribute(CURRENT_DEPTH_ATTR) == null;
+        boolean hydrated = false;
         try {
             // If the current depth parameter is set, then it must be decreased in order to
             // account for the number of levels that will be processed for related contents,
@@ -673,7 +800,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             // In this API, Block Editor fields must NEVER be automatically hydrated in order to
             // prevent infinite loops. Their specific hydration will be handled manually in
             // subsequent methods in this class
-            final Contentlet fattyContentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), DONT_RESPECT_FRONT_END_ROLES, true);
+            final Contentlet fattyContentlet = APILocator.getContentletAPI().find(inode, user, respectFrontendRoles, true);
 
             if (null != fattyContentlet) {
                 final String fattyIdentifier = fattyContentlet.getIdentifier();
@@ -689,10 +816,15 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                     return;
                 }
                 try {
-                    this.addContentletRelationships(fattyContentlet, currentDepth);
-                    final Map<String, Object> updatedDataMap = this.refreshContentlet(fattyContentlet);
+                    // The Contentlet returned by the API may be the shared cached instance, so the
+                    // related content of this user is added to a copy of it
+                    final Contentlet referenced = new Contentlet(fattyContentlet);
+                    this.addContentletRelationships(referenced, currentDepth, user);
+                    final Map<String, Object> updatedDataMap = this.refreshContentlet(referenced, user,
+                            respectFrontendRoles);
                     this.excludeNonExistingProperties(dataMap, updatedDataMap);
                     dataMap.putAll(updatedDataMap);
+                    hydrated = true;
                 } finally {
                     processing.remove(fattyIdentifier);
                 }
@@ -700,10 +832,19 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         } catch (final JsonProcessingException e) {
             Logger.error(this, String.format("An error occurred when transforming JSON data in contentlet with Inode " +
                     "'%s': %s", inode, ExceptionUtil.getErrorMessage(e)), e);
-        } catch (final DotDataException | DotSecurityException e) {
+        } catch (final DotSecurityException e) {
+            Logger.debug(this, () -> String.format("Contentlet with Inode '%s' is not readable by the requesting " +
+                    "user; its Story Block data was omitted", inode));
+        } catch (final DotDataException e) {
             Logger.error(this, String.format("An error occurred when retrieving contentlet with Inode " +
                     "'%s': %s", inode, ExceptionUtil.getErrorMessage(e)), e);
         } finally {
+            if (!hydrated) {
+                // Whatever prevented the refresh (no READ permission, nothing to read, an error),
+                // the data stored with the reference is not returned: the node keeps only the keys
+                // that identify the reference, so a later reader with access can still resolve it
+                this.keepOnlyReferenceKeys(dataMap);
+            }
             if (isCurrentDepthEmpty) {
                 request.removeAttribute(CURRENT_DEPTH_ATTR);
                 // Remove the thread-local set when exiting the top-level call to
@@ -717,12 +858,14 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * Adds the relationships of the specified {@link Contentlet} object, if required.
      *
      * @param contentlet The Contentlet that may contain Relationship fields.
+     * @param depth      The number of levels of related content to load.
+     * @param user       The user on whose behalf the related Contentlets are read.
      */
-    private void addContentletRelationships(final Contentlet contentlet, final int depth) {
+    private void addContentletRelationships(final Contentlet contentlet, final int depth, final User user) {
         final HttpServletRequest httpRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final PageMode currentPageMode = PageMode.get(httpRequest);
 
-        ContentUtils.addRelationships(contentlet, APILocator.systemUser(), currentPageMode, contentlet.getLanguageId(), depth);
+        ContentUtils.addRelationships(contentlet, user, currentPageMode, contentlet.getLanguageId(), depth);
     }
 
     /**
@@ -796,13 +939,17 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     /**
      * Refreshes the Contentlet data using the Contentlet from the API call to the DB.
      *
-     * @param contentlet The {@link Contentlet} with the latest properties.
+     * @param contentlet           The {@link Contentlet} with the latest properties.
+     * @param user                 The user on whose behalf nested references are resolved.
+     * @param respectFrontendRoles If {@code true}, front-end roles are taken into account when
+     *                             resolving nested references.
      *
      * @return The updated data map with the latest properties.
      *
      * @throws JsonProcessingException An error occurred when processing property with JSON data.
      */
-    private Map<String, Object> refreshContentlet(final Contentlet contentlet)
+    private Map<String, Object> refreshContentlet(final Contentlet contentlet, final User user,
+                                                  final boolean respectFrontendRoles)
             throws JsonProcessingException {
         final Map<String, Object> dataMap = new LinkedHashMap<>();
         final List<Field> fields = contentlet.getContentType().fields();
@@ -821,17 +968,19 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                         // back to the story block value itself. If neither is valid JSON (e.g. a test
                         // or misconfigured field whose default value is plain text), skip the field
                         // entirely so the rest of the data map is still populated correctly.
+                        // The Contentlets referenced at this depth are not read again, so the data
+                        // stored with them is not returned either: only their reference keys are kept.
                         final Object rawValue = contentlet.get(field.variable() + "_raw");
                         final String rawStr = rawValue != null ? rawValue.toString() : null;
                         if (rawStr != null && isJsonObject(rawStr)) {
-                            dataMap.put(field.variable(), this.toMap(rawValue));
+                            dataMap.put(field.variable(), this.keepOnlyNestedReferenceKeys(this.toMap(rawValue)));
                         } else if (isJsonObject(value.toString())) {
-                            dataMap.put(field.variable(), this.toMap(value));
+                            dataMap.put(field.variable(), this.keepOnlyNestedReferenceKeys(this.toMap(value)));
                         }
                     } else {
                         dataMap.putIfAbsent(field.variable(),
                                 this.refreshNestedStoryBlockValues(value, contentlet.getIdentifier(),
-                                        MAX_NESTED_STORY_BLOCK_REFRESH_DEPTH));
+                                        MAX_NESTED_STORY_BLOCK_REFRESH_DEPTH, user, respectFrontendRoles));
                     }
                 } catch (final Exception e) {
                     Logger.warnAndDebug(StoryBlockAPIImpl.class, String.format(
@@ -853,6 +1002,9 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      * @param value The current value to inspect (Map, List, String, or scalar).
      * @param parentContentletIdentifier The parent contentlet identifier used to prevent self-refresh loops.
      * @param remainingDepth Remaining recursive traversal depth allowed.
+     * @param user The user on whose behalf nested references are read.
+     * @param respectFrontendRoles If {@code true}, front-end roles are taken into account when
+     *                             reading nested references.
      *
      * @return A refreshed value preserving the same logical structure.
      *
@@ -860,7 +1012,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      */
     @SuppressWarnings("unchecked")
     private Object refreshNestedStoryBlockValues(final Object value, final String parentContentletIdentifier,
-            final int remainingDepth)
+            final int remainingDepth, final User user, final boolean respectFrontendRoles)
             throws JsonProcessingException {
         if (remainingDepth <= 0) {
             return value;
@@ -872,14 +1024,15 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 // refreshStoryBlockValueReferences currently processes JSON values, so Story Block maps
                 // must be normalized to JSON before refresh and parsed back afterwards.
                 final StoryBlockReferenceResult refreshedValue =
-                        this.refreshStoryBlockValueReferences(this.toJson(valueMap), parentContentletIdentifier);
+                        this.refreshStoryBlockValueReferences(this.toJson(valueMap), parentContentletIdentifier,
+                                user, respectFrontendRoles);
                 return refreshedValue.isRefreshed() ? this.toMap(refreshedValue.getValue()) : valueMap;
             }
             Map<String, Object> refreshedMap = null;
             for (final Map.Entry<String, Object> entry : valueMap.entrySet()) {
                 final Object nestedValue = entry.getValue();
                 final Object refreshedNestedValue = this.refreshNestedStoryBlockValues(nestedValue,
-                        parentContentletIdentifier, remainingDepth - 1);
+                        parentContentletIdentifier, remainingDepth - 1, user, respectFrontendRoles);
 
                 if (refreshedMap != null) {
                     refreshedMap.put(entry.getKey(), refreshedNestedValue);
@@ -904,7 +1057,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             for (int i = 0; i < valueList.size(); i++) {
                 final Object item = valueList.get(i);
                 final Object refreshedItem = this.refreshNestedStoryBlockValues(item, parentContentletIdentifier,
-                        remainingDepth - 1);
+                        remainingDepth - 1, user, respectFrontendRoles);
 
                 if (refreshedList != null) {
                     refreshedList.add(refreshedItem);
@@ -923,7 +1076,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         }
 
         final StoryBlockReferenceResult result =
-                this.refreshStoryBlockValueReferences(value, parentContentletIdentifier);
+                this.refreshStoryBlockValueReferences(value, parentContentletIdentifier, user, respectFrontendRoles);
         return result.isRefreshed() ? result.getValue() : value;
     }
 
@@ -943,10 +1096,16 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
      *
      * @param contentlet the contentlet object that contains the data
      * @param field the field for which the file link will be generated
+     * The link is built with the system user: by the time it is built, the Contentlet has already
+     * been read on behalf of the requesting user, and the link only needs the Site the file
+     * belongs to.
+     *
+     * @param request the current request, used to build an absolute link
      * @return an Optional containing the file link as a String if generated successfully,
      *         or an empty Optional if an error occurs or the link cannot be generated
      */
-    private static Optional<String> getFileLink(final Contentlet contentlet, final Field field, final HttpServletRequest request) {
+    private static Optional<String> getFileLink(final Contentlet contentlet, final Field field,
+                                                final HttpServletRequest request) {
         String fileLink = null;
         try {
             fileLink = new ResourceLink.ResourceLinkBuilder().getFileLink(request, APILocator.systemUser(), contentlet, field.variable());
