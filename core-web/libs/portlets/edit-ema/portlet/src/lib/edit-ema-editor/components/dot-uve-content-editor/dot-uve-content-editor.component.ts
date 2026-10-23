@@ -49,7 +49,7 @@ import { getLanguageChangePageParams } from '../../../utils';
     providers: [DotCopyContentModalService]
 })
 export class DotUveContentEditorComponent {
-    readonly #uveStore = inject(UVEStore);
+    protected readonly uveStore = inject(UVEStore);
     readonly #events = inject(Events);
     readonly #window = inject(WINDOW);
     readonly #dialogService = inject(DialogService);
@@ -110,7 +110,7 @@ export class DotUveContentEditorComponent {
             component: loadDotSourceEditorSidePanel,
             heading: (request) => request.title,
             inputs: (request) => ({ request }),
-            outputs: { saved: () => this.#uveStore.pageReload() },
+            outputs: { saved: () => this.uveStore.pageReload() },
             closed: () => this.$sourceEditorPanel.set(null)
         });
 
@@ -137,26 +137,21 @@ export class DotUveContentEditorComponent {
     protected handleLegacyDialogAction({ event }: DialogAction): void {
         switch (event.detail.name) {
             case NG_CUSTOM_EVENTS.SAVE_PAGE: {
-                this.#uveStore.pageReload();
+                this.uveStore.pageReload();
                 break;
             }
 
             case NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED: {
-                this.#uveStore.pageLoad(
+                this.uveStore.pageLoad(
                     getLanguageChangePageParams(event.detail.payload?.htmlPageReferer, {
                         origin: this.#window.location.origin,
-                        urlContentMap: this.#uveStore.pageAsset()?.urlContentMap,
-                        currentUrl: this.#uveStore.pageParams().url
+                        urlContentMap: this.uveStore.pageAsset()?.urlContentMap,
+                        currentUrl: this.uveStore.pageParams().url
                     })
                 );
                 break;
             }
         }
-    }
-
-    /** Reloads the page when the legacy dialog asks for it, as it does after a workflow action. */
-    protected reloadPage(): void {
-        this.#uveStore.pageReload();
     }
 
     /**
@@ -186,7 +181,7 @@ export class DotUveContentEditorComponent {
             return this.#openContentEditor(contentlet);
         }
 
-        const treeNode = this.#uveStore.getCurrentTreeNode(forkFrom, contentlet);
+        const treeNode = this.uveStore.getCurrentTreeNode(forkFrom, contentlet);
 
         return this.#copyContentModalService.open().pipe(
             switchMap(({ shouldCopy }) =>
@@ -200,7 +195,7 @@ export class DotUveContentEditorComponent {
             // No copy: edit the original, on every page. A copy: edit it, on this page only.
             switchMap((copied) => {
                 if (copied) {
-                    this.#uveStore.pageReload();
+                    this.uveStore.pageReload();
                 }
 
                 return this.#openContentEditor(copied ?? contentlet);
@@ -291,11 +286,11 @@ export class DotUveContentEditorComponent {
             mode: 'edit',
             contentletInode: contentlet.inode,
             onContentSaved: () => {
-                this.#uveStore.pageReload();
+                this.uveStore.pageReload();
             }
         };
 
-        if (this.#uveStore.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]) {
+        if (this.uveStore.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]) {
             // The side panel shows `title` in its header, as the dialog shows `header`.
             this.$editContentPanel.set({ ...data, title: header });
 
