@@ -226,7 +226,9 @@
             "type": "text/javascript",
             "exec": [
               "// Anonymous request: clear any session cookie left by an earlier request of this run.",
-              "pm.sendRequest({ url: pm.environment.get('serverURL') + '/api/v1/logout', method: 'GET' }, function () {});"
+              "pm.sendRequest({ url: pm.environment.get('serverURL') + '/api/v1/logout', method: 'GET' }, function () {});",
+              "// The GraphQL schema learns the new content type asynchronously",
+              "setTimeout(function(){}, 5000);"
             ]
           }
         },
@@ -238,7 +240,7 @@
               "const userKeys = [\"owner\", \"ownerUserName\", \"modUser\", \"modUserName\", \"publishUser\", \"publishUserName\", \"lockedBy\", \"lockedByName\"];",
               "const missing = (object) => userKeys.filter((key) => Object.prototype.hasOwnProperty.call(object, key));",
               "pm.test('200', () => pm.response.to.have.status(200));",
-              "const rows = pm.response.json().data['UserPropertiesCheck' + pm.collectionVariables.get('runId') + 'Collection'];",
+              "const rows = pm.response.json().data.search;",
               "pm.test('content returned', () => pm.expect(rows).to.not.be.empty);",
               "pm.test('no user properties', () => rows.forEach((row) => pm.expect(missing(row._map)).to.be.empty));"
             ]
@@ -272,7 +274,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"query\": \"{ UserPropertiesCheck{{runId}}Collection { _map } }\"\n}",
+          "raw": "{\n  \"query\": \"{ search(query: \\\"+identifier:{{contentId}}\\\") { identifier _map } }\"\n}",
           "options": {
             "raw": {
               "language": "json"

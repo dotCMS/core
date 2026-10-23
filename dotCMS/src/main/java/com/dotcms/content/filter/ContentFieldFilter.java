@@ -39,10 +39,10 @@ import java.util.stream.Collectors;
  * neither CMS administrators nor back-end users, such as anonymous visitors of a headless site or
  * logged-in front-end users.
  * <p>
- * <strong>Scope:</strong> responses are filtered only by the legacy Content API ({@code /api/content}).
- * Other endpoints that return contentlets, such as {@code /api/v1/content}, the Page API and GraphQL, still
- * return these properties unchanged; they are meant to reuse this class. The {@code catchall} exclusion
- * described below applies at index time, so it covers every search endpoint.
+ * <strong>Scope:</strong> the configured lists are applied to the contentlets of every JSON REST response
+ * and of GraphQL {@code _map}, and to the XML of the legacy Content API ({@code /api/content}); the
+ * responses of the scripted {@code /api/vtl} and {@code /api/js} endpoints are left as written. The
+ * {@code catchall} exclusion described below applies at index time, so it covers every search endpoint.
  * <p>
  * Two configuration properties drive it. Both are comma-separated lists of property names, matched
  * without regard to case, and both are empty by default, in which case no response is changed:

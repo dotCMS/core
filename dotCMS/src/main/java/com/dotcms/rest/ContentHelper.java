@@ -277,7 +277,6 @@ public class ContentHelper {
     }
 
     /**
-     * Runs a content search and returns the matching contentlets as a {@link SearchView}.
      *
      * @param request
      * @param response
