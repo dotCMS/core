@@ -288,7 +288,8 @@
     },
     "resolutions": {
         "http-cache-semantics": "^4.1.1",
-        "pdfjs-dist": "^4.2.67"
+        "pdfjs-dist": "^4.2.67",
+        "mermaid": "^10.9.5"
     },
     "nx": {
         "includedScripts": []
