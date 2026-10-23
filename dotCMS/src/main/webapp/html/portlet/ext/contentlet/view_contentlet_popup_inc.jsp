@@ -419,11 +419,11 @@ if(!hasPermissions) {
 
 			                if (UtilMethods.isSet(originalValue)){
 			                	if (originalValue.contains(value + ",")){%>
-			                		<%=name%><br>
+			                		<%=Xss.encodeForHTML(name)%><br>
 								<%}
 			                } else{
 			                  if (UtilMethods.isSet(defaultValue) && (defaultValue.contains("|" + value) || defaultValue.contains(value + "|") || defaultValue.equals(value))){%>
-			                	  <%=name%><br>
+			                	  <%=Xss.encodeForHTML(name)%><br>
 			                  <%}
 			                }
 
@@ -491,11 +491,11 @@ if(!hasPermissions) {
 							<%if(UtilMethods.isImage(x)){%>
 								<%=Xss.encodeForHTML(x) %>
 								<br/>
-								<a  href="#" onclick="dotPreviewFile('/dA/<%=content.getInode() %>/<%=field.getVelocityVarName() %>/<%=Xss.encodeForJavaScript(content.getBinary(field.getVelocityVarName()).getName())%>')">
-									<img src="/dA/<%=content.getInode() %>/<%=field.getVelocityVarName() %>/300w/20q" style="border:1px dotted silver;max-width:400px"/>
+								<a  href="#" onclick="dotPreviewFile('/dA/<%=Xss.encodeForJavaScript(content.getInode()) %>/<%=Xss.encodeForJavaScript(field.getVelocityVarName()) %>/<%=Xss.encodeForJavaScript(content.getBinary(field.getVelocityVarName()).getName())%>')">
+									<img src="/dA/<%=Xss.encodeForHTMLAttribute(content.getInode()) %>/<%=Xss.encodeForHTMLAttribute(field.getVelocityVarName()) %>/300w/20q" style="border:1px dotted silver;max-width:400px"/>
 								</a>
 							<%}else{ %>
-								<a href="#" onclick="dotPreviewFile('/dA/<%=content.getInode() %>/<%=field.getVelocityVarName() %>/150w/20q')"><%=Xss.encodeForHTML(x) %></a>
+								<a href="#" onclick="dotPreviewFile('/dA/<%=Xss.encodeForJavaScript(content.getInode()) %>/<%=Xss.encodeForJavaScript(field.getVelocityVarName()) %>/150w/20q')"><%=Xss.encodeForHTML(x) %></a>
 							<%} %>
 						<%}%>
 					<%}%>
@@ -513,7 +513,7 @@ if(!hasPermissions) {
 					<!-- display -->
 					<% String inode = String.valueOf(capi.getFieldValue(content, field));
 					if(InodeUtils.isSet(inode)){%>
-						<img id="<%=field.getFieldContentlet()%>Thumbnail" src="/contentAsset/image/<%= inode %>/fileAsset/filter/Thumbnail/thumbnail_w/100/thumbnail_h/100" border="1">
+						<img id="<%=field.getFieldContentlet()%>Thumbnail" src="/contentAsset/image/<%= Xss.encodeForHTMLAttribute(inode) %>/fileAsset/filter/Thumbnail/thumbnail_w/100/thumbnail_h/100" border="1">
 					<% }else{ %>
 						<%=LanguageUtil.get(pageContext, "No-Image-configured")  %>
 					<%} %>
@@ -563,7 +563,7 @@ if(!hasPermissions) {
 							else if (originalValue instanceof Float) 
 								value = Parameter.getFloat((String) value);
 							if ((UtilMethods.isSet(originalValue) && value.equals(originalValue)) || (UtilMethods.isSet(defaultValue) && defaultValue.equals(value))){%>
-								<%=name%><br>
+								<%=Xss.encodeForHTML(name)%><br>
 							<%}%> 
 						<%}%> 
 					<%}%> 
@@ -631,7 +631,7 @@ if(!hasPermissions) {
 					for(com.dotmarketing.portlets.categories.model.Category child : children){%>		
 						<%for(com.dotmarketing.portlets.categories.model.Category sel : selectedCats){%>		
 							<%if(child.getInode().equals(sel.getInode())){ %>
-								<%=child.getCategoryName() %> <br>
+								<%=Xss.encodeForHTML(child.getCategoryName()) %> <br>
 							<%} %>
 						<%} %>
 					<%} %>
