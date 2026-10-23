@@ -3,6 +3,7 @@ package com.dotmarketing.startup.runonce;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.util.ContentletAsJsonBackup;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
@@ -35,21 +36,36 @@ public class Task211101AddContentletAsJsonColumnTest {
         }
     }
 
+    /**
+     * Method to test: {@link Task211101AddContentletAsJsonColumn#executeUpgrade()}
+     * Given Scenario: The {@code contentlet_as_json} column does not exist
+     * Expected Result: The task adds it, empty, to every contentlet. The JSON that existed before the
+     * test is put back afterwards, so the rest of the run still has its content.
+     *
+     * @throws DotDataException if the column cannot be dropped, added or restored
+     * @throws SQLException     if the column cannot be looked up
+     */
     @Test
-    public void Test_Upgrade_Task() throws DotDataException {
-        removeConstraintIfAny();
-        final Task211101AddContentletAsJsonColumn task = new Task211101AddContentletAsJsonColumn();
-        assertTrue(task.forceRun());
+    public void Test_Upgrade_Task() throws DotDataException, SQLException {
+        final ContentletAsJsonBackup backup = new ContentletAsJsonBackup("task211101_contentlet_as_json_backup");
+        backup.save();
+        try {
+            removeConstraintIfAny();
+            final Task211101AddContentletAsJsonColumn task = new Task211101AddContentletAsJsonColumn();
+            assertTrue(task.forceRun());
 
-        task.executeUpgrade();
-        final DotConnect dotConnect = new DotConnect();
-        dotConnect
-                .setSQL("select * from contentlet")
-                .loadObjectResults()
-                .forEach(rowMap -> {
-                    assertTrue(rowMap.containsKey("contentlet_as_json"));
-                    assertNull(rowMap.get("contentlet_as_json"));
-                });
+            task.executeUpgrade();
+            final DotConnect dotConnect = new DotConnect();
+            dotConnect
+                    .setSQL("select * from contentlet")
+                    .loadObjectResults()
+                    .forEach(rowMap -> {
+                        assertTrue(rowMap.containsKey("contentlet_as_json"));
+                        assertNull(rowMap.get("contentlet_as_json"));
+                    });
+        } finally {
+            backup.restore();
+        }
     }
 
 }
