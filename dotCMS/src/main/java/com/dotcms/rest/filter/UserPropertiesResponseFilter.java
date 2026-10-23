@@ -2,9 +2,10 @@ package com.dotcms.rest.filter;
 
 import com.dotcms.content.filter.ContentFieldFilter;
 import com.dotcms.content.filter.PropertyTreeFilter;
-import com.dotcms.content.filter.PropertyTreeFilter.FieldTypes;
+import com.dotcms.rendering.js.JsResource;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
+import com.dotcms.rest.api.v1.vtl.VTLResource;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -18,12 +19,13 @@ import java.util.Collection;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 import javax.annotation.Priority;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
 import javax.ws.rs.container.ContainerResponseFilter;
+import javax.ws.rs.container.ResourceInfo;
+import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.StreamingOutput;
@@ -32,8 +34,8 @@ import javax.ws.rs.ext.Provider;
 /**
  * Removes user properties from the JSON responses sent to callers who are neither CMS administrators nor
  * back-end users. The caller is the user stored under {@link com.liferay.portal.util.WebKeys#USER} on the
- * request; a request without one is treated as a non-back-end caller. Non-JSON responses and streamed
- * entities are never read nor changed.
+ * request; a request without one is treated as a non-back-end caller. Non-JSON responses, streamed
+ * entities and the responses of scripted Velocity and JavaScript endpoints are never read nor changed.
  * <p>
  * It runs after the other response filters (its priority is lower than
  * {@link Priorities#HEADER_DECORATOR}), so the entity it reads is the one about to be written.
@@ -44,21 +46,8 @@ import javax.ws.rs.ext.Provider;
 @Priority(Priorities.AUTHORIZATION)
 public class UserPropertiesResponseFilter implements ContainerResponseFilter {
 
-    private final Supplier<FieldTypes> fieldTypes;
-
-    /** Creates the filter, resolving contentlet field types from the stored content types. */
-    public UserPropertiesResponseFilter() {
-        this(PropertyTreeFilter::storedContentTypes);
-    }
-
-    /**
-     * Creates the filter with a given source of field types.
-     *
-     * @param fieldTypes supplies the field type resolver used for one response
-     */
-    UserPropertiesResponseFilter(final Supplier<FieldTypes> fieldTypes) {
-        this.fieldTypes = fieldTypes;
-    }
+    @Context
+    private ResourceInfo resourceInfo;
 
     /**
      * Filters the entity of one response for the caller of the request.
@@ -74,7 +63,8 @@ public class UserPropertiesResponseFilter implements ContainerResponseFilter {
             return;
         }
         final Object entity = responseContext.getEntity();
-        if (null == entity || isStream(entity) || !isJson(responseContext.getMediaType(), entity)) {
+        if (null == entity || isScriptedEndpoint() || isStream(entity)
+                || !isJson(responseContext.getMediaType(), entity)) {
             return;
         }
         final ContentFieldFilter filter = ContentFieldFilter.forUser(caller(requestContext));
@@ -88,7 +78,7 @@ public class UserPropertiesResponseFilter implements ContainerResponseFilter {
                 return;
             }
             final Object filtered = PropertyTreeFilter.filter(
-                    JsonUtil.getObjectFromJson(json, Object.class), filter, fieldTypes.get());
+                    JsonUtil.getObjectFromJson(json, Object.class), filter, PropertyTreeFilter.storedContentTypes());
             responseContext.setEntity(entity instanceof String ? mapper.writeValueAsString(filtered) : filtered);
         } catch (final Exception e) {
             Logger.warn(this, String.format("The response for '%s' could not be prepared for the caller; "
@@ -109,6 +99,17 @@ public class UserPropertiesResponseFilter implements ContainerResponseFilter {
     private static User caller(final ContainerRequestContext requestContext) {
         final Object user = requestContext.getProperty(WebKeys.USER);
         return user instanceof User ? (User) user : null;
+    }
+
+    /**
+     * Tells whether the request was handled by a scripted Velocity or JavaScript endpoint. What those
+     * endpoints return is written by the site, so it is sent as the site wrote it.
+     *
+     * @return {@code true} for a response of {@link VTLResource} or {@link JsResource}
+     */
+    private boolean isScriptedEndpoint() {
+        final Class<?> resourceClass = null == resourceInfo ? null : resourceInfo.getResourceClass();
+        return VTLResource.class.equals(resourceClass) || JsResource.class.equals(resourceClass);
     }
 
     /**

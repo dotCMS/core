@@ -2,7 +2,6 @@ package com.dotcms.graphql;
 
 import com.dotcms.content.filter.ContentFieldFilter;
 import com.dotcms.content.filter.PropertyTreeFilter;
-import com.dotcms.content.filter.PropertyTreeFilter.FieldTypes;
 import com.dotcms.graphql.business.PageAPIGraphQLTypesProvider;
 import com.liferay.portal.model.User;
 import graphql.GraphqlErrorBuilder;
@@ -16,7 +15,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Supplier;
 
 /**
  * Keeps user properties out of the GraphQL results returned to callers who are neither CMS administrators
@@ -34,22 +32,6 @@ public class UserPropertiesInstrumentation extends SimpleInstrumentation {
     private static final String QUERY_ARGUMENT = "query";
     /** Sort arguments: {@code sortBy} on collections, {@code sort} as read by relationship fields. */
     private static final List<String> SORT_ARGUMENTS = List.of("sortBy", "sort");
-
-    private final Supplier<FieldTypes> fieldTypes;
-
-    /** Creates the instrumentation, resolving contentlet field types from the stored content types. */
-    public UserPropertiesInstrumentation() {
-        this(PropertyTreeFilter::storedContentTypes);
-    }
-
-    /**
-     * Creates the instrumentation with a given source of field types.
-     *
-     * @param fieldTypes supplies the field type resolver used for one field
-     */
-    UserPropertiesInstrumentation(final Supplier<FieldTypes> fieldTypes) {
-        this.fieldTypes = fieldTypes;
-    }
 
     /**
      * Wraps the fetchers of the fields that can return or search user properties; every other fetcher is
@@ -112,13 +94,13 @@ public class UserPropertiesInstrumentation extends SimpleInstrumentation {
         }
         final String key = environment.getArgument(MAP_KEY_ARGUMENT);
         if (null == key) {
-            return PropertyTreeFilter.filter(result, filter, fieldTypes.get());
+            return PropertyTreeFilter.filter(result, filter, PropertyTreeFilter.storedContentTypes());
         }
         final Map<String, Object> single = new LinkedHashMap<>();
         single.put(key, result);
         final Map<String, Object> filtered = filter.apply(single);
         return filtered.containsKey(key)
-                ? PropertyTreeFilter.filter(filtered.get(key), filter, fieldTypes.get())
+                ? PropertyTreeFilter.filter(filtered.get(key), filter, PropertyTreeFilter.storedContentTypes())
                 : null;
     }
 
