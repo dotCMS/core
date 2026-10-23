@@ -6834,11 +6834,12 @@ paths:
           | **Property**         | **Type**   | **Required** | **Default** | **Description** |
           |----------------------|------------|--------------|-------------|-----------------|
           | `contentType`        | String     | ✅ Yes        | –           | Content Type variable or ID to import data into. |
-          | `language`           | String     | ❌ No         | Default language | Language code (e.g., `en-US`) or language ID. |
+          | `language`           | String     | ❌ No         | Multilingual | Language code (e.g., `en-US`) or language ID. Leaving it out, or sending `-1`, imports a multilingual file: each row carries its language in `languageCode` and `countryCode` columns, and at least one key field is required. |
           | `workflowActionId`   | String     | ✅ Yes        | –           | Workflow Action UUID to apply to imported content. |
           | `fields`             | String[]   | ❌ No         | –           | List of field variables or IDs used as keys for content updates. |
           | `stopOnError`        | Boolean    | ❌ No         | `false`     | Whether to stop import on first validation error. |
           | `commitGranularity`  | Integer    | ❌ No         | `100`       | Number of rows to commit in each transaction batch. |
+          | `site`               | String     | ❌ No         | Session site | Site identifier or hostname the import runs against, in place of the session's site. It resolves in-row references such as File and Image values; it does not change where rows are placed. An unknown site is refused with 400, a site the user can't read with 403. |
 
           **Example `form` value:**
 
@@ -6849,7 +6850,8 @@ paths:
             "workflowActionId": "b9d89c80-3d88-4311-8365-187323c96436",
             "fields": ["title"],
             "stopOnError": false,
-            "commitGranularity": 100
+            "commitGranularity": 100,
+            "site": "demo.dotcms.com"
           }
           ```
         required: true
@@ -6878,6 +6880,42 @@ paths:
       tags:
       - Content Import
       - Content
+  /v1/content/_import/_sample:
+    get:
+      description: "Returns the sample CSV Content Search's import offers: a header\
+        \ row of the content type's importable fields, in their order on the type,\
+        \ and a row of placeholders showing each field's expected format (for example\
+        \ MM/dd/yyyy for date fields)."
+      operationId: downloadContentImportSample
+      parameters:
+      - description: The content type's identifier or variable name.
+        in: query
+        name: contentType
+        required: true
+        schema:
+          type: string
+          example: Blog
+      responses:
+        "200":
+          content:
+            text/csv:
+              schema:
+                type: string
+                format: binary
+                description: "Two CSV lines: field variables, then placeholders."
+          description: The sample CSV.
+        "400":
+          description: "Bad Request: contentType is missing."
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "403":
+          description: "Forbidden: The user can't read the content type."
+        "404":
+          description: "Not Found: The content type doesn't exist."
+      summary: Downloads a sample CSV for importing a content type
+      tags:
+      - Content Import
+      - Content
   /v1/content/_import/_validate:
     post:
       description: "Creates and enqueues a content import job in preview mode. This\
@@ -6902,11 +6940,12 @@ paths:
           | **Property**         | **Type**   | **Required** | **Default** | **Description** |
           |----------------------|------------|--------------|-------------|-----------------|
           | `contentType`        | String     | ✅ Yes        | –           | Content Type variable or ID to import data into. |
-          | `language`           | String     | ❌ No         | Default language | Language code (e.g., `en-US`) or language ID. |
+          | `language`           | String     | ❌ No         | Multilingual | Language code (e.g., `en-US`) or language ID. Leaving it out, or sending `-1`, imports a multilingual file: each row carries its language in `languageCode` and `countryCode` columns, and at least one key field is required. |
           | `workflowActionId`   | String     | ✅ Yes        | –           | Workflow Action UUID to apply to imported content. |
           | `fields`             | String[]   | ❌ No         | –           | List of field variables or IDs used as keys for content updates. |
           | `stopOnError`        | Boolean    | ❌ No         | `false`     | Whether to stop import on first validation error. |
           | `commitGranularity`  | Integer    | ❌ No         | `100`       | Number of rows to commit in each transaction batch. |
+          | `site`               | String     | ❌ No         | Session site | Site identifier or hostname the import runs against, in place of the session's site. It resolves in-row references such as File and Image values; it does not change where rows are placed. An unknown site is refused with 400, a site the user can't read with 403. |
 
           **Example `form` value:**
 
@@ -6917,7 +6956,8 @@ paths:
             "workflowActionId": "b9d89c80-3d88-4311-8365-187323c96436",
             "fields": ["title"],
             "stopOnError": false,
-            "commitGranularity": 100
+            "commitGranularity": 100,
+            "site": "demo.dotcms.com"
           }
           ```
         required: true
@@ -8557,6 +8597,59 @@ paths:
         "500":
           description: Internal Server Error
       summary: Filters content types
+      tags:
+      - Content Type
+  /v1/contenttype/_writable:
+    get:
+      description: "Returns, a page at a time, the content types the current user\
+        \ has WRITE permission on, sorted by name, in a short form (id, variable,\
+        \ name, base type, icon). Unlike the general listing, which filters by READ,\
+        \ it only offers types the user can create content in. The permission rule\
+        \ and the exclusions are applied before paging, so the total counts matching\
+        \ types exactly."
+      operationId: getWritableContentTypes
+      parameters:
+      - description: "Text the content type's name or variable must contain, ignoring\
+          \ case."
+        in: query
+        name: filter
+        schema:
+          type: string
+      - description: "The page to return, starting at 1."
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int64
+          default: 1
+      - description: How many content types a page holds.
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int64
+          default: 40
+      - description: "Comma-separated variables of content types to leave out, ignoring\
+          \ case (for example `Host`)."
+        in: query
+        name: exclude
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContentTypeSummaryListView"
+          description: A page of the content types the user can write to (possibly
+            empty).
+        "400":
+          description: "Bad Request: page or per_page is below 1."
+        "401":
+          description: "Unauthorized: Invalid or missing user authentication."
+        "500":
+          description: "Internal Server Error: The content types could not be read."
+      summary: Lists the content types the user can write to
       tags:
       - Content Type
   /v1/contenttype/basetypes:
@@ -27675,6 +27768,8 @@ components:
             type: string
         language:
           type: string
+        site:
+          type: string
         stopOnError:
           type: boolean
         workflowActionId:
@@ -27689,16 +27784,20 @@ components:
         file:
           type: string
           format: binary
-          description: The CSV file to import.
+          description: The CSV file to import. Required unless `tempFileId` is sent
+            instead.
         form:
           type: string
           description: JSON string representing import settings.
-          example: "{\n  \"contentType\": \"activity\",\n  \"language\": \"en-US\"\
-            ,\n  \"workflowActionId\": \"b9d89c80-3d88-4311-8365-187323c96436\",\n\
-            \  \"fields\": [\"title\"]\n  \"stopOnError\":false \n  \"commitGranularity\"\
-            : 100\n}"
+          example: "{\"contentType\":\"activity\",\"language\":\"en-US\",\"workflowActionId\"\
+            :\"b9d89c80-3d88-4311-8365-187323c96436\",\"fields\":[\"title\"],\"stopOnError\"\
+            :false,\"commitGranularity\":100,\"site\":\"demo.dotcms.com\"}"
+        tempFileId:
+          type: string
+          description: "The id of a CSV already uploaded by the same user, such as\
+            \ the `tempFileId` a preview returns in its job parameters, imported instead\
+            \ of uploading `file` again. Send either `file` or `tempFileId`, not both."
       required:
-      - file
       - form
     ContentReferenceView:
       type: object
@@ -27987,6 +28086,19 @@ components:
       required:
       - clazz
       - name
+    ContentTypeSummaryView:
+      type: object
+      properties:
+        baseType:
+          type: string
+        icon:
+          type: string
+        id:
+          type: string
+        name:
+          type: string
+        variable:
+          type: string
     ContentTypeView:
       type: object
       properties:
@@ -34711,6 +34823,31 @@ components:
           properties:
             empty:
               type: boolean
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityContentTypeSummaryListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContentTypeSummaryView"
         errors:
           type: array
           items:

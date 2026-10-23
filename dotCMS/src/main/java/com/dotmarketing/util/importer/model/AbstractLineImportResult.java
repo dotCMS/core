@@ -148,4 +148,12 @@ public interface AbstractLineImportResult extends Serializable {
      */
     int duplicateContent();
 
+    /**
+     * Where this line's content lands, once its location is known (#37896). Absent for a line
+     * that failed before then; such lines are not counted in the import's destinations.
+     *
+     * @return the line's destination, with {@code rows} set to 1
+     */
+    Optional<ImportDestination> destination();
+
 }

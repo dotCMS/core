@@ -107,30 +107,64 @@ test.describe('Content Drive bulk folder delete', () => {
         adminPage,
         apiHelpers,
         testSuffix
-    }) =>
-        inSeededContainer(
+    }) => {
+        let submitted: string[][] = [];
+
+        return inSeededContainer(
             {
                 adminPage,
                 apiHelpers,
                 name: `cd-del-reload-${testSuffix}`,
-                // A few folders inside are enough: the page reloads straight after the delete is
-                // submitted, so it is still queued or running when the page reads the queue back.
-                // Seeding 150 took longer than the whole test budget on CI.
-                children: ['big', ...Array.from({ length: 20 }, (_, index) => `big/child-${index}`)]
+                children: ['big'],
+                // The run is held rather than run: a real one over a few folders now finishes
+                // before the page can reload (the job queue picks a new job up at once, #37896),
+                // so whether it was still in flight would be a race. Nothing is deleted; the
+                // first test covers the real delete.
+                beforeOpen: async () => {
+                    submitted = await acceptSubmissionsWithoutRunning(
+                        adminPage,
+                        FOLDER_RUN_URL.delete
+                    );
+                }
             },
             async (_drive, preview) => {
                 await preview.open('DELETE_FOLDER', ['big']);
                 await preview.execute();
                 await preview.expectMarkedInFlight('big');
 
+                // The queue's active listing answers with the run that was submitted, as it does
+                // while a real one is still going.
+                await adminPage.route(
+                    (url) => url.pathname === '/api/v1/jobs/folderBulkDelete/active',
+                    (route) =>
+                        route.fulfill({
+                            contentType: 'application/json',
+                            json: {
+                                entity: {
+                                    jobs: [
+                                        {
+                                            id: 'e2e-not-run-1',
+                                            queueName: 'folderBulkDelete',
+                                            state: 'RUNNING',
+                                            parameters: {
+                                                paths: (submitted[0] ?? []).map((path) => ({
+                                                    path
+                                                }))
+                                            }
+                                        }
+                                    ]
+                                }
+                            }
+                        })
+                );
+
                 // Re-established from the queue's active listing, not remembered by the page that
                 // started it.
                 await adminPage.reload();
                 await preview.expectMarkedInFlight('big');
-
-                await preview.expectGone('big');
             }
-        ));
+        );
+    });
 
     test('runs only as many folders as one delete may carry', ({
         adminPage,

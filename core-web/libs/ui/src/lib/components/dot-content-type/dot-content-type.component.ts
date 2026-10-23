@@ -1,4 +1,5 @@
 import { signalState, patchState } from '@ngrx/signals';
+import { Observable } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
@@ -24,7 +25,20 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectLazyLoadEvent, SelectModule, Select } from 'primeng/select';
 
 import { DotContentTypeService } from '@dotcms/data-access';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentType,
+    DotContentTypePaginationOptions,
+    DotPagination
+} from '@dotcms/dotcms-models';
+
+/**
+ * Loads one page of the content types the selector offers, in the shape
+ * `DotContentTypeService.getContentTypesWithPagination` answers. Lets a consumer list content
+ * types under its own rule while the selector keeps its paging, search and dropdown.
+ */
+export type DotContentTypePageLoader = (
+    options: DotContentTypePaginationOptions
+) => Observable<{ contentTypes: DotCMSContentType[]; pagination: DotPagination }>;
 
 interface ParsedSelectLazyLoadEvent extends SelectLazyLoadEvent {
     itemsNeeded: number;
@@ -146,6 +160,20 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit, On
      * Can be customized; defaults to an empty string.
      */
     id = input<string>('');
+
+    /**
+     * Where the pages of content types come from. When not set, they come from
+     * `DotContentTypeService.getContentTypesWithPagination`, the general content type listing.
+     */
+    pageLoader = input<DotContentTypePageLoader | null>(null);
+
+    /**
+     * What the list says when it has no content types at all, for a consumer whose list can
+     * legitimately be empty. Not shown while the user searches: there an empty list means the
+     * search found nothing, and the select's own message says so. When not set, the select's
+     * default empty message is used.
+     */
+    emptyMessage = input<string | null>(null);
 
     /**
      * Reactive state of the component including loaded types, loading status, total results, and active filter.
@@ -553,53 +581,55 @@ export class DotContentTypeComponent implements ControlValueAccessor, OnInit, On
         const pageToLoad = pages[0];
         const remainingPages = pages.slice(1);
 
-        this.contentTypeService
-            .getContentTypesWithPagination({
-                page: pageToLoad,
-                per_page: this.pageSize,
-                ...(filter ? { filter } : {})
-            })
-            .subscribe({
-                next: ({ contentTypes, pagination }) => {
-                    const currentContentTypes = this.$state.contentTypes();
-                    const isFirstPage = pageToLoad === 1;
+        const options: DotContentTypePaginationOptions = {
+            page: pageToLoad,
+            per_page: this.pageSize,
+            ...(filter ? { filter } : {})
+        };
+        const pageLoader = this.pageLoader();
 
-                    // Update total records from pagination
-                    if (isFirstPage || this.$state.totalRecords() === 0) {
-                        if (pagination.totalEntries) {
-                            patchState(this.$state, { totalRecords: pagination.totalEntries });
-                        }
+        (pageLoader
+            ? pageLoader(options)
+            : this.contentTypeService.getContentTypesWithPagination(options)
+        ).subscribe({
+            next: ({ contentTypes, pagination }) => {
+                const currentContentTypes = this.$state.contentTypes();
+                const isFirstPage = pageToLoad === 1;
+
+                // Update total records from pagination
+                if (isFirstPage || this.$state.totalRecords() === 0) {
+                    if (pagination.totalEntries) {
+                        patchState(this.$state, { totalRecords: pagination.totalEntries });
                     }
+                }
 
-                    // Replace on first page (initial load or filter change clears list first)
-                    // Merge on subsequent pages (lazy loading pagination)
-                    if (isFirstPage) {
-                        this.setContentTypes(contentTypes);
-                    } else {
-                        // For subsequent pages, merge with existing (lazy loading)
-                        const existingVariables = new Set(
-                            currentContentTypes.map((ct) => ct.variable)
-                        );
-                        const newContentTypes = contentTypes.filter(
-                            (ct) => !existingVariables.has(ct.variable)
-                        );
+                // Replace on first page (initial load or filter change clears list first)
+                // Merge on subsequent pages (lazy loading pagination)
+                if (isFirstPage) {
+                    this.setContentTypes(contentTypes);
+                } else {
+                    // For subsequent pages, merge with existing (lazy loading)
+                    const existingVariables = new Set(currentContentTypes.map((ct) => ct.variable));
+                    const newContentTypes = contentTypes.filter(
+                        (ct) => !existingVariables.has(ct.variable)
+                    );
 
-                        if (newContentTypes.length > 0) {
-                            this.setContentTypes([...currentContentTypes, ...newContentTypes]);
-                        }
+                    if (newContentTypes.length > 0) {
+                        this.setContentTypes([...currentContentTypes, ...newContentTypes]);
                     }
+                }
 
-                    this.loadedPages.add(pageToLoad);
+                this.loadedPages.add(pageToLoad);
 
-                    if (remainingPages.length > 0) {
-                        this.loadPagesSequentially(remainingPages);
-                    } else {
-                        patchState(this.$state, { loading: false });
-                    }
-                },
-                error: () => {
+                if (remainingPages.length > 0) {
+                    this.loadPagesSequentially(remainingPages);
+                } else {
                     patchState(this.$state, { loading: false });
                 }
-            });
+            },
+            error: () => {
+                patchState(this.$state, { loading: false });
+            }
+        });
     }
 }

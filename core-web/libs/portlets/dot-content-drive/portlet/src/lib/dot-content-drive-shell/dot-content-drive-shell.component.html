@@ -222,6 +222,15 @@
                     </span>
                 </div>
             }
+            @case (DIALOG_TYPE.IMPORT) {
+                <span class="p-dialog-title" data-testId="dialog-header">
+                    @if ($importDialog()?.$step() === 'preview') {
+                        {{ 'content-drive.import.dialog.preview-header' | dm }}
+                    } @else {
+                        {{ 'content-drive.import.dialog.header' | dm }}
+                    }
+                </span>
+            }
             @default {
                 <span class="p-dialog-title">{{ $activeDialog()?.header }}</span>
             }
@@ -244,6 +253,9 @@
         @case (DIALOG_TYPE.ACTION_CENTER) {
             <dot-content-drive-action-center data-testId="dialog-action-center" />
         }
+        @case (DIALOG_TYPE.IMPORT) {
+            <dot-content-drive-dialog-import data-testId="dialog-import" />
+        }
     }
 </p-dialog>
 
@@ -251,12 +263,36 @@
      into whichever presentation is active: a popover for the Upload button, a modal for drag-drop. -->
 <ng-template #uploadSelectorTpl>
     @if ($uploadSelectorPayload(); as payload) {
-        <dot-upload-type-selector
-            class="block"
-            data-testId="dialog-upload-selector"
-            [targetFolder]="payload.targetFolder"
-            [files]="payload.files"
-            (selectUploadType)="onUploadTypeSelected($event)" />
+        @if (payload.showUploadTypes !== false) {
+            <dot-upload-type-selector
+                class="block"
+                data-testId="dialog-upload-selector"
+                [targetFolder]="payload.targetFolder"
+                [files]="payload.files"
+                [allowedBaseTypes]="payload.allowedBaseTypes"
+                (selectUploadType)="onUploadTypeSelected($event)" />
+        }
+        <!-- Import CSV (#37896) only from the Upload button: dropped files always upload. It is not
+             an upload type, so a top border sets it apart from the selector above. -->
+        @if (payload.fromButton) {
+            <button
+                type="button"
+                class="flex w-full cursor-pointer items-start gap-4 border-t border-gray-200 bg-transparent px-5 py-4 text-left transition-colors hover:bg-primary/5"
+                data-testid="upload-selector-import-csv"
+                (click)="openImportDialog()">
+                <i class="material-symbols-outlined text-[1.5rem]! leading-none text-primary">
+                    table_view
+                </i>
+                <span class="flex flex-col gap-1">
+                    <span class="text-base font-semibold text-gray-800">
+                        {{ 'content-drive.import.menu' | dm }}
+                    </span>
+                    <span class="text-sm leading-snug text-gray-600">
+                        {{ 'content-drive.import.menu.description' | dm }}
+                    </span>
+                </span>
+            </button>
+        }
     }
 </ng-template>
 

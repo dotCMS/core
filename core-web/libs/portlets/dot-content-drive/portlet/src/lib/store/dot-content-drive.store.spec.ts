@@ -17,6 +17,7 @@ import { ActivatedRoute } from '@angular/router';
 import {
     AddToBundleService,
     DotBulkRefreshService,
+    DotContentImportService,
     DotFolderBulkDeleteService,
     DotFolderBulkDuplicateService,
     DotEventsSocket,
@@ -1714,6 +1715,8 @@ describe('DotContentDriveStore - runs in progress on load', () => {
     let store: InstanceType<typeof DotContentDriveStore>;
     let currentUser$: Observable<DotCurrentUser>;
     let activeDeletes$: Observable<DotFolderDeleteActiveRun[]>;
+    /** Empty unless a test needs imports to restore (#37896), so the other tests are unaffected. */
+    let activeImports$: Observable<{ id: string; userId?: string; fileName?: string }[]>;
 
     const createService = createServiceFactory({
         service: DotContentDriveStore,
@@ -1761,6 +1764,9 @@ describe('DotContentDriveStore - runs in progress on load', () => {
                     ])
                 )
             }),
+            mockProvider(DotContentImportService, {
+                readActiveImports: vi.fn(() => activeImports$)
+            }),
             mockProvider(DotUploadFileService, {
                 readActiveUploads: vi.fn(() =>
                     of([
@@ -1798,6 +1804,19 @@ describe('DotContentDriveStore - runs in progress on load', () => {
     beforeEach(() => {
         currentUser$ = of({ userId: 'me', admin: false } as DotCurrentUser);
         activeDeletes$ = of([{ id: 'delete-1', state: 'RUNNING', paths: ['//demo.com/gone/'] }]);
+        activeImports$ = of([]);
+    });
+
+    it("should restore the author's own CSV imports, and no one else's (#37896)", () => {
+        // Same rule as uploads: only the submitter is sent the completion that ends a run.
+        activeImports$ = of([
+            { id: 'import-mine', userId: 'me', fileName: 'blogs.csv' },
+            { id: 'import-theirs', userId: 'someone-else', fileName: 'news.csv' }
+        ]);
+        build();
+
+        expect(Object.keys(store.importJobs())).toEqual(['import-mine']);
+        expect(store.toolbarRunCount()).toBe(3);
     });
 
     it("should restore the author's own duplicates and uploads, and no one else's", () => {
@@ -1845,23 +1864,26 @@ describe('DotContentDriveStore - runs in progress on load', () => {
         expect(Object.keys(store.folderDeleteRuns())).toEqual(['delete-1']);
     });
 
-    it('should hold no upload completion for a restore that cannot happen without an author', () => {
-        // With no author nothing is ever restored to claim a held completion, so holding one would
-        // keep it for the portlet's lifetime.
+    it('should hold only a bounded number of upload completions when no restore can claim them', () => {
+        // With no author nothing is restored, but a batch's own answer can still claim its early
+        // completion (#37896). Bounded, so other tabs' completions are not kept for the portlet's
+        // lifetime.
         currentUser$ = throwError(() => new Error('boom'));
         build();
 
-        store.reportUploadCompleted('Upload', {
-            jobId: 'other-tab',
-            state: 'SUCCESS',
-            total: 1,
-            processed: 1,
-            successCount: 1,
-            failedCount: 0,
-            skippedCount: 0
-        } as DotBulkUploadCompletedEvent);
+        for (let index = 0; index <= 20; index++) {
+            store.reportUploadCompleted('Upload', {
+                jobId: `other-tab-${index}`,
+                state: 'SUCCESS',
+                total: 1,
+                processed: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0
+            } as DotBulkUploadCompletedEvent);
+        }
 
-        expect(store.unclaimedUploadCompletions()).toEqual({});
+        expect(Object.keys(store.unclaimedUploadCompletions())).toHaveLength(20);
     });
 });
 

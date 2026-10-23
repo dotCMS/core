@@ -214,7 +214,12 @@ export const DIALOG_TYPE = {
      * the URL can name it while it is open (#37759, FR-030); the shell renders it as the JSP
      * permissions dialog rather than in its own `p-dialog`.
      */
-    FOLDER_PERMISSIONS: 'FOLDER_PERMISSIONS'
+    FOLDER_PERMISSIONS: 'FOLDER_PERMISSIONS',
+    /**
+     * Import content from a CSV (#37896). Opened from the Upload menu; not named in the URL, since
+     * the file the form holds can't survive a reload anyway.
+     */
+    IMPORT: 'IMPORT'
 } as const;
 
 /**

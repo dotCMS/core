@@ -23,6 +23,7 @@ import {
     DotBulkUploadCompletedEvent,
     DotFolderBulkDeleteSubmitResponse,
     DotFolderBulkDuplicateCompletedEvent,
+    DotImportCompletedEvent,
     DotJobState
 } from '@dotcms/dotcms-models';
 
@@ -123,6 +124,8 @@ describe('withActionExecution', () => {
      * as a delete result and a test could pass for the wrong reason.
      */
     let duplicateSocketEvents: Subject<DotFolderBulkDuplicateCompletedEvent>;
+    /** Imports get their own stream too, for the same reason as duplication (#37896). */
+    let importSocketEvents: Subject<DotImportCompletedEvent>;
 
     const createService = createServiceFactory({
         service: actionExecutionStoreMock,
@@ -139,7 +142,9 @@ describe('withActionExecution', () => {
                 on: (type: DotSystemEventType) =>
                     type === DotSystemEventType.BULK_FOLDER_DUPLICATE_COMPLETED
                         ? duplicateSocketEvents.asObservable()
-                        : socketEvents.asObservable()
+                        : type === DotSystemEventType.IMPORT_CONTENTLETS_COMPLETED
+                          ? importSocketEvents.asObservable()
+                          : socketEvents.asObservable()
             })
         ]
     });
@@ -147,6 +152,7 @@ describe('withActionExecution', () => {
     const build = () => {
         socketEvents = new Subject<DotBulkRefreshCompletedEvent>();
         duplicateSocketEvents = new Subject<DotFolderBulkDuplicateCompletedEvent>();
+        importSocketEvents = new Subject<DotImportCompletedEvent>();
         spectator = createService();
         store = spectator.service;
     };
@@ -980,6 +986,195 @@ describe('withActionExecution', () => {
      * status indicator was lost on a reload while the run carried on; it is put back from the
      * queues' active listings, and the completion that follows ends it.
      */
+    /**
+     * #37896: a CSV import runs in the background. The status toast shows it while it runs and
+     * reports a summary — created, updated, failed — when its completion event arrives. The Drive
+     * never polls for it.
+     */
+    describe('a CSV import', () => {
+        const importCompleted = (
+            overrides: Partial<DotImportCompletedEvent> = {}
+        ): DotImportCompletedEvent => ({
+            jobId: 'import-1',
+            state: 'SUCCESS',
+            cmd: 'publish',
+            created: 3,
+            updated: 1,
+            failed: 2,
+            ...overrides
+        });
+
+        it('should be reported on the status indicator without locking anything', () => {
+            build();
+
+            store.startImportRun('import-1', 'blogs.csv');
+
+            expect(store.toolbarRun()).toEqual(
+                expect.objectContaining({ labelKey: 'content-drive.import.indicator' })
+            );
+            expect(store.blockingRunCount()).toBe(0);
+        });
+
+        it('should end the report and state the counts when its completion arrives', () => {
+            build();
+            store.startImportRun('import-1', 'blogs.csv');
+
+            importSocketEvents.next(importCompleted());
+
+            expect(store.toolbarRunCount()).toBe(0);
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'blogs.csv',
+                    outcomeKind: 'import',
+                    createdCount: 3,
+                    updatedCount: 1,
+                    successCount: 4,
+                    failedCount: 2,
+                    backgrounded: true
+                })
+            );
+        });
+
+        it('should report a job only once, however many times its completion arrives', () => {
+            build();
+            store.startImportRun('import-1', 'blogs.csv');
+            importSocketEvents.next(importCompleted({ state: 'FAILED' }));
+            store.clearActionExecutionResult();
+
+            importSocketEvents.next(importCompleted({ state: 'FAILED_PERMANENTLY' }));
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should ignore previews, which belong to the import dialog', () => {
+            build();
+            store.startImportRun('import-1', 'blogs.csv');
+
+            importSocketEvents.next(importCompleted({ cmd: 'preview' }));
+
+            expect(store.toolbarRunCount()).toBe(1);
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it("should carry the server's reason when the import failed outright (US5)", () => {
+            build();
+            store.startImportRun('import-1', 'blogs.csv');
+
+            importSocketEvents.next({
+                jobId: 'import-1',
+                state: 'FAILED_PERMANENTLY',
+                cmd: 'publish',
+                message: 'Content type [Blog] not found'
+            });
+
+            expect(store.toolbarRunCount()).toBe(0);
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    outcomeKind: 'import',
+                    successCount: 0,
+                    failedCount: 0,
+                    message: 'Content type [Blog] not found'
+                })
+            );
+        });
+
+        it('should ignore imports this page is not tracking', () => {
+            build();
+
+            importSocketEvents.next(importCompleted({ jobId: 'someone-else' }));
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should come back on the indicator after a reload, and settle as before', () => {
+            build();
+
+            store.restoreImportRuns([{ id: 'import-7', fileName: 'news.csv' }]);
+            expect(store.toolbarRun()).toEqual(
+                expect.objectContaining({ labelKey: 'content-drive.import.indicator' })
+            );
+
+            importSocketEvents.next(importCompleted({ jobId: 'import-7' }));
+
+            expect(store.toolbarRunCount()).toBe(0);
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({ actionName: 'news.csv', outcomeKind: 'import' })
+            );
+        });
+
+        /**
+         * PR #38054 review: after a reload the active imports are read, then restored. An import
+         * that ends in between reports its completion before it is tracked. It must not come back
+         * as running (nothing would end it), and its outcome is still the author's to see.
+         */
+        it('should report an import that ended before its restore, instead of restoring it as running', () => {
+            build();
+
+            importSocketEvents.next(importCompleted({ jobId: 'import-7' }));
+            store.restoreImportRuns([{ id: 'import-7', fileName: 'news.csv' }]);
+
+            expect(store.toolbarRunCount()).toBe(0);
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'news.csv',
+                    outcomeKind: 'import',
+                    createdCount: 3,
+                    updatedCount: 1,
+                    failedCount: 2
+                })
+            );
+        });
+
+        /**
+         * PR #38054 review (nicobytes): the import's job id reaches the dialog over HTTP, and its
+         * completion over the websocket. For a small CSV the completion can land first, long
+         * after the restore on load. It must still end the run the dialog then starts.
+         */
+        it('should settle an import whose completion arrives before the dialog starts its run', () => {
+            build();
+            store.restoreImportRuns([]);
+
+            importSocketEvents.next(importCompleted({ jobId: 'import-9' }));
+            store.startImportRun('import-9', 'fast.csv');
+
+            expect(store.toolbarRunCount()).toBe(0);
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'fast.csv',
+                    outcomeKind: 'import',
+                    createdCount: 3,
+                    updatedCount: 1,
+                    failedCount: 2
+                })
+            );
+        });
+
+        it('should hold only the most recent early completions', () => {
+            build();
+            store.restoreImportRuns([]);
+
+            // Other tabs' imports keep arriving; only a bounded number is held for a claim.
+            for (let index = 0; index <= 20; index++) {
+                importSocketEvents.next(importCompleted({ jobId: `other-${index}` }));
+            }
+            store.startImportRun('other-0', 'oldest.csv');
+
+            // The oldest was dropped, so its run starts as running.
+            expect(store.toolbarRunCount()).toBe(1);
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should not report an early completion that no restore claims', () => {
+            build();
+
+            importSocketEvents.next(importCompleted({ jobId: 'someone-else' }));
+            store.restoreImportRuns([{ id: 'import-7', fileName: 'news.csv' }]);
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+            expect(store.toolbarRunCount()).toBe(1);
+        });
+    });
+
     describe('restoring runs in progress after a reload', () => {
         const ALPHA = '//demo.dotcms.com/blogs/alpha/';
         const BETA = '//demo.dotcms.com/blogs/beta/';
@@ -1119,14 +1314,18 @@ describe('withActionExecution', () => {
                 expect(store.unclaimedUploadCompletions()).toEqual({});
             });
 
-            it('should stop holding untracked completions once the restore has run', () => {
-                // Held after it, they would only accumulate for the portlet's lifetime.
+            it('should hold only the most recent untracked completions after the restore', () => {
+                // Held after it too, for a batch whose answer is still on its way; bounded, so
+                // other tabs' batches cannot accumulate for the portlet's lifetime.
                 build();
                 store.restoreUploadRuns([]);
 
-                store.reportUploadCompleted('Upload', uploadCompleted('other-tab'));
+                for (let index = 0; index <= 20; index++) {
+                    store.reportUploadCompleted('Upload', uploadCompleted(`other-${index}`));
+                }
 
-                expect(store.unclaimedUploadCompletions()).toEqual({});
+                expect(Object.keys(store.unclaimedUploadCompletions())).toHaveLength(20);
+                expect(store.unclaimedUploadCompletions()).not.toHaveProperty('other-0');
             });
 
             it('should not report a batch this page is already tracking a second time', () => {
@@ -1400,6 +1599,43 @@ describe('withActionExecution', () => {
             expect(store.toolbarRunCount()).toBe(0);
         });
 
+        it('should report a batch whose completion arrived before the server answered', () => {
+            // A small batch can finish, and its completion be pushed, before the answer that
+            // accepted it reaches the page. Untracked then, it was dropped: no outcome, and the
+            // background run never ended (#37896, CI E2E "the folder's own rule refused the file").
+            build();
+            store.restoreUploadRuns([]);
+            store.reportUploadCompleted('Upload', completed());
+
+            const runId = store.startExternalRun({
+                operation: 'upload:upload-1',
+                total: 1,
+                targets: [] as string[]
+            });
+            store.trackUploadJob('upload-1', ['//demo.com/images'], runId, 'FILEASSET');
+
+            expect(store.toolbarRunCount()).toBe(0);
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Upload',
+                    successCount: 3,
+                    affectedFolders: ['//demo.com/images'],
+                    baseType: 'FILEASSET'
+                })
+            );
+            expect(store.unclaimedUploadCompletions()).toEqual({});
+        });
+
+        it('should still ignore an untracked batch that this page never claims', () => {
+            build();
+            store.restoreUploadRuns([]);
+
+            store.reportUploadCompleted('Upload', completed({ jobId: 'someone-elses' }));
+            store.trackUploadJob('upload-1');
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
         it('should settle a batch only once', () => {
             // A resumed run must not report twice, and the same event can be delivered again.
             build();
@@ -1431,6 +1667,33 @@ describe('withActionExecution', () => {
             refresh.mockReturnValue(of({ jobId: 'job-1' }));
             store.executeRefresh('Refresh', ['inode-1']);
         };
+
+        it('should report a run whose completion arrived before the server answered', () => {
+            // A reindex over a few rows can finish before its 202 reaches the page. Untracked
+            // then, the completion was dropped and the author never heard the run ended.
+            build();
+            const answer = new Subject<{ jobId: string }>();
+            refresh.mockReturnValue(answer);
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            store.reportRefreshCompleted('Refresh', completed());
+            answer.next({ jobId: 'job-1' });
+            answer.complete();
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({ actionName: 'Refresh', successCount: 2 })
+            );
+            expect(store.refreshJobIds()).toEqual([]);
+        });
+
+        it('should still ignore a run it never submitted', () => {
+            build();
+
+            store.reportRefreshCompleted('Refresh', completed({ jobId: 'someone-elses' }));
+            submitRefresh();
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
 
         it('should publish a result for a run this store submitted', () => {
             build();
@@ -1762,6 +2025,24 @@ describe('withActionExecution', () => {
             );
             store.executeFolderBulkDelete(['//d/a/', '//d/b/', '//d/c/'], ['inode-a']);
         };
+
+        it('should end the run when the completion arrived before the server answered', () => {
+            // A delete of a few empty folders can finish before its 202 reaches the page. The
+            // completion is reported either way; the late answer must not start tracking a run
+            // that is already over, or the folders stay marked in flight for good.
+            build();
+            const answer = new Subject<DotFolderBulkDeleteSubmitResponse>();
+            submitFolderBulkDelete.mockReturnValue(answer);
+            store.executeFolderBulkDelete(['//d/a/', '//d/b/', '//d/c/'], ['inode-a']);
+
+            store.reportFolderDeleteCompleted('Delete', completed());
+            answer.next({ jobId: 'job-1', statusUrl: '/api/v1/jobs/job-1/status', submitted: 3 });
+            answer.complete();
+
+            expect(store.runs()).toEqual({});
+            expect(store.folderDeleteJobs()).toEqual({});
+            expect(store.actionExecutionResult()?.successCount).toBe(2);
+        });
 
         it('should report the SERVER’s counts, not the number submitted', () => {
             build();

@@ -22,6 +22,7 @@ import com.dotcms.rendering.velocity.services.PageRenderUtil;
 import com.dotcms.rest.PATCH;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.Pagination;
 import com.dotcms.rest.ResponseEntityPaginatedDataView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.ResponseEntityListMapView;
@@ -2266,4 +2267,98 @@ public class ContentTypeResource implements Serializable {
                 .filter(Objects::nonNull)
 				.collect(Collectors.toList());
 	} // findPageContainersContentTypesVarnamesByPathOrIdAndFilter
+
+    /** Page size of {@code GET /_writable} when none is asked for, as {@code GET /} uses. */
+    static final int DEFAULT_WRITABLE_PER_PAGE = 40;
+
+    /**
+     * Lists, a page at a time, the content types the current user can write to, sorted by name.
+     * For a selector that must not offer types the user can only read: Content Drive's CSV import
+     * uses it, leaving out Host, to list what a user can import into (#37896).
+     *
+     * @param request  the HTTP servlet request
+     * @param response the HTTP servlet response
+     * @param filter   text the name or variable must contain, ignoring case; optional
+     * @param page     the page to return, starting at 1; defaults to 1
+     * @param perPage  how many content types a page holds; defaults to 40
+     * @param exclude  comma-separated variables of content types to leave out; optional
+     * @return the page of writable content types, with the page, its size and the total number of
+     *         matching types
+     * @throws DotDataException     if the content types or their permissions can't be read
+     * @throws DotSecurityException if the user can't list content types
+     */
+    @GET
+    @Path("/_writable")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    @Operation(
+            operationId = "getWritableContentTypes",
+            summary = "Lists the content types the user can write to",
+            description = "Returns, a page at a time, the content types the current user has WRITE "
+                    + "permission on, sorted by name, in a short form (id, variable, name, base "
+                    + "type, icon). Unlike the general listing, which filters by READ, it only "
+                    + "offers types the user can create content in. The permission rule and the "
+                    + "exclusions are applied before paging, so the total counts matching types "
+                    + "exactly.",
+            tags = {"Content Type"},
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "A page of the content types the user can write to (possibly empty).",
+                            content = @Content(
+                                    mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = ResponseEntityContentTypeSummaryListView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "Bad Request: page or per_page is below 1."),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: The content types could not be read.")
+            }
+    )
+    public ResponseEntityContentTypeSummaryListView getWritableContentTypes(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @Parameter(description = "Text the content type's name or variable must contain, ignoring case.")
+            @QueryParam("filter") final String filter,
+            @Parameter(description = "The page to return, starting at 1.",
+                    schema = @Schema(type = "integer", defaultValue = "1"))
+            @QueryParam("page") final Integer page,
+            @Parameter(description = "How many content types a page holds.",
+                    schema = @Schema(type = "integer", defaultValue = "40"))
+            @QueryParam("per_page") final Integer perPage,
+            @Parameter(description = "Comma-separated variables of content types to leave out, "
+                    + "ignoring case (for example `Host`).")
+            @QueryParam("exclude") final String exclude)
+            throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(this.webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init();
+
+        final int pageNumber = page == null ? 1 : page;
+        final int pageSize = perPage == null ? DEFAULT_WRITABLE_PER_PAGE : perPage;
+        if (pageNumber < 1 || pageSize < 1) {
+            throw new BadRequestException("page and per_page must be 1 or more");
+        }
+
+        final List<String> excluded = UtilMethods.isSet(exclude)
+                ? Arrays.stream(exclude.split(",")).map(String::trim)
+                        .filter(UtilMethods::isSet).collect(Collectors.toList())
+                : List.of();
+        final List<ContentTypeSummaryView> types = this.contentTypeHelper
+                .getWritableContentTypes(initData.getUser(), filter, excluded);
+        final int from = (int) Math.min((long) (pageNumber - 1) * pageSize, types.size());
+        final int to = (int) Math.min((long) from + pageSize, types.size());
+
+        return new ResponseEntityContentTypeSummaryListView(types.subList(from, to),
+                new Pagination.Builder()
+                        .currentPage(pageNumber)
+                        .perPage(pageSize)
+                        .totalEntries(types.size())
+                        .build());
+    }
 }

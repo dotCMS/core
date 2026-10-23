@@ -7,6 +7,7 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.repackage.javax.portlet.ActionRequest;
+import com.dotmarketing.util.importer.ContentImportTemplateGenerator;
 import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
@@ -399,46 +400,9 @@ public class ImportContentletsAction extends DotPortletAction {
 		httpRes.setContentType("application/octet-stream");
 		httpRes.setHeader("Content-Disposition", "attachment; filename=\"CSV_Template.csv\"");
 
+		// Shared with the REST sample endpoint (#37896), so both offer the same file
 		ServletOutputStream out = httpRes.getOutputStream();
-		for(int i = 0; i < fields.size(); i++) {
-			Field field = fields.get(i);
-			if (ImportUtil.isImportableField(field)) {
-				String fieldVariableName = field.getVelocityVarName();
-				if(fieldVariableName.contains(",")) {
-					out.print("\"" + fieldVariableName + "\"");
-				} else {
-					out.print(fieldVariableName);
-				}
-				if(i < fields.size() - 1) { 
-					out.print(",");
-				}
-			}
-		}
-		out.print("\n");
-
-		for(int i = 0; i < fields.size(); i++) {
-			Field field = fields.get(i);
-			if (ImportUtil.isImportableField(field)) {
-				if (field.getFieldType().equals(Field.FieldType.DATE.toString())) {
-					out.print("\"MM/dd/yyyy\"");
-				} else if (field.getFieldType().equals(Field.FieldType.DATE_TIME.toString())) {
-					out.print("\"MM/dd/yyyy hh:mm aa\"");
-				} else if (field.getFieldType().equals(Field.FieldType.TIME.toString())) {
-					out.print("\"hh:mm aa\"");
-				}else if (field.getFieldType().equals(Field.FieldType.HOST_OR_FOLDER.toString())) {
-					out.print("\"Host/Folder Identifier\"");
-				}else if (field.getFieldType().equals(Field.FieldType.CATEGORY.toString())) {
-					out.print("\"Category Unique Key\"");
-				}else if (field.getFieldType().equals(Field.FieldType.KEY_VALUE.toString())){
-				    out.print("\"{'key1':'value','key2':'value2'}\"");
-				}    else {
-					out.print("\"XXX\"");
-				}
-				if(i < fields.size() - 1) {
-					out.print(",");
-				}
-			}
-		}
+		out.print(ContentImportTemplateGenerator.generate(fields));
 		out.flush();
 		out.close();
 		HibernateUtil.closeSession();

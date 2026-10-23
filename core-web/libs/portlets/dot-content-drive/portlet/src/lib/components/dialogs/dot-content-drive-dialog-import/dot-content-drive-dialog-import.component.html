@@ -1,0 +1,477 @@
+@switch ($step()) {
+    @case ('preview') {
+        <div class="flex flex-col gap-4" data-testid="import-preview">
+            @if ($previewErrors().length) {
+                <div
+                    class="rounded-lg bg-red-50 px-4 py-3 text-sm font-medium text-red-600"
+                    data-testid="import-preview-errors-banner">
+                    {{ 'content-drive.import.preview.errors-banner' | dm }}
+                </div>
+            }
+
+            <section class="flex flex-col gap-2" data-testid="import-summary">
+                <span class="font-semibold">{{ 'Summary' | dm }}</span>
+                <p-card [pt]="{ body: { class: 'p-0' } }">
+                    <div class="grid grid-cols-4 divide-x divide-gray-200">
+                        <div
+                            class="flex flex-col gap-1 p-3"
+                            [pTooltip]="'content-drive.import.preview.rows-read.tooltip' | dm"
+                            tooltipPosition="top">
+                            <span class="text-sm text-gray-500">
+                                {{ 'content-drive.import.preview.rows-read' | dm }}
+                            </span>
+                            <span
+                                class="text-xl font-semibold"
+                                data-testid="import-summary-rows-read">
+                                {{ $summary().rowsRead }}
+                            </span>
+                        </div>
+                        <div
+                            class="flex flex-col gap-1 p-3"
+                            [pTooltip]="'content-drive.import.preview.headers-matched.tooltip' | dm"
+                            tooltipPosition="top">
+                            <span class="text-sm text-gray-500">
+                                {{ 'content-drive.import.preview.headers-matched' | dm }}
+                            </span>
+                            <span
+                                class="text-xl font-semibold"
+                                data-testid="import-summary-headers">
+                                {{ $summary().headersMatched }}
+                            </span>
+                        </div>
+                        <div
+                            class="flex flex-col gap-1 p-3"
+                            [pTooltip]="$willImportTooltip()"
+                            tooltipPosition="top">
+                            <span class="text-sm text-gray-500">
+                                {{ 'content-drive.import.preview.will-import' | dm }}
+                            </span>
+                            <span
+                                class="text-xl font-semibold"
+                                data-testid="import-summary-will-import">
+                                {{ $summary().toCreate + $summary().toUpdate }}
+                            </span>
+                        </div>
+                        <div
+                            class="flex flex-col gap-1 p-3"
+                            [pTooltip]="'content-drive.import.preview.failed-rows.tooltip' | dm"
+                            tooltipPosition="top">
+                            <span class="text-sm text-gray-500">
+                                {{ 'content-drive.import.preview.failed-rows' | dm }}
+                            </span>
+                            <span
+                                class="text-xl font-semibold"
+                                [class.text-red-500]="$summary().failed > 0"
+                                data-testid="import-summary-failed">
+                                {{ $summary().failed }}
+                            </span>
+                        </div>
+                    </div>
+                </p-card>
+                <!-- Variable by design: where rows land, the key fields when there are any, and the
+                     server's info lines that the figures above don't already say. -->
+                @if ($summaryNotes().length) {
+                    <span class="text-xs text-gray-500" data-testid="import-summary-info">
+                        @for (note of $summaryNotes(); track $index; let last = $last) {
+                            <span [attr.data-testid]="note.testId">{{ note.text }}</span>
+                            @if (!last) {
+                                ·
+                            }
+                        }
+                    </span>
+                }
+            </section>
+
+            <!-- Warnings first and Errors below, each a section the user opens and closes on its
+                 own, both open at first. A section with nothing in it is left out, and with
+                 neither there is no box at all (FR-012). -->
+            @if ($previewWarnings().length || $previewErrors().length) {
+                <p-accordion
+                    class="overflow-hidden rounded-lg border border-surface-200"
+                    data-testid="import-messages"
+                    [multiple]="true"
+                    [value]="openSections">
+                    @if ($previewWarnings().length) {
+                        <p-accordion-panel value="warnings" data-testid="import-warnings-group">
+                            <p-accordion-header>
+                                <span class="flex w-full items-center gap-2 pr-2">
+                                    <i
+                                        class="pi pi-exclamation-triangle text-amber-500"
+                                        aria-hidden="true"></i>
+                                    <span class="text-sm font-bold">{{ 'Warnings' | dm }}</span>
+                                    <p-tag
+                                        class="ml-auto"
+                                        severity="warn"
+                                        [value]="'' + $previewWarnings().length"
+                                        data-testid="import-warnings-count" />
+                                </span>
+                            </p-accordion-header>
+                            <p-accordion-content>
+                                <ul
+                                    class="m-0 flex list-none flex-col divide-y divide-surface-100 p-0">
+                                    @for (warning of $previewWarnings(); track $index) {
+                                        <li
+                                            class="flex items-start gap-4 px-4 py-3 text-sm"
+                                            data-testid="import-warning-item">
+                                            <span
+                                                class="w-24 shrink-0 whitespace-nowrap text-gray-500">
+                                                @if (warning.row) {
+                                                    {{
+                                                        'content-drive.import.preview.line'
+                                                            | dm: ['' + warning.row]
+                                                    }}
+                                                }
+                                            </span>
+                                            <div class="min-w-0 flex-1">
+                                                {{ warning.message }}
+                                                @if (warning.field || warning.value) {
+                                                    <div class="text-xs text-gray-500">
+                                                        {{ warning.field }}
+                                                        @if (warning.value) {
+                                                            <code>{{ warning.value }}</code>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        </li>
+                                    }
+                                </ul>
+                            </p-accordion-content>
+                        </p-accordion-panel>
+                    }
+                    @if ($previewErrors().length) {
+                        <p-accordion-panel value="errors" data-testid="import-errors-group">
+                            <p-accordion-header>
+                                <span class="flex w-full items-center gap-2 pr-2">
+                                    <i
+                                        class="pi pi-exclamation-circle text-red-500"
+                                        aria-hidden="true"></i>
+                                    <span class="text-sm font-bold">{{ 'Errors' | dm }}</span>
+                                    <p-tag
+                                        class="ml-auto"
+                                        severity="danger"
+                                        [value]="'' + $previewErrors().length"
+                                        data-testid="import-errors-count" />
+                                </span>
+                            </p-accordion-header>
+                            <p-accordion-content>
+                                <ul
+                                    class="m-0 flex list-none flex-col divide-y divide-surface-100 p-0">
+                                    @for (error of $previewErrors(); track $index) {
+                                        <li
+                                            class="flex items-start gap-4 px-4 py-3 text-sm"
+                                            data-testid="import-error-item">
+                                            <span
+                                                class="w-24 shrink-0 whitespace-nowrap text-gray-500">
+                                                @if (error.row) {
+                                                    {{
+                                                        'content-drive.import.preview.line'
+                                                            | dm: ['' + error.row]
+                                                    }}
+                                                }
+                                            </span>
+                                            <div class="min-w-0 flex-1">
+                                                {{ error.message }}
+                                                @if (error.field || error.value) {
+                                                    <div class="text-xs text-gray-500">
+                                                        {{ error.field }}
+                                                        @if (error.value) {
+                                                            <code>{{ error.value }}</code>
+                                                        }
+                                                    </div>
+                                                }
+                                            </div>
+                                        </li>
+                                    }
+                                </ul>
+                            </p-accordion-content>
+                        </p-accordion-panel>
+                    }
+                </p-accordion>
+            }
+
+            @if ($error(); as error) {
+                <p-message severity="error" data-testid="import-error">
+                    {{ error }}
+                </p-message>
+            }
+        </div>
+
+        <!-- The dialog's content box is the one scroll container (FR-012); the buttons stick to
+             its bottom edge. `-bottom-6 pb-6` covers the content box's 1.5rem bottom padding. -->
+        <div class="sticky -bottom-6 mt-4 flex justify-end gap-2 bg-white pt-2 pb-6">
+            <p-button
+                severity="secondary"
+                [outlined]="true"
+                data-testid="import-preview-back"
+                [label]="'dot.common.cancel' | dm"
+                (onClick)="backToForm()" />
+            <p-button
+                data-testid="import-confirm-btn"
+                [label]="
+                    ($previewErrors().length
+                        ? 'content-drive.import.preview.import-valid-rows'
+                        : 'Import-Content'
+                    ) | dm
+                "
+                (onClick)="confirmImport()" />
+        </div>
+    }
+    @default {
+        <div>
+            <form [formGroup]="importForm" (ngSubmit)="preview()">
+                <div class="flex flex-col gap-2">
+                    <label
+                        for="import-content-type"
+                        [checkIsRequiredControl]="'contentType'"
+                        dotFieldRequired>
+                        {{ 'content-drive.import.content-type.label' | dm }}
+                    </label>
+                    <!-- The shared selector: paged as the user scrolls and searched on the server, fed
+                     with only the types the user can write to (FR-004). -->
+                    <dot-content-type
+                        id="import-content-type"
+                        formControlName="contentType"
+                        data-testid="import-content-type"
+                        [pageLoader]="contentTypePageLoader"
+                        [emptyMessage]="'content-drive.import.content-type.empty' | dm"
+                        [placeholder]="'content-drive.import.content-type.placeholder' | dm" />
+                    @if ($fieldErrors().contentType) {
+                        <small class="text-sm text-red-500" data-testid="import-error-contentType">
+                            {{ 'content-drive.import.required.content-type' | dm }}
+                        </small>
+                    }
+                </div>
+
+                <div class="mt-5 flex flex-col gap-2">
+                    <label
+                        for="import-language"
+                        [checkIsRequiredControl]="'language'"
+                        dotFieldRequired>
+                        {{ 'content-drive.import.language.label' | dm }}
+                    </label>
+                    <p-select
+                        inputId="import-language"
+                        formControlName="language"
+                        optionLabel="label"
+                        optionValue="value"
+                        appendTo="body"
+                        data-testid="import-language"
+                        [options]="$languageOptions()"
+                        [placeholder]="'content-drive.import.language.placeholder' | dm"
+                        [attr.aria-label]="'content-drive.import.language.label' | dm" />
+                    @if ($isMultilingual()) {
+                        <small data-testid="import-multilingual-note">
+                            {{ 'In-order-to-import-correctly-a-multilingual-file' | dm }}
+                            {{ 'There-CSV-file-must-have-two-extra-fields' | dm }}
+                            {{ 'A-key-field-must-be-selected' | dm }}
+                        </small>
+                    }
+                    @if ($fieldErrors().language) {
+                        <small class="text-sm text-red-500" data-testid="import-error-language">
+                            {{ 'content-drive.import.required.language' | dm }}
+                        </small>
+                    }
+                </div>
+
+                <div class="mt-5 flex flex-col gap-2">
+                    <label
+                        for="import-workflow-action"
+                        [checkIsRequiredControl]="'workflowActionId'"
+                        dotFieldRequired>
+                        {{ 'Workflow-Action' | dm }}
+                    </label>
+                    <p-select
+                        inputId="import-workflow-action"
+                        formControlName="workflowActionId"
+                        optionLabel="label"
+                        optionValue="value"
+                        appendTo="body"
+                        data-testid="import-workflow-action"
+                        [options]="$workflowActions()"
+                        [placeholder]="'content-drive.import.workflow-action.placeholder' | dm"
+                        [attr.aria-label]="'Workflow-Action' | dm" />
+                    <small class="text-gray-600">
+                        {{ 'content-drive.import.workflow-action.helper' | dm }}
+                    </small>
+                    @if ($fieldErrors().workflowActionId) {
+                        <small
+                            class="text-sm text-red-500"
+                            data-testid="import-error-workflowActionId">
+                            {{ 'content-drive.import.required.workflow-action' | dm }}
+                        </small>
+                    }
+                </div>
+
+                <div class="mt-5 flex flex-col gap-2">
+                    <label for="import-key-fields">{{ 'Key-Fields' | dm }}</label>
+                    <p-multiselect
+                        inputId="import-key-fields"
+                        formControlName="fields"
+                        optionLabel="name"
+                        optionValue="variable"
+                        appendTo="body"
+                        display="chip"
+                        data-testid="import-key-fields"
+                        [pt]="{ label: { class: keyFieldsLabelClass } }"
+                        [options]="$keyFields()"
+                        [placeholder]="'content-drive.import.key-fields.placeholder' | dm"
+                        [attr.aria-label]="'Key-Fields' | dm" />
+                    <small class="text-gray-600">
+                        {{ 'content-drive.import.key-fields.helper' | dm }}
+                    </small>
+                    @if ($fieldErrors().fields) {
+                        <small class="text-sm text-red-500" data-testid="import-error-fields">
+                            {{ 'A-key-field-must-be-selected' | dm }}
+                        </small>
+                    }
+                </div>
+
+                <div class="mt-5 flex flex-col gap-2">
+                    <label [checkIsRequiredControl]="'file'" dotFieldRequired>
+                        {{ 'content-drive.import.file.label' | dm }}
+                    </label>
+                    <!-- Same picker as the tags import (dot-tags-import): advanced mode for the drop
+                     area, no upload/cancel buttons, the file is only held until Preview. -->
+                    <p-fileupload
+                        #fileUpload
+                        mode="advanced"
+                        accept=".csv,text/csv"
+                        [showUploadButton]="false"
+                        [showCancelButton]="false"
+                        [multiple]="false"
+                        [auto]="false"
+                        [customUpload]="true"
+                        [pt]="{
+                            root: { style: { border: '0' } },
+                            header: { style: { padding: '0', border: '0' } },
+                            content: { style: { padding: '0', border: '0' } }
+                        }"
+                        data-testid="import-file-input"
+                        [disabled]="$previewing()"
+                        (onSelect)="onFileSelect($event)"
+                        (onClear)="onFileClear()">
+                        <ng-template #header />
+                        <ng-template #content>
+                            @if ($fileName(); as fileName) {
+                                <div
+                                    class="flex items-center gap-3 rounded-xl border border-surface-200 bg-surface-50 px-4 py-3"
+                                    data-testid="import-file-card">
+                                    <span
+                                        class="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary-100">
+                                        <i
+                                            class="material-symbols-outlined text-primary"
+                                            aria-hidden="true">
+                                            description
+                                        </i>
+                                    </span>
+                                    <div class="flex min-w-0 flex-col">
+                                        <span
+                                            class="truncate font-semibold"
+                                            data-testid="import-file-name">
+                                            {{ fileName }}
+                                        </span>
+                                        @if ($fileMeta(); as meta) {
+                                            <span
+                                                class="text-sm text-gray-500"
+                                                data-testid="import-file-meta">
+                                                {{ meta }}
+                                            </span>
+                                        }
+                                    </div>
+                                    <div class="ml-auto flex shrink-0 items-center gap-1">
+                                        <p-button
+                                            [outlined]="true"
+                                            severity="secondary"
+                                            size="small"
+                                            data-testid="import-file-replace"
+                                            [disabled]="$previewing()"
+                                            [label]="'content-drive.import.file.replace' | dm"
+                                            (onClick)="fileUpload.choose()" />
+                                        <p-button
+                                            [text]="true"
+                                            severity="secondary"
+                                            icon="pi pi-times"
+                                            data-testid="import-file-clear"
+                                            [disabled]="$previewing()"
+                                            [attr.aria-label]="
+                                                'content-drive.import.file.clear' | dm
+                                            "
+                                            (onClick)="fileUpload.clear()" />
+                                    </div>
+                                </div>
+                            } @else {
+                                <div
+                                    class="flex cursor-pointer flex-col items-center justify-center gap-2 rounded-xl bg-surface-50 px-6 py-10 text-center"
+                                    data-testid="import-file-dropzone"
+                                    (click)="fileUpload.choose()">
+                                    <span
+                                        class="mb-2 flex size-16 items-center justify-center rounded-full bg-primary-100">
+                                        <i
+                                            class="pi pi-download text-2xl! text-primary-500"
+                                            aria-hidden="true"></i>
+                                    </span>
+                                    <span class="text-lg font-semibold">
+                                        {{ 'content-drive.import.file.drop-here' | dm }}
+                                    </span>
+                                    <span class="flex items-center gap-2 text-sm text-gray-500">
+                                        {{ 'content-drive.import.file.hint' | dm }}
+                                        <i
+                                            class="pi pi-info-circle"
+                                            tabindex="0"
+                                            data-testid="import-file-hint-info"
+                                            [pTooltip]="
+                                                'content-drive.import.file.hint.tooltip' | dm
+                                            "
+                                            tooltipPosition="top"
+                                            [attr.aria-label]="
+                                                'content-drive.import.file.hint.tooltip' | dm
+                                            "></i>
+                                    </span>
+                                </div>
+                            }
+                        </ng-template>
+                    </p-fileupload>
+                    @if ($fieldErrors().file) {
+                        <small class="text-sm text-red-500" data-testid="import-error-file">
+                            {{ 'content-drive.import.required.file' | dm }}
+                        </small>
+                    }
+                </div>
+
+                <p class="m-0 mt-5 text-sm text-gray-600" data-testid="import-placement-notice">
+                    {{ 'content-drive.import.placement-notice' | dm }}
+                </p>
+            </form>
+
+            @if ($error(); as error) {
+                <p-message severity="error" styleClass="mt-4" data-testid="import-error">
+                    {{ error }}
+                </p-message>
+            }
+        </div>
+        <!-- The dialog's content box is the one scroll container (FR-012); the buttons stick to
+             its bottom edge. `-bottom-6 pb-6` covers the content box's 1.5rem bottom padding. -->
+        <div class="sticky -bottom-6 mt-4 flex justify-end gap-2 bg-white pt-2 pb-6">
+            <p-button
+                [text]="true"
+                data-testid="import-cancel-btn"
+                [label]="'dot.common.cancel' | dm"
+                (onClick)="closeDialog()" />
+            <!-- The sample needs a content type to know which columns to list (FR-025), so the
+                 button only shows once one is picked. -->
+            @if ($value().contentType) {
+                <p-button
+                    [outlined]="true"
+                    data-testid="import-sample-link"
+                    [label]="'content-drive.import.file.sample-download' | dm"
+                    (onClick)="downloadSample()" />
+            }
+            <p-button
+                data-testid="import-preview-btn"
+                [label]="'Go-to-Preview' | dm"
+                [loading]="$step() === 'previewing'"
+                (onClick)="preview()" />
+        </div>
+    }
+}

@@ -7,11 +7,13 @@ import com.dotcms.config.DotInitializer;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.graphql.listener.ContentTypeAndFieldsModsListeners;
 import com.dotcms.jobs.business.api.events.JobCompletedEvent;
+import com.dotcms.jobs.business.api.events.JobFailedEvent;
 import com.dotcms.publishing.listener.PushPublishKeyResetEventListener;
 import com.dotcms.rendering.velocity.services.MacroCacheRefresherJob;
 import com.dotcms.rest.api.v1.asset.bulkdelete.FolderBulkDeleteCompletionListener;
 import com.dotcms.rest.api.v1.asset.bulkduplicate.FolderBulkDuplicateCompletionListener;
 import com.dotcms.rest.api.v1.asset.bulkupload.BulkUploadCompletionListener;
+import com.dotcms.rest.api.v1.content.dotimport.ImportContentletsCompletionListener;
 import com.dotcms.rest.api.v1.content.bulkrefresh.BulkRefreshCompletionListener;
 import com.dotcms.rest.api.v1.system.logger.ChangeLoggerLevelEvent;
 import com.dotcms.security.apps.AppSecretSavedEvent;
@@ -99,6 +101,16 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
         // for the same reason as the delete listener above.
         APILocator.getLocalSystemEventsAPI().subscribe(JobCompletedEvent.class,
                 new FolderBulkDuplicateCompletionListener());
+
+        // A content import job (#37896) ends with JobCompletedEvent when it finishes and with only
+        // JobFailedEvent when it throws, so one listener takes both. Registered here for the same
+        // reason as the listeners above: nothing injects it, so as a CDI bean it would never run.
+        final ImportContentletsCompletionListener importCompletionListener =
+                new ImportContentletsCompletionListener();
+        APILocator.getLocalSystemEventsAPI().subscribe(JobCompletedEvent.class,
+                importCompletionListener);
+        APILocator.getLocalSystemEventsAPI().subscribe(JobFailedEvent.class,
+                importCompletionListener);
 
         this.initDotVelocityMacrosVtlFiles();
     }
