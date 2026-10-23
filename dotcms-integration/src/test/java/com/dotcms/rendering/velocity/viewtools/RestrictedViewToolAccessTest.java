@@ -25,6 +25,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
 import java.util.List;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -38,27 +39,57 @@ import org.junit.Test;
  */
 public class RestrictedViewToolAccessTest {
 
-    private static final String PROPERTY_NAME = "DOT_RENDER_TEST_PASSWORD";
-    private static final String PROPERTY_VALUE = "value-" + System.currentTimeMillis();
-    private static final String FIELD_CODE = "[$!config.getStringProperty(\"" + PROPERTY_NAME + "\")]"
-            + "[#foreach($f in $macro.getFileSystemFolder(\"/WEB-INF\"))$f.name#end]"
-            + "[$!config.getStringProperty(\"DEFAULT_TEMPLATE_NAME\", \"default\")]";
+    private static final String ALLOWED_PROPERTY = "VELOCITY_PUBLIC_RENDER_TEST_VALUE";
+    private static final String ALLOWED_VALUE = "allowed-" + System.currentTimeMillis();
+    private static final String OTHER_PROPERTY = "DOT_RENDER_TEST_OTHER";
+    private static final String OTHER_VALUE = "other-" + System.currentTimeMillis();
+
+    /**
+     * A: allowed property through {@code $config}; B: other property through {@code $config};
+     * C and D: the same two through {@code $webapi.getConfigVar}; E: the WEB-INF folder;
+     * F: whether {@code $macro} is available at all; G: a default-list property.
+     */
+    private static final String FIELD_CODE = "[A:$!config.getStringProperty(\"" + ALLOWED_PROPERTY + "\")]"
+            + "[B:$!config.getStringProperty(\"" + OTHER_PROPERTY + "\")]"
+            + "[C:$!webapi.getConfigVar(\"" + ALLOWED_PROPERTY + "\")]"
+            + "[D:$!webapi.getConfigVar(\"" + OTHER_PROPERTY + "\")]"
+            + "[E:#foreach($f in $macro.getFileSystemFolder(\"/WEB-INF\"))$f.name#end]"
+            + "[F:#if($macro)macro#end]"
+            + "[G:$!config.getStringProperty(\"DEFAULT_TEMPLATE_NAME\", \"default\")]";
 
     private static User admin;
     private static User limitedUser;
+    private static final List<User> users = new ArrayList<>();
+    private static final List<Role> roles = new ArrayList<>();
+    private static final List<ContentType> contentTypes = new ArrayList<>();
 
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
-        Config.setProperty(PROPERTY_NAME, PROPERTY_VALUE);
+        Config.setProperty(ALLOWED_PROPERTY, ALLOWED_VALUE);
+        Config.setProperty(OTHER_PROPERTY, OTHER_VALUE);
         admin = APILocator.getUserAPI().loadByUserByEmail("admin@dotcms.com",
                 APILocator.systemUser(), false);
-        limitedUser = new UserDataGen().nextPersisted();
+        limitedUser = user(new UserDataGen().nextPersisted());
     }
 
     @AfterClass
     public static void cleanUp() {
-        Config.setProperty(PROPERTY_NAME, null);
+        Config.setProperty(ALLOWED_PROPERTY, null);
+        Config.setProperty(OTHER_PROPERTY, null);
+        contentTypes.forEach(contentType -> ContentTypeDataGen.remove(contentType, true));
+        users.forEach(user -> UserDataGen.remove(user, true));
+        roles.forEach(role -> RoleDataGen.remove(role, true));
+    }
+
+    private static User user(final User user) {
+        users.add(user);
+        return user;
+    }
+
+    private static Role role(final Role role) {
+        roles.add(role);
+        return role;
     }
 
     private static HttpServletRequest request(final User user) {
@@ -84,45 +115,60 @@ public class RestrictedViewToolAccessTest {
     }
 
     /**
+     * The parts of the output that do not depend on who wrote or who reads the content.
+     */
+    private static void assertCommonRules(final String result) {
+        assertTrue(result, result.contains("[A:" + ALLOWED_VALUE + "]"));
+        assertTrue(result, result.contains("[C:" + ALLOWED_VALUE + "]"));
+        assertFalse(result, result.contains(OTHER_VALUE));
+        assertTrue(result, result.contains("[B:]"));
+        assertTrue(result, result.contains("[D:]"));
+        assertTrue(result, result.contains("[E:]"));
+        assertFalse(result, result.contains("[G:]"));
+    }
+
+    /**
      * Method to test: {@link RenderFieldStrategy#renderFieldValue}
      * When: content written by a user without the Scripting Developer role is rendered for an
      * anonymous visitor
-     * Should: not expose configuration values nor list folders of the web application
+     * Should: expose only the allowed configuration properties and not make {@code $macro}
+     * available
      */
     @Test
     public void limitedAuthor_anonymousCaller_cannotUseRestrictedTools() {
         final String result = render(request(null), notPersistedContent(limitedUser));
 
-        assertFalse(result, result.contains(PROPERTY_VALUE));
-        assertFalse(result, result.contains("web.xml"));
+        assertCommonRules(result);
+        assertTrue(result, result.contains("[F:]"));
     }
 
     /**
      * Method to test: {@link RenderFieldStrategy#renderFieldValue}
-     * When: the caller is a CMS Administrator
-     * Should: keep the configuration tool and return the configured value, but still never list
-     * the WEB-INF folder
+     * When: the same content is rendered for a CMS Administrator
+     * Should: behave exactly as for the anonymous visitor; the reader does not change what the
+     * author's code can do
      */
     @Test
-    public void adminCaller_canReadConfiguration() {
+    public void adminCaller_limitedAuthor_rendersAsAnonymous() {
         final String result = render(request(admin), notPersistedContent(limitedUser));
 
-        assertTrue(result, result.contains("[" + PROPERTY_VALUE + "]"));
-        assertTrue(result, result.contains("[]"));
-        assertFalse(result, result.contains("web.xml"));
+        assertCommonRules(result);
+        assertTrue(result, result.contains("[F:]"));
     }
 
     /**
      * Method to test: {@link RenderFieldStrategy#renderFieldValue}
      * When: content written by a CMS Administrator is rendered for an anonymous visitor
-     * Should: keep the configuration tool and return the configured value
+     * Should: keep {@code $macro} available while still exposing only the allowed configuration
+     * properties
      */
     @Test
-    public void adminAuthor_anonymousCaller_canReadConfiguration() throws Exception {
+    public void adminAuthor_anonymousCaller_keepsTools() throws Exception {
         final ContentType contentType = new ContentTypeDataGen()
                 .fields(List.of(new FieldDataGen().type(TextAreaField.class)
                         .velocityVarName("code").next()))
                 .nextPersisted();
+        contentTypes.add(contentType);
         final Contentlet draft = new ContentletDataGen(contentType.id())
                 .setProperty("code", "text")
                 .next();
@@ -132,7 +178,8 @@ public class RestrictedViewToolAccessTest {
 
         final String result = render(request(null), contentlet);
 
-        assertTrue(result, result.contains("[" + PROPERTY_VALUE + "]"));
+        assertCommonRules(result);
+        assertTrue(result, result.contains("[F:macro]"));
     }
 
     /**
@@ -149,12 +196,12 @@ public class RestrictedViewToolAccessTest {
         assertTrue(RestrictedViewToolAccess.hasAccess(admin));
 
         final Role scripting = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);
-        final User developer = new UserDataGen().roles(scripting).nextPersisted();
+        final User developer = user(new UserDataGen().roles(scripting).nextPersisted());
         assertTrue(RestrictedViewToolAccess.hasAccess(developer));
         assertTrue(RestrictedViewToolAccess.userIdHasAccess(developer.getUserId()));
         assertFalse(RestrictedViewToolAccess.userIdHasAccess(limitedUser.getUserId()));
-        assertFalse(RestrictedViewToolAccess.hasAccess(new UserDataGen()
-                .roles(new RoleDataGen().nextPersisted()).nextPersisted()));
+        assertFalse(RestrictedViewToolAccess.hasAccess(user(new UserDataGen()
+                .roles(role(new RoleDataGen().nextPersisted())).nextPersisted())));
     }
 
     /**

@@ -35,6 +35,12 @@ public class FileTool implements ViewTool {
 
 	private HttpServletRequest request;
 
+	/**
+	 * Keeps the request the tool was created for, used when no request is bound to the current
+	 * thread.
+	 *
+	 * @param initData the {@link ViewContext} of the rendering, or any other object to ignore
+	 */
 	public void init(Object initData) {
 		if (initData instanceof ViewContext) {
 			this.request = ((ViewContext) initData).getRequest();
@@ -42,11 +48,13 @@ public class FileTool implements ViewTool {
 	}
 
 	/**
-	 * @return the user making the current request, or the anonymous user if there is none.
+	 * @return the user making the current request, or the anonymous user if there is none. The
+	 * request bound to the current thread wins over the one the tool was created for, so a tool
+	 * instance shared between requests still answers for the current one.
 	 */
 	protected User getRequestUser() {
-		final HttpServletRequest currentRequest = null != this.request
-				? this.request : HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		final HttpServletRequest threadRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		final HttpServletRequest currentRequest = null != threadRequest ? threadRequest : this.request;
 		User user = null;
 		if (null != currentRequest) {
 			user = WebAPILocator.getUserWebAPI().getUser(currentRequest);

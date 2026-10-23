@@ -483,8 +483,16 @@ public class WebAPI implements ViewTool {
 		return subURI;
 	}
 
+	/**
+	 * Reads a configuration property for templates, under the same rules as {@code $config}
+	 * (see {@link ConfigTool#isAllowedKey(String)}).
+	 *
+	 * @param varName the property name
+	 *
+	 * @return the value, or {@code null} if the property is not available to templates
+	 */
 	public String getConfigVar(String varName) {
-		return Config.getStringProperty(varName);
+		return ConfigTool.isAllowedKey(varName) ? Config.getStringProperty(varName) : null;
 	}
 
 	public static String formatDate(Date date,String format)

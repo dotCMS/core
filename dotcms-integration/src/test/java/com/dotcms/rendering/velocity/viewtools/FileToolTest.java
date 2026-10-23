@@ -26,6 +26,10 @@ import com.liferay.portal.model.User;
 import org.apache.velocity.tools.view.context.ViewContext;
 import java.io.File;
 import javax.servlet.http.HttpServletRequest;
+import io.vavr.control.Try;
+import java.util.ArrayList;
+import java.util.List;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -35,10 +39,29 @@ import static org.mockito.Mockito.when;
 
 public class FileToolTest {
 
+    private static final List<Host> sites = new ArrayList<>();
+    private static final List<Role> roles = new ArrayList<>();
+
     @BeforeClass
     public static void prepare() throws Exception{
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+    }
+
+    @AfterClass
+    public static void cleanUp() {
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+        roles.forEach(role -> RoleDataGen.remove(role, true));
+        sites.forEach(site -> {
+            Try.run(() -> APILocator.getHostAPI().archive(site, APILocator.systemUser(), false));
+            Try.run(() -> APILocator.getHostAPI().delete(site, APILocator.systemUser(), false));
+        });
+    }
+
+    private static Host site() {
+        final Host site = new SiteDataGen().nextPersisted();
+        sites.add(site);
+        return site;
     }
 
     @Test
@@ -233,12 +256,13 @@ public class FileToolTest {
     public void getFile_usesRequestUserPermissions() throws DotDataException, DotSecurityException {
         final File binary = new File(Thread.currentThread()
                 .getContextClassLoader().getResource("images/test.jpg").getFile());
-        final Host site = new SiteDataGen().nextPersisted();
+        final Host site = site();
         final Contentlet fileAsset = new FileAssetDataGen(site, binary)
                 .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
                 .nextPersisted();
 
         final Role otherRole = new RoleDataGen().nextPersisted();
+        roles.add(otherRole);
         APILocator.getPermissionAPI().save(new Permission(fileAsset.getPermissionId(),
                         otherRole.getId(), PermissionAPI.PERMISSION_READ),
                 fileAsset, APILocator.systemUser(), false);
@@ -266,7 +290,7 @@ public class FileToolTest {
     public void getFile_anonymousCanReadPublicFile() throws DotDataException, DotSecurityException {
         final File binary = new File(Thread.currentThread()
                 .getContextClassLoader().getResource("images/test.jpg").getFile());
-        final Host site = new SiteDataGen().nextPersisted();
+        final Host site = site();
         final Contentlet fileAsset = new FileAssetDataGen(site, binary)
                 .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
                 .nextPersisted();

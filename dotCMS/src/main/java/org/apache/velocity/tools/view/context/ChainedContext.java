@@ -154,6 +154,22 @@ public class ChainedContext extends VelocityContext implements ViewContext
 
 
     /**
+     * <p>Puts a view tool in this context's toolbox, for example to restore one taken out with
+     * {@link #removeTool(String)}. Does nothing when this context has no toolbox.</p>
+     *
+     * @param key the key of the tool
+     * @param tool the tool
+     */
+    public void putTool(String key, Object tool)
+    {
+        if (toolbox != null)
+        {
+            toolbox.put(key, tool);
+        }
+    }
+
+
+    /**
      * <p>Looks up and returns the object with the specified key.</p>
      * <p>See the class documentation for more details.</p>
      *

@@ -161,7 +161,7 @@
 	</tool>
 	 <tool>
 		<key>config</key>
-		<scope>request</scope>
+		<scope>application</scope>
 		<class>com.dotcms.rendering.velocity.viewtools.ConfigTool</class>
 	 </tool>
 	<tool>

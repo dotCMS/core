@@ -334,7 +334,6 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentletCacheImplTest.class,
         HostTest.class,
         FileToolTest.class,
-        RestrictedViewToolAccessTest.class,
         Task210719CleanUpTitleFieldTest.class,
         Task210802UpdateStructureTableTest.class,
         MaintenanceUtilTest.class,
@@ -579,6 +578,7 @@ import org.junit.runners.Suite.SuiteClasses;
         RoleResourceCountsIntegrationTest.class,
         RoleResourceUsersIntegrationTest.class,
         com.dotmarketing.common.reindex.ReindexDeleteJournalTest.class,
+        RestrictedViewToolAccessTest.class,
 })
 
 public class MainSuite2b {
