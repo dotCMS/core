@@ -142,6 +142,10 @@
                                          type destroy drop the schema before their transaction commits, so a
                                          concurrent query could rebuild it from the old state. -->
                                     <DOT_GRAPHQL_SCHEMA_DEBOUNCE_DELAY_MILLIS>0</DOT_GRAPHQL_SCHEMA_DEBOUNCE_DELAY_MILLIS>
+                                    <!-- Tomcat's keep-alive timeout defaults to this (3000 ms in server.xml). It must
+                                         exceed the longest script wait before a request (70 s in GraphQLTests), or
+                                         newman reuses a connection Tomcat is closing. -->
+                                    <CMS_CONNECTION_TIMEOUT>120000</CMS_CONNECTION_TIMEOUT>
                                     <DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>600</DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>
                                     <JVM_ENDPOINT_TEST_PASS>obfuscate_me</JVM_ENDPOINT_TEST_PASS>
                                     <DOT_ENABLE_SCRIPTING>true</DOT_ENABLE_SCRIPTING>

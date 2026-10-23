@@ -72,6 +72,9 @@ services:
             # Safe only because newman runs one request at a time: field delete and type destroy
             # drop the schema before their transaction commits.
             DOT_GRAPHQL_SCHEMA_DEBOUNCE_DELAY_MILLIS: 0
+            # Tomcat's keep-alive timeout defaults to this (3000 ms in server.xml). It must exceed the
+            # longest script wait before a request (70 s in GraphQLTests), or newman reuses a closing connection.
+            CMS_CONNECTION_TIMEOUT: 120000
             DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS: 600
             WAIT_FOR_DEPS: 30
             JVM_ENDPOINT_TEST_PASS: 'obfuscate_me'
