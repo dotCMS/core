@@ -500,6 +500,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.servlets.ajax.AjaxDirectorServletIntegrationTest.class,
         FocalPointAPITest.class,
         com.dotmarketing.tag.business.TagAPITest.class,
+        com.dotmarketing.tag.ajax.TagAjaxTest.class,
         OSGIUtilTest.class,
         EncryptPlainPasswordsJobTest.class,
         CachedParameterDecoratorTest.class,
