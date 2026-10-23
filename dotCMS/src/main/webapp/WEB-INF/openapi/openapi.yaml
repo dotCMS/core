@@ -5881,7 +5881,8 @@ paths:
   /v1/containers:
     delete:
       description: Permanently deletes the specified container. The user must have
-        Edit permissions on the container.
+        Edit permissions on the container. A container that any template still uses
+        is not deleted (409).
       operationId: deleteContainer
       parameters:
       - description: Container identifier to delete
@@ -5904,6 +5905,8 @@ paths:
           description: Forbidden - User lacks edit permissions
         "404":
           description: Container not found
+        "409":
+          description: Conflict - The container is used by one or more templates
       summary: Deletes a container
       tags:
       - Containers
@@ -6106,7 +6109,8 @@ paths:
     delete:
       description: Deletes a list of containers by their identifiers. Returns a summary
         of successful and failed deletions. The user must have Edit permissions on
-        each container.
+        each container. A container that any template still uses is not deleted and
+        is reported as a failure.
       operationId: bulkDeleteContainers
       requestBody:
         content:

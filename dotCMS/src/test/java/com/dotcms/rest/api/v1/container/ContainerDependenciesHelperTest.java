@@ -316,6 +316,41 @@ class ContainerDependenciesHelperTest {
         assertThrows(DotDataException.class, () -> helper.dependenciesOf(container, user));
     }
 
+    /**
+     * Given templates the requesting user cannot read also use the container, when the usage is
+     * counted for a delete, then every template counts: the count is taken as the system user.
+     */
+    @Test
+    void countsEveryTemplateThatUsesTheContainerWhoeverCanReadIt() throws Exception {
+        final Template first = template("t1-inode", "t1-id", "Landing");
+        final Template second = template("t2-inode", "t2-id", "Hidden");
+        final Template other = template("t3-inode", "t3-id", "Blog");
+        when(templateAPI.findTemplates(eq(systemUser), eq(true), any(), any(), any(), any(), any(),
+                eq(0), eq(ContainerDependenciesHelper.TEMPLATE_PAGE_SIZE), any()))
+                .thenReturn(List.of(first, second, other));
+        when(templateAPI.getContainersInTemplate(first, systemUser, false)).thenReturn(List.of(container));
+        when(templateAPI.getContainersInTemplate(second, systemUser, false)).thenReturn(List.of(container));
+        when(templateAPI.getContainersInTemplate(other, systemUser, false))
+                .thenReturn(List.of(container("other-inode", "other-id", "Other")));
+
+        assertEquals(2, helper.countTemplatesUsing(container));
+
+        verify(templateAPI, never()).findTemplates(eq(user), anyBoolean(), any(), any(), any(), any(), any(),
+                anyInt(), anyInt(), any());
+    }
+
+    /**
+     * Given a container without identifier, when the usage is counted, then it is zero and no
+     * template is listed.
+     */
+    @Test
+    void countsNoTemplatesForAContainerWithoutIdentifier() throws Exception {
+        assertEquals(0, helper.countTemplatesUsing(container("new-inode", null, "Unsaved")));
+
+        verify(templateAPI, never()).findTemplates(any(), anyBoolean(), any(), any(), any(), any(), any(),
+                anyInt(), anyInt(), any());
+    }
+
     private void userCanList(final Template... templates) throws Exception {
         when(templateAPI.findTemplates(eq(user), anyBoolean(), any(), any(), any(), any(), any(),
                 eq(0), eq(ContainerDependenciesHelper.TEMPLATE_PAGE_SIZE), any())).thenReturn(List.of(templates));

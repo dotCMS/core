@@ -16,6 +16,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.BulkResultView;
 import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.rest.api.v1.page.ResponseEntityPaginatedArrayListMapView;
+import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.DotPreconditions;
@@ -556,6 +557,29 @@ public class ContainerResource implements Serializable {
 
         final VelocityResourceKey pageKey = new VelocityResourceKey((HTMLPageAsset) htmlPage, mode, languageId);
         velocityUtil.merge(pageKey.path, context);
+    }
+
+    /**
+     * Refuses to delete a Container that any Template still uses.
+     *
+     * @param container the {@link Container} about to be deleted
+     * @throws ConflictException    if one or more Templates use the Container; the response is a 409
+     * @throws DotDataException     if the Templates cannot be read from the data source
+     * @throws DotSecurityException if the Templates cannot be listed
+     */
+    private void assertNotUsedByTemplates(final Container container)
+            throws DotDataException, DotSecurityException {
+
+        if (Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
+            return;
+        }
+
+        final int templates = this.dependenciesHelper.countTemplatesUsing(container);
+        if (templates > 0) {
+            throw new ConflictException(String.format(
+                    "The container is used by %d template(s). Remove it from them before deleting it.",
+                    templates));
+        }
     }
 
     private Container getContainerWorking(final String containerId, final User user, final Host host) throws DotDataException, DotSecurityException {
@@ -1454,7 +1478,8 @@ public class ContainerResource implements Serializable {
     @Operation(
             operationId = "deleteContainer",
             summary = "Deletes a container",
-            description = "Permanently deletes the specified container. The user must have Edit permissions on the container.",
+            description = "Permanently deletes the specified container. The user must have Edit permissions on the container. " +
+                    "A container that any template still uses is not deleted (409).",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Container deletion result (true if deleted, false otherwise)",
                             content = @Content(mediaType = "application/json",
@@ -1462,7 +1487,8 @@ public class ContainerResource implements Serializable {
                     @ApiResponse(responseCode = "400", description = "Bad request - Container ID is required"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks edit permissions"),
-                    @ApiResponse(responseCode = "404", description = "Container not found")
+                    @ApiResponse(responseCode = "404", description = "Container not found"),
+                    @ApiResponse(responseCode = "409", description = "Conflict - The container is used by one or more templates")
             }
     )
     public final Response delete(@Context final HttpServletRequest  request,
@@ -1485,6 +1511,8 @@ public class ContainerResource implements Serializable {
         if (null != container && InodeUtils.isSet(container.getInode())) {
 
             Logger.debug(this,()->"Calling Delete Container");
+
+            this.assertNotUsedByTemplates(container);
 
             if(this.containerAPI.delete(container, user, pageMode.respectAnonPerms)) {
 
@@ -1595,7 +1623,8 @@ public class ContainerResource implements Serializable {
             operationId = "bulkDeleteContainers",
             summary = "Deletes multiple containers",
             description = "Deletes a list of containers by their identifiers. Returns a summary of successful " +
-                    "and failed deletions. The user must have Edit permissions on each container.",
+                    "and failed deletions. The user must have Edit permissions on each container. A container " +
+                    "that any template still uses is not deleted and is reported as a failure.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Bulk delete results with success and failure counts",
                             content = @Content(mediaType = "application/json",
@@ -1631,6 +1660,7 @@ public class ContainerResource implements Serializable {
                         WebAPILocator.getHostWebAPI().getHost(request));
 
                 if (null != container && InodeUtils.isSet(container.getInode())){
+                    this.assertNotUsedByTemplates(container);
                     this.containerAPI.delete(container, user, pageMode.respectAnonPerms);
                     ActivityLogger.logInfo(this.getClass(),
                             "Delete Container Action",

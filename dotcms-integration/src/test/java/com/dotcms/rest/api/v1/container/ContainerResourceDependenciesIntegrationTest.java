@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.container;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -16,6 +17,8 @@ import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.api.BulkResultView;
+import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -207,6 +210,51 @@ public class ContainerResourceDependenciesIntegrationTest {
         final ContainerDependenciesView view = entity(result);
         assertEquals(1, view.templates().size());
         assertEquals(template.getIdentifier(), view.templates().get(0).identifier());
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#delete}
+     * Given Scenario: a container that a template uses, and one that no template uses
+     * ExpectedResult: the first is refused with a conflict and still exists; the second is deleted
+     */
+    @Test
+    public void deleteRefusesAContainerATemplateUses() throws Exception {
+        final Host site = defaultSite();
+        final Container used = persistContainer(site, "Used " + System.currentTimeMillis());
+        final Container free = persistContainer(site, "Free " + System.currentTimeMillis());
+        persistTemplate(site, "Uses " + System.currentTimeMillis(), used);
+
+        assertThrows(ConflictException.class, () -> resource.delete(
+                request(adminUser.getEmailAddress()), response, used.getIdentifier()));
+        assertNotNull(APILocator.getContainerAPI()
+                .getWorkingContainerById(used.getIdentifier(), adminUser, false));
+
+        final Response result = resource.delete(
+                request(adminUser.getEmailAddress()), response, free.getIdentifier());
+
+        assertEquals(Response.Status.OK.getStatusCode(), result.getStatus());
+        assertEquals(true, ((ResponseEntityView<?>) result.getEntity()).getEntity());
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#bulkDelete}
+     * Given Scenario: a bulk delete of a container a template uses and one no template uses
+     * ExpectedResult: the free container is deleted and the used one is reported as a failure
+     */
+    @Test
+    public void bulkDeleteReportsAContainerATemplateUsesAsAFailure() throws Exception {
+        final Host site = defaultSite();
+        final Container used = persistContainer(site, "BulkUsed " + System.currentTimeMillis());
+        final Container free = persistContainer(site, "BulkFree " + System.currentTimeMillis());
+        persistTemplate(site, "BulkUses " + System.currentTimeMillis(), used);
+
+        final Response result = resource.bulkDelete(request(adminUser.getEmailAddress()), response,
+                List.of(used.getIdentifier(), free.getIdentifier()));
+
+        final BulkResultView view = (BulkResultView) ((ResponseEntityView<?>) result.getEntity()).getEntity();
+        assertEquals(Long.valueOf(1L), view.getSuccessCount());
+        assertEquals(1, view.getFails().size());
+        assertEquals(used.getIdentifier(), view.getFails().get(0).getElement());
     }
 
     /**

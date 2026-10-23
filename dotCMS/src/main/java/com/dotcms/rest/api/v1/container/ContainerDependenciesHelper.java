@@ -99,14 +99,46 @@ public class ContainerDependenciesHelper {
         final String containerId = container.getIdentifier();
         if (UtilMethods.isSet(containerId)) {
             final Map<String, String> siteNames = new HashMap<>();
-            for (final Template template : this.readableTemplates(user)) {
-                if (this.usesContainer(template, containerId)) {
-                    usages.add(new TemplateDependencyView(template.getInode(), template.getIdentifier(),
-                            template.getTitle(), this.siteNameOf(template, user, siteNames)));
-                }
+            for (final Template template : this.templatesUsing(containerId, user)) {
+                usages.add(new TemplateDependencyView(template.getInode(), template.getIdentifier(),
+                        template.getTitle(), this.siteNameOf(template, user, siteNames)));
             }
         }
         return new ContainerDependenciesView(container.getInode(), containerId, container.getTitle(), usages);
+    }
+
+    /**
+     * Counts every Template that uses the Container, whoever can read it. It is meant to guard a
+     * delete, so it does not depend on the permissions of the user asking: a Template the user
+     * cannot see still blocks the delete. Only the count is returned, so nothing about those
+     * Templates is disclosed.
+     *
+     * @param container the {@link Container} about to be deleted
+     * @return how many Templates, archived ones included, use the Container
+     * @throws DotDataException     if the Templates or their containers cannot be read from the
+     *                              data source
+     * @throws DotSecurityException if the Templates cannot be listed
+     */
+    public int countTemplatesUsing(final Container container)
+            throws DotDataException, DotSecurityException {
+
+        final String containerId = container.getIdentifier();
+        return UtilMethods.isSet(containerId) ? this.templatesUsing(containerId, this.systemUser).size() : 0;
+    }
+
+    /**
+     * Lists the Templates, among those the given user can read, that use the Container.
+     */
+    private List<Template> templatesUsing(final String containerId, final User user)
+            throws DotDataException, DotSecurityException {
+
+        final List<Template> used = new ArrayList<>();
+        for (final Template template : this.readableTemplates(user)) {
+            if (this.usesContainer(template, containerId)) {
+                used.add(template);
+            }
+        }
+        return used;
     }
 
     /**
