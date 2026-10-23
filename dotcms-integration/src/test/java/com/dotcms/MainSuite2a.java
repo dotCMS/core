@@ -20,6 +20,7 @@ import com.dotcms.inference.rest.InferenceTestsAreRegisteredTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.rest.api.v1.maintenance.MaintenanceResourceIntegrationTest;
 import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
+import com.dotmarketing.portlets.cmsmaintenance.action.ViewCMSMaintenanceActionTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
@@ -106,7 +107,8 @@ import org.junit.runners.Suite.SuiteClasses;
         EventAnalyticsProxyResourceIntegrationTest.class,
         GenericBundleActivatorIntegrationTest.class,
         com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest.class,
-        com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class
+        com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class,
+        ViewCMSMaintenanceActionTest.class
 })
 public class MainSuite2a {
 
