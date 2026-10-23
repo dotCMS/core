@@ -40,6 +40,10 @@ public class UserDeletionCacheInvalidationTest {
     private static Contentlet contentlet;
     private static User replacementUser;
 
+    /**
+     * Boots the integration test environment and resolves the user, site, content and
+     * versionable APIs the test drives.
+     */
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();

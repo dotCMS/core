@@ -230,6 +230,24 @@ public class ESContentFactoryImpl implements ContentletFactory {
     private static final Lazy<Integer> OLD_CONTENT_BATCHES_BEFORE_PAUSE = Lazy.of(
             () -> Config.getIntProperty("OLD_CONTENT_BATCHES_BEFORE_PAUSE", 10));
 
+    /**
+     * Current (working or live) Contentlet versions last modified by a user. Both legs of the
+     * union resolve through the {@code idx_contentlet_vi_working} and {@code idx_contentlet_vi_live}
+     * indexes. Takes the user id twice.
+     */
+    private static final String SELECT_CURRENT_INODES_BY_MOD_USER_SQL =
+            "SELECT cvi.working_inode AS inode FROM contentlet c "
+                    + "JOIN contentlet_version_info cvi ON cvi.working_inode = c.inode "
+                    + "WHERE c.mod_user = ? "
+                    + "UNION "
+                    + "SELECT cvi.live_inode AS inode FROM contentlet c "
+                    + "JOIN contentlet_version_info cvi ON cvi.live_inode = c.inode "
+                    + "WHERE c.mod_user = ?";
+
+    /** Version-info rows currently locked by a user. Takes the user id once. */
+    private static final String SELECT_VERSION_INFOS_BY_LOCKED_BY_SQL =
+            "SELECT identifier, lang, variant_id FROM contentlet_version_info WHERE locked_by = ?";
+
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
     /**
@@ -1774,8 +1792,6 @@ public class ESContentFactoryImpl implements ContentletFactory {
      * {@code userId}. Only current versions are returned: those are the ones the index holds
      * and the ones listings serve from cache, and bounding the result to them keeps the list
      * proportional to the amount of current content rather than to the full version history.
-     * Both legs of the union resolve through the {@code idx_contentlet_vi_working} and
-     * {@code idx_contentlet_vi_live} indexes.
      *
      * @param userId the user whose current content versions are wanted
      * @return the distinct inodes, possibly empty, never {@code null}
@@ -1783,13 +1799,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
      */
     private List<String> findCurrentInodesModifiedBy(final String userId) throws DotDataException {
         final DotConnect dc = new DotConnect();
-        dc.setSQL("SELECT cvi.working_inode AS inode FROM contentlet c "
-                + "JOIN contentlet_version_info cvi ON cvi.working_inode = c.inode "
-                + "WHERE c.mod_user = ? "
-                + "UNION "
-                + "SELECT cvi.live_inode AS inode FROM contentlet c "
-                + "JOIN contentlet_version_info cvi ON cvi.live_inode = c.inode "
-                + "WHERE c.mod_user = ?");
+        dc.setSQL(SELECT_CURRENT_INODES_BY_MOD_USER_SQL);
         dc.addParam(userId);
         dc.addParam(userId);
         return dc.loadObjectResults().stream()
@@ -1810,8 +1820,7 @@ public class ESContentFactoryImpl implements ContentletFactory {
     private List<Map<String, Object>> findVersionInfosLockedBy(final String userId)
             throws DotDataException {
         final DotConnect dc = new DotConnect();
-        dc.setSQL("SELECT identifier, lang, variant_id FROM contentlet_version_info "
-                + "WHERE locked_by = ?");
+        dc.setSQL(SELECT_VERSION_INFOS_BY_LOCKED_BY_SQL);
         dc.addParam(userId);
         return dc.loadObjectResults();
     }
@@ -1843,11 +1852,17 @@ public class ESContentFactoryImpl implements ContentletFactory {
                         ((Number) row.get("lang")).longValue(),
                         null != variantId ? variantId.toString() : DEFAULT_VARIANT.name());
             }
-            CacheLocator.getHostCache().clearCache();
         } catch (final Exception e) {
             Logger.error(this, String.format("Unable to evict cached references to a replaced "
                     + "user (%d contentlets, %d locks). Flush the caches to clear them.",
                     inodes.size(), versionInfosLockedBy.size()), e);
+        }
+        // Own try block: the Site cache must be cleared even if the targeted evictions failed
+        try {
+            CacheLocator.getHostCache().clearCache();
+        } catch (final Exception e) {
+            Logger.error(this, "Unable to clear the Site cache after replacing a user. "
+                    + "Flush the caches to clear it.", e);
         }
     }
 
