@@ -380,7 +380,11 @@ public class ContentletPermissionReplacementIntegrationTest {
     @Test
     public void copyByUserWithoutEditPermissions_carriesSourcePermissions() throws Exception {
         final User editor = newBackEndUser();
-        final Contentlet source = newContentlet(contentType, site);
+        // Creating the copy needs WRITE on the content type
+        final ContentType copyType = newContentType(site);
+        grantIndividual(copyType, userRole(editor),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE);
+        final Contentlet source = newContentlet(copyType, site);
         grantIndividual(source, userRole(editor),
                 PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE);
         grantIndividual(source, extraRole, PermissionAPI.PERMISSION_READ);
@@ -499,7 +503,7 @@ public class ContentletPermissionReplacementIntegrationTest {
     }
 
     /**
-     * Method to test: {@link ContentletAPI#checkinWithoutVersioning(Contentlet, ContentletRelationships, List, List, User, boolean)}
+     * Method to test: {@link ContentletAPI#checkinWithoutVersioning(Contentlet, Map, List, List, User, boolean)}
      * Given Scenario: A user with READ and WRITE (no permission to edit permissions) checks in the
      * working version without a new version, outside any transaction, with a permission list that
      * adds a role
@@ -512,9 +516,10 @@ public class ContentletPermissionReplacementIntegrationTest {
         grantIndividual(contentlet, userRole(editor),
                 PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE);
 
+        // The ContentletRelationships overload does not apply a permission list; this one does
         assertDirectChangedListIsRefused(contentlet, workingCopyFor(contentlet, editor),
                 (editable, permissions) -> contentletAPI.checkinWithoutVersioning(editable,
-                        (ContentletRelationships) null, null, permissions, editor, false));
+                        new HashMap<>(), null, permissions, editor, false));
     }
 
     /**
@@ -590,6 +595,12 @@ public class ContentletPermissionReplacementIntegrationTest {
                 new String[]{titleField.id()});
 
         assertNoImportErrors(results);
+        final List<Contentlet> afterImport = contentletsOf(importType);
+        assertEquals("The import must update the existing contentlet, not add one",
+                1, afterImport.size());
+        assertEquals(existing.getIdentifier(), afterImport.get(0).getIdentifier());
+        assertNotEquals("The import must write a new version of the existing contentlet",
+                existing.getInode(), afterImport.get(0).getInode());
         assertEquals(rowsBefore, individualRows(existing));
     }
 

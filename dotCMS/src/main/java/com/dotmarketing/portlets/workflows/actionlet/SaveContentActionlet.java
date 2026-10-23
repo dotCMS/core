@@ -63,9 +63,10 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 	/**
 	 * Checks in the contentlet carried by the workflow processor, with the categories,
 	 * relationships and permissions sent along with it, and puts the saved version back on the
-	 * processor. Any failure is rethrown as a {@link WorkflowActionFailureException}; validation
-	 * failures and permission refusals are not logged here as errors, since they are expected
-	 * outcomes and refusals are already in the security log.
+	 * processor. Any failure is rethrown as a {@link WorkflowActionFailureException}. Validation
+	 * failures and permission refusals ({@link DotSecurityException}) are expected outcomes, so they
+	 * are not logged here as errors; the caller reports them, and a refused permission change is
+	 * also written to the security log where it is decided.
 	 *
 	 * @param processor the workflow processor carrying the contentlet to save
 	 * @param params    the actionlet parameters
