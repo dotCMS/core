@@ -66,6 +66,7 @@ jobs:
     with:
       core-build: true
       run-pr-checks: true
+      cleanup-runner: false
     secrets:
       # READ-ONLY key: PR code is untrusted, and a build cache an attacker can
       # write is replayed as a build output on trunk (CVE-2025-36852). Fork PRs
@@ -110,6 +111,7 @@ jobs:
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_test-phase.yml
     with:
+      skip-runner-cleanup: true
       jvm_unit_test: ${{ fromJSON(needs.initialize.outputs.filters).jvm_unit_test == 'true' }}
       # The long suites (integration, postman, karate, cli, e2e) only run when the PR's own base is
       # main/master. A PR in a GitHub native stack passes the trigger's branches filter because
