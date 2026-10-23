@@ -170,29 +170,39 @@ public class JsModuleImportIntegrationTest extends IntegrationTestBase {
     }
 
     /**
-     * Checks that a script naming a site with {@code //<site>/application/...} gets the module of that site, even
-     * when the default site holds a module with the same name and a different export.
+     * Checks that a script naming a site with {@code //<site>/application/...} gets the module of that site, whether
+     * the site is named by its name, its identifier or one of its aliases, even when the default site holds a module
+     * with the same name and a different export.
      *
      * @throws Exception when the test data cannot be created
      */
     @Test
     public void siteQualifiedApplicationModuleIsImported() throws Exception {
-        // Given a second site, and a module with the same file name on the default site and on the second site
+        // Given a second site with an alias, and a module with the same file name on the default site and on the
+        // second site
         final String siteName = "js-modules-" + RUN_ID + ".test";
-        final Host secondSite = new SiteDataGen().name(siteName).nextPersisted(true);
+        final String siteAlias = "js-modules-alias-" + RUN_ID + ".test";
+        final Host secondSite = new SiteDataGen().name(siteName).aliases(siteAlias).nextPersisted(true);
         createdSites.add(secondSite);
         final String fileName = "shared-module-" + RUN_ID + ".mjs";
         createModule(defaultSite, fileName, "export const value = 'DEFAULT-SITE-EXPORT';");
         createModule(secondSite, fileName, "export const value = 'SECOND-SITE-EXPORT';");
 
-        // When a script imports //<second site>/application/js/modules/<name>, and then the same path with no site
+        // When a script imports /application/js/modules/<name> of the second site by its name, its identifier and its
+        // alias, and then the same path with no site
         final String fromSecondSite = runAsync(
                 "(await import('//" + siteName + MODULES_FOLDER_PATH + fileName + "')).value");
+        final String fromSecondSiteIdentifier = runAsync(
+                "(await import('//" + secondSite.getIdentifier() + MODULES_FOLDER_PATH + fileName + "')).value");
+        final String fromSecondSiteAlias = runAsync(
+                "(await import('//" + siteAlias + MODULES_FOLDER_PATH + fileName + "')).value");
         final String fromCurrentSite = runAsync(
                 "(await import('" + MODULES_FOLDER_PATH + fileName + "')).value");
 
-        // Then the site-qualified path returns the second site's export, and the plain path the default site's one
+        // Then every site-qualified path returns the second site's export, and the plain path the default site's one
         assertEquals("RESOLVED SECOND-SITE-EXPORT", fromSecondSite);
+        assertEquals("RESOLVED SECOND-SITE-EXPORT", fromSecondSiteIdentifier);
+        assertEquals("RESOLVED SECOND-SITE-EXPORT", fromSecondSiteAlias);
         assertEquals("RESOLVED DEFAULT-SITE-EXPORT", fromCurrentSite);
     }
 

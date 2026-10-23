@@ -4,6 +4,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.HostUtil;
@@ -299,16 +300,16 @@ public class JsFileSystem implements FileSystem {
 
     /**
      * Reads an {@code /application/} module from the content repository: a named site is looked up by its
-     * identifier or key, without falling back to the default site; with no name, the current site is used (the
-     * default one when there is no current site). Then the file asset at the module path is read, in any language,
-     * on its working version. Lookups run as the system user. The content is cached by the file's location, so a new
-     * version of the module is read again. Any failure while looking up or reading the module is reported through
-     * {@link #moduleNotReadable(String, Exception)}.
+     * identifier, name or alias, without falling back to the default site, and the system host counts as no site;
+     * with no name, the current site is used (the default one when there is no current site). Then the file asset at
+     * the module path is read, in any language, on its working version. Lookups run as the system user. The content
+     * is cached by the file's location, so a new version of the module is read again. Any failure while looking up or
+     * reading the module is reported through {@link #moduleNotReadable(String, String, String, Exception)}.
      *
-     * @param siteName   the identifier or key of the site, or {@code null} for the current site
+     * @param siteName   the identifier, name or alias of the site, or {@code null} for the current site
      * @param modulePath the module path inside the site, starting with {@code /application/}
-     * @return the module source, or empty when the site or the module does not exist or the content is not a file
-     *         asset
+     * @return the module source, or empty when the site or the module does not exist, the site is the system host,
+     *         or the content is not a file asset
      * @throws IOException when the module exists but cannot be read, or a lookup fails
      */
     private static Optional<String> readFromContent(final String siteName, final String modulePath) throws IOException {
@@ -318,7 +319,7 @@ public class JsFileSystem implements FileSystem {
             final Optional<Host> site = null != siteName
                     ? APILocator.getHostAPI().findByIdOrKey(siteName, APILocator.systemUser(), false)
                     : Optional.ofNullable(currentOrDefaultSite());
-            if (site.isEmpty()) {
+            if (site.isEmpty() || site.get().isSystemHost()) {
                 return Optional.empty();
             }
 
@@ -336,33 +337,59 @@ public class JsFileSystem implements FileSystem {
             final File binary = APILocator.getFileAssetAPI().fromContentlet(contentlet).getFileAsset();
             final String source = null != binary ? JsEngine.toString(binary.getAbsolutePath(), binary) : null;
             if (null == source) {
-                throw moduleNotReadable("identifier " + identifier.getId(), null);
+                throw moduleNotReadable(siteName, modulePath, "identifier " + identifier.getId(), null);
             }
 
             return Optional.of(source);
         } catch (final DotDataException | DotSecurityException | RuntimeException e) {
 
-            throw moduleNotReadable(causeClassNames(e), e);
+            throw moduleNotReadable(siteName, modulePath, causeClassNames(e), e);
         }
     }
 
     /**
-     * Logs that a module could not be read and builds the exception reported to the engine. The warning has a
-     * fixed message followed by the given detail; a failure, when there is one, goes to the debug log only. The
-     * returned exception has a fixed message and no cause, so no internal detail travels with it.
+     * Logs that a module could not be read and builds the exception reported to the engine. The warning names the
+     * site and the module path, followed by the given detail. A failure the content repository reports
+     * ({@link DotDataException}, {@link DotSecurityException} or {@link DotRuntimeException}) goes to the debug log
+     * only, since its message can carry data-layer text; any other failure is logged with the warning, trace
+     * included, so a programming error does not read as a failed lookup. The returned exception has a fixed message
+     * and no cause, so no internal detail travels with it.
      *
-     * @param detail  what the warning adds to its fixed message: the class names along the failure's cause chain, or
-     *                the identifier of the module whose file could not be read
-     * @param failure the failure that stopped the lookup, or {@code null} when the module's file could not be read
+     * @param siteName   the identifier, name or alias of the site, or {@code null} for the current site
+     * @param modulePath the module path inside the site
+     * @param detail     what the warning adds after the site and the module path: the class names along the
+     *                   failure's cause chain, or the identifier of the module whose file could not be read
+     * @param failure    the failure that stopped the lookup, or {@code null} when the module's file could not be read
      * @return the exception to throw
      */
-    private static IOException moduleNotReadable(final String detail, @Nullable final Exception failure) {
+    private static IOException moduleNotReadable(@Nullable final String siteName, final String modulePath,
+            final String detail, @Nullable final Exception failure) {
 
-        Logger.warn(JsFileSystem.class, MODULE_NOT_READABLE_LOG + " (" + detail + ")");
-        if (null != failure) {
-            Logger.debug(JsFileSystem.class, MODULE_NOT_READABLE_LOG, failure);
+        final String warning = MODULE_NOT_READABLE_LOG + " ("
+                + (null != siteName ? "site " + siteName : "current site") + ", module " + modulePath + ": " + detail
+                + ")";
+        if (null == failure || isRepositoryFailure(failure)) {
+            Logger.warn(JsFileSystem.class, warning);
+            if (null != failure) {
+                Logger.debug(JsFileSystem.class, MODULE_NOT_READABLE_LOG, failure);
+            }
+        } else {
+            Logger.warn(JsFileSystem.class, warning, failure);
         }
         return new IOException(MODULE_NOT_READABLE_MESSAGE);
+    }
+
+    /**
+     * Tells whether a failure is one the content repository reports while looking up or reading content, as opposed
+     * to a programming error.
+     *
+     * @param failure the failure to classify
+     * @return {@code true} for a {@link DotDataException}, {@link DotSecurityException} or {@link DotRuntimeException}
+     */
+    private static boolean isRepositoryFailure(final Exception failure) {
+
+        return failure instanceof DotDataException || failure instanceof DotSecurityException
+                || failure instanceof DotRuntimeException;
     }
 
     /**

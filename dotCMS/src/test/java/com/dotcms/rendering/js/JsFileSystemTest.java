@@ -8,6 +8,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -26,6 +29,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
 import com.dotmarketing.util.HostUtil;
+import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import java.io.File;
 import java.io.IOException;
@@ -51,6 +55,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.ArgumentCaptor;
 import org.mockito.MockedStatic;
 
 /**
@@ -72,6 +77,11 @@ public class JsFileSystemTest {
     private static final String MODULE_READ_FAILURE = "The module could not be read";
 
     /**
+     * Fixed start of the warning logged when the default module source cannot read a module.
+     */
+    private static final String MODULE_READ_FAILURE_LOG = "A JavaScript module could not be read";
+
+    /**
      * Logical path of {@code /application/js/a.mjs} on site-b.test, as the file system receives it.
      */
     private static final String SITE_B_MODULE = "/dot-site-token/site-b.test/application/js/a.mjs";
@@ -85,13 +95,11 @@ public class JsFileSystemTest {
 
     /**
      * Keeps the tests hermetic: any {@link APILocator} call a test does not stub fails, so nothing here reaches the
-     * content repository, and the script cache is an empty mock. The asset path stub answers the default file storage
-     * path, as a running instance would.
+     * content repository, and the script cache is an empty mock.
      */
     @BeforeEach
     public void isolateFromRuntime() {
         fileAssetAPI = mock(FileAssetAPI.class);
-        when(fileAssetAPI.getRelativeAssetsRootPath()).thenReturn("/" + STORAGE_FOLDER);
         apiLocator = mockStatic(APILocator.class, invocation -> {
             throw new IllegalStateException("The content repository is not available in this unit test");
         });
@@ -392,13 +400,18 @@ public class JsFileSystemTest {
 
     @Test
     public void siteQualifiedPathOffApplicationIsRefused() {
-        // Given the path /dot-site-token/site-b.test/other/x.mjs
-        final JsFileSystem fileSystem = new JsFileSystem(new StubModuleSource());
+        // Given the paths /dot-site-token/site-b.test/other/x.mjs and /dot-site-token/site-b.test/javascript/x.mjs,
+        // the second one using the folder that is accepted only without a site
+        final StubModuleSource source = new StubModuleSource();
+        final JsFileSystem fileSystem = new JsFileSystem(source);
 
-        // When toRealPath is called with it
-        // Then an IllegalArgumentException is thrown
+        // When toRealPath is called with each
+        // Then an IllegalArgumentException is thrown every time and the module source is never called
         assertThrows(IllegalArgumentException.class,
                 () -> fileSystem.toRealPath(Paths.get("/dot-site-token/site-b.test/other/x.mjs")));
+        assertThrows(IllegalArgumentException.class,
+                () -> fileSystem.toRealPath(Paths.get("/dot-site-token/site-b.test/javascript/x.mjs")));
+        assertTrue(source.requests().isEmpty());
     }
 
     @Test
@@ -417,14 +430,18 @@ public class JsFileSystemTest {
     }
 
     @Test
-    public void bareApplicationPrefixIsRefused() {
-        // Given the paths /application/ and /dot-site-token/site-b.test/application/
+    public void bareModuleFolderIsRefused() {
+        // Given the module folders alone, with and without a trailing slash: /application/, /application,
+        // /javascript/, /javascript and /dot-site-token/site-b.test/application/
         final StubModuleSource source = new StubModuleSource();
         final JsFileSystem fileSystem = new JsFileSystem(source);
 
         // When newByteChannel is called with each
-        // Then an IllegalArgumentException is thrown and the module source is never called
+        // Then an IllegalArgumentException is thrown every time and the module source is never called
         assertThrows(IllegalArgumentException.class, () -> read(fileSystem, Paths.get("/application/")));
+        assertThrows(IllegalArgumentException.class, () -> read(fileSystem, Paths.get("/application")));
+        assertThrows(IllegalArgumentException.class, () -> read(fileSystem, Paths.get("/javascript/")));
+        assertThrows(IllegalArgumentException.class, () -> read(fileSystem, Paths.get("/javascript")));
         assertThrows(IllegalArgumentException.class,
                 () -> read(fileSystem, Paths.get("/dot-site-token/site-b.test/application/")));
         assertTrue(source.requests().isEmpty());
@@ -509,13 +526,19 @@ public class JsFileSystemTest {
         final JsFileSystem fileSystem = new JsFileSystem(source);
         final Path modulePath = Paths.get("/application/js/modules/a.mjs");
 
-        // When checkAccess is called on it with WRITE, with READ and WRITE together, and with READ alone
-        // Then both requests that include WRITE throw an IOException, READ alone is accepted, and the module source
-        // is never called
+        // When checkAccess is called on it with WRITE, with READ and WRITE together, with EXECUTE, with READ alone and
+        // with no mode, and with no mode on /tmp/x.mjs
+        // Then every request with a mode other than READ throws an IOException; READ alone and no mode are accepted
+        // on the module path, no mode on /tmp/x.mjs is refused by the path rule, and the module source is never
+        // called
         assertThrows(IOException.class, () -> fileSystem.checkAccess(modulePath, Set.of(AccessMode.WRITE)));
         assertThrows(IOException.class,
                 () -> fileSystem.checkAccess(modulePath, Set.of(AccessMode.READ, AccessMode.WRITE)));
+        assertThrows(IOException.class, () -> fileSystem.checkAccess(modulePath, Set.of(AccessMode.EXECUTE)));
         assertDoesNotThrow(() -> fileSystem.checkAccess(modulePath, Set.of(AccessMode.READ)));
+        assertDoesNotThrow(() -> fileSystem.checkAccess(modulePath, Set.of()));
+        assertThrows(IllegalArgumentException.class,
+                () -> fileSystem.checkAccess(Paths.get("/tmp/x.mjs"), Set.of()));
         assertTrue(source.requests().isEmpty());
     }
 
@@ -614,6 +637,44 @@ public class JsFileSystemTest {
     }
 
     @Test
+    public void engineResolvesParentImportInsideApplicationFolderOfNamedSite() {
+        // Given a module source where /application/js/modules/b.mjs of site-b.test imports ../lib/x.mjs
+        final StubModuleSource source = new StubModuleSource()
+                .with("site-b.test", "/application/js/modules/b.mjs",
+                        "import { v } from '../lib/x.mjs'; export const w = 'B' + v;")
+                .with("site-b.test", "/application/js/lib/x.mjs", "export const v = 'X';");
+        final JsFileSystem fileSystem = new JsFileSystem(source);
+
+        // When a script imports //site-b.test/application/js/modules/b.mjs
+        final String result = runAsync(fileSystem,
+                "(await import('//site-b.test/application/js/modules/b.mjs')).w");
+
+        // Then ../lib/x.mjs resolves to /application/js/lib/x.mjs of site-b.test
+        assertEquals("RESOLVED BX", result);
+        assertTrue(source.requests().contains(StubModuleSource.key("site-b.test", "/application/js/lib/x.mjs")),
+                source.requests().toString());
+    }
+
+    @Test
+    public void engineRefusesParentImportAboveApplicationFolderOfNamedSite() {
+        // Given a module source where /application/js/modules/b.mjs of site-b.test imports ../../../x.mjs, which
+        // climbs above /application/ of that site
+        final StubModuleSource source = new StubModuleSource()
+                .with("site-b.test", "/application/js/modules/b.mjs",
+                        "import { v } from '../../../x.mjs'; export const w = v;");
+        final JsFileSystem fileSystem = new JsFileSystem(source);
+
+        // When a script imports //site-b.test/application/js/modules/b.mjs
+        final String result = runAsync(fileSystem,
+                "(await import('//site-b.test/application/js/modules/b.mjs')).w");
+
+        // Then the import is rejected and the module source is asked only for the importing module
+        assertTrue(result.startsWith("REJECTED"), result);
+        assertEquals(List.of(StubModuleSource.key("site-b.test", "/application/js/modules/b.mjs")),
+                source.requests());
+    }
+
+    @Test
     public void engineImportsSiteQualifiedModule() {
         // Given a module source where /application/js/b.mjs of site-b.test imports ./c.mjs
         final StubModuleSource source = new StubModuleSource()
@@ -683,6 +744,117 @@ public class JsFileSystemTest {
         assertEquals(MODULE_READ_FAILURE, siteLookupFailure.getMessage());
         assertFalse(siteLookupFailure.getMessage().contains("site-b.test"));
         assertNull(siteLookupFailure.getCause());
+    }
+
+    @Test
+    public void defaultSourceWarnsWithSiteAndModuleButNotTheFailureMessage() throws Exception {
+        // Given the default module source, with a site lookup that fails with an error whose message is detailed
+        final DotRuntimeException lookupFailure = new DotRuntimeException("The site site-b.test could not be loaded");
+        final User systemUser = mock(User.class);
+        final HostAPI hostAPI = mock(HostAPI.class);
+        when(hostAPI.findByIdOrKey("site-b.test", systemUser, false)).thenThrow(lookupFailure);
+        apiLocator.when(APILocator::systemUser).thenReturn(systemUser);
+        apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
+        final JsFileSystem fileSystem = new JsFileSystem();
+
+        try (MockedStatic<Logger> logger = mockStatic(Logger.class)) {
+
+            // When newByteChannel reads the module of site-b.test
+            assertThrows(IOException.class, () -> read(fileSystem, Paths.get(SITE_B_MODULE)));
+
+            // Then the warning names the site, the module path and the failure's class, but not its message
+            final ArgumentCaptor<String> warning = ArgumentCaptor.forClass(String.class);
+            logger.verify(() -> Logger.warn(eq(JsFileSystem.class), warning.capture()));
+            assertTrue(warning.getValue().startsWith(MODULE_READ_FAILURE_LOG), warning.getValue());
+            assertTrue(warning.getValue().contains("site-b.test"), warning.getValue());
+            assertTrue(warning.getValue().contains("/application/js/a.mjs"), warning.getValue());
+            assertTrue(warning.getValue().contains("DotRuntimeException"), warning.getValue());
+            assertFalse(warning.getValue().contains("could not be loaded"), warning.getValue());
+
+            // And the failure itself goes to the debug log only
+            logger.verify(() -> Logger.debug(eq(JsFileSystem.class), eq(MODULE_READ_FAILURE_LOG), same(lookupFailure)));
+            logger.verify(() -> Logger.warn(eq(JsFileSystem.class), anyString(), any(Throwable.class)), never());
+        }
+    }
+
+    @Test
+    public void defaultSourceWarnsWithTheTraceOfAnUnexpectedFailure() throws Exception {
+        // Given the default module source, with a site lookup that fails with an unexpected error
+        final NullPointerException unexpected = new NullPointerException("unexpected");
+        final User systemUser = mock(User.class);
+        final HostAPI hostAPI = mock(HostAPI.class);
+        when(hostAPI.findByIdOrKey("site-b.test", systemUser, false)).thenThrow(unexpected);
+        apiLocator.when(APILocator::systemUser).thenReturn(systemUser);
+        apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
+        final JsFileSystem fileSystem = new JsFileSystem();
+
+        try (MockedStatic<Logger> logger = mockStatic(Logger.class)) {
+
+            // When newByteChannel reads the module of site-b.test
+            final IOException failure = assertThrows(IOException.class,
+                    () -> read(fileSystem, Paths.get(SITE_B_MODULE)));
+
+            // Then the warning carries the unexpected error with its trace, and the script still gets the fixed
+            // message with no cause
+            final ArgumentCaptor<String> warning = ArgumentCaptor.forClass(String.class);
+            logger.verify(() -> Logger.warn(eq(JsFileSystem.class), warning.capture(), same(unexpected)));
+            assertTrue(warning.getValue().contains("/application/js/a.mjs"), warning.getValue());
+            assertEquals(MODULE_READ_FAILURE, failure.getMessage());
+            assertNull(failure.getCause());
+        }
+    }
+
+    @Test
+    public void defaultSourceWarningNamesTheCurrentSite() throws Exception {
+        // Given the default module source, a current site, and a file asset at /application/js/a.mjs on it with no
+        // binary
+        final Contentlet contentlet = fileAssetWithBinary(null);
+        final Host currentSite = mock(Host.class);
+        final Identifier identifier = mock(Identifier.class);
+        when(identifier.getId()).thenReturn("current-module-id");
+        final IdentifierAPI identifierAPI = mock(IdentifierAPI.class);
+        when(identifierAPI.find(currentSite, "/application/js/a.mjs")).thenReturn(identifier);
+        final ContentletAPI contentletAPI = mock(ContentletAPI.class);
+        when(contentletAPI.findContentletByIdentifierAnyLanguage("current-module-id")).thenReturn(contentlet);
+        apiLocator.when(APILocator::getIdentifierAPI).thenReturn(identifierAPI);
+        apiLocator.when(APILocator::getContentletAPI).thenReturn(contentletAPI);
+        final JsFileSystem fileSystem = new JsFileSystem();
+
+        try (MockedStatic<HostUtil> hostUtil = mockStatic(HostUtil.class);
+                MockedStatic<Logger> logger = mockStatic(Logger.class)) {
+            hostUtil.when(HostUtil::findCurrentHost).thenReturn(currentSite);
+
+            // When newByteChannel reads /application/js/a.mjs, with no site in the path
+            assertThrows(IOException.class, () -> read(fileSystem, Paths.get("/application/js/a.mjs")));
+
+            // Then the warning names the current site, the module path and the module's identifier
+            final ArgumentCaptor<String> warning = ArgumentCaptor.forClass(String.class);
+            logger.verify(() -> Logger.warn(eq(JsFileSystem.class), warning.capture()));
+            assertTrue(warning.getValue().contains("current site"), warning.getValue());
+            assertTrue(warning.getValue().contains("/application/js/a.mjs"), warning.getValue());
+            assertTrue(warning.getValue().contains("current-module-id"), warning.getValue());
+        }
+    }
+
+    @Test
+    public void defaultSourceTreatsSystemHostAsNotFound() throws Exception {
+        // Given the default module source, where the key SYSTEM_HOST resolves to the system host
+        final User systemUser = mock(User.class);
+        final Host systemHost = mock(Host.class);
+        when(systemHost.isSystemHost()).thenReturn(true);
+        final HostAPI hostAPI = mock(HostAPI.class);
+        when(hostAPI.findByIdOrKey("SYSTEM_HOST", systemUser, false)).thenReturn(Optional.of(systemHost));
+        final IdentifierAPI identifierAPI = mock(IdentifierAPI.class);
+        apiLocator.when(APILocator::systemUser).thenReturn(systemUser);
+        apiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
+        apiLocator.when(APILocator::getIdentifierAPI).thenReturn(identifierAPI);
+        final JsFileSystem fileSystem = new JsFileSystem();
+
+        // When newByteChannel reads /application/js/a.mjs of SYSTEM_HOST
+        // Then a NoSuchFileException is thrown, as for an unknown site, and no module is looked up on it
+        assertThrows(NoSuchFileException.class,
+                () -> read(fileSystem, Paths.get("/dot-site-token/SYSTEM_HOST/application/js/a.mjs")));
+        verify(identifierAPI, never()).find(any(Host.class), any());
     }
 
     @Test
@@ -848,7 +1020,6 @@ public class JsFileSystemTest {
 
         final Identifier identifier = mock(Identifier.class);
         when(identifier.getId()).thenReturn("module-id");
-        when(identifier.exists()).thenReturn(true);
         final IdentifierAPI identifierAPI = mock(IdentifierAPI.class);
         when(identifierAPI.find(site, "/application/js/a.mjs")).thenReturn(identifier);
 
