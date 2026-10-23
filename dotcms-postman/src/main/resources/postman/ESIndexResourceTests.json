@@ -193,6 +193,324 @@
 				}
 			],
 			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "GetFailedRecords",
+			"item": [
+				{
+					"name": "FailedRecordsAsAdmin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "65fc199c-4793-423f-acc4-429d41fed8ba",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"",
+									"pm.test(\"Root carries limits, retry policy, count and records\", function () {",
+									"    const entity = pm.response.json().entity;",
+									"    pm.expect(entity).to.have.all.keys('limits', 'retryPolicy', 'failedRecordCount', 'failedRecords');",
+									"    pm.expect(entity.limits.maxStringLength.value).to.be.a('number');",
+									"    pm.expect(entity.limits.maxStringLength.unit).to.eql('chars');",
+									"    pm.expect(entity.limits.maxNestingDepth.value).to.be.a('number');",
+									"    pm.expect(entity.limits.maxNestingDepth.unit).to.eql('levels');",
+									"    pm.expect(entity.retryPolicy.maxRetries).to.be.a('number');",
+									"    pm.expect(entity.failedRecords).to.be.an('array');",
+									"    pm.expect(entity.failedRecordCount).to.eql(entity.failedRecords.length);",
+									"});",
+									"",
+									"pm.test(\"Records identify the content without its values\", function () {",
+									"    const keys = ['identifier', 'inode', 'title', 'contentTypeVariable', 'languageId', 'archived', 'operation',",
+									"        'failedAttempts', 'priority', 'failureReason', 'violation'];",
+									"    pm.response.json().entity.failedRecords.forEach(function (record) {",
+									"        pm.expect(Object.keys(record)).to.have.members(keys);",
+									"        pm.expect(record).to.not.have.property('contentlet');",
+									"    });",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/index/failed",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"index",
+								"failed"
+							]
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateLimitedBackendUser",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "e6f9eee8-c746-4ada-81b9-488a0794915f",
+								"exec": [
+									"pm.test(\"Limited back-end user created\", function () { pm.response.to.have.status(200); });",
+									"pm.collectionVariables.set(\"limitedUserId\", pm.response.json().entity.user.id);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": \"failed-records-limited-user\",\n    \"active\": true,\n    \"firstName\": \"Limited\",\n    \"lastName\": \"Backend\",\n    \"email\": \"failed-records-limited@dotcms.com\",\n    \"male\": true,\n    \"password\": [\n        \"L\",\n        \"i\",\n        \"m\",\n        \"i\",\n        \"t\",\n        \"e\",\n        \"d\",\n        \"1\",\n        \"2\",\n        \"3\",\n        \"!\"\n    ],\n    \"roles\": [\n        \"DOTCMS_BACK_END_USER\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Creates a back-end user with no CMS Administrator role and no Maintenance portlet, used to check that the failed-records listing rejects authenticated users without those permissions."
+					},
+					"response": []
+				},
+				{
+					"name": "IssueLimitedUserToken",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "c288c56e-adc4-4562-846a-3d0190ca7ad6",
+								"exec": [
+									"pm.test(\"Token issued for the limited user\", function () { pm.response.to.have.status(200); });",
+									"pm.collectionVariables.set(\"limitedUserToken\", pm.response.json().entity.jwt);",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": \"{{limitedUserId}}\",\n    \"expirationSeconds\": 3600\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken"
+							]
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Issues an API token for the limited user. A token is used instead of basic auth because the basic-auth login rejects a user with no site permission before the endpoint's role check runs, which would turn the expected 403 into a 401."
+					},
+					"response": []
+				},
+				{
+					"name": "FailedRecordsAsLimitedUser",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "66e1a119-2a9a-4861-83de-44891c1abe85",
+								"exec": [
+									"// WebResource reports a missing CMS Administrator role as 401, not 403.",
+									"pm.test(\"Authenticated users without the CMS Administrator role are rejected\", function () { pm.response.to.have.status(401); });",
+									"",
+									"pm.test(\"The failed records are not returned\", function () {",
+									"    pm.expect(pm.response.text()).to.not.include('failedRecords');",
+									"});",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/index/failed",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"index",
+								"failed"
+							]
+						},
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{limitedUserToken}}",
+									"type": "string"
+								}
+							]
+						},
+						"description": "Authenticates with the limited user's API token, with cookies disabled so the admin session left in the cookie jar by earlier requests does not authenticate it."
+					},
+					"response": [],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					}
+				},
+				{
+					"name": "FailedRecordsWithoutCredentials",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"id": "6ec417eb-dcc0-401d-bd4a-5e07a372e5ad",
+								"exec": [
+									"pm.test(\"Anonymous access is rejected\", function () { pm.response.to.have.status(401); });",
+									""
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"name": "Content-Type",
+								"type": "text",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/index/failed",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"index",
+								"failed"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						},
+						"description": "Runs with cookies disabled: the earlier requests logged in as admin and left JSESSIONID and the remember-me cookie (rme) in the run's cookie jar, which would otherwise authenticate this request."
+					},
+					"response": [],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					}
+				}
+			],
+			"protocolProfileBehavior": {}
 		}
 	],
 	"variable": [
@@ -200,6 +518,14 @@
 			"id": "eefdebf6-eef8-4713-92fa-244bc9491a6e",
 			"key": "indexName",
 			"value": "live_20200710131411"
+		},
+		{
+			"key": "limitedUserId",
+			"value": ""
+		},
+		{
+			"key": "limitedUserToken",
+			"value": ""
 		}
 	],
 	"protocolProfileBehavior": {}
