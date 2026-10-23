@@ -1,28 +1,22 @@
 import { vi } from 'vitest';
 
-import { Editor, type EditorOptions } from '@tiptap/core';
+import { Editor } from '@tiptap/core';
 import { Slice } from '@tiptap/pm/model';
 import StarterKit from '@tiptap/starter-kit';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
-import {
-    handleMediaDrop,
-    handleMediaPaste,
-    insertDotAudioFromContentlet,
-    transformPastedDataUrlImages
-} from './editor.utils';
+import { handleMediaDrop, handleMediaPaste, insertDotAudioFromContentlet } from './editor.utils';
 import { Audio, DOT_AUDIO_NODE_NAME } from './extensions/nodes/audio.extension';
 import { DOT_IMAGE_NODE_NAME, DotImage } from './extensions/nodes/image.extension';
 import { createUploadPlaceholderExtension } from './extensions/nodes/upload-placeholder.extension';
 import { type UploadedAudio, type UploadedImage } from './services/dot-upload.service';
-import { pasteHTML } from './testing/editor.testing';
 
 const PLACEHOLDER_NODE_NAME = 'uploadPlaceholder';
 
 const flushPromises = () => new Promise((resolve) => setTimeout(resolve, 0));
 
-function buildEditor(options: Partial<EditorOptions> = {}): Editor {
+function buildEditor(): Editor {
     return new Editor({
         extensions: [
             StarterKit,
@@ -30,8 +24,7 @@ function buildEditor(options: Partial<EditorOptions> = {}): Editor {
             DotImage,
             createUploadPlaceholderExtension({ uploading: () => 'Uploading' })
         ],
-        content: '<p>seed</p>',
-        ...options
+        content: '<p>seed</p>'
     });
 }
 
@@ -372,115 +365,6 @@ describe('handleMediaPaste', () => {
             buildPasteEvent([new File(['x'], 'image.png', { type: 'image/png' })]),
             { uploadImage }
         );
-        await flushPromises();
-
-        expect(hasNodeType(editor, PLACEHOLDER_NODE_NAME)).toBe(false);
-        expect(imageNodes(editor)).toHaveLength(0);
-    });
-});
-
-/**
- * Base64 images inside pasted HTML or Markdown used to be dropped by `DotImage`'s parse rule
- * (#38165). They are swapped for upload placeholders before ProseMirror parses the HTML, uploaded,
- * and then replaced by the resulting dotImage.
- */
-describe('transformPastedDataUrlImages', () => {
-    let editor: Editor;
-
-    afterEach(() => editor?.destroy());
-
-    it('returns the HTML untouched when it has no data: images', () => {
-        editor = buildEditor();
-        const uploadImage = vi.fn();
-        const html = '<p>hello <img src="https://dotcms.com/a.png"></p>';
-
-        expect(transformPastedDataUrlImages(editor, html, uploadImage)).toBe(html);
-        expect(uploadImage).not.toHaveBeenCalled();
-    });
-
-    it('returns the HTML untouched when the field does not allow images', () => {
-        editor = buildEditorWithoutImages();
-        const uploadImage = vi.fn();
-        const html = `<p>hello</p><img src="${PNG_DATA_URL}">`;
-
-        expect(transformPastedDataUrlImages(editor, html, uploadImage)).toBe(html);
-        expect(uploadImage).not.toHaveBeenCalled();
-    });
-
-    it('swaps each data: image for an upload placeholder and uploads the decoded file', () => {
-        editor = buildEditor();
-        const uploadImage = vi.fn().mockResolvedValue(UPLOADED_IMAGE);
-        const html = `<p>a</p><img src="${PNG_DATA_URL}" alt="one"><p>b</p><img src="${PNG_DATA_URL}">`;
-
-        const out = transformPastedDataUrlImages(editor, html, uploadImage);
-
-        expect(out).not.toContain('data:image');
-        expect(out.match(/data-upload-id="/g)).toHaveLength(2);
-        expect(out).toContain('<p>a</p>');
-        expect(uploadImage).toHaveBeenCalledTimes(2);
-        const file = uploadImage.mock.calls[0][0] as File;
-        expect(file.type).toBe('image/png');
-        expect(file.name).toMatch(/\.png$/);
-    });
-
-    it('handles an unencoded SVG data URL whose src contains ">" characters', () => {
-        editor = buildEditor();
-        const uploadImage = vi.fn().mockResolvedValue(UPLOADED_IMAGE);
-        const svg = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><rect/></svg>";
-        const html = `<p>a</p><img alt="shape" src="${svg}"><p>b</p>`;
-
-        const out = transformPastedDataUrlImages(editor, html, uploadImage);
-
-        expect(out).not.toContain('<svg');
-        expect(out).toContain('<p>a</p>');
-        expect(out).toContain('<p>b</p>');
-        expect(out.match(/data-upload-id="/g)).toHaveLength(1);
-        expect(uploadImage).toHaveBeenCalledTimes(1);
-        expect((uploadImage.mock.calls[0][0] as File).type).toBe('image/svg+xml');
-    });
-
-    it('does not turn a foreign div[data-upload-id] in pasted HTML into a placeholder', () => {
-        editor = buildEditor();
-
-        pasteHTML(editor, '<div data-upload-id="not-ours" data-media-type="image">x</div>');
-
-        expect(hasNodeType(editor, PLACEHOLDER_NODE_NAME)).toBe(false);
-    });
-
-    it('through the real paste pipeline: placeholder lands in the doc, then becomes the uploaded dotImage', async () => {
-        const uploadImage = vi.fn().mockResolvedValue(UPLOADED_IMAGE);
-        editor = buildEditor({
-            editorProps: {
-                transformPastedHTML: (html) =>
-                    transformPastedDataUrlImages(editor, html, uploadImage)
-            }
-        });
-
-        pasteHTML(editor, `<p>intro</p><img src="${PNG_DATA_URL}" alt="shot">`);
-
-        expect(hasNodeType(editor, PLACEHOLDER_NODE_NAME)).toBe(true);
-        expect(imageNodes(editor)).toHaveLength(0);
-
-        await flushPromises();
-
-        expect(hasNodeType(editor, PLACEHOLDER_NODE_NAME)).toBe(false);
-        const [image] = imageNodes(editor);
-        expect(image?.attrs?.['src']).toBe('/dA/inode-1');
-        expect(image?.attrs?.['data']).toEqual(UPLOADED_IMAGE.data);
-        expect(editor.getText()).toContain('intro');
-    });
-
-    it('removes the placeholder when the upload fails', async () => {
-        const uploadImage = vi.fn().mockRejectedValue(new Error('boom'));
-        vi.spyOn(console, 'error').mockImplementation(() => undefined);
-        editor = buildEditor({
-            editorProps: {
-                transformPastedHTML: (html) =>
-                    transformPastedDataUrlImages(editor, html, uploadImage)
-            }
-        });
-
-        pasteHTML(editor, `<img src="${PNG_DATA_URL}">`);
         await flushPromises();
 
         expect(hasNodeType(editor, PLACEHOLDER_NODE_NAME)).toBe(false);

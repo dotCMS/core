@@ -31,22 +31,31 @@ import {
     type UploadPlaceholderMediaType
 } from './nodes/upload-placeholder.extension';
 import { Video } from './nodes/video.extension';
+import { createPastedImageUploadExtension } from './pasted-image-upload.extension';
 import { SelectionPreserveExtension } from './selection-preserve.extension';
 import { createSlashCommandExtension } from './slash-command.extension';
 import { TableActiveCellsPlugin } from './table-active-cells.plugin';
 import { createDotTableExtensions } from './table-extensions';
 import { UnsupportedMark } from './unsupported-mark.extension';
 
+import { type UploadedImage } from '../services/dot-upload.service';
 import { EditorPopoverService } from '../services/editor-popover.service';
 
 import type { SlashMenuService } from '../components/slash-menu/slash-menu.service';
 
+/**
+ * Builds the editor's extension set for a field.
+ *
+ * @param uploadImage Publishes a pasted base64 image as a dotAsset; omitted where the host
+ * cannot upload, in which case pasted `data:` images are dropped as before.
+ */
 export function createEditorExtensions(
     menuService: SlashMenuService,
     allowedBlocks: string[] | undefined,
     injector: Injector,
     dotMessageService: DotMessageService,
-    remoteExtensions: AnyExtension[] = []
+    remoteExtensions: AnyExtension[] = [],
+    uploadImage?: (file: File) => Promise<UploadedImage>
 ): Extensions {
     const t = (key: string, ...args: string[]) => dotMessageService.get(key, ...args);
     const uploadCopy = {
@@ -168,6 +177,8 @@ export function createEditorExtensions(
         // Styled via `.tiptap mark` in editor.component.css rather than inline HTMLAttributes.
         Highlight,
         createUploadPlaceholderExtension(uploadCopy),
+        // Self-gates on `dotImage` being in the schema, so it is not behind `has('image')`.
+        createPastedImageUploadExtension(uploadImage),
         // Legacy-compat only: the new editor never creates `aiContent` nodes (AI Content
         // dialog inserts the generated HTML via `commands.insertContent` so it becomes
         // normal paragraph/heading/list nodes). This registration exists so customer

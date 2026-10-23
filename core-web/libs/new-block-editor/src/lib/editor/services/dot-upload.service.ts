@@ -44,7 +44,7 @@ export interface UploadedAudio {
  * Editor-facing adapter around `@dotcms/data-access`'s {@link DotUploadFileService}.
  *
  * Why this wrapper exists: the drop and paste handlers ({@link handleMediaDrop},
- * {@link handleMediaPaste}, {@link transformPastedDataUrlImages}) consume Promises
+ * {@link handleMediaPaste} and the `pastedImageUpload` extension) consume Promises
  * (`async/await`), while {@link DotUploadFileService.publishContent} returns an Observable
  * stream of `DotCMSContentlet[]`. This service:
  *  1. Bridges Promise/Observable so the drop flow stays linear and readable.

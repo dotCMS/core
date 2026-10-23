@@ -16,22 +16,15 @@ export type UploadPlaceholderCopy = {
     uploading: (mediaType: UploadPlaceholderMediaType) => string;
 };
 
-const PLACEHOLDER_NODE_NAME = 'uploadPlaceholder' as const;
+/** TipTap node name of the upload placeholder; exported so paste handling can create one. */
+export const UPLOAD_PLACEHOLDER_NODE_NAME = 'uploadPlaceholder' as const;
 
-/** HTML attribute carrying the placeholder's temp id, both when serialized and when parsed. */
-const PLACEHOLDER_ID_ATTR = 'data-upload-id';
-/** HTML attribute carrying the placeholder's media kind, both when serialized and when parsed. */
-const PLACEHOLDER_MEDIA_TYPE_ATTR = 'data-media-type';
-
-/** Id prefix per media kind; the parse rule only accepts ids built from these. */
+/** Id prefix per media kind. */
 const PLACEHOLDER_ID_PREFIX: Record<UploadPlaceholderMediaType, string> = {
     image: 'img',
     video: 'vid',
     audio: 'aud'
 };
-
-/** Shape of every id {@link createUploadPlaceholderId} produces: `<prefix>-<timestamp>-<sequence>`. */
-const PLACEHOLDER_ID_PATTERN = /^(img|vid|aud)-\d+-\d+$/;
 
 /** Keeps placeholder ids unique even when two pastes land within the same millisecond. */
 let placeholderSequence = 0;
@@ -40,30 +33,10 @@ let placeholderSequence = 0;
  * Builds a placeholder id that is unique for the page's lifetime.
  *
  * @param mediaType - Media kind, which picks the id prefix.
- * @returns An id matching the shape the node's parse rule accepts.
+ * @returns `<prefix>-<timestamp>-<sequence>`.
  */
 export function createUploadPlaceholderId(mediaType: UploadPlaceholderMediaType): string {
     return `${PLACEHOLDER_ID_PREFIX[mediaType]}-${Date.now()}-${placeholderSequence++}`;
-}
-
-/**
- * True when the id has the shape this editor generates. The parse rule uses it so a foreign
- * `div[data-upload-id]` in pasted HTML does not become a placeholder nothing will ever replace.
- */
-function isUploadPlaceholderId(id: string | null): id is string {
-    return id !== null && PLACEHOLDER_ID_PATTERN.test(id);
-}
-
-/**
- * Serializes a placeholder as the HTML the node's parse rule understands, so a paste
- * transform can put a placeholder where an image used to be before ProseMirror parses
- * the clipboard HTML (see `transformPastedDataUrlImages`).
- *
- * @param item - Temp id and media type of the placeholder.
- * @returns A `div` element string carrying the id and media type as data attributes.
- */
-export function uploadPlaceholderHtml({ id, mediaType }: UploadPlaceholderItem): string {
-    return `<div ${PLACEHOLDER_ID_ATTR}="${id}" ${PLACEHOLDER_MEDIA_TYPE_ATTR}="${mediaType}"></div>`;
 }
 
 /**
@@ -77,7 +50,7 @@ function findUploadPlaceholderPosition(doc: PMNode, placeholderId: string): numb
     let targetPos: number | null = null;
 
     doc.descendants((node, pos) => {
-        if (node.type.name === PLACEHOLDER_NODE_NAME && node.attrs['id'] === placeholderId) {
+        if (node.type.name === UPLOAD_PLACEHOLDER_NODE_NAME && node.attrs['id'] === placeholderId) {
             targetPos = pos;
             return false;
         }
@@ -157,15 +130,13 @@ function createUploadPlaceholderDom(
  * Atomic block node shown while a file uploads; replaced or removed when the upload finishes.
  *
  * - Not selectable/draggable; `contenteditable="false"` in the node view.
- * - Serializes as a `div` with `data-upload-id` and `data-media-type` for HTML export, and
- *   parses that same shape back, which is how {@link uploadPlaceholderHtml} lands in the
- *   document through the paste pipeline.
+ * - Serializes as a `div` with `data-upload-id` and `data-media-type` for HTML export.
  *
  * @param copy - Pre-translated copy provider for the placeholder UI.
  */
 export function createUploadPlaceholderExtension(copy: UploadPlaceholderCopy) {
     return Node.create({
-        name: PLACEHOLDER_NODE_NAME,
+        name: UPLOAD_PLACEHOLDER_NODE_NAME,
         group: 'block',
         atom: true,
         selectable: false,
@@ -178,30 +149,12 @@ export function createUploadPlaceholderExtension(copy: UploadPlaceholderCopy) {
             };
         },
 
-        parseHTML() {
-            return [
-                {
-                    tag: `div[${PLACEHOLDER_ID_ATTR}]`,
-                    getAttrs: (element: HTMLElement) => {
-                        const id = element.getAttribute(PLACEHOLDER_ID_ATTR);
-                        // `false` rejects the rule: only ids this editor minted are placeholders.
-                        if (!isUploadPlaceholderId(id)) return false;
-
-                        return {
-                            id,
-                            mediaType: element.getAttribute(PLACEHOLDER_MEDIA_TYPE_ATTR) ?? 'image'
-                        };
-                    }
-                }
-            ];
-        },
-
         renderHTML({ HTMLAttributes }) {
             return [
                 'div',
                 {
-                    [PLACEHOLDER_ID_ATTR]: HTMLAttributes['id'],
-                    [PLACEHOLDER_MEDIA_TYPE_ATTR]: HTMLAttributes['mediaType']
+                    'data-upload-id': HTMLAttributes['id'],
+                    'data-media-type': HTMLAttributes['mediaType']
                 }
             ];
         },
@@ -228,7 +181,7 @@ export function insertUploadPlaceholders(
     placeholders: UploadPlaceholderItem[]
 ): void {
     const content = placeholders.map(({ id, mediaType }) => ({
-        type: PLACEHOLDER_NODE_NAME,
+        type: UPLOAD_PLACEHOLDER_NODE_NAME,
         attrs: { id, mediaType }
     }));
     editor.chain().focus().insertContentAt(pos, content).run();

@@ -15,8 +15,7 @@ import {
     createUploadPlaceholderId,
     insertUploadPlaceholders,
     replacePlaceholder,
-    removePlaceholder,
-    uploadPlaceholderHtml
+    removePlaceholder
 } from './extensions/nodes/upload-placeholder.extension';
 import {
     type DotVideoData,
@@ -28,7 +27,6 @@ import {
     type UploadedImage,
     type UploadedVideo
 } from './services/dot-upload.service';
-import { dataUrlToFile, isDataUrl } from './utils/data-url.utils';
 import { isImageUrl } from './utils/url.utils';
 
 /** Upload callbacks the editor host supplies; a missing one means that media kind is not uploaded. */
@@ -80,7 +78,7 @@ function groupAllowedMediaFiles(
  * placeholder when the upload fails. Shared by the drop, file-paste and base64-paste paths so
  * every pasted or dropped image ends up with the same identifier-based `src` and `data`.
  */
-function uploadImageIntoPlaceholder(
+export function uploadImageIntoPlaceholder(
     editor: Editor,
     placeholderId: string,
     file: File,
@@ -248,9 +246,9 @@ export function handleMediaDrop(
  * - Plain text that is an image URL becomes an image node.
  * - Any other text wins over a file: Word puts a rendering of the formatted text on the
  *   clipboard as an image file next to the text, and the author wants the text.
- * - HTML carrying a base64 image wins over a file too: {@link transformPastedDataUrlImages}
- *   has already started uploading it, and consuming the paste here would discard the slice
- *   holding its placeholder and leave that upload orphaned.
+ * - HTML carrying a base64 image wins over a file too: the `pastedImageUpload` extension's
+ *   `transformPasted` has already swapped it for a placeholder and started its upload, and
+ *   consuming the paste here would discard that slice and leave the upload orphaned.
  *
  * @returns `true` when the paste was consumed; `false` lets ProseMirror paste as usual.
  */
@@ -290,65 +288,6 @@ export function handleMediaPaste(
         Array.from(clipboard.files ?? []),
         uploaders
     );
-}
-
-/**
- * Matches each `<img …>` tag in clipboard HTML. Quoted attribute values are consumed whole, so
- * a `>` inside the value, legal in serialized HTML and common in an unencoded
- * `data:image/svg+xml,<svg …>` source, does not end the match early.
- */
-const IMG_TAG_PATTERN = /<img\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi;
-
-/**
- * Reads `src` and `alt` off a single `<img>` tag without touching the live document: an element
- * in a detached document never fetches its `src`.
- */
-function readImgAttributes(tag: string): { src: string | null; alt: string | null } {
-    const container = document.implementation.createHTMLDocument('').createElement('div');
-    container.innerHTML = tag;
-    const img = container.querySelector('img');
-
-    return { src: img?.getAttribute('src') ?? null, alt: img?.getAttribute('alt') ?? null };
-}
-
-/**
- * ProseMirror `transformPastedHTML` hook: replaces every base64 (`data:`) image in pasted HTML
- * with an upload placeholder, uploads the decoded file, and swaps the placeholder for the
- * resulting `dotImage` once the upload finishes (#38165).
- *
- * `DotImage` deliberately does not parse `data:` sources, so without this the images in HTML
- * or Markdown pasted from another editor silently vanish. Replacing them before ProseMirror
- * parses the HTML keeps the surrounding content byte-for-byte as pasted; only the `<img>` tags
- * change. The placeholders reach the document synchronously with the paste, well before any
- * upload resolves.
- *
- * @returns The HTML to parse; unchanged when it carries no `data:` images, when images are not
- * allowed in the field, or when no uploader is available.
- */
-export function transformPastedDataUrlImages(
-    editor: Editor,
-    html: string,
-    uploadImage?: (file: File) => Promise<UploadedImage>
-): string {
-    if (!uploadImage || !isMediaTypeAllowed(editor, 'image') || !/data:image\//i.test(html)) {
-        return html;
-    }
-
-    let pastedCount = 0;
-
-    return html.replace(IMG_TAG_PATTERN, (tag) => {
-        const { src, alt } = readImgAttributes(tag);
-        if (!src || !isDataUrl(src)) return tag;
-
-        const file = dataUrlToFile(src, `pasted-image-${++pastedCount}`);
-        // Undecodable: leave the tag for the parser, which drops it as it always did.
-        if (!file) return tag;
-
-        const placeholder = { id: createUploadPlaceholderId('image'), mediaType: 'image' as const };
-        uploadImageIntoPlaceholder(editor, placeholder.id, file, alt ?? file.name, uploadImage);
-
-        return uploadPlaceholderHtml(placeholder);
-    });
 }
 
 /**
