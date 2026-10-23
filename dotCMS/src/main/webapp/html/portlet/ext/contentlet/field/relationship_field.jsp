@@ -360,8 +360,20 @@
                 : ""
         }
 
+        /**
+         * Escapes a value so it is shown as plain text when added to the page with innerHTML.
+         */
+        function <%= relationJsName%>EscapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         function <%= relationJsName%>WriteLinkTitle (o) {
-            return <%= relationJsName%>EditRelatedContentWrap(o, o['title']);
+            return <%= relationJsName%>EditRelatedContentWrap(o, <%= relationJsName%>EscapeHtml(o['title'] || ""));
         }
 		
         function numberOfRows<%= relationJsName%> () {
@@ -685,11 +697,11 @@
 						if (fieldName === "id"){
 							fieldCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(
 									item,
-									item["siblings"][0][fieldName] || item["siblings"][0][fieldName.toUpperCase()] || item[fieldName]);
+									<%= relationJsName%>EscapeHtml(item["siblings"]?.[0]?.[fieldName] || item["siblings"]?.[0]?.[fieldName.toUpperCase()] || item[fieldName] || ""));
 						} else {
 							fieldCell.innerHTML = <%= relationJsName%>EditRelatedContentWrap(
 									item,
-									item[fieldName] || "");
+									<%= relationJsName%>EscapeHtml(item[fieldName] || ""));
 						}
 
                     }
