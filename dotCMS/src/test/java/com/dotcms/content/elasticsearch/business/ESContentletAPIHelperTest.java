@@ -226,6 +226,35 @@ public class ESContentletAPIHelperTest extends UnitTestBase {
     }
 
     /**
+     * Given a requested list that adds a role with no bits to the current one
+     * When the two lists are compared
+     * Then they are the same
+     */
+    @Test
+    public void samePermissions_ignoresRolesWithoutBits() {
+
+        final List<Permission> requested = Arrays.asList(
+                permission(ROLE_A, READ), permission(ROLE_B, 0));
+        final List<Permission> current = Collections.singletonList(permission(ROLE_A, READ));
+
+        assertTrue(helper.hasSamePermissions(requested, current));
+    }
+
+    /**
+     * Given a null list against an empty one, and a list with a null entry against the same list
+     * without it
+     * When the lists are compared
+     * Then they are the same
+     */
+    @Test
+    public void samePermissions_treatsNullListsAndEntriesAsEmpty() {
+
+        assertTrue(helper.hasSamePermissions(null, Collections.emptyList()));
+        assertTrue(helper.hasSamePermissions(Arrays.asList(null, permission(ROLE_A, READ)),
+                Collections.singletonList(permission(ROLE_A, READ))));
+    }
+
+    /**
      * Given a contentlet flagged as being copied and a user without EDIT_PERMISSIONS anywhere
      * When the user's right to change its permissions is checked
      * Then it is allowed
@@ -242,9 +271,9 @@ public class ESContentletAPIHelperTest extends UnitTestBase {
     }
 
     /**
-     * Given a user with EDIT_PERMISSIONS on the contentlet
+     * Given a user with EDIT_PERMISSIONS on the contentlet, front-end roles included
      * When the user's right to change its permissions is checked
-     * Then it is allowed
+     * Then it is allowed, front-end roles counting as in PermissionAPI#save
      */
     @Test
     public void canEditPermissions_withEditPermissionsOnContentlet_isTrue() throws Exception {
@@ -252,6 +281,7 @@ public class ESContentletAPIHelperTest extends UnitTestBase {
         final PermissionAPI permissionAPI = mock(PermissionAPI.class);
         final Contentlet contentlet = contentlet();
         final User user = user();
+        // only the 3-argument check is stubbed: it counts front-end roles, the 4-argument one with false does not
         when(permissionAPI.doesUserHavePermission(contentlet, EDIT_PERMISSIONS, user)).thenReturn(true);
 
         assertTrue(helper.canEditPermissions(permissionAPI, contentlet, user));
@@ -290,22 +320,39 @@ public class ESContentletAPIHelperTest extends UnitTestBase {
     }
 
     /**
-     * Given a user whose EDIT_PERMISSIONS on the contentlet comes only from a front-end role
-     * When the user's right to change its permissions is checked
-     * Then it is allowed, as in PermissionAPI#save
+     * Given a contentlet flagged as being copied and no user
+     * When the right to change its permissions is checked
+     * Then it is allowed
      */
     @Test
-    public void canEditPermissions_countsFrontendRoles_likeSave() throws Exception {
+    public void canEditPermissions_copyFlagWithNullUser_isTrue() throws Exception {
 
         final PermissionAPI permissionAPI = mock(PermissionAPI.class);
         final Contentlet contentlet = contentlet();
-        final User user = user();
-        // the 3-argument check counts front-end roles, the 4-argument one with false does not
-        when(permissionAPI.doesUserHavePermission(contentlet, EDIT_PERMISSIONS, user)).thenReturn(true);
+        when(contentlet.getBoolProperty(Contentlet.IS_COPY)).thenReturn(true);
 
-        assertTrue(helper.canEditPermissions(permissionAPI, contentlet, user));
-        verify(permissionAPI, never()).doesUserHavePermission(
-                any(Permissionable.class), anyInt(), any(User.class), eq(false));
+        assertTrue(helper.canEditPermissions(permissionAPI, contentlet, null));
+    }
+
+    /**
+     * Given no user and a list equal to the contentlet's current permissions
+     * When the replacement is prepared
+     * Then there is nothing to do: no task and no removal
+     */
+    @Test
+    public void permissionReplacement_nullUserWithUnchangedList_doesNothing() throws Exception {
+
+        final PermissionAPI permissionAPI = mock(PermissionAPI.class);
+        final Contentlet contentlet = contentlet();
+        when(permissionAPI.getPermissions(contentlet)).thenReturn(Collections.singletonList(
+                permission(ROLE_A, READ)));
+        final List<Permission> requested = Collections.singletonList(permission(ROLE_A, READ));
+
+        final Optional<Runnable> replacement = helper.permissionReplacement(
+                permissionAPI, contentlet, requested, null, systemUser());
+
+        assertFalse(replacement.isPresent());
+        verify(permissionAPI, never()).removePermissions(any(Permissionable.class));
     }
 
     /**
@@ -385,15 +432,7 @@ public class ESContentletAPIHelperTest extends UnitTestBase {
 
         final InOrder inOrder = inOrder(permissionAPI);
         inOrder.verify(permissionAPI).removePermissions(contentlet);
-        inOrder.verify(permissionAPI, never()).doesUserHavePermission(
-                any(Permissionable.class), anyInt(), any(User.class));
-        inOrder.verify(permissionAPI, never()).doesUserHavePermission(
-                any(Permissionable.class), anyInt(), any(User.class), anyBoolean());
-        inOrder.verify(permissionAPI, never()).doesUserHavePermission(
-                any(ContentType.class), anyInt(), any(User.class));
-        inOrder.verify(permissionAPI, never()).doesUserHavePermission(
-                any(ContentType.class), anyInt(), any(User.class), anyBoolean());
-        inOrder.verify(permissionAPI).save(anyCollection(), eq(contentlet), same(systemUser), anyBoolean());
+        inOrder.verify(permissionAPI).save(anyCollection(), eq(contentlet), same(systemUser), eq(false));
     }
 
     /**

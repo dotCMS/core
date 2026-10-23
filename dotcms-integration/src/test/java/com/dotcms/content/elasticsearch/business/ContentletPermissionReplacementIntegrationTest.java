@@ -8,6 +8,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -16,10 +17,12 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.api.v1.workflow.WorkflowResource;
@@ -32,6 +35,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -42,9 +46,13 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
-import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.WebKeys;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -81,6 +89,9 @@ public class ContentletPermissionReplacementIntegrationTest {
     private static PermissionAPI permissionAPI;
     private static RoleAPI roleAPI;
 
+    /** Commit listener mode found before this class ran, restored when it finishes. */
+    private static boolean asyncCommitListenersBefore;
+
     /** Role given to every firing user: may use the System Workflow Save and Publish actions. */
     private static Role actorRole;
     /** Role that is not part of the contentlet's permissions until a caller requests it. */
@@ -91,11 +102,15 @@ public class ContentletPermissionReplacementIntegrationTest {
     private static ContentType contentType;
 
     /**
-     * Initializes the integration environment and creates the shared site, content type and roles.
+     * Initializes the integration environment, makes commit listeners run synchronously so the
+     * permission rows can be read right after each call, and creates the shared site, content type
+     * and roles.
      */
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        asyncCommitListenersBefore = HibernateUtil.getAsyncCommitListenersFinalization();
+        HibernateUtil.setAsyncCommitListenersFinalization(false);
 
         systemUser = APILocator.systemUser();
         contentletAPI = APILocator.getContentletAPI();
@@ -119,23 +134,50 @@ public class ContentletPermissionReplacementIntegrationTest {
     }
 
     /**
-     * Removes every contentlet, content type, site, user and role created by this class.
+     * Removes every contentlet, content type, site, user and role created by this class, and the
+     * permission rows it added on the System Workflow Save and Publish actions, then restores the
+     * commit listener mode found before the class ran.
      */
     @AfterClass
     public static void cleanup() {
-        contentlets.forEach(contentlet -> ContentletDataGen.destroy(contentlet, true));
-        contentTypes.forEach(ContentTypeDataGen::remove);
-        for (final Host createdSite : sites) {
+        try {
+            contentlets.forEach(contentlet -> ContentletDataGen.destroy(contentlet, true));
+            contentTypes.forEach(ContentTypeDataGen::remove);
+            for (final Host createdSite : sites) {
+                try {
+                    APILocator.getHostAPI().archive(createdSite, systemUser, false);
+                    APILocator.getHostAPI().delete(createdSite, systemUser, false);
+                } catch (final Exception e) {
+                    Logger.warn(ContentletPermissionReplacementIntegrationTest.class,
+                            "Unable to remove site " + createdSite.getIdentifier() + ": " + e.getMessage());
+                }
+            }
+            users.forEach(UserDataGen::remove);
+            removeActorRoleFromSystemActions();
+            roles.forEach(RoleDataGen::remove);
+        } finally {
+            HibernateUtil.setAsyncCommitListenersFinalization(asyncCommitListenersBefore);
+        }
+    }
+
+    /**
+     * Removes the USE rows {@link #prepare()} added for {@link #actorRole} on the System Workflow
+     * Save and Publish actions. Saving a row with no bits deletes it.
+     */
+    private static void removeActorRoleFromSystemActions() {
+        if (null == actorRole) {
+            return;
+        }
+        for (final String actionId : List.of(WORKFLOW_SAVE_ACTION_ID, WORKFLOW_PUBLISH_ACTION_ID)) {
             try {
-                APILocator.getHostAPI().archive(createdSite, systemUser, false);
-                APILocator.getHostAPI().delete(createdSite, systemUser, false);
+                final WorkflowAction action = workflowAPI.findAction(actionId, systemUser);
+                permissionAPI.save(new Permission(action.getPermissionId(), actorRole.getId(), 0, true),
+                        action, systemUser, false);
             } catch (final Exception e) {
                 Logger.warn(ContentletPermissionReplacementIntegrationTest.class,
-                        "Unable to remove site " + createdSite.getIdentifier() + ": " + e.getMessage());
+                        "Unable to remove the permissions on action " + actionId + ": " + e.getMessage());
             }
         }
-        users.forEach(UserDataGen::remove);
-        roles.forEach(RoleDataGen::remove);
     }
 
     /**
@@ -154,7 +196,6 @@ public class ContentletPermissionReplacementIntegrationTest {
         final String workingInodeBefore = workingInode(contentlet);
 
         final Contentlet saved = fire(contentlet, WORKFLOW_SAVE_ACTION_ID, editor, null);
-        waitForCommitListeners();
 
         assertNotNull(saved);
         assertNotEquals("A new version is expected", workingInodeBefore, workingInode(contentlet));
@@ -233,7 +274,6 @@ public class ContentletPermissionReplacementIntegrationTest {
                 extraRole.getId(), PermissionAPI.PERMISSION_READ);
 
         fire(contentlet, WORKFLOW_SAVE_ACTION_ID, owner, toPermissions(requested));
-        waitForCommitListeners();
 
         assertRowsContain(requested, individualRows(contentlet));
     }
@@ -260,7 +300,6 @@ public class ContentletPermissionReplacementIntegrationTest {
                 extraRole.getId(), PermissionAPI.PERMISSION_READ);
 
         fire(contentlet, WORKFLOW_SAVE_ACTION_ID, manager, toPermissions(requested));
-        waitForCommitListeners();
 
         assertRowsContain(requested, individualRows(contentlet));
     }
@@ -286,7 +325,6 @@ public class ContentletPermissionReplacementIntegrationTest {
                 extraRole.getId(), PermissionAPI.PERMISSION_READ);
 
         fire(contentlet, WORKFLOW_SAVE_ACTION_ID, typeManager, toPermissions(requested));
-        waitForCommitListeners();
 
         assertRowsContain(requested, individualRows(contentlet));
     }
@@ -309,7 +347,6 @@ public class ContentletPermissionReplacementIntegrationTest {
                 roleAPI.loadFrontEndUserRole().getId(), PermissionAPI.PERMISSION_READ);
 
         fire(contentlet, WORKFLOW_SAVE_ACTION_ID, TestUserUtils.getAdminUser(), toPermissions(requested));
-        waitForCommitListeners();
 
         assertRowsContain(requested, individualRows(contentlet));
     }
@@ -330,7 +367,6 @@ public class ContentletPermissionReplacementIntegrationTest {
                 extraRole.getId(), PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE);
 
         fire(contentlet, WORKFLOW_SAVE_ACTION_ID, systemUser, toPermissions(requested));
-        waitForCommitListeners();
 
         assertRowsContain(requested, individualRows(contentlet));
     }
@@ -352,7 +388,6 @@ public class ContentletPermissionReplacementIntegrationTest {
 
         final Contentlet copy = contentletAPI.copyContentlet(source, site, editor, false);
         contentlets.add(copy);
-        waitForCommitListeners();
 
         assertNotEquals(source.getIdentifier(), copy.getIdentifier());
         assertEquals(sourceRows, individualRows(copy));
@@ -374,7 +409,6 @@ public class ContentletPermissionReplacementIntegrationTest {
         final Map<String, Integer> rowsBefore = individualRows(contentlet);
 
         final Contentlet checkedIn = checkinWithCurrentPermissions(contentlet, editor);
-        waitForCommitListeners();
 
         assertNotNull(checkedIn);
         assertEquals(rowsBefore, individualRows(contentlet));
@@ -398,7 +432,6 @@ public class ContentletPermissionReplacementIntegrationTest {
         assertTrue(individualRows(contentlet).isEmpty());
 
         final Contentlet checkedIn = checkinWithCurrentPermissions(contentlet, editor);
-        waitForCommitListeners();
 
         assertNotNull(checkedIn);
         assertTrue(individualRows(contentlet).isEmpty());
@@ -409,7 +442,8 @@ public class ContentletPermissionReplacementIntegrationTest {
      * javax.servlet.http.HttpServletResponse, String, String, String, String, String, FireActionForm)}
      * Given Scenario: A back-end user with READ and WRITE (no permission to edit permissions) fires
      * Save through the REST resource with individual permissions that add a role
-     * ExpectedResult: The response status is 403 and the rows are unchanged
+     * ExpectedResult: The call fails because of a {@link DotSecurityException}, the response status
+     * is 403 and the rows are unchanged
      */
     @Test
     public void fireActionResource_withChangedList_withoutEditPermissions_answersForbidden() throws Exception {
@@ -419,31 +453,170 @@ public class ContentletPermissionReplacementIntegrationTest {
                 PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE);
         final Map<String, Integer> rowsBefore = individualRows(contentlet);
 
-        final int status = fireThroughResource(contentlet, editor);
-        waitForCommitListeners();
+        final Exception refusal = fireThroughResourceExpectingRefusal(contentlet, editor);
 
-        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), status);
+        assertTrue("Expected a DotSecurityException in the cause chain but got: " + refusal,
+                ExceptionUtil.causedBy(refusal, DotSecurityException.class));
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(),
+                ResponseUtil.mapExceptionResponse(refusal).getStatus());
         assertEquals(rowsBefore, individualRows(contentlet));
     }
 
     /**
-     * Method to test: {@link WorkflowResource#fireActionSinglePart(HttpServletRequest,
-     * javax.servlet.http.HttpServletResponse, String, String, String, String, String, FireActionForm)}
-     * Given Scenario: A front-end-only user fires Save through the REST resource with individual
-     * permissions that add a role
-     * ExpectedResult: The response status is 403 and the rows are unchanged
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, ContentletRelationships, List, List, User, boolean)}
+     * Given Scenario: A user with READ and WRITE (no permission to edit permissions) checks in a new
+     * version, outside any transaction, with a permission list that adds a role
+     * ExpectedResult: The call throws a {@link DotSecurityException} and the rows are unchanged
      */
     @Test
-    public void fireActionResource_byFrontEndOnlyUser_answersForbidden() throws Exception {
-        final User frontEndUser = newUser(roleAPI.loadFrontEndUserRole());
+    public void checkinWithChangedList_withoutEditPermissions_isRefused() throws Exception {
+        final User editor = newBackEndUser();
         final Contentlet contentlet = newContentlet(contentType, site);
-        final Map<String, Integer> rowsBefore = individualRows(contentlet);
+        grantIndividual(contentlet, userRole(editor),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE);
 
-        final int status = fireThroughResource(contentlet, frontEndUser);
-        waitForCommitListeners();
+        assertDirectChangedListIsRefused(contentlet, checkoutFor(contentlet, editor),
+                (editable, permissions) -> contentletAPI.checkin(editable,
+                        (ContentletRelationships) null, null, permissions, editor, false));
+    }
 
-        assertEquals(Response.Status.FORBIDDEN.getStatusCode(), status);
-        assertEquals(rowsBefore, individualRows(contentlet));
+    /**
+     * Method to test: {@link ContentletAPI#saveDraft(Contentlet, ContentletRelationships, List, List, User, boolean)}
+     * Given Scenario: A user with READ and WRITE (no permission to edit permissions) saves a draft,
+     * outside any transaction, with a permission list that adds a role
+     * ExpectedResult: The call throws a {@link DotSecurityException} and the rows are unchanged
+     */
+    @Test
+    public void saveDraftWithChangedList_withoutEditPermissions_isRefused() throws Exception {
+        final User editor = newBackEndUser();
+        final Contentlet contentlet = newContentlet(contentType, site);
+        grantIndividual(contentlet, userRole(editor),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE);
+
+        assertDirectChangedListIsRefused(contentlet, workingCopyFor(contentlet, editor),
+                (editable, permissions) -> contentletAPI.saveDraft(editable,
+                        (ContentletRelationships) null, null, permissions, editor, false));
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkinWithoutVersioning(Contentlet, ContentletRelationships, List, List, User, boolean)}
+     * Given Scenario: A user with READ and WRITE (no permission to edit permissions) checks in the
+     * working version without a new version, outside any transaction, with a permission list that
+     * adds a role
+     * ExpectedResult: The call throws a {@link DotSecurityException} and the rows are unchanged
+     */
+    @Test
+    public void checkinWithoutVersioningWithChangedList_withoutEditPermissions_isRefused() throws Exception {
+        final User editor = newBackEndUser();
+        final Contentlet contentlet = newContentlet(contentType, site);
+        grantIndividual(contentlet, userRole(editor),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE);
+
+        assertDirectChangedListIsRefused(contentlet, workingCopyFor(contentlet, editor),
+                (editable, permissions) -> contentletAPI.checkinWithoutVersioning(editable,
+                        (ContentletRelationships) null, null, permissions, editor, false));
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, ContentletRelationships, List, List, User, boolean)}
+     * Given Scenario: A user with EDIT_PERMISSIONS on the contentlet checks in a new version, outside
+     * any transaction, with a permission list that adds a role
+     * ExpectedResult: Right after the call the rows equal the requested list
+     */
+    @Test
+    public void checkinWithChangedList_withEditPermissions_replacesRows() throws Exception {
+        final User owner = newBackEndUser();
+        final Contentlet contentlet = newContentlet(contentType, site);
+        final int ownerBits = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE
+                | PermissionAPI.PERMISSION_EDIT_PERMISSIONS;
+        grantIndividual(contentlet, userRole(owner), ownerBits);
+        final Map<String, Integer> requested = Map.of(
+                userRole(owner).getId(), ownerBits,
+                extraRole.getId(), PermissionAPI.PERMISSION_READ);
+
+        final Contentlet checkedIn = contentletAPI.checkin(checkoutFor(contentlet, owner),
+                (ContentletRelationships) null, null, toPermissions(requested), owner, false);
+
+        assertNotNull(checkedIn);
+        assertEquals(requested, individualRows(contentlet));
+    }
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean,
+     * User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Given Scenario: A user with READ and WRITE on a content type that has its own permission rows,
+     * and no permission to edit permissions anywhere, imports a new row
+     * ExpectedResult: The import reports no errors and the new contentlet has no rows of its own
+     */
+    @Test
+    public void importByUserWithoutEditPermissions_newRowKeepsInheriting() throws Exception {
+        final User importer = newBackEndUser();
+        final ContentType importType = newContentType(site);
+        grantIndividual(importType, userRole(importer),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE);
+        grantIndividual(importType, extraRole, PermissionAPI.PERMISSION_READ);
+
+        final Map<String, List<String>> results = importTitle(importType, importer,
+                "title-test-" + uniqueSuffix(), new String[]{});
+
+        assertNoImportErrors(results);
+        final List<Contentlet> imported = contentletsOf(importType);
+        assertEquals(1, imported.size());
+        assertTrue(individualRows(imported.get(0)).isEmpty());
+    }
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean,
+     * User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Given Scenario: A user with READ and WRITE (no permission to edit permissions) updates, through
+     * a key field, an existing contentlet that has its own rows
+     * ExpectedResult: The import reports no errors and the contentlet's rows are unchanged
+     */
+    @Test
+    public void importUpdateByUserWithoutEditPermissions_keepsRowPermissions() throws Exception {
+        final User importer = newBackEndUser();
+        final ContentType importType = newContentType(site);
+        grantIndividual(importType, userRole(importer),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE);
+        grantIndividual(importType, extraRole, PermissionAPI.PERMISSION_READ);
+        final String title = "title-test-" + uniqueSuffix();
+        final Contentlet existing = newContentlet(importType, site, title);
+        grantIndividual(existing, userRole(importer),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE);
+        final Map<String, Integer> rowsBefore = individualRows(existing);
+        final Field titleField = importType.fieldMap().get("title");
+
+        final Map<String, List<String>> results = importTitle(importType, importer, title,
+                new String[]{titleField.id()});
+
+        assertNoImportErrors(results);
+        assertEquals(rowsBefore, individualRows(existing));
+    }
+
+    /**
+     * Method to test: {@link ImportUtil#importFile(Long, String, String, String[], boolean, boolean,
+     * User, long, String[], CsvReader, int, int, Reader, String, HttpServletRequest)}
+     * Given Scenario: A user with EDIT_PERMISSIONS on a content type that has its own permission rows
+     * imports a new row
+     * ExpectedResult: The import reports no errors and the new contentlet's rows include the
+     * content type's permissions
+     */
+    @Test
+    public void importByUserWithEditPermissionsOnContentType_appliesTypePermissions() throws Exception {
+        final User importer = newBackEndUser();
+        final ContentType importType = newContentType(site);
+        grantIndividual(importType, userRole(importer), PermissionAPI.PERMISSION_READ
+                | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_EDIT_PERMISSIONS);
+        grantIndividual(importType, extraRole, PermissionAPI.PERMISSION_READ);
+        final Map<String, Integer> typeRows = individualRows(importType);
+
+        final Map<String, List<String>> results = importTitle(importType, importer,
+                "title-test-" + uniqueSuffix(), new String[]{});
+
+        assertNoImportErrors(results);
+        final List<Contentlet> imported = contentletsOf(importType);
+        assertEquals(1, imported.size());
+        assertRowsContain(typeRows, individualRows(imported.get(0)));
     }
 
     /**
@@ -465,7 +638,6 @@ public class ContentletPermissionReplacementIntegrationTest {
             assertTrue("Expected a DotSecurityException in the cause chain but got: " + e,
                     isCausedBySecurityException(e));
         }
-        waitForCommitListeners();
 
         assertEquals(rowsBefore, individualRows(contentlet));
         assertEquals(stateBefore, ContentletState.of(contentlet));
@@ -504,19 +676,110 @@ public class ContentletPermissionReplacementIntegrationTest {
 
     /**
      * Fires Save through {@link WorkflowResource} authenticated as the given user, with individual
-     * permissions that grant READ to {@link #extraRole}, and returns the resulting HTTP status.
+     * permissions that grant READ to {@link #extraRole}, and returns the exception the call fails
+     * with. Fails the test when the call succeeds.
      */
-    private static int fireThroughResource(final Contentlet contentlet, final User user) {
+    private static Exception fireThroughResourceExpectingRefusal(final Contentlet contentlet,
+            final User user) {
         final FireActionForm form = new FireActionForm.Builder()
                 .individualPermissions(Map.of(PermissionAPI.Type.READ, List.of(extraRole.getId())))
                 .build();
+        final int status;
         try {
-            return new WorkflowResource().fireActionSinglePart(requestAs(user), new EmptyHttpResponse(),
+            status = new WorkflowResource().fireActionSinglePart(requestAs(user), new EmptyHttpResponse(),
                     WORKFLOW_SAVE_ACTION_ID, contentlet.getInode(), null, "FORCE", "-1", form)
                     .getStatus();
         } catch (final Exception e) {
-            return ResponseUtil.mapExceptionResponse(e).getStatus();
+            return e;
         }
+        throw new AssertionError("A changed permission list requires permission to edit permissions,"
+                + " but the call answered " + status);
+    }
+
+    /**
+     * Calls a save method with a permission list that adds {@link #extraRole} to the contentlet's
+     * current rows and asserts the call throws a {@link DotSecurityException} itself, not wrapped,
+     * and the rows are unchanged.
+     */
+    private static void assertDirectChangedListIsRefused(final Contentlet contentlet,
+            final Contentlet editable, final SaveWithPermissions call) throws DotDataException {
+
+        final Map<String, Integer> rowsBefore = individualRows(contentlet);
+        final Map<String, Integer> requested = new HashMap<>(rowsBefore);
+        requested.merge(extraRole.getId(), PermissionAPI.PERMISSION_READ, (current, added) -> current | added);
+
+        try {
+            call.save(editable, toPermissions(requested));
+            fail("A changed permission list requires permission to edit permissions");
+        } catch (final DotSecurityException expected) {
+            // the refusal reaches the caller as thrown by the contentlet API
+        }
+
+        assertEquals(rowsBefore, individualRows(contentlet));
+    }
+
+    /**
+     * Checks out the contentlet for the given user, ready to be checked in as a new version.
+     */
+    private static Contentlet checkoutFor(final Contentlet contentlet, final User user)
+            throws DotDataException, DotSecurityException {
+        final Contentlet checkout = contentletAPI.checkout(contentlet.getInode(), user, false);
+        checkout.setIndexPolicy(IndexPolicy.FORCE);
+        return checkout;
+    }
+
+    /**
+     * Returns an editable copy of the contentlet's working version that keeps its inode, so it can be
+     * saved as a draft or checked in without a new version.
+     */
+    private static Contentlet workingCopyFor(final Contentlet contentlet, final User user)
+            throws DotDataException, DotSecurityException {
+        final Contentlet copy = checkoutFor(contentlet, user);
+        copy.setInode(contentlet.getInode());
+        return copy;
+    }
+
+    /**
+     * Imports one CSV row with the given title into the content type on {@link #site}, as the given
+     * user, without a workflow action, and returns the import results.
+     */
+    private static Map<String, List<String>> importTitle(final ContentType type, final User user,
+            final String title, final String[] keyFields) throws IOException, DotDataException {
+        final Reader reader = new StringReader("title\r\n" + title + "\r\n");
+        final CsvReader csvReader = new CsvReader(reader);
+        csvReader.setSafetySwitch(false);
+        final String[] csvHeaders = csvReader.getHeaders();
+        return ImportUtil.importFile(0L, site.getInode(), type.inode(), keyFields, false, false, user,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(), csvHeaders, csvReader, -1, -1,
+                reader, null, importRequestAs(user));
+    }
+
+    /**
+     * Asserts the import results carry no errors.
+     */
+    private static void assertNoImportErrors(final Map<String, List<String>> results) {
+        final List<String> errors = results.get(ImportUtil.KEY_ERRORS);
+        assertTrue("Unexpected import errors: " + errors, null == errors || errors.isEmpty());
+    }
+
+    /**
+     * Returns the working contentlets of the given content type and registers them for cleanup.
+     */
+    private static List<Contentlet> contentletsOf(final ContentType type)
+            throws DotDataException, DotSecurityException {
+        final List<Contentlet> found = contentletAPI.findByStructure(type.inode(), systemUser, false, 0, 0);
+        contentlets.addAll(found);
+        return found;
+    }
+
+    /**
+     * Builds a request for an import run by the given user.
+     */
+    private static HttpServletRequest importRequestAs(final User user) {
+        final HttpServletRequest request = requestAs(user);
+        request.setAttribute(WebKeys.USER, user);
+        request.setAttribute(WebKeys.USER_ID, user.getUserId());
+        return request;
     }
 
     /**
@@ -665,9 +928,18 @@ public class ContentletPermissionReplacementIntegrationTest {
      * Creates a contentlet of the given type on the given site, without permission rows of its own.
      */
     private static Contentlet newContentlet(final ContentType type, final Host targetSite) {
+        return newContentlet(type, targetSite, "title-test");
+    }
+
+    /**
+     * Creates a contentlet of the given type and title on the given site, without permission rows of
+     * its own.
+     */
+    private static Contentlet newContentlet(final ContentType type, final Host targetSite,
+            final String title) {
         final Contentlet contentlet = new ContentletDataGen(type.id())
                 .host(targetSite)
-                .setProperty("title", "title-test")
+                .setProperty("title", title)
                 .nextPersisted();
         contentlets.add(contentlet);
         return contentlet;
@@ -683,17 +955,23 @@ public class ContentletPermissionReplacementIntegrationTest {
     }
 
     /**
-     * Waits for the commit listeners that save permission rows after a transaction commits.
-     */
-    private static void waitForCommitListeners() {
-        DateUtil.sleep(DateUtil.SECOND_MILLIS * 2);
-    }
-
-    /**
      * Returns a short random suffix for unique names.
      */
     private static String uniqueSuffix() {
         return UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+    }
+
+    /**
+     * A contentlet API save call that receives the contentlet to save and a permission list.
+     */
+    @FunctionalInterface
+    private interface SaveWithPermissions {
+
+        /**
+         * Saves the contentlet with the given permission list.
+         */
+        Contentlet save(Contentlet editable, List<Permission> permissions)
+                throws DotDataException, DotSecurityException;
     }
 
     /**
