@@ -106,9 +106,9 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentAnalyticsPersistenceModeIT.class,
         EventAnalyticsProxyResourceIntegrationTest.class,
         GenericBundleActivatorIntegrationTest.class,
-        UserDeletionCacheInvalidationTest.class,
         com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest.class,
-        com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class
+        com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class,
+        UserDeletionCacheInvalidationTest.class
 })
 public class MainSuite2a {
 
