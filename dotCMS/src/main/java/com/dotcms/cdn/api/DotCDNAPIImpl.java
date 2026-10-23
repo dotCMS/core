@@ -20,6 +20,7 @@ import com.dotmarketing.util.json.JSONObject;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
+import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -409,7 +410,8 @@ public class DotCDNAPIImpl implements DotCDNAPI {
      */
     @Override
     public boolean invalidateAll() {
-        try (final Response response = RestClientBuilder.newClient().target(invalidateAllUrl())
+        final Client client = RestClientBuilder.newClient();
+        try (final Response response = client.target(invalidateAllUrl())
                 .request(MediaType.APPLICATION_JSON_TYPE)
                 .header("AccessKey", accessKey)
                 .post(Entity.entity("", MediaType.TEXT_PLAIN))) {
@@ -421,6 +423,8 @@ public class DotCDNAPIImpl implements DotCDNAPI {
                 throw new BadRequestException(message);
             }
             return true;
+        } finally {
+            client.close();
         }
     }
 

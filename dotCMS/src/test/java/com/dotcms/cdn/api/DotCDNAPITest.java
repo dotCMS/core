@@ -51,6 +51,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -379,6 +380,7 @@ class DotCDNAPITest {
                 final boolean result = dotCDNAPI.invalidateAll();
 
                 assertTrue(result);
+                verify(restClient).close();
             }
         }
     }
@@ -400,6 +402,7 @@ class DotCDNAPITest {
                 final DotCDNAPI dotCDNAPI = DotCDNAPI.api(host);
 
                 assertThrows(BadRequestException.class, dotCDNAPI::invalidateAll);
+                verify(restClient).close();
             }
         }
     }
