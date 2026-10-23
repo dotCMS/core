@@ -287,6 +287,19 @@ describe('handleMediaPaste', () => {
         expect(hasNodeType(editor, UPLOAD_PLACEHOLDER_NODE_NAME)).toBe(false);
     });
 
+    it('leaves the paste alone when the HTML carries a data: image even if the text is an image URL', () => {
+        editor = buildEditor();
+        const uploadImage = vi.fn().mockResolvedValue(UPLOADED_IMAGE);
+        const event = buildPasteEvent(
+            [],
+            'https://dotcms.com/images/logo.png',
+            `<img src="${PNG_DATA_URL}">`
+        );
+
+        expect(handleMediaPaste(editor, editor.view, event, { uploadImage })).toBe(false);
+        expect(imageNodes(editor)).toHaveLength(0);
+    });
+
     it('leaves the paste alone when text travels with the image (Word formatting image)', () => {
         editor = buildEditor();
         const file = new File(['x'], 'image.png', { type: 'image/png' });

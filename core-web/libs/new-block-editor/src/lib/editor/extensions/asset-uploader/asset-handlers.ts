@@ -52,9 +52,9 @@ export function handleMediaDrop(
  * - Plain text that is an image URL becomes an image node.
  * - Any other text wins over a file: Word puts a rendering of the formatted text on the
  *   clipboard as an image file next to the text, and the author wants the text.
- * - HTML carrying a base64 image wins over a file too: {@link swapDataUrlImages} has already
- *   replaced it with a placeholder and started its upload, and consuming the paste here would
- *   discard that slice and leave the upload orphaned.
+ * - HTML carrying a base64 image wins over a file and over an image URL: {@link swapDataUrlImages}
+ *   has already replaced it with a placeholder and started its upload, and consuming the paste
+ *   here would discard that slice and leave the upload orphaned.
  *
  * @returns `true` when the paste was consumed; `false` lets ProseMirror paste as usual.
  */
@@ -71,6 +71,9 @@ export function handleMediaPaste(
     const pastedImageUrl = isImageUrl(text);
     if (text && !pastedImageUrl) return false;
 
+    // Checked before the image-URL branch too: that branch also consumes the paste.
+    if (/data:image\//i.test(clipboard.getData('text/html') || '')) return false;
+
     if (pastedImageUrl) {
         if (!editor.schema.nodes[DOT_IMAGE_NODE_NAME]) return false;
 
@@ -85,8 +88,6 @@ export function handleMediaPaste(
 
         return true;
     }
-
-    if (/data:image\//i.test(clipboard.getData('text/html') || '')) return false;
 
     const files = Array.from(clipboard.files ?? []);
 
