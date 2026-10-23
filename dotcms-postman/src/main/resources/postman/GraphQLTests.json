@@ -3769,9 +3769,11 @@
 											"",
 											"pm.test(\"No content is returned to anonymous callers\", function () {",
 											"    const body = pm.response.text();",
-											"    pm.expect(body).to.contains(\"Unauthorized\");",
+											"    // sendError may answer with a plain container error page;",
+											"    // no GraphQL payload or setting name may ever reach the caller.",
 											"    pm.expect(body).not.to.contains(\"CONTENT_APIS_ALLOW_ANONYMOUS\");",
 											"    pm.expect(body).not.to.match(/\"data\"\\s*:/);",
+											"    pm.expect(pm.response.code).to.eql(401);",
 											"});"
 										],
 										"type": "text/javascript",
@@ -12414,9 +12416,11 @@
 									"",
 									"pm.test(\"No content is returned to anonymous callers\", function () {",
 									"    const body = pm.response.text();",
-									"    pm.expect(body).to.contains(\"Unauthorized\");",
+									"    // sendError may answer with a plain container error page;",
+									"    // no GraphQL payload or setting name may ever reach the caller.",
 									"    pm.expect(body).not.to.contains(\"CONTENT_APIS_ALLOW_ANONYMOUS\");",
 									"    pm.expect(body).not.to.match(/\"data\"\\s*:/);",
+									"    pm.expect(pm.response.code).to.eql(401);",
 									"});"
 								],
 								"type": "text/javascript"

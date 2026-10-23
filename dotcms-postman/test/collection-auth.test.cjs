@@ -598,6 +598,7 @@ function runRenderScript(r, status, body) {
   const failures = [];
   const response = {
     status,
+    code: status,
     json: () => body,
     text: () => typeof body === 'string' ? body : JSON.stringify(body),
     to: { have: { status: (expected) => assert.equal(status, expected,
@@ -613,7 +614,9 @@ function runRenderScript(r, status, body) {
         `expected ${JSON.stringify(actual)} not to contain ${JSON.stringify(expected)}`);
       return {
         to: { equal: (expected) => assert.equal(actual, expected),
-          contains: (expected) => contains(actual, expected), not: { contains: negative } },
+          contains: (expected) => contains(actual, expected),
+          eql: (expected) => assert.deepStrictEqual(actual, expected),
+          not: { contains: negative, match: (pattern) => assert.ok(!pattern.test(String(actual))) } },
         not: { to: { contains: negative,
           match: (pattern) => assert.ok(!pattern.test(String(actual))) } },
       };
