@@ -6,8 +6,9 @@
 # each one once per job and a single toomanyrequests/unknown-blob error fails the job (and,
 # via fail-fast, cancels ~20 siblings). So pull them here first, with retries:
 #
-#   1. anonymously through mirror.gcr.io (empty DOCKER_CONFIG, see below), then retag as the
-#      canonical reference. The plugin's default IfNotPresent pull policy then finds it.
+#   1. through mirror.gcr.io, then retag as the canonical reference. The plugin's default
+#      IfNotPresent pull policy then finds it. (A CI spike on #38189 showed the pull works with
+#      the Docker Hub login active, and that a retagged image stops the plugin pulling again.)
 #   2. otherwise from Docker Hub with the job's (docker/login-action) credentials.
 #
 # Best effort by design: this script ALWAYS exits 0. If every pull fails the plugin pulls
@@ -33,18 +34,12 @@ for key in $KEYS; do
   elif docker image inspect "$ref" >/dev/null 2>&1; then
     source="present"
   else
-    # docker/login-action leaves Docker Hub credentials in the docker config; they are
-    # forwarded to the mirror's token endpoint, which answers 401 to non-matching Basic
-    # credentials. The mirror attempt therefore needs an anonymous (empty) config,
-    # otherwise every logged-in pull would silently fall back to Hub.
     for attempt in $(seq 1 "$MIRROR_TRIES"); do
-      anon="$(mktemp -d)"
-      if DOCKER_CONFIG="$anon" timeout 300 docker pull "${MIRROR}/${ref}" >/dev/null 2>&1 \
+      if timeout 300 docker pull "${MIRROR}/${ref}" >/dev/null 2>&1 \
          && docker tag "${MIRROR}/${ref}" "$ref"; then
         source="mirror"
+        break
       fi
-      rm -rf "$anon"
-      [[ "$source" == "mirror" ]] && break
       [[ "$attempt" -lt "$MIRROR_TRIES" ]] && sleep $((10 * attempt))
     done
 

@@ -104,17 +104,6 @@ STUB_PRESENT=0 run_case "nope"
 check "$RC" "0" "exit 0"
 check "$(count "$LOG" 'docker pull')" "0" "no pull"
 
-echo "mirror pull is anonymous"
-DOCKER_CONFIG="$WORKDIR/loggedin" STUB_PRESENT=0 STUB_MIRROR_FAILS=99 STUB_HUB_OK=1 run_case "postgres"
-mirror_cfg="$(printf '%s\n' "$LOG" | grep 'docker pull mirror.gcr.io/' | sed -E 's/.*DOCKER_CONFIG=([^]]*)\]/\1/' | sort -u)"
-hub_cfg="$(printf '%s\n' "$LOG" | grep "docker pull $POSTGRES_REF" | sed -E 's/.*DOCKER_CONFIG=([^]]*)\]/\1/' | sort -u)"
-if [[ -n "$mirror_cfg" && "$mirror_cfg" != *"$WORKDIR/loggedin"* && "$mirror_cfg" != *default* ]]; then
-  ok "mirror pull uses a fresh DOCKER_CONFIG, not the caller's"
-else
-  bad "mirror pull uses a fresh DOCKER_CONFIG, not the caller's" "saw '$mirror_cfg'"
-fi
-check "$hub_cfg" "$WORKDIR/loggedin" "Hub fallback keeps the caller's (logged-in) DOCKER_CONFIG"
-
 echo "environment.properties"
 # Comments may mention the mirror; no property value may.
 if grep -v '^[[:space:]]*#' "$ENV_FILE" | grep -q 'mirror\.gcr\.io'; then bad "no mirror.gcr.io in environment.properties"; else ok "no mirror.gcr.io in environment.properties"; fi
