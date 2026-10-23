@@ -380,6 +380,9 @@ runs:
     - name: Pre-pull test images
       if: ${{ inputs.pre-pull-images != '' && runner.os == 'Linux' }}
       continue-on-error: true
+      # Hard cap: the script's own worst case (3 mirror + 2 Hub tries per key at timeout 300)
+      # is far longer. On expiry continue-on-error lets the plugin do its own pull.
+      timeout-minutes: 10
       shell: bash
       env:
         PRE_PULL_IMAGES: ${{ inputs.pre-pull-images }}

@@ -30,6 +30,7 @@ on:
       - '.github/actionlint.yaml'
       - '.github/filters.yaml'
       - '.github/test-matrix.yml'
+      - 'environments/**'
       - 'independent-projects/core-plugins/**'
       - 'osgi-base/**'
 

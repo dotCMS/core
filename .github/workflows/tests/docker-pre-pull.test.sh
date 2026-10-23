@@ -57,38 +57,41 @@ run_case() {
   SUMMARY="$(cat "$GITHUB_STEP_SUMMARY")"
 }
 count() { printf '%s\n' "$1" | grep -c -- "$2" || true; }
+# Fixed-string count. Callers include the stub's trailing " [DOCKER_CONFIG=" so the whole
+# reference is matched: a ref with extra trailing characters must NOT count.
+countF() { printf '%s\n' "$1" | grep -cF -- "$2" || true; }
 
 POSTGRES_REF="$(grep -m1 '^docker\.image\.postgres=' "$ENV_FILE" | cut -d= -f2-)"
 
 echo "mirror succeeds on first try"
 STUB_PRESENT=0 STUB_MIRROR_FAILS=0 STUB_HUB_OK=0 run_case "postgres"
 check "$RC" "0" "exit 0"
-check "$(count "$LOG" 'docker pull mirror.gcr.io/')" "1" "one mirror pull"
-check "$(count "$LOG" "docker tag mirror.gcr.io/$POSTGRES_REF $POSTGRES_REF")" "1" "retagged to the exact canonical reference"
-check "$(count "$LOG" 'docker pull pgvector')" "0" "no Hub pull"
+check "$(countF "$LOG" "docker pull mirror.gcr.io/$POSTGRES_REF [DOCKER_CONFIG=")" "1" "one mirror pull of the exact reference"
+check "$(countF "$LOG" "docker tag mirror.gcr.io/$POSTGRES_REF $POSTGRES_REF [DOCKER_CONFIG=")" "1" "retagged to the exact canonical reference"
+check "$(countF "$LOG" "docker pull $POSTGRES_REF [DOCKER_CONFIG=")" "0" "no Hub pull"
 check "$(count "$OUT" 'pre-pull postgres source=mirror')" "1" "notice says source=mirror"
 check "$(count "$SUMMARY" 'pre-pull postgres source=mirror')" "1" "step summary says source=mirror"
 
 echo "mirror fails 3 times, Hub succeeds"
 STUB_PRESENT=0 STUB_MIRROR_FAILS=99 STUB_HUB_OK=1 run_case "postgres"
 check "$RC" "0" "exit 0"
-check "$(count "$LOG" 'docker pull mirror.gcr.io/')" "3" "three mirror attempts"
+check "$(countF "$LOG" "docker pull mirror.gcr.io/$POSTGRES_REF [DOCKER_CONFIG=")" "3" "three mirror attempts at the exact reference"
 check "$(count "$LOG" 'sleep 10$')" "1" "sleep 10 after attempt 1"
 check "$(count "$LOG" 'sleep 20$')" "1" "sleep 20 after attempt 2"
-check "$(count "$LOG" "docker pull $POSTGRES_REF")" "1" "Hub pull of the canonical reference"
+check "$(countF "$LOG" "docker pull $POSTGRES_REF [DOCKER_CONFIG=")" "1" "Hub pull of the canonical reference"
 check "$(count "$LOG" 'docker tag')" "0" "no tag when the mirror never succeeded"
 check "$(count "$OUT" 'source=hub')" "1" "notice says source=hub"
 
 echo "mirror succeeds on the third attempt"
 STUB_PRESENT=0 STUB_MIRROR_FAILS=2 STUB_HUB_OK=0 run_case "postgres"
-check "$(count "$LOG" 'docker pull mirror.gcr.io/')" "3" "three mirror attempts"
+check "$(countF "$LOG" "docker pull mirror.gcr.io/$POSTGRES_REF [DOCKER_CONFIG=")" "3" "three mirror attempts at the exact reference"
 check "$(count "$OUT" 'source=mirror')" "1" "source=mirror"
 
 echo "everything fails"
 STUB_PRESENT=0 STUB_MIRROR_FAILS=99 STUB_HUB_OK=0 run_case "postgres search"
 check "$RC" "0" "exit code is still 0"
 check "$(count "$OUT" 'source=none')" "2" "both keys report source=none"
-check "$(count "$LOG" "docker pull $POSTGRES_REF")" "2" "Hub tried twice for postgres"
+check "$(countF "$LOG" "docker pull $POSTGRES_REF [DOCKER_CONFIG=")" "2" "Hub tried twice for postgres"
 
 echo "image already present"
 STUB_PRESENT=1 run_case "postgres search search.upgrade"

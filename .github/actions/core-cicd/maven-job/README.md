@@ -35,6 +35,7 @@ This GitHub Action sets up and runs a Maven job with extensive configuration opt
 | `java-version` | The version of Java to install | No | - |
 | `graalvm-version` | Override the sdkman version of GraalVM to install | No | - |
 | `require-graalvm` | Require GraalVM to be installed | Yes | `false` |
+| `pre-pull-images` | Space-separated `docker.image.<key>` keys to pre-pull via mirror.gcr.io with Docker Hub fallback (Linux only, best effort) | No | `''` |
 
 ## Usage
 
