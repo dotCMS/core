@@ -4,6 +4,11 @@ import static com.dotcms.datagen.TestDataUtils.getEmployeeLikeContentType;
 import static com.dotcms.rest.api.v1.vtl.RequestBodyVelocityReader.EMBEDDED_VELOCITY_KEY_NAME;
 import static com.dotcms.rest.api.v1.vtl.VTLResource.VTL_PATH;
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -13,21 +18,27 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.rendering.velocity.viewtools.secrets.DotVelocitySecretAppConfigThreadLocal;
+import com.dotcms.rendering.velocity.viewtools.secrets.DotVelocitySecretAppKeys;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.WebResource;
+import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.util.ConfigTestHelper;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -70,6 +81,8 @@ public class VTLResourceIntegrationTest {
 
     private final User systemUser = APILocator.systemUser();
     private static final String ANONYMOUS_USER_ID = "anonymous";
+    private static final String SECRET_VALUE = "vtl-secret-value";
+    private static final String SECRET_REFERENCE = "$dotsecrets.get(\"mySecret\")";
 
     @BeforeClass
     public static void prepare() throws Exception{
@@ -177,6 +190,12 @@ public class VTLResourceIntegrationTest {
         final Host site = new SiteDataGen().nextPersisted();
 
         final Folder vtlFolder = createVTLFolder(testCase.getFolderName(), site);
+        // the anonymous cases expect READ globally (other tests may leave it changed) and the
+        // scripting opt-in for the file endpoint; authenticated cases are unaffected
+        final String originalGlobal = Config.getStringProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, null);
+        final String originalScripting = Config.getStringProperty(AnonymousAccess.SCRIPTING_APIS_ALLOW_ANONYMOUS, null);
+        Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, "READ");
+        Config.setProperty(AnonymousAccess.SCRIPTING_APIS_ALLOW_ANONYMOUS, true);
 
         try {
             final Response response = getResponseFromVTLResource(testCase, vtlFolder,
@@ -186,14 +205,109 @@ public class VTLResourceIntegrationTest {
             final String actualOutput = actualOutput(testCase, response);
             assertEquals(expectedOutput, actualOutput);
         } finally {
+            Config.setProperty(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS, originalGlobal);
+            Config.setProperty(AnonymousAccess.SCRIPTING_APIS_ALLOW_ANONYMOUS, originalScripting);
             APILocator.getFolderAPI().delete(vtlFolder, APILocator.systemUser(), false);
+        }
+    }
+
+    /**
+     * Given scenario: an anonymous GET to a file-based /api/vtl endpoint whose get.vtl reads a
+     * Velocity Secret, and the file was last edited by a user with the Scripting Developer role.
+     * Expected result: the secret value is rendered.
+     */
+    @Test
+    public void testGet_anonymousReadsSecret_whenFileLastEditedByScriptingDeveloper() throws Exception {
+        final User scriptingDeveloper = new UserDataGen().roles(
+                APILocator.getRoleAPI().loadCMSAdminRole(),
+                APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER)).nextPersisted();
+
+        assertEquals(SECRET_VALUE, getSecretAnonymously(scriptingDeveloper));
+    }
+
+    /**
+     * Given scenario: the same anonymous request, but the file's last editor lacks the Scripting
+     * Developer role.
+     * Expected result: the secret is not rendered.
+     */
+    @Test
+    public void testGet_anonymousCannotReadSecret_whenFileEditorLacksScriptingRole() throws Exception {
+        final User editor = new UserDataGen().roles(APILocator.getRoleAPI().loadCMSAdminRole()).nextPersisted();
+
+        // the denied call returns null, which Velocity renders as the unresolved reference
+        assertEquals(SECRET_REFERENCE, getSecretAnonymously(editor));
+    }
+
+    /**
+     * Seeds a dotVelocitySecretApp secret on a new site, publishes a get.vtl that prints it as the
+     * given editor, and calls the endpoint as the anonymous user.
+     *
+     * @param editor user who checks in and publishes the get.vtl file
+     * @return the raw output of the endpoint
+     */
+    private String getSecretAnonymously(final User editor) throws Exception {
+        final String allowAnonymous = Config.getStringProperty(AnonymousAccess.SCRIPTING_APIS_ALLOW_ANONYMOUS, null);
+        Config.setProperty(AnonymousAccess.SCRIPTING_APIS_ALLOW_ANONYMOUS, true);
+        DotVelocitySecretAppConfigThreadLocal.INSTANCE.clearConfig();
+
+        final Host site = new SiteDataGen().nextPersisted();
+        final String folderName = System.currentTimeMillis() + "secrets";
+        final Folder vtlFolder = createVTLFolder(folderName, site);
+        try {
+            APILocator.getAppsAPI().saveSecrets(new AppSecrets.Builder()
+                    .withKey(DotVelocitySecretAppKeys.APP_KEY)
+                    .withSecret(DotVelocitySecretAppKeys.TITLE.key, "VTL secrets test")
+                    .withHiddenSecret("mySecret", SECRET_VALUE)
+                    .build(), site, systemUser);
+
+            final File vtl = new File(Files.createTempDirectory("dotcms-test").toFile(), "get.vtl");
+            Files.writeString(vtl.toPath(), SECRET_REFERENCE);
+
+            final VTLResourceTestCase testCase = new VTLResourceTestCase.Builder()
+                    .setVtlFile(vtl)
+                    .setFolderName(folderName)
+                    .setQueryParameters(new MultivaluedHashMap<>())
+                    .setPathParameter("secret")
+                    .setUser(ANONYMOUS_USER_ID)
+                    .setResourceMethod(ResourceMethod.GET)
+                    .build();
+            final Response response = getResponseFromVTLResource(testCase, vtlFolder,
+                    site.getHostname(), editor);
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            return response.getEntity().toString().trim();
+        } finally {
+            Config.setProperty(AnonymousAccess.SCRIPTING_APIS_ALLOW_ANONYMOUS, allowAnonymous);
+            DotVelocitySecretAppConfigThreadLocal.INSTANCE.clearConfig();
+            APILocator.getAppsAPI().deleteSecrets(DotVelocitySecretAppKeys.APP_KEY, site, systemUser);
+            APILocator.getFolderAPI().delete(vtlFolder, systemUser, false);
+            APILocator.getHostAPI().archive(site, systemUser, false);
+            APILocator.getHostAPI().delete(site, systemUser, false);
         }
     }
 
     private Response getResponseFromVTLResource(final VTLResourceTestCase testCase,
             final Folder vtlFolder, final String hostName)
             throws IOException, DotSecurityException, DotDataException {
-        createVTLFile(testCase.getVtlFile(), vtlFolder);
+        return getResponseFromVTLResource(testCase, vtlFolder, hostName, systemUser);
+    }
+
+    /**
+     * Publishes the test case's VTL file as {@code fileEditor} and calls the resource method the
+     * test case names.
+     *
+     * @param testCase   the request to make and the VTL file to serve
+     * @param vtlFolder  folder that holds the endpoint's get.vtl
+     * @param hostName   server name the mocked request reports
+     * @param fileEditor user who checks in and publishes get.vtl, and so is its last editor
+     * @return the resource's response
+     * @throws IOException          if the VTL file cannot be copied
+     * @throws DotSecurityException if the editor cannot save or publish the file
+     * @throws DotDataException     if the file or the requesting user cannot be loaded
+     */
+    private Response getResponseFromVTLResource(final VTLResourceTestCase testCase,
+            final Folder vtlFolder, final String hostName, final User fileEditor)
+            throws IOException, DotSecurityException, DotDataException {
+        createVTLFile(testCase.getVtlFile(), vtlFolder, fileEditor);
 
         final HttpServletRequest request = getMockedRequest();
         when(request.getServerName()).thenReturn(hostName);
@@ -255,8 +369,8 @@ public class VTLResourceIntegrationTest {
                 APILocator.systemUser(), false);
 
         final WebResource webResource = spy(WebResource.class);
-        doReturn(requestingUser).when(webResource).getCurrentUser(request, response,
-                WebResource.buildParamsMap(testCase.getPathParameter()), AnonymousAccess.systemSetting());
+        doReturn(requestingUser).when(webResource).getCurrentUser(eq(request), eq(response),
+                anyMap(), any(AnonymousAccess.class), any(WebResource.AuthCheckOptions[].class));
         return webResource;
     }
 
@@ -265,6 +379,11 @@ public class VTLResourceIntegrationTest {
         final HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getSession(false)).thenReturn(mock(HttpSession.class));
         when(request.getSession()).thenReturn(mock(HttpSession.class));
+        // keep request attributes, which the file readers use to tell SecretTool which file runs
+        final Map<String, Object> attributes = new HashMap<>();
+        doAnswer(invocation -> attributes.put(invocation.getArgument(0), invocation.getArgument(1)))
+                .when(request).setAttribute(anyString(), any());
+        when(request.getAttribute(anyString())).thenAnswer(invocation -> attributes.get(invocation.<String>getArgument(0)));
         return request;
     }
 
@@ -274,17 +393,31 @@ public class VTLResourceIntegrationTest {
         return EMPTY_HTTP_RESPONSE;
     }
 
-    private void createVTLFile(final File vtlFile, final Folder vtlFolder) throws IOException, DotSecurityException, DotDataException {
+    /**
+     * Checks in and publishes the given file as get.vtl under the folder, so that {@code editor}
+     * is its last editor, and lets the anonymous role read it.
+     *
+     * @param vtlFile    file whose contents become get.vtl
+     * @param vtlFolder  folder under /application/apivtl that holds the endpoint
+     * @param editor     user who checks in and publishes the file
+     * @throws IOException          if the temporary copy of the file cannot be written
+     * @throws DotSecurityException if the editor cannot save or publish the file
+     * @throws DotDataException     if the file or its permissions cannot be saved
+     */
+    private void createVTLFile(final File vtlFile, final Folder vtlFolder, final User editor)
+            throws IOException, DotSecurityException, DotDataException {
         final File getVTLFile = new File(Files.createTempDirectory("dotcms-test").toFile(), "get.vtl");
         FileUtil.copyFile(vtlFile, getVTLFile);
 
-        final FileAssetDataGen fileAssetDataGen = new FileAssetDataGen(vtlFolder, getVTLFile);
-        final Contentlet getVTLFileAsset = fileAssetDataGen.nextPersisted();
+        final Contentlet newFileAsset = new FileAssetDataGen(vtlFolder, getVTLFile).next();
+        newFileAsset.setIndexPolicy(IndexPolicy.FORCE);
+        newFileAsset.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+        final Contentlet getVTLFileAsset = APILocator.getContentletAPI().checkin(newFileAsset, editor, false);
         getVTLFileAsset.setIndexPolicy(IndexPolicy.FORCE);
         getVTLFileAsset.setIndexPolicyDependencies(IndexPolicy.FORCE);
         getVTLFileAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         getVTLFileAsset.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
-        APILocator.getContentletAPI().publish(getVTLFileAsset, systemUser, false);
+        APILocator.getContentletAPI().publish(getVTLFileAsset, editor, false);
 
         //Assign permissions
         APILocator.getPermissionAPI().save(
