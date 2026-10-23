@@ -112,6 +112,14 @@ endpoints when preparing an upgrade. Servers providing public content feeds, inc
 announcements feed, must explicitly opt into `READ`; instances merely consuming a remote
 public feed do not need to enable anonymous access themselves.
 
+**Rollback note:** these are compiled-in defaults, not stored settings, so rolling the binary
+back to a previous release silently restores the older, more permissive behavior (implicit
+anonymous `READ` on content APIs, and re-enabled Basic/DOTAUTH password credentials) without
+any operator action. An installation that must keep the hardened posture across a rollback
+should pin it with environment overrides — `DOT_CONTENT_APIS_ALLOW_ANONYMOUS=NONE` and
+`DOT_ALLOW_BASIC_AUTH=NONE` — which outlive the binary, instead of relying on the in-binary
+defaults. Call this out in the release notes.
+
 ## Configuration Documentation Pattern
 When adding new properties, include:
 ```properties
