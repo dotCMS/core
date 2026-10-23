@@ -56,7 +56,7 @@ import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/do
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotToggleLockButtonComponent } from './components/dot-toggle-lock-button/dot-toggle-lock-button.component';
 import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
-import { DeviceSelectorChange } from './components/dot-uve-device-selector/dot-uve-device-selector.models';
+import { DeviceSelectorState } from './components/dot-uve-device-selector/dot-uve-device-selector.models';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 import { DotUveToolbarComponent } from './dot-uve-toolbar.component';
@@ -170,6 +170,11 @@ const deviceSignal = signal(
 );
 const socialMediaSignal = signal(null);
 const orientationSignal = signal(Orientation.LANDSCAPE);
+const deviceSelectorStateSignal = signal<DeviceSelectorState>({
+    device: deviceSignal() ?? null,
+    socialMedia: socialMediaSignal(),
+    orientation: orientationSignal()
+});
 const viewParamsSignal = signal({
     seo: undefined,
     device: undefined,
@@ -249,6 +254,7 @@ const baseUVEState = {
     viewSetDevice: vi.fn(),
     viewSetSEO: vi.fn(),
     viewSetOrientation: vi.fn(),
+    viewApplyDeviceSelectorChange: vi.fn(),
     pageParams: pageParamsSignal,
     pageAsset: pageSnapshotSignal,
     // View state signal
@@ -281,6 +287,7 @@ const baseUVEState = {
     viewDevice: deviceSignal,
     viewSocialMedia: socialMediaSignal,
     viewDeviceOrientation: orientationSignal,
+    $viewDeviceSelectorState: deviceSelectorStateSignal, // Mutable for tests
     workflowIsLoading: signal(false),
     workflowLockIsLoading: signal(false),
     // Both merge into `pageParams`, as the real store's do. A bare `vi.fn()` would let a test
@@ -1353,86 +1360,15 @@ describe('DotUveToolbarComponent', () => {
         });
 
         describe('DotUveDeviceSelectorComponent', () => {
-            describe('Computed Properties', () => {
-                describe('$deviceSelectorState', () => {
-                    it('should build unified state object from store signals', () => {
-                        const testDevice = DEFAULT_DEVICES[1];
-                        baseUVEState.device.set(testDevice);
-                        baseUVEState.socialMedia.set('facebook');
-                        baseUVEState.orientation.set(Orientation.LANDSCAPE);
-                        spectator.detectChanges();
-
-                        const state = spectator.component.$deviceSelectorState();
-
-                        expect(state).toEqual({
-                            device: testDevice,
-                            socialMedia: 'facebook',
-                            orientation: Orientation.LANDSCAPE
-                        });
-                    });
-
-                    it('should react to device changes', () => {
-                        const defaultDevice = DEFAULT_DEVICES[0];
-                        baseUVEState.device.set(defaultDevice);
-                        spectator.detectChanges();
-
-                        expect(spectator.component.$deviceSelectorState().device).toBe(
-                            defaultDevice
-                        );
-
-                        const newDevice = DEFAULT_DEVICES[1];
-                        baseUVEState.device.set(newDevice);
-                        spectator.detectChanges();
-
-                        expect(spectator.component.$deviceSelectorState().device).toBe(newDevice);
-                    });
-
-                    it('should react to social media changes', () => {
-                        baseUVEState.socialMedia.set(null);
-                        spectator.detectChanges();
-
-                        expect(spectator.component.$deviceSelectorState().socialMedia).toBeNull();
-
-                        baseUVEState.socialMedia.set('twitter');
-                        spectator.detectChanges();
-
-                        expect(spectator.component.$deviceSelectorState().socialMedia).toBe(
-                            'twitter'
-                        );
-                    });
-
-                    it('should react to orientation changes', () => {
-                        baseUVEState.orientation.set(Orientation.PORTRAIT);
-                        spectator.detectChanges();
-
-                        expect(spectator.component.$deviceSelectorState().orientation).toBe(
-                            Orientation.PORTRAIT
-                        );
-
-                        baseUVEState.orientation.set(Orientation.LANDSCAPE);
-                        spectator.detectChanges();
-
-                        expect(spectator.component.$deviceSelectorState().orientation).toBe(
-                            Orientation.LANDSCAPE
-                        );
-                    });
-                });
-            });
-
-            describe('deviceSelectorChange output', () => {
-                let emittedChanges: DeviceSelectorChange[];
-
+            describe('applying the device selector change', () => {
                 beforeEach(() => {
-                    emittedChanges = [];
-                    spectator.component.deviceSelectorChange.subscribe((c) =>
-                        emittedChanges.push(c)
-                    );
+                    (baseUVEState.viewApplyDeviceSelectorChange as Mock).mockClear();
                     pageParamsSignal.set({ ...params, mode: UVE_MODE.PREVIEW });
                     baseUVEState.$isPreviewMode.set(true);
                     spectator.detectChanges();
                 });
 
-                it('should emit device change when device selector emits stateChange', () => {
+                it('should apply a device change through the store when the device selector emits stateChange', () => {
                     const testDevice = DEFAULT_DEVICES[1];
 
                     spectator.triggerEventHandler(DotUveDeviceSelectorComponent, 'stateChange', {
@@ -1440,37 +1376,40 @@ describe('DotUveToolbarComponent', () => {
                         device: testDevice
                     });
 
-                    expect(emittedChanges).toHaveLength(1);
-                    expect(emittedChanges[0]).toEqual({ type: 'device', device: testDevice });
+                    expect(baseUVEState.viewApplyDeviceSelectorChange).toHaveBeenCalledTimes(1);
+                    expect(baseUVEState.viewApplyDeviceSelectorChange).toHaveBeenCalledWith({
+                        type: 'device',
+                        device: testDevice
+                    });
                 });
 
-                it('should emit socialMedia change when device selector emits stateChange', () => {
+                it('should apply a socialMedia change through the store when the device selector emits stateChange', () => {
                     spectator.triggerEventHandler(DotUveDeviceSelectorComponent, 'stateChange', {
                         type: 'socialMedia',
                         socialMedia: 'facebook'
                     });
 
-                    expect(emittedChanges).toHaveLength(1);
-                    expect(emittedChanges[0]).toEqual({
+                    expect(baseUVEState.viewApplyDeviceSelectorChange).toHaveBeenCalledTimes(1);
+                    expect(baseUVEState.viewApplyDeviceSelectorChange).toHaveBeenCalledWith({
                         type: 'socialMedia',
                         socialMedia: 'facebook'
                     });
                 });
 
-                it('should emit orientation change when device selector emits stateChange', () => {
+                it('should apply an orientation change through the store when the device selector emits stateChange', () => {
                     spectator.triggerEventHandler(DotUveDeviceSelectorComponent, 'stateChange', {
                         type: 'orientation',
                         orientation: Orientation.PORTRAIT
                     });
 
-                    expect(emittedChanges).toHaveLength(1);
-                    expect(emittedChanges[0]).toEqual({
+                    expect(baseUVEState.viewApplyDeviceSelectorChange).toHaveBeenCalledTimes(1);
+                    expect(baseUVEState.viewApplyDeviceSelectorChange).toHaveBeenCalledWith({
                         type: 'orientation',
                         orientation: Orientation.PORTRAIT
                     });
                 });
 
-                it('should emit all change types in sequence', () => {
+                it('should apply every change type through the store in sequence', () => {
                     const testDevice = DEFAULT_DEVICES[0];
 
                     spectator.triggerEventHandler(DotUveDeviceSelectorComponent, 'stateChange', {
@@ -1486,13 +1425,16 @@ describe('DotUveToolbarComponent', () => {
                         orientation: Orientation.LANDSCAPE
                     });
 
-                    expect(emittedChanges).toHaveLength(3);
-                    expect(emittedChanges[0]).toEqual({ type: 'device', device: testDevice });
-                    expect(emittedChanges[1]).toEqual({
+                    expect(baseUVEState.viewApplyDeviceSelectorChange).toHaveBeenCalledTimes(3);
+                    expect(baseUVEState.viewApplyDeviceSelectorChange).toHaveBeenNthCalledWith(1, {
+                        type: 'device',
+                        device: testDevice
+                    });
+                    expect(baseUVEState.viewApplyDeviceSelectorChange).toHaveBeenNthCalledWith(2, {
                         type: 'socialMedia',
                         socialMedia: 'twitter'
                     });
-                    expect(emittedChanges[2]).toEqual({
+                    expect(baseUVEState.viewApplyDeviceSelectorChange).toHaveBeenNthCalledWith(3, {
                         type: 'orientation',
                         orientation: Orientation.LANDSCAPE
                     });
@@ -1506,11 +1448,13 @@ describe('DotUveToolbarComponent', () => {
                     spectator.detectChanges();
                 });
 
-                it('should pass state input to device selector', () => {
+                it("should pass the store's device selector state to device selector", () => {
                     const testDevice = DEFAULT_DEVICES[1];
-                    baseUVEState.device.set(testDevice);
-                    baseUVEState.socialMedia.set('facebook');
-                    baseUVEState.orientation.set(Orientation.LANDSCAPE);
+                    baseUVEState.$viewDeviceSelectorState.set({
+                        device: testDevice,
+                        socialMedia: 'facebook',
+                        orientation: Orientation.LANDSCAPE
+                    });
                     spectator.detectChanges();
 
                     const deviceSelectorDebugElement = spectator.debugElement.query(
@@ -1551,9 +1495,8 @@ describe('DotUveToolbarComponent', () => {
                     expect(deviceSelector.$isTraditionalPage()).toBe(true);
                 });
 
-                it('should forward stateChange from device selector as deviceSelectorChange output', () => {
-                    const emitted: DeviceSelectorChange[] = [];
-                    spectator.component.deviceSelectorChange.subscribe((c) => emitted.push(c));
+                it('should apply stateChange from the device selector through the store', () => {
+                    (baseUVEState.viewApplyDeviceSelectorChange as Mock).mockClear();
                     const testDevice = DEFAULT_DEVICES[1];
 
                     spectator.triggerEventHandler(DotUveDeviceSelectorComponent, 'stateChange', {
@@ -1561,8 +1504,11 @@ describe('DotUveToolbarComponent', () => {
                         device: testDevice
                     });
 
-                    expect(emitted).toHaveLength(1);
-                    expect(emitted[0]).toEqual({ type: 'device', device: testDevice });
+                    expect(baseUVEState.viewApplyDeviceSelectorChange).toHaveBeenCalledTimes(1);
+                    expect(baseUVEState.viewApplyDeviceSelectorChange).toHaveBeenCalledWith({
+                        type: 'device',
+                        device: testDevice
+                    });
                 });
             });
         });

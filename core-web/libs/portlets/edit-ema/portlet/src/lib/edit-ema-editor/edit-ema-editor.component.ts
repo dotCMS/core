@@ -2,7 +2,6 @@ import { patchState, signalState } from '@ngrx/signals';
 import { injectDispatch } from '@ngrx/signals/events';
 import { EMPTY, Observable, fromEvent, of } from 'rxjs';
 
-import { ClipboardModule } from '@angular/cdk/clipboard';
 import { NgClass, NgStyle } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -26,15 +25,12 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
-import { PopoverModule } from 'primeng/popover';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { TabsModule } from 'primeng/tabs';
-import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
@@ -67,29 +63,25 @@ import {
     loadDotEditContentSidePanel
 } from '@dotcms/edit-content';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
-import { GlobalStore } from '@dotcms/store';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { StyleEditorFormSchema, __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService, DotMessagePipe, injectSidePanel } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
 import { getContentletsInContainer } from '@dotcms/uve/internal';
 
+import { DotUveBrowserToolbarComponent } from './components/dot-uve-browser-toolbar/dot-uve-browser-toolbar.component';
 import { DotUveContentEditorComponent } from './components/dot-uve-content-editor/dot-uve-content-editor.component';
 import { uveContentEditorEvents } from './components/dot-uve-content-editor/dot-uve-content-editor.events';
 import { DotUveContentletQuickEditComponent } from './components/dot-uve-contentlet-quick-edit/dot-uve-contentlet-quick-edit.component';
 import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
-import { DotUveDeviceControlsComponent } from './components/dot-uve-device-controls/dot-uve-device-controls.component';
 import { DotUveIframeComponent } from './components/dot-uve-iframe/dot-uve-iframe.component';
 import { DotUveIframeResizeHandlesComponent } from './components/dot-uve-iframe-resize-handles/dot-uve-iframe-resize-handles.component';
-import { DotUveIframeSizeInputComponent } from './components/dot-uve-iframe-size-input/dot-uve-iframe-size-input.component';
 import { DotUveLockOverlayComponent } from './components/dot-uve-lock-overlay/dot-uve-lock-overlay.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotUveStyleEditorEmptyStateComponent } from './components/dot-uve-palette/components/dot-uve-style-editor-empty-state/dot-uve-style-editor-empty-state.component';
 import { DotUveStyleEditorFormComponent } from './components/dot-uve-palette/components/dot-uve-style-editor-form/dot-uve-style-editor-form.component';
 import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-palette.component';
-import { DeviceSelectorChange } from './components/dot-uve-toolbar/components/dot-uve-device-selector/dot-uve-device-selector.models';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
-import { DotUveZoomControlsComponent } from './components/dot-uve-zoom-controls/dot-uve-zoom-controls.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import { EmaDragItem } from './components/ema-page-dropzone/types';
 
@@ -123,7 +115,6 @@ import { IframeAccessMode, PageType } from '../store/models';
 import {
     TEMPORAL_DRAG_ITEM,
     areContainersEquals,
-    createFullURL,
     deleteContentletFromContainer,
     getLanguageChangePageParams,
     insertContentletInContainer,
@@ -173,19 +164,13 @@ const MESSAGE_KEY = {
         DotUveStyleEditorFormComponent,
         DotUveIframeComponent,
         DotUveIframeResizeHandlesComponent,
-        DotUveIframeSizeInputComponent,
-        ButtonModule,
-        ToolbarModule,
         TabsModule,
         InputGroupModule,
         InputGroupAddonModule,
-        DotUveZoomControlsComponent,
-        ClipboardModule,
-        PopoverModule,
         TooltipModule,
         DotMessagePipe,
-        DotUveDeviceControlsComponent,
-        DotUveContentEditorComponent
+        DotUveContentEditorComponent,
+        DotUveBrowserToolbarComponent
     ],
     providers: [
         DotPaletteListStore,
@@ -304,7 +289,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     private readonly dotPageApiService = inject(DotPageApiService);
     private readonly destroyRef = inject(DestroyRef);
     private readonly actionsHandler = inject(DotUveActionsHandlerService);
-    private readonly globalStore = inject(GlobalStore);
     private readonly dragDropService = inject(DotUveDragDropService);
     private readonly iframeMessenger = inject(UveIframeMessengerService);
     private readonly contentEditor = injectDispatch(uveContentEditorEvents);
@@ -469,10 +453,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     });
     readonly $iframeOpacity = computed((): number => {
         return this.$isIframeLoading() ? 0.5 : 1;
-    });
-
-    readonly $pageURL = computed((): string => {
-        return this.$pageURLS()[0]?.value ?? '/';
     });
 
     get contentWindow(): Window | null {
@@ -1950,71 +1930,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         // style editor — the side panel binds to editorSelected().payload
         // for its data.
         this.#openStyleEditor();
-    }
-
-    protected togglePalette(): void {
-        this.uveStore.setPaletteOpen(!this.$paletteOpen);
-    }
-
-    protected toggleEditPanel(): void {
-        this.uveStore.setEditPanelOpen(!this.$editPanelOpen);
-    }
-
-    readonly $deviceSelectorState = computed(() => ({
-        device: this.uveStore.viewDevice(),
-        socialMedia: this.uveStore.viewSocialMedia(),
-        orientation: this.uveStore.viewDeviceOrientation()
-    }));
-
-    handleDeviceSelectorChange(change: DeviceSelectorChange): void {
-        switch (change.type) {
-            case 'device':
-                this.uveStore.viewSetDevice(change.device);
-                break;
-            case 'socialMedia':
-                this.uveStore.viewSetSEO(change.socialMedia);
-                break;
-            case 'orientation':
-                this.uveStore.viewSetOrientation(change.orientation);
-                break;
-        }
-    }
-
-    readonly $pageURLS = computed<{ label: string; value: string }[]>(() => {
-        const params = this.uveStore.pageParams();
-        const siteId = this.uveStore.pageAsset()?.site?.identifier;
-        const host = params?.clientHost || this.window.location.origin;
-        const path = params?.url?.replace(/\/index(\.html)?$/, '') || '/';
-
-        const currentSiteHostname = this.globalStore.siteDetails()?.hostname;
-
-        const urls: { label: string; value: string }[] = [
-            {
-                label: 'uve.toolbar.page.live.url',
-                value: new URL(path, host).toString()
-            },
-            {
-                label: 'uve.toolbar.page.current.view.url',
-                value: createFullURL(params, siteId)
-            }
-        ];
-
-        if (currentSiteHostname) {
-            urls.push({
-                label: 'uve.toolbar.page.current.site.url',
-                value: new URL(path, `https://${currentSiteHostname}`).toString()
-            });
-        }
-
-        return urls;
-    });
-
-    protected triggerCopyToast(): void {
-        this.messageService.add({
-            severity: 'success',
-            summary: this.dotMessageService.get('Copied'),
-            life: 3000
-        });
     }
 
     #openStyleEditor(): void {

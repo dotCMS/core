@@ -84,6 +84,7 @@ import {
     seoOGTagsResultMock
 } from '@dotcms/utils-testing';
 
+import { DotUveBrowserToolbarComponent } from './components/dot-uve-browser-toolbar/dot-uve-browser-toolbar.component';
 import { DotUveContentEditorComponent } from './components/dot-uve-content-editor/dot-uve-content-editor.component';
 import { uveContentEditorEvents } from './components/dot-uve-content-editor/dot-uve-content-editor.events';
 import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
@@ -212,6 +213,14 @@ class DotUvePaletteStubComponent {
 })
 class DotUveContentEditorMockComponent {}
 
+/** The browser toolbar has its own spec; here it only needs to be placed. */
+@Component({
+    selector: 'dot-uve-browser-toolbar',
+    template: '<div></div>',
+    standalone: true
+})
+class DotUveBrowserToolbarMockComponent {}
+
 const createRouting = () =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
@@ -229,14 +238,16 @@ const createRouting = () =>
                         imports: [
                             DotUveToolbarComponent,
                             DotUvePaletteComponent,
-                            DotUveContentEditorComponent
+                            DotUveContentEditorComponent,
+                            DotUveBrowserToolbarComponent
                         ]
                     },
                     add: {
                         imports: [
                             DotUveToolbarStubComponent,
                             DotUvePaletteStubComponent,
-                            DotUveContentEditorMockComponent
+                            DotUveContentEditorMockComponent,
+                            DotUveBrowserToolbarMockComponent
                         ]
                     }
                 }
@@ -652,6 +663,10 @@ describe('EditEmaEditorComponent', () => {
                 expect(toolbar).not.toBeNull();
             });
 
+            it('should place the browser toolbar', () => {
+                expect(spectator.query(byTestId('uve-browser-toolbar'))).toBeTruthy();
+            });
+
             /**
              * Reversed by #37308 — this used to assert the opposite.
              *
@@ -760,151 +775,6 @@ describe('EditEmaEditorComponent', () => {
                     expect(spectator.component.$editorContentStyles()).toEqual({
                         display: 'none'
                     });
-                });
-            });
-
-            describe('$pageURLS', () => {
-                it('should construct live URL with clientHost and url from pageParams', () => {
-                    patchState(store, {
-                        pageParams: {
-                            url: '/my-page',
-                            clientHost: 'https://example.com',
-                            language_id: '1',
-                            [PERSONA_KEY]: 'dot:persona'
-                        }
-                    });
-
-                    const urls = spectator.component.$pageURLS();
-                    const liveUrl = urls.find((u) => u.label === 'uve.toolbar.page.live.url');
-
-                    expect(liveUrl?.value).toBe('https://example.com/my-page');
-                });
-
-                it('should strip /index suffix from live URL', () => {
-                    patchState(store, {
-                        pageParams: {
-                            url: '/my-page/index',
-                            clientHost: 'https://example.com',
-                            language_id: '1',
-                            [PERSONA_KEY]: 'dot:persona'
-                        }
-                    });
-
-                    const liveUrl = spectator.component
-                        .$pageURLS()
-                        .find((u) => u.label === 'uve.toolbar.page.live.url');
-
-                    expect(liveUrl?.value).toBe('https://example.com/my-page');
-                });
-
-                it('should strip /index.html suffix from live URL', () => {
-                    patchState(store, {
-                        pageParams: {
-                            url: '/my-page/index.html',
-                            clientHost: 'https://example.com',
-                            language_id: '1',
-                            [PERSONA_KEY]: 'dot:persona'
-                        }
-                    });
-
-                    const liveUrl = spectator.component
-                        .$pageURLS()
-                        .find((u) => u.label === 'uve.toolbar.page.live.url');
-
-                    expect(liveUrl?.value).toBe('https://example.com/my-page');
-                });
-
-                it('should fallback to window.location.origin when clientHost is not provided', () => {
-                    patchState(store, {
-                        pageParams: {
-                            url: '/my-page',
-                            clientHost: undefined,
-                            language_id: '1',
-                            [PERSONA_KEY]: 'dot:persona'
-                        }
-                    });
-
-                    const liveUrl = spectator.component
-                        .$pageURLS()
-                        .find((u) => u.label === 'uve.toolbar.page.live.url');
-
-                    expect(liveUrl?.value).toBe(`${window.location.origin}/my-page`);
-                });
-
-                it('should default to root path when url is undefined', () => {
-                    patchState(store, {
-                        pageParams: {
-                            url: undefined,
-                            clientHost: 'https://example.com',
-                            language_id: '1',
-                            [PERSONA_KEY]: 'dot:persona'
-                        }
-                    });
-
-                    const liveUrl = spectator.component
-                        .$pageURLS()
-                        .find((u) => u.label === 'uve.toolbar.page.live.url');
-
-                    expect(liveUrl?.value).toBe('https://example.com/');
-                });
-
-                it('should include current view URL', () => {
-                    patchState(store, {
-                        pageParams: {
-                            url: '/my-page',
-                            clientHost: 'https://example.com',
-                            language_id: '1',
-                            [PERSONA_KEY]: 'dot:persona'
-                        }
-                    });
-
-                    const viewUrl = spectator.component
-                        .$pageURLS()
-                        .find((u) => u.label === 'uve.toolbar.page.current.view.url');
-
-                    expect(viewUrl).toBeTruthy();
-                    expect(typeof viewUrl?.value).toBe('string');
-                });
-            });
-
-            describe('$pageURL', () => {
-                it('should return the live URL from $pageURLS', () => {
-                    patchState(store, {
-                        pageParams: {
-                            url: '/about-us',
-                            clientHost: 'https://example.com',
-                            language_id: '1',
-                            [PERSONA_KEY]: 'dot:persona'
-                        }
-                    });
-
-                    expect(spectator.component.$pageURL()).toBe('https://example.com/about-us');
-                });
-
-                it('should return root URL when url is undefined', () => {
-                    patchState(store, {
-                        pageParams: {
-                            url: undefined,
-                            clientHost: 'https://example.com',
-                            language_id: '1',
-                            [PERSONA_KEY]: 'dot:persona'
-                        }
-                    });
-
-                    expect(spectator.component.$pageURL()).toBe('https://example.com/');
-                });
-
-                it('should strip /index from URL', () => {
-                    patchState(store, {
-                        pageParams: {
-                            url: '/about-us/index',
-                            clientHost: 'https://example.com',
-                            language_id: '1',
-                            [PERSONA_KEY]: 'dot:persona'
-                        }
-                    });
-
-                    expect(spectator.component.$pageURL()).toBe('https://example.com/about-us');
                 });
             });
 

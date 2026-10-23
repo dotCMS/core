@@ -4,8 +4,7 @@
 
 <dot-uve-toolbar
     (translatePage)="translatePage($event)"
-    (editUrlContentMap)="editContentMap($event)"
-    (deviceSelectorChange)="handleDeviceSelectorChange($event)" />
+    (editUrlContentMap)="editContentMap($event)" />
 
 @if (showSEOTool) {
     @if ($seoResults(); as seoResults) {
@@ -29,133 +28,7 @@
     [ngStyle]="$editorContentStyles()"
     [ngClass]="{ 'editor-content-preview': $mode() === UVE_MODE.PREVIEW }"
     data-testId="editor-content">
-    <p-toolbar
-        class="browser-toolbar"
-        [pt]="{
-            root: {
-                style: {
-                    borderRadius: '0',
-                    border: 'none',
-                    borderBottom: 'solid 1px var(--color-gray-200)'
-                }
-            }
-        }">
-        <ng-template #start>
-            <div class="flex items-center gap-1">
-                @if (uveStore.viewMode() === UVE_MODE.EDIT) {
-                    <p-button
-                        (click)="togglePalette()"
-                        [text]="true"
-                        [rounded]="true"
-                        [ariaLabel]="
-                            ($paletteOpen ? 'uve.palette.toggle.close' : 'uve.palette.toggle.open')
-                                | dm
-                        "
-                        size="small"
-                        data-testId="uve-toolbar-palette-toggle">
-                        <!-- One static glyph: the icon names where the panel docks, not what the click
-                             does, so it must not swap per state. `dock_to_right` for a LEFT panel.
-                             `aria-hidden` keeps screen readers off the ligature; the state is on the
-                             button's accessible name. -->
-                        <i
-                            class="material-symbols-outlined"
-                            aria-hidden="true"
-                            data-testId="palette-toggle-icon">
-                            dock_to_right
-                        </i>
-                    </p-button>
-                }
-            </div>
-        </ng-template>
-        <ng-template #center>
-            <div class="browser-url-pill bg-gray-100">
-                <p-button
-                    (click)="copyUrlOverlay.toggle($event)"
-                    [pTooltip]="'editpage.header.copy' | dm"
-                    tooltipPosition="bottom"
-                    icon="pi pi-link"
-                    [text]="true"
-                    [rounded]="true"
-                    size="small"
-                    [pt]="{ icon: { class: 'text-gray-900!' } }"
-                    data-testId="uve-toolbar-copy-url">
-                    <p-popover #copyUrlOverlay>
-                        <div class="url-list">
-                            @for (url of $pageURLS(); track url.value) {
-                                <div class="url-item">
-                                    <div class="url-info">
-                                        <span class="url-label">{{ url.label | dm }}</span>
-                                        <a
-                                            class="url-value"
-                                            [href]="url.value"
-                                            target="_blank"
-                                            rel="noreferrer noopener">
-                                            {{ url.value }}
-                                        </a>
-                                    </div>
-                                    <p-button
-                                        icon="pi pi-copy"
-                                        [text]="true"
-                                        size="small"
-                                        [rounded]="true"
-                                        (cdkCopyToClipboardCopied)="triggerCopyToast()"
-                                        [cdkCopyToClipboard]="url.value"
-                                        data-testId="copy-url-button" />
-                                </div>
-                            }
-                        </div>
-                    </p-popover>
-                </p-button>
-                <div class="browser-url-bar">{{ $pageURL() }}</div>
-            </div>
-            <dot-uve-device-controls
-                [state]="$deviceSelectorState()"
-                (stateChange)="handleDeviceSelectorChange($event)"
-                data-testId="uve-device-controls" />
-            <div class="flex items-center gap-2 rounded-full bg-gray-100 pr-3">
-                <p-button
-                    icon="pi pi-undo"
-                    size="small"
-                    [text]="true"
-                    [rounded]="true"
-                    [pt]="{ icon: { class: 'text-gray-900!' } }"
-                    (onClick)="uveStore.viewZoomReset()"
-                    aria-label="Reset zoom and canvas size"
-                    data-testId="zoom-reset" />
-                <span class="h-4 w-px bg-gray-300" aria-hidden="true"></span>
-                <dot-uve-iframe-size-input data-testId="uve-iframe-size-input" />
-                <span class="h-4 w-px bg-gray-300" aria-hidden="true"></span>
-                <dot-uve-zoom-controls />
-            </div>
-        </ng-template>
-        <ng-template #end>
-            <div class="flex items-center gap-1">
-                @if (uveStore.viewMode() === UVE_MODE.EDIT) {
-                    <p-button
-                        (click)="toggleEditPanel()"
-                        [text]="true"
-                        [rounded]="true"
-                        [ariaLabel]="
-                            ($editPanelOpen
-                                ? 'uve.edit-panel.toggle.close'
-                                : 'uve.edit-panel.toggle.open'
-                            ) | dm
-                        "
-                        size="small"
-                        data-testId="right-sidebar-toggle">
-                        <!-- `dock_to_left` for a RIGHT panel, rendered as-is: the glyph already points
-                             the correct way, so the horizontal flip the SVG pair needed is gone. -->
-                        <i
-                            class="material-symbols-outlined"
-                            aria-hidden="true"
-                            data-testId="right-sidebar-toggle-icon">
-                            dock_to_left
-                        </i>
-                    </p-button>
-                }
-            </div>
-        </ng-template>
-    </p-toolbar>
+    <dot-uve-browser-toolbar data-testid="uve-browser-toolbar" />
     @if ($progressBar()) {
         <div class="progress-bar-wrapper">
             <p-progressBar

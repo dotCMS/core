@@ -276,6 +276,38 @@ describe('withView', () => {
                 expect(store.$showWorkflowsActions()).toBe(false);
             });
         });
+
+        describe('$viewDeviceSelectorState', () => {
+            it('should combine the device, the social media preview and the orientation', () => {
+                expect(store.$viewDeviceSelectorState()).toEqual({
+                    device: null,
+                    socialMedia: null,
+                    orientation: Orientation.LANDSCAPE
+                });
+            });
+
+            it('should follow a device change', () => {
+                const iphone = mockDotDevices[0];
+
+                store.viewSetDevice(iphone, Orientation.PORTRAIT);
+
+                expect(store.$viewDeviceSelectorState()).toEqual({
+                    device: iphone,
+                    socialMedia: null,
+                    orientation: Orientation.PORTRAIT
+                });
+            });
+
+            it('should follow a social media preview', () => {
+                store.viewSetSEO('facebook');
+
+                expect(store.$viewDeviceSelectorState()).toEqual({
+                    device: null,
+                    socialMedia: 'facebook',
+                    orientation: null
+                });
+            });
+        });
     });
 
     describe('methods', () => {
@@ -356,6 +388,59 @@ describe('withView', () => {
                     device: null,
                     orientation: null,
                     seo: 'seo'
+                });
+            });
+        });
+
+        describe('viewApplyDeviceSelectorChange', () => {
+            it('should set the device for a device change, as viewSetDevice does', () => {
+                const iphone = mockDotDevices[0];
+
+                store.viewApplyDeviceSelectorChange({ type: 'device', device: iphone });
+
+                expect(store.viewDevice()).toBe(iphone);
+                expect(store.viewDeviceOrientation()).toBe(Orientation.LANDSCAPE); // The mock is wider than it is tall
+                expect(store.viewSocialMedia()).toBe(null);
+                expect(store.viewParams()).toEqual({
+                    device: iphone.inode,
+                    orientation: Orientation.LANDSCAPE,
+                    seo: null
+                });
+            });
+
+            it('should set the social media preview for a social media change, as viewSetSEO does', () => {
+                store.viewSetDevice(mockDotDevices[0]);
+
+                store.viewApplyDeviceSelectorChange({
+                    type: 'socialMedia',
+                    socialMedia: 'facebook'
+                });
+
+                expect(store.viewSocialMedia()).toBe('facebook');
+                expect(store.viewDevice()).toBe(null);
+                expect(store.viewDeviceOrientation()).toBe(null);
+                expect(store.viewParams()).toEqual({
+                    device: null,
+                    orientation: null,
+                    seo: 'facebook'
+                });
+            });
+
+            it('should set the orientation for an orientation change, as viewSetOrientation does', () => {
+                const iphone = mockDotDevices[0];
+                store.viewSetDevice(iphone);
+
+                store.viewApplyDeviceSelectorChange({
+                    type: 'orientation',
+                    orientation: Orientation.PORTRAIT
+                });
+
+                expect(store.viewDevice()).toBe(iphone);
+                expect(store.viewDeviceOrientation()).toBe(Orientation.PORTRAIT);
+                expect(store.viewParams()).toEqual({
+                    device: iphone.inode,
+                    orientation: Orientation.PORTRAIT,
+                    seo: null
                 });
             });
         });
