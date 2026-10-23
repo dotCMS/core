@@ -47,6 +47,7 @@ import com.dotcms.system.event.local.type.pushpublish.receiver.PushPublishFailur
 import com.dotcms.system.event.local.type.pushpublish.receiver.PushPublishStartOnReceiverEvent;
 import com.dotcms.system.event.local.type.pushpublish.receiver.PushPublishSuccessOnReceiverEvent;
 import com.dotcms.util.CloseUtils;
+import com.dotcms.util.PathContainmentUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
@@ -139,11 +140,16 @@ public class BundlePublisher extends Publisher {
     /**
      * Processes the contents of a bundle. The process consists of uncompressing
      * the bundle file, and having each {@link IHandler} class analyze and
-     * process the corresponding data files.
+     * process the corresponding data files. The bundle identifier, taken from
+     * {@link PublisherConfig#getId()}, must be a plain file name ending in
+     * {@code .tar.gz} whose stem is itself a plain segment; otherwise this method fails before
+     * updating the audit table or touching the bundles directory, since that stem is later used
+     * on its own to build the bundle's working folder.
      *
      * @param status - Current status of the publishing process.
      * @return This bundle configuration ({@link PublisherConfig}).
-     * @throws DotPublishingException An error occurred when handling the contents of this bundle.
+     * @throws DotPublishingException An error occurred when handling the contents of this bundle,
+     * or the bundle identifier is not a plain file name.
      */
     @Override
     public PublisherConfig process ( final PublishStatus status ) throws DotPublishingException {
@@ -155,7 +161,13 @@ public class BundlePublisher extends Publisher {
         final LocalSystemEventsAPI localSystemEventsAPI = APILocator.getLocalSystemEventsAPI();
         boolean hasWarnings = false;
         String bundleName = config.getId();
-        String bundleID = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
+        String bundleID = PathContainmentUtil
+                .plainSegmentBeforeSuffix(bundleName, BundlePublisherResource.BUNDLE_EXTENSION)
+                .orElseThrow(() -> {
+                    SecurityLogger.logWarn(BundlePublisher.class,
+                            () -> "Rejected a bundle identifier that is not a plain file name");
+                    return new DotPublishingException("Invalid bundle file name");
+                });
         String bundlePath =
                 ConfigUtils.getBundlePath() + File.separator + BundlePublisherResource.MY_TEMP;
 
@@ -307,7 +319,8 @@ public class BundlePublisher extends Publisher {
     }
 
     /**
-     * Untars the given bundle file in order process its contents.
+     * Untars the given bundle file in order process its contents. An entry that does not resolve to
+     * a location inside the bundles directory makes the process fail.
      *
      * @param bundle   - The {@link InputStream} containing the bundle.
      * @param path     - The location where the bundle will be uncompressed.
@@ -343,7 +356,7 @@ public class BundlePublisher extends Publisher {
                 File fileOrDir = new File(pathWithoutName + entry.getName());
                 
                 // if the logFile is outside of of the logFolder, die
-                if ( !fileOrDir.getCanonicalPath().startsWith(baseBundlePath.getCanonicalPath())) {
+                if ( !PathContainmentUtil.isContainedIn(baseBundlePath, fileOrDir)) {
 
                     SecurityLogger.logInfo(this.getClass(),  "Invalid Bundle writing file outside of bundlePath"  );
                     SecurityLogger.logInfo(this.getClass(),  " Bundle path "  + baseBundlePath );

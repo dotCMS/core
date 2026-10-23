@@ -62,3 +62,4 @@ Release-25.07.10 LTS
 56. https://github.com/dotCMS/core/pull/38101 : fix(rest): require admin and Maintenance portlet to tail log files #38101
 57. https://github.com/dotCMS/core/issues/37592 : Remove pgjdbc-ng and PostgresPubSubImpl (superseded by JDBCPubSubImpl) #37592
 58. https://github.com/dotCMS/core/pull/37626 : chore(deps): bump six libraries with published security fixes #37626
+59. https://github.com/dotCMS/core/pull/38023 : fix(publishing): validate bundle receipt and restrict endpoint management #38023
