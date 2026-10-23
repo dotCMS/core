@@ -2,6 +2,15 @@
 
 All notable changes to the DotCMS React SDK will be documented in this file.
 
+## Unreleased
+
+### Changed
+
+- **Changed**: The bundled TinyMCE editor is now 8.9.1 (was 7.2.1), served from dotCMS's version-neutral `/ext/tinymce/` path instead of `/ext/tinymcev7/`.
+
+### Deprecated
+
+- **Deprecated**: `/ext/tinymcev7/`, the path this SDK's editor previously loaded TinyMCE from, is deprecated server-side. It still resolves (dotCMS aliases it to the current `/ext/tinymce/` files) so already-published versions of this SDK keep working, but has no fixed removal date and new code should not depend on it — this SDK itself already points at `/ext/tinymce/`.
 
 ## v1.2.0
 

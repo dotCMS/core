@@ -39,7 +39,7 @@
     "@dotcms/types": "latest",
     "@dotcms/uve": "latest",
     "@tailwindcss/postcss": "^4.1.13",
-    "@tinymce/tinymce-angular": "^9.0.0",
+    "@tinymce/tinymce-angular": "^9.1.1",
     "@types/dotenv": "^6.1.1",
     "dotenv": "^17.2.2",
     "express": "^5.1.0",
