@@ -81,7 +81,7 @@ public class ContainerResourceIntegrationTest {
         when(formContent.getIdentifier()).thenReturn(formId);
 
         containerResource = new ContainerResource(webResource, paginationUtil, formAPI, containerAPI, versionableAPI,
-                velocityUtil, shortyAPI, contentletAPI, new ContainerDependenciesHelper());
+                velocityUtil, shortyAPI, contentletAPI, mock(ContainerDependenciesHelper.class));
 
         IntegrationTestInitService.getInstance().init();
     }

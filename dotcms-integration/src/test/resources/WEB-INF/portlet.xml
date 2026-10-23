@@ -96,14 +96,7 @@
     <portlet>
         <portlet-name>containers</portlet-name>
         <display-name>Container Manager</display-name>
-        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-        <init-param>
-            <name>view-action</name>
-            <value>/ext/containers/view_containers</value>
-        </init-param>
-
-
-        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
 
     </portlet>
 

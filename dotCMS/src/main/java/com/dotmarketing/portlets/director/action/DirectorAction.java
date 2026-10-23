@@ -393,40 +393,6 @@ public class DirectorAction extends DotPortletAction {
 			}
 
 
-			if (cmd!=null && cmd.equals("editContainer")) {
-
-				Logger.debug(DirectorAction.class, "Director :: editContainer" + subcmd);
-
-				Container container = (Container) InodeFactory.getInode(req.getParameter("container"), Container.class);
-
-				Identifier identifier = APILocator.getIdentifierAPI().find(container);
-				//gets the current working asset
-				WebAsset workingContainer = (WebAsset) APILocator.getVersionableAPI().findWorkingVersion(identifier,APILocator.getUserAPI().getSystemUser(),false);
-
-				if ("unlockContainer".equals(subcmd)) {
-					WebAssetFactory.unLockAsset(workingContainer);
-				}
-				if (workingContainer.isLocked() && !workingContainer.getModUser().equals(user.getUserId())) {
-					req.setAttribute(WebKeys.CONTAINER_EDIT, workingContainer);
-					setForward(req,"portlet.ext.director.unlock_container");
-					return;
-				}
-				else if (workingContainer.isLocked()) {
-					//it's locked by the same user
-					WebAssetFactory.unLockAsset(workingContainer);
-				}
-				java.util.Map params = new java.util.HashMap();
-				params.put("struts_action",new String[] {"/ext/containers/edit_container"});
-				params.put("cmd",new String[] { "edit" });
-				params.put("inode",new String[] { workingContainer.getInode() + "" });
-				params.put("referer",new String[] { referer });
-
-				String af = com.dotmarketing.util.PortletURLUtil.getActionURL(httpReq,WindowState.MAXIMIZED.toString(),params);
-
-				_sendToReferral(req, res, af);
-				return;
-			}
-
 			if (cmd!=null && cmd.equals("editLink")) {
 
 				Logger.debug(DirectorAction.class, "Director :: editLink");
