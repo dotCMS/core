@@ -44,7 +44,7 @@ import { EditorToolbarStore } from './components/toolbar/editor-toolbar.store';
 import { ToolbarComponent } from './components/toolbar/toolbar.component';
 import { syncCharacterStatsFromEditor } from './editor-character-stats';
 import { handleEditorProseMirrorClick } from './editor-chrome-click';
-import { type MediaUploaders, handleMediaDrop, handleMediaPaste } from './editor.utils';
+import { type MediaUploaders } from './extensions/asset-uploader.extension';
 import { createEditorExtensions } from './extensions/editor-extensions';
 import { type ContentletEditEvent } from './extensions/nodes/contentlet/contentlet.extension';
 import { SELECTION_PRESERVE_KEY } from './extensions/selection-preserve.extension';
@@ -445,7 +445,7 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
     private pendingDisabled: boolean | null = null;
 
     /**
-     * Constructs the underlying TipTap editor with dotCMS extensions, drop handling,
+     * Constructs the underlying TipTap editor with dotCMS extensions, upload handling,
      * and stats sync. Returns the new instance instead of assigning it, so the caller
      * can pin it inside the {@link editor} signal in a single, atomic update.
      *
@@ -477,21 +477,8 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
                     'aria-multiline': 'true',
                     'aria-label': this.$accessibleName()
                 },
-                handleDrop: (view, event, slice, moved) =>
-                    handleMediaDrop(
-                        editor,
-                        view,
-                        event as DragEvent,
-                        slice,
-                        moved,
-                        uploaders.uploadImage,
-                        uploaders.uploadVideo,
-                        uploaders.uploadAudio
-                    ),
-                // Clipboard files and image URLs upload like a drop (#38165). Base64 images in
-                // pasted HTML are handled by the `pastedImageUpload` extension's `transformPasted`,
-                // which ProseMirror runs before this hook.
-                handlePaste: (view, event) => handleMediaPaste(editor, view, event, uploaders),
+                // Drops and pastes of files live in the `assetUploader` extension, registered
+                // through `createEditorExtensions` with `uploaders` below.
                 handleScrollToSelection: (view) => scrollCaretIntoEditorContainer(view)
             },
             extensions: createEditorExtensions(
@@ -500,7 +487,7 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
                 this.injector,
                 this.dotMessageService,
                 remoteExtensions,
-                uploaders.uploadImage
+                uploaders
             ),
             content: ''
         });
