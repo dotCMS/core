@@ -1126,9 +1126,8 @@ public class ContainerResource implements Serializable {
      */
     @GET
     @Path("/dependencies")
-    @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(
             operationId = "getContainerDependencies",
             summary = "Lists the templates that use a container",

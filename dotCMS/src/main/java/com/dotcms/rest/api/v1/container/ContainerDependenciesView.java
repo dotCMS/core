@@ -7,7 +7,7 @@ import java.util.List;
 /**
  * The Templates that use a Container, as returned by {@code GET /api/v1/containers/dependencies}.
  *
- * <p>The legacy Containers portlet shows this list before deleting a Container. Every value is
+ * <p>The Containers portlet shows this list before deleting a Container. Every value is
  * returned as saved: the client decides how to render it. A drawn Template is listed when its
  * layout references the Container; an advanced Template only when the Container holds content.
  *

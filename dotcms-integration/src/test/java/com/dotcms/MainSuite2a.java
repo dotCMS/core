@@ -108,7 +108,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest.class,
         com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class,
         com.dotcms.rest.api.v1.container.ContainerResourceDependenciesIntegrationTest.class,
-        com.dotmarketing.startup.runonce.Task261023RemoveContainersLegacyPortletFromLayoutsTest.class
+        com.dotmarketing.startup.runonce.Task261023RemoveContainersLegacyPortletFromLayoutsTest.class,
+        com.dotmarketing.portlets.templates.business.TemplateAPIFindUsingContainerTest.class
 })
 public class MainSuite2a {
 
