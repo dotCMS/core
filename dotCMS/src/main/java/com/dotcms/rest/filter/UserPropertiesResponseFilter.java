@@ -20,6 +20,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.Priority;
+import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Priorities;
 import javax.ws.rs.container.ContainerRequestContext;
 import javax.ws.rs.container.ContainerResponseContext;
@@ -46,8 +47,26 @@ import javax.ws.rs.ext.Provider;
 @Priority(Priorities.AUTHORIZATION)
 public class UserPropertiesResponseFilter implements ContainerResponseFilter {
 
+    /** Request attribute holding the one response entity already filtered for the caller where it was built. */
+    private static final String FILTERED_ENTITY_ATTRIBUTE = UserPropertiesResponseFilter.class.getName() + ".filteredEntity";
+
     @Context
     private ResourceInfo resourceInfo;
+
+    /**
+     * Records that a response entity was already filtered for the caller where it was built, so this filter
+     * does not read and rebuild it again. Only that exact object is skipped: an entity that wraps or replaces
+     * it is filtered as usual.
+     *
+     * @param request the current request
+     * @param entity the filtered response entity
+     * @param <T> the entity type
+     * @return the same entity
+     */
+    public static <T> T markFiltered(final HttpServletRequest request, final T entity) {
+        request.setAttribute(FILTERED_ENTITY_ATTRIBUTE, entity);
+        return entity;
+    }
 
     /**
      * Filters the entity of one response for the caller of the request.
@@ -63,7 +82,8 @@ public class UserPropertiesResponseFilter implements ContainerResponseFilter {
             return;
         }
         final Object entity = responseContext.getEntity();
-        if (null == entity || isScriptedEndpoint() || isStream(entity)
+        if (null == entity || entity == requestContext.getProperty(FILTERED_ENTITY_ATTRIBUTE)
+                || isScriptedEndpoint() || isStream(entity)
                 || !isJson(responseContext.getMediaType(), entity)) {
             return;
         }

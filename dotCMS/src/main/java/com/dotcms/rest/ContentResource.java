@@ -13,6 +13,7 @@ import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.rest.filter.UserPropertiesResponseFilter;
 import com.dotcms.util.xstream.XStreamHandler;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -258,7 +259,12 @@ public class ContentResource {
         final SearchView searchView = this.contentHelper.pullContent(request, response, realQuery,
                 userForPull, pageMode, offset, limit, sort, tmDate, render, user, depth,
                 language, allCategoriesInfo);
-        return Response.ok(new ResponseEntityView<>(searchView)).build();
+        // Filtered here, while still a JSONObject, so the response filter does not parse and rebuild it
+        final SearchView callerView = new SearchView(searchView.getResultsSize(), searchView.getQueryTook(),
+                searchView.getContentTook(), new JsonObjectView(
+                        ContentHelper.filterForCaller(searchView.getJsonObjectView().getJsonObject(), user)));
+        return Response.ok(UserPropertiesResponseFilter.markFiltered(request,
+                new ResponseEntityView<>(callerView))).build();
     }
 
     /**
@@ -1314,7 +1320,8 @@ public class ContentResource {
 
     /**
      * Creates the JSON response (as text) for a list of contentlets, with their related content up to the
-     * given depth, prepared for the user it is sent to by {@link ContentHelper#filterForCaller(JSONObject, User)}.
+     * given depth, prepared for the user it is sent to by {@link ContentHelper#filterForCaller(JSONObject, User)}
+     * and marked as filtered, so {@link UserPropertiesResponseFilter} does not process it again.
      *
      * @param cons                 the contentlets to return
      * @param request              the current request
@@ -1334,7 +1341,7 @@ public class ContentResource {
             final boolean live, final boolean allCategoriesInfo){
         final JSONObject json = this.contentHelper.getJSONObject(cons, request, response, render, user,
                 depth, respectFrontendRoles, language, live, allCategoriesInfo);
-        return ContentHelper.filterForCaller(json, user).toString();
+        return UserPropertiesResponseFilter.markFiltered(request, ContentHelper.filterForCaller(json, user).toString());
     }
 
     public class MapEntryConverter implements Converter {
