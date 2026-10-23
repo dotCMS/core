@@ -82,6 +82,12 @@
                                          request thread after every write (3000 ms by default). One node needs no
                                          wait for a cluster to catch up; the integration tests use 10 as well. -->
                                     <DOT_NETWORK_CACHE_FLUSH_DELAY>10</DOT_NETWORK_CACHE_FLUSH_DELAY>
+                                    <!-- Drop the GraphQL schema as soon as a content type changes (default: 5 s
+                                         debounce), so a query right after the change sees the new type. Safe only
+                                         because requests run one at a time (KarateCITests uses parallel(1)): field
+                                         delete and type destroy drop the schema before their transaction commits,
+                                         so a concurrent query could rebuild it from the old state. -->
+                                    <DOT_GRAPHQL_SCHEMA_DEBOUNCE_DELAY_MILLIS>0</DOT_GRAPHQL_SCHEMA_DEBOUNCE_DELAY_MILLIS>
                                     <DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>600</DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>
                                     <JVM_ENDPOINT_TEST_PASS>obfuscate_me</JVM_ENDPOINT_TEST_PASS>
                                     <DOT_ENABLE_SCRIPTING>true</DOT_ENABLE_SCRIPTING>

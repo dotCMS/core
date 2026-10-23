@@ -68,6 +68,10 @@ services:
             # With synchronous commit listeners, the cache-flush delay is a sleep on the request
             # thread after every write (3000 ms by default). One node needs no wait for a cluster.
             DOT_NETWORK_CACHE_FLUSH_DELAY: 10
+            # Drop the GraphQL schema as soon as a content type changes (default: 5 s debounce).
+            # Safe only because newman runs one request at a time: field delete and type destroy
+            # drop the schema before their transaction commits.
+            DOT_GRAPHQL_SCHEMA_DEBOUNCE_DELAY_MILLIS: 0
             DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS: 600
             WAIT_FOR_DEPS: 30
             JVM_ENDPOINT_TEST_PASS: 'obfuscate_me'
