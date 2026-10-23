@@ -106,7 +106,8 @@ import org.junit.runners.Suite.SuiteClasses;
         EventAnalyticsProxyResourceIntegrationTest.class,
         GenericBundleActivatorIntegrationTest.class,
         com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest.class,
-        com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class
+        com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class,
+        com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionIntegrationTest.class
 })
 public class MainSuite2a {
 
