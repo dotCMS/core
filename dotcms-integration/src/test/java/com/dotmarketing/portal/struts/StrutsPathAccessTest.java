@@ -38,6 +38,8 @@ public class StrutsPathAccessTest {
     private static final String UNRESTRICTED_PATH = "/ext/contentlet/edit_contentlet";
     private static final String LINKS_PATH = "/ext/links/edit_link";
 
+    private static final String USERS_BETA_PORTLET = "users-beta";
+
     private static final List<User> usersToClean = new ArrayList<>();
     private static final List<Layout> layoutsToClean = new ArrayList<>();
 
@@ -48,6 +50,7 @@ public class StrutsPathAccessTest {
     private static User languagesPortletUser;
     private static User localesPortletUser;
     private static User contentPortletUser;
+    private static User usersBetaPortletUser;
     private static User siteSearchPortletUser;
 
     @BeforeClass
@@ -63,6 +66,7 @@ public class StrutsPathAccessTest {
         localesPortletUser = backendUserWithPortlet("locales-portlet",
                 PortletID.LOCALES.toString());
         contentPortletUser = backendUserWithPortlet("content-portlet", PortletID.CONTENT.toString());
+        usersBetaPortletUser = backendUserWithPortlet("users-beta-portlet", USERS_BETA_PORTLET);
         siteSearchPortletUser = backendUserWithPortlet("site-search-portlet",
                 PortletID.SITE_SEARCH.toString());
 
@@ -154,6 +158,19 @@ public class StrutsPathAccessTest {
         assertFalse(StrutsPathAccess.canAccess(SITES_PATH, jobsPortletUser));
         assertFalse(StrutsPathAccess.canAccess(LANGUAGES_PATH, usersPortletUser));
         assertFalse(StrutsPathAccess.canAccess(SCHEDULER_PATH, languagesPortletUser));
+    }
+
+    /**
+     * Method to test: {@link StrutsPathAccess#canAccess(String, User)}
+     * Given: a back-end user whose only portlet is the beta id of an administrative tool
+     * Expected: the directories that tool administers are allowed, since the beta portlet opens
+     * the same legacy screens as the shipped one
+     */
+    @Test
+    public void canAccess_betaPortletHolder_allowsTheSameDirectories() {
+        assertTrue(StrutsPathAccess.canAccess(USERADMIN_PATH, usersBetaPortletUser));
+        assertTrue(StrutsPathAccess.canAccess(ROLEADMIN_PATH, usersBetaPortletUser));
+        assertFalse(StrutsPathAccess.canAccess(SCHEDULER_PATH, usersBetaPortletUser));
     }
 
     /**
