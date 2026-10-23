@@ -105,7 +105,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentAnalyticsPersistenceModeIT.class,
         EventAnalyticsProxyResourceIntegrationTest.class,
         GenericBundleActivatorIntegrationTest.class,
-        com.dotcms.rest.api.v1.container.ContainerResourceDependenciesIntegrationTest.class
+        com.dotcms.rest.api.v1.container.ContainerResourceDependenciesIntegrationTest.class,
+        com.dotmarketing.startup.runonce.Task261023RemoveContainersLegacyPortletFromLayoutsTest.class
 })
 public class MainSuite2a {
 
