@@ -674,18 +674,16 @@ export const getDateRange = (timeRange: TimeRangeInput): [Date, Date] => {
         return [startDate, endDate];
     }
 
-    // Relative ranges resolve to whole, completed days ending YESTERDAY — today is still in
-    // progress and is excluded. Mirrors the upstream `last_7_days` / `last_30_days` semantics
-    // used by toApiRangeParams, so the client-side fill window lines up exactly with the data
-    // the API returns (otherwise chart labels drift +1 day and today shows as an empty bucket).
-    const yesterday = endOfDay(subDays(today, 1));
+    // Match CAEM's inclusive-today relative ranges: exactly N calendar days, with today's
+    // counts potentially incomplete. The fill window must retain the current-day API row.
+    const endDate = endOfDay(today);
 
     switch (timeRange) {
         case TIME_RANGE_OPTIONS.last7days:
-            return [startOfDay(subDays(today, 7)), yesterday];
+            return [startOfDay(subDays(today, 6)), endDate];
 
         case TIME_RANGE_OPTIONS.last30days:
-            return [startOfDay(subDays(today, 30)), yesterday];
+            return [startOfDay(subDays(today, 29)), endDate];
 
         default:
             return [startOfDay(today), endOfDay(today)];

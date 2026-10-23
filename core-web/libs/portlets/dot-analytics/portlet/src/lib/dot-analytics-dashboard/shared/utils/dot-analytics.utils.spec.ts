@@ -13,7 +13,7 @@ describe('Analytics Utils', () => {
     // ============================================================================
 
     describe('isValidCustomDateRange', () => {
-        it('should return true for valid date range spanning at least 7 days', () => {
+        it('should preserve valid longer date ranges', () => {
             expect(isValidCustomDateRange('2024-01-01', '2024-01-31')).toBe(true);
             expect(isValidCustomDateRange('2023-12-01', '2024-01-01')).toBe(true);
         });
@@ -23,13 +23,13 @@ describe('Analytics Utils', () => {
             expect(isValidCustomDateRange('2024-01-01', '2024-01-07')).toBe(true);
         });
 
-        it('should return false for range shorter than 7 days', () => {
-            expect(isValidCustomDateRange('2024-01-01', '2024-01-06')).toBe(false);
-            expect(isValidCustomDateRange('2024-01-01', '2024-01-02')).toBe(false);
+        it('should accept ranges shorter than 7 days', () => {
+            expect(isValidCustomDateRange('2024-01-01', '2024-01-06')).toBe(true);
+            expect(isValidCustomDateRange('2024-01-01', '2024-01-02')).toBe(true);
         });
 
-        it('should return false for same-day range', () => {
-            expect(isValidCustomDateRange('2024-01-01', '2024-01-01')).toBe(false);
+        it('should accept a single calendar day', () => {
+            expect(isValidCustomDateRange('2024-01-15', '2024-01-15')).toBe(true);
         });
 
         it('should return false for invalid dates', () => {

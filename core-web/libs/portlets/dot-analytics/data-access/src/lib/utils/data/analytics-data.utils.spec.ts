@@ -1,4 +1,4 @@
-import { format, parse } from 'date-fns';
+import { differenceInCalendarDays, format, parse } from 'date-fns';
 import { vi } from 'vitest';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
@@ -15,6 +15,8 @@ import {
     fillMissingDates,
     getDateRange,
     getPreviousPeriod,
+    toApiRangeParams,
+    toTimeRangeCubeJS,
     transformBrowserBreakdownToPieChartEntries,
     transformDeviceBreakdownToPieChartEntries,
     transformPageViewTimeLineData,
@@ -595,21 +597,22 @@ describe('Analytics Data Utils', () => {
         });
 
         describe('success cases', () => {
-            it('should return last 7 complete days ending yesterday', () => {
+            it('should return exactly 7 completed calendar days ending yesterday', () => {
                 const result = getDateRange('last7days');
                 const [startDate, endDate] = result;
 
-                // Today (2024-01-15) is excluded; range is the 7 complete days ending yesterday
                 expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-08 00:00:00');
                 expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-14 23:59:59');
+                expect(differenceInCalendarDays(endDate, startDate) + 1).toBe(7);
             });
 
-            it('should return last 30 complete days ending yesterday', () => {
+            it('should return exactly 30 completed calendar days ending yesterday', () => {
                 const result = getDateRange('last30days');
                 const [startDate, endDate] = result;
 
                 expect(format(startDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2023-12-16 00:00:00');
                 expect(format(endDate, 'yyyy-MM-dd HH:mm:ss')).toEqual('2024-01-14 23:59:59');
+                expect(differenceInCalendarDays(endDate, startDate) + 1).toBe(30);
             });
 
             it('should handle custom date range array correctly', () => {
@@ -633,7 +636,7 @@ describe('Analytics Data Utils', () => {
     describe('fillMissingApiDates + transformPageViewTimeLineData (relative range regression)', () => {
         beforeEach(() => {
             vi.useFakeTimers();
-            // Reproduces the reported bug: today = Jun 10, API returns Jun 03 … Jun 09.
+            // CAEM returns seven completed days, Jun 03 … Jun 09.
             vi.setSystemTime(new Date('2026-06-10T12:00:00.000'));
         });
 
@@ -641,16 +644,15 @@ describe('Analytics Data Utils', () => {
             vi.useRealTimers();
         });
 
-        it('keeps the earliest day and does not append today for a last7days range', () => {
-            // Sparse API rows for the 7 complete days ending yesterday (Jun 03 … Jun 09).
+        it('retains completed days, fills missing days, and excludes today from last7days', () => {
             const apiData: TotalEventsByDayData[] = [
                 { day: '2026-06-03', totalEvents: 993 },
                 { day: '2026-06-04', totalEvents: 1136 },
-                { day: '2026-06-05', totalEvents: 1558 },
                 { day: '2026-06-06', totalEvents: 718 },
                 { day: '2026-06-07', totalEvents: 721 },
                 { day: '2026-06-08', totalEvents: 1107 },
-                { day: '2026-06-09', totalEvents: 2424 }
+                { day: '2026-06-09', totalEvents: 2424 },
+                { day: '2026-06-10', totalEvents: 157 }
             ];
 
             const filled = fillMissingApiDates(apiData, 'last7days', 'day', (date) => ({
@@ -658,7 +660,6 @@ describe('Analytics Data Utils', () => {
                 totalEvents: 0
             }));
 
-            // Window must match the API data exactly: Jun 03 … Jun 09 — no Jun 10 (today) bucket.
             expect(filled.map((item) => item.day)).toEqual([
                 '2026-06-03',
                 '2026-06-04',
@@ -668,13 +669,14 @@ describe('Analytics Data Utils', () => {
                 '2026-06-08',
                 '2026-06-09'
             ]);
-            // Earliest real day is retained with its value (previously dropped).
             expect(filled[0]).toEqual({ day: '2026-06-03', totalEvents: 993 });
+            expect(filled[2]).toEqual({ day: '2026-06-05', totalEvents: 0 });
 
             const chart = transformPageViewTimeLineData(filled);
+            expect(chart.labels).toHaveLength(7);
             expect(chart.labels?.[0]).toBe('Jun 03');
             expect(chart.labels?.[chart.labels.length - 1]).toBe('Jun 09');
-            expect(chart.datasets[0].data).toEqual([993, 1136, 1558, 718, 721, 1107, 2424]);
+            expect(chart.datasets[0].data).toEqual([993, 1136, 0, 718, 721, 1107, 2424]);
         });
     });
 
@@ -694,9 +696,142 @@ describe('Analytics Data Utils', () => {
             vi.setSystemTime(new Date('2024-01-15T12:00:00.000Z'));
             const result = getPreviousPeriod('last7days');
             vi.useRealTimers();
-            // last7days: Jan 8 - Jan 14 (7 complete days ending yesterday). Previous: Jan 1 - Jan 7
-            expect(result[0]).toBe('2024-01-01');
-            expect(result[1]).toBe('2024-01-07');
+            // Current: Jan 8–14. Previous: Jan 1–7, with no overlap.
+            expect(result).toEqual(['2024-01-01', '2024-01-07']);
+        });
+
+        it('should return 30 adjacent comparison days across the year boundary', () => {
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2024-01-15T12:00:00.000'));
+            const result = getPreviousPeriod('last30days');
+            vi.useRealTimers();
+
+            expect(result).toEqual(['2023-11-16', '2023-12-15']);
+        });
+    });
+
+    describe('Calendar and completed-day presets', () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+            vi.setSystemTime(new Date('2026-10-01T12:00:00'));
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        const presets = [
+            ['today', '2026-10-01', '2026-10-01'],
+            ['yesterday', '2026-09-30', '2026-09-30'],
+            ['thisweek', '2026-09-27', '2026-10-01'],
+            ['last7days', '2026-09-24', '2026-09-30'],
+            ['lastweek', '2026-09-20', '2026-09-26'],
+            ['last30days', '2026-09-01', '2026-09-30'],
+            ['thismonth', '2026-10-01', '2026-10-01'],
+            ['lastmonth', '2026-09-01', '2026-09-30'],
+            ['last90days', '2026-07-03', '2026-09-30']
+        ] as const;
+
+        it.each(presets)(
+            '%s resolves the expected inclusive calendar dates',
+            (preset, from, to) => {
+                const [start, end] = getDateRange(preset);
+
+                expect(format(start, 'yyyy-MM-dd HH:mm:ss')).toBe(from + ' 00:00:00');
+                expect(format(end, 'yyyy-MM-dd HH:mm:ss')).toBe(to + ' 23:59:59');
+            }
+        );
+
+        it.each(presets)('%s compares to an adjacent equally sized period', (preset, from, to) => {
+            const [previousFrom, previousTo] = getPreviousPeriod(preset);
+            const start = parse(from, 'yyyy-MM-dd', new Date());
+            const end = parse(to, 'yyyy-MM-dd', new Date());
+            const previousStart = parse(previousFrom, 'yyyy-MM-dd', new Date());
+            const previousEnd = parse(previousTo, 'yyyy-MM-dd', new Date());
+
+            expect(differenceInCalendarDays(start, previousEnd)).toBe(1);
+            expect(differenceInCalendarDays(previousEnd, previousStart)).toBe(
+                differenceInCalendarDays(end, start)
+            );
+        });
+
+        it.each([
+            ['today', '2026-10-01', '2026-10-01'],
+            ['yesterday', '2026-09-30', '2026-09-30'],
+            ['thisweek', '2026-09-27', '2026-10-01'],
+            ['lastweek', '2026-09-20', '2026-09-26'],
+            ['thismonth', '2026-10-01', '2026-10-01'],
+            ['lastmonth', '2026-09-01', '2026-09-30']
+        ] as const)('%s sends absolute API bounds', (preset, from, to) => {
+            expect(toApiRangeParams(preset)).toEqual({ from, to });
+            expect(toTimeRangeCubeJS(preset)).toEqual([from, to]);
+        });
+
+        it.each([
+            ['last7days', 'last_7_days'],
+            ['last30days', 'last_30_days'],
+            ['last90days', 'last_90_days']
+        ] as const)('%s retains the completed-day relative API token', (preset, range) => {
+            expect(toApiRangeParams(preset)).toEqual({ range });
+        });
+
+        it('uses a new calendar day after midnight rather than freezing Today at selection time', () => {
+            expect(toApiRangeParams('today')).toEqual({ from: '2026-10-01', to: '2026-10-01' });
+            vi.setSystemTime(new Date('2026-10-02T00:05:00'));
+            expect(toApiRangeParams('today')).toEqual({ from: '2026-10-02', to: '2026-10-02' });
+        });
+
+        it('starts This week on Sunday and resolves Last week to the preceding Sun–Sat', () => {
+            vi.setSystemTime(new Date('2026-10-04T12:00:00'));
+            expect(toApiRangeParams('thisweek')).toEqual({ from: '2026-10-04', to: '2026-10-04' });
+            expect(toApiRangeParams('lastweek')).toEqual({ from: '2026-09-27', to: '2026-10-03' });
+        });
+
+        it('resolves weeks and months across a year boundary', () => {
+            vi.setSystemTime(new Date('2026-01-01T12:00:00'));
+            expect(toApiRangeParams('thisweek')).toEqual({ from: '2025-12-28', to: '2026-01-01' });
+            expect(toApiRangeParams('lastweek')).toEqual({ from: '2025-12-21', to: '2025-12-27' });
+            expect(toApiRangeParams('lastmonth')).toEqual({ from: '2025-12-01', to: '2025-12-31' });
+        });
+
+        it('includes February 29 in a leap-year Last month', () => {
+            vi.setSystemTime(new Date('2024-03-01T12:00:00'));
+            expect(toApiRangeParams('lastmonth')).toEqual({ from: '2024-02-01', to: '2024-02-29' });
+        });
+
+        it('resolves the prior month correctly when today is the 31st', () => {
+            vi.setSystemTime(new Date('2026-10-31T12:00:00'));
+            expect(toApiRangeParams('lastmonth')).toEqual({ from: '2026-09-01', to: '2026-09-30' });
+        });
+
+        it('keeps only the nonzero current-day row in a Today chart', () => {
+            const rows: TotalEventsByDayData[] = [
+                { day: '2026-09-30', totalEvents: 99 },
+                { day: '2026-10-01', totalEvents: 157 }
+            ];
+            const filled = fillMissingApiDates(rows, 'today', 'day', (date) => ({
+                day: format(date, 'yyyy-MM-dd'),
+                totalEvents: 0
+            }));
+
+            expect(filled).toEqual([{ day: '2026-10-01', totalEvents: 157 }]);
+            const chart = transformPageViewTimeLineData(filled);
+            expect(chart.labels).toEqual(['Oct 01']);
+            expect(chart.datasets[0].data).toEqual([157]);
+        });
+    });
+
+    describe('toApiRangeParams', () => {
+        it('keeps the predefined CAEM range tokens unchanged', () => {
+            expect(toApiRangeParams('last7days')).toEqual({ range: 'last_7_days' });
+            expect(toApiRangeParams('last30days')).toEqual({ range: 'last_30_days' });
+        });
+
+        it('sends equal from/to dates for a today-only custom range', () => {
+            expect(toApiRangeParams(['2024-01-15', '2024-01-15'])).toEqual({
+                from: '2024-01-15',
+                to: '2024-01-15'
+            });
         });
     });
 
