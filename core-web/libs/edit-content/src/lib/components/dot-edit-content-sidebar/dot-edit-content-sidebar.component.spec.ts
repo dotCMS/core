@@ -34,6 +34,8 @@ import {
     DotWorkflowService
 } from '@dotcms/data-access';
 import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
     DotCMSWorkflowAction,
     DotContentletCanLock,
     DotContentletDepths
@@ -444,6 +446,124 @@ describe('DotEditContentSidebarComponent', () => {
 
                 expect(emitSpy).toHaveBeenCalledWith(action);
             });
+        });
+
+        describe('preview button', () => {
+            const loadContent = (extra: Partial<DotCMSContentlet>, withActions = true) => {
+                const dotContentTypeService = spectator.inject(DotContentTypeService);
+                const workflowActionsService = spectator.inject(DotWorkflowsActionsService);
+
+                if (!withActions) {
+                    workflowActionsService.getByInode.mockReturnValue(of([]));
+                    workflowActionsService.getWorkFlowActions.mockReturnValue(of([]));
+                }
+
+                const dotEditContentService = spectator.inject(DotEditContentService);
+
+                dotEditContentService.getContentById.mockReturnValue(
+                    of(
+                        createFakeContentlet({
+                            inode: '123',
+                            contentType: 'testContentType',
+                            identifier: '123-456',
+                            title: 'Test Content',
+                            host: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+                            languageId: 1,
+                            ...extra
+                        })
+                    )
+                );
+                dotContentTypeService.getContentTypeWithRender.mockReturnValue(
+                    of(CONTENT_TYPE_MOCK)
+                );
+
+                store.initializeExistingContent({ inode: '123', depth: DotContentletDepths.TWO });
+                tick();
+                spectator.detectChanges();
+            };
+
+            const preview = () => spectator.query(byTestId('sidebar-preview-button'));
+
+            it('should not render for content that is neither a page nor URL-mapped', fakeAsync(() => {
+                loadContent({ baseType: DotCMSBaseTypesContentTypes.CONTENT });
+
+                expect(preview()).toBeFalsy();
+            }));
+
+            it('should render for an HTML page, below the workflow actions with a divider above it', fakeAsync(() => {
+                loadContent({ baseType: DotCMSBaseTypesContentTypes.HTMLPAGE, url: '/blog/index' });
+
+                const actions = spectator.query(byTestId('sidebar-workflow-actions')) as Element;
+                const button = preview() as HTMLElement;
+
+                expect(button).toBeTruthy();
+                expect(
+                    actions.compareDocumentPosition(button) & Node.DOCUMENT_POSITION_FOLLOWING
+                ).toBeTruthy();
+                expect(button.closest('[data-testid="sidebar-preview-section"]')).toBeTruthy();
+                expect(
+                    (
+                        spectator.query(byTestId('sidebar-preview-section')) as HTMLElement
+                    ).classList.contains('border-b')
+                ).toBe(true);
+            }));
+
+            it('should be a button with an eye icon', fakeAsync(() => {
+                loadContent({ baseType: DotCMSBaseTypesContentTypes.HTMLPAGE, url: '/blog/index' });
+
+                // PrimeNG applies the outlined and full-width classes after the first render, so the
+                // look itself is checked in the browser (quickstart step 8); what is fixed here is
+                // the element and its icon.
+                expect(preview()?.tagName).toBe('BUTTON');
+                expect(preview()?.getAttribute('icon')).toBe('pi pi-eye');
+            }));
+
+            it('should render for content with a URL map', fakeAsync(() => {
+                loadContent({ URL_MAP_FOR_CONTENT: '/blog/post/5-snow-sports' });
+
+                expect(preview()).toBeTruthy();
+            }));
+
+            it('should still render, right below Lock for Editing, when there are no workflow actions', fakeAsync(() => {
+                loadContent(
+                    { baseType: DotCMSBaseTypesContentTypes.HTMLPAGE, url: '/blog/index' },
+                    false
+                );
+
+                const lock = spectator.query(byTestId('sidebar-lock-section')) as Element;
+
+                expect(spectator.query(byTestId('sidebar-workflow-actions'))).toBeFalsy();
+                expect(preview()).toBeTruthy();
+                expect(
+                    lock.compareDocumentPosition(preview() as Element) &
+                        Node.DOCUMENT_POSITION_FOLLOWING
+                ).toBeTruthy();
+            }));
+
+            it('should not render while a historical version is viewed', fakeAsync(() => {
+                loadContent({ baseType: DotCMSBaseTypesContentTypes.HTMLPAGE, url: '/blog/index' });
+                patchState(store as unknown as WritableStateSource<object>, {
+                    isViewingHistoricalVersion: true
+                });
+                spectator.detectChanges();
+
+                expect(preview()).toBeFalsy();
+            }));
+
+            it('should open the preview of the content when clicked', fakeAsync(() => {
+                const openSpy = vi
+                    .spyOn(utils, 'openContentletPreview')
+                    .mockImplementation(() => undefined);
+                loadContent({ baseType: DotCMSBaseTypesContentTypes.HTMLPAGE, url: '/blog/index' });
+
+                spectator.click(
+                    (preview()?.tagName === 'BUTTON'
+                        ? preview()
+                        : preview()?.querySelector('button')) as HTMLElement
+                );
+
+                expect(openSpy).toHaveBeenCalledWith(store.contentlet());
+            }));
         });
 
         describe('sections', () => {

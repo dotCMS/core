@@ -32,6 +32,7 @@ import {
 
 import { DotRelationshipFieldComponent } from './dot-relationship-field.component';
 
+import { DotEditContentDialogHeaderComponent } from '../../../../components/dot-create-content-dialog/dot-edit-content-dialog-header.component';
 import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
 import { EDIT_CONTENT_HOST } from '../../../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../../../store/edit-content.store';
@@ -332,6 +333,8 @@ describe('DotRelationshipFieldComponent', () => {
             expect(config.data).toEqual(
                 expect.objectContaining({ mode: 'new', contentTypeId: 'ct-1' })
             );
+            // PrimeNG prints `header` only without a header template; this one adds the state chip.
+            expect(config.templates).toEqual({ header: DotEditContentDialogHeaderComponent });
         });
 
         it('opens the create-new content in the side panel when the flag is on', async () => {
@@ -364,6 +367,8 @@ describe('DotRelationshipFieldComponent', () => {
             expect(config.data).toEqual(
                 expect.objectContaining({ mode: 'new', contentTypeId: 'ct-1' })
             );
+            // PrimeNG prints `header` only without a header template; this one adds the state chip.
+            expect(config.templates).toEqual({ header: DotEditContentDialogHeaderComponent });
         });
 
         it('resolves the language of the created content so the Locales column renders at once', async () => {

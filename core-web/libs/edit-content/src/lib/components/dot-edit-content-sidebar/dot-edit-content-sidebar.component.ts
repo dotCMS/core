@@ -24,7 +24,7 @@ import {
     DotWorkflowState
 } from '../../models/dot-edit-content.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
-import { escapeHtml } from '../../utils/functions.util';
+import { escapeHtml, openContentletPreview } from '../../utils/functions.util';
 
 /**
  * The DotEditContentSidebarComponent is a component that displays the sidebar for the DotCMS content editing application.
@@ -138,6 +138,14 @@ export class DotEditContentSidebarComponent {
                 }
             }
         });
+    }
+
+    /**
+     * Handles a click on the Preview button: opens the page editor (HTML page) or the URL-map preview
+     * in a new tab, as the tab bar link did before it moved here.
+     */
+    onPreview(): void {
+        openContentletPreview(this.$store.contentlet());
     }
 
     /**

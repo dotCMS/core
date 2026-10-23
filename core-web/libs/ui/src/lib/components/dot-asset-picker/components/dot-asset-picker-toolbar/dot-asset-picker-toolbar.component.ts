@@ -9,9 +9,12 @@ import {
 } from '@angular/core';
 
 import {
+    DOT_SEARCH_SCOPE,
     DotCMSBaseTypesContentTypes,
     DotCMSContentTypeField,
+    DotSearchScope,
     LOAD_MORE_NODE_TYPE,
+    SEARCH_SCOPE_FILTER_KEY,
     TreeNodeContentData
 } from '@dotcms/dotcms-models';
 
@@ -26,7 +29,7 @@ import { DotContentStatus } from '../../../dot-filter-bar/chips/dot-status-filte
 import { DotStatusFilterComponent } from '../../../dot-filter-bar/chips/dot-status-filter/dot-status-filter.component';
 import { DotFilterBarComponent } from '../../../dot-filter-bar/dot-filter-bar.component';
 import { DotFilterChipError } from '../../../dot-filter-bar/filter-facade.token';
-import { DotSearchInputComponent } from '../../../dot-search-input/dot-search-input.component';
+import { DotSearchScopeInputComponent } from '../../../dot-search-scope-input/dot-search-scope-input.component';
 import { DotUploadButtonComponent } from '../../../dot-upload-button/dot-upload-button.component';
 import { DotAssetPickerStore } from '../../store/dot-asset-picker.store';
 import { allowedStatusesFor } from '../../store/filter-defaults';
@@ -48,7 +51,7 @@ import { allowedStatusesFor } from '../../store/filter-defaults';
     templateUrl: './dot-asset-picker-toolbar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
-        DotSearchInputComponent,
+        DotSearchScopeInputComponent,
         DotSharedAssetsFilterComponent,
         DotFilterBarComponent,
         DotContentTypeFilterChipComponent,
@@ -82,7 +85,7 @@ export class DotAssetPickerToolbarComponent implements OnDestroy {
     // NOTE: `private`, not `#`, despite TYPESCRIPT_STANDARDS.md:87. Angular's compiler rejects a
     // signal query on an ES-private field: "Cannot use 'viewChild' on a class member that is
     // declared as ES private." The standard cannot be followed here.
-    private readonly $searchInput = viewChild.required(DotSearchInputComponent);
+    private readonly $searchInput = viewChild.required(DotSearchScopeInputComponent);
 
     /**
      * Claims the search shortcut while this dialog is open.
@@ -126,6 +129,13 @@ export class DotAssetPickerToolbarComponent implements OnDestroy {
     }
 
     protected readonly $searchTerm = computed(() => this.store.filters().title ?? '');
+
+    /** Title unless the editor picked All Fields: the store keeps the scope only when it differs. */
+    protected readonly $searchScope = computed(
+        () =>
+            (this.store.filters()[SEARCH_SCOPE_FILTER_KEY] as DotSearchScope | undefined) ??
+            DOT_SEARCH_SCOPE.TITLE
+    );
 
     /**
      * Restricts the content-type selector to what the entry point allows — neither a File nor an
