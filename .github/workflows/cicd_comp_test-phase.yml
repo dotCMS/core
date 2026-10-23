@@ -315,7 +315,7 @@ jobs:
       # than the one we ship.
       # Bounded so a wedged registry or mirror can't burn the job timeout (#37118).
       - name: Install native libvips (image engine parity tests)
-        if: matrix.test_type == 'jvm'
+        if: matrix.test_type == 'jvm' && matrix.name == 'JVM Unit Tests'
         timeout-minutes: 15
         env:
           # Passed through env rather than interpolated into the script body: `${{ }}` is
