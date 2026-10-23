@@ -155,26 +155,15 @@ export class DotUveContentEditorComponent {
     }
 
     /**
-     * Opens the editor a request asks for. A legacy-only request goes straight to the legacy
-     * dialog. A contentlet picked from a container that is on more than one page first asks
-     * whether to edit it on every page or a copy on this page only; the copy is made in place,
-     * the page reloads, and the copy opens. Everything else opens the editor its content type
-     * asks for.
+     * Opens the editor a request asks for. A contentlet picked from a container that is on more
+     * than one page first asks whether to edit it on every page or a copy on this page only; the
+     * copy is made in place, the page reloads, and the copy opens. Then the content type decides
+     * the editor.
      *
      * @param request what to edit, and how
      * @returns the work the request does, completing when it is done
      */
-    #editContent({
-        contentlet,
-        forkFrom,
-        legacyOnly
-    }: DotUveEditContentRequest): Observable<unknown> {
-        if (legacyOnly) {
-            this.$legacyDialog()?.editContentlet(contentlet);
-
-            return EMPTY;
-        }
-
+    #editContent({ contentlet, forkFrom }: DotUveEditContentRequest): Observable<unknown> {
         const onMultiplePages = Number(contentlet.onNumberOfPages ?? 1) > 1;
 
         if (!forkFrom || !onMultiplePages) {

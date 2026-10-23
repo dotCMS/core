@@ -270,6 +270,8 @@ describe('DotUveContentEditorComponent', () => {
     });
 
     describe('uveEditContentRequested', () => {
+        // Every caller sends `{ contentlet }` (plus `forkFrom` from the pencil), the SDK's
+        // editContentlet() included, so these tests are its path too.
         describe('choosing the editor', () => {
             it('should open the legacy dialog when the content type does not enable the new editor', () => {
                 editContent({ contentlet: CONTENTLET });
@@ -311,18 +313,6 @@ describe('DotUveContentEditorComponent', () => {
 
                 expect(contentTypeService.getContentType).not.toHaveBeenCalled();
                 expect(legacyDialog()?.editContentlet).toHaveBeenCalledWith(contentlet);
-            });
-
-            it('should open the legacy dialog without a lookup when the request asks for it only', () => {
-                // The SDK's editContentlet() has always opened the legacy dialog, whatever the
-                // content type asks for.
-                contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_CONTENT_TYPE));
-
-                editContent({ contentlet: CONTENTLET, legacyOnly: true });
-
-                expect(contentTypeService.getContentType).not.toHaveBeenCalled();
-                expect(legacyDialog()?.editContentlet).toHaveBeenCalledWith(CONTENTLET);
-                expect(dialogService.open).not.toHaveBeenCalled();
             });
 
             it('should not check edit permission itself', () => {
@@ -720,12 +710,6 @@ describe('DotUveContentEditorComponent', () => {
 
                 it('should open the legacy dialog for a content type not on the new editor', () => {
                     editContent({ contentlet: CONTENTLET });
-
-                    expect(legacyDialog()?.editContentlet).toHaveBeenCalledWith(CONTENTLET);
-                });
-
-                it('should open the legacy dialog for a legacy-only request', () => {
-                    editContent({ contentlet: CONTENTLET, legacyOnly: true });
 
                     expect(legacyDialog()?.editContentlet).toHaveBeenCalledWith(CONTENTLET);
                 });

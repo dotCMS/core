@@ -17,11 +17,6 @@ export interface DotUveEditContentRequest {
      * on this page only.
      */
     forkFrom?: ContainerPayload;
-    /**
-     * Opens the legacy editor whatever the content type asks for, as the SDK's `editContentlet()`
-     * always has.
-     */
-    legacyOnly?: boolean;
 }
 
 /**

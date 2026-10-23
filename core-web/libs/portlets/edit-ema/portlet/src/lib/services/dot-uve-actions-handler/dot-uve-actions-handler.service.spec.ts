@@ -573,9 +573,9 @@ describe('DotUveActionsHandlerService – EDIT_CONTENTLET', () => {
         vi.spyOn(dispatcher, 'dispatch');
     });
 
-    it("should ask for the legacy editor on the client's contentlet instead of opening the dialog itself", () => {
-        // The SDK's editContentlet() has always opened the legacy dialog, whatever the content
-        // type asks for; the content editor now owns that dialog.
+    it("should ask the content editor to edit the client's contentlet instead of opening the dialog itself", () => {
+        // The same request every other edit sends: the content editor picks the editor from the
+        // content type, so the SDK's editContentlet() no longer forces the legacy dialog.
         const contentlet = createFakeContentlet({ inode: 'sdk-inode', contentType: 'Blog' });
         const editContentlet = vi.fn();
 
@@ -592,7 +592,7 @@ describe('DotUveActionsHandlerService – EDIT_CONTENTLET', () => {
         );
 
         expect(dispatcher.dispatch).toHaveBeenCalledWith(
-            uveContentEditorEvents.uveEditContentRequested({ contentlet, legacyOnly: true }),
+            uveContentEditorEvents.uveEditContentRequested({ contentlet }),
             { scope: 'self' }
         );
         expect(editContentlet).not.toHaveBeenCalled();
