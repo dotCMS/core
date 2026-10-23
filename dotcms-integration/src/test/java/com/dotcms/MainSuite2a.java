@@ -4,6 +4,7 @@ import com.dotcms.analytics.ContentAnalyticsPersistenceModeIT;
 import com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyResourceIntegrationTest;
 import com.dotcms.business.interceptor.InterceptorHandlerTest;
 import com.dotcms.enterprise.publishing.remote.handler.FolderHandlerTest;
+import com.dotcms.enterprise.rules.RulesAPIImplParentChecksIntegrationTest;
 import com.dotcms.inference.rest.ChatCompletionsStreamingTest;
 import com.dotcms.inference.rest.ChatCompletionsTest;
 import com.dotcms.inference.rest.InferenceAuthorizationTest;
@@ -19,6 +20,8 @@ import com.dotcms.inference.rest.InferenceSiteResolutionTest;
 import com.dotcms.inference.rest.InferenceTestsAreRegisteredTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.rest.api.v1.maintenance.MaintenanceResourceIntegrationTest;
+import com.dotcms.rest.api.v1.sites.ruleengine.RuleRefusedActionsIntegrationTest;
+import com.dotcms.rest.api.v1.sites.ruleengine.RuleResourcesAccessIntegrationTest;
 import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
 import org.junit.runner.RunWith;
@@ -106,7 +109,10 @@ import org.junit.runners.Suite.SuiteClasses;
         EventAnalyticsProxyResourceIntegrationTest.class,
         GenericBundleActivatorIntegrationTest.class,
         com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest.class,
-        com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class
+        com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class,
+        RulesAPIImplParentChecksIntegrationTest.class,
+        RuleResourcesAccessIntegrationTest.class,
+        RuleRefusedActionsIntegrationTest.class
 })
 public class MainSuite2a {
 
