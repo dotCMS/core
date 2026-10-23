@@ -441,7 +441,10 @@ public class UserResource implements Serializable {
 		operationId = "filterUsers",
 		summary = "Filter users",
 		description = "Returns a list of dotCMS users based on specified search criteria with pagination support. "
-				+ "Each item is the user's data map. When `includeRoles=true` is passed, each item additionally "
+				+ "Each item is the user's data map. CMS Administrators and users with access to the Users portlet "
+				+ "receive the complete map; any other back-end user receives only the directory fields of each user "
+				+ "(`userId`, `id`, `firstName`, `lastName`, `fullName`, `name`, `emailAddress`, `emailaddress`, "
+				+ "`gravitar`, `type`). When `includeRoles=true` is passed, each item additionally "
 				+ "carries a `roles` array listing the user's directly assigned roles as `{id, name, roleKey}` "
 				+ "objects (`roleKey` may be null for roles created without a key); roles held through the role "
 				+ "hierarchy and the user's personal role are not included. Requesting roles requires being a CMS "
