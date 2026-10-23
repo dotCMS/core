@@ -12,6 +12,7 @@ import {
 import { type DotImageData, DOT_IMAGE_NODE_NAME } from './extensions/nodes/image.extension';
 import {
     type UploadPlaceholderMediaType,
+    createUploadPlaceholderId,
     insertUploadPlaceholders,
     replacePlaceholder,
     removePlaceholder,
@@ -43,16 +44,6 @@ const NODE_NAME_BY_MEDIA_TYPE: Record<UploadPlaceholderMediaType, string> = {
     video: DOT_VIDEO_NODE_NAME,
     audio: DOT_AUDIO_NODE_NAME
 };
-
-/** Keeps placeholder ids unique even when two pastes land within the same millisecond. */
-let placeholderSequence = 0;
-
-/** Builds a placeholder id that is unique for the page's lifetime. */
-function nextPlaceholderId(mediaType: UploadPlaceholderMediaType): string {
-    const prefix = mediaType === 'image' ? 'img' : mediaType === 'video' ? 'vid' : 'aud';
-
-    return `${prefix}-${Date.now()}-${placeholderSequence++}`;
-}
 
 /** The media kind a file belongs to, or `null` when it is not an image, video or audio file. */
 function mediaTypeOf(file: File): UploadPlaceholderMediaType | null {
@@ -133,15 +124,15 @@ export function uploadMediaFiles(
 
     // Build placeholder descriptors for all files
     const imagePlaceholders = imageFiles.map(() => ({
-        id: nextPlaceholderId('image'),
+        id: createUploadPlaceholderId('image'),
         mediaType: 'image' as const
     }));
     const videoPlaceholders = videoFiles.map(() => ({
-        id: nextPlaceholderId('video'),
+        id: createUploadPlaceholderId('video'),
         mediaType: 'video' as const
     }));
     const audioPlaceholders = audioFiles.map(() => ({
-        id: nextPlaceholderId('audio'),
+        id: createUploadPlaceholderId('audio'),
         mediaType: 'audio' as const
     }));
 
@@ -257,6 +248,9 @@ export function handleMediaDrop(
  * - Plain text that is an image URL becomes an image node.
  * - Any other text wins over a file: Word puts a rendering of the formatted text on the
  *   clipboard as an image file next to the text, and the author wants the text.
+ * - HTML carrying a base64 image wins over a file too: {@link transformPastedDataUrlImages}
+ *   has already started uploading it, and consuming the paste here would discard the slice
+ *   holding its placeholder and leave that upload orphaned.
  *
  * @returns `true` when the paste was consumed; `false` lets ProseMirror paste as usual.
  */
@@ -288,6 +282,8 @@ export function handleMediaPaste(
         return true;
     }
 
+    if (/data:image\//i.test(clipboard.getData('text/html') || '')) return false;
+
     return uploadMediaFiles(
         editor,
         view.state.selection.from,
@@ -296,8 +292,12 @@ export function handleMediaPaste(
     );
 }
 
-/** Matches each `<img …>` tag in clipboard HTML; a `data:` payload never contains `>`. */
-const IMG_TAG_PATTERN = /<img\b[^>]*>/gi;
+/**
+ * Matches each `<img …>` tag in clipboard HTML. Quoted attribute values are consumed whole, so
+ * a `>` inside the value, legal in serialized HTML and common in an unencoded
+ * `data:image/svg+xml,<svg …>` source, does not end the match early.
+ */
+const IMG_TAG_PATTERN = /<img\b(?:[^>"']|"[^"]*"|'[^']*')*>/gi;
 
 /**
  * Reads `src` and `alt` off a single `<img>` tag without touching the live document: an element
@@ -344,7 +344,7 @@ export function transformPastedDataUrlImages(
         // Undecodable: leave the tag for the parser, which drops it as it always did.
         if (!file) return tag;
 
-        const placeholder = { id: nextPlaceholderId('image'), mediaType: 'image' as const };
+        const placeholder = { id: createUploadPlaceholderId('image'), mediaType: 'image' as const };
         uploadImageIntoPlaceholder(editor, placeholder.id, file, alt ?? file.name, uploadImage);
 
         return uploadPlaceholderHtml(placeholder);

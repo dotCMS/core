@@ -311,6 +311,17 @@ describe('handleMediaPaste', () => {
         expect(imageNodes(editor)[0]?.attrs?.['src']).toBe('/dA/inode-1');
     });
 
+    it('leaves the paste alone when the HTML already carries a data: image, so the transform owns it', () => {
+        editor = buildEditor();
+        const file = new File(['x'], 'image.png', { type: 'image/png' });
+        const uploadImage = vi.fn().mockResolvedValue(UPLOADED_IMAGE);
+        const event = buildPasteEvent([file], '', `<img src="${PNG_DATA_URL}">`);
+
+        expect(handleMediaPaste(editor, editor.view, event, { uploadImage })).toBe(false);
+        expect(uploadImage).not.toHaveBeenCalled();
+        expect(hasNodeType(editor, PLACEHOLDER_NODE_NAME)).toBe(false);
+    });
+
     it('leaves the paste alone when text travels with the image (Word formatting image)', () => {
         editor = buildEditor();
         const file = new File(['x'], 'image.png', { type: 'image/png' });
@@ -410,6 +421,30 @@ describe('transformPastedDataUrlImages', () => {
         const file = uploadImage.mock.calls[0][0] as File;
         expect(file.type).toBe('image/png');
         expect(file.name).toMatch(/\.png$/);
+    });
+
+    it('handles an unencoded SVG data URL whose src contains ">" characters', () => {
+        editor = buildEditor();
+        const uploadImage = vi.fn().mockResolvedValue(UPLOADED_IMAGE);
+        const svg = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg'><rect/></svg>";
+        const html = `<p>a</p><img alt="shape" src="${svg}"><p>b</p>`;
+
+        const out = transformPastedDataUrlImages(editor, html, uploadImage);
+
+        expect(out).not.toContain('<svg');
+        expect(out).toContain('<p>a</p>');
+        expect(out).toContain('<p>b</p>');
+        expect(out.match(/data-upload-id="/g)).toHaveLength(1);
+        expect(uploadImage).toHaveBeenCalledTimes(1);
+        expect((uploadImage.mock.calls[0][0] as File).type).toBe('image/svg+xml');
+    });
+
+    it('does not turn a foreign div[data-upload-id] in pasted HTML into a placeholder', () => {
+        editor = buildEditor();
+
+        pasteHTML(editor, '<div data-upload-id="not-ours" data-media-type="image">x</div>');
+
+        expect(hasNodeType(editor, PLACEHOLDER_NODE_NAME)).toBe(false);
     });
 
     it('through the real paste pipeline: placeholder lands in the doc, then becomes the uploaded dotImage', async () => {

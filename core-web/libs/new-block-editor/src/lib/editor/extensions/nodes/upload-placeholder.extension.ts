@@ -23,6 +23,37 @@ const PLACEHOLDER_ID_ATTR = 'data-upload-id';
 /** HTML attribute carrying the placeholder's media kind, both when serialized and when parsed. */
 const PLACEHOLDER_MEDIA_TYPE_ATTR = 'data-media-type';
 
+/** Id prefix per media kind; the parse rule only accepts ids built from these. */
+const PLACEHOLDER_ID_PREFIX: Record<UploadPlaceholderMediaType, string> = {
+    image: 'img',
+    video: 'vid',
+    audio: 'aud'
+};
+
+/** Shape of every id {@link createUploadPlaceholderId} produces: `<prefix>-<timestamp>-<sequence>`. */
+const PLACEHOLDER_ID_PATTERN = /^(img|vid|aud)-\d+-\d+$/;
+
+/** Keeps placeholder ids unique even when two pastes land within the same millisecond. */
+let placeholderSequence = 0;
+
+/**
+ * Builds a placeholder id that is unique for the page's lifetime.
+ *
+ * @param mediaType - Media kind, which picks the id prefix.
+ * @returns An id matching the shape the node's parse rule accepts.
+ */
+export function createUploadPlaceholderId(mediaType: UploadPlaceholderMediaType): string {
+    return `${PLACEHOLDER_ID_PREFIX[mediaType]}-${Date.now()}-${placeholderSequence++}`;
+}
+
+/**
+ * True when the id has the shape this editor generates. The parse rule uses it so a foreign
+ * `div[data-upload-id]` in pasted HTML does not become a placeholder nothing will ever replace.
+ */
+function isUploadPlaceholderId(id: string | null): id is string {
+    return id !== null && PLACEHOLDER_ID_PATTERN.test(id);
+}
+
 /**
  * Serializes a placeholder as the HTML the node's parse rule understands, so a paste
  * transform can put a placeholder where an image used to be before ProseMirror parses
@@ -151,10 +182,16 @@ export function createUploadPlaceholderExtension(copy: UploadPlaceholderCopy) {
             return [
                 {
                     tag: `div[${PLACEHOLDER_ID_ATTR}]`,
-                    getAttrs: (element: HTMLElement) => ({
-                        id: element.getAttribute(PLACEHOLDER_ID_ATTR),
-                        mediaType: element.getAttribute(PLACEHOLDER_MEDIA_TYPE_ATTR) ?? 'image'
-                    })
+                    getAttrs: (element: HTMLElement) => {
+                        const id = element.getAttribute(PLACEHOLDER_ID_ATTR);
+                        // `false` rejects the rule: only ids this editor minted are placeholders.
+                        if (!isUploadPlaceholderId(id)) return false;
+
+                        return {
+                            id,
+                            mediaType: element.getAttribute(PLACEHOLDER_MEDIA_TYPE_ATTR) ?? 'image'
+                        };
+                    }
                 }
             ];
         },
