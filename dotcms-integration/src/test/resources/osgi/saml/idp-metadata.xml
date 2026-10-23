@@ -1,0 +1,11 @@
+<!-- Synthetic trust certificate for assertion.xml; no private key is distributed. -->
+<md:EntityDescriptor xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"
+    xmlns:ds="http://www.w3.org/2000/09/xmldsig#" entityID="https://saml-it.example/idp">
+  <md:IDPSSODescriptor protocolSupportEnumeration="urn:oasis:names:tc:SAML:2.0:protocol">
+    <md:KeyDescriptor use="signing">
+      <ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIIDDjCCAfagAwIBAgIJAIuR4iZkiMh2MA0GCSqGSIb3DQEBCwUAMDQxMjAwBgNVBAMTKVN5bnRoZXRpYyBkb3RDTVMgU0FNTCBpbnRlZ3JhdGlvbiBmaXh0dXJlMCAXDTIwMDEwMTA1MDAwMFoYDzIxMjAwMTAyMDUwMDAwWjA0MTIwMAYDVQQDEylTeW50aGV0aWMgZG90Q01TIFNBTUwgaW50ZWdyYXRpb24gZml4dHVyZTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBALo3d7Op8ruov45gy+06LXEViIhp5JyVdyyJnA2zqEawAdW58iQGOkQPw2Nx4FnwMwQciG3h5B7Sy0izntOA57uGSz59S8ngkKXuNk8r2G6u5S87CQdEa0L8o9IOrP2T2Ov9rajR/HssWKG/ThglLEkGd0dE0k4quJEb1UiWPpaxz2zHuZk3jG5C79MLLHrwmaPcACk+RoVLPldkbCzrFOezqEiw42QfcCra5yJvjB/SLJsgyz+4GBdira7ADNFn809GZ2Rxl1ZTnP3XdKIOl/DuvfNurOqm28wp43szgVaKJSR0K6yu12rO2GO9zAR7HrDWAvMffCyqQd8N4/TtFlECAwEAAaMhMB8wHQYDVR0OBBYEFPs3yQdilCIFGIkmMr/PEOsxC1A/MA0GCSqGSIb3DQEBCwUAA4IBAQAB/BxcUul6xedRXAVIAR/rUcceNWxxAqaVxo+Crx8j8fEO7kxBetv3EU5sFL6uI+0p7GBqhTzMwSFn03o77RnCyU+ls9WECPUf09wCrcuhFctKlmLi8/Z6rVebobF9FSCg4yfMY5UeYEmPt5BEmVLVH5q4E4JvJ+70jiIpGgX+T7Fu04X4s8gLFrVU34VIkX3k3Z2UgHc3fEYIOiOB/YasuVxScCCvle2R7EJLzs7dPZwe9ThKGWnFlNAQiuKBczw8BSzh3nTi21PxFvQx09rPdO6pJV8q6AsFTKieFMbkrMtHckO2iWO9Lt/FYLfLj2T0Z04KbQI6HG+1BsWgNewz</ds:X509Certificate></ds:X509Data></ds:KeyInfo>
+    </md:KeyDescriptor>
+    <md:SingleSignOnService Binding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect"
+        Location="https://saml-it.example/idp/login"/>
+  </md:IDPSSODescriptor>
+</md:EntityDescriptor>

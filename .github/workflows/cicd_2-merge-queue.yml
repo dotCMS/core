@@ -4,6 +4,13 @@ on:
   merge_group:
     types: [ checks_requested ]
     branches: [ main, master ]
+# GitHub deletes a merge group's branch when the queue re-forms it but does not cancel its run.
+# The squash message embeds the PR number and is identical across re-formations of the same PR,
+# so keying on it cancels the orphan while runs for other PRs, which build in parallel, are untouched.
+# toJSON keeps a multi-line message (a PR body folded into the squash) on a single escaped line.
+concurrency:
+  group: mq-${{ toJSON(github.event.merge_group.head_commit.message) }}
+  cancel-in-progress: true
 jobs:
   initialize:
     name: Initialize

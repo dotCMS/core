@@ -101,6 +101,16 @@ public class EventAnalyticsProxyResource {
      *     → POST {DOT_ANALYTICS_BASE_URL}/v1/event/ingest   {body with site_id injected}
      * </pre>
      *
+     * <p>Before forwarding, each event's URL fields are cleaned by {@link UrlParamFilter}: the
+     * page's {@code url}, {@code doc_search} and {@code doc_hash} and the clicked element's
+     * {@code href} keep only allowlisted query parameters (defaults, the
+     * {@code analytics.url.allowed.params} property and the site's {@code allowedUrlParams} App
+     * field); user info and {@code ;jsessionid} segments are removed from {@code url},
+     * {@code doc_path} and {@code href}; a URL field holding an array or object becomes
+     * {@code ""}; and an event whose {@code data} or {@code page} is not an object is removed from
+     * the batch. When the site's {@code filterUrlParams} App field is {@code false}, only user info
+     * and session ids are removed.
+     *
      * <p>Read-side endpoints (e.g. {@code total-events}, {@code unique-visitors}) are GETs
      * served by {@link #proxyGetRequest} via the catch-all {@code /v1/analytics/{path:.*}}.
      *
@@ -123,7 +133,9 @@ public class EventAnalyticsProxyResource {
             operationId = "proxyAnalyticsEventRequest",
             summary = "Proxy analytics event ingest with site auth validation",
             description = "Validates the site_auth field in the JSON body via SiteAuthValidator, " +
-                    "resolves the active site, injects site_id into context, and asynchronously " +
+                    "resolves the active site, adds site_id to context, cleans each event's page and " +
+                    "link URL fields (allowlisted query parameters only, no user info or session ids; events " +
+                    "with a malformed data or page object are dropped), and asynchronously " +
                     "forwards the body to {DOT_ANALYTICS_BASE_URL}/v1/event/ingest. " +
                     "The dotCMS-side path is a fixed match; the upstream sub-path is not " +
                     "caller-controllable.",
@@ -172,7 +184,7 @@ public class EventAnalyticsProxyResource {
             return;
         }
 
-        String proxyBody = body;
+        final Map<String, Object> eventBody;
         try {
             final Map<String, Object> bodyMap = JsonUtil.getJsonFromString(body);
             // The literal JSON token "null" parses to a Java null — guard before deref.
@@ -211,7 +223,7 @@ public class EventAnalyticsProxyResource {
             new SiteAuthValidator().validate(siteAuth.toString());
 
             contextMap.put("site_id", site.getIdentifier());
-            proxyBody = JsonUtil.getJsonStringFromObject(bodyMap);
+            eventBody = bodyMap;
         } catch (final AnalyticsValidationException e) {
             Logger.warn(this, "SiteAuth validation failed for analytics proxy: " + e.getMessage());
             resumeWithBadRequest(asyncResponse, e.getCode().name(), e.getMessage());
@@ -232,7 +244,8 @@ public class EventAnalyticsProxyResource {
             return;
         }
 
-        final Secret persistenceMode = ContentAnalyticsUtil.getAppSecrets(site).get(PERSISTENCE_MODE_KEY);
+        final Map<String, Secret> appSecrets = ContentAnalyticsUtil.getAppSecrets(site);
+        final Secret persistenceMode = appSecrets.get(PERSISTENCE_MODE_KEY);
         if (null != persistenceMode && PERSISTENCE_MODE_READONLY.equals(persistenceMode.getString())) {
             // Read Only suppressing an event is expected, everyday behavior for an instance an
             // admin deliberately chose not to persist from -- not a fault condition, hence debug
@@ -252,7 +265,15 @@ public class EventAnalyticsProxyResource {
             return;
         }
 
-        final String finalProxyBody = proxyBody;
+        // Page URL fields keep only allowlisted query parameters; user info and session id path
+        // segments are removed either way. See UrlParamFilter.
+        if (UrlParamFilter.isEnabled(appSecrets)) {
+            UrlParamFilter.filterEventPages(eventBody, UrlParamFilter.resolveAllowedParams(appSecrets));
+        } else {
+            UrlParamFilter.removeUserInfoAndSessionIds(eventBody);
+        }
+
+        final String finalProxyBody = JsonUtil.getJsonStringFromObject(eventBody);
         final Host finalSite = site;
         ResponseUtil.handleAsyncResponse(
                 () -> EventAnalyticsProxyHelper.proxy("event/ingest", uriInfo, finalProxyBody,

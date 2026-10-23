@@ -9,6 +9,7 @@ import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
+import com.dotcms.publisher.receiver.BundleOrigin;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.util.EnterpriseFeature;
 import com.dotcms.util.PathContainmentUtil;
@@ -183,7 +184,8 @@ public class BundlePublisherResource {
 
 			if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
 				Logger.debug(BundlePublisherResource.class, "Triggering Push Publisher Job for bundle: " + fileName);
-				PushPublisherJob.triggerPushPublisherJob(fileName, status);
+				// a registered sender is trusted to ship plugins
+				PushPublisherJob.triggerPushPublisherJob(fileName, status, BundleOrigin.REGISTERED_SENDER, null);
 			}
 
 			return bundle;

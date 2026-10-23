@@ -21,6 +21,7 @@ TIKA = "com/dotcms/core/plugins/com.dotcms.tika-api"
 FLAT = "com/dotcms/dotcms-core"
 BUNDLES = "com/dotcms/plugins/dotcms-core-bundles"
 PARENT = "com/dotcms/core/plugins/dotcms-core-plugins-parent"
+SAML = "com/dotcms/samlbundle/com.dotcms.samlbundle"
 PREFIX = "s3://test-bucket/libs-release/"
 
 # Snapshot every cp's source bytes before the publisher deletes its temp dirs.
@@ -43,6 +44,8 @@ if operation[0] == "ls":
     print("                           PRE 26.09.28-02-java25/")
     print("2026-09-14 12:00:00 300 maven-metadata.xml")
 elif operation[0] == "cp":
+    if os.environ.get("STUB_FAIL_CP") == "true":
+        sys.exit(1)
     source, dest = Path(operation[1]), operation[2]
     exclusions = [operation[i + 1] for i, arg in enumerate(operation) if arg == "--exclude"]
     if source.is_dir():
@@ -85,6 +88,7 @@ class PublishTests(unittest.TestCase):
         self.install(TIKA)
         self.install(BUNDLES, extension="zip")
         self.install(PARENT, extension=None)
+        self.install(SAML)
 
     def install(self, artifact_path, version=VERSION, extension="jar"):
         directory = self.repo / artifact_path / version
@@ -154,6 +158,32 @@ class PublishTests(unittest.TestCase):
             for suffix, digest in (("sha1", hashlib.sha1), ("md5", hashlib.md5)):
                 self.assertEqual(self.uploads[key + "." + suffix].decode().strip(),
                                  digest(self.uploads[key]).hexdigest())
+
+    def test_saml_bundle_uploads_jar_pom_checksums_and_metadata(self):
+        # SAML keeps its existing com.dotcms.samlbundle:com.dotcms.samlbundle
+        # coordinates; the generic publisher needs no SAML-specific handling.
+        self.publish()
+        for suffix in ("pom", "jar"):
+            key = self.key(SAML, suffix)
+            self.assertIn(key, self.uploads)
+            for checksum, digest in (("sha1", hashlib.sha1), ("md5", hashlib.md5)):
+                self.assertEqual(self.uploads[key + "." + checksum].decode().strip(),
+                                 digest(self.uploads[key]).hexdigest())
+        metadata = ET.fromstring(self.uploads[f"{PREFIX}{SAML}/maven-metadata.xml"])
+        self.assertEqual(metadata.findtext("groupId"), "com.dotcms.samlbundle")
+        self.assertEqual(metadata.findtext("artifactId"), "com.dotcms.samlbundle")
+        self.assertEqual(metadata.findtext("versioning/latest"), VERSION)
+        self.assertEqual(metadata.findtext("versioning/release"), VERSION)
+
+    def test_saml_bundle_module_filter_selects_only_the_saml_bundle(self):
+        self.publish("--modules", "com.dotcms.samlbundle")
+        self.assertIn(self.key(SAML, "jar"), self.uploads)
+        self.assertNotIn(self.key(TIKA, "jar"), self.uploads)
+        self.assertNotIn(self.key(FLAT, "jar"), self.uploads)
+
+    def test_saml_bundle_upload_failure_is_reported(self):
+        self.env["STUB_FAIL_CP"] = "true"
+        self.publish("--modules", "com.dotcms.samlbundle", expected_code=1)
 
     def test_modules_filter_finds_nested_artifact_and_excludes_others(self):
         self.publish("--modules", "com.dotcms.tika-api")

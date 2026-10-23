@@ -66,6 +66,21 @@ public class OAuthProtocolHandlerTest {
     }
 
     @Test
+    public void trustEmailWithoutVerifiedClaim_is_registered_as_boolean_secret() {
+        assertTrue(handler.secretKeys().contains(OAuthAppConfig.KEY_TRUST_EMAIL_WITHOUT_VERIFIED_CLAIM));
+        assertTrue(handler.booleanKeys().contains(OAuthAppConfig.KEY_TRUST_EMAIL_WITHOUT_VERIFIED_CLAIM));
+    }
+
+    @Test
+    public void buildSecrets_persists_trustEmailWithoutVerifiedClaim_boolean() {
+        final AppSecrets result = handler.buildSecrets(
+                Map.of(OAuthAppConfig.KEY_TRUST_EMAIL_WITHOUT_VERIFIED_CLAIM, "true"),
+                Optional.empty());
+
+        assertTrue(result.getSecrets().get(OAuthAppConfig.KEY_TRUST_EMAIL_WITHOUT_VERIFIED_CLAIM).getBoolean());
+    }
+
+    @Test
     public void maskedValues_replaces_clientSecret_with_mask() {
         final AppSecrets secrets = AppSecrets.builder()
                 .withKey(DotAuthConstants.APP_KEY)

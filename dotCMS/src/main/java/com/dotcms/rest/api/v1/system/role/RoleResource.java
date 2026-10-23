@@ -18,6 +18,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Layout;
+import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
@@ -50,6 +52,9 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.vavr.control.Try;
+import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import org.apache.commons.beanutils.BeanUtils;
 import org.glassfish.jersey.server.JSONP;
 
@@ -723,7 +728,9 @@ public class RoleResource implements Serializable {
 	}
 
 	/**
-	 * Load the user and roles by role id.
+	 * Load the user and roles by role id. The caller must be able to read role membership (an
+	 * administrator, or Roles plus Users portlets) or hold a workflow action that assigns work
+	 * to the role, which is what the workflow assignee picker relies on.
 	 * @param request   {@link HttpServletRequest}
 	 * @param response  {@link HttpServletResponse}
 	 * @param roleId    {@link String} role
@@ -736,7 +743,9 @@ public class RoleResource implements Serializable {
 	@Operation(
 		operationId = "loadUsersAndRolesByRoleId",
 		summary = "Load users and roles by role ID",
-		description = "Load the user and roles by role id with optional hierarchy and filtering"
+		description = "Load the user and roles by role id with optional hierarchy and filtering. "
+				+ "The caller must be an administrator, have access to both the Roles and the Users "
+				+ "portlets, or hold a workflow action that assigns to the role."
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
@@ -750,7 +759,7 @@ public class RoleResource implements Serializable {
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "403", 
-					description = "Forbidden - backend user required",
+					description = "Forbidden - membership privilege or an assigning workflow action required",
 					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "404", 
 					description = "Role not found",
@@ -769,9 +778,19 @@ public class RoleResource implements Serializable {
 											  @Parameter(description = "Role name filter prefix", required = false)
 											  @QueryParam  ("name") final String roleNameToFilter) throws DotDataException, DotSecurityException {
 
-		new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
+		final User modUser = new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
 				.requiredFrontendUser(false).requestAndResponse(request, response)
-				.rejectWhenNoUser(true).init();
+				.rejectWhenNoUser(true).init().getUser();
+
+		if (!this.canReadRoleMembership(modUser) && !this.canAssignToRole(modUser, roleId)) {
+
+			SecurityLogger.logInfo(this.getClass(), "unauthorized attempt to read the hierarchy and users of role "
+					+ roleId + " by user " + modUser.getUserId() + " from " + request.getRemoteHost());
+			final String forbiddenMessage = "The User: " + modUser.getUserId()
+					+ " does not have permissions to read the users of a role";
+			Logger.error(this, forbiddenMessage);
+			throw new ForbiddenException(forbiddenMessage);
+		}
 
 		final Role role = this.roleAPI.loadRoleById(roleId);
 
@@ -821,7 +840,8 @@ public class RoleResource implements Serializable {
 	 * user serialization (email address included). Grants inherited through the role hierarchy
 	 * are not part of the response: clients that need the effective member list walk the
 	 * ancestor chain through the {@code parent} attribute of {@link RoleView} and call this
-	 * endpoint per role.
+	 * endpoint per role. The caller must be an administrator or hold both the Roles and the
+	 * Users portlets, the same privilege {@link #loadUserRoles} asks for.
 	 *
 	 * @param request   {@link HttpServletRequest}
 	 * @param response  {@link HttpServletResponse}
@@ -839,7 +859,8 @@ public class RoleResource implements Serializable {
 		summary = "Get the users directly granted a role",
 		description = "Returns the paginated list of users directly granted the given role, "
 				+ "using the standard user serialization (email address included). Grants "
-				+ "inherited through the role hierarchy are not included."
+				+ "inherited through the role hierarchy are not included. The caller must be "
+				+ "an administrator or have access to both the Roles and the Users portlets."
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200",
@@ -853,7 +874,7 @@ public class RoleResource implements Serializable {
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "403",
-					description = "Forbidden - roles portlet access required",
+					description = "Forbidden - administrator, or Roles and Users portlet access, required",
 					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "404",
 					description = "Role not found",
@@ -886,6 +907,17 @@ public class RoleResource implements Serializable {
 				.requiredPortlet("roles")
 				.requestAndResponse(request, response)
 				.rejectWhenNoUser(true).init();
+
+		final User user = initData.getUser();
+		if (!this.canReadRoleMembership(user)) {
+
+			SecurityLogger.logInfo(this.getClass(), "unauthorized attempt to list the users of role "
+					+ roleId + " by user " + user.getUserId() + " from " + request.getRemoteHost());
+			final String forbiddenMessage = "The User: " + user.getUserId()
+					+ " does not have permissions to list the users of a role";
+			Logger.error(this, forbiddenMessage);
+			throw new ForbiddenException(forbiddenMessage);
+		}
 
 		Logger.debug(this, () -> "Loading the users directly granted the role: " + roleId);
 
@@ -1216,15 +1248,9 @@ public class RoleResource implements Serializable {
 				.requiredFrontendUser(false).requestAndResponse(request, response)
 				.rejectWhenNoUser(true).init().getUser();
 
-		final boolean isRoleAdministrator = modUser.isAdmin() ||
-				(
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-				);
-
 		Logger.debug(this, ()-> "Loading the user roles for: " + modUser);
 
-		if (isRoleAdministrator) {
+		if (this.canReadRoleMembership(modUser)) {
 
 			User userRecover = Try.of(()->this.userAPI.loadUserById(userIdOrEmail)).getOrNull();
 			if (userRecover == null) {
@@ -1248,6 +1274,49 @@ public class RoleResource implements Serializable {
 		final String forbiddenMessage = "The User: " + modUser.getUserId() + " does not have permissions to retrieve users roles";
 		Logger.error(this, forbiddenMessage);
 		throw new ForbiddenException(forbiddenMessage);
+	}
+
+	/**
+	 * Whether a user may see which users hold a role and which roles a user holds; the rule
+	 * lives in {@link RoleHelper#canReadRoleMembership(User)} and is shared with the legacy
+	 * DWR listing.
+	 *
+	 * @param user the user making the request
+	 * @return {@code true} when the user may read role membership
+	 * @throws DotDataException if the user's portlet access cannot be resolved
+	 */
+	private boolean canReadRoleMembership(final User user) throws DotDataException {
+
+		return this.roleHelper.canReadRoleMembership(user);
+	}
+
+	/**
+	 * Whether the user may use a workflow action that assigns work to the given role. Such a
+	 * user has to pick an assignee among the role's members, so those members are visible to
+	 * them even without the membership privilege. The actions of each scheme come from the
+	 * workflow cache and are matched on their assignee role first, so the permission check
+	 * runs only for the few actions that assign to this role.
+	 *
+	 * @param user   the user making the request
+	 * @param roleId the role whose members are requested
+	 * @return {@code true} when the user may use a workflow action that assigns to the role
+	 * @throws DotDataException if the workflow schemes or actions cannot be loaded
+	 */
+	private boolean canAssignToRole(final User user, final String roleId) throws DotDataException {
+
+		final WorkFlowFactory workflowFactory = FactoryLocator.getWorkFlowFactory();
+		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+		for (final WorkflowScheme scheme : APILocator.getWorkflowAPI().findSchemes(false)) {
+
+			for (final WorkflowAction action : workflowFactory.findActions(scheme)) {
+
+				if (roleId.equals(action.getNextAssign())
+						&& permissionAPI.doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user)) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	/**

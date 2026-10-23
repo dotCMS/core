@@ -21,6 +21,7 @@ import com.dotcms.enterprise.achecker.utility.CheckFuncUtility;
 import com.dotcms.enterprise.achecker.utility.Constants;
 import com.dotcms.enterprise.achecker.utility.Globals;
 import com.dotcms.enterprise.achecker.utility.Utility;
+import com.dotmarketing.util.Logger;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -309,14 +310,15 @@ public class AccessibilityValidator {
 	}
 
 	/**
-	 * private
-	 * check given html dom node for given check_id, save result into $this->result
-	 * parameters:
-	 * $e: simple html dom node
-	 * $check_id: check id
+	 * Runs one check against an HTML element and records the result. A check that was already run
+	 * on the same line and column is not run again. When the check is not found in the database it
+	 * is skipped: a warning naming the check id is logged, no result is recorded and the element is
+	 * treated as passing.
 	 *
-	 * return "success" or "fail"
-	 * @throws Exception 
+	 * @param e the HTML element to check
+	 * @param check_id the id of the check to run
+	 * @return {@code true} if the element passes the check or the check was skipped
+	 * @throws Exception if the check cannot be evaluated or looked up
 	 */
 	private boolean check(Node e, int check_id) throws Exception {
 
@@ -355,6 +357,11 @@ public class AccessibilityValidator {
 		ChecksDAO checksDAO = new ChecksDAO();
 
 		CheckBean row = checksDAO.getCheckByID(check_id);
+		if (row == null) {
+			Logger.warn(AccessibilityValidator.class,
+					"Accessibility check " + check_id + " was not found and is skipped");
+			return true;
+		}
 
 		if (checked_result == null)
 		{

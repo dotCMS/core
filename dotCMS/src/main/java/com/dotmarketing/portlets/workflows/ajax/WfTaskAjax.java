@@ -124,7 +124,7 @@ public class WfTaskAjax extends WfBaseAction {
 					APILocator.getWorkflowAPI().fireContentWorkflow(contentlet,
 							new ContentletDependencies.Builder()
 									.respectAnonymousPermissions(false)
-									.modUser(APILocator.getUserAPI().getSystemUser())
+									.modUser(getUser())
 									.workflowActionId(action.getId())
 									.workflowActionComments(wfActionComments)
 									.workflowAssignKey(wfActionAssign).build());

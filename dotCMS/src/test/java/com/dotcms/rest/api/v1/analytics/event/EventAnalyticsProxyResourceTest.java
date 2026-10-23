@@ -7,6 +7,8 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.analytics.content.util.ContentAnalyticsUtil;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.security.apps.Secret;
+import com.dotcms.security.apps.Type;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.liferay.portal.model.User;
@@ -22,6 +24,7 @@ import javax.ws.rs.core.MultivaluedHashMap;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriInfo;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -58,6 +61,11 @@ public class EventAnalyticsProxyResourceTest {
 
     private static final String VALID_EVENT_BODY =
             "{\"context\":{\"site_auth\":\"any-token\"},\"events\":[]}";
+
+    private static final String PAGEVIEW_BODY =
+            "{\"context\":{\"site_auth\":\"site-auth-value\"},\"events\":[{\"event_type\":\"pageview\","
+                    + "\"data\":{\"page\":{\"url\":\"https://h/p?a=1&utm_source=s#/r?b=2\","
+                    + "\"doc_search\":\"?a=1&utm_source=s\",\"doc_hash\":\"#/r?b=2\"}}}]}";
 
     /**
      * Method to test: {@link EventAnalyticsProxyResource#proxyEventRequest(HttpServletRequest, HttpServletResponse, AsyncResponse, UriInfo, String)}
@@ -510,5 +518,142 @@ public class EventAnalyticsProxyResourceTest {
             assertEquals(400, ((Response) resumed.getValue()).getStatus(),
                     "App configured + missing site_auth must return 400");
         }
+    }
+
+    // --- Page URL query-parameter allowlist ----------------------------------------------------
+
+    /**
+     * Method to test: {@link EventAnalyticsProxyResource#proxyEventRequest}
+     * Given scenario: the App is configured and the body has one pageview event with url
+     *   {@code https://h/p?a=1&utm_source=s#/r?b=2}, doc_search {@code ?a=1&utm_source=s},
+     *   doc_hash {@code #/r?b=2}.
+     * Expected result: the body passed to {@link EventAnalyticsProxyHelper#proxy} has url
+     *   {@code https://h/p?utm_source=s#/r}, doc_search {@code ?utm_source=s}, doc_hash {@code #/r}.
+     */
+    @Test
+    public void proxyEventRequest_forwardsPageUrlWithAllowedParamsOnly() throws Exception {
+        final Map<String, Object> page = forwardedPage(new HashMap<>());
+
+        assertEquals("https://h/p?utm_source=s#/r", page.get("url"));
+        assertEquals("?utm_source=s", page.get("doc_search"));
+        assertEquals("#/r", page.get("doc_hash"));
+    }
+
+    /**
+     * Method to test: {@link EventAnalyticsProxyResource#proxyEventRequest}
+     * Given scenario: the site's App secrets include {@code allowedUrlParams=a}.
+     * Expected result: the forwarded url keeps {@code a=1} as well as {@code utm_source=s}.
+     */
+    @Test
+    public void proxyEventRequest_siteAllowedParam_isForwarded() throws Exception {
+        final Map<String, Secret> secrets = new HashMap<>();
+        secrets.put(ContentAnalyticsUtil.ALLOWED_URL_PARAMS_KEY, Secret.builder()
+                .withType(Type.STRING).withValue("a").build());
+
+        final Map<String, Object> page = forwardedPage(secrets);
+
+        assertEquals("https://h/p?a=1&utm_source=s#/r", page.get("url"));
+    }
+
+    /**
+     * Method to test: {@link EventAnalyticsProxyResource#proxyEventRequest}
+     * Given scenario: the site's App secrets include {@code filterUrlParams=false}.
+     * Expected result: the forwarded page url, doc_search and doc_hash equal the input.
+     */
+    @Test
+    public void proxyEventRequest_siteFilterDisabled_forwardsPageUnchanged() throws Exception {
+        final Map<String, Secret> secrets = new HashMap<>();
+        secrets.put(ContentAnalyticsUtil.FILTER_URL_PARAMS_KEY, Secret.builder()
+                .withType(Type.BOOL).withValue("false").build());
+
+        final Map<String, Object> page = forwardedPage(secrets);
+
+        assertEquals("https://h/p?a=1&utm_source=s#/r?b=2", page.get("url"));
+        assertEquals("?a=1&utm_source=s", page.get("doc_search"));
+        assertEquals("#/r?b=2", page.get("doc_hash"));
+    }
+
+    /**
+     * Method to test: {@link EventAnalyticsProxyResource#proxyEventRequest}
+     * Given scenario: the site's App secrets include {@code filterUrlParams=false}, and the page
+     *   url is {@code https://u:p@h/p;jsessionid=A1?a=1} with doc_path {@code /p;jsessionid=A1}.
+     * Expected result: the forwarded url is {@code https://h/p?a=1} and doc_path {@code /p}; query
+     *   parameters are kept, user info and session id segments are removed.
+     */
+    @Test
+    public void proxyEventRequest_siteFilterDisabled_stillRemovesUserInfoAndSessionId() throws Exception {
+        final Map<String, Secret> secrets = new HashMap<>();
+        secrets.put(ContentAnalyticsUtil.FILTER_URL_PARAMS_KEY, Secret.builder()
+                .withType(Type.BOOL).withValue("false").build());
+        final String body = "{\"context\":{\"site_auth\":\"site-auth-value\"},\"events\":[{\"event_type\":\"pageview\","
+                + "\"data\":{\"page\":{\"url\":\"https://u:p@h/p;jsessionid=A1?a=1\","
+                + "\"doc_path\":\"/p;jsessionid=A1\"}}}]}";
+
+        final Map<String, Object> page = forwardedPage(secrets, body);
+
+        assertEquals("https://h/p?a=1", page.get("url"));
+        assertEquals("/p", page.get("doc_path"));
+    }
+
+    /**
+     * Sends {@link #PAGEVIEW_BODY} through {@link EventAnalyticsProxyResource#proxyEventRequest};
+     * see {@link #forwardedPage(Map, String)}.
+     */
+    private Map<String, Object> forwardedPage(final Map<String, Secret> secrets) throws Exception {
+        return forwardedPage(secrets, PAGEVIEW_BODY);
+    }
+
+    /**
+     * Sends {@code eventBody} through {@link EventAnalyticsProxyResource#proxyEventRequest}
+     * for a configured site with the given App secrets, and returns the {@code data.page} object
+     * of the first event in the body that was handed to {@link EventAnalyticsProxyHelper#proxy}.
+     *
+     * @param secrets   the Content Analytics App secrets to stub {@code getAppSecrets} with.
+     * @param eventBody the JSON request body to send.
+     * @return the forwarded event's page object
+     */
+    private Map<String, Object> forwardedPage(final Map<String, Secret> secrets, final String eventBody)
+            throws Exception {
+        final Host site = mock(Host.class);
+        when(site.getIdentifier()).thenReturn("site-identifier");
+
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final AsyncResponse asyncResponse = mock(AsyncResponse.class);
+        final UriInfo uriInfo = mock(UriInfo.class);
+        final ArgumentCaptor<String> forwardedBody = ArgumentCaptor.forClass(String.class);
+
+        try (MockedConstruction<SiteAuthValidator> ignoredSiteAuthValidator = mockConstruction(SiteAuthValidator.class);
+             MockedStatic<ContentAnalyticsUtil> contentAnalyticsUtilMock = mockStatic(ContentAnalyticsUtil.class);
+             MockedStatic<EventAnalyticsProxyHelper> proxyHelperMock = mockStatic(EventAnalyticsProxyHelper.class);
+             MockedStatic<ResponseUtil> responseUtilMock = mockStatic(ResponseUtil.class)) {
+
+            contentAnalyticsUtilMock.when(() -> ContentAnalyticsUtil.getSiteFromRequest(request))
+                    .thenReturn(site);
+            contentAnalyticsUtilMock.when(() -> ContentAnalyticsUtil.getAppSecrets(site))
+                    .thenReturn(secrets);
+            contentAnalyticsUtilMock.when(() -> ContentAnalyticsUtil.isAppConfigured(site))
+                    .thenReturn(true);
+            proxyHelperMock.when(() -> EventAnalyticsProxyHelper.proxy(any(), any(), any(), any(), any()))
+                    .thenReturn(Response.ok().build());
+            responseUtilMock.when(() -> ResponseUtil.handleAsyncResponse(any(Supplier.class), eq(asyncResponse)))
+                    .thenAnswer(invocation -> {
+                        final Supplier<?> supplier = invocation.getArgument(0);
+                        supplier.get();
+                        return null;
+                    });
+
+            new EventAnalyticsProxyResource().proxyEventRequest(
+                    request, response, asyncResponse, uriInfo, eventBody);
+
+            proxyHelperMock.verify(() -> EventAnalyticsProxyHelper.proxy(
+                    eq("event/ingest"), eq(uriInfo), forwardedBody.capture(), any(), eq(site)));
+        }
+
+        final Map<String, Object> body = JsonUtil.getJsonFromString(forwardedBody.getValue());
+        final Map<?, ?> event = (Map<?, ?>) ((List<?>) body.get("events")).get(0);
+        @SuppressWarnings("unchecked")
+        final Map<String, Object> page = (Map<String, Object>) ((Map<?, ?>) event.get("data")).get("page");
+        return page;
     }
 }

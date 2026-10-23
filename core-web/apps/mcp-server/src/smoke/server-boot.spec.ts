@@ -141,6 +141,45 @@ describe('mcp-server boot smoke test', () => {
         ]);
     });
 
+    it('flags a failed call as an MCP error, not as an ordinary result', async () => {
+        // Unconfigured, every call fails as CONFIGURATION. Sent back as plain text content,
+        // a failure looked like a result to the client: nothing in the protocol said the
+        // call had failed, so a client could not show it as one or stop a chain on it.
+        const { responses, stderr, exitCode } = await speak(
+            [
+                {
+                    jsonrpc: '2.0',
+                    id: 1,
+                    method: 'initialize',
+                    params: {
+                        protocolVersion: '2025-06-18',
+                        capabilities: {},
+                        clientInfo: { name: 'boot-smoke-test', version: '0' }
+                    }
+                },
+                { jsonrpc: '2.0', method: 'notifications/initialized' },
+                {
+                    jsonrpc: '2.0',
+                    id: 2,
+                    method: 'tools/call',
+                    params: { name: 'page_verify', arguments: { path: '/about-us' } }
+                }
+            ],
+            2
+        );
+
+        expect({ exitCode, stderr }).toEqual({ exitCode: null, stderr: '' });
+        const call = responses.find((response) => response.id === 2);
+        const result = call?.result as
+            | { isError?: boolean; content?: Array<{ type: string; text: string }> }
+            | undefined;
+        expect(result?.isError).toBe(true);
+        expect(JSON.parse(result?.content?.[0]?.text ?? '{}')).toMatchObject({
+            ok: false,
+            code: 'CONFIGURATION'
+        });
+    });
+
     // The test above boots dist/ in place, which never consults package.json's `files`
     // allowlist — so it would happily pass while the published tarball was missing half the
     // bundle. That is #37337 one level up: build output fine, shipped artifact broken, nothing

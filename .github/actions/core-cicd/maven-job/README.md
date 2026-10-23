@@ -23,7 +23,6 @@ This GitHub Action sets up and runs a Maven job with extensive configuration opt
 | `needs-history` | Runner needs the full git history | Yes | `false` |
 | `requires-node` | Job requires Node.js | Yes | `true` |
 | `cache-sonar` | Cache the SonarQube files | No | `false` |
-| `require-main` | Require the main tag to run this action | Yes | `false` |
 | `dotcms-license` | The license key for dotCMS | No | `''` |
 | `artifacts-from` | Download artifacts from a previous job | No | `''` |
 | `github-token` | GitHub token for authentication | Yes | - |

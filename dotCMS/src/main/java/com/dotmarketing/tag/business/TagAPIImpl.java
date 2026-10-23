@@ -728,6 +728,44 @@ public class TagAPIImpl implements TagAPI {
         tagFactory.deleteTagInodesByInode(inode);
     }
 
+    @CloseDBIfOpened
+    @Override
+    public boolean canDeleteTagInodesByInode(final User user, final String inode) throws DotDataException {
+        if (user.isAdmin() || user.getUserId().equals(APILocator.systemUser().getUserId())) {
+            return true;
+        }
+
+        final Contentlet contentlet;
+        try {
+            contentlet = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false);
+        } catch (final DotSecurityException e) {
+            // Not expected with the system user; deny rather than guess
+            Logger.warn(this, String.format("Could not load inode '%s' to check its tags: %s",
+                    inode, e.getMessage()));
+            return false;
+        }
+        if (contentlet == null) {
+            Logger.debug(this, () -> String.format(
+                    "Inode '%s' is not a contentlet, only admins can remove its tags", inode));
+            return false;
+        }
+
+        return APILocator.getPermissionAPI()
+                .doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_EDIT, user);
+    }
+
+    @WrapInTransaction
+    @Override
+    public boolean deleteTagInodesByInode(final User user, final String inode) throws DotDataException {
+        if (!canDeleteTagInodesByInode(user, inode)) {
+            Logger.debug(this, () -> String.format(
+                    "User '%s' can't remove the tags of inode '%s'", user.getUserId(), inode));
+            return false;
+        }
+        deleteTagInodesByInode(inode);
+        return true;
+    }
+
     @WrapInTransaction
     @Override
     public void deleteTagInodesByTagId(String tagId) throws DotDataException {

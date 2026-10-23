@@ -33,6 +33,7 @@ export {
     ValidationError,
     PolicyError,
     HttpError,
+    NetworkError,
     TimeoutError,
     AbortError,
     SandboxError,

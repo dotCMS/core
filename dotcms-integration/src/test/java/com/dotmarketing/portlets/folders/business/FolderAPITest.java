@@ -27,6 +27,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.cache.FolderCache;
@@ -702,6 +703,125 @@ public class FolderAPITest extends IntegrationTestBase {//24 contentlets
 
 		final List<MultiTree> mt= APILocator.getMultiTreeAPI().getMultiTrees(pages.get(0).getIdentifier());
 		Assert.assertTrue(mt.size() ==1 && mt.get(0).getParent2().equals(container.getIdentifier()) && mt.get(0).getChild().equals(contentAsset2.getIdentifier()) );
+	}
+
+	/**
+	 * Method to test: {@link FolderAPI#move(Folder, Folder, User, boolean)}
+	 * Given Scenario: A user who can read a folder but not edit it moves it into a folder where
+	 * they may add children
+	 * ExpectedResult: DotSecurityException, and the folder stays where it was
+	 */
+	@Test
+	public void move_toFolder_withoutEditOnSource_throwsDotSecurityException() throws Exception {
+		final Host site = new SiteDataGen().nextPersisted();
+		final Folder source = new FolderDataGen().site(site).nextPersisted();
+		final Folder destination = new FolderDataGen().site(site).nextPersisted();
+		final String sourcePath = source.getPath();
+		final User limitedUser = new UserDataGen().nextPersisted();
+		grantPermissions(source, limitedUser, PermissionAPI.PERMISSION_READ);
+		grantPermissions(destination, limitedUser, PermissionAPI.PERMISSION_READ
+				| PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+
+		try {
+			folderAPI.move(source, destination, limitedUser, false);
+			Assert.fail("Moving a folder without EDIT permission on it should throw DotSecurityException");
+		} catch (DotSecurityException e) {
+			// expected
+		}
+
+		assertTrue(folderExists(sourcePath, site));
+		assertFalse(folderExists(destination.getPath() + source.getName() + "/", site));
+	}
+
+	/**
+	 * Method to test: {@link FolderAPI#move(Folder, Folder, User, boolean)}
+	 * Given Scenario: A user with READ and EDIT on a folder moves it into a folder where they may
+	 * add children
+	 * ExpectedResult: the folder is moved under the destination
+	 */
+	@Test
+	public void move_toFolder_withEditOnSource_movesFolder() throws Exception {
+		final Host site = new SiteDataGen().nextPersisted();
+		final Folder source = new FolderDataGen().site(site).nextPersisted();
+		final Folder destination = new FolderDataGen().site(site).nextPersisted();
+		final String sourcePath = source.getPath();
+		final User limitedUser = new UserDataGen().nextPersisted();
+		grantPermissions(source, limitedUser,
+				PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT);
+		grantPermissions(destination, limitedUser, PermissionAPI.PERMISSION_READ
+				| PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+
+		assertTrue(folderAPI.move(source, destination, limitedUser, false));
+
+		assertFalse(folderExists(sourcePath, site));
+		assertTrue(folderExists(destination.getPath() + source.getName() + "/", site));
+	}
+
+	/**
+	 * Method to test: {@link FolderAPI#move(Folder, Host, User, boolean)}
+	 * Given Scenario: A user who can read a sub-folder but not edit it moves it to the root of a
+	 * site where they may add children
+	 * ExpectedResult: DotSecurityException, and the folder stays where it was
+	 */
+	@Test
+	public void move_toSite_withoutEditOnSource_throwsDotSecurityException() throws Exception {
+		final Host site = new SiteDataGen().nextPersisted();
+		final Folder parent = new FolderDataGen().site(site).nextPersisted();
+		final Folder source = new FolderDataGen().parent(parent).nextPersisted();
+		final String sourcePath = source.getPath();
+		final User limitedUser = new UserDataGen().nextPersisted();
+		grantPermissions(source, limitedUser, PermissionAPI.PERMISSION_READ);
+		grantPermissions(site, limitedUser, PermissionAPI.PERMISSION_READ
+				| PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+
+		try {
+			folderAPI.move(source, site, limitedUser, false);
+			Assert.fail("Moving a folder without EDIT permission on it should throw DotSecurityException");
+		} catch (DotSecurityException e) {
+			// expected
+		}
+
+		assertTrue(folderExists(sourcePath, site));
+		assertFalse(folderExists("/" + source.getName() + "/", site));
+	}
+
+	/**
+	 * Method to test: {@link FolderAPI#move(Folder, Host, User, boolean)}
+	 * Given Scenario: A user with READ and EDIT on a sub-folder moves it to the root of a site
+	 * where they may add children
+	 * ExpectedResult: the folder is moved to the site root
+	 */
+	@Test
+	public void move_toSite_withEditOnSource_movesFolder() throws Exception {
+		final Host site = new SiteDataGen().nextPersisted();
+		final Folder parent = new FolderDataGen().site(site).nextPersisted();
+		final Folder source = new FolderDataGen().parent(parent).nextPersisted();
+		final String sourcePath = source.getPath();
+		final User limitedUser = new UserDataGen().nextPersisted();
+		grantPermissions(source, limitedUser,
+				PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT);
+		grantPermissions(site, limitedUser, PermissionAPI.PERMISSION_READ
+				| PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+
+		assertTrue(folderAPI.move(source, site, limitedUser, false));
+
+		assertFalse(folderExists(sourcePath, site));
+		assertTrue(folderExists("/" + source.getName() + "/", site));
+	}
+
+	private static void grantPermissions(final Permissionable permissionable, final User grantee,
+			final int permissions) throws DotDataException, DotSecurityException {
+		final Permission permission = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+				permissionable.getPermissionId(),
+				APILocator.getRoleAPI().loadRoleByKey(grantee.getUserId()).getId(),
+				permissions, true);
+		APILocator.getPermissionAPI().save(permission, permissionable, user, false);
+	}
+
+	private static boolean folderExists(final String path, final Host site)
+			throws DotDataException, DotSecurityException {
+		final Folder folder = folderAPI.findFolderByPath(path, site, user, false);
+		return folder != null && InodeUtils.isSet(folder.getInode());
 	}
 
 	/**

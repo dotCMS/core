@@ -22,7 +22,7 @@ import com.dotcms.enterprise.achecker.dao.BaseDAO;
 /**
  * DAO for "lang_codes" table
  * @access	public
- 
+
  * @package	DAO
  */
 
@@ -31,6 +31,16 @@ public class LangCodesDAO extends BaseDAO {
 
 	public LangCodesDAO() throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
 		super();
+	}
+
+	/**
+	 * Creates a DAO that runs its queries through the given {@link DAO}. Mainly for tests, where
+	 * the {@link DAO} can point at a throw-away database.
+	 *
+	 * @param dao the {@link DAO} that runs the queries
+	 */
+	public LangCodesDAO(final DAO dao) {
+		super(dao);
 	}
 	/**
 	 * Return all rows
@@ -46,55 +56,42 @@ public class LangCodesDAO extends BaseDAO {
 	}
 
 	/**
-	 * Return lang code info of the given 2 letters code
-	 * @access  public
-	 * @param   $code : 2 letters code
-	 * @return  table rows
-	 * @author  Cindy Qi Li
+	 * Finds the language whose two-letter code (for example {@code en}) is the given one.
+	 *
+	 * @param code the two-letter language code; sent to the database as a bound value
+	 * @return the matching language code row, or {@code null} when there is none
+	 * @throws Exception if the query fails
 	 */
 	public  LanguageCodeBean getLangCodeBy2LetterCode(String code) throws Exception
 	{
-		try{
- 			String sql = "SELECT * FROM "+ tablePrefix +"lang_codes WHERE code_2letters = '"+code+"'";
-			LanguageCodeBean rows = executeOne( LanguageCodeBean.class ,  sql);
-			return rows;
-		}catch (Exception e) {
-			throw new SQLException(e);
-		}
+		String sql = "SELECT * FROM "+ tablePrefix +"lang_codes WHERE code_2letters = ?";
+		return executeOne(LanguageCodeBean.class, sql, code);
 	}
 
 	/**
-	 * Return lang code info of the given 3 letters code
-	 * @access  public
-	 * @param   $code : 3 letters code
-	 * @return  table rows
-	 * @author  Cindy Qi Li
+	 * Finds the language whose three-letter code (for example {@code eng}) is the given one.
+	 *
+	 * @param code the three-letter language code; sent to the database as a bound value
+	 * @return the matching language code row, or {@code null} when there is none
+	 * @throws Exception if the query fails
 	 */
 	public LanguageCodeBean getLangCodeBy3LetterCode(String code) throws Exception
 	{
-		//		global $addslashes;
-		//		$code = $addslashes($code);
-		String sql = "SELECT * FROM "+ tablePrefix +"lang_codes WHERE code_3letters = '"+code+"'";
-		LanguageCodeBean  rows = executeOne(LanguageCodeBean.class , sql);
-		return rows;
-		 
+		String sql = "SELECT * FROM "+ tablePrefix +"lang_codes WHERE code_3letters = ?";
+		return executeOne(LanguageCodeBean.class, sql, code);
 	}
 
 	/**
-	 * Return array of all the 2-letter & 3-letter language codes with given direction
-	 * @access  public
-	 * @param   $direction : 'rtl' or 'ltr'
-	 * @return  table rows
-	 * @author  Cindy Qi Li
+	 * Lists the languages written in the given direction.
+	 *
+	 * @param direction {@code rtl} or {@code ltr}; sent to the database as a bound value
+	 * @return the language code rows with that direction
+	 * @throws Exception if the query fails
 	 */
 	public  List<LanguageCodeBean>  getLangCodeByDirection(String direction ) throws Exception
 	{
-		//		global $addslashes;
-		//		$direction = $addslashes($direction);
-		//		$rtn_array = array();
-		String sql = "SELECT * FROM "+ tablePrefix +"lang_codes WHERE direction = '"+direction+"'";
-		List<LanguageCodeBean> rows = execute(LanguageCodeBean.class, sql);
-		return rows;
+		String sql = "SELECT * FROM "+ tablePrefix +"lang_codes WHERE direction = ?";
+		return execute(LanguageCodeBean.class, sql, direction);
 	}
 
 }

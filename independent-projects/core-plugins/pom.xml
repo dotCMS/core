@@ -22,6 +22,7 @@
     <modules>
         <module>tika-api</module>
         <module>tika-plugin</module>
+        <module>saml-plugin</module>
     </modules>
 
     <build>

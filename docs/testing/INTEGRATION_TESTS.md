@@ -59,17 +59,23 @@ class that is not listed in one of these suites compiles fine but is silently ne
 CI** — green build, zero coverage. This is easy to miss because the class runs locally via
 `-Dit.test=MyTestClass`.
 
-When you add a new integration test class, register it:
+**Mandatory placement rule: ALL new integration-test coverage MUST go in the currently
+shortest-running compatible CI suite.** This includes new classes **and new test methods added
+to existing classes**; reusing a class does not exempt its new tests from this rule. An example,
+feature grouping, existing registration, or old timing comment is not placement evidence.
+Keep JUnit 5 and required-profile tests in suites that support their framework and environment.
 
-1. **Pick the suite with the shortest current CI runtime** — not by package/feature grouping.
+Whenever you add integration-test coverage:
+
+1. **Measure and select the shortest-running compatible suite before adding coverage.**
    The `MainSuite*` jobs (currently five — see the note above on this list growing over time)
    run in parallel in CI, so the goal is to keep their wall-clock times roughly balanced; adding
    to whichever suite already finishes fastest keeps the overall PR build time down. **Don't
    hardcode a specific suite name as "the fast one" in this doc or in memory** — suite runtimes
-   shift over time as tests are added/removed elsewhere, so check current timings before each new
-   registration. The real way to check: pull job start/completion times from **at least 3 recent,
-   independent PR CI runs** (not just one — a single run can be skewed by runner contention or
-   noise, and durations should agree before you trust them) —
+   shift over time as tests are added/removed elsewhere, so check current timings for every
+   addition, even when no new class is needed. Pull job start/completion times from **at least
+   3 recent, independent PR CI runs**, using successful, completed jobs that actually executed
+   the compatible suites; ignore skipped, cancelled, incomplete, or cache-short-circuited jobs —
    ```bash
    gh pr view <recent-PR-number> --repo dotCMS/core --json statusCheckRollup \
      -q '.statusCheckRollup[] | select(.name? and (.name | test("Integration Tests"))) | "\(.name) \(.startedAt) \(.completedAt)"'
@@ -77,21 +83,27 @@ When you add a new integration test class, register it:
    repeated across 3 different recent PR numbers, and compute the duration of each `MainSuite*`
    job in each (ignore `Junit5Suite1` and `OpenSearchUpgradeSuite` — those are structurally
    different, purpose-built suites, not general destinations for a new JUnit4 test). Add the new
-   test to whichever `MainSuite*` is consistently fastest across the samples. If every current
-   `MainSuite*` is consistently near-saturated and none is meaningfully faster, that's a signal a
+   coverage to the compatible suite with the lowest median elapsed job runtime across the
+   samples. Record the run links, compared runtimes, and chosen suite in the PR description.
+   If timing data is unavailable, report that and ask the developer; do not guess a default.
+   If every current `MainSuite*` is consistently near-saturated and none is meaningfully faster,
+   that's a signal a
    new `MainSuite` class may be needed — that's a call for whoever owns the CI/test infra, not
    something to decide unilaterally from a PR sample.
-2. Add the `import` (alphabetized, matching the file's existing import block) **and** append the
+2. **Recheck existing class placement.** If the class receiving new methods is in a slower suite,
+   move its registration to the selected suite, or put the new tests in a separate class
+   registered there. Do not leave new coverage in a slower suite just to reuse its class.
+   When moving a class, remove its old import and suite entry; keep exactly one registration
+   across the regular CI suites, without duplicating its existing tests.
+3. Add the `import` (alphabetized, matching the file's existing import block) **and** append the
    `Foo.class,` entry to the **end** of the `@SuiteClasses({ ... })` list — the real
    `@SuiteClasses` lists are not alphabetized or grouped by feature/package at all; new tests are
    consistently appended at the end.
 
 ```java
-// Say the check in step 1 found MainSuite2b currently has the shortest CI runtime —
-// register the new class there: import alphabetized with the rest, class entry appended
-// at the end of the @SuiteClasses list. (MyNewFeatureIntegrationTest below is a placeholder —
-// don't copy an existing suite member as your "new" entry, or you'll register it twice.)
-// MainSuite2b.java
+// In the suite selected from current CI timings, not a fixed example suite:
+// alphabetize the import and append the class entry at the end of @SuiteClasses.
+// MyNewFeatureIntegrationTest is a placeholder, not an existing suite member.
 import com.dotcms.myfeature.MyNewFeatureIntegrationTest; // alphabetized import
 ...
 @SuiteClasses({

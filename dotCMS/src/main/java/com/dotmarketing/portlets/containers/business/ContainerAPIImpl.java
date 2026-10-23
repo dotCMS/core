@@ -18,6 +18,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotDataValidationException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
@@ -144,6 +145,9 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 
 		newContainer.copy(source);
 
+		// A value stored before it was validated must not stop the copy
+		ContainerSortBy.resetIfUnsupported(newContainer);
+
 		final String appendToName = getAppendToContainerTitle(source.getTitle(), destination);
        	newContainer.setFriendlyName(source.getFriendlyName() + appendToName);
        	newContainer.setTitle(source.getTitle() + appendToName);
@@ -228,6 +232,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			Logger.debug(this, "System Container cannot be saved.");
 			return;
 		}
+		validateSortContentletsBy(container);
 		containerFactory.save(container);
 	}
 
@@ -243,6 +248,7 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 			Logger.debug(this, "System Container cannot be saved/updated.");
 			return;
 		}
+		validateSortContentletsBy(container);
 		containerFactory.save(container);
 	}
 
@@ -696,6 +702,38 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 		return containerFactory.findContainersUnder(parentPermissionable);
 	}
 
+	/**
+	 * Checks that the "sort contentlets by" setting of a container, when present, is one of the
+	 * values listed in {@link ContainerSortBy}. The stored value is later used to order the
+	 * contentlets of the container, so nothing else can be saved.
+	 *
+	 * @param container the container about to be saved
+	 * @throws DotDataValidationException if the value is set and is not supported
+	 */
+	private void validateSortContentletsBy(final Container container)
+			throws DotDataValidationException {
+		if (!ContainerSortBy.isSupported(container.getSortContentletsBy())) {
+			throw new DotDataValidationException(
+					"sortContentletsBy must be one of the supported sort columns");
+		}
+	}
+
+	/**
+	 * Reads the "sort contentlets by" value of a container version straight from the database,
+	 * so the comparison with an incoming value does not depend on a cached instance the caller
+	 * may have modified.
+	 *
+	 * @param inode the container version to read
+	 * @return the stored value, or null when unset
+	 * @throws DotDataException if the database cannot be read
+	 */
+	private String storedSortContentletsBy(final String inode) throws DotDataException {
+		return new DotConnect()
+				.setSQL("select sort_contentlets_by from dot_containers where inode = ?")
+				.addParam(inode)
+				.getString("sort_contentlets_by");
+	}
+
 	@WrapInTransaction
 	@Override
 	@SuppressWarnings("unchecked")
@@ -741,6 +779,12 @@ public class ContainerAPIImpl extends BaseWebAssetAPI implements ContainerAPI, D
 							respectFrontendRoles);
 					currentTemplates = APILocator.getTemplateAPI()
 							.findTemplatesByContainerInode(currentContainer.getInode());
+					// A value stored before it was validated, sent back unchanged, must not block the save
+					if (!ContainerSortBy.isSupported(container.getSortContentletsBy())
+							&& Objects.equals(storedSortContentletsBy(currentContainer.getInode()),
+									container.getSortContentletsBy())) {
+						ContainerSortBy.resetIfUnsupported(container);
+					}
 				}
 			} else {
 				existingId = true;

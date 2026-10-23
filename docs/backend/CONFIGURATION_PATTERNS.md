@@ -54,6 +54,39 @@ The `Config` class automatically transforms properties:
 - `experiments.enabled` → `DOT_EXPERIMENTS_ENABLED`
 - `health.detailed.authentication.required` → `DOT_HEALTH_DETAILED_AUTHENTICATION_REQUIRED`
 
+## Feature Flags
+
+A feature flag is a boolean property that switches a whole behavior on or off. It follows the
+same `Config` rules as any other property, plus three of its own:
+
+- **The name is a constant in `FeatureFlagName`** (`com.dotcms.featureflag.FeatureFlagName`), never a
+  string literal at the call site. The constant and its value are the same upper-case,
+  underscore-separated name with the `FEATURE_FLAG_` prefix, e.g.
+  `FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION`. The `DOT_` environment variable form is automatic:
+  `DOT_FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION`.
+- **The default is stated in the constant's Javadoc**, together with what the flag turns on or off
+  and what is left untouched. The default lives at the read site
+  (`Config.getBooleanProperty(FeatureFlagName.X, true)`), so the Javadoc is the only place a reader
+  can learn it without finding every caller. Say whether it is an opt-in (off by default) or a
+  kill switch (on by default).
+- **Read it once per request, not per loop iteration.** Cache it in a `Lazy` or a field when the
+  same code path reads it repeatedly.
+
+```java
+// FeatureFlagName.java
+/**
+ * Kill switch for X. On by default: ... Off: ... Pages are not affected either way.
+ */
+String FEATURE_FLAG_X = "FEATURE_FLAG_X";
+
+// Call site
+if (Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_X, true)) { ... }
+```
+
+Only add the property to `dotmarketing-config.properties` when the default must be visible there
+(for example when a frontend reader treats an absent property as enabled); otherwise the Javadoc
+and the read site are enough.
+
 ## Config Class Resolution Order
 1. **Environment variables** (with `DOT_` prefix)
 2. **System table** (database)
