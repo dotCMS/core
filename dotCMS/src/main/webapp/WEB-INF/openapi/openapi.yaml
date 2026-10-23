@@ -19756,7 +19756,11 @@ paths:
         \ be null for roles created without a key); roles held through the role hierarchy\
         \ and the user's personal role are not included. Requesting roles requires\
         \ being a CMS Administrator or having access to both the Roles and Users portlets\
-        \ (403 otherwise). Without the flag the payload is unchanged."
+        \ (403 otherwise). Without the flag the payload is unchanged. Results can\
+        \ be restricted to users directly holding any of the given roles through `roleKey`\
+        \ and/or `roleId`; filtering by role requires that same privilege. The `admin`\
+        \ flag on each item is only returned to callers with that same privilege;\
+        \ for anyone else it is left out."
       operationId: filterUsers
       parameters:
       - description: "Filter users by user ID, first name, last name, email address,\
@@ -19815,10 +19819,21 @@ paths:
           type: integer
           format: int32
       - description: "Role key(s) to restrict results to users holding any of them;\
-          \ repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER.\
-          \ Requires CMS Administrator or Roles+Users portlet access (403 otherwise)"
+          \ repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER (exact\
+          \ match). Requires CMS Administrator or Roles+Users portlet access (403\
+          \ otherwise)"
         in: query
         name: roleKey
+        schema:
+          type: array
+          items:
+            type: string
+      - description: "Role ID(s) to restrict results to users directly holding any\
+          \ of them, combined with roleKey; repeatable and/or comma-separated. Also\
+          \ matches roles created without a key. Requires CMS Administrator or Roles+Users\
+          \ portlet access (403 otherwise)"
+        in: query
+        name: roleId
         schema:
           type: array
           items:
@@ -19842,8 +19857,8 @@ paths:
         "400":
           content:
             application/json: {}
-          description: Bad request - a provided roleKey does not match any existing
-            Role
+          description: Bad request - a provided roleKey or roleId does not match any
+            existing Role
         "401":
           content:
             application/json: {}
@@ -19852,7 +19867,8 @@ paths:
           content:
             application/json: {}
           description: "Forbidden - insufficient permissions, or includeRoles=true\
-            \ requested without CMS Administrator / Roles+Users portlet access"
+            \ / a role filter requested without CMS Administrator / Roles+Users portlet\
+            \ access"
       summary: Filter users
       tags:
       - Users

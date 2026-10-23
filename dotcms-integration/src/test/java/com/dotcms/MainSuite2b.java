@@ -121,6 +121,7 @@ import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
 import com.dotcms.rest.api.v1.system.permission.PermissionResourceIntegrationTest;
 import com.dotcms.rest.api.v1.taillog.TailLogResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
+import com.dotcms.api.system.user.UserServiceFactoryTest;
 import com.dotcms.rest.api.v2.asset.WebAssetResourceV2IntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
@@ -590,6 +591,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.languagesmanager.ajax.LanguageAjaxIntegrationTest.class,
         com.dotmarketing.business.ajax.RoleAjaxLayoutsIntegrationTest.class,
         com.dotmarketing.portlets.languagesmanager.action.EditLanguageKeysActionTest.class,
+        UserServiceFactoryTest.class,
 })
 
 public class MainSuite2b {
