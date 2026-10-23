@@ -474,6 +474,37 @@ describe('pasted base64 images', () => {
         expect(imageNodes(editor)).toHaveLength(0);
     });
 
+    it('uploads a base64 image dropped as rich HTML too: ProseMirror runs transformPasted on drops', async () => {
+        const uploadImage = vi.fn().mockResolvedValue(UPLOADED_IMAGE);
+        editor = buildEditor({ uploadImage });
+        // jsdom has no layout; land the drop at the end of the seed paragraph.
+        vi.spyOn(editor.view, 'posAtCoords').mockReturnValue({ pos: 5, inside: 0 });
+        const html = `<p>dragged</p><img src="${PNG_DATA_URL}" alt="shot">`;
+        // A drag of selected page content: text/html on the transfer, no files.
+        const drop = new Event('drop', { bubbles: true, cancelable: true });
+        Object.defineProperty(drop, 'dataTransfer', {
+            value: {
+                files: [],
+                types: ['text/html'],
+                getData: (type: string) => (type === 'text/html' ? html : '')
+            }
+        });
+        Object.assign(drop, { clientX: 0, clientY: 0 });
+
+        editor.view.dom.dispatchEvent(drop);
+
+        expect(uploadImage).toHaveBeenCalledTimes(1);
+        expect(hasNodeType(editor, UPLOAD_PLACEHOLDER_NODE_NAME)).toBe(true);
+        expect(editor.getText()).toContain('dragged');
+
+        await flushPromises();
+
+        expect(hasNodeType(editor, UPLOAD_PLACEHOLDER_NODE_NAME)).toBe(false);
+        const [image] = imageNodes(editor);
+        expect(image?.attrs?.['src']).toBe('/dA/inode-1');
+        expect(image?.attrs?.['data']).toEqual(UPLOADED_IMAGE.data);
+    });
+
     it('leaves setContent on the schema parser: a data: image in loaded HTML is still dropped', () => {
         const uploadImage = vi.fn();
         editor = buildEditor({ uploadImage });
