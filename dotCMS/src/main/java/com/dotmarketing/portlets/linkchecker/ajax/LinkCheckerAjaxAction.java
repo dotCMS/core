@@ -36,14 +36,21 @@ import com.liferay.portal.model.User;
 
 public class LinkCheckerAjaxAction extends AjaxAction {
 
+    static final String LINK_CHECKER_PORTLET_ID = "link-checker";
+
     public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String cmd = getURIParams().get("cmd");
         java.lang.reflect.Method meth = null;
         Class partypes[] = new Class[] { HttpServletRequest.class, HttpServletResponse.class };
         Object arglist[] = new Object[] { request, response };
         try {
-            if (getUser() == null ) {
+            final User user = getUser();
+            if (user == null ) {
                 response.sendError(401);
+                return;
+            }
+            if (!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(LINK_CHECKER_PORTLET_ID, user)) {
+                response.sendError(403);
                 return;
             }
             meth = this.getClass().getMethod(cmd, partypes);

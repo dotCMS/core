@@ -13,8 +13,8 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.repackage.org.apache.commons.httpclient.Header;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpClient;
-import com.dotcms.repackage.org.apache.commons.httpclient.HttpMethod;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpState;
 import com.dotcms.repackage.org.apache.commons.httpclient.NameValuePair;
 import com.dotcms.repackage.org.apache.commons.httpclient.UsernamePasswordCredentials;
@@ -44,6 +44,9 @@ import com.dotmarketing.portlets.structure.StructureUtil;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.SimpleStructureURLMap;
+import com.dotcms.util.network.IPUtils;
+import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.RegEX;
 import com.dotmarketing.util.RegExMatch;
 import com.dotmarketing.util.UtilMethods;
@@ -55,6 +58,8 @@ import com.liferay.util.StringPool;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 
 public class LinkCheckerAPIImpl implements LinkCheckerAPI {
 
@@ -68,6 +73,9 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
     private static final String PARAGRAPH = "#";
     private static final int DEFAULT_PORT = 80;
     private static final int DEFAULT_TIMEOUT = 2000;
+    private static final int DEFAULT_READ_TIMEOUT = 10000;
+    private static final int MAX_REDIRECTS = 5;
+    private static final String LOCATION_HEADER = "Location";
     private static final String UNTITLED = "Untitled";
     private static final String BROKEN_LINKS_UNTITLED = "BROKEN_LINKS_UNTITLED";
 
@@ -279,27 +287,32 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
                 new HttpConnectionParams();
 
         params.setConnectionTimeout(DEFAULT_TIMEOUT);
+        params.setSoTimeout(Config.getIntProperty("LINK_CHECKER_READ_TIMEOUT", DEFAULT_READ_TIMEOUT));
 
         final HttpClient client = new HttpClient(new HttpClientParams(params));
         loadProxy(client);
 
         final String url = anchor.getExternalLink().absoluteURL();
-        final HttpMethod method = new GetMethod(url);
-
+        String queryString = null;
         if(anchor.getExternalLink().isWithParameter()) {
 
             if (null != anchor.getExternalLink().getRawQueryString()) {
-                method.setQueryString(anchor.getExternalLink().getRawQueryString());
+                queryString = anchor.getExternalLink().getRawQueryString();
             } else {
-                method.setQueryString(anchor.getExternalLink().getQueryString());
+                // encodes the parameters the same way the request does
+                final GetMethod encoder = new GetMethod();
+                encoder.setQueryString(anchor.getExternalLink().getQueryString());
+                queryString = encoder.getQueryString();
             }
         }
 
-        int statusCode = -1;
-
-        try{
-            statusCode = client.executeMethod(method);
-        } catch(Exception e) { }
+        final Optional<Integer> status = getExternalLinkStatus(client, url, queryString,
+                LinkCheckerAPIImpl::isHostAllowed);
+        if (status.isEmpty()) {
+            Logger.debug(LinkCheckerAPIImpl.class, "Skipping link to a host that is not allowed: " + url);
+            return;
+        }
+        final int statusCode = status.get();
 
         if(statusCode < 200 || statusCode >= 400){
 
@@ -319,6 +332,86 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
             invalidLinks.add(invalidLink);
         }
     } // checkExternalLink.
+
+    /**
+     * Links are only checked against hosts outside of the configured private subnets
+     * ({@code REMOTE_CALL_SUBNET_BLACKLIST}), unless {@code ALLOW_ACCESS_TO_PRIVATE_SUBNETS} is
+     * {@code true}, consistent with the other outgoing HTTP calls.
+     */
+    static boolean isHostAllowed(final String host) {
+        return Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false)
+                || !IPUtils.isIpPrivateSubnet(host);
+    }
+
+    /**
+     * Requests the URL and returns its HTTP status. Redirects are followed manually, up to
+     * {@link #MAX_REDIRECTS}, so that every location is validated before it is requested.
+     *
+     * @param client        The HTTP client.
+     * @param url           The URL to check.
+     * @param queryString   Query string of the first request, or {@code null}.
+     * @param isHostAllowed Decides whether a host may be requested.
+     *
+     * @return The status code (-1 if the request failed), or empty if the URL or one of its
+     * redirect locations is not allowed.
+     */
+    static Optional<Integer> getExternalLinkStatus(final HttpClient client, final String url,
+                                                   final String queryString,
+                                                   final Predicate<String> isHostAllowed) {
+
+        String currentUrl = url;
+        String currentQueryString = queryString;
+        for (int redirects = 0; redirects <= MAX_REDIRECTS; redirects++) {
+
+            final java.net.URL target;
+            try {
+                target = new java.net.URL(currentUrl);
+            } catch (final MalformedURLException e) {
+                return Optional.of(-1);
+            }
+            final String protocol = target.getProtocol();
+            if (!(HTTP.equalsIgnoreCase(protocol) || HTTPS.equalsIgnoreCase(protocol))) {
+                return Optional.empty();
+            }
+            if (!isResolvable(target.getHost())) {
+                // a host that does not exist is a broken link
+                return Optional.of(-1);
+            }
+            if (!isHostAllowed.test(target.getHost())) {
+                return Optional.empty();
+            }
+
+            final GetMethod method = new GetMethod(currentUrl);
+            method.setFollowRedirects(false);
+            if (null != currentQueryString) {
+                method.setQueryString(currentQueryString);
+            }
+            try {
+                final int statusCode = client.executeMethod(method);
+                final Header location = method.getResponseHeader(LOCATION_HEADER);
+                if (statusCode < 300 || statusCode >= 400 || null == location
+                        || !UtilMethods.isSet(location.getValue())) {
+                    return Optional.of(statusCode);
+                }
+                currentUrl = new java.net.URL(new java.net.URL(method.getURI().toString()),
+                        location.getValue().trim()).toString();
+                currentQueryString = null;
+            } catch (final Exception e) {
+                return Optional.of(-1);
+            } finally {
+                method.releaseConnection();
+            }
+        }
+        return Optional.of(-1);
+    } // getExternalLinkStatus.
+
+    private static boolean isResolvable(final String host) {
+        try {
+            return UtilMethods.isSet(host) && java.net.InetAddress.getAllByName(host).length > 0;
+        } catch (final java.net.UnknownHostException e) {
+            return false;
+        }
+    }
 
     @WrapInTransaction
     @Override

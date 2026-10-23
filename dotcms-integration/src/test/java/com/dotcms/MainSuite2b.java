@@ -95,6 +95,7 @@ import com.dotcms.rendering.velocity.directive.DotParseTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateToolTest;
 import com.dotcms.rendering.velocity.viewtools.FileToolTest;
+import com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccessTest;
 import com.dotcms.rendering.velocity.viewtools.JSONToolTest;
 import com.dotcms.rendering.velocity.viewtools.MessageToolTest;
 import com.dotcms.rendering.velocity.viewtools.XmlToolTest;
@@ -594,6 +595,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.business.ajax.RoleAjaxLayoutsIntegrationTest.class,
         com.dotmarketing.portlets.languagesmanager.action.EditLanguageKeysActionTest.class,
         UserServiceFactoryTest.class,
+        RestrictedViewToolAccessTest.class,
 })
 
 public class MainSuite2b {
