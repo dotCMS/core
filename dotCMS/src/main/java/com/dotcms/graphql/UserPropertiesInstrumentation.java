@@ -21,8 +21,8 @@ import java.util.Set;
 /**
  * Keeps user properties out of the GraphQL results returned to callers who are neither CMS administrators
  * nor back-end users: the {@code _map} field and Story Block fields lose them, the lock owner of a
- * {@code DotPage} resolves to {@code null}, and searches whose query or sort names one return a field error. Results for back-end
- * callers, and fields of customer content types, are left unchanged.
+ * {@code DotPage} resolves to {@code null}, and searches whose query or sort names one return a field error.
+ * Results for back-end callers, and fields of customer content types, are left unchanged.
  *
  * @author hassandotcms
  */
