@@ -28,7 +28,7 @@
         <karate.test.skip>true</karate.test.skip>
         <karate.base.url>http://localhost:${tomcat.port}</karate.base.url>
         <karate.management.url>http://localhost:${management.port}</karate.management.url>
-        <it.test>KarateCITests#defaults</it.test>
+        <it.test>KarateCITests#defaults,AuthenticationFeatureParseTest</it.test>
     </properties>
 
     <build>

@@ -1,6 +1,9 @@
 package com.dotcms.rest.api.v1.system.role;
 
 import com.dotcms.datagen.LayoutDataGen;
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.WorkflowActionDataGen;
@@ -34,7 +37,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +60,9 @@ import static org.junit.Assert.assertTrue;
  * @author hassandotcms
  */
 public class RoleResourceUsersIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     static HttpServletResponse response;
     static RoleResource resource;
@@ -102,6 +107,7 @@ public class RoleResourceUsersIntegrationTest {
                         .request());
     }
 
+    /** Builds a session-authenticated request for the given {@link User}. */
     private static HttpServletRequest requestFor(final User user) {
         final MockSessionRequest request = baseRequest();
         request.getSession().setAttribute(
@@ -109,10 +115,15 @@ public class RoleResourceUsersIntegrationTest {
         return request.request();
     }
 
+    /**
+     * Builds an admin request authenticated with a Bearer API token.
+     *
+     * @return the request
+     */
     private static HttpServletRequest mockAdminRequest() {
         final MockHeaderRequest request = new MockHeaderRequest(baseRequest().request());
         request.setHeader("Authorization",
-                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+                TOKEN_UTILS.adminBearerHeader());
         return request;
     }
 

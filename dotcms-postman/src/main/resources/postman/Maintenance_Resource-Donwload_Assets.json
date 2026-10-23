@@ -23,16 +23,11 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "password",
-							"value": "admin",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
 						}
 					]
@@ -82,6 +77,9 @@
 						"v1",
 						"logout"
 					]
+				},
+				"auth": {
+					"type": "noauth"
 				}
 			},
 			"response": []
@@ -120,6 +118,9 @@
 						"maintenance",
 						"_downloadAssets"
 					]
+				},
+				"auth": {
+					"type": "noauth"
 				}
 			},
 			"response": []

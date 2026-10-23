@@ -1,5 +1,8 @@
 package com.dotcms.contenttype.business;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.contenttype.model.field.BinaryField;
 import com.dotcms.contenttype.model.field.Field;
@@ -35,7 +38,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -50,6 +52,9 @@ import java.util.Optional;
  * left over from other tests; everything created is removed in {@link #tearDown()}.</p>
  */
 public class FileAssetBaseTypeToContentTypeStrategyImplTest extends IntegrationTestBase {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private final List<ContentType> contentTypesToCleanUp = new ArrayList<>();
     private Host testSite;
@@ -108,11 +113,16 @@ public class FileAssetBaseTypeToContentTypeStrategyImplTest extends IntegrationT
         return fileAssetContentType;
     }
 
+    /**
+     * Builds an admin request authenticated with a Bearer API token.
+     *
+     * @return the request
+     */
     private MockHeaderRequest mockRequest() {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(new MockAttributeRequest(
                         new MockHttpRequestIntegrationTest("localhost", "/").request()).request()).request());
-        request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+        request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
         request.setHeader("User-Agent", "Fake-Agent");
         request.setHeader("Host", "localhost");
         request.setHeader("Origin", "localhost");

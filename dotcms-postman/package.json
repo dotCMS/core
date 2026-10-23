@@ -11,6 +11,7 @@
     "yargs": "^17.7.2"
   },
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "test": "node --test test/*.test.cjs"
   }
 }

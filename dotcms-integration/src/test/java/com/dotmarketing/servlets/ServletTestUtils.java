@@ -9,6 +9,7 @@ import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.response.MockHttpStatusResponse;
+import com.dotcms.test.util.ApiTokenTestUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -101,9 +102,11 @@ public class ServletTestUtils {
      * delegates permission enforcement to the downstream {@code /contentAsset} servlet.
      * <p>
      * Both an invalid (non-dotCMS-user) credential and a valid dotCMS credential must result in the
-     * request being forwarded; neither is rejected with a {@code 401} at this servlet. This is the
-     * behavior fixed in dotCMS/core#35536: before the fix, an invalid/foreign credential aborted
-     * with {@code 401} before any permission check.
+     * request being forwarded; neither is rejected with a {@code 401} at this servlet. The valid
+     * case authenticates with a Bearer API token because Basic passwords are disabled by default;
+     * the invalid case stays on Basic to exercise the anonymous fallback. This is the behavior
+     * fixed in dotCMS/core#35536: before the fix, an invalid/foreign credential aborted with
+     * {@code 401} before any permission check.
      *
      * @param servlet servlet to test
      * @param urlGenerator function to generate a URL for the servlet
@@ -118,6 +121,9 @@ public class ServletTestUtils {
         Host testHost = null;
         Role testRole = null;
         User testUser = null;
+        // This helper owns the token it mints and deletes it before the owner is removed, because
+        // ApiTokenAPI.deleteToken revalidates the owning user.
+        final ApiTokenTestUtils tokenUtils = new ApiTokenTestUtils();
         try {
             // Create a test host, role, and user
             final String userPassword = RandomStringUtils.randomAlphabetic(10);
@@ -165,16 +171,19 @@ public class ServletTestUtils {
             // Verify the auth step did not abort the request with a 401
             assertNotEquals(HttpServletResponse.SC_UNAUTHORIZED, response.getStatus());
 
-            // Send request to the servlet with an authenticated user
+            // Send request to the servlet authenticated as the test user via a Bearer API token,
+            // because username/password Basic authentication is disabled by default.
             request.setHeader("Authorization",
-                    "Basic " + Base64.getEncoder().encodeToString(
-                            userEmailAndPassword.getBytes()));
+                    tokenUtils.bearerHeader(testUser));
             servlet.service(request, response);
 
             // Verify that the request was forwarded for both the invalid and the valid credential
             verify(dispatcher, times(2)).forward(any(), any());
 
         } finally {
+            // Delete the fixture token first, while its owner still exists. Host/role cleanup can
+            // throw, and doing this last would skip it and orphan the token.
+            tokenUtils.close();
             // Clean up
             if (testHost != null) {
                 final User systemUser = APILocator.systemUser();

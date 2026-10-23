@@ -5,17 +5,17 @@ function fn() {
         env = 'dev';
     }
     let baseUrl = karate.properties['karate.base.url'] || 'http://localhost:8080';
-    let authString = 'admin@dotcms.com:admin';
-    let encodedAuth = function(s) {
-        return java.util.Base64.getEncoder().encodeToString(s.getBytes('UTF-8'));
-    };
-    let authHeader = 'Basic ' + encodedAuth(authString);
+    // Basic username/password authentication is disabled by default, so bootstrap a real API JWT
+    // through the supported JSON session login then API-token issuance. karate.callSingle runs the
+    // bootstrap once per JVM and keeps its session cookie out of ordinary collection requests.
+    let auth = karate.callSingle('classpath:authentication.feature');
     let config = {
         env: env,
         baseUrl: baseUrl,
+        authHeader: auth.authHeader,
         commonHeaders : {
             'Content-Type': 'application/json',
-            'Authorization': authHeader
+            'Authorization': auth.authHeader
         }
     }
     if (env === 'dev') {

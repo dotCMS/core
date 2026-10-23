@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.system.role;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.RoleDataGen;
@@ -29,7 +32,6 @@ import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.ejb.UserTestUtil;
 import com.liferay.portal.model.User;
-import com.liferay.util.Base64;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -67,6 +69,9 @@ import static org.junit.Assert.fail;
  */
 public class RoleResourceIntegrationTest {
 
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
+
     private static RoleResource resource;
     private static RoleAPI roleAPI;
     private static Host testHost;
@@ -91,6 +96,11 @@ public class RoleResourceIntegrationTest {
 
     // ==================== Helpers ====================
 
+    /**
+     * Builds an admin request authenticated with a Bearer API token.
+     *
+     * @return the request
+     */
     private static HttpServletRequest adminRequest() {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
@@ -100,7 +110,7 @@ public class RoleResourceIntegrationTest {
                         .request());
 
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode("admin@dotcms.com:admin".getBytes())));
+                TOKEN_UTILS.adminBearerHeader());
         return request;
     }
 

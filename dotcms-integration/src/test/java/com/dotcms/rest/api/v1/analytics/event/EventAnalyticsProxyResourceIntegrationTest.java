@@ -18,6 +18,7 @@ import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.security.apps.ParamDescriptor;
 import com.dotcms.security.apps.Type;
+import com.dotcms.test.util.ApiTokenTestUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -27,8 +28,8 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
-import com.liferay.util.Base64;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -62,6 +63,9 @@ import static org.junit.Assert.assertTrue;
 @Dependent
 @RunWith(JUnit4WeldRunner.class)
 public class EventAnalyticsProxyResourceIntegrationTest extends IntegrationTestBase {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static EventAnalyticsProxyResource resource;
     private static HttpServletResponse mockResponse;
@@ -279,16 +283,15 @@ public class EventAnalyticsProxyResourceIntegrationTest extends IntegrationTestB
                 .request();
     }
 
+    /** Builds a credential-only request carrying the given {@link User}'s API token. */
     private static HttpServletRequest authenticatedRequest(final User user) {
-        final String credentials = Base64.encode(
-                (user.getEmailAddress() + ":admin").getBytes());
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
                         new MockAttributeRequest(
                                 new MockHttpRequestIntegrationTest("localhost", "/").request())
                                 .request())
                         .request());
-        request.setHeader("Authorization", "Basic " + credentials);
+        request.setHeader("Authorization", TOKEN_UTILS.bearerHeader(user));
         return request;
     }
 
