@@ -11,6 +11,8 @@ import graphql.execution.instrumentation.parameters.InstrumentationFieldFetchPar
 import graphql.schema.DataFetcher;
 import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLNamedType;
+import graphql.schema.GraphQLType;
+import graphql.schema.GraphQLTypeUtil;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,8 +20,8 @@ import java.util.Set;
 
 /**
  * Keeps user properties out of the GraphQL results returned to callers who are neither CMS administrators
- * nor back-end users: the {@code _map} field loses them, the lock owner of a {@code DotPage} resolves to
- * {@code null}, and searches whose query or sort names one return a field error. Results for back-end
+ * nor back-end users: the {@code _map} field and Story Block fields lose them, the lock owner of a
+ * {@code DotPage} resolves to {@code null}, and searches whose query or sort names one return a field error. Results for back-end
  * callers, and fields of customer content types, are left unchanged.
  *
  * @author hassandotcms
@@ -47,11 +49,13 @@ public class UserPropertiesInstrumentation extends SimpleInstrumentation {
         final DataFetchingEnvironment fieldEnvironment = parameters.getEnvironment();
         final String fieldName = fieldEnvironment.getFieldDefinition().getName();
         final boolean contentMap = MAP_FIELD.equals(fieldName);
+        final boolean storyBlock = CustomFieldType.STORY_BLOCK.getTypeName().equals(
+                typeName(fieldEnvironment.getFieldDefinition().getType()));
         final boolean pageLock = PAGE_LOCK_FIELDS.contains(fieldName)
                 && PageAPIGraphQLTypesProvider.DOT_PAGE.equals(parentTypeName(fieldEnvironment));
         final boolean search = fieldEnvironment.containsArgument(QUERY_ARGUMENT)
                 || SORT_ARGUMENTS.stream().anyMatch(fieldEnvironment::containsArgument);
-        if (!contentMap && !pageLock && !search) {
+        if (!contentMap && !storyBlock && !pageLock && !search) {
             return dataFetcher;
         }
         return environment -> {
@@ -69,6 +73,9 @@ public class UserPropertiesInstrumentation extends SimpleInstrumentation {
                 return null;
             }
             final Object result = dataFetcher.get(environment);
+            if (storyBlock) {
+                return PropertyTreeFilter.filter(result, filter, PropertyTreeFilter.storedContentTypes());
+            }
             return contentMap ? filterContentMap(result, environment, filter) : result;
         };
     }
@@ -127,6 +134,17 @@ public class UserPropertiesInstrumentation extends SimpleInstrumentation {
                 .filter(value -> value instanceof String)
                 .map(String.class::cast)
                 .findFirst().orElse(null);
+    }
+
+    /**
+     * Returns the name of a field's type, without list or non-null wrappers.
+     *
+     * @param type the field's type
+     * @return the type name, or {@code null} when it has none
+     */
+    private static String typeName(final GraphQLType type) {
+        final GraphQLType unwrapped = GraphQLTypeUtil.unwrapAll(type);
+        return unwrapped instanceof GraphQLNamedType ? ((GraphQLNamedType) unwrapped).getName() : null;
     }
 
     /**

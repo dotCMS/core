@@ -4,7 +4,9 @@ import com.dotcms.contenttype.model.field.CustomField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.JSONField;
 import com.dotcms.contenttype.model.field.KeyValueField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.json.JSONArray;
@@ -26,7 +28,9 @@ import java.util.Set;
  * scalars) for one caller. Every object loses the user properties the given
  * {@link ContentFieldFilter} hides, and objects that are contentlets also get the configured content
  * property lists. The values of a contentlet's JSON, Key/Value and Custom fields are customer data and
- * are left as they are. The result is a copy; the input tree is never changed.
+ * are left as they are. A Story Block value held as JSON text, and its {@code _raw} copy, is read and
+ * filtered the same way, since it carries the data of the contentlets embedded in it. The result is a copy;
+ * the input tree is never changed.
  *
  * @author hassandotcms
  */
@@ -35,6 +39,9 @@ public final class PropertyTreeFilter {
     /** Field types whose values are customer data and are never walked into. */
     private static final Set<String> CUSTOMER_VALUE_FIELD_TYPES = Set.of(
             JSONField.class.getName(), KeyValueField.class.getName(), CustomField.class.getName());
+
+    /** Suffix of the property that repeats a Story Block value as stored, e.g. {@code blogContent_raw}. */
+    private static final String RAW_SUFFIX = "_raw";
 
     /**
      * Resolves the type of a contentlet field, so the values of JSON, Key/Value and Custom fields can be
@@ -104,6 +111,9 @@ public final class PropertyTreeFilter {
         if (field instanceof CustomField) {
             return CustomField.class.getName();
         }
+        if (field instanceof StoryBlockField) {
+            return StoryBlockField.class.getName();
+        }
         return field.getClass().getName();
     }
 
@@ -146,9 +156,14 @@ public final class PropertyTreeFilter {
             if (userProperties.contains(name.toLowerCase(Locale.ROOT))) {
                 return;
             }
-            final Object copiedValue = isCustomerValue(contentType, name, fieldTypes)
-                    ? value
-                    : copy(value, filter, fieldTypes);
+            final Object copiedValue;
+            if (isCustomerValue(contentType, name, fieldTypes)) {
+                copiedValue = value;
+            } else if (value instanceof String && isStoryBlock(contentType, name, fieldTypes)) {
+                copiedValue = copyStoryBlockText((String) value, filter, fieldTypes);
+            } else {
+                copiedValue = copy(value, filter, fieldTypes);
+            }
             if (jsonObject) {
                 jsonCopy.put(name, copiedValue);
             } else {
@@ -200,6 +215,61 @@ public final class PropertyTreeFilter {
     private static String contentTypeOf(final Map<?, ?> contentlet) {
         final Object contentType = contentlet.get(Contentlet.CONTENT_TYPE_KEY);
         return null == contentType ? null : String.valueOf(contentType);
+    }
+
+    /**
+     * Tells whether a property of a contentlet holds a Story Block value: the field itself or its
+     * {@code _raw} copy.
+     *
+     * @param contentType the contentlet's content type, or {@code null} when the object is not a contentlet
+     * @param name the property name
+     * @param fieldTypes the field type resolver
+     * @return {@code true} for a Story Block value
+     */
+    private static boolean isStoryBlock(final String contentType, final String name, final FieldTypes fieldTypes) {
+        if (null == contentType) {
+            return false;
+        }
+        final String field = name.endsWith(RAW_SUFFIX) ? name.substring(0, name.length() - RAW_SUFFIX.length()) : name;
+        return StoryBlockField.class.getName().equals(Try.of(() -> fieldTypes.typeOf(contentType, field)).getOrNull());
+    }
+
+    /**
+     * Filters a Story Block value held as JSON text and returns it as text again. Text that cannot name a
+     * filtered property, or that is not a JSON object or array (such as HTML kept from a converted field), is
+     * returned as it is.
+     *
+     * @param text the Story Block value
+     * @param filter the caller's filter
+     * @param fieldTypes the field type resolver
+     * @return the filtered JSON text, or the original text
+     */
+    private static String copyStoryBlockText(final String text, final ContentFieldFilter filter,
+                                             final FieldTypes fieldTypes) {
+        if (!mayName(text, filter)) {
+            return text;
+        }
+        final Object tree = Try.of(() -> JsonUtil.getObjectFromJson(text, Object.class)).getOrNull();
+        if (!(tree instanceof Map) && !(tree instanceof Collection)) {
+            return text;
+        }
+        return Try.of(() -> JsonUtil.JSON_MAPPER.writeValueAsString(copy(tree, filter, fieldTypes))).get();
+    }
+
+    /**
+     * Tells whether a text may hold, as a JSON key, a property the filter masks or removes. Text with
+     * {@code \}{@code u} character codes is always read, since a key could be written with them.
+     *
+     * @param text the text to check
+     * @param filter the caller's filter
+     * @return {@code false} only when the text cannot hold any of them
+     */
+    private static boolean mayName(final String text, final ContentFieldFilter filter) {
+        if (text.contains("\\u")) {
+            return true;
+        }
+        final String lowerCased = text.toLowerCase(Locale.ROOT);
+        return filter.restrictedProperties().stream().anyMatch(name -> lowerCased.contains('"' + name + '"'));
     }
 
     /**

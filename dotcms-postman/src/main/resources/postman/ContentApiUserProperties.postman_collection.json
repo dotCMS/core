@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "efc25317-0ce6-49b6-b539-4524f169486a",
     "name": "ContentApiUserProperties",
-    "description": "Content API responses to anonymous callers leave out user properties (owner, modUser, publishUser, lockedBy and their names), searches on them are refused, key/value field values are kept, and administrators still get them. The content type and content are created and deleted by this collection.",
+    "description": "Content API responses to anonymous callers leave out user properties (owner, modUser, publishUser, lockedBy and their names), including those of content embedded in a Story Block; searches on them are refused, key/value field values are kept, and administrators still get them. The content type and content are created and deleted by this collection.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -43,7 +43,7 @@
         },
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n  \"name\": \"UserPropertiesCheck{{runId}}\",\n  \"variable\": \"UserPropertiesCheck{{runId}}\",\n  \"host\": \"SYSTEM_HOST\",\n  \"fields\": [\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n      \"name\": \"Title\",\n      \"variable\": \"title\",\n      \"indexed\": true,\n      \"listed\": true\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableKeyValueField\",\n      \"name\": \"Meta\",\n      \"variable\": \"meta\"\n    }\n  ]\n}",
+          "raw": "{\n  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n  \"name\": \"UserPropertiesCheck{{runId}}\",\n  \"variable\": \"UserPropertiesCheck{{runId}}\",\n  \"host\": \"SYSTEM_HOST\",\n  \"fields\": [\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n      \"name\": \"Title\",\n      \"variable\": \"title\",\n      \"indexed\": true,\n      \"listed\": true\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableKeyValueField\",\n      \"name\": \"Meta\",\n      \"variable\": \"meta\"\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableStoryBlockField\",\n      \"name\": \"Body\",\n      \"variable\": \"body\"\n    }\n  ]\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -99,6 +99,156 @@
         "body": {
           "mode": "raw",
           "raw": "{\n  \"contentlet\": {\n    \"contentType\": \"UserPropertiesCheck{{runId}}\",\n    \"title\": \"user-properties-check\",\n    \"meta\": \"{\\\"owner\\\":\\\"customer-value\\\"}\",\n    \"languageId\": 1\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Setup - read the publishing user - 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "const user = pm.response.json();",
+              "pm.collectionVariables.set('publisherId', user.userId);",
+              "pm.collectionVariables.set('publisherName', user.givenName + ' ' + user.surname);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/users/current",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "current"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Setup - publish content to embed - 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('embeddedId', pm.response.json().entity.identifier);",
+              "pm.collectionVariables.set('embeddedInode', pm.response.json().entity.inode);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "actions",
+            "default",
+            "fire",
+            "PUBLISH"
+          ],
+          "query": [
+            {
+              "key": "indexPolicy",
+              "value": "WAIT_FOR"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"contentlet\": {\n    \"contentType\": \"UserPropertiesCheck{{runId}}\",\n    \"title\": \"user-properties-embedded\",\n    \"languageId\": 1\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Setup - publish content embedding it in a Story Block - 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('storyId', pm.response.json().entity.identifier);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "actions",
+            "default",
+            "fire",
+            "PUBLISH"
+          ],
+          "query": [
+            {
+              "key": "indexPolicy",
+              "value": "WAIT_FOR"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"contentlet\": {\n    \"contentType\": \"UserPropertiesCheck{{runId}}\",\n    \"title\": \"user-properties-story\",\n    \"languageId\": 1,\n    \"body\": \"{\\\"type\\\": \\\"doc\\\", \\\"content\\\": [{\\\"type\\\": \\\"dotContent\\\", \\\"attrs\\\": {\\\"data\\\": {\\\"identifier\\\": \\\"{{embeddedId}}\\\", \\\"inode\\\": \\\"{{embeddedInode}}\\\", \\\"languageId\\\": 1, \\\"contentType\\\": \\\"UserPropertiesCheck{{runId}}\\\", \\\"title\\\": \\\"user-properties-embedded\\\", \\\"owner\\\": \\\"{{publisherId}}\\\", \\\"modUser\\\": \\\"{{publisherId}}\\\", \\\"modUserName\\\": \\\"{{publisherName}}\\\", \\\"publishUser\\\": \\\"{{publisherId}}\\\", \\\"publishUserName\\\": \\\"{{publisherName}}\\\"}}}]}\"\n  }\n}",
           "options": {
             "raw": {
               "language": "json"
@@ -288,6 +438,187 @@
       "response": []
     },
     {
+      "name": "Anonymous - Story Block with embedded content - no user ids or names",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Anonymous request: clear any session cookie left by an earlier request of this run.",
+              "pm.sendRequest({ url: pm.environment.get('serverURL') + '/api/v1/logout', method: 'GET' }, function () {});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const text = pm.response.text();",
+              "const userId = pm.collectionVariables.get('publisherId');",
+              "const userName = pm.collectionVariables.get('publisherName');",
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "pm.test('Story Block returned', () => pm.expect(text).to.include('user-properties-embedded'));",
+              "pm.test('no user id', () => pm.expect(text).to.not.include(userId));",
+              "pm.test('no user name', () => pm.expect(text).to.not.include(userName));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/content/{{storyId}}",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "content",
+            "{{storyId}}"
+          ]
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Anonymous - legacy Story Block with embedded content - no user ids or names",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Anonymous request: clear any session cookie left by an earlier request of this run.",
+              "pm.sendRequest({ url: pm.environment.get('serverURL') + '/api/v1/logout', method: 'GET' }, function () {});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const text = pm.response.text();",
+              "const userId = pm.collectionVariables.get('publisherId');",
+              "const userName = pm.collectionVariables.get('publisherName');",
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "pm.test('Story Block returned', () => pm.expect(text).to.include('user-properties-embedded'));",
+              "pm.test('no user id', () => pm.expect(text).to.not.include(userId));",
+              "pm.test('no user name', () => pm.expect(text).to.not.include(userName));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/content/id/{{storyId}}",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "content",
+            "id",
+            "{{storyId}}"
+          ]
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Anonymous - GraphQL Story Block json - no user ids or names",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Anonymous request: clear any session cookie left by an earlier request of this run.",
+              "pm.sendRequest({ url: pm.environment.get('serverURL') + '/api/v1/logout', method: 'GET' }, function () {});",
+              "// The GraphQL schema learns the new content type asynchronously",
+              "setTimeout(function(){}, 5000);"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const text = pm.response.text();",
+              "const userId = pm.collectionVariables.get('publisherId');",
+              "const userName = pm.collectionVariables.get('publisherName');",
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "pm.test('Story Block returned', () => pm.expect(text).to.include('user-properties-embedded'));",
+              "pm.test('no user id', () => pm.expect(text).to.not.include(userId));",
+              "pm.test('no user name', () => pm.expect(text).to.not.include(userName));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/graphql?dotcachettl=0",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "graphql"
+          ],
+          "query": [
+            {
+              "key": "dotcachettl",
+              "value": "0"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"{ search(query: \\\"+identifier:{{storyId}}\\\") { ... on UserPropertiesCheck{{runId}} { body { json } } } }\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
       "name": "Anonymous - query on owner - 400",
       "event": [
         {
@@ -432,6 +763,46 @@
       "response": []
     },
     {
+      "name": "Admin - Story Block with embedded content - user ids present",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const text = pm.response.text();",
+              "const userId = pm.collectionVariables.get('publisherId');",
+              "const userName = pm.collectionVariables.get('publisherName');",
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "pm.test('embedded content carries the user id', () => pm.expect(text).to.include(userId));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/content/{{storyId}}",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "content",
+            "{{storyId}}"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "Cleanup - delete content type - 200",
       "event": [
         {
@@ -501,6 +872,26 @@
     },
     {
       "key": "contentId",
+      "value": ""
+    },
+    {
+      "key": "publisherId",
+      "value": ""
+    },
+    {
+      "key": "publisherName",
+      "value": ""
+    },
+    {
+      "key": "embeddedId",
+      "value": ""
+    },
+    {
+      "key": "embeddedInode",
+      "value": ""
+    },
+    {
+      "key": "storyId",
       "value": ""
     }
   ]
