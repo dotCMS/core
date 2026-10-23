@@ -10,12 +10,12 @@ import {
     handleMediaDrop,
     handleMediaPaste
 } from './asset-uploader.extension';
-import { Audio, DOT_AUDIO_NODE_NAME } from './nodes/audio.extension';
-import { DOT_IMAGE_NODE_NAME, DotImage } from './nodes/image.extension';
-import { UPLOAD_PLACEHOLDER_NODE_NAME } from './nodes/upload-placeholder.extension';
 
-import { type UploadedAudio, type UploadedImage } from '../services/dot-upload.service';
-import { pasteHTML } from '../testing/editor.testing';
+import { type UploadedAudio, type UploadedImage } from '../../services/dot-upload.service';
+import { pasteHTML } from '../../testing/editor.testing';
+import { Audio, DOT_AUDIO_NODE_NAME } from '../nodes/audio.extension';
+import { DOT_IMAGE_NODE_NAME, DotImage } from '../nodes/image.extension';
+import { UPLOAD_PLACEHOLDER_NODE_NAME } from '../nodes/upload-placeholder.extension';
 
 const PNG_DATA_URL = 'data:image/png;base64,iVBORw0KGgo=';
 

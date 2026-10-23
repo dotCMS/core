@@ -15,7 +15,10 @@ import StarterKit from '@tiptap/starter-kit';
 
 import type { DotMessageService } from '@dotcms/data-access';
 
-import { type MediaUploaders, createAssetUploaderExtension } from './asset-uploader.extension';
+import {
+    type MediaUploaders,
+    createAssetUploaderExtension
+} from './asset-uploader/asset-uploader.extension';
 import { createBlockGutterDragHandle } from './block-gutter.extension';
 import { createDotEmoji } from './dot-emoji.extension';
 import { IndentExtension } from './indent.extension';
