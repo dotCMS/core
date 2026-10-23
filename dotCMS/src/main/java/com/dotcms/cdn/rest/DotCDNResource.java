@@ -8,12 +8,13 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
-import io.vavr.Lazy;
 import io.vavr.control.Try;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -69,17 +70,14 @@ public class DotCDNResource {
             @QueryParam("dateFrom") final String dateFromStr,
             @QueryParam("dateTo") final String dateToStr,
             @QueryParam("hostId") final String hostId,
-            @QueryParam("hourly") final boolean hourly) {
+            @QueryParam("hourly") final boolean hourly)
+            throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(request, response)
                 .rejectWhenNoUser(true).requiredBackendUser(true)
                 .requiredPortlet("dotCDN").init().getUser();
 
-        final Lazy<Host> lazyCurrentHost = Lazy.of(() -> Try.of(
-                () -> Host.class.cast(request.getSession().getAttribute(WebKeys.CURRENT_HOST)))
-                .getOrNull());
-        final Host host = Try.of(() -> APILocator.getHostAPI()
-                .find(hostId, user, false)).getOrElse(lazyCurrentHost.get());
+        final Host host = resolveHost(request, hostId, user);
 
         if (!DotCDNAPI.isConfigured(host)) {
             throw new BadRequestException(
@@ -116,22 +114,18 @@ public class DotCDNResource {
                             schema = @Schema(implementation = ResponseEntityDotCDNPurgeView.class))))
     public final Response purgeCache(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            final InvalidationForm invalidationForm) {
+            final InvalidationForm invalidationForm)
+            throws DotDataException, DotSecurityException {
 
         final User user = new WebResource.InitBuilder(request, response)
                 .rejectWhenNoUser(true).requiredBackendUser(true)
                 .requiredPortlet("dotCDN").init().getUser();
 
-        final Lazy<Host> lazyCurrentHost = Lazy.of(() -> Try.of(
-                () -> Host.class.cast(request.getSession().getAttribute(WebKeys.CURRENT_HOST)))
-                .getOrNull());
         if (invalidationForm == null) {
             throw new BadRequestException("Invalidation form is required");
         }
 
-        final Host host = Try.of(() -> APILocator.getHostAPI()
-                .find(invalidationForm.getHostId(), user, false))
-                .getOrElse(lazyCurrentHost.get());
+        final Host host = resolveHost(request, invalidationForm.getHostId(), user);
 
         if (!DotCDNAPI.isConfigured(host)) {
             throw new BadRequestException(
@@ -150,6 +144,28 @@ public class DotCDNResource {
         final List<String> urls = validateUrls(invalidationForm.getUrls(), cdnApi);
         return Response.ok(new ResponseEntityDotCDNPurgeView(
                 new DotCDNPurgeResponse(cdnApi.invalidate(urls), false))).build();
+    }
+
+    /**
+     * Resolves the site whose dotCDN App configuration the request works on. A request that names
+     * a {@code hostId} gets that site, looked up as the calling user, so a site the user cannot
+     * read is rejected instead of being swapped for another one. A request without a
+     * {@code hostId} gets the site in the user's session.
+     *
+     * @param request the current request, which holds the session site
+     * @param hostId the id of the site the caller asked for, may be blank
+     * @param user the calling user
+     * @return the site, or {@code null} if the id names no site or the session has none
+     * @throws DotSecurityException if the user may not read the requested site
+     * @throws DotDataException if the site lookup fails
+     */
+    private Host resolveHost(final HttpServletRequest request, final String hostId,
+            final User user) throws DotDataException, DotSecurityException {
+        if (UtilMethods.isSet(hostId)) {
+            return APILocator.getHostAPI().find(hostId, user, false);
+        }
+        return Try.of(() -> Host.class.cast(request.getSession().getAttribute(WebKeys.CURRENT_HOST)))
+                .getOrNull();
     }
 
     /**
