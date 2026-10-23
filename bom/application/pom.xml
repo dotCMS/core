@@ -162,11 +162,6 @@
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.bsh</artifactId>
-                <version>2.0b4_3</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.cactus.integration.ant</artifactId>
                 <version>1.8.0_3</version>
             </dependency>
