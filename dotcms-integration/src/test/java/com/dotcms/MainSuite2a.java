@@ -107,7 +107,10 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.contentlet.action.ExportContentletsToCSVTest.class,
         GenericBundleActivatorIntegrationTest.class,
         com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest.class,
-        com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class
+        com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class,
+        com.dotcms.rest.ClusterResourceIntegrationTest.class,
+        com.dotcms.rest.api.v1.cluster.ClusterNodesResourceIntegrationTest.class,
+        com.dotcms.rest.api.v1.system.ConfigurationHelperTest.class
 })
 public class MainSuite2a {
 
