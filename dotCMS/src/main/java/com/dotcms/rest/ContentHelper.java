@@ -2,6 +2,7 @@ package com.dotcms.rest;
 
 import com.dotcms.api.web.HttpServletRequestImpersonator;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.content.filter.ContentFieldFilter;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -396,7 +397,9 @@ public class ContentHelper {
      * @param user              The {@link User} performing this action.
      * @param allCategoriesInfo If information about Categories must be included, set to {@code true}.
      *
-     * @return The representation of the Contentlet as a {@link JSONObject}.
+     * @return The representation of the Contentlet as a {@link JSONObject}, with the properties configured in
+     * {@link ContentFieldFilter} masked or removed when the user is neither a CMS administrator nor a back-end
+     * user.
      *
      * @throws JSONException        An error occurred when generating the JSON object.
      * @throws IOException          An error occurred when generating the printable Contentlet map.
@@ -418,9 +421,11 @@ public class ContentHelper {
      * @param render            If the rendered HTML version must be included in the response, set to {@code true}.
      * @param user              The {@link User} performing this action.
      * @param allCategoriesInfo If information about Categories must be included, set to {@code true}.
-     * @param hydrateRelated
+     * @param hydrateRelated    If related content must be hydrated into the result, set to {@code true}.
      *
-     * @return The representation of the Contentlet as a {@link JSONObject}.
+     * @return The representation of the Contentlet as a {@link JSONObject}, with the properties configured in
+     * {@link ContentFieldFilter} masked or removed when the user is neither a CMS administrator nor a back-end
+     * user.
      *
      * @throws JSONException        An error occurred when generating the JSON object.
      * @throws IOException          An error occurred when generating the printable Contentlet map.
@@ -488,7 +493,8 @@ public class ContentHelper {
         jsonObject.put("__icon__", UtilHTML.getIconClass(contentlet));
         jsonObject.put("contentTypeIcon", type.icon());
         jsonObject.put("variant", contentlet.getVariantId());
-        return jsonObject;
+        // Filter last, once every property has been added, so none of them can bypass the masking
+        return ContentFieldFilter.forUser(user).apply(jsonObject);
     }
 
     public JSONObject addRelationshipsToJSON(final HttpServletRequest request,
