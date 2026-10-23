@@ -1,6 +1,7 @@
 package com.dotcms;
 
 import com.dotcms.analytics.ContentAnalyticsPersistenceModeIT;
+import com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyResourceIntegrationTest;
 import com.dotcms.business.interceptor.InterceptorHandlerTest;
 import com.dotcms.enterprise.publishing.remote.handler.FolderHandlerTest;
 import com.dotcms.inference.rest.ChatCompletionsStreamingTest;
@@ -18,6 +19,7 @@ import com.dotcms.inference.rest.InferenceSiteResolutionTest;
 import com.dotcms.inference.rest.InferenceTestsAreRegisteredTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.rest.api.v1.maintenance.MaintenanceResourceIntegrationTest;
+import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
@@ -25,9 +27,7 @@ import org.junit.runners.Suite.SuiteClasses;
 /* grep -l -r "@Test" dotCMS/src/integration-test */
 /* ./gradlew integrationTest -Dtest.single=com.dotcms.MainSuite */
 
-/**
- * NOTE: LET'S AVOID ADDING MORE TESTS TO THIS SUITE, THIS ONE IS TAKING ALMOST TWICE THE TIME TO RUN THAN THE OTHERS
- */
+/** JUnit 4 integration-test shard; balance additions using current CI runtime measurements. */
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
         ChatCompletionsTest.class,
@@ -102,7 +102,11 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.AuditPublishingResourceTest.class,
         MaintenanceResourceIntegrationTest.class,
         FolderHandlerTest.class,
-        ContentAnalyticsPersistenceModeIT.class
+        ContentAnalyticsPersistenceModeIT.class,
+        EventAnalyticsProxyResourceIntegrationTest.class,
+        GenericBundleActivatorIntegrationTest.class,
+        com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest.class,
+        com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class
 })
 public class MainSuite2a {
 

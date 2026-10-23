@@ -99,7 +99,12 @@ export class DotCopyButtonComponent {
 
         this.dotClipboardUtil
             .copy(this.copy())
-            .then(() => {
+            .then((copied) => {
+                // DotClipboardUtil reports failure by resolving false, not by rejecting.
+                if (!copied) {
+                    throw new Error('Clipboard copy was not allowed');
+                }
+
                 this.$copyState.set('copied');
                 this.tooltipRef()?.show();
                 this.$resetTimer = setTimeout(() => this.$copyState.set('idle'), 1000);

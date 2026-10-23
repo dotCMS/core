@@ -3503,9 +3503,11 @@ paths:
   /v1/analytics/content/event:
     post:
       description: "Validates the site_auth field in the JSON body via SiteAuthValidator,\
-        \ resolves the active site, injects site_id into context, and asynchronously\
-        \ forwards the body to {DOT_ANALYTICS_BASE_URL}/v1/event/ingest. The dotCMS-side\
-        \ path is a fixed match; the upstream sub-path is not caller-controllable."
+        \ resolves the active site, adds site_id to context, cleans each event's page\
+        \ and link URL fields (allowlisted query parameters only, no user info or\
+        \ session ids; events with a malformed data or page object are dropped), and\
+        \ asynchronously forwards the body to {DOT_ANALYTICS_BASE_URL}/v1/event/ingest.\
+        \ The dotCMS-side path is a fixed match; the upstream sub-path is not caller-controllable."
       operationId: proxyAnalyticsEventRequest
       requestBody:
         content:
@@ -3560,6 +3562,32 @@ paths:
         "500":
           description: Internal Server Error
       summary: Generate Site Auth
+      tags:
+      - Content Analytics
+  /v1/analytics/health:
+    get:
+      description: Returns a dotCMS-evaluated analytics health state. Always returns
+        200 — never returns 503 unlike the catch-all proxy. Reflects the App configuration
+        and backend connectivity for the site resolved from the request.
+      operationId: analyticsHealth
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "ResponseEntityView containing {\"health\": \"OK\"|\"\
+                  NOT_CONFIGURED\"|\"CONFIGURATION_ERROR\"}"
+          description: Health state evaluated successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized — backend user required
+        "403":
+          content:
+            application/json: {}
+          description: User lacks READ on the resolved site
+      summary: Evaluate analytics health for the current site
       tags:
       - Content Analytics
   /v1/analytics/{path}:
@@ -5802,6 +5830,32 @@ paths:
         "401":
           description: User is not authenticated
       summary: Retrieve whitelisted configuration values
+      tags:
+      - System Configuration
+  /v1/configuration/dotcmsLogo:
+    get:
+      description: "Returns the /dA/ path of the stock dotCMS login logo. The path\
+        \ can be saved as loginScreenLogo through PUT /api/v1/configuration/branding.\
+        \ Read-only: no content and no company setting is created or changed. Returns\
+        \ 404 when this instance doesn't have the stock logo, or it isn't published,\
+        \ readable by anonymous users, or the stock dotCMS image."
+      operationId: getDotcmsLogo
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Path of the stock dotCMS login logo
+        "401":
+          content:
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
+        "404":
+          content:
+            application/json: {}
+          description: The dotCMS logo is not available on this instance
+      summary: Get the stock dotCMS login logo
       tags:
       - System Configuration
   /v1/configuration/license:
@@ -10937,10 +10991,10 @@ paths:
           content:
             application/javascript:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringHealth"
+                $ref: "#/components/schemas/ResponseEntityViewExperimentsHealthView"
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringHealth"
+                $ref: "#/components/schemas/ResponseEntityViewExperimentsHealthView"
           description: default response
       tags:
       - Experiment
@@ -10971,15 +11025,16 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Experiment cancelled successfully
+        "403":
+          content:
+            application/json: {}
+          description: Feature disabled (FEATURE_DISABLED) — flag=false
       tags:
       - Experiment
   /v1/experiments/{experimentId}:
@@ -11038,15 +11093,16 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityExperimentView"
-          description: default response
+          description: Experiment archived successfully
+        "403":
+          content:
+            application/json: {}
+          description: Feature disabled (FEATURE_DISABLED) — flag=false
       tags:
       - Experiment
   /v1/experiments/{experimentId}/_end:
@@ -11059,15 +11115,12 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Experiment ended successfully
       tags:
       - Experiment
   /v1/experiments/{experimentId}/_start:
@@ -11080,15 +11133,27 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Experiment started successfully
+        "400":
+          content:
+            application/json: {}
+          description: Duration exceeds the 10-day limited-mode cap
+        "403":
+          content:
+            application/json: {}
+          description: "Limited-mode gate rejected the start. errorCode FEATURE_DISABLED:\
+            \ flag=false and the free experiment slot is already occupied. errorCode\
+            \ SCHEDULED_START_NOT_ALLOWED: flag=false and the experiment has a future\
+            \ startDate."
+        "503":
+          content:
+            application/json: {}
+          description: Analytics App not configured for this site (ANALYTICS_NOT_CONFIGURED)
       tags:
       - Experiment
   /v1/experiments/{experimentId}/goals/primary:
@@ -11288,15 +11353,16 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityExperimentResults"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityExperimentResults"
-          description: default response
+          description: Experiment results retrieved
+        "503":
+          content:
+            application/json: {}
+          description: Analytics App not configured for this site
       tags:
       - Experiment
   /v1/fieldTypes:
@@ -12311,7 +12377,8 @@ paths:
           description: "Unauthorized: Invalid or missing user authentication."
         "403":
           description: "Forbidden: User lacks permission to enqueue jobs in the specified\
-            \ queue."
+            \ queue, or the queue has a dedicated endpoint (the message names it)\
+            \ and does not accept jobs through this one."
         "404":
           description: "Not Found: Queue with the specified name does not exist."
         "500":
@@ -12423,7 +12490,8 @@ paths:
           description: "Unauthorized: Invalid or missing user authentication."
         "403":
           description: "Forbidden: User lacks permission to enqueue jobs in the specified\
-            \ queue."
+            \ queue, or the queue has a dedicated endpoint (the message names it)\
+            \ and does not accept jobs through this one."
         "404":
           description: "Not Found: Queue with the specified name does not exist."
         "500":
@@ -16680,8 +16748,10 @@ paths:
       - Roles
   /v1/roles/{roleid}/rolehierarchyanduserroles:
     get:
-      description: Load the user and roles by role id with optional hierarchy and
-        filtering
+      description: "Load the user and roles by role id with optional hierarchy and\
+        \ filtering. The caller must be an administrator, have access to both the\
+        \ Roles and the Users portlets, or hold a workflow action that assigns to\
+        \ the role."
       operationId: loadUsersAndRolesByRoleId
       parameters:
       - description: Role ID
@@ -16719,7 +16789,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - backend user required
+          description: Forbidden - membership privilege or an assigning workflow action
+            required
         "404":
           content:
             application/json: {}
@@ -16788,7 +16859,8 @@ paths:
     get:
       description: "Returns the paginated list of users directly granted the given\
         \ role, using the standard user serialization (email address included). Grants\
-        \ inherited through the role hierarchy are not included."
+        \ inherited through the role hierarchy are not included. The caller must be\
+        \ an administrator or have access to both the Roles and the Users portlets."
       operationId: loadUsersByRoleId
       parameters:
       - description: Id of the role to list users for
@@ -16846,7 +16918,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - roles portlet access required
+          description: "Forbidden - administrator, or Roles and Users portlet access,\
+            \ required"
         "404":
           content:
             application/json: {}
@@ -19771,7 +19844,8 @@ paths:
           type: integer
           format: int32
       - description: "Role key(s) to restrict results to users holding any of them;\
-          \ repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER"
+          \ repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER.\
+          \ Requires CMS Administrator or Roles+Users portlet access (403 otherwise)"
         in: query
         name: roleKey
         schema:
@@ -29465,6 +29539,33 @@ components:
           format: float
         trafficProportion:
           $ref: "#/components/schemas/TrafficProportion"
+    ExperimentsHealthView:
+      type: object
+      properties:
+        freeExperimentUsed:
+          type: boolean
+          description: Whether the single free experiment slot is already occupied.
+            Present only when tier="limited"; null when tier="full".
+        health:
+          type: string
+          description: Current health state of the experiments / analytics configuration
+          enum:
+          - OK
+          - NOT_CONFIGURED
+          - CONFIGURATION_ERROR
+        tier:
+          type: string
+          description: "License tier: \"full\" when experiments are fully enabled,\
+            \ \"limited\" when restricted to one free experiment"
+          enum:
+          - full
+          - limited
+        warning:
+          type: string
+          description: Warning code present when the Analytics App is not configured
+            for the site. Absent when configured.
+          enum:
+          - analytics_disabled
     ExportSecretForm:
       type: object
       properties:
@@ -37617,6 +37718,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityViewExperimentsHealthView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/ExperimentsHealthView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityViewJob:
       type: object
       properties:
@@ -37789,35 +37913,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MulitreeView"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityViewMapStringHealth:
-      type: object
-      properties:
-        entity:
-          type: object
-          additionalProperties:
-            type: string
-            enum:
-            - OK
-            - NOT_CONFIGURED
-            - CONFIGURATION_ERROR
         errors:
           type: array
           items:

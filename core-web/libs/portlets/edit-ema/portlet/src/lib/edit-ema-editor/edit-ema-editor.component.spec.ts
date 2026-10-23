@@ -1,4 +1,4 @@
-import { patchState } from '@ngrx/signals';
+import { patchState, WritableStateSource } from '@ngrx/signals';
 import {
     SpectatorRouting,
     byTestId,
@@ -60,7 +60,14 @@ import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlet
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
-import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
+import {
+    DOT_VELOCITY_LANGUAGE_ID,
+    DotCopyContentModalService,
+    DotSidePanelConfig,
+    DotSidePanelRef,
+    DotSidePanelService,
+    SafeUrlPipe
+} from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
     CONTENT_TYPE_MOCK_FOR_EDITOR,
@@ -110,7 +117,7 @@ import {
 import { ActionPayload, ContentletPayload, VTLFile } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
-import { IframeAccessMode, PageType } from '../store/models';
+import { IframeAccessMode, PageType, UVEState } from '../store/models';
 
 global.URL.createObjectURL = vi.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -278,7 +285,10 @@ const createRouting = () =>
             {
                 provide: DotContentletService,
                 useValue: {
-                    getContentletByInode: () => of(URL_MAP_CONTENTLET)
+                    getContentletByInode: () => of(URL_MAP_CONTENTLET),
+                    // The VTL menu asks before opening Edit Code; by default the user may edit.
+                    canLock: () =>
+                        of({ canLock: true, locked: false, id: '', inode: '', lockedBy: '' })
                 }
             },
             {
@@ -2651,6 +2661,56 @@ describe('EditEmaEditorComponent', () => {
                     );
                 });
 
+                it('opens the new editor in the side panel when its flag is on, and clears the request when the panel closes', () => {
+                    const dotContentTypeService =
+                        spectator.debugElement.injector.get(DotContentTypeService);
+                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                        of(
+                            createFakeContentType({
+                                variable: 'test',
+                                name: 'Test',
+                                metadata: {
+                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+                                }
+                            })
+                        )
+                    );
+                    const closed = new Subject<void>();
+                    const openSpy = vi
+                        .spyOn(spectator.inject(DotSidePanelService), 'open')
+                        .mockReturnValue({ closed } as unknown as DotSidePanelRef);
+                    // The store's type does not expose its state as writable signals.
+                    patchState(store as unknown as WritableStateSource<UVEState>, {
+                        flags: {
+                            ...store.flags(),
+                            [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
+                        }
+                    });
+
+                    store.setSelected({
+                        bounds: { x: 0, y: 0, width: 0, height: 0 },
+                        payload: EDIT_ACTION_PAYLOAD_MOCK
+                    });
+                    spectator.detectChanges();
+                    spectator.component['handleOpenFullEditor']();
+                    spectator.detectChanges();
+
+                    expect(openSpy).toHaveBeenCalledTimes(1);
+                    const [, config] = openSpy.mock.calls[0];
+                    expect((config.heading as () => string)()).toBe('Hello World');
+                    expect((config.inputs?.['data'] as () => unknown)()).toEqual(
+                        expect.objectContaining({
+                            mode: 'edit',
+                            contentletInode: 'contentlet-inode-123'
+                        })
+                    );
+
+                    closed.next();
+                    closed.complete();
+
+                    expect(spectator.component['$editContentPanel']()).toBeNull();
+                });
+
                 it('should fall back to legacy dialog when getContentType throws', () => {
                     const dotContentTypeService =
                         spectator.debugElement.injector.get(DotContentTypeService);
@@ -2769,6 +2829,128 @@ describe('EditEmaEditorComponent', () => {
                             contentletInode: 'vtl-inode-123'
                         })
                     );
+                });
+
+                describe('Edit Code panel', () => {
+                    /** The side panels the editor opened, recorded instead of rendered. */
+                    let opened: {
+                        config: DotSidePanelConfig;
+                        ref: { closed: Subject<void>; close: Mock; requestClose: Mock };
+                    }[];
+
+                    beforeEach(() => {
+                        opened = [];
+                        vi.spyOn(spectator.inject(DotSidePanelService), 'open').mockImplementation(
+                            (_component, config) => {
+                                const closed = new Subject<void>();
+                                const ref = {
+                                    closed,
+                                    close: vi.fn(() => {
+                                        closed.next();
+                                        closed.complete();
+                                    }),
+                                    requestClose: vi.fn()
+                                };
+                                opened.push({ config, ref });
+
+                                return ref as unknown as ReturnType<DotSidePanelService['open']>;
+                            }
+                        );
+                    });
+
+                    const VELOCITY_FILE = {
+                        ...URL_MAP_CONTENTLET,
+                        inode: 'vtl-inode-123',
+                        identifier: 'vtl-identifier-123',
+                        languageId: 2,
+                        baseType: 'FILEASSET',
+                        extension: 'vtl',
+                        fileName: 'my-template.vtl'
+                    } as DotCMSContentlet;
+
+                    /** Clicks the file in the VTL menu and lets the panel open. */
+                    const openVelocityFile = async () => {
+                        vi.spyOn(
+                            spectator.debugElement.injector.get(DotContentletService),
+                            'getContentletByInode'
+                        ).mockReturnValue(of(VELOCITY_FILE));
+
+                        spectator.component.handleEditVTL(VTL_FILE_MOCK);
+                        spectator.detectChanges();
+                        await spectator.fixture.whenStable();
+                        spectator.detectChanges();
+                    };
+
+                    it("should open a Velocity file's source instead of the content editor", async () => {
+                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogServiceOpenSpy = vi.spyOn(
+                            spectator.inject(DialogService),
+                            'open'
+                        );
+
+                        await openVelocityFile();
+
+                        const [{ config }] = opened;
+                        expect((config.inputs?.['request'] as () => unknown)()).toEqual({
+                            inode: 'vtl-inode-123',
+                            title: 'my-template.vtl',
+                            language: DOT_VELOCITY_LANGUAGE_ID
+                        });
+                        expect((config.heading as () => string)()).toBe('my-template.vtl');
+                        expect(dialogSpy).not.toHaveBeenCalled();
+                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                    });
+
+                    it.each([
+                        [
+                            'the user cannot edit it',
+                            of({
+                                canLock: false,
+                                locked: true,
+                                id: '',
+                                inode: '',
+                                lockedBy: 'someone'
+                            })
+                        ],
+                        ['the lock check fails', throwError(() => new Error('network'))]
+                    ])(
+                        'should open the content editor instead when %s',
+                        async (_label, lockAnswer) => {
+                            vi.spyOn(
+                                spectator.debugElement.injector.get(DotContentletService),
+                                'canLock'
+                            ).mockReturnValue(
+                                lockAnswer as ReturnType<DotContentletService['canLock']>
+                            );
+                            const openContentForEdit = vi
+                                .spyOn(spectator.component, 'openContentForEdit')
+                                .mockImplementation(() => undefined);
+
+                            await openVelocityFile();
+
+                            expect(openContentForEdit).toHaveBeenCalledWith(VELOCITY_FILE);
+                            expect(opened).toHaveLength(0);
+                        }
+                    );
+
+                    it('should reload the page when the source is saved', async () => {
+                        await openVelocityFile();
+                        const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+
+                        (opened[0].config.outputs?.['saved'] as () => void)();
+
+                        expect(pageReloadSpy).toHaveBeenCalled();
+                    });
+
+                    it('should open the file again after the panel closed itself', async () => {
+                        await openVelocityFile();
+
+                        opened[0].ref.close();
+                        await openVelocityFile();
+
+                        // The close cleared the request, so the same file opens a new panel.
+                        expect(opened).toHaveLength(2);
+                    });
                 });
             });
 
@@ -3717,6 +3899,24 @@ describe('EditEmaEditorComponent', () => {
 
                     expect(pageLoadSpy).not.toHaveBeenCalled();
                     expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                });
+
+                it('should not do anything for a javascript:-href anchor', () => {
+                    // Regression test: a `javascript:…` href never navigates —
+                    // it's a page's own click handler invoked via the href
+                    // itself, not a link. `anchor.href` for such an anchor
+                    // resolves to the literal string back (hostname ""),
+                    // which — before this bailed early alongside the
+                    // hash-only case — wrongly tripped the external-link
+                    // branch below and tried to open it in a new tab.
+                    const mockEvent = createMockEvent('javascript:void(0)');
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                    expect(mockEvent.preventDefault).not.toHaveBeenCalled();
+                    expect(windowOpenSpy).not.toHaveBeenCalled();
+                    expect(openedLink.click).not.toHaveBeenCalled();
                 });
 
                 it('should open external URL in new tab', () => {

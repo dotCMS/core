@@ -30,6 +30,7 @@ Descriptions say **when to load** the doc, not what it contains.
 | [REST_API_PATTERNS.md](backend/REST_API_PATTERNS.md) | Adding or changing a JAX-RS resource — annotations, `WebResource.InitBuilder`, `@Schema` rules |
 | [MAVEN_BUILD_SYSTEM.md](backend/MAVEN_BUILD_SYSTEM.md) | Adding a dependency or touching build configuration |
 | [CONFIGURATION_PATTERNS.md](backend/CONFIGURATION_PATTERNS.md) | Reading configuration — `Config.getProperty()` and the resolution order |
+| [APPS_CONFIGURATION.md](backend/APPS_CONFIGURATION.md) | Deciding who may change or read Apps configuration, or using its legacy delegation feature flag |
 | [DATABASE_PATTERNS.md](backend/DATABASE_PATTERNS.md) | Writing SQL, using `DotConnect`, or reasoning about transactions |
 | [SECURITY_BACKEND.md](backend/SECURITY_BACKEND.md) | Input validation, auth, SQL/XSS prevention, secure logging on the backend specifically |
 | [VIRTUAL_THREADS.md](backend/VIRTUAL_THREADS.md) | Deciding whether a workload belongs on a virtual thread — socket I/O yes, file I/O no |
@@ -106,6 +107,7 @@ Descriptions say **when to load** the doc, not what it contains.
 | [WORKFLOW_PATTERNS.md](claude/WORKFLOW_PATTERNS.md) | Structuring how an assistant approaches a task — context detection, information gathering |
 | [GITHUB_AUTOMATION.md](claude/GITHUB_AUTOMATION.md) | Automating GitHub issue management with dotCMS utilities |
 | [GPG_COMMIT_SIGNING.md](claude/GPG_COMMIT_SIGNING.md) | Setting up signed commits — required so commits made through AI tools are verifiably authorized by you |
+| [BACKEND_GAP_BACKLOG.md](BACKEND_GAP_BACKLOG.md) | Planning next quarter's AI-context work — the drafted backlog of backend and testing gaps (epic #37124) |
 
 Cursor rules live in [`.cursor/rules/`](../.cursor/rules/README.md) (short reminders with globs, linking back to these docs). Slash commands live in `.claude/commands/`, and the skills they call in `.claude/skills/` — see its [CATALOG.md](../.claude/skills/CATALOG.md).
 

@@ -7,7 +7,7 @@ on:
 jobs:
   add-to-triage:
     name: Add unowned issues to AI Triage project
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     # Only process issues with no assignee
     if: github.event.issue.assignee == null
     steps:

@@ -140,6 +140,7 @@ import org.junit.runners.Suite;
         SystemEventsRetentionIntegrationTest.class,
         com.dotcms.rest.api.v1.portlet.PortletResourceIntegrationTest.class,
         LayoutResourceIntegrationTest.class,
+        com.dotmarketing.webdav.DotWebdavTempPathContainmentTest.class,
         com.dotcms.enterprise.ClusterUtilIntegrationTest.class,
         com.dotcms.rest.ClusterResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.cluster.ClusterNodesResourceIntegrationTest.class
