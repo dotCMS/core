@@ -30,6 +30,9 @@ import { type ContentDriveApiHelpers, expect, test } from '../../fixtures/conten
 // fixtures here stay deliberately small and the budget still has to be generous.
 test.describe.configure({ timeout: 300000 });
 
+/** Where Content Drive reads the deletes still running when it loads. */
+const ACTIVE_DELETES_URL = '/api/v1/jobs/folderBulkDelete/active';
+
 /**
  * Seeds a container folder holding the given subfolders, opens it, and removes it however the
  * test ends.
@@ -107,30 +110,35 @@ test.describe('Content Drive bulk folder delete', () => {
         adminPage,
         apiHelpers,
         testSuffix
-    }) =>
-        inSeededContainer(
-            {
-                adminPage,
-                apiHelpers,
-                name: `cd-del-reload-${testSuffix}`,
-                // A few folders inside are enough: the page reloads straight after the delete is
-                // submitted, so it is still queued or running when the page reads the queue back.
-                // Seeding 150 took longer than the whole test budget on CI.
-                children: ['big', ...Array.from({ length: 20 }, (_, index) => `big/child-${index}`)]
-            },
-            async (_drive, preview) => {
-                await preview.open('DELETE_FOLDER', ['big']);
-                await preview.execute();
-                await preview.expectMarkedInFlight('big');
+    }) => {
+        const name = `cd-del-reload-${testSuffix}`;
 
-                // Re-established from the queue's active listing, not remembered by the page that
-                // started it.
+        return inSeededContainer(
+            { adminPage, apiHelpers, name, children: ['big'] },
+            async (_drive, preview) => {
+                const site = await apiHelpers.getDefaultSite();
+
+                // Re-established from the queue's active listing, not remembered by the page. The
+                // run must still be going when the reloaded page reads that listing, and a delete
+                // this size ends within seconds, often before the page is back. So the read is
+                // held, the delete queued, and only then does the read reach the server: it
+                // always finds the run, however fast this instance deletes.
+                await adminPage.route(
+                    (url) => url.pathname === ACTIVE_DELETES_URL,
+                    async (route) => {
+                        await apiHelpers.submitFolderDelete(site.hostname, [`/${name}/big`]);
+                        await route.continue();
+                    },
+                    { times: 1 }
+                );
+
                 await adminPage.reload();
                 await preview.expectMarkedInFlight('big');
 
                 await preview.expectGone('big');
             }
-        ));
+        );
+    });
 
     test('runs only as many folders as one delete may carry', ({
         adminPage,
