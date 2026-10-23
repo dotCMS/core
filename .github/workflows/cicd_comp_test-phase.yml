@@ -113,6 +113,7 @@ jobs:
           # Passed via env (not interpolated into the script) to avoid script injection.
           OPENSEARCH_PHASE: ${{ inputs.opensearch_phase }}
         with:
+          # nosemgrep: yaml.github-actions.security.github-script-injection.github-script-injection -- only boolean workflow_call inputs are interpolated; the one string input is passed via env
           script: |
             const fs = require('fs');
             
