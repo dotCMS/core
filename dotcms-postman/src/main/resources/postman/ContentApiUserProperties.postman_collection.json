@@ -259,6 +259,243 @@
       "response": []
     },
     {
+      "name": "Setup - read the default site - 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('siteId', pm.response.json().entity.identifier);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/site/defaultSite",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "site",
+            "defaultSite"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Setup - create a front-end user - 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('feUserId', pm.response.json().entity.userID || pm.response.json().entity.userId);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/users",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"UserProperties\",\n  \"lastName\": \"FrontEnd\",\n  \"email\": \"user.properties.{{runId}}@example.com\",\n  \"password\": \"Zq8!UserProps-{{runId}}\",\n  \"active\": true,\n  \"roles\": [\n    \"DOTCMS_FRONT_END_USER\"\n  ]\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Setup - front-end user reads the site - 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/permissions/user/{{feUserId}}/asset/{{siteId}}",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "permissions",
+            "user",
+            "{{feUserId}}",
+            "asset",
+            "{{siteId}}"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"permissions\": {\n    \"INDIVIDUAL\": [\n      \"READ\"\n    ],\n    \"HOST\": [\n      \"READ\"\n    ],\n    \"FOLDER\": [\n      \"READ\"\n    ],\n    \"CONTENT\": [\n      \"READ\"\n    ],\n    \"PAGE\": [\n      \"READ\"\n    ],\n    \"CONTENT_TYPE\": [\n      \"READ\"\n    ],\n    \"TEMPLATE\": [\n      \"READ\"\n    ],\n    \"CONTAINER\": [\n      \"READ\"\n    ]\n  },\n  \"cascade\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Setup - front-end user reads the system host - 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/permissions/user/{{feUserId}}/asset/SYSTEM_HOST",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "permissions",
+            "user",
+            "{{feUserId}}",
+            "asset",
+            "SYSTEM_HOST"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"permissions\": {\n    \"INDIVIDUAL\": [\n      \"READ\"\n    ],\n    \"HOST\": [\n      \"READ\"\n    ],\n    \"FOLDER\": [\n      \"READ\"\n    ],\n    \"CONTENT\": [\n      \"READ\"\n    ],\n    \"PAGE\": [\n      \"READ\"\n    ],\n    \"CONTENT_TYPE\": [\n      \"READ\"\n    ],\n    \"TEMPLATE\": [\n      \"READ\"\n    ],\n    \"CONTAINER\": [\n      \"READ\"\n    ]\n  },\n  \"cascade\": true\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Setup - front-end user token - 200",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Anonymous request: clear any session cookie left by an earlier request of this run.",
+              "pm.sendRequest({ url: pm.environment.get('serverURL') + '/api/v1/logout', method: 'GET' }, function () {});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('feToken', pm.response.json().entity.token);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/authentication/api-token",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "authentication",
+            "api-token"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user\": \"user.properties.{{runId}}@example.com\",\n  \"password\": \"Zq8!UserProps-{{runId}}\",\n  \"expirationDays\": 1\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
       "name": "Anonymous - legacy content by id - no user properties",
       "event": [
         {
@@ -619,6 +856,429 @@
       "response": []
     },
     {
+      "name": "Anonymous - legacy content search - no user properties",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Anonymous request: clear any session cookie left by an earlier request of this run.",
+              "pm.sendRequest({ url: pm.environment.get('serverURL') + '/api/v1/logout', method: 'GET' }, function () {});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const userKeys = [\"owner\", \"ownerUserName\", \"modUser\", \"modUserName\", \"publishUser\", \"publishUserName\", \"lockedBy\", \"lockedByName\"];",
+              "// Every user property key anywhere in the response, except inside the customer Key/Value field 'meta'",
+              "const userKeysIn = (node) => { const hits = []; (function walk(x) {",
+              "    if (Array.isArray(x)) { x.forEach(walk); return; }",
+              "    if (x && typeof x === 'object') { Object.keys(x).forEach((k) => { if (userKeys.includes(k)) { hits.push(k); } if (k !== 'meta') { walk(x[k]); } }); }",
+              "})(node); return hits; };",
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "const found = pm.response.json().entity.jsonObjectView.contentlets;",
+              "pm.test('content returned', () => pm.expect(found).to.not.be.empty);",
+              "pm.test('no user properties', () => pm.expect(userKeysIn(found)).to.be.empty);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/content/_search",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "content",
+            "_search"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"+contentType:UserPropertiesCheck{{runId}}\",\n  \"limit\": 10\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Anonymous - content search - no user properties",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Anonymous request: clear any session cookie left by an earlier request of this run.",
+              "pm.sendRequest({ url: pm.environment.get('serverURL') + '/api/v1/logout', method: 'GET' }, function () {});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const userKeys = [\"owner\", \"ownerUserName\", \"modUser\", \"modUserName\", \"publishUser\", \"publishUserName\", \"lockedBy\", \"lockedByName\"];",
+              "// Every user property key anywhere in the response, except inside the customer Key/Value field 'meta'",
+              "const userKeysIn = (node) => { const hits = []; (function walk(x) {",
+              "    if (Array.isArray(x)) { x.forEach(walk); return; }",
+              "    if (x && typeof x === 'object') { Object.keys(x).forEach((k) => { if (userKeys.includes(k)) { hits.push(k); } if (k !== 'meta') { walk(x[k]); } }); }",
+              "})(node); return hits; };",
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "const found = pm.response.json().entity.jsonObjectView.contentlets;",
+              "pm.test('content returned', () => pm.expect(found).to.not.be.empty);",
+              "pm.test('no user properties', () => pm.expect(userKeysIn(found)).to.be.empty);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/content/_search",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "content",
+            "_search"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"+contentType:UserPropertiesCheck{{runId}}\",\n  \"limit\": 10\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Anonymous - Elasticsearch search - no user properties",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Anonymous request: clear any session cookie left by an earlier request of this run.",
+              "pm.sendRequest({ url: pm.environment.get('serverURL') + '/api/v1/logout', method: 'GET' }, function () {});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const userKeys = [\"owner\", \"ownerUserName\", \"modUser\", \"modUserName\", \"publishUser\", \"publishUserName\", \"lockedBy\", \"lockedByName\"];",
+              "// Every user property key anywhere in the response, except inside the customer Key/Value field 'meta'",
+              "const userKeysIn = (node) => { const hits = []; (function walk(x) {",
+              "    if (Array.isArray(x)) { x.forEach(walk); return; }",
+              "    if (x && typeof x === 'object') { Object.keys(x).forEach((k) => { if (userKeys.includes(k)) { hits.push(k); } if (k !== 'meta') { walk(x[k]); } }); }",
+              "})(node); return hits; };",
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "const found = pm.response.json().contentlets;",
+              "pm.test('content returned', () => pm.expect(found).to.not.be.empty);",
+              "pm.test('no user properties', () => pm.expect(userKeysIn(found)).to.be.empty);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/es/search",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "es",
+            "search"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": { \"query_string\": { \"query\": \"+contenttype:UserPropertiesCheck{{runId}}\" } }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Front-end user - content by id - no user properties",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const userKeys = [\"owner\", \"ownerUserName\", \"modUser\", \"modUserName\", \"publishUser\", \"publishUserName\", \"lockedBy\", \"lockedByName\"];",
+              "// Every user property key anywhere in the response, except inside the customer Key/Value field 'meta'",
+              "const userKeysIn = (node) => { const hits = []; (function walk(x) {",
+              "    if (Array.isArray(x)) { x.forEach(walk); return; }",
+              "    if (x && typeof x === 'object') { Object.keys(x).forEach((k) => { if (userKeys.includes(k)) { hits.push(k); } if (k !== 'meta') { walk(x[k]); } }); }",
+              "})(node); return hits; };",
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "pm.test('content returned', () => pm.expect(pm.response.json().entity.title).to.eql('user-properties-check'));",
+              "pm.test('no user properties', () => pm.expect(userKeysIn(pm.response.json())).to.be.empty);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/content/{{contentId}}",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "content",
+            "{{contentId}}"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{feToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Front-end user - page JSON - no user properties",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const userKeys = [\"owner\", \"ownerUserName\", \"modUser\", \"modUserName\", \"publishUser\", \"publishUserName\", \"lockedBy\", \"lockedByName\"];",
+              "// Every user property key anywhere in the response, except inside the customer Key/Value field 'meta'",
+              "const userKeysIn = (node) => { const hits = []; (function walk(x) {",
+              "    if (Array.isArray(x)) { x.forEach(walk); return; }",
+              "    if (x && typeof x === 'object') { Object.keys(x).forEach((k) => { if (userKeys.includes(k)) { hits.push(k); } if (k !== 'meta') { walk(x[k]); } }); }",
+              "})(node); return hits; };",
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "pm.test('page returned', () => pm.expect(pm.response.json().entity.page.title).to.not.be.empty);",
+              "pm.test('no user properties', () => pm.expect(userKeysIn(pm.response.json())).to.be.empty);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/page/json/destinations/costa-rica",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "page",
+            "json",
+            "destinations",
+            "costa-rica"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{feToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Anonymous - related content query on owner - 400",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Anonymous request: clear any session cookie left by an earlier request of this run.",
+              "pm.sendRequest({ url: pm.environment.get('serverURL') + '/api/v1/logout', method: 'GET' }, function () {});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/contentrelationships/query/+owner:dotcms*",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "contentrelationships",
+            "query",
+            "+owner:dotcms*"
+          ]
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Anonymous - GraphQL search on owner - error",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Anonymous request: clear any session cookie left by an earlier request of this run.",
+              "pm.sendRequest({ url: pm.environment.get('serverURL') + '/api/v1/logout', method: 'GET' }, function () {});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "pm.test('search refused', () => pm.expect(pm.response.json().errors).to.not.be.empty);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/graphql?dotcachettl=0",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "graphql"
+          ],
+          "query": [
+            {
+              "key": "dotcachettl",
+              "value": "0"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"{ search(query: \\\"+owner:dotcms*\\\") { identifier } }\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
       "name": "Anonymous - query on owner - 400",
       "event": [
         {
@@ -803,6 +1463,93 @@
       "response": []
     },
     {
+      "name": "Admin - page JSON - user properties present",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const userKeys = [\"owner\", \"ownerUserName\", \"modUser\", \"modUserName\", \"publishUser\", \"publishUserName\", \"lockedBy\", \"lockedByName\"];",
+              "// Every user property key anywhere in the response, except inside the customer Key/Value field 'meta'",
+              "const userKeysIn = (node) => { const hits = []; (function walk(x) {",
+              "    if (Array.isArray(x)) { x.forEach(walk); return; }",
+              "    if (x && typeof x === 'object') { Object.keys(x).forEach((k) => { if (userKeys.includes(k)) { hits.push(k); } if (k !== 'meta') { walk(x[k]); } }); }",
+              "})(node); return hits; };",
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "pm.test('user properties present', () => pm.expect(userKeysIn(pm.response.json())).to.not.be.empty);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/page/json/destinations/costa-rica",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "page",
+            "json",
+            "destinations",
+            "costa-rica"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Cleanup - delete the front-end user - 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/users/{{feUserId}}?replacementUserId=dotcms.org.1",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "users",
+            "{{feUserId}}"
+          ],
+          "query": [
+            {
+              "key": "replacementUserId",
+              "value": "dotcms.org.1"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
       "name": "Cleanup - delete content type - 200",
       "event": [
         {
@@ -892,6 +1639,18 @@
     },
     {
       "key": "storyId",
+      "value": ""
+    },
+    {
+      "key": "siteId",
+      "value": ""
+    },
+    {
+      "key": "feUserId",
+      "value": ""
+    },
+    {
+      "key": "feToken",
       "value": ""
     }
   ]
