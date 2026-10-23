@@ -15,6 +15,7 @@
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.portlets.languagesmanager.model.Language"%>
 <%@page import="com.dotmarketing.util.UtilMethods"%>
+<%@page import="com.liferay.util.Xss"%>
 
 <%
 String contentletId = (String) request.getParameter("contentletId");
@@ -130,7 +131,7 @@ if(!hasPermissions) {
 
 	function dotPreviewPage(){
 
-	    var editPath="/api/v1/page/render<%= editPath%>";
+	    var editPath="/api/v1/page/render<%= Xss.encodeForJavaScript(editPath)%>";
 	    if(editPath.indexOf("?")<0){
 	        editPath+="?"
 	    }
@@ -217,7 +218,7 @@ if(!hasPermissions) {
 				<%= LanguageUtil.get(pageContext, "Title") %>
 			</th>
 			<td style="display: flex; align-items: center; justify-content: space-between;">
-				<%= content.getTitle()%>
+				<%= Xss.encodeForHTML(content.getTitle())%>
                 <button dojoType="dijit.form.Button" type="button" 
                     onclick="emmitCompareEvent('<%= vinode %>', '<%= videntifier %>', '<%=lang.getLanguageCode() %>-<%=lang.getCountryCode().toLowerCase()%>');return false;" >
                     <%= LanguageUtil.get(pageContext, "compare.to.previous.versions") %>
@@ -241,9 +242,9 @@ if(!hasPermissions) {
                <td>
                    <%if(structure.getStructureType()==Structure.STRUCTURE_TYPE_HTMLPAGE || isUrlMap  ){ %>
                        <%session.setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, content.getHost()); %>
-                       <div style="padding:3px;"><a style="color:#0E80CB;" target="workflowWindow" text-decoration: underline;" href="/dotAdmin/#/edit-page/content?url=<%= editPath+ "&language_id=" + lang.getId()%>"><%= editPath%></a></div>
+                       <div style="padding:3px;"><a style="color:#0E80CB;" target="workflowWindow" text-decoration: underline;" href="/dotAdmin/#/edit-page/content?url=<%= Xss.encodeForHTMLAttribute(editPath + "&language_id=" + lang.getId())%>"><%= Xss.encodeForHTML(editPath)%></a></div>
                    <%}else  if(structure.getStructureType()==Structure.STRUCTURE_TYPE_FILEASSET ){ %>
-                       <div style="padding:3px;"><a style="color:#0E80CB; text-decoration: underline;" href="#" onclick="dotPreviewFile('/dA/<%=shorty.shortify(content.getInode()) %>/fileAsset/<%=id.getAssetName() %>?mode=PREVIEW_MODE')" >/dA/<%=shorty.shortify(content.getInode()) %>/fileAsset/<%=id.getAssetName() %>?mode=PREVIEW_MODE</a></div>
+                       <div style="padding:3px;"><a style="color:#0E80CB; text-decoration: underline;" href="#" onclick="dotPreviewFile('/dA/<%=shorty.shortify(content.getInode()) %>/fileAsset/<%=Xss.encodeForJavaScript(id.getAssetName()) %>?mode=PREVIEW_MODE')" >/dA/<%=shorty.shortify(content.getInode()) %>/fileAsset/<%=Xss.encodeForHTML(id.getAssetName()) %>?mode=PREVIEW_MODE</a></div>
                    <%} %>
                </td>
            </tr>
@@ -263,7 +264,7 @@ if(!hasPermissions) {
 					<%= LanguageUtil.get(pageContext, "Host-Folder") %>
 				</th>
 				<td>
-					<%=conPath %>
+					<%=Xss.encodeForHTML(conPath) %>
 				</td>
 			</tr>
 		<%} %>
@@ -348,10 +349,11 @@ if(!hasPermissions) {
 			    		}
 			        }
 					if(!wysiwygPlain){%>
-						<%if (textValue.contains("<a href=")){
-			        		textValue = textValue.replaceAll("<a href=", "<a target='_blank' href=");
+						<% String sourceValue = String.valueOf(capi.getFieldValue(content, field));
+						if (sourceValue.contains("<a href=")){
+			        		sourceValue = sourceValue.replaceAll("<a href=", "<a target='_blank' href=");
 			        	}%>
-						<textarea style="width:100%;border:0px;"><%=textValue %></textarea>
+						<textarea style="width:100%;border:0px;"><%=Xss.encodeForHTML(sourceValue) %></textarea>
 					<%}else{ %>
 						<div class="textAreaDiv">
 						<% textValue = textValue.replaceAll("<", "&lt;");%>
@@ -417,11 +419,11 @@ if(!hasPermissions) {
 
 			                if (UtilMethods.isSet(originalValue)){
 			                	if (originalValue.contains(value + ",")){%>
-			                		<%=name%><br>
+			                		<%=Xss.encodeForHTML(name)%><br>
 								<%}
 			                } else{
 			                  if (UtilMethods.isSet(defaultValue) && (defaultValue.contains("|" + value) || defaultValue.contains(value + "|") || defaultValue.equals(value))){%>
-			                	  <%=name%><br>
+			                	  <%=Xss.encodeForHTML(name)%><br>
 			                  <%}
 			                }
 
@@ -487,13 +489,13 @@ if(!hasPermissions) {
 						if(x.indexOf(java.io.File.separator) > -1){
 							x=x.substring(x.lastIndexOf(java.io.File.separator)+1, x.length());	%>
 							<%if(UtilMethods.isImage(x)){%>
-								<%=x %>
+								<%=Xss.encodeForHTML(x) %>
 								<br/>
-								<a  href="#" onclick="dotPreviewFile('/dA/<%=content.getInode() %>/<%=field.getVelocityVarName() %>/<%=content.getBinary(field.getVelocityVarName()).getName()%>')">
-									<img src="/dA/<%=content.getInode() %>/<%=field.getVelocityVarName() %>/300w/20q" style="border:1px dotted silver;max-width:400px"/>
+								<a  href="#" onclick="dotPreviewFile('/dA/<%=Xss.encodeForJavaScript(content.getInode()) %>/<%=Xss.encodeForJavaScript(field.getVelocityVarName()) %>/<%=Xss.encodeForJavaScript(content.getBinary(field.getVelocityVarName()).getName())%>')">
+									<img src="/dA/<%=Xss.encodeForHTMLAttribute(content.getInode()) %>/<%=Xss.encodeForHTMLAttribute(field.getVelocityVarName()) %>/300w/20q" style="border:1px dotted silver;max-width:400px"/>
 								</a>
 							<%}else{ %>
-								<a href="#" onclick="dotPreviewFile('/dA/<%=content.getInode() %>/<%=field.getVelocityVarName() %>/150w/20q')"><%=x %></a>
+								<a href="#" onclick="dotPreviewFile('/dA/<%=Xss.encodeForJavaScript(content.getInode()) %>/<%=Xss.encodeForJavaScript(field.getVelocityVarName()) %>/150w/20q')"><%=Xss.encodeForHTML(x) %></a>
 							<%} %>
 						<%}%>
 					<%}%>
@@ -511,7 +513,7 @@ if(!hasPermissions) {
 					<!-- display -->
 					<% String inode = String.valueOf(capi.getFieldValue(content, field));
 					if(InodeUtils.isSet(inode)){%>
-						<img id="<%=field.getFieldContentlet()%>Thumbnail" src="/contentAsset/image/<%= inode %>/fileAsset/filter/Thumbnail/thumbnail_w/100/thumbnail_h/100" border="1">
+						<img id="<%=field.getFieldContentlet()%>Thumbnail" src="/contentAsset/image/<%= Xss.encodeForHTMLAttribute(inode) %>/fileAsset/filter/Thumbnail/thumbnail_w/100/thumbnail_h/100" border="1">
 					<% }else{ %>
 						<%=LanguageUtil.get(pageContext, "No-Image-configured")  %>
 					<%} %>
@@ -561,7 +563,7 @@ if(!hasPermissions) {
 							else if (originalValue instanceof Float) 
 								value = Parameter.getFloat((String) value);
 							if ((UtilMethods.isSet(originalValue) && value.equals(originalValue)) || (UtilMethods.isSet(defaultValue) && defaultValue.equals(value))){%>
-								<%=name%><br>
+								<%=Xss.encodeForHTML(name)%><br>
 							<%}%> 
 						<%}%> 
 					<%}%> 
@@ -581,7 +583,7 @@ if(!hasPermissions) {
 	         
 	         	<%--   TAGS  --%>
 	            <% if (field.getFieldType().equals(Field.FieldType.TAG.toString())){ %>
-					<%=(UtilMethods.isSet(capi.getFieldValue(content, field))?String.valueOf(capi.getFieldValue(content, field)):"")%>
+					<%=(UtilMethods.isSet(capi.getFieldValue(content, field))?Xss.encodeForHTML(String.valueOf(capi.getFieldValue(content, field))):"")%>
 				<%} %>		
 
 
@@ -602,10 +604,10 @@ if(!hasPermissions) {
 								</tr>
 								<%for(String x : keyValueMap.keySet()){ %>
 									<tr>
-										<td><%=x %></td>
+										<td><%=Xss.encodeForHTML(x) %></td>
 										<td><%=("content".equals(x)) 
 											? "<em>" + LanguageUtil.get(pageContext, "indexed-content")  + "</em>"
-											: keyValueMap.get(x) %></td>
+											: Xss.encodeForHTML(String.valueOf(keyValueMap.get(x))) %></td>
 									</tr>
 								<%} %>
 							</table>
@@ -629,7 +631,7 @@ if(!hasPermissions) {
 					for(com.dotmarketing.portlets.categories.model.Category child : children){%>		
 						<%for(com.dotmarketing.portlets.categories.model.Category sel : selectedCats){%>		
 							<%if(child.getInode().equals(sel.getInode())){ %>
-								<%=child.getCategoryName() %> <br>
+								<%=Xss.encodeForHTML(child.getCategoryName()) %> <br>
 							<%} %>
 						<%} %>
 					<%} %>
@@ -650,7 +652,7 @@ if(!hasPermissions) {
 						file = APILocator.getFileAssetAPI().fromContentlet(cont);
 
 						if(file!=null){	%>
-							<a target="_blank" href="<%=file.getURI()%>"><%=file.getFileName() %></a>
+							<a target="_blank" href="<%=Xss.encodeForHTMLAttribute(file.getURI())%>"><%=Xss.encodeForHTML(file.getFileName()) %></a>
 						<%}%>
 		  			<%}%>
 				<%} %>
