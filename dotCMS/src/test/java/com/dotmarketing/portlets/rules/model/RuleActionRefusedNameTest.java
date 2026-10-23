@@ -20,6 +20,7 @@ import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.actionlet.SetRequestAttributeActionlet;
 import com.dotmarketing.portlets.rules.actionlet.SetResponseHeaderActionlet;
 import com.dotmarketing.portlets.rules.actionlet.SetSessionAttributeActionlet;
+import com.dotmarketing.portlets.rules.actionlet.StopProcessingActionlet;
 import com.liferay.portal.util.WebKeys;
 import java.util.ArrayList;
 import java.util.List;
@@ -266,6 +267,31 @@ class RuleActionRefusedNameTest extends UnitTestBase {
                 .getRefusedName(parameters(SetRequestAttributeActionlet.REQUEST_KEY, null)));
         assertEquals(Optional.empty(), new SetResponseHeaderActionlet()
                 .getRefusedName(parameters(SetResponseHeaderActionlet.HEADER_KEY, null)));
+        assertEquals(Optional.empty(), new SetSessionAttributeActionlet().getRefusedName(null));
+        assertEquals(Optional.empty(), new SetResponseHeaderActionlet().getRefusedName(null));
+        assertEquals(Optional.empty(), new SetResponseHeaderActionlet().getRefusedName(Map.of()));
+    }
+
+    /**
+     * Given a response-header action whose name is only whitespace,
+     * When it is asked for the refused name,
+     * Then nothing is reported, so the existing required-name check answers for it.
+     */
+    @Test
+    void blankHeaderNameIsNotReportedAsRefused() {
+        assertEquals(Optional.empty(), new SetResponseHeaderActionlet()
+                .getRefusedName(parameters(SetResponseHeaderActionlet.HEADER_KEY, "   ")));
+    }
+
+    /**
+     * Given an actionlet that does not refuse any name,
+     * When it is asked for the refused name,
+     * Then nothing is reported, so its actions validate and run as before.
+     */
+    @Test
+    void actionletThatRefusesNothingReportsNoRefusedName() {
+        assertEquals(Optional.empty(), new StopProcessingActionlet()
+                .getRefusedName(parameters(StopProcessingActionlet.RETURN_CODE, "404")));
     }
 
     private static Map<String, ParameterModel> parameters(final String key, final String value) {
