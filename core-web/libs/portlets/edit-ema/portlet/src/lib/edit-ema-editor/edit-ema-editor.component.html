@@ -190,8 +190,6 @@
                     @if ($showContentletControls()) {
                         <dot-uve-contentlet-tools
                             (openQuickEdit)="handleOpenQuickEdit()"
-                            (openFullEditor)="handleEditWithCopyDecision($event)"
-                            (editVTL)="handleEditVTL($event)"
                             (deleteContent)="deleteContent($event)"
                             (addContent)="handleAddContent($event)"
                             (selectContent)="handleSelectContent($event)"
@@ -249,8 +247,7 @@
                     @if ($editorPanelActiveTab() === 0) {
                         <dot-uve-contentlet-quick-edit
                             [data]="$contentletEditData()"
-                            [loading]="$isIframeLoading()"
-                            (openFullEditor)="handleOpenFullEditor()" />
+                            [loading]="$isIframeLoading()" />
                     }
                 </p-tabpanel>
                 @if ($showStyleEditorTab()) {
@@ -295,6 +292,9 @@
         #dialog
         data-testId="ema-dialog" />
 }
+<!-- Opens every editor for an existing contentlet, in any mode and on any page, including the
+     legacy dialog for those edits. -->
+<dot-uve-content-editor data-testid="uve-content-editor" />
 <p-confirmDialog
     [style]="{
         width: '400px'

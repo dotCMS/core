@@ -1051,6 +1051,36 @@ export function shouldNavigate(targetUrl: string | undefined, currentUrl: string
 }
 
 /**
+ * The page to load after the legacy editor saved a page in a new language. The language comes from
+ * the `htmlPageReferer` the editor reports; the URL is added only when that page is not the one on
+ * screen. A URL-mapped page is compared by its URL map, since its referer is the detail page.
+ *
+ * @param {string} htmlPageReferer - The page URL the legacy editor reports, relative or absolute.
+ * @param {string} options.origin - Where a relative referer resolves from.
+ * @param {DotCMSURLContentMap | undefined} options.urlContentMap - The URL map of the page on screen, if any.
+ * @param {string} options.currentUrl - The URL of the page on screen.
+ * @returns The params for `pageLoad`: the language, plus the URL when the page moved.
+ */
+export function getLanguageChangePageParams(
+    htmlPageReferer: string,
+    {
+        origin,
+        urlContentMap,
+        currentUrl
+    }: { origin: string; urlContentMap: DotCMSURLContentMap | undefined; currentUrl: string }
+): { url?: string; language_id: string | null } {
+    const url = new URL(htmlPageReferer, origin); // Add base for relative URLs
+    const targetUrl = getTargetUrl(url.pathname, urlContentMap);
+    const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language');
+
+    if (shouldNavigate(targetUrl, currentUrl)) {
+        return { url: targetUrl, language_id };
+    }
+
+    return { language_id };
+}
+
+/**
  * Get the page URI from the contentlet
  *
  * If the URL_MAP_FOR_CONTENT is present, it will be used as the page URI.
