@@ -20,6 +20,7 @@ import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.enterprise.ClusterUtilProxy;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.rest.api.v1.cluster.ClusterNodesHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
@@ -28,7 +29,6 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
@@ -77,7 +77,7 @@ public class ClusterResource {
         final List<Server> pendingServers = new ArrayList<>(APILocator.getServerAPI().getAliveServers());
         final String myServerId = APILocator.getServerAPI().readServerId();
         
-        final int maxWaitTime =  Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", Math.max(2000, pendingServers.size()*1000)) ;
+        final int maxWaitTime = ClusterNodesHelper.statusWaitMillis(pendingServers.size());
         final Map<String, Serializable> info = new HashMap<>();
         info.put("myServerId", myServerId);
         final Map<String, Serializable> replies = CacheLocator.getCacheAdministrator().getTransport().validateCacheInCluster(maxWaitTime);

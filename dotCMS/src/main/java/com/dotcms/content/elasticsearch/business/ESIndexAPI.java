@@ -528,9 +528,10 @@ public class ESIndexAPI implements IndexAPI {
     /**
      * Returns the health of this install's indices in Elasticsearch (the cluster prefix), with the
      * same server-side timeout the cluster status report has always used. The status and shard
-     * counts cover only those indices; node counts and pending work stay cluster-wide. The call
-     * gives up on the client side after {@link SearchClusterHealth#TIMEOUT_PROPERTY} milliseconds,
-     * so a slow Elasticsearch cannot hold the report past the requester's wait window. A failure
+     * counts cover only those indices; node counts and pending work stay cluster-wide. Each attempt
+     * gives up on the client side after {@link SearchClusterHealth#TIMEOUT_PROPERTY} milliseconds;
+     * after a failed attempt the client tries the next configured host, so with several hung hosts
+     * the call takes a multiple of the limit. A failure
      * to reach Elasticsearch propagates instead of being answered with an empty result.
      *
      * @return the Elasticsearch health, stamped as {@link SearchClusterHealth.Engine#ELASTICSEARCH}

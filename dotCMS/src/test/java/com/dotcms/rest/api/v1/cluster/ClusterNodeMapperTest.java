@@ -43,6 +43,7 @@ public class ClusterNodeMapperTest {
     /**
      * A report as a current server sends it, after the JSON round trip of the pub/sub channel:
      * numbers arrive as Integer, Long or Double, and assetsCanRead keeps its historic "true/" form.
+     * Every search value is distinct, so two swapped arguments in the section's constructor fail.
      */
     @Test
     public void currentReport_mapsToTypedSections() {
@@ -59,8 +60,15 @@ public class ClusterNodeMapperTest {
         report.put("esClusterName", "os-cluster");
         report.put("esTimedout", false);
         report.put("esNumberOfNodes", 3);
+        report.put("esNumberOfDataNodes", 4);
+        report.put("esActivePrimaryShards", 5);
+        report.put("esActiveShards", 6);
+        report.put("esRelocatingShards", 7);
+        report.put("esInitializingShards", 8);
         report.put("esUnassignedShards", 1);
         report.put("esDelayedUnasignedShards", 0);
+        report.put("esNumberOfPendingTasks", 9);
+        report.put("esNumberOfInFlightFetch", 10);
         report.put("esTaskMaxWaitingTimeMillis", 25);
         report.put("esTaskMaxWaitingInQueueMillis", "25ms");
         report.put("esActiveShardsPercentAsNumber", 99.5);
@@ -75,13 +83,23 @@ public class ClusterNodeMapperTest {
         assertNull("-1 means the transport has no port", cache.port());
         assertEquals(Integer.valueOf(2), cache.numberOfNodes());
         assertEquals(Long.valueOf(1024), cache.receivedBytes());
+        assertEquals(Long.valueOf(4096), cache.sentBytes());
         assertEquals(Boolean.TRUE, cache.open());
 
         final SearchSectionView search = ClusterNodeMapper.search(report);
         assertEquals(Engine.OPENSEARCH, search.engine());
         assertEquals("os-cluster", search.clusterName());
+        assertEquals(Boolean.FALSE, search.timedOut());
+        assertEquals(Integer.valueOf(3), search.numberOfNodes());
+        assertEquals(Integer.valueOf(4), search.numberOfDataNodes());
+        assertEquals(Integer.valueOf(5), search.activePrimaryShards());
+        assertEquals(Integer.valueOf(6), search.activeShards());
+        assertEquals(Integer.valueOf(7), search.relocatingShards());
+        assertEquals(Integer.valueOf(8), search.initializingShards());
         assertEquals(Integer.valueOf(1), search.unassignedShards());
         assertEquals(Integer.valueOf(0), search.delayedUnassignedShards());
+        assertEquals(Integer.valueOf(9), search.numberOfPendingTasks());
+        assertEquals(Integer.valueOf(10), search.numberOfInFlightFetch());
         assertEquals(Long.valueOf(25), search.taskMaxWaitingInQueueMillis());
         assertEquals(99.5, search.activeShardsPercent(), 0.0001);
 

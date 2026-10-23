@@ -97,8 +97,8 @@ public class OSIndexAPIImplClusterHealthSummaryTest {
     /**
      * Given : a healthy OpenSearch.
      * When  : the health summary is read.
-     * Then  : the request covers only this install's indices, and the call carries the
-     *         client-side time limit (default 750 ms) for the answer.
+     * Then  : the result names OpenSearch, the request covers only this install's indices, and the
+     *         call carries the client-side time limit (default 750 ms).
      */
     @Test
     @SuppressWarnings("unchecked")
@@ -115,7 +115,9 @@ public class OSIndexAPIImplClusterHealthSummaryTest {
         final OpenSearchClient client = mock(OpenSearchClient.class);
         when(client.cluster()).thenReturn(cluster);
 
-        apiWith(client).getClusterHealthSummary();
+        final SearchClusterHealth health = apiWith(client).getClusterHealthSummary();
+
+        assertEquals(SearchClusterHealth.Engine.OPENSEARCH, health.engine());
 
         final HealthRequest sent = request.getValue().apply(new HealthRequest.Builder()).build();
         assertEquals(List.of(PREFIX + "*"), sent.index());

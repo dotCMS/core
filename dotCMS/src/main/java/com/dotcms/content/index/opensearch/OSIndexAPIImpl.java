@@ -542,9 +542,10 @@ public class OSIndexAPIImpl implements IndexAPI {
     /**
      * Returns the health of this install's indices in OpenSearch (the cluster prefix), with the
      * {@link #INDEX_OPERATIONS_TIMEOUT} server-side timeout. The status and shard counts cover only
-     * those indices; node counts and pending work stay cluster-wide. The call gives up on the
-     * client side after {@link SearchClusterHealth#TIMEOUT_PROPERTY} milliseconds, so a slow
-     * OpenSearch cannot hold the cluster status report past the requester's wait window. Unlike
+     * those indices; node counts and pending work stay cluster-wide. Each attempt gives up on the
+     * client side after {@link SearchClusterHealth#TIMEOUT_PROPERTY} milliseconds; after a failed
+     * attempt the client tries the next configured host, so with several hung hosts the call takes
+     * a multiple of the limit. Unlike
      * {@link #getClusterHealth()}, which lists this cluster's indices and answers an empty map on
      * failure, an unreachable cluster is reported as an unchecked exception: {@code PhaseRouter}
      * only falls back to Elasticsearch in phase 2 on a {@link RuntimeException}, and the client

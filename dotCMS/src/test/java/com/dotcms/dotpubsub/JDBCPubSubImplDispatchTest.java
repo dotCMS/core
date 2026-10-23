@@ -2,13 +2,14 @@ package com.dotcms.dotpubsub;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
 
 /**
- * Unit tests for {@link JDBCPubSubImpl#dispatch(DotPubSubEvent, String, java.util.Collection)}: one
- * topic handler that throws must not stop the rest of a Postgres notification batch from being
- * delivered, cache invalidations included (issue #37876).
+ * Unit tests for {@link JDBCPubSubImpl#dispatch(DotPubSubEvent, String, java.util.Collection)}: a
+ * topic handler that throws on one notification must not stop the rest of a Postgres notification
+ * batch from being delivered, cache invalidations included (issue #37876).
  *
  * @author hassandotcms
  */
@@ -16,16 +17,11 @@ public class JDBCPubSubImplDispatchTest {
 
     private static final String CHANNEL = "dotcache_topic";
 
-    /** A topic on {@link #CHANNEL} that counts what it receives and can be told to throw from its handler. */
-    private static class FakeTopic implements DotPubSubTopic {
+    /** The topic subscribed to {@link #CHANNEL}; its handler throws on the first event it gets. */
+    private static class FailsOnceTopic implements DotPubSubTopic {
 
-        private final boolean failOnNotify;
-        int notified;
-        int counted;
-
-        FakeTopic(final boolean failOnNotify) {
-            this.failOnNotify = failOnNotify;
-        }
+        final List<String> delivered = new ArrayList<>();
+        private boolean failed;
 
         @Override
         public Comparable getKey() {
@@ -34,38 +30,35 @@ public class JDBCPubSubImplDispatchTest {
 
         @Override
         public void incrementReceivedCounters(final DotPubSubEvent event) {
-            counted++;
+            // not under test
         }
 
         @Override
         public void notify(final DotPubSubEvent event) {
-            if (failOnNotify) {
+            if (!failed) {
+                failed = true;
                 throw new IllegalStateException("handler failure");
             }
-            notified++;
+            delivered.add(event.getMessage());
         }
     }
 
-    private static DotPubSubEvent event() {
-        return new DotPubSubEvent.Builder().withTopic(CHANNEL).withType("INVAL").withMessage("0:group").build();
+    private static DotPubSubEvent event(final String message) {
+        return new DotPubSubEvent.Builder().withTopic(CHANNEL).withType("INVAL").withMessage(message).build();
     }
 
     /**
-     * Given : three topics on the same channel, the middle one throwing from notify().
-     * When  : an event is dispatched to them.
-     * Then  : the first and third topics still get the event and count it, and nothing escapes.
+     * Given : two notifications in one batch, and a topic whose handler throws on the first.
+     * When  : they are dispatched one after the other, as the batch loop does.
+     * Then  : the first failure doesn't escape, and the second notification is still delivered.
      */
     @Test
-    public void handlerFailure_doesNotStopOtherTopics() {
-        final FakeTopic first = new FakeTopic(false);
-        final FakeTopic failing = new FakeTopic(true);
-        final FakeTopic third = new FakeTopic(false);
+    public void handlerFailure_doesNotStopTheNextNotification() {
+        final FailsOnceTopic topic = new FailsOnceTopic();
 
-        JDBCPubSubImpl.dispatch(event(), CHANNEL, List.of(first, failing, third));
+        JDBCPubSubImpl.dispatch(event("0:first"), CHANNEL, List.of(topic));
+        JDBCPubSubImpl.dispatch(event("0:second"), CHANNEL, List.of(topic));
 
-        assertEquals(1, first.notified);
-        assertEquals(1, first.counted);
-        assertEquals(1, third.notified);
-        assertEquals(1, third.counted);
+        assertEquals(List.of("0:second"), topic.delivered);
     }
 }

@@ -63,8 +63,8 @@ public class ESIndexAPIClusterHealthSummaryTest {
     /**
      * Given : a healthy Elasticsearch.
      * When  : the health summary is read.
-     * Then  : the request covers only this install's indices, and carries the client-side time
-     *         limit (default 750 ms) for connecting and for the answer.
+     * Then  : the result names Elasticsearch, the request covers only this install's indices, and
+     *         it carries the client-side time limit (default 750 ms) for connecting and for the answer.
      */
     @Test
     public void request_isLimitedToOurIndices_andCarriesTheTimeLimit() throws Exception {
@@ -79,13 +79,15 @@ public class ESIndexAPIClusterHealthSummaryTest {
         final RestHighLevelClient client = mock(RestHighLevelClient.class);
         when(client.cluster()).thenReturn(cluster);
 
+        final SearchClusterHealth health;
         try (MockedStatic<RestHighLevelClientProvider> provider = mockStatic(RestHighLevelClientProvider.class)) {
             final RestHighLevelClientProvider instance = providerFor(client);
             provider.when(RestHighLevelClientProvider::getInstance).thenReturn(instance);
 
-            apiWithPrefix().getClusterHealthSummary();
+            health = apiWithPrefix().getClusterHealthSummary();
         }
 
+        assertEquals(SearchClusterHealth.Engine.ELASTICSEARCH, health.engine());
         assertArrayEquals(new String[]{PREFIX + "*"}, request.getValue().indices());
         assertEquals(750, options.getValue().getRequestConfig().getSocketTimeout());
         assertEquals(750, options.getValue().getRequestConfig().getConnectTimeout());

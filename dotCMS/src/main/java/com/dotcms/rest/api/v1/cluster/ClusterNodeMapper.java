@@ -3,8 +3,12 @@ package com.dotcms.rest.api.v1.cluster;
 import com.dotcms.content.index.domain.SearchClusterHealth;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UtilMethods;
+import io.vavr.control.Try;
 import java.io.Serializable;
 import java.util.Map;
+import org.apache.commons.lang3.BooleanUtils;
+import org.apache.commons.lang3.EnumUtils;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Turns a server's cluster status report into the typed sections of
@@ -167,43 +171,22 @@ final class ClusterNodeMapper {
             return ((Number) value).doubleValue();
         }
         final String text = toText(value);
-        if (text == null) {
-            return null;
-        }
-        try {
-            return Double.valueOf(text);
-        } catch (final NumberFormatException e) {
-            return null;
-        }
+        return text != null ? Try.of(() -> Double.valueOf(text)).getOrNull() : null;
     }
 
-    /** Accepts booleans, and "true"/"false" with the trailing "/" the report has always sent. */
+    /**
+     * Accepts booleans, and boolean text such as "true"/"false" (or "yes"/"no", "on"/"off"), with
+     * the trailing "/" the report has always sent; anything else becomes {@code null}.
+     */
     private static Boolean toBoolean(final Object value) {
         if (value instanceof Boolean) {
             return (Boolean) value;
         }
-        final String text = toText(value);
-        if (text == null) {
-            return null;
-        }
-        final String bare = text.endsWith("/") ? text.substring(0, text.length() - 1) : text;
-        if ("true".equalsIgnoreCase(bare)) {
-            return Boolean.TRUE;
-        }
-        return "false".equalsIgnoreCase(bare) ? Boolean.FALSE : null;
+        return BooleanUtils.toBooleanObject(StringUtils.removeEnd(toText(value), "/"));
     }
 
     /** Returns the engine the value names, ignoring case; anything else, or no value, becomes {@code null}. */
     private static SearchClusterHealth.Engine toEngine(final Object value) {
-        final String text = toText(value);
-        if (text == null) {
-            return null;
-        }
-        for (final SearchClusterHealth.Engine engine : SearchClusterHealth.Engine.values()) {
-            if (engine.name().equalsIgnoreCase(text)) {
-                return engine;
-            }
-        }
-        return null;
+        return EnumUtils.getEnumIgnoreCase(SearchClusterHealth.Engine.class, toText(value));
     }
 }

@@ -118,7 +118,7 @@ public class ClusterNodesResourceIntegrationTest {
             resource.getClusterNodes(request, new MockHttpResponse().response());
             fail("the call must be rejected");
         } catch (final SecurityException expected) {
-            // expected: 401
+            assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), expected.getResponse().getStatus());
         }
     }
 
@@ -158,10 +158,21 @@ public class ClusterNodesResourceIntegrationTest {
     }
 
     /**
+     * Given : a back-end user whose only grant is the configuration portlet, the one the old
+     *         Network tab requires.
+     * When  : the nodes are listed.
+     * Then  : 200.
+     */
+    @Test
+    public void configurationUser_isAllowed() throws Exception {
+        call(requestFor(backendUserWithLayout(PortletID.CONFIGURATION.toString())));
+    }
+
+    /**
      * Given : a back-end user with neither the configuration nor the network-beta portlet, and an
      *         anonymous caller.
      * When  : they list the nodes.
-     * Then  : both are rejected.
+     * Then  : both are rejected with 401.
      */
     @Test
     public void userWithoutPortlet_andAnonymous_areRejected() throws Exception {

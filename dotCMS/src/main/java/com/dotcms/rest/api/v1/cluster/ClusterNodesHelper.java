@@ -50,6 +50,19 @@ public class ClusterNodesHelper {
     }
 
     /**
+     * Returns how long a cluster status request waits for replies: {@code CLUSTER_SERVER_THREAD_SLEEP}
+     * when set, otherwise one second per alive server with a two-second minimum. Both the old
+     * Network tab ({@code GET /api/cluster/getNodesStatus/}) and this endpoint use it, so they
+     * always wait the same time.
+     *
+     * @param aliveServers the number of servers with a recent heartbeat
+     * @return the wait window in milliseconds
+     */
+    public static int statusWaitMillis(final int aliveServers) {
+        return Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", Math.max(2000, aliveServers * 1000));
+    }
+
+    /**
      * Lists the alive servers in database order (startup time, then server id), each with its
      * identity, whether it answered this call's status request, its status and, when it answered,
      * the typed sections of its report.
@@ -71,9 +84,8 @@ public class ClusterNodesHelper {
             Logger.error(this, "Could not read the cluster servers: " + e.getMessage(), e);
             throw new DotRuntimeException("Could not read the cluster servers");
         }
-        final int waitMillis = Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP",
-                Math.max(2000, alive.size() * 1000));
-        final Map<String, Serializable> replies = transport.get().validateCacheInCluster(waitMillis);
+        final Map<String, Serializable> replies =
+                transport.get().validateCacheInCluster(statusWaitMillis(alive.size()));
         final Map<String, Serializable> answered = replies != null ? replies : Map.of();
         final long threshold = ClusterNodeMapper.staleThresholdSeconds();
         final long now = clock.millis();

@@ -281,7 +281,7 @@ public class IndexAPIImpl implements IndexAPI {
      */
     @Override
     public SearchClusterHealth getClusterHealthSummary() {
-        return router.read(IndexAPI::getClusterHealthSummary);
+        return router.read("clusterHealthSummary", IndexAPI::getClusterHealthSummary);
     }
 
     // -------------------------------------------------------------------------

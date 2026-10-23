@@ -388,9 +388,10 @@ public interface IndexAPI {
      * <p>Unlike {@link #getClusterHealth()}, which lists the health of each of this cluster's
      * indices, this is one summary over all indices carrying {@link #getClusterPrefix()}: the
      * status and shard counts cover only those indices, while node counts and pending work stay
-     * cluster-wide. Implementations give up after
-     * {@link com.dotcms.content.index.domain.SearchClusterHealth#TIMEOUT_PROPERTY} milliseconds and
-     * throw an unchecked exception when the engine can't be asked or doesn't answer in time; they
+     * cluster-wide. Each attempt gives up after
+     * {@link com.dotcms.content.index.domain.SearchClusterHealth#TIMEOUT_PROPERTY} milliseconds (the
+     * search client may try each configured host in turn), and implementations throw an unchecked
+     * exception when the engine can't be asked or doesn't answer in time; they
      * never answer with an empty or default result, so the caller can tell an outage from a
      * healthy cluster.</p>
      *

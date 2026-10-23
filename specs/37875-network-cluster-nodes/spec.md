@@ -183,11 +183,13 @@ logged in as a CMS Administrator.
     deliberately differs from the Indices portlet, which keeps showing Elasticsearch indices until
     phase 3; the Indices portlet is unchanged;
   - each engine names itself in its result and throws on failure;
-  - each engine's call has a client-side time limit, `CLUSTER_SEARCH_HEALTH_TIMEOUT_MILLIS`
-    (default 750 ms), so a slow engine can't hold the report past the requester's wait window. In
-    phase 2 the router may try OpenSearch and then Elasticsearch, so both tries fit inside the
-    default wait window, which is at least 2 s. The search client providers and `PhaseRouter` are
-    unchanged.
+  - each attempt of an engine's health call has a client-side time limit,
+    `CLUSTER_SEARCH_HEALTH_TIMEOUT_MILLIS` (default 750 ms). With one host per engine, a hung
+    engine still leaves the reply inside the default wait window (at least 2 s), including the
+    phase 2 fallback to Elasticsearch. The limit is per attempt: the search client tries each
+    configured host in turn, so when every configured host hangs, or both engines hang in phase 2,
+    the reply can arrive after the wait window and the server is listed as not responding for that
+    check. The search client providers and `PhaseRouter` are unchanged.
 - **`ClusterUtil.getNodeInfo`:**
   - uses that method;
   - on a search failure, empties only the search keys (`esEngine` included), sets
@@ -499,9 +501,9 @@ read.
 - `CLUSTER_NODE_STALE_HEARTBEAT_SECONDS` is configured below `HEARTBEAT_TIMEOUT` (default 600 s), the
   age after which a server leaves the alive list. Otherwise a server that stops answering never
   becomes `DOWN`.
-- `CLUSTER_SERVER_THREAD_SLEEP`, if configured, stays at least twice
-  `CLUSTER_SEARCH_HEALTH_TIMEOUT_MILLIS`, so both phase 2 tries of the search health call fit in the
-  wait window.
+- `CLUSTER_SERVER_THREAD_SLEEP`, if configured, stays at least `CLUSTER_SEARCH_HEALTH_TIMEOUT_MILLIS`
+  plus 1 s (the pub/sub listener picks up the request and the reply up to 0.5 s late each), so a
+  single hung search engine still fits in the wait window.
 - Each server's `sitelic` row is its own heartbeat row (a placeholder license under the server's
   id); nothing checks its content. Every server creates it on startup and the heartbeat recreates it
   if it's missing, so a running server is missing from `nodes` only while it has no recent

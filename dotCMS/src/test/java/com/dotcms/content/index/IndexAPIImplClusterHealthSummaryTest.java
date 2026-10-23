@@ -58,6 +58,42 @@ public class IndexAPIImplClusterHealthSummaryTest {
     }
 
     /**
+     * Given : phase 1, where OpenSearch only receives dual writes.
+     * When  : the health summary is read.
+     * Then  : only Elasticsearch, the engine serving reads, is asked.
+     */
+    @Test
+    public void phase1_asksOnlyElasticsearch() {
+        setPhase(MigrationPhase.PHASE_1_DUAL_WRITE_ES_READS);
+        final ESIndexAPI es = mock(ESIndexAPI.class);
+        final OSIndexAPIImpl os = mock(OSIndexAPIImpl.class);
+        when(es.getClusterHealthSummary()).thenReturn(health(Engine.ELASTICSEARCH));
+
+        new IndexAPIImpl(es, os).getClusterHealthSummary();
+
+        verify(es).getClusterHealthSummary();
+        verifyNoInteractions(os);
+    }
+
+    /**
+     * Given : phase 2, where Elasticsearch only receives dual writes.
+     * When  : the health summary is read and OpenSearch answers.
+     * Then  : only OpenSearch, the engine serving reads, is asked.
+     */
+    @Test
+    public void phase2_asksOnlyOpenSearch() {
+        setPhase(MigrationPhase.PHASE_2_DUAL_WRITE_OS_READS);
+        final ESIndexAPI es = mock(ESIndexAPI.class);
+        final OSIndexAPIImpl os = mock(OSIndexAPIImpl.class);
+        when(os.getClusterHealthSummary()).thenReturn(health(Engine.OPENSEARCH));
+
+        new IndexAPIImpl(es, os).getClusterHealthSummary();
+
+        verify(os).getClusterHealthSummary();
+        verifyNoInteractions(es);
+    }
+
+    /**
      * Given : phase 2 and an OpenSearch that can't be reached.
      * When  : the health summary is read.
      * Then  : the router falls back to Elasticsearch, and the result names Elasticsearch as the

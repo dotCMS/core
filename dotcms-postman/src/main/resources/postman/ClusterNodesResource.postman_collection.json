@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "27cc1482-4973-4b4d-865a-3a43f55967dc",
 		"name": "ClusterNodesResource",
-		"description": "Checks GET /api/v1/cluster/nodes, the typed cluster status endpoint behind the Network (Beta) portlet (#37875): an admin gets every alive server with a computed status, serialized with the documented field names.",
+		"description": "Checks GET /api/v1/cluster/nodes, the typed cluster status endpoint behind the Network (Beta) portlet (#37875): an admin gets every alive server with a computed status, serialized with the documented field names, and an anonymous caller gets 401.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -49,6 +49,44 @@
 					]
 				},
 				"description": "An admin lists the alive servers with their status."
+			},
+			"response": []
+		},
+		{
+			"name": "Anonymous caller is rejected",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"packages": {},
+						"exec": [
+							"pm.test(\"Status code is 401\", function () {",
+							"    pm.response.to.have.status(401);",
+							"});"
+						]
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/cluster/nodes",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"cluster",
+						"nodes"
+					]
+				},
+				"description": "A request with no credentials is rejected with 401."
 			},
 			"response": []
 		}

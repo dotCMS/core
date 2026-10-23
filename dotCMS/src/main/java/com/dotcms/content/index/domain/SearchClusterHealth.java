@@ -2,8 +2,6 @@ package com.dotcms.content.index.domain;
 
 import com.dotcms.content.index.IndexAPI;
 import com.dotmarketing.util.Config;
-import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.immutables.value.Value;
 
 /**
@@ -18,21 +16,23 @@ import org.immutables.value.Value;
  * so a caller can tell which engine actually answered, including when the phase 2 read falls back
  * from OpenSearch to Elasticsearch.</p>
  *
- * <p>Each engine gives up on the health call after {@value #TIMEOUT_PROPERTY} milliseconds
- * (default {@value #DEFAULT_TIMEOUT_MILLIS}), so a slow engine cannot hold the cluster status
- * report past the requester's wait window.</p>
+ * <p>Each attempt of the health call gives up after {@value #TIMEOUT_PROPERTY} milliseconds
+ * (default {@value #DEFAULT_TIMEOUT_MILLIS}). The limit is per attempt, not per call: after a
+ * failure the search client tries the next configured host, and in phase 2 a failed OpenSearch
+ * call is followed by the Elasticsearch fallback. With one host per engine a hung engine still
+ * leaves the report inside the requester's wait window; when every configured host hangs, or both
+ * engines hang in phase 2, the call can take a multiple of the limit and the server may be listed
+ * as not responding for that check.</p>
  *
  * @author hassandotcms
  */
 @Value.Immutable
-@JsonSerialize(as = ImmutableSearchClusterHealth.class)
-@JsonDeserialize(as = ImmutableSearchClusterHealth.class)
 public interface SearchClusterHealth {
 
-    /** Config key for the client-side time limit, in milliseconds, of the health call. */
+    /** Config key for the client-side time limit, in milliseconds, of each attempt of the health call. */
     String TIMEOUT_PROPERTY = "CLUSTER_SEARCH_HEALTH_TIMEOUT_MILLIS";
 
-    /** Default client-side time limit of the health call, in milliseconds. */
+    /** Default client-side time limit of each attempt of the health call, in milliseconds. */
     int DEFAULT_TIMEOUT_MILLIS = 750;
 
     /** The search engine a health summary came from. */
@@ -90,7 +90,7 @@ public interface SearchClusterHealth {
     double activeShardsPercent();
 
     /**
-     * Returns the client-side time limit of the health call, read from {@link #TIMEOUT_PROPERTY} on
+     * Returns the client-side time limit of each attempt of the health call, read from {@link #TIMEOUT_PROPERTY} on
      * every call. A value of zero or less would mean "no limit" to the HTTP clients, so it falls
      * back to {@link #DEFAULT_TIMEOUT_MILLIS}.
      *
