@@ -1,13 +1,13 @@
 import { Events } from '@ngrx/signals/events';
-import { EMPTY, Observable, forkJoin, of } from 'rxjs';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { EMPTY, Observable, forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Component, inject, signal, viewChild } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { catchError, mergeMap, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, map, mergeMap, switchMap, take, tap } from 'rxjs/operators';
 
 import {
     DotContentTypeService,
@@ -78,6 +78,19 @@ export class DotUveContentEditorComponent {
      */
     protected readonly $sourceEditorPanel = signal<DotSourceEditorRequest | null>(null);
 
+    // `mergeMap`: every request runs on its own, as separate clicks always have. Each one
+    // handles its own errors, so a failed request never stops the listener.
+
+    /** Opens the editor each edit request asks for. */
+    readonly #handleEditContentRequest = rxMethod<DotUveEditContentRequest>(
+        pipe(mergeMap((request) => this.#editContent(request)))
+    );
+
+    /** Opens the source of each VTL file an edit-source request names. */
+    readonly #handleEditSourceRequest = rxMethod<VTLFile>(
+        pipe(mergeMap((file) => this.#editSource(file)))
+    );
+
     constructor() {
         // The Edit Content side panel, open while `$editContentPanel` is set. Post-save work runs
         // through the request's `onContentSaved` callback; closing clears the request. Loaded on
@@ -101,23 +114,17 @@ export class DotUveContentEditorComponent {
             closed: () => this.$sourceEditorPanel.set(null)
         });
 
-        // `mergeMap`: every request runs on its own, as separate clicks always have. Each one
-        // handles its own errors, so a failed request never stops the listener.
-        this.#events
-            .on(uveContentEditorEvents.uveEditContentRequested)
-            .pipe(
-                mergeMap(({ payload }) => this.#editContent(payload)),
-                takeUntilDestroyed()
-            )
-            .subscribe();
+        this.#handleEditContentRequest(
+            this.#events
+                .on(uveContentEditorEvents.uveEditContentRequested)
+                .pipe(map(({ payload }) => payload))
+        );
 
-        this.#events
-            .on(uveContentEditorEvents.uveEditSourceRequested)
-            .pipe(
-                mergeMap(({ payload }) => this.#editSource(payload)),
-                takeUntilDestroyed()
-            )
-            .subscribe();
+        this.#handleEditSourceRequest(
+            this.#events
+                .on(uveContentEditorEvents.uveEditSourceRequested)
+                .pipe(map(({ payload }) => payload))
+        );
     }
 
     /**
