@@ -2,6 +2,7 @@ package com.dotcms.contenttype.business;
 
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.liferay.portal.model.User;
 import com.google.common.collect.ImmutableSet;
 
 import java.util.LinkedHashMap;
@@ -30,7 +31,7 @@ public interface StoryBlockAPI {
     /**
      * Contains the types of Contentlets that can be added to a Story Block field
      */
-    Set<String> allowedTypes = new ImmutableSet.Builder<String>().add("dotContent", "dotImage", "dotVideo").build();
+    Set<String> allowedTypes = new ImmutableSet.Builder<String>().add("dotContent", "dotImage", "dotVideo", "dotAudio").build();
 
     /**
      * Updates all Contentlets referenced in every {@link com.dotcms.contenttype.model.field.StoryBlockField}  of the
@@ -56,6 +57,60 @@ public interface StoryBlockAPI {
      * @return An instance of {@link StoryBlockReferenceResult} containing the result of the refresh process.
      */
     StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue, final String parentContentletIdentifier);
+
+    /**
+     * Same as {@link #refreshReferences(Contentlet)}, but the referenced Contentlets are looked up
+     * on behalf of the given user instead of the user of the current request. A reference that
+     * cannot be read and refreshed for that user is kept in the document with only the keys that
+     * identify it ({@code identifier} and {@code languageId}) in its data map.
+     * <p>The {@link com.dotmarketing.util.PageMode} of the current request still decides which
+     * version of each referenced Contentlet is read (live or working) and how its related content
+     * is loaded, so the given user should be the user of that request or one with the same
+     * access.</p>
+     *
+     * @param contentlet           The Contentlet containing the Story Block field(s).
+     * @param user                 The user on whose behalf the referenced Contentlets are read.
+     * @param respectFrontendRoles If {@code true}, front-end roles are taken into account when
+     *                             reading the referenced Contentlets.
+     *
+     * @return The {@link StoryBlockReferenceResult} object containing the final result of the refreshing process.
+     */
+    StoryBlockReferenceResult refreshReferences(final Contentlet contentlet, final User user,
+                                                final boolean respectFrontendRoles);
+
+    /**
+     * Applies the read permissions of the user of the current request (anonymous when there is
+     * none) to the Contentlets referenced in every Story Block field of the given Contentlet,
+     * without refreshing them: a reference that user can read keeps the data stored with it, and
+     * any other reference keeps only the keys that identify it. Used where references are not
+     * refreshed on read.
+     *
+     * @param contentlet The Contentlet containing the Story Block field(s). It is modified in place.
+     *
+     * @return The {@link StoryBlockReferenceResult} with the given Contentlet.
+     */
+    StoryBlockReferenceResult limitReferencesToReader(final Contentlet contentlet);
+
+    /**
+     * Same as {@link #refreshStoryBlockValueReferences(Object, String)}, but the referenced
+     * Contentlets are looked up on behalf of the given user instead of the user of the current
+     * request. A reference that cannot be read and refreshed for that user is kept in the document
+     * with only the keys that identify it ({@code identifier} and {@code languageId}) in its data
+     * map. As in {@link #refreshReferences(Contentlet, User, boolean)}, the page mode of the
+     * current request still decides which version is read and how related content is loaded.
+     *
+     * @param storyBlockValue            The actual value of the Story Block field.
+     * @param parentContentletIdentifier String identifier of the parent contentlet
+     * @param user                       The user on whose behalf the referenced Contentlets are read.
+     * @param respectFrontendRoles       If {@code true}, front-end roles are taken into account when
+     *                                   reading the referenced Contentlets.
+     *
+     * @return An instance of {@link StoryBlockReferenceResult} containing the result of the refresh process.
+     */
+    StoryBlockReferenceResult refreshStoryBlockValueReferences(final Object storyBlockValue,
+                                                               final String parentContentletIdentifier,
+                                                               final User user,
+                                                               final boolean respectFrontendRoles);
 
     /**
      * Traverses every {@link com.dotcms.contenttype.model.field.StoryBlockField} in the specified Contentlet, and

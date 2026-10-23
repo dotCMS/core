@@ -1540,6 +1540,8 @@ public class StoryBlockAPITest extends IntegrationTestBase {
                     .setProperty(imageField.variable(), imageFileAsset.getIdentifier())
                     .setProperty("fileAsset",tempFile)
                     .nextPersisted();
+            // The reference is refreshed from its live version
+            ContentletDataGen.publish(contentletWithImage);
 
             //  create the content that has the BlockEditor
             com.dotcms.contenttype.model.field.Field blockEditoField = new FieldDataGen()
@@ -1570,9 +1572,9 @@ public class StoryBlockAPITest extends IntegrationTestBase {
             final Contentlet checkin = ContentletDataGen.checkin(checkout);
             final Contentlet published = ContentletDataGen.publish(checkin);
 
-            //Call the apis
+            //Call the apis, reading the referenced content as a user that can read it
             final StoryBlockReferenceResult storyBlockReferenceResult = storyBlockAPI
-                    .refreshReferences(published);
+                    .refreshReferences(published, APILocator.systemUser(), false);
 
             //Extract updated fields
             Assert.assertTrue(storyBlockReferenceResult.isRefreshed());
@@ -1947,8 +1949,10 @@ public class StoryBlockAPITest extends IntegrationTestBase {
                     .refreshStoryBlockValueReferences(storyBlockJsonWithDataAsInteger, "parent-789");
 
             assertNotNull("Result should not be null for data as Integer", resultWithInteger);
-            // Should return false in isRefreshed since data type is unexpected
-            assertFalse("Should handle unexpected data type gracefully", resultWithInteger.isRefreshed());
+            // A data value that cannot identify a Contentlet is dropped, not returned as stored
+            assertTrue("Should handle unexpected data type gracefully", resultWithInteger.isRefreshed());
+            assertEquals("Unexpected data type should be replaced by an empty map",
+                    Map.of(), firstContentData(resultWithInteger));
 
             // Test Case 4: Data field as invalid JSON String - should handle gracefully
             final String storyBlockJsonWithInvalidJsonString =
@@ -1968,12 +1972,29 @@ public class StoryBlockAPITest extends IntegrationTestBase {
                     .refreshStoryBlockValueReferences(storyBlockJsonWithInvalidJsonString, "parent-999");
 
             assertNotNull("Result should not be null for invalid JSON string", resultWithInvalidJson);
-            // Should return false since JSON parsing failed
-            assertFalse("Should handle invalid JSON string gracefully", resultWithInvalidJson.isRefreshed());
+            // A data value that cannot be parsed is dropped, not returned as stored
+            assertTrue("Should handle invalid JSON string gracefully", resultWithInvalidJson.isRefreshed());
+            assertEquals("Invalid JSON data should be replaced by an empty map",
+                    Map.of(), firstContentData(resultWithInvalidJson));
 
         } finally {
             HttpServletRequestThreadLocal.INSTANCE.setRequest(oldThreadRequest);
             HttpServletResponseThreadLocal.INSTANCE.setResponse(oldThreadResponse);
         }
+    }
+
+    /**
+     * Returns the {@code attrs.data} value of the first content node of a refreshed Story Block.
+     *
+     * @param result The result of a refresh.
+     *
+     * @return The data value of the first node.
+     */
+    @SuppressWarnings("unchecked")
+    private static Object firstContentData(final StoryBlockReferenceResult result) {
+        final Map<String, Object> storyBlockMap = Try.of(() -> APILocator.getStoryBlockAPI()
+                .toMap(result.getValue())).getOrElseThrow(e -> new AssertionError(e));
+        final Map<String, Object> node = ((List<Map<String, Object>>) storyBlockMap.get("content")).get(0);
+        return ((Map<String, Object>) node.get(StoryBlockAPI.ATTRS_KEY)).get(StoryBlockAPI.DATA_KEY);
     }
 }
