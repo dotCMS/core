@@ -1,4 +1,5 @@
 import { tapResponse } from '@ngrx/operators';
+import { injectDispatch } from '@ngrx/signals/events';
 import { Observable, of } from 'rxjs';
 
 import { inject, Injectable } from '@angular/core';
@@ -19,6 +20,7 @@ import { DotCopyContentModalService } from '@dotcms/ui';
 
 import { DotBlockEditorSidebarComponent } from '../../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../../components/dot-ema-dialog/dot-ema-dialog.component';
+import { uveContentEditorEvents } from '../../edit-ema-editor/components/dot-uve-content-editor/dot-uve-content-editor.events';
 import {
     ClientContentletArea,
     Container,
@@ -60,6 +62,7 @@ export class DotUveActionsHandlerService {
     private readonly messageService = inject(MessageService);
     private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
+    private readonly contentEditor = injectDispatch(uveContentEditorEvents);
 
     handleAction({ action, payload }: PostMessage, deps: ActionsHandlerDependencies): void {
         const {
@@ -331,8 +334,13 @@ export class DotUveActionsHandlerService {
                 uveStore.pageReload(pageParams);
                 uveStore.setIsClientReady(true);
             },
+            /**
+             * Handles the `EDIT_CONTENTLET` postMessage action sent by the SDK's `editContentlet()`,
+             * as every other edit: the content type decides between the new editor and the legacy
+             * dialog.
+             */
             [DotCMSUVEAction.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
-                dialog.editContentlet({ ...contentlet, clientAction: action });
+                this.contentEditor.uveEditContentRequested({ contentlet });
             },
             /**
              * Handles the `CREATE_CONTENTLET` postMessage action sent by `window.dotUVE.createContentlet()`

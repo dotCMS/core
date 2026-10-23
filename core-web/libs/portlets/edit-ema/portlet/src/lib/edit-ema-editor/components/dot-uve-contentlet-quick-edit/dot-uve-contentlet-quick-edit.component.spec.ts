@@ -1,17 +1,21 @@
-import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/vitest';
+import { Dispatcher } from '@ngrx/signals/events';
+import { Spectator, SpyObject, byTestId, createComponentFactory } from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
 import { Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { createFakeTextField } from '@dotcms/utils-testing';
 
 import { DotUveContentletQuickEditComponent } from './dot-uve-contentlet-quick-edit.component';
 import { DotUveCopyDecisionComponent } from './dot-uve-copy-decision/dot-uve-copy-decision.component';
 import { DotUveQuickEditFormComponent } from './dot-uve-quick-edit-form/dot-uve-quick-edit-form.component';
 import { ContentletEditData, TEMP_EMPTY_CONTENTLET_TYPE } from './types';
 
+import { EDIT_ACTION_PAYLOAD_MOCK } from '../../../shared/mocks';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { uveContentEditorEvents } from '../dot-uve-content-editor/dot-uve-content-editor.events';
 
 const makeContentlet = (overrides: Partial<DotCMSContentlet> = {}): DotCMSContentlet =>
     ({
@@ -62,6 +66,7 @@ describe('DotUveContentletQuickEditComponent', () => {
                 })
             }
         ],
+        componentProviders: [Dispatcher],
         detectChanges: false
     });
 
@@ -204,26 +209,87 @@ describe('DotUveContentletQuickEditComponent', () => {
         });
     });
 
-    describe('openFullEditor output', () => {
-        it('emits when the no-fields button is clicked', () => {
-            contentTypeCache.set({ Blog: { layout: [] } });
-            spectator = createComponent({
-                props: {
-                    data: makeData({ contentType: 'Blog', onNumberOfPages: 1 })
-                }
-            });
+    describe('full editor', () => {
+        /**
+         * Creates the panel on `data` and spies on what it asks for. The dispatcher is the
+         * component's own, so the spy sees only this panel's requests.
+         */
+        const createWithDispatcher = (data: ContentletEditData) => {
+            spectator = createComponent({ props: { data } });
+            const dispatcher: SpyObject<Dispatcher> = spectator.inject(Dispatcher, true);
+            vi.spyOn(dispatcher, 'dispatch');
             spectator.detectChanges();
 
-            const emitSpy = vi.fn();
-            spectator.component.openFullEditor.subscribe(emitSpy);
+            return dispatcher;
+        };
 
+        const clickNoFieldsButton = () => {
             const button = spectator
                 .query(byTestId('empty-open-full-editor-button'))
                 ?.querySelector('button');
             expect(button).toBeTruthy();
             spectator.click(button as HTMLElement);
+        };
 
-            expect(emitSpy).toHaveBeenCalled();
+        it('asks to edit the shown contentlet when the no-fields button is clicked', () => {
+            contentTypeCache.set({ Blog: { layout: [] } });
+            const data = makeData({ contentType: 'Blog', onNumberOfPages: 1 });
+            const dispatcher = createWithDispatcher(data);
+
+            clickNoFieldsButton();
+
+            expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                uveContentEditorEvents.uveEditContentRequested({ contentlet: data.contentlet }),
+                { scope: 'self' }
+            );
+        });
+
+        it('asks to edit the shown contentlet when the form asks for the full editor', () => {
+            contentTypeCache.set({
+                Blog: { layout: [{ columns: [{ fields: [createFakeTextField()] }] }] }
+            });
+            const data = makeData({ contentType: 'Blog', onNumberOfPages: 1 });
+            const dispatcher = createWithDispatcher(data);
+            expect(spectator.component.$mode()).toBe('form');
+
+            spectator.triggerEventHandler(
+                DotUveQuickEditFormComponent,
+                'openFullEditor',
+                undefined
+            );
+
+            expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                uveContentEditorEvents.uveEditContentRequested({ contentlet: data.contentlet }),
+                { scope: 'self' }
+            );
+        });
+
+        it('does not ask to fork the contentlet from its container', () => {
+            // The panel has its own copy prompt; the full editor opens on what the panel shows.
+            contentTypeCache.set({ Blog: { layout: [] } });
+            const data: ContentletEditData = {
+                container: EDIT_ACTION_PAYLOAD_MOCK.container,
+                contentlet: makeContentlet({ contentType: 'Blog', onNumberOfPages: 1 })
+            };
+            const dispatcher = createWithDispatcher(data);
+
+            clickNoFieldsButton();
+
+            expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                uveContentEditorEvents.uveEditContentRequested({ contentlet: data.contentlet }),
+                { scope: 'self' }
+            );
+        });
+
+        it('asks nothing for a contentlet without an inode', () => {
+            contentTypeCache.set({ Blog: { layout: [] } });
+            const dispatcher = createWithDispatcher(
+                makeData({ contentType: 'Blog', onNumberOfPages: 1, inode: undefined })
+            );
+
+            clickNoFieldsButton();
+
+            expect(dispatcher.dispatch).not.toHaveBeenCalled();
         });
     });
 

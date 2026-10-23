@@ -1,5 +1,7 @@
+import { Dispatcher } from '@ngrx/signals/events';
 import {
     Spectator,
+    SpyObject,
     byTestId,
     createComponentFactory,
     mockProvider
@@ -9,12 +11,14 @@ import { vi } from 'vitest';
 import { signal } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { TEMP_EMPTY_CONTENTLET_TYPE } from '@dotcms/uve/internal';
 
 import { DotUveContentletToolsComponent } from './dot-uve-contentlet-tools.component';
 
 import { ContentletPayload, SelectedContentlet, VTLFile } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { uveContentEditorEvents } from '../dot-uve-content-editor/dot-uve-content-editor.events';
 import { ContentletArea } from '../ema-page-dropzone/types';
 
 /**
@@ -84,6 +88,7 @@ const MOCK_EMPTY_CONTENTLET_AREA: ContentletArea = {
 
 describe('DotUveContentletToolsComponent', () => {
     let spectator: Spectator<DotUveContentletToolsComponent>;
+    let dispatcher: SpyObject<Dispatcher>;
     /**
      * Writable mock for the store's `editorSelected` signal. The SDK's
      * CONTENTLET_CLICKED handler sets this; tests drive it directly.
@@ -121,6 +126,7 @@ describe('DotUveContentletToolsComponent', () => {
                 })
             }
         ],
+        componentProviders: [Dispatcher],
         detectChanges: false
     });
 
@@ -136,6 +142,8 @@ describe('DotUveContentletToolsComponent', () => {
                 showStyleEditorOption: false
             }
         });
+        dispatcher = spectator.inject(Dispatcher, true);
+        vi.spyOn(dispatcher, 'dispatch');
         spectator.detectChanges();
     });
 
@@ -423,17 +431,76 @@ describe('DotUveContentletToolsComponent', () => {
         });
 
         describe('full-editor (pencil) button', () => {
-            it('should emit openFullEditor with the hovered payload', () => {
-                const handler = vi.fn();
-                spectator.output('openFullEditor').subscribe(handler);
+            /** The request the pencil makes for the hovered contentlet. */
+            const EDIT_HOVERED_CONTENTLET = uveContentEditorEvents.uveEditContentRequested({
+                contentlet: MOCK_CONTENTLET_AREA.payload.contentlet as unknown as DotCMSContentlet,
+                forkFrom: MOCK_CONTENTLET_AREA.payload.container
+            });
+
+            const fullEditorMenuItem = () =>
+                spectator.component.actionsMenuItems().find((item) => item.symbol === 'edit_note');
+
+            /** Hovers a contentlet whose payload carries the given overrides. */
+            const hoverContentlet = (overrides: Partial<ContentletPayload>) => {
+                spectator.setInput('contentletArea', {
+                    ...MOCK_CONTENTLET_AREA,
+                    payload: {
+                        ...MOCK_CONTENTLET_AREA.payload,
+                        contentlet: {
+                            ...(MOCK_CONTENTLET_AREA.payload.contentlet as ContentletPayload),
+                            ...overrides
+                        }
+                    }
+                });
+                spectator.detectChanges();
+            };
+
+            it('should ask to edit the hovered contentlet, forking from its container', () => {
+                const editButton = spectator.query(byTestId('hover-edit-button')) as HTMLElement;
+                spectator.click(editButton.querySelector('button') as Element);
+
+                expect(dispatcher.dispatch).toHaveBeenCalledWith(EDIT_HOVERED_CONTENTLET, {
+                    scope: 'self'
+                });
+            });
+
+            it("should ask the same from the collapsed menu's full editor entry", () => {
+                fullEditorMenuItem()?.command?.({});
+
+                expect(dispatcher.dispatch).toHaveBeenCalledWith(EDIT_HOVERED_CONTENTLET, {
+                    scope: 'self'
+                });
+            });
+
+            it('should leave the selection alone', () => {
+                // The pencil is stateless: opening the full editor must not change what is
+                // selected in the editor.
+                const store = spectator.inject(UVEStore);
+                (store.setSelected as ReturnType<typeof vi.fn>).mockClear();
 
                 const editButton = spectator.query(byTestId('hover-edit-button')) as HTMLElement;
                 spectator.click(editButton.querySelector('button') as Element);
 
-                expect(handler).toHaveBeenCalledWith({
-                    ...MOCK_CONTENTLET_AREA.payload,
-                    position: 'after'
-                });
+                expect(store.setSelected).not.toHaveBeenCalled();
+            });
+
+            it('should ask nothing for a contentlet the user cannot edit', () => {
+                // The button is disabled, but the toolbar can be driven from stale bounds or
+                // programmatically, so the guard must not rest on the disabled state alone.
+                hoverContentlet({ canEdit: false });
+
+                fullEditorMenuItem()?.command?.({});
+
+                expect(dispatcher.dispatch).not.toHaveBeenCalled();
+            });
+
+            it('should ask nothing for a contentlet without an inode', () => {
+                hoverContentlet({ inode: undefined });
+
+                const editButton = spectator.query(byTestId('hover-edit-button')) as HTMLElement;
+                spectator.click(editButton.querySelector('button') as Element);
+
+                expect(dispatcher.dispatch).not.toHaveBeenCalled();
             });
         });
 
@@ -519,8 +586,8 @@ describe('DotUveContentletToolsComponent', () => {
             });
         });
 
-        describe('editVTL', () => {
-            it('should emit editVTL with file when clicking VTL menu item', () => {
+        describe('uveEditSourceRequested', () => {
+            it('should ask to edit the source of the file when clicking VTL menu item', () => {
                 const expectedFile: VTLFile = {
                     inode: 'vtl-inode-1',
                     name: 'template1.vtl'
@@ -532,15 +599,16 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.detectChanges();
 
                 // Get the VTL menu items and trigger the first command
-                const handler = vi.fn();
-                spectator.output('editVTL').subscribe(handler);
                 const vtlMenuItems = spectator.component.vtlMenuItems();
                 vtlMenuItems[0].command?.({});
 
-                expect(handler).toHaveBeenCalledWith(expectedFile);
+                expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                    uveContentEditorEvents.uveEditSourceRequested(expectedFile),
+                    { scope: 'self' }
+                );
             });
 
-            it('should emit editVTL with second file when clicking second VTL menu item', () => {
+            it('should ask to edit the source of the second file when clicking second VTL menu item', () => {
                 const expectedFile: VTLFile = {
                     inode: 'vtl-inode-2',
                     name: 'template2.vtl'
@@ -552,12 +620,13 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.detectChanges();
 
                 // Get the VTL menu items and trigger the second command
-                const handler = vi.fn();
-                spectator.output('editVTL').subscribe(handler);
                 const vtlMenuItems = spectator.component.vtlMenuItems();
                 vtlMenuItems[1].command?.({});
 
-                expect(handler).toHaveBeenCalledWith(expectedFile);
+                expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                    uveContentEditorEvents.uveEditSourceRequested(expectedFile),
+                    { scope: 'self' }
+                );
             });
         });
     });
@@ -1255,17 +1324,16 @@ describe('DotUveContentletToolsComponent', () => {
      * dismissed leaves the selection untouched.
      */
     describe('choosing a VTL file promotes the hovered contentlet', () => {
-        it('promotes the hovered contentlet and still emits the file', () => {
+        it('promotes the hovered contentlet before asking to edit the file', () => {
             const store = spectator.inject(UVEStore);
-            const emitted: VTLFile[] = [];
-            spectator.component.editVTL.subscribe((file: VTLFile) => emitted.push(file));
+            const setSelected = store.setSelected as ReturnType<typeof vi.fn>;
 
             spectator.setInput('contentletArea', MOCK_CONTENTLET_AREA);
             spectator.detectChanges();
 
             spectator.component.vtlMenuItems()[0].command?.({} as never);
 
-            expect(store.setSelected).toHaveBeenCalledWith(
+            expect(setSelected).toHaveBeenCalledWith(
                 expect.objectContaining({
                     bounds: {
                         x: MOCK_CONTENTLET_AREA.x,
@@ -1275,7 +1343,16 @@ describe('DotUveContentletToolsComponent', () => {
                     }
                 })
             );
-            expect(emitted).toEqual([{ inode: 'vtl-inode-1', name: 'template1.vtl' }]);
+            expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                uveContentEditorEvents.uveEditSourceRequested({
+                    inode: 'vtl-inode-1',
+                    name: 'template1.vtl'
+                }),
+                { scope: 'self' }
+            );
+            expect(setSelected.mock.invocationCallOrder[0]).toBeLessThan(
+                dispatcher.dispatch.mock.invocationCallOrder[0]
+            );
         });
 
         /**

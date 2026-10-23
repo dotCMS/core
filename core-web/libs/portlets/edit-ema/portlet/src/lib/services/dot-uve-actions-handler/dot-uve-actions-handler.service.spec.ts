@@ -1,4 +1,10 @@
-import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
+import { Dispatcher } from '@ngrx/signals/events';
+import {
+    createServiceFactory,
+    mockProvider,
+    SpectatorService,
+    SpyObject
+} from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
@@ -11,9 +17,11 @@ import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
 import { DotCMSUVEAction } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService } from '@dotcms/ui';
+import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotUveActionsHandlerService } from './dot-uve-actions-handler.service';
 
+import { uveContentEditorEvents } from '../../edit-ema-editor/components/dot-uve-content-editor/dot-uve-content-editor.events';
 import { UpdatedContentlet } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE, UVE_STATUS } from '../../shared/enums';
 import { UVEStore } from '../../store/dot-uve.store';
@@ -538,6 +546,57 @@ describe('DotUveActionsHandlerService – REGISTER_STYLE_SCHEMAS', () => {
         );
 
         expect(setStyleSchemas).toHaveBeenCalledWith(mockSchemas);
+    });
+});
+
+describe('DotUveActionsHandlerService – EDIT_CONTENTLET', () => {
+    let spectator: SpectatorService<DotUveActionsHandlerService>;
+    let service: DotUveActionsHandlerService;
+    let dispatcher: SpyObject<Dispatcher>;
+
+    const createService = createServiceFactory({
+        service: DotUveActionsHandlerService,
+        providers: [
+            Dispatcher,
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotMessageService),
+            mockProvider(MessageService),
+            mockProvider(DotCopyContentModalService),
+            { provide: UVEStore, useValue: buildMockStore() }
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        service = spectator.service;
+        dispatcher = spectator.inject(Dispatcher);
+        vi.spyOn(dispatcher, 'dispatch');
+    });
+
+    it("should ask the content editor to edit the client's contentlet instead of opening the dialog itself", () => {
+        // The same request every other edit sends: the content editor picks the editor from the
+        // content type, so the SDK's editContentlet() no longer forces the legacy dialog.
+        const contentlet = createFakeContentlet({ inode: 'sdk-inode', contentType: 'Blog' });
+        const editContentlet = vi.fn();
+
+        service.handleAction(
+            { action: DotCMSUVEAction.EDIT_CONTENTLET, payload: contentlet },
+            {
+                uveStore: buildMockStore() as unknown as InstanceType<typeof UVEStore>,
+                dialog: { editContentlet } as never,
+                // Not used by EDIT_CONTENTLET.
+                inlineEditingService: {} as InlineEditService,
+                contentWindow: null,
+                host: 'http://localhost',
+                onCopyContent: vi.fn()
+            }
+        );
+
+        expect(dispatcher.dispatch).toHaveBeenCalledWith(
+            uveContentEditorEvents.uveEditContentRequested({ contentlet }),
+            { scope: 'self' }
+        );
+        expect(editContentlet).not.toHaveBeenCalled();
     });
 });
 

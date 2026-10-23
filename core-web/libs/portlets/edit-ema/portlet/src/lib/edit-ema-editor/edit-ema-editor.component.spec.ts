@@ -1,4 +1,5 @@
-import { patchState, WritableStateSource } from '@ngrx/signals';
+import { patchState } from '@ngrx/signals';
+import { Dispatcher } from '@ngrx/signals/events';
 import {
     SpectatorRouting,
     byTestId,
@@ -55,19 +56,12 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
-import { DEFAULT_VARIANT_ID, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DEFAULT_VARIANT_ID, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
-import {
-    DOT_VELOCITY_LANGUAGE_ID,
-    DotCopyContentModalService,
-    DotSidePanelConfig,
-    DotSidePanelRef,
-    DotSidePanelService,
-    SafeUrlPipe
-} from '@dotcms/ui';
+import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
     CONTENT_TYPE_MOCK_FOR_EDITOR,
@@ -82,6 +76,7 @@ import {
     MockDotMessageService,
     URL_MAP_CONTENTLET,
     createFakeContentType,
+    createFakeContentlet,
     getDraftExperimentMock,
     getRunningExperimentMock,
     getScheduleExperimentMock,
@@ -89,6 +84,8 @@ import {
     seoOGTagsResultMock
 } from '@dotcms/utils-testing';
 
+import { DotUveContentEditorComponent } from './components/dot-uve-content-editor/dot-uve-content-editor.component';
+import { uveContentEditorEvents } from './components/dot-uve-content-editor/dot-uve-content-editor.events';
 import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-palette.component';
@@ -114,10 +111,10 @@ import {
     dotPropertiesServiceMock,
     mockCurrentUser
 } from '../shared/mocks';
-import { ActionPayload, ContentletPayload, VTLFile } from '../shared/models';
+import { ActionPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
-import { IframeAccessMode, PageType, UVEState } from '../store/models';
+import { IframeAccessMode, PageType } from '../store/models';
 
 global.URL.createObjectURL = vi.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -207,6 +204,14 @@ class DotUvePaletteStubComponent {
     @Input() styleSchema: unknown;
 }
 
+/** The content editor has its own spec; here it only needs to be placed. */
+@Component({
+    selector: 'dot-uve-content-editor',
+    template: '<div></div>',
+    standalone: true
+})
+class DotUveContentEditorMockComponent {}
+
 const createRouting = () =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
@@ -221,16 +226,25 @@ const createRouting = () =>
                 EditEmaEditorComponent,
                 {
                     remove: {
-                        imports: [DotUveToolbarComponent, DotUvePaletteComponent]
+                        imports: [
+                            DotUveToolbarComponent,
+                            DotUvePaletteComponent,
+                            DotUveContentEditorComponent
+                        ]
                     },
                     add: {
-                        imports: [DotUveToolbarStubComponent, DotUvePaletteStubComponent]
+                        imports: [
+                            DotUveToolbarStubComponent,
+                            DotUvePaletteStubComponent,
+                            DotUveContentEditorMockComponent
+                        ]
                     }
                 }
             ]
         ],
         detectChanges: false,
         componentProviders: [
+            Dispatcher,
             ConfirmationService,
             MessageService,
             UVEStore,
@@ -2322,7 +2336,6 @@ describe('EditEmaEditorComponent', () => {
                         bounds: { x: 0, y: 0, width: 0, height: 0 },
                         payload: EDIT_ACTION_PAYLOAD_MOCK
                     });
-                    spectator.component['handleOpenFullEditor']();
 
                     spectator.detectComponentChanges();
 
@@ -2581,742 +2594,37 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            describe('handleOpenFullEditor', () => {
-                afterEach(() => {
-                    vi.restoreAllMocks();
-                });
-
-                it('should open legacy ema dialog when the content type does not enable the new editor', () => {
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of(
-                            createFakeContentType({
-                                variable: 'test',
-                                name: 'Test',
-                                metadata: {
-                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                                }
-                            })
-                        )
-                    );
-                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
-
-                    store.setSelected({
-                        bounds: { x: 0, y: 0, width: 0, height: 0 },
-                        payload: EDIT_ACTION_PAYLOAD_MOCK
-                    });
-                    spectator.detectChanges();
-                    spectator.component['handleOpenFullEditor']();
+            describe('content editor', () => {
+                it('should place the content editor', () => {
                     spectator.detectChanges();
 
-                    expect(dialogSpy).toHaveBeenCalledWith(
-                        expect.objectContaining({ inode: 'contentlet-inode-123' })
-                    );
-                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                    expect(spectator.query(byTestId('uve-content-editor'))).toBeTruthy();
                 });
 
-                it('should open the new edit content dialog when CONTENT_EDITOR2_ENABLED is true on the content type', async () => {
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of(
-                            createFakeContentType({
-                                variable: 'test',
-                                name: 'Test',
-                                metadata: {
-                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
-                                }
-                            })
-                        )
-                    );
-                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                    const dialogRefMock = {
-                        onClose: new Subject<void | unknown>(),
-                        close: vi.fn()
-                    };
-                    const dialogServiceOpenSpy = vi
-                        .spyOn(spectator.inject(DialogService), 'open')
-                        .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
-
-                    store.setSelected({
-                        bounds: { x: 0, y: 0, width: 0, height: 0 },
-                        payload: EDIT_ACTION_PAYLOAD_MOCK
-                    });
-                    spectator.detectChanges();
-                    spectator.component['handleOpenFullEditor']();
+                it('should keep the content editor in preview mode', () => {
+                    // Page Properties opens the new editor in preview mode too, so the content
+                    // editor that opens it cannot depend on the mode.
+                    pageApi().pageUpdateParams({ mode: UVE_MODE.PREVIEW });
                     spectator.detectChanges();
 
-                    await spectator.fixture.whenStable();
-
-                    expect(dialogSpy).not.toHaveBeenCalled();
-                    expect(dialogServiceOpenSpy).toHaveBeenCalled();
-                    const [, config] = dialogServiceOpenSpy.mock.calls[0];
-                    expect(config.data).toEqual(
-                        expect.objectContaining({
-                            mode: 'edit',
-                            contentletInode: 'contentlet-inode-123'
-                        })
-                    );
+                    expect(spectator.query(byTestId('uve-content-editor'))).toBeTruthy();
                 });
 
-                it('opens the new editor in the side panel when its flag is on, and clears the request when the panel closes', () => {
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of(
-                            createFakeContentType({
-                                variable: 'test',
-                                name: 'Test',
-                                metadata: {
-                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
-                                }
-                            })
-                        )
+                it("should ask the content editor to edit the page's contentlet when the shell opens page Properties", () => {
+                    const dispatcher = spectator.inject(Dispatcher, true);
+                    vi.spyOn(dispatcher, 'dispatch');
+                    const page = createFakeContentlet({
+                        inode: 'page-inode',
+                        title: 'Page',
+                        contentType: 'htmlpageasset'
+                    });
+
+                    spectator.component.openContentForEdit(page);
+
+                    expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                        uveContentEditorEvents.uveEditContentRequested({ contentlet: page }),
+                        { scope: 'self' }
                     );
-                    const closed = new Subject<void>();
-                    const openSpy = vi
-                        .spyOn(spectator.inject(DotSidePanelService), 'open')
-                        .mockReturnValue({ closed } as unknown as DotSidePanelRef);
-                    // The store's type does not expose its state as writable signals.
-                    patchState(store as unknown as WritableStateSource<UVEState>, {
-                        flags: {
-                            ...store.flags(),
-                            [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
-                        }
-                    });
-
-                    store.setSelected({
-                        bounds: { x: 0, y: 0, width: 0, height: 0 },
-                        payload: EDIT_ACTION_PAYLOAD_MOCK
-                    });
-                    spectator.detectChanges();
-                    spectator.component['handleOpenFullEditor']();
-                    spectator.detectChanges();
-
-                    expect(openSpy).toHaveBeenCalledTimes(1);
-                    const [, config] = openSpy.mock.calls[0];
-                    expect((config.heading as () => string)()).toBe('Hello World');
-                    expect((config.inputs?.['data'] as () => unknown)()).toEqual(
-                        expect.objectContaining({
-                            mode: 'edit',
-                            contentletInode: 'contentlet-inode-123'
-                        })
-                    );
-
-                    closed.next();
-                    closed.complete();
-
-                    expect(spectator.component['$editContentPanel']()).toBeNull();
-                });
-
-                it('should fall back to legacy dialog when getContentType throws', () => {
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        throwError(() => new Error('network error'))
-                    );
-                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
-
-                    store.setSelected({
-                        bounds: { x: 0, y: 0, width: 0, height: 0 },
-                        payload: EDIT_ACTION_PAYLOAD_MOCK
-                    });
-                    spectator.detectChanges();
-                    spectator.component['handleOpenFullEditor']();
-                    spectator.detectChanges();
-
-                    expect(dialogSpy).toHaveBeenCalledWith(
-                        expect.objectContaining({ inode: 'contentlet-inode-123' })
-                    );
-                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
-                });
-            });
-
-            describe('handleEditVTL', () => {
-                const VTL_FILE_MOCK: VTLFile = { inode: 'vtl-inode-123', name: 'my-template.vtl' };
-
-                afterEach(() => {
-                    vi.restoreAllMocks();
-                });
-
-                it('should open the legacy VTL dialog when the contentlet lookup fails', () => {
-                    const dotContentletService =
-                        spectator.debugElement.injector.get(DotContentletService);
-                    vi.spyOn(dotContentletService, 'getContentletByInode').mockReturnValue(
-                        throwError(() => new Error('network error'))
-                    );
-                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editVTLContentlet');
-
-                    spectator.component.handleEditVTL(VTL_FILE_MOCK);
-                    spectator.detectChanges();
-
-                    expect(dialogSpy).toHaveBeenCalledWith(VTL_FILE_MOCK);
-                });
-
-                it('should open the legacy dialog when the resolved content type does not enable the new editor', () => {
-                    const dotContentletService =
-                        spectator.debugElement.injector.get(DotContentletService);
-                    vi.spyOn(dotContentletService, 'getContentletByInode').mockReturnValue(
-                        of({ ...URL_MAP_CONTENTLET, inode: 'vtl-inode-123', contentType: 'test' })
-                    );
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of(
-                            createFakeContentType({
-                                variable: 'test',
-                                name: 'Test',
-                                metadata: {
-                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                                }
-                            })
-                        )
-                    );
-                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
-
-                    spectator.component.handleEditVTL(VTL_FILE_MOCK);
-                    spectator.detectChanges();
-
-                    expect(dialogSpy).toHaveBeenCalledWith(
-                        expect.objectContaining({ inode: 'vtl-inode-123' })
-                    );
-                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
-                });
-
-                it('should open the new edit content flow when CONTENT_EDITOR2_ENABLED is true on the resolved content type', async () => {
-                    const dotContentletService =
-                        spectator.debugElement.injector.get(DotContentletService);
-                    vi.spyOn(dotContentletService, 'getContentletByInode').mockReturnValue(
-                        of({ ...URL_MAP_CONTENTLET, inode: 'vtl-inode-123', contentType: 'test' })
-                    );
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of(
-                            createFakeContentType({
-                                variable: 'test',
-                                name: 'Test',
-                                metadata: {
-                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
-                                }
-                            })
-                        )
-                    );
-                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                    const dialogRefMock = {
-                        onClose: new Subject<void | unknown>(),
-                        close: vi.fn()
-                    };
-                    const dialogServiceOpenSpy = vi
-                        .spyOn(spectator.inject(DialogService), 'open')
-                        .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
-
-                    spectator.component.handleEditVTL(VTL_FILE_MOCK);
-                    spectator.detectChanges();
-
-                    await spectator.fixture.whenStable();
-
-                    expect(dialogSpy).not.toHaveBeenCalled();
-                    expect(dialogServiceOpenSpy).toHaveBeenCalled();
-                    const [, config] = dialogServiceOpenSpy.mock.calls[0];
-                    expect(config.data).toEqual(
-                        expect.objectContaining({
-                            mode: 'edit',
-                            contentletInode: 'vtl-inode-123'
-                        })
-                    );
-                });
-
-                describe('Edit Code panel', () => {
-                    /** The side panels the editor opened, recorded instead of rendered. */
-                    let opened: {
-                        config: DotSidePanelConfig;
-                        ref: { closed: Subject<void>; close: Mock; requestClose: Mock };
-                    }[];
-
-                    beforeEach(() => {
-                        opened = [];
-                        vi.spyOn(spectator.inject(DotSidePanelService), 'open').mockImplementation(
-                            (_component, config) => {
-                                const closed = new Subject<void>();
-                                const ref = {
-                                    closed,
-                                    close: vi.fn(() => {
-                                        closed.next();
-                                        closed.complete();
-                                    }),
-                                    requestClose: vi.fn()
-                                };
-                                opened.push({ config, ref });
-
-                                return ref as unknown as ReturnType<DotSidePanelService['open']>;
-                            }
-                        );
-                    });
-
-                    const VELOCITY_FILE = {
-                        ...URL_MAP_CONTENTLET,
-                        inode: 'vtl-inode-123',
-                        identifier: 'vtl-identifier-123',
-                        languageId: 2,
-                        baseType: 'FILEASSET',
-                        extension: 'vtl',
-                        fileName: 'my-template.vtl'
-                    } as DotCMSContentlet;
-
-                    /** Clicks the file in the VTL menu and lets the panel open. */
-                    const openVelocityFile = async () => {
-                        vi.spyOn(
-                            spectator.debugElement.injector.get(DotContentletService),
-                            'getContentletByInode'
-                        ).mockReturnValue(of(VELOCITY_FILE));
-
-                        spectator.component.handleEditVTL(VTL_FILE_MOCK);
-                        spectator.detectChanges();
-                        await spectator.fixture.whenStable();
-                        spectator.detectChanges();
-                    };
-
-                    it("should open a Velocity file's source instead of the content editor", async () => {
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogServiceOpenSpy = vi.spyOn(
-                            spectator.inject(DialogService),
-                            'open'
-                        );
-
-                        await openVelocityFile();
-
-                        const [{ config }] = opened;
-                        expect((config.inputs?.['request'] as () => unknown)()).toEqual({
-                            inode: 'vtl-inode-123',
-                            title: 'my-template.vtl',
-                            language: DOT_VELOCITY_LANGUAGE_ID
-                        });
-                        expect((config.heading as () => string)()).toBe('my-template.vtl');
-                        expect(dialogSpy).not.toHaveBeenCalled();
-                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
-                    });
-
-                    it.each([
-                        [
-                            'the user cannot edit it',
-                            of({
-                                canLock: false,
-                                locked: true,
-                                id: '',
-                                inode: '',
-                                lockedBy: 'someone'
-                            })
-                        ],
-                        ['the lock check fails', throwError(() => new Error('network'))]
-                    ])(
-                        'should open the content editor instead when %s',
-                        async (_label, lockAnswer) => {
-                            vi.spyOn(
-                                spectator.debugElement.injector.get(DotContentletService),
-                                'canLock'
-                            ).mockReturnValue(
-                                lockAnswer as ReturnType<DotContentletService['canLock']>
-                            );
-                            const openContentForEdit = vi
-                                .spyOn(spectator.component, 'openContentForEdit')
-                                .mockImplementation(() => undefined);
-
-                            await openVelocityFile();
-
-                            expect(openContentForEdit).toHaveBeenCalledWith(VELOCITY_FILE);
-                            expect(opened).toHaveLength(0);
-                        }
-                    );
-
-                    it('should reload the page when the source is saved', async () => {
-                        await openVelocityFile();
-                        const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
-
-                        (opened[0].config.outputs?.['saved'] as () => void)();
-
-                        expect(pageReloadSpy).toHaveBeenCalled();
-                    });
-
-                    it('should open the file again after the panel closed itself', async () => {
-                        await openVelocityFile();
-
-                        opened[0].ref.close();
-                        await openVelocityFile();
-
-                        // The close cleared the request, so the same file opens a new panel.
-                        expect(opened).toHaveLength(2);
-                    });
-                });
-            });
-
-            describe('handleEditWithCopyDecision', () => {
-                const MULTI_PAGE_PAYLOAD: ActionPayload = {
-                    ...EDIT_ACTION_PAYLOAD_MOCK,
-                    contentlet: {
-                        ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
-                        onNumberOfPages: 2
-                    } as ContentletPayload
-                };
-
-                afterEach(() => {
-                    vi.restoreAllMocks();
-                });
-
-                describe('single-page contentlet (onNumberOfPages: 1)', () => {
-                    it('should open legacy dialog when feature flag is disabled', () => {
-                        const dotContentTypeService =
-                            spectator.debugElement.injector.get(DotContentTypeService);
-                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                            of(
-                                createFakeContentType({
-                                    variable: 'test',
-                                    name: 'Test',
-                                    metadata: {
-                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                                    }
-                                })
-                            )
-                        );
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogServiceOpenSpy = vi.spyOn(
-                            spectator.inject(DialogService),
-                            'open'
-                        );
-
-                        spectator.component['handleEditWithCopyDecision'](EDIT_ACTION_PAYLOAD_MOCK);
-                        spectator.detectChanges();
-
-                        expect(dialogSpy).toHaveBeenCalledWith(
-                            expect.objectContaining({ inode: 'contentlet-inode-123' })
-                        );
-                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
-                    });
-
-                    it('should open new edit content dialog when feature flag is enabled', async () => {
-                        const dotContentTypeService =
-                            spectator.debugElement.injector.get(DotContentTypeService);
-                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                            of(
-                                createFakeContentType({
-                                    variable: 'test',
-                                    name: 'Test',
-                                    metadata: {
-                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
-                                    }
-                                })
-                            )
-                        );
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogRefMock = {
-                            onClose: new Subject<void | unknown>(),
-                            close: vi.fn()
-                        };
-                        const dialogServiceOpenSpy = vi
-                            .spyOn(spectator.inject(DialogService), 'open')
-                            .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
-
-                        spectator.component['handleEditWithCopyDecision'](EDIT_ACTION_PAYLOAD_MOCK);
-                        spectator.detectChanges();
-
-                        await spectator.fixture.whenStable();
-
-                        expect(dialogSpy).not.toHaveBeenCalled();
-                        expect(dialogServiceOpenSpy).toHaveBeenCalled();
-                        const [, config] = dialogServiceOpenSpy.mock.calls[0];
-                        expect(config.data).toEqual(
-                            expect.objectContaining({
-                                mode: 'edit',
-                                contentletInode: 'contentlet-inode-123'
-                            })
-                        );
-                    });
-
-                    it('should fall back to legacy dialog when getContentType throws', () => {
-                        const dotContentTypeService =
-                            spectator.debugElement.injector.get(DotContentTypeService);
-                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                            throwError(() => new Error('network error'))
-                        );
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogServiceOpenSpy = vi.spyOn(
-                            spectator.inject(DialogService),
-                            'open'
-                        );
-
-                        spectator.component['handleEditWithCopyDecision'](EDIT_ACTION_PAYLOAD_MOCK);
-                        spectator.detectChanges();
-
-                        expect(dialogSpy).toHaveBeenCalledWith(
-                            expect.objectContaining({ inode: 'contentlet-inode-123' })
-                        );
-                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
-                    });
-                });
-
-                describe('multi-page contentlet (onNumberOfPages > 1)', () => {
-                    it('should open legacy dialog when flag is disabled and user edits all pages', () => {
-                        const dotContentTypeService =
-                            spectator.debugElement.injector.get(DotContentTypeService);
-                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                            of(
-                                createFakeContentType({
-                                    variable: 'test',
-                                    name: 'Test',
-                                    metadata: {
-                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                                    }
-                                })
-                            )
-                        );
-                        vi.spyOn(
-                            spectator.inject(DotCopyContentModalService),
-                            'open'
-                        ).mockReturnValue(of({ shouldCopy: false }));
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogServiceOpenSpy = vi.spyOn(
-                            spectator.inject(DialogService),
-                            'open'
-                        );
-
-                        spectator.component['handleEditWithCopyDecision'](MULTI_PAGE_PAYLOAD);
-                        spectator.detectChanges();
-
-                        expect(dialogSpy).toHaveBeenCalledWith(
-                            expect.objectContaining({ inode: 'contentlet-inode-123' })
-                        );
-                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
-                    });
-
-                    it('should open new edit content dialog when flag is enabled and user edits all pages', async () => {
-                        const dotContentTypeService =
-                            spectator.debugElement.injector.get(DotContentTypeService);
-                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                            of(
-                                createFakeContentType({
-                                    variable: 'test',
-                                    name: 'Test',
-                                    metadata: {
-                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
-                                    }
-                                })
-                            )
-                        );
-                        vi.spyOn(
-                            spectator.inject(DotCopyContentModalService),
-                            'open'
-                        ).mockReturnValue(of({ shouldCopy: false }));
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogRefMock = {
-                            onClose: new Subject<void | unknown>(),
-                            close: vi.fn()
-                        };
-                        const dialogServiceOpenSpy = vi
-                            .spyOn(spectator.inject(DialogService), 'open')
-                            .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
-
-                        spectator.component['handleEditWithCopyDecision'](MULTI_PAGE_PAYLOAD);
-                        spectator.detectChanges();
-
-                        await spectator.fixture.whenStable();
-
-                        expect(dialogSpy).not.toHaveBeenCalled();
-                        expect(dialogServiceOpenSpy).toHaveBeenCalled();
-                        const [, config] = dialogServiceOpenSpy.mock.calls[0];
-                        expect(config.data).toEqual(
-                            expect.objectContaining({
-                                mode: 'edit',
-                                contentletInode: 'contentlet-inode-123'
-                            })
-                        );
-                    });
-
-                    it('should open new edit content dialog with copied contentlet inode when flag is enabled and user copies', async () => {
-                        const COPIED_INODE = 'copied-contentlet-inode-456';
-                        const dotContentTypeService =
-                            spectator.debugElement.injector.get(DotContentTypeService);
-                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                            of(
-                                createFakeContentType({
-                                    variable: 'test',
-                                    name: 'Test',
-                                    metadata: {
-                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
-                                    }
-                                })
-                            )
-                        );
-                        vi.spyOn(
-                            spectator.inject(DotCopyContentModalService),
-                            'open'
-                        ).mockReturnValue(of({ shouldCopy: true }));
-                        vi.spyOn(
-                            spectator.inject(DotCopyContentService),
-                            'copyInPage'
-                        ).mockReturnValue(
-                            of({ inode: COPIED_INODE, contentType: 'test' } as DotCMSContentlet)
-                        );
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogRefMock = {
-                            onClose: new Subject<void | unknown>(),
-                            close: vi.fn()
-                        };
-                        const dialogServiceOpenSpy = vi
-                            .spyOn(spectator.inject(DialogService), 'open')
-                            .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
-
-                        spectator.component['handleEditWithCopyDecision'](MULTI_PAGE_PAYLOAD);
-                        spectator.detectChanges();
-
-                        await spectator.fixture.whenStable();
-
-                        expect(dialogSpy).not.toHaveBeenCalled();
-                        expect(dialogServiceOpenSpy).toHaveBeenCalled();
-                        const [, config] = dialogServiceOpenSpy.mock.calls[0];
-                        expect(config.data).toEqual(
-                            expect.objectContaining({
-                                mode: 'edit',
-                                contentletInode: COPIED_INODE
-                            })
-                        );
-                    });
-
-                    it('should fall back to legacy dialog and still reload page when getContentType throws after copy', () => {
-                        const dotContentTypeService =
-                            spectator.debugElement.injector.get(DotContentTypeService);
-                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                            throwError(() => new Error('network error'))
-                        );
-                        vi.spyOn(
-                            spectator.inject(DotCopyContentModalService),
-                            'open'
-                        ).mockReturnValue(of({ shouldCopy: true }));
-                        const COPIED_INODE = 'copied-contentlet-inode-456';
-                        vi.spyOn(
-                            spectator.inject(DotCopyContentService),
-                            'copyInPage'
-                        ).mockReturnValue(
-                            of({ inode: COPIED_INODE, contentType: 'test' } as DotCMSContentlet)
-                        );
-                        const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogServiceOpenSpy = vi.spyOn(
-                            spectator.inject(DialogService),
-                            'open'
-                        );
-
-                        spectator.component['handleEditWithCopyDecision'](MULTI_PAGE_PAYLOAD);
-                        spectator.detectChanges();
-
-                        expect(pageReloadSpy).toHaveBeenCalled();
-                        expect(dialogSpy).toHaveBeenCalledWith(
-                            expect.objectContaining({ inode: COPIED_INODE })
-                        );
-                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
-                    });
-                });
-
-                describe('contentlet edit permission (#37376)', () => {
-                    const DENIED_PAYLOAD: ActionPayload = {
-                        ...EDIT_ACTION_PAYLOAD_MOCK,
-                        contentlet: {
-                            ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
-                            canEdit: false
-                        }
-                    };
-
-                    const DENIED_MULTI_PAGE_PAYLOAD: ActionPayload = {
-                        ...MULTI_PAGE_PAYLOAD,
-                        contentlet: {
-                            ...MULTI_PAGE_PAYLOAD.contentlet,
-                            canEdit: false
-                        }
-                    };
-
-                    it('should not open any editor for a contentlet the user cannot edit', () => {
-                        // Mock the content type so the permitted path WOULD open
-                        // the legacy dialog synchronously. Without this the test
-                        // would pass vacuously, proving nothing about the guard.
-                        const dotContentTypeService =
-                            spectator.debugElement.injector.get(DotContentTypeService);
-                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                            of(
-                                createFakeContentType({
-                                    variable: 'test',
-                                    name: 'Test',
-                                    metadata: {
-                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                                    }
-                                })
-                            )
-                        );
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogServiceOpenSpy = vi.spyOn(
-                            spectator.inject(DialogService),
-                            'open'
-                        );
-
-                        spectator.component['handleEditWithCopyDecision'](DENIED_PAYLOAD);
-                        spectator.detectChanges();
-
-                        expect(dialogSpy).not.toHaveBeenCalled();
-                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
-                    });
-
-                    it('should not open the copy decision modal for a denied multi-page contentlet', () => {
-                        // The modal is the first thing the multi-page path does,
-                        // so it must never be reached — the user cannot edit the
-                        // original nor be offered a copy of it here.
-                        const copyModalSpy = vi.spyOn(
-                            spectator.inject(DotCopyContentModalService),
-                            'open'
-                        );
-
-                        spectator.component['handleEditWithCopyDecision'](
-                            DENIED_MULTI_PAGE_PAYLOAD
-                        );
-                        spectator.detectChanges();
-
-                        expect(copyModalSpy).not.toHaveBeenCalled();
-                    });
-
-                    it('should still open the copy decision modal when the user can edit', () => {
-                        const copyModalSpy = vi
-                            .spyOn(spectator.inject(DotCopyContentModalService), 'open')
-                            .mockReturnValue(of({ shouldCopy: false }));
-
-                        spectator.component['handleEditWithCopyDecision'](MULTI_PAGE_PAYLOAD);
-                        spectator.detectChanges();
-
-                        expect(copyModalSpy).toHaveBeenCalled();
-                    });
-
-                    it('should still open the editor when the permission field is absent', () => {
-                        // Headless payloads carry no canEdit; fail open.
-                        const dotContentTypeService =
-                            spectator.debugElement.injector.get(DotContentTypeService);
-                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                            of(
-                                createFakeContentType({
-                                    variable: 'test',
-                                    name: 'Test',
-                                    metadata: {
-                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                                    }
-                                })
-                            )
-                        );
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-
-                        spectator.component['handleEditWithCopyDecision'](EDIT_ACTION_PAYLOAD_MOCK);
-                        spectator.detectChanges();
-
-                        expect(dialogSpy).toHaveBeenCalled();
-                    });
                 });
             });
 

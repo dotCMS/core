@@ -1,5 +1,6 @@
 import { patchState, signalState } from '@ngrx/signals';
-import { EMPTY, Observable, forkJoin, fromEvent, of } from 'rxjs';
+import { injectDispatch } from '@ngrx/signals/events';
+import { EMPTY, Observable, fromEvent, of } from 'rxjs';
 
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { NgClass, NgStyle } from '@angular/common';
@@ -62,11 +63,8 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     DotEditContentDialogComponent,
-    DotSourceEditorRequest,
     EditContentDialogData,
-    loadDotEditContentSidePanel,
-    loadDotSourceEditorSidePanel,
-    toSourceEditorRequest
+    loadDotEditContentSidePanel
 } from '@dotcms/edit-content';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
@@ -76,6 +74,8 @@ import { DotCopyContentModalService, DotMessagePipe, injectSidePanel } from '@do
 import { WINDOW, isEqual } from '@dotcms/utils';
 import { getContentletsInContainer } from '@dotcms/uve/internal';
 
+import { DotUveContentEditorComponent } from './components/dot-uve-content-editor/dot-uve-content-editor.component';
+import { uveContentEditorEvents } from './components/dot-uve-content-editor/dot-uve-content-editor.events';
 import { DotUveContentletQuickEditComponent } from './components/dot-uve-contentlet-quick-edit/dot-uve-contentlet-quick-edit.component';
 import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
 import { DotUveDeviceControlsComponent } from './components/dot-uve-device-controls/dot-uve-device-controls.component';
@@ -115,25 +115,24 @@ import {
     InsertPayloadFromDelete,
     PageContainer,
     PositionPayload,
-    PostMessage,
-    VTLFile
+    PostMessage
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
+import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
 import { IframeAccessMode, PageType } from '../store/models';
 import {
     TEMPORAL_DRAG_ITEM,
     areContainersEquals,
     createFullURL,
     deleteContentletFromContainer,
-    getTargetUrl,
+    getLanguageChangePageParams,
     insertContentletInContainer,
     isAssetPath,
     isNavigableHref,
     isSamePageNavigation,
     measureCanvasAvailableSize,
     resolveClickedAnchor,
-    scrollIframeToFragment,
-    shouldNavigate
+    scrollIframeToFragment
 } from '../utils';
 
 // Message keys constants
@@ -185,7 +184,8 @@ const MESSAGE_KEY = {
         PopoverModule,
         TooltipModule,
         DotMessagePipe,
-        DotUveDeviceControlsComponent
+        DotUveDeviceControlsComponent,
+        DotUveContentEditorComponent
     ],
     providers: [
         DotPaletteListStore,
@@ -211,7 +211,13 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         return this.iframeComponent?.iframe;
     }
 
-    protected readonly uveStore = inject(UVEStore);
+    /**
+     * The UVE store. `withPageApi`'s methods (`pageLoad`, `pageReload`…) reach the store's type
+     * only through an index signature, as plain `Function`, so they are typed through that
+     * feature's own interface.
+     */
+    protected readonly uveStore = inject(UVEStore) as InstanceType<typeof UVEStore> &
+        WithPageApiMethods;
 
     /**
      * Right sidebar tab management using NgRx signalState (similar to palette component).
@@ -290,7 +296,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private readonly dotCopyContentService = inject(DotCopyContentService);
     private readonly dotContentTypeService = inject(DotContentTypeService);
-    private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
     private readonly dotContentletService = inject(DotContentletService);
     private readonly dialogService = inject(DialogService);
     private readonly tempFileUploadService = inject(DotTempFileUploadService);
@@ -302,23 +307,18 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     private readonly globalStore = inject(GlobalStore);
     private readonly dragDropService = inject(DotUveDragDropService);
     private readonly iframeMessenger = inject(UveIframeMessengerService);
+    private readonly contentEditor = injectDispatch(uveContentEditorEvents);
 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
 
     /**
-     * Drives the Edit Content side panel: the content to open (create/edit) or `null` when closed.
+     * Drives the Edit Content side panel for the create flows: the content to create, or `null`
+     * when closed. Editing an existing contentlet goes through the content editor instead.
      * Only used when {@link $sidePanelEnabled} is on; the panel is open while it is set (see the
      * constructor).
      */
     protected readonly $editContentPanel = signal<EditContentDialogData | null>(null);
-
-    /**
-     * Drives the Edit Code side panel: the VTL file whose source is open in Monaco, or `null`
-     * when closed. Set from the contentlet tools' VTL menu (see {@link handleEditVTL}); the panel is
-     * open while it is set (see the constructor).
-     */
-    protected readonly $sourceEditorPanel = signal<DotSourceEditorRequest | null>(null);
 
     /**
      * Feature flag: when on, the editor opens in the side panel; when off, it opens in the centered
@@ -620,18 +620,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             heading: (data) => data.title ?? '',
             inputs: (data) => ({ data }),
             closed: () => this.$editContentPanel.set(null)
-        });
-
-        // The Edit Code side panel, open while `$sourceEditorPanel` is set. A save writes the
-        // file's working version, which edit mode renders, so the page reloads to show it; the
-        // panel then closes itself. Loaded on its first open, so Monaco stays out of this
-        // portlet's chunk.
-        injectSidePanel(this.$sourceEditorPanel, {
-            component: loadDotSourceEditorSidePanel,
-            heading: (request) => request.title,
-            inputs: (request) => ({ request }),
-            outputs: { saved: () => this.reloadPage() },
-            closed: () => this.$sourceEditorPanel.set(null)
         });
     }
 
@@ -1403,24 +1391,20 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 this.cd.detectChanges();
             },
             [NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED]: () => {
-                const htmlPageReferer = event.detail.payload?.htmlPageReferer;
-                const url = new URL(htmlPageReferer, this.window.location.origin); // Add base for relative URLs
-                const targetUrl = getTargetUrl(
-                    url.pathname,
-                    this.uveStore.pageAsset()?.urlContentMap
-                );
-                const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language');
+                const pageParams = this.uveStore.pageParams();
 
-                if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
-                    // Navigate to the new URL if it's different from the current one
-                    this.uveStore.pageLoad({ url: targetUrl, language_id });
-
+                // With no page loaded there is no page to show in the new language.
+                if (!pageParams) {
                     return;
                 }
 
-                this.uveStore.pageLoad({
-                    language_id
-                });
+                this.uveStore.pageLoad(
+                    getLanguageChangePageParams(event.detail.payload?.htmlPageReferer, {
+                        origin: this.window.location.origin,
+                        urlContentMap: this.uveStore.pageAsset()?.urlContentMap,
+                        currentUrl: pageParams.url
+                    })
+                );
             }
         })[detail.name];
     }
@@ -1511,37 +1495,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         patchState(this.#rightSidebarTabState, { currentTab: 0 });
     }
 
-    protected handleOpenFullEditor(): void {
-        // Use $contentletEditData (not editorSelected directly) so the dialog
-        // always receives the freshest contentlet from the page asset. After
-        // a dialog save + pageReload(), the page asset is updated with a new
-        // inode, but editorSelected().payload still holds the stale one.
-        // $contentletEditData looks up the contentlet by identifier from the
-        // updated page asset, so it reflects the post-save version.
-        const { contentlet } = this.$contentletEditData();
-
-        if (!contentlet?.inode) {
-            return;
-        }
-
-        this.openContentForEdit(contentlet);
-    }
-
-    /**
-     * Opens the Angular-based edit content dialog (same shell as relationship field "create").
-     */
-    #openNewEditContentDialog(contentlet: DotCMSContentlet): void {
-        const dialogData: EditContentDialogData = {
-            mode: 'edit',
-            contentletInode: contentlet.inode,
-            onContentSaved: () => {
-                this.uveStore.pageReload();
-            }
-        };
-
-        this.#openDotEditContentShell(contentlet.title ?? '', dialogData);
-    }
-
     /**
      * Fetches the content type and opens the new Angular-based editor if the feature flag is enabled,
      * otherwise calls the legacy fallback.
@@ -1571,23 +1524,16 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Opens the new Angular editor if the content type has the flag enabled, otherwise the legacy
-     * dialog. Single entry point used by handleOpenFullEditor and handleEditWithCopyDecision — and,
-     * since it's public, also by DotEmaShellComponent for the "Properties" nav action (editing the
-     * page's own contentlet), captured via the router-outlet `(activate)` reference to this component.
+     * Asks the content editor to edit a contentlet. Public because DotEmaShellComponent calls
+     * it for the "Properties" nav action (editing the page's own contentlet), through the
+     * router-outlet `(activate)` reference to this component. No permission check, as Properties
+     * never had one.
+     *
+     * @param {DotCMSContentlet} contentlet - The contentlet to edit.
+     * @memberof EditEmaEditorComponent
      */
     openContentForEdit(contentlet: DotCMSContentlet): void {
-        const contentTypeVariable = contentlet.contentType;
-        if (!contentTypeVariable) {
-            this.dialog?.editContentlet(contentlet);
-            return;
-        }
-
-        this.#openNewContentDialogOrFallback(
-            contentTypeVariable,
-            () => this.#openNewEditContentDialog(contentlet),
-            () => this.dialog?.editContentlet(contentlet)
-        );
+        this.contentEditor.uveEditContentRequested({ contentlet });
     }
 
     /**
@@ -1641,7 +1587,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     #openDotEditContentShell(header: string, dialogData: EditContentDialogData): void {
         if (this.$sidePanelEnabled()) {
             // Side panel: shows `title` in its header (the dialog used `header`) and fires
-            // `dialogData.onContentSaved`/`onCancel` on close — so palette-drop / edit flows work
+            // `dialogData.onContentSaved`/`onCancel` on close — so the create flows work
             // unchanged.
             this.$editContentPanel.set({ ...dialogData, title: header });
 
@@ -1669,114 +1615,8 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         });
     }
 
-    /**
-     * Pencil button on the hover toolbar: open the full content editor
-     * dialog. If the contentlet appears on more than one page, prompt
-     * the user first ("edit on all pages" vs "this page only"). On
-     * "this page only", fork the contentlet via copyInPage so the
-     * other pages are unaffected, then open the dialog with the new copy.
-     *
-     * Reads the contentlet from the event payload, NOT from
-     * editorSelected — pencil is intentionally stateless
-     * with respect to editor selection. Selection (border) and active
-     * (side panel) are owned by other actions.
-     */
-    protected handleEditWithCopyDecision(payload: ActionPayload): void {
-        const contentlet = payload?.contentlet;
-        if (!contentlet?.inode) {
-            return;
-        }
-
-        // Defense in depth for the disabled pencil. The button is already
-        // disabled when the user lacks EDIT permission on this contentlet, but
-        // the toolbar can emit from stale bounds or be driven programmatically,
-        // so the guarantee must not rest on styling alone. Fail-open: only an
-        // explicit `false` denies, because headless pages carry no permission.
-        if (contentlet.canEdit === false) {
-            return;
-        }
-
-        const onMultiplePages = Number(contentlet.onNumberOfPages ?? 1) > 1;
-        if (!onMultiplePages) {
-            this.openContentForEdit(contentlet as unknown as DotCMSContentlet);
-            return;
-        }
-
-        const treeNode = this.uveStore.getCurrentTreeNode(payload.container, contentlet);
-
-        this.dotCopyContentModalService
-            .open()
-            .pipe(
-                takeUntilDestroyed(this.destroyRef),
-                switchMap(({ shouldCopy }) =>
-                    shouldCopy ? this.dotCopyContentService.copyInPage(treeNode) : of(null)
-                )
-            )
-            .subscribe({
-                next: (copied) => {
-                    // shouldCopy === false → edit the original (affects all pages).
-                    // shouldCopy === true  → copyInPage forked it; edit the new copy.
-                    const target = copied ?? (contentlet as unknown as DotCMSContentlet);
-                    if (copied) {
-                        this.uveStore.pageReload();
-                    }
-
-                    this.openContentForEdit(target);
-                },
-                error: (error: HttpErrorResponse) => {
-                    this.dotHttpErrorManagerService.handle(error);
-                }
-            });
-    }
-
     private handleCopyContent(treeNode: DotTreeNode): Observable<DotCMSContentlet> {
         return this.dotCopyContentService.copyInPage(treeNode);
-    }
-
-    /**
-     * Handles the edit of a VTL file: opens its source in Monaco, in the Edit Code side panel.
-     *
-     * `VTLFile` only carries `inode`/`name` (it comes from the client's postMessage payload), so the
-     * full contentlet is resolved by inode first: `toSourceEditorRequest` needs its type, extension
-     * and name to decide whether the source editor handles it. Who may edit the source is decided
-     * before opening, by the same rule as Content Drive's row menu, from the server's lock answer
-     * fetched alongside.
-     *
-     * A file the source editor does not handle, or one the user cannot edit, goes to the content
-     * editor as before, which shows what the user may see. Falls back to the legacy dialog if the
-     * file lookup fails (network/permissions), matching this codebase's established "swallow the
-     * error, keep editing working via the legacy editor" fallback pattern.
-     *
-     * @param {VTLFile} vtlFile - The VTL file to be edited.
-     * @memberof EditEmaEditorComponent
-     */
-    handleEditVTL(vtlFile: VTLFile) {
-        forkJoin({
-            contentlet: this.dotContentletService.getContentletByInode(vtlFile.inode),
-            // A failed lock check is an unknown answer, so it reads as "cannot edit the source".
-            lock: this.dotContentletService.canLock(vtlFile.inode).pipe(catchError(() => of(null)))
-        })
-            .pipe(
-                take(1),
-                takeUntilDestroyed(this.destroyRef),
-                catchError(() => of(null))
-            )
-            .subscribe((result) => {
-                if (!result) {
-                    this.dialog?.editVTLContentlet(vtlFile);
-                    return;
-                }
-
-                const { contentlet, lock } = result;
-                const request = lock ? toSourceEditorRequest(contentlet, lock) : null;
-
-                if (!request) {
-                    this.openContentForEdit(contentlet);
-                    return;
-                }
-
-                this.$sourceEditorPanel.set(request);
-            });
     }
 
     /**

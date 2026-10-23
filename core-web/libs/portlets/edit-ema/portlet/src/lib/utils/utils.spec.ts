@@ -3,6 +3,7 @@ import { DotContainer, DotDevice, DotExperiment, DotExperimentStatus } from '@do
 import {
     DotCMSPage,
     DotCMSPageAssetContainers,
+    DotCMSURLContentMap,
     DotCMSViewAsPersona,
     UVE_MODE
 } from '@dotcms/types';
@@ -25,6 +26,7 @@ import {
     compareUrlPaths,
     createFullURL,
     getDragItemData,
+    getLanguageChangePageParams,
     createReorderMenuURL,
     getRequestHostName,
     getOrientation,
@@ -1179,6 +1181,62 @@ describe('utils functions', () => {
 
         it('should return false when the paths are not equal', () => {
             expect(compareUrlPaths('/test', '/test2')).toBe(false);
+        });
+    });
+
+    describe('getLanguageChangePageParams', () => {
+        const origin = 'http://localhost:8080';
+
+        it('should return the new URL and language when the referer points at another page', () => {
+            expect(
+                getLanguageChangePageParams('/new-url-here?com.dotmarketing.htmlpage.language=1', {
+                    origin,
+                    urlContentMap: undefined,
+                    currentUrl: 'index'
+                })
+            ).toEqual({ url: '/new-url-here', language_id: '1' });
+        });
+
+        it('should return only the language when the referer points at the current page', () => {
+            expect(
+                getLanguageChangePageParams('/test-url?com.dotmarketing.htmlpage.language=2', {
+                    origin,
+                    urlContentMap: undefined,
+                    currentUrl: 'test-url'
+                })
+            ).toEqual({ language_id: '2' });
+        });
+
+        it("should compare against a URL-mapped page's own URL instead of the referer path", () => {
+            // The referer of a URL-mapped page is its detail page, not the URL the editor shows.
+            const urlContentMap = { URL_MAP_FOR_CONTENT: '/blog/post-1' } as DotCMSURLContentMap;
+
+            expect(
+                getLanguageChangePageParams('/blog/detail?com.dotmarketing.htmlpage.language=2', {
+                    origin,
+                    urlContentMap,
+                    currentUrl: '/blog/post-1'
+                })
+            ).toEqual({ language_id: '2' });
+        });
+
+        it('should read the path of an absolute referer', () => {
+            expect(
+                getLanguageChangePageParams(
+                    'http://another-host/new-url?com.dotmarketing.htmlpage.language=3',
+                    { origin, urlContentMap: undefined, currentUrl: 'index' }
+                )
+            ).toEqual({ url: '/new-url', language_id: '3' });
+        });
+
+        it('should leave the language unset when the referer carries none', () => {
+            expect(
+                getLanguageChangePageParams('/test-url', {
+                    origin,
+                    urlContentMap: undefined,
+                    currentUrl: 'test-url'
+                }).language_id
+            ).toBeUndefined();
         });
     });
 

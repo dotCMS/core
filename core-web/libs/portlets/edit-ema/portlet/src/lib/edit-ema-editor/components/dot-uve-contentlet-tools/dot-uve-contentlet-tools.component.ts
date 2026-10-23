@@ -1,4 +1,5 @@
 import { signalMethod } from '@ngrx/signals';
+import { injectDispatch } from '@ngrx/signals/events';
 
 import { JsonPipe, NgStyle } from '@angular/common';
 import {
@@ -19,11 +20,13 @@ import { TieredMenu, TieredMenuModule } from 'primeng/tieredmenu';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { TEMP_EMPTY_CONTENTLET_TYPE } from '@dotcms/uve/internal';
 
-import { ActionPayload, VTLFile } from '../../../shared/models';
+import { ActionPayload } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { uveContentEditorEvents } from '../dot-uve-content-editor/dot-uve-content-editor.events';
 import { ContentletArea } from '../ema-page-dropzone/types';
 
 /**
@@ -54,6 +57,7 @@ type DotHoverActionMenuItem = MenuItem & { symbol?: string };
 export class DotUveContentletToolsComponent {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #uveStore = inject(UVEStore);
+    readonly #contentEditor = injectDispatch(uveContentEditorEvents);
 
     readonly menuHover = viewChild<Menu>('menuHover');
     readonly menuHoverVTL = viewChild<Menu>('menuHoverVTL');
@@ -86,23 +90,10 @@ export class DotUveContentletToolsComponent {
     readonly showStyleEditorOption = input<boolean>(false, { alias: 'showStyleEditorOption' });
 
     /**
-     * Emitted when the user chooses to edit a VTL file associated with the current contentlet.
-     */
-    readonly editVTL = output<VTLFile>();
-    /**
      * Emitted when the user clicks the quick-edit (sliders) button to
      * open the side panel for inline-style edits.
      */
     readonly openQuickEdit = output<void>();
-    /**
-     * Emitted when the user clicks the pencil button to open the full
-     * content editor as a modal dialog. Carries the hovered contentlet's
-     * payload so the parent can act on it without writing to
-     * editorSelected — pencil
-     * is intentionally "stateless" (doesn't pin the contentlet as
-     * selected or active in the editor).
-     */
-    readonly openFullEditor = output<ActionPayload>();
     /**
      * Emitted when the user requests deletion of the current contentlet.
      * The parent component is responsible for performing and confirming the deletion.
@@ -307,7 +298,7 @@ export class DotUveContentletToolsComponent {
                 label: file?.name,
                 command: () => {
                     this.promoteHoverToSelected();
-                    this.editVTL.emit(file);
+                    this.#contentEditor.uveEditSourceRequested(file);
                 }
             })) ?? []
         );
@@ -352,7 +343,7 @@ export class DotUveContentletToolsComponent {
             label: this.#dotMessageService.get('uve.tooltip.edit.full'),
             symbol: 'edit_note',
             disabled: !this.canEditContentlet(),
-            command: () => this.openFullEditor.emit(context)
+            command: () => this.editContent(context)
         });
 
         const vtlSubmenu = this.vtlMenuItems();
@@ -494,6 +485,29 @@ export class DotUveContentletToolsComponent {
 
     constructor() {
         this.hideMenusMethod(this.contentletArea);
+    }
+
+    /**
+     * Pencil: asks for the full content editor on the hovered contentlet. Sends its container
+     * along, so a contentlet on more than one page is first offered as a copy on this page only.
+     *
+     * Reads the hovered payload, NOT editorSelected — the pencil is intentionally stateless with
+     * respect to editor selection, so it does not call {@link promoteHoverToSelected}.
+     *
+     * Defense in depth for the disabled pencil: the toolbar can act from stale bounds or be
+     * driven programmatically, so the permission check must not rest on the disabled button
+     * alone. Fail-open: only an explicit `false` denies, because headless pages carry no
+     * permission.
+     */
+    protected editContent({ contentlet, container }: ActionPayload): void {
+        if (!contentlet?.inode || contentlet.canEdit === false) {
+            return;
+        }
+
+        this.#contentEditor.uveEditContentRequested({
+            contentlet: contentlet as unknown as DotCMSContentlet,
+            forkFrom: container
+        });
     }
 
     /**

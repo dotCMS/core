@@ -125,7 +125,7 @@
                     </p-button>
                 }
                 <p-button
-                    (click)="openFullEditor.emit(hoverContext)"
+                    (click)="editContent(hoverContext)"
                     [disabled]="!canEditContentlet()"
                     data-testId="hover-edit-button"
                     [pTooltip]="editButtonTooltip() | dm"

@@ -1,3 +1,5 @@
+import { injectDispatch } from '@ngrx/signals/events';
+
 import {
     ChangeDetectionStrategy,
     Component,
@@ -5,7 +7,6 @@ import {
     effect,
     inject,
     input,
-    output,
     signal,
     untracked
 } from '@angular/core';
@@ -21,6 +22,7 @@ import { ContentletEditData, ContentletField } from './types';
 
 import { UVEStore } from '../../../store/dot-uve.store';
 import { getQuickEditFields, parseFieldValues } from '../../utils';
+import { uveContentEditorEvents } from '../dot-uve-content-editor/dot-uve-content-editor.events';
 
 type QuickEditMode =
     | 'decide'
@@ -58,11 +60,10 @@ type QuickEditMode =
 })
 export class DotUveContentletQuickEditComponent {
     readonly #uveStore = inject(UVEStore);
+    readonly #contentEditor = injectDispatch(uveContentEditorEvents);
 
     readonly data = input.required<ContentletEditData>();
     readonly loading = input<boolean>(false);
-
-    readonly openFullEditor = output<void>();
 
     readonly #decisionMade = signal(false);
     readonly #lastIdentifierForDecision = signal<string | undefined>(undefined);
@@ -149,6 +150,22 @@ export class DotUveContentletQuickEditComponent {
     /** Wired to the copy-decision component's `decisionMade` output. */
     protected handleDecisionMade(): void {
         this.#decisionMade.set(true);
+    }
+
+    /**
+     * Wired to the form's `openFullEditor` output and the no-fields button. Opens the full editor
+     * on the contentlet the panel shows, which comes from the page asset, so it is the latest
+     * saved version even after a save changed its inode. No container goes along: this panel has
+     * its own copy prompt.
+     */
+    protected openFullEditor(): void {
+        const { contentlet } = this.data();
+
+        if (!contentlet?.inode) {
+            return;
+        }
+
+        this.#contentEditor.uveEditContentRequested({ contentlet });
     }
 
     /** Wired to the form component's `closed` output (Cancel button). */
