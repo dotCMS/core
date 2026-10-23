@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.structure.action;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 
+import com.dotcms.contenttype.business.FieldReorderHelper;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.LegacyFieldTypes;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
@@ -50,7 +51,9 @@ import com.liferay.util.servlet.SessionMessages;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.apache.commons.beanutils.BeanUtils;
@@ -74,6 +77,7 @@ public class EditFieldAction extends DotPortletAction {
     private static final String MISSING_DATA_VALUE_MESSAGE = "message.structure.missingdatavalue";
     private static final String INVALIDATE_DATA_TYPE_MESSAGE = "message.structure.invaliddatatype";
     private static final String ERROR = "error";
+    private static final String SORT_ORDER_PARAMETER_PREFIX = "order_";
 
 	/**
 	 * Default constructor for Struts to instantiate this action.
@@ -90,6 +94,12 @@ public class EditFieldAction extends DotPortletAction {
     
 	/**
 	 * Handles all the actions associated to a field in a Content Type.
+	 * <p>For {@code cmd=reorder} the posted {@code order_<field inode>} values are saved through
+	 * {@link FieldReorderHelper}: the fields must all belong to one content type on which the user
+	 * has EDIT_PERMISSIONS, checked before the sort orders are read, and they are saved as that
+	 * user. A rejected reorder, or one from a user who may reorder the fields with a sort order that
+	 * is not a whole number, saves nothing, adds an error message, rolls back the transaction and
+	 * shows the error page instead of redirecting back as a successful reorder does.</p>
 	 *
 	 * @param mapping
 	 *            -
@@ -179,7 +189,15 @@ public class EditFieldAction extends DotPortletAction {
             } else if ((cmd != null) && cmd.equals("reorder")) {
                 try {
                     Logger.debug(this, "Calling reorder Method");
-                    _reorderFields(form, req, res);
+                    _reorderFields(req, user);
+                } catch (final DotSecurityException e) {
+                    rejectReorder(req, e, "message.insufficient.permissions.to.save");
+                    return;
+                } catch (final NumberFormatException e) {
+                    rejectReorder(req,
+                            new IllegalArgumentException("Every sort order must be a whole number"),
+                            INVALIDATE_DATA_MESSAGE);
+                    return;
                 } catch (Exception ae) {
                     _handleException(ae, req);
                     return;
@@ -469,34 +487,53 @@ public class EditFieldAction extends DotPortletAction {
     }
 
     /**
-     * 
-     * @param form
-	 *            - The form containing the information selected by the user in
-	 *            the UI.
-	 * @param req
-	 *            - The HTTP Request wrapper.
-	 * @param res
-	 *            - The HTTP Response wrapper.
+     * Saves the sort orders posted as {@code order_<field inode>} parameters.
+     * {@link FieldReorderHelper} resolves the content type of the posted fields and requires
+     * EDIT_PERMISSIONS on it before it looks at the other fields or the sort orders, requires every
+     * field to belong to that type, validates every entry before saving any field, and saves them
+     * as the user. The success message is added only after the fields are saved.
+     *
+     * @param req  - The HTTP Request wrapper.
+     * @param user - The {@link User} reordering the fields; {@code null} is rejected.
+     * @throws DotSecurityException  The request breaks a reorder rule; nothing was saved.
+     * @throws NumberFormatException The user may reorder the fields but a sort order is not a
+     *                               whole number; nothing was saved.
+     * @throws DotDataException      The fields could not be loaded or saved.
      */
-    private void _reorderFields(ActionForm form, ActionRequest req, ActionResponse res) {
-        try {
-            Enumeration enumeration = req.getParameterNames();
-            while (enumeration.hasMoreElements()) {
-                String parameterName = (String) enumeration.nextElement();
-                if (parameterName.indexOf("order_") != -1) {
-                    String parameterValue = req.getParameter(parameterName);
-                    String fieldInode = parameterName.substring(parameterName.indexOf("_") + 1);
-                    Field field = FieldFactory.getFieldByInode(fieldInode);
-                    field.setSortOrder(Integer.parseInt(parameterValue));
-                    FieldFactory.saveField(field);
-                }
+    private void _reorderFields(final ActionRequest req, final User user)
+            throws DotSecurityException, DotDataException {
+        FieldReorderHelper.reorderFieldsOfOneType(user, collectSortOrders(req));
+        SessionMessages.add(req, "message", "message.structure.reorderfield");
+    }
+
+    /**
+     * Reads the {@code order_<field inode>} parameters of a reorder request into a sort order per
+     * field inode, keeping the values as posted; {@link FieldReorderHelper} reads them as numbers
+     * once the user has been checked.
+     */
+    private Map<String, String> collectSortOrders(final ActionRequest req) {
+        final Map<String, String> sortOrders = new LinkedHashMap<>();
+        final Enumeration<?> parameterNames = req.getParameterNames();
+        while (parameterNames.hasMoreElements()) {
+            final String parameterName = (String) parameterNames.nextElement();
+            if (parameterName.startsWith(SORT_ORDER_PARAMETER_PREFIX)) {
+                sortOrders.put(parameterName.substring(SORT_ORDER_PARAMETER_PREFIX.length()),
+                        req.getParameter(parameterName));
             }
-            FieldsCache.clearCache();
-            String message = "message.structure.reorderfield";
-            SessionMessages.add(req, "message", message);
-        } catch (Exception ex) {
-            Logger.error(EditFieldAction.class, ex.toString());
         }
+        return sortOrders;
+    }
+
+    /**
+     * Ends a reorder request that saved nothing: adds the error message for the user, then uses
+     * the action's error handling without a stack trace, which rolls back the transaction and
+     * shows the error page instead of redirecting back as a successful reorder does. The
+     * {@code reason} must carry a fixed message, as it is written to the log.
+     */
+    private void rejectReorder(final ActionRequest req, final Exception reason,
+            final String messageKey) {
+        SessionMessages.add(req, ERROR, messageKey);
+        _handleException(reason, req, false);
     }
 
     /**

@@ -146,7 +146,6 @@ import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.filters.CMSUrlUtilIntegrationTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
-import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
 import com.dotmarketing.portlets.browser.BrowserUtilTest;
 import com.dotmarketing.portlets.browser.ajax.BrowserAjaxTest;
 import com.dotmarketing.portlets.categories.business.CategoryFactoryTest;
@@ -305,7 +304,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task201102UpdateColumnSitelicTableTest.class,
         DependencyManagerTest.class,
         com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class,
-        GenericBundleActivatorIntegrationTest.class,
         SAMLHelperTest.class,
         PermissionHelperTest.class,
         ResetPasswordTokenUtilTest.class,
@@ -494,12 +492,14 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.business.PermissionAPIIntegrationTest.class,
         com.dotmarketing.business.PermissionAPITest.class,
         com.dotmarketing.business.ajax.PermissionAjaxIntegrationTest.class,
+        com.dotmarketing.business.ajax.RoleAjaxIntegrationTest.class,
         com.dotmarketing.servlets.BinaryExporterServletTest.class,
         com.dotmarketing.servlets.ShortyServletAndTitleImageTest.class,
         com.dotmarketing.servlets.InitRunnerTest.class,
         com.dotmarketing.servlets.ajax.AjaxDirectorServletIntegrationTest.class,
         FocalPointAPITest.class,
         com.dotmarketing.tag.business.TagAPITest.class,
+        com.dotmarketing.tag.ajax.TagAjaxTest.class,
         OSGIUtilTest.class,
         EncryptPlainPasswordsJobTest.class,
         CachedParameterDecoratorTest.class,
@@ -582,6 +582,13 @@ import org.junit.runners.Suite.SuiteClasses;
         RoleResourceUsersIntegrationTest.class,
         com.dotmarketing.common.reindex.ReindexDeleteJournalTest.class,
         AiRetrievalPermissionTest.class,
+        com.dotmarketing.portlets.cmsmaintenance.ajax.CMSMaintenanceAjaxIntegrationTest.class,
+        com.dotmarketing.portlets.structure.ajax.StructureAjaxIntegrationTest.class,
+        com.dotmarketing.portlets.structure.action.EditFieldActionReorderTest.class,
+        com.dotmarketing.portlets.contentlet.ajax.ImportContentletAjaxIntegrationTest.class,
+        com.dotmarketing.portlets.languagesmanager.ajax.LanguageAjaxIntegrationTest.class,
+        com.dotmarketing.business.ajax.RoleAjaxLayoutsIntegrationTest.class,
+        com.dotmarketing.portlets.languagesmanager.action.EditLanguageKeysActionTest.class,
 })
 
 public class MainSuite2b {

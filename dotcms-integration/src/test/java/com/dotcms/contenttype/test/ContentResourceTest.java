@@ -2024,7 +2024,8 @@ public class ContentResourceTest extends IntegrationTestBase {
      * Given scenario: the field filter is configured and an anonymous caller queries or sorts by a masked
      * property, which would let them recover its value.
      * Expected result: the anonymous caller gets a 400 with a readable message, never the raw message key, while
-     * an administrator can still run the query.
+     * an administrator can still run the query; an id lookup with the same orderby, which searches nothing, is not
+     * refused.
      */
     @Test
     public void test_search_fieldFilterConfigured_rejectsQueriesOnRestrictedFieldsForAnonymousUsers() throws Exception {
@@ -2049,6 +2050,10 @@ public class ContentResourceTest extends IntegrationTestBase {
             assertThrows(BadRequestException.class, () -> contentResource.search(
                     createHttpRequest(null, anonymous), mock(HttpServletResponse.class), false,
                     new SearchForm.Builder().query(query).build()));
+            assertEquals("an id lookup searches nothing, so its unused orderby must not be refused",
+                    Status.OK.getStatusCode(), contentResource.getContent(createHttpRequest(null, anonymous),
+                            mock(HttpServletResponse.class),
+                            "/id/" + fixture.parent.getIdentifier() + "/orderby/owner").getStatus());
 
             assertEquals(Status.OK.getStatusCode(), contentResource.getContent(
                     createHttpRequest(null, TestUserUtils.getAdminUser()), mock(HttpServletResponse.class),
