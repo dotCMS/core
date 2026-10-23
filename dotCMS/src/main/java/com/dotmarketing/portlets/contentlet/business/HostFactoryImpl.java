@@ -795,6 +795,24 @@ public class HostFactoryImpl implements HostFactory {
         return future;
     }
 
+    /**
+     * Finds the default {@link Host}, looking first in the site cache and then in the database.
+     * <p>
+     * On a database with JSON support the site is looked up in the {@code contentlet_as_json}
+     * column first, and then, when nothing is found there, in the legacy column {@code columnName}.
+     * The JSON lookup does not depend on {@code persist.contentlet.as.json}: that flag only decides
+     * how new content is written, and a site saved while it was on is stored in the JSON column only.
+     * If the lookup were skipped when the flag is off, an existing default site would not be found
+     * and {@code HostAPIImpl} would create a second, fake default site.
+     *
+     * @param contentTypeId        the inode of the Site content type
+     * @param columnName           the legacy contentlet column that holds the {@code isDefault} field
+     * @param respectFrontendRoles {@code true} to return the live version of the site when it differs
+     *                             from the working one
+     * @return the default {@link Host}, or an empty {@link Optional} if no site is marked as default
+     * @throws DotDataException     if the site cannot be read from the database
+     * @throws DotSecurityException if the site cannot be loaded
+     */
     @Override
     public Optional<Host> findDefaultHost(final String contentTypeId, final String columnName,
                                           final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
@@ -806,24 +824,20 @@ public class HostFactoryImpl implements HostFactory {
         String workingInode = null;
         String liveInode = null;
 
-        if (APILocator.getContentletJsonAPI().isPersistContentAsJson()) {
+        if (APILocator.getContentletJsonAPI().isJsonSupportedDatabase()) {
 
-            String sql = null;
+            final String sql;
 
             if(DbConnectionFactory.isPostgres()) {
                 sql = "SELECT cvi.working_inode,cvi.live_inode\n"
                         + "  FROM contentlet_version_info cvi join contentlet c on (c.inode = cvi.working_inode) \n"
                         + "  WHERE c.contentlet_as_json @> '{ \"fields\":{\"isDefault\":{ \"value\":true }} }' \n"
                         + "  and c.structure_inode = ?";
-            }
-            if(DbConnectionFactory.isMsSql()){
+            } else {
                 sql = "SELECT cvi.working_inode,cvi.live_inode\n"
                         + "  FROM contentlet_version_info cvi join contentlet c on (c.inode = cvi.working_inode) \n"
                         + "  WHERE JSON_VALUE(c.contentlet_as_json, '$.fields.isDefault.value') = 'true'  \n"
                         + "  and c.structure_inode = ?";
-            }
-            if(null == sql) {
-                throw new IllegalStateException("Unable to determine what db with json support we're running on!");
             }
             dotConnect.setSQL(sql);
             dotConnect.addParam(contentTypeId);
