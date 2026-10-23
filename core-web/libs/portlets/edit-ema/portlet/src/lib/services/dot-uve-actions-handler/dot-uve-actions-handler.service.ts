@@ -339,7 +339,7 @@ export class DotUveActionsHandlerService {
              * which has always opened the legacy dialog, whatever the content type asks for.
              */
             [DotCMSUVEAction.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
-                this.contentEditor.editContent({ contentlet, legacyOnly: true });
+                this.contentEditor.uveEditContentRequested({ contentlet, legacyOnly: true });
             },
             /**
              * Handles the `CREATE_CONTENTLET` postMessage action sent by `window.dotUVE.createContentlet()`

@@ -2627,7 +2627,7 @@ describe('EditEmaEditorComponent', () => {
                     spectator.component.openContentForEdit(page);
 
                     expect(dispatcher.dispatch).toHaveBeenCalledWith(
-                        uveContentEditorEvents.editContent({ contentlet: page }),
+                        uveContentEditorEvents.uveEditContentRequested({ contentlet: page }),
                         { scope: 'self' }
                     );
                 });

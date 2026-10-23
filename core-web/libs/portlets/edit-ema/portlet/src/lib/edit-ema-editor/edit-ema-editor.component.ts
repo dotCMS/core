@@ -1519,7 +1519,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * @memberof EditEmaEditorComponent
      */
     openContentForEdit(contentlet: DotCMSContentlet): void {
-        this.contentEditor.editContent({ contentlet });
+        this.contentEditor.uveEditContentRequested({ contentlet });
     }
 
     /**

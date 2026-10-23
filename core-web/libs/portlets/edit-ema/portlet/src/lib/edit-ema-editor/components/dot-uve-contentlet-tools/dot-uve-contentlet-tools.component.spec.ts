@@ -432,7 +432,7 @@ describe('DotUveContentletToolsComponent', () => {
 
         describe('full-editor (pencil) button', () => {
             /** The request the pencil makes for the hovered contentlet. */
-            const EDIT_HOVERED_CONTENTLET = uveContentEditorEvents.editContent({
+            const EDIT_HOVERED_CONTENTLET = uveContentEditorEvents.uveEditContentRequested({
                 contentlet: MOCK_CONTENTLET_AREA.payload.contentlet as unknown as DotCMSContentlet,
                 forkFrom: MOCK_CONTENTLET_AREA.payload.container
             });
@@ -586,7 +586,7 @@ describe('DotUveContentletToolsComponent', () => {
             });
         });
 
-        describe('editSource', () => {
+        describe('uveEditSourceRequested', () => {
             it('should ask to edit the source of the file when clicking VTL menu item', () => {
                 const expectedFile: VTLFile = {
                     inode: 'vtl-inode-1',
@@ -603,7 +603,7 @@ describe('DotUveContentletToolsComponent', () => {
                 vtlMenuItems[0].command?.({});
 
                 expect(dispatcher.dispatch).toHaveBeenCalledWith(
-                    uveContentEditorEvents.editSource(expectedFile),
+                    uveContentEditorEvents.uveEditSourceRequested(expectedFile),
                     { scope: 'self' }
                 );
             });
@@ -624,7 +624,7 @@ describe('DotUveContentletToolsComponent', () => {
                 vtlMenuItems[1].command?.({});
 
                 expect(dispatcher.dispatch).toHaveBeenCalledWith(
-                    uveContentEditorEvents.editSource(expectedFile),
+                    uveContentEditorEvents.uveEditSourceRequested(expectedFile),
                     { scope: 'self' }
                 );
             });
@@ -1344,7 +1344,10 @@ describe('DotUveContentletToolsComponent', () => {
                 })
             );
             expect(dispatcher.dispatch).toHaveBeenCalledWith(
-                uveContentEditorEvents.editSource({ inode: 'vtl-inode-1', name: 'template1.vtl' }),
+                uveContentEditorEvents.uveEditSourceRequested({
+                    inode: 'vtl-inode-1',
+                    name: 'template1.vtl'
+                }),
                 { scope: 'self' }
             );
             expect(setSelected.mock.invocationCallOrder[0]).toBeLessThan(

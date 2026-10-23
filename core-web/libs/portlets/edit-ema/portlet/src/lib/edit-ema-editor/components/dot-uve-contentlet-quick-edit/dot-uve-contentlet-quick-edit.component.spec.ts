@@ -239,7 +239,7 @@ describe('DotUveContentletQuickEditComponent', () => {
             clickNoFieldsButton();
 
             expect(dispatcher.dispatch).toHaveBeenCalledWith(
-                uveContentEditorEvents.editContent({ contentlet: data.contentlet }),
+                uveContentEditorEvents.uveEditContentRequested({ contentlet: data.contentlet }),
                 { scope: 'self' }
             );
         });
@@ -259,7 +259,7 @@ describe('DotUveContentletQuickEditComponent', () => {
             );
 
             expect(dispatcher.dispatch).toHaveBeenCalledWith(
-                uveContentEditorEvents.editContent({ contentlet: data.contentlet }),
+                uveContentEditorEvents.uveEditContentRequested({ contentlet: data.contentlet }),
                 { scope: 'self' }
             );
         });
@@ -276,7 +276,7 @@ describe('DotUveContentletQuickEditComponent', () => {
             clickNoFieldsButton();
 
             expect(dispatcher.dispatch).toHaveBeenCalledWith(
-                uveContentEditorEvents.editContent({ contentlet: data.contentlet }),
+                uveContentEditorEvents.uveEditContentRequested({ contentlet: data.contentlet }),
                 { scope: 'self' }
             );
         });

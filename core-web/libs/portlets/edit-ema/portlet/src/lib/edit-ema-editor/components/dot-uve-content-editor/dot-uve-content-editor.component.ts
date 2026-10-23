@@ -104,7 +104,7 @@ export class DotUveContentEditorComponent {
         // `mergeMap`: every request runs on its own, as separate clicks always have. Each one
         // handles its own errors, so a failed request never stops the listener.
         this.#events
-            .on(uveContentEditorEvents.editContent)
+            .on(uveContentEditorEvents.uveEditContentRequested)
             .pipe(
                 mergeMap(({ payload }) => this.#editContent(payload)),
                 takeUntilDestroyed()
@@ -112,7 +112,7 @@ export class DotUveContentEditorComponent {
             .subscribe();
 
         this.#events
-            .on(uveContentEditorEvents.editSource)
+            .on(uveContentEditorEvents.uveEditSourceRequested)
             .pipe(
                 mergeMap(({ payload }) => this.#editSource(payload)),
                 takeUntilDestroyed()

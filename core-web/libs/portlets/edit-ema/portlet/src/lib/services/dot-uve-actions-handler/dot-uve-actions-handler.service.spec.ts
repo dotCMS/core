@@ -592,7 +592,7 @@ describe('DotUveActionsHandlerService – EDIT_CONTENTLET', () => {
         );
 
         expect(dispatcher.dispatch).toHaveBeenCalledWith(
-            uveContentEditorEvents.editContent({ contentlet, legacyOnly: true }),
+            uveContentEditorEvents.uveEditContentRequested({ contentlet, legacyOnly: true }),
             { scope: 'self' }
         );
         expect(editContentlet).not.toHaveBeenCalled();

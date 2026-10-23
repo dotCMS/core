@@ -298,7 +298,7 @@ export class DotUveContentletToolsComponent {
                 label: file?.name,
                 command: () => {
                     this.promoteHoverToSelected();
-                    this.#contentEditor.editSource(file);
+                    this.#contentEditor.uveEditSourceRequested(file);
                 }
             })) ?? []
         );
@@ -504,7 +504,7 @@ export class DotUveContentletToolsComponent {
             return;
         }
 
-        this.#contentEditor.editContent({
+        this.#contentEditor.uveEditContentRequested({
             contentlet: contentlet as unknown as DotCMSContentlet,
             forkFrom: container
         });

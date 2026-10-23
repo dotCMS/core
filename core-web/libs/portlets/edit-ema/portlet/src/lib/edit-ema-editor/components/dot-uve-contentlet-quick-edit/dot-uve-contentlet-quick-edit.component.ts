@@ -165,7 +165,7 @@ export class DotUveContentletQuickEditComponent {
             return;
         }
 
-        this.#contentEditor.editContent({ contentlet });
+        this.#contentEditor.uveEditContentRequested({ contentlet });
     }
 
     /** Wired to the form component's `closed` output (Cancel button). */

@@ -31,7 +31,7 @@ export interface DotUveEditContentRequest {
 export const uveContentEditorEvents = eventGroup({
     source: 'UVE Content Editor',
     events: {
-        editContent: type<DotUveEditContentRequest>(),
-        editSource: type<VTLFile>()
+        uveEditContentRequested: type<DotUveEditContentRequest>(),
+        uveEditSourceRequested: type<VTLFile>()
     }
 });

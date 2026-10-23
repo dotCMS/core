@@ -203,13 +203,15 @@ describe('DotUveContentEditorComponent', () => {
 
     /** Asks the content editor to edit a contentlet, as any part of the editor does. */
     const editContent = (request: DotUveEditContentRequest) => {
-        spectator.inject(Dispatcher).dispatch(uveContentEditorEvents.editContent(request));
+        spectator
+            .inject(Dispatcher)
+            .dispatch(uveContentEditorEvents.uveEditContentRequested(request));
         spectator.detectChanges();
     };
 
     /** Asks the content editor to edit a VTL file, as the contentlet tools' VTL menu does. */
     const editSource = (file: VTLFile) => {
-        spectator.inject(Dispatcher).dispatch(uveContentEditorEvents.editSource(file));
+        spectator.inject(Dispatcher).dispatch(uveContentEditorEvents.uveEditSourceRequested(file));
         spectator.detectChanges();
     };
 
@@ -267,7 +269,7 @@ describe('DotUveContentEditorComponent', () => {
         });
     });
 
-    describe('editContent', () => {
+    describe('uveEditContentRequested', () => {
         describe('choosing the editor', () => {
             it('should open the legacy dialog when the content type does not enable the new editor', () => {
                 editContent({ contentlet: CONTENTLET });
@@ -582,7 +584,7 @@ describe('DotUveContentEditorComponent', () => {
         });
     });
 
-    describe('editSource', () => {
+    describe('uveEditSourceRequested', () => {
         it('should open the legacy VTL dialog when the file lookup fails', () => {
             contentletService.getContentletByInode.mockReturnValue(
                 throwError(() => new Error('network error'))
