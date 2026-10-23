@@ -2275,7 +2275,9 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                             var cell = row.insertCell (row.cells.length);
                             cell.setAttribute("align", "center");
-                            cell.innerHTML = '<dot-contentlet-lock-icon locked="' + cellData.locked + '" />';
+                            cell.innerHTML = '<dot-contentlet-lock-icon />';
+                            // Set as a property, like dot-state-icon above: an attribute is not mapped to the prop on pages that load prototype.js
+                            cell.firstElementChild.locked = cellData["locked"] == "true";
 
                         } else {
 
