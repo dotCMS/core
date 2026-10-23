@@ -1,5 +1,6 @@
 package com.dotcms.content.filter;
 
+import com.dotcms.util.JsonUtil;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -8,6 +9,9 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.liferay.portal.language.LanguageUtil;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
@@ -15,12 +19,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
@@ -33,9 +39,10 @@ import java.util.stream.Collectors;
  * neither CMS administrators nor back-end users, such as anonymous visitors of a headless site or
  * logged-in front-end users.
  * <p>
- * <strong>Scope:</strong> responses are filtered only by the legacy Content API ({@code /api/content}).
- * Other endpoints that return contentlets, such as {@code /api/v1/content}, the Page API and GraphQL, still
- * return these properties unchanged; they are meant to reuse this class. The {@code catchall} exclusion
+ * <strong>Scope:</strong> the configured lists are applied to the contentlets of every JSON REST response,
+ * of GraphQL {@code _map} and Story Block fields, including the contentlets embedded in a Story Block, and
+ * to the XML of the legacy Content API ({@code /api/content}); the responses of the scripted
+ * {@code /api/vtl} and {@code /api/js} endpoints are left as written. The {@code catchall} exclusion
  * described below applies at index time, so it covers every search endpoint.
  * <p>
  * Two configuration properties drive it. Both are comma-separated lists of property names, matched
@@ -82,6 +89,31 @@ public final class ContentFieldFilter {
     public static final String FIELDS_TO_HIDE_PROPERTY = "CONTENT_API_FIELDS_TO_HIDE";
 
     /**
+     * Whether the {@link #USER_PROPERTIES} are removed from what non-back-end callers receive. A permanent
+     * setting, not a feature flag. Default: on, as shipped in {@code dotmarketing-config.properties}.
+     */
+    public static final String HIDE_USER_PROPERTIES_PROPERTY = "CONTENT_API_HIDE_USER_PROPERTIES";
+
+    /**
+     * The properties that identify the users who created, changed, published, locked, pushed or were
+     * assigned an object. Lower-cased.
+     */
+    public static final Set<String> USER_PROPERTIES = Set.of(
+            "owner", "ownerusername", "moduser", "modusername", "publishuser", "publishusername",
+            "lockedby", "lockedbyname", "pushedby", "wfcreatedby", "wfassign");
+
+    /** Keys of a search body whose text values name an index field. */
+    private static final Set<String> FIELD_NAME_KEYS = Set.of("field", "fields", "default_field", "path", "sort");
+    /** Keys of a search body that hold a query in Lucene syntax under {@link #QUERY_TEXT_KEY}. */
+    private static final Set<String> QUERY_STRING_KEYS = Set.of("query_string", "simple_query_string");
+    private static final String QUERY_TEXT_KEY = "query";
+    /** Scripts ({@code script}, {@code script_score}, {@code script_fields}…) can read any field. */
+    private static final String SCRIPT_KEY_PREFIX = "script";
+    private static final String RUNTIME_MAPPINGS_KEY = "runtime_mappings";
+    private static final String TOP_HITS_KEY = "top_hits";
+    private static final String SOURCE_KEY = "_source";
+
+    /**
      * {@code Language.properties} key of the message returned to a caller whose query or sort names a masked or
      * hidden property.
      */
@@ -116,24 +148,29 @@ public final class ContentFieldFilter {
     /** Suffixes of index fields derived from a contentlet property, e.g. {@code moduser_dotraw}. */
     private static final List<String> SEARCH_FIELD_SUFFIXES = List.of("_dotraw", "_text", "_sha256");
 
-    private static final ContentFieldFilter NO_OP = new ContentFieldFilter(Set.of(), Set.of(), null);
+    private static final ContentFieldFilter NO_OP = new ContentFieldFilter(Set.of(), Set.of(), Set.of(), null);
     /** The ignored names last warned about, per configuration property, so the warning is not repeated on every request. */
     private static final Map<String, Set<String>> LAST_IGNORED_WARNING = new ConcurrentHashMap<>();
 
     private final Set<String> fieldsToMask;
     private final Set<String> fieldsToHide;
+    private final Set<String> userProperties;
     private final User user;
 
-    private ContentFieldFilter(final Set<String> fieldsToMask, final Set<String> fieldsToHide, final User user) {
+    private ContentFieldFilter(final Set<String> fieldsToMask, final Set<String> fieldsToHide,
+                               final Set<String> userProperties, final User user) {
         this.fieldsToMask = fieldsToMask;
         this.fieldsToHide = fieldsToHide;
+        this.userProperties = userProperties;
         this.user = user;
     }
 
     /**
      * Returns the filter that applies to the given user. CMS administrators and back-end users get a
-     * filter that changes nothing, and so does everyone when neither property is set. Anonymous
-     * callers, front-end users and a {@code null} user get the configured filter.
+     * filter that changes nothing, and so does everyone when neither property is set and the
+     * {@link #HIDE_USER_PROPERTIES_PROPERTY} setting is off. Anonymous callers, front-end users and a
+     * {@code null} user get the configured filter. When the setting is on, the {@link #USER_PROPERTIES}
+     * are added to the properties to remove, so they are removed even when they are also listed to mask.
      *
      * @param user the {@link User} the content is being returned to
      * @return the filter to apply to that user's content
@@ -141,10 +178,16 @@ public final class ContentFieldFilter {
     public static ContentFieldFilter forUser(final User user) {
         final Set<String> toMask = readFields(FIELDS_TO_MASK_PROPERTY);
         final Set<String> toHide = readFields(FIELDS_TO_HIDE_PROPERTY);
-        if ((toMask.isEmpty() && toHide.isEmpty()) || isTrusted(user)) {
+        final boolean hideUserProperties = Config.getBooleanProperty(HIDE_USER_PROPERTIES_PROPERTY, true);
+        if ((toMask.isEmpty() && toHide.isEmpty() && !hideUserProperties) || isTrusted(user)) {
             return NO_OP;
         }
-        return new ContentFieldFilter(toMask, toHide, user);
+        if (!hideUserProperties) {
+            return new ContentFieldFilter(toMask, toHide, Set.of(), user);
+        }
+        final Set<String> hidden = new LinkedHashSet<>(toHide);
+        hidden.addAll(USER_PROPERTIES);
+        return new ContentFieldFilter(toMask, Collections.unmodifiableSet(hidden), USER_PROPERTIES, user);
     }
 
     /**
@@ -203,6 +246,163 @@ public final class ContentFieldFilter {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Tells whether the caller may run the given Elasticsearch JSON search body. A body is refused when it
+     * names a restricted property as an object key or as the value of {@code field}, {@code fields},
+     * {@code default_field}, {@code path} or a sort, when the text of a {@code query_string} or
+     * {@code simple_query_string} names one, or when it uses scripts or runtime mappings.
+     *
+     * @param jsonBody the search body sent by the caller; may be {@code null}
+     * @return {@code false} when the body must be refused; {@code true} for an empty body or when this
+     * filter changes nothing
+     */
+    public boolean allowsJsonSearch(final String jsonBody) {
+        if (!isActive() || !UtilMethods.isSet(jsonBody)) {
+            return true;
+        }
+        final Optional<JsonNode> body = readSearchBody(jsonBody);
+        final Set<String> restricted = new LinkedHashSet<>(fieldsToMask);
+        restricted.addAll(fieldsToHide);
+        // A body that cannot be read is refused: the search engine may accept a looser syntax than this check
+        final boolean allowed = body.isPresent() && !jsonReferences(body.get(), null, restricted);
+        if (!allowed) {
+            SecurityLogger.logInfo(ContentFieldFilter.class,
+                    () -> "JSON search on a masked or hidden content property refused for user: "
+                            + (null == user ? null : user.getUserId()));
+        }
+        return allowed;
+    }
+
+    /**
+     * Limits the documents returned by every {@code top_hits} aggregation of a search body to their
+     * {@code identifier} and {@code inode}.
+     *
+     * @param jsonBody the search body sent by the caller; may be {@code null}
+     * @return the body with the {@code _source} of every {@code top_hits} restricted; anything else is unchanged
+     */
+    public String restrictTopHits(final String jsonBody) {
+        if (!isActive() || !UtilMethods.isSet(jsonBody)) {
+            return jsonBody;
+        }
+        final Optional<JsonNode> body = readSearchBody(jsonBody);
+        if (body.isEmpty()) {
+            return jsonBody;
+        }
+        limitTopHitsSource(body.get());
+        return Try.of(() -> JsonUtil.JSON_MAPPER.writeValueAsString(body.get())).getOrElse(jsonBody);
+    }
+
+    /**
+     * Returns the {@link #USER_PROPERTIES} this filter removes from every object of a response, kept apart
+     * from the configured content property lists, which apply to contentlets only.
+     *
+     * @return lower-cased property names; empty when the user properties are not hidden for this caller
+     */
+    public Set<String> userPropertiesToHide() {
+        return userProperties;
+    }
+
+    /**
+     * Returns every property this filter masks or removes: the configured lists and, when they are
+     * hidden, the {@link #USER_PROPERTIES}.
+     *
+     * @return lower-cased property names; empty when this filter changes nothing
+     */
+    public Set<String> restrictedProperties() {
+        final Set<String> restricted = new LinkedHashSet<>(fieldsToMask);
+        restricted.addAll(fieldsToHide);
+        return Collections.unmodifiableSet(restricted);
+    }
+
+    /**
+     * Reads an Elasticsearch search body. The legacy endpoints accept the looser syntax of
+     * {@link JSONObject} (unquoted names, single quotes), so a body that is not strict JSON is first
+     * normalized with it.
+     *
+     * @param jsonBody the search body sent by the caller
+     * @return the parsed body, or empty when it cannot be read in either syntax
+     */
+    private static Optional<JsonNode> readSearchBody(final String jsonBody) {
+        final Optional<JsonNode> strict = Try.of(() -> JsonUtil.JSON_MAPPER.readTree(jsonBody)).toJavaOptional()
+                .filter(node -> node.isObject() || node.isArray());
+        if (strict.isPresent()) {
+            return strict;
+        }
+        return Try.of(() -> JsonUtil.JSON_MAPPER.readTree(new JSONObject(jsonBody).toString())).toJavaOptional();
+    }
+
+    /**
+     * Tells whether a search body refers to any of the given properties: as an object key (a query
+     * clause, a sort or a field name), as a field named under {@code field}, {@code fields},
+     * {@code default_field}, {@code path} or {@code sort}, or inside the text of a {@code query_string}
+     * or {@code simple_query_string}. Scripts and runtime mappings count as a reference, because they can
+     * read any field.
+     *
+     * @param node the part of the body to inspect
+     * @param parentKey the key this part is held under, lower-cased; {@code null} for the root
+     * @param restricted lower-cased property names
+     * @return {@code true} when the body refers to one of them
+     */
+    private static boolean jsonReferences(final JsonNode node, final String parentKey, final Set<String> restricted) {
+        if (node.isArray()) {
+            for (final JsonNode element : node) {
+                if (jsonReferences(element, parentKey, restricted)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        if (node.isTextual()) {
+            return null != parentKey && FIELD_NAME_KEYS.contains(parentKey)
+                    && refersTo(node.asText(), restricted);
+        }
+        if (!node.isObject()) {
+            return false;
+        }
+        final Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
+        while (fields.hasNext()) {
+            final Map.Entry<String, JsonNode> field = fields.next();
+            final String key = field.getKey().toLowerCase(Locale.ROOT);
+            if (key.startsWith(SCRIPT_KEY_PREFIX) || RUNTIME_MAPPINGS_KEY.equals(key)
+                    || refersTo(field.getKey(), restricted)) {
+                return true;
+            }
+            if (QUERY_TEXT_KEY.equals(key) && null != parentKey && QUERY_STRING_KEYS.contains(parentKey)
+                    && field.getValue().isTextual()
+                    && queryReferences(field.getValue().asText(), restricted)) {
+                return true;
+            }
+            if (jsonReferences(field.getValue(), key, restricted)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Sets the {@code _source} of every {@code top_hits} aggregation in a search body to the identifier
+     * and inode, the same fields a plain search returns.
+     *
+     * @param node the part of the body to change, in place
+     */
+    private static void limitTopHitsSource(final JsonNode node) {
+        if (node.isArray()) {
+            node.forEach(ContentFieldFilter::limitTopHitsSource);
+            return;
+        }
+        if (!node.isObject()) {
+            return;
+        }
+        final ObjectNode object = (ObjectNode) node;
+        final JsonNode topHits = object.get(TOP_HITS_KEY);
+        if (null != topHits && topHits.isObject()) {
+            final ArrayNode source = ((ObjectNode) topHits).putArray(SOURCE_KEY);
+            source.add(Contentlet.IDENTIFIER_KEY);
+            source.add(Contentlet.INODE_KEY);
+        }
+        object.forEach(ContentFieldFilter::limitTopHitsSource);
     }
 
     /**
