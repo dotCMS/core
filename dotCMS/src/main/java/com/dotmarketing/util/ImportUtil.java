@@ -6,6 +6,7 @@ import static com.dotmarketing.util.importer.HeaderValidationCodes.HEADERS_NOT_F
 import static com.dotmarketing.util.importer.ImportLineValidationCodes.LANGUAGE_NOT_FOUND;
 import static com.liferay.util.StringPool.FORWARD_SLASH;
 
+import com.dotcms.content.elasticsearch.business.ESContentletAPIHelper;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -4414,6 +4415,10 @@ public class ImportUtil {
      * valid, performs it with the given user and contentlet details. If no workflow action is
      * applicable, it falls back to saving or publishing the contentlet based on system
      * configurations.
+     * <p>
+     * The content type's permissions are sent along with the row only when the importing user may
+     * change the row's permissions; otherwise no permissions are sent and the row keeps the
+     * permissions it has (see {@link #permissionsToApply(Contentlet, User, List)}).
      *
      * @param user                    The user attempting to run the workflow for the contentlet.
      * @param contentTypePermissions  The list of permissions associated with the content type of
@@ -4450,7 +4455,8 @@ public class ImportUtil {
                         (contentlet, new ContentletDependencies.Builder()
                                 .workflowActionId(workflowActionSaveOpt.get().getId())
                                 .relationships(contentletRelationships).categories(categories)
-                                .permissions(contentTypePermissions).modUser(user).build());
+                                .permissions(permissionsToApply(contentlet, user, contentTypePermissions))
+                                .modUser(user).build());
                 return live && !workflowActionSaveOpt.get().hasPublishActionlet()?
                         runWorkflowPublishIfCould(contentletRelationships,
                                 categories, contentTypePermissions, user, savedContent):
@@ -4466,7 +4472,7 @@ public class ImportUtil {
         }
         contentlet.setProperty(Contentlet.DONT_VALIDATE_ME, true);
         final Contentlet contentletSaved = conAPI.checkin(contentlet, contentletRelationships,
-                categories, contentTypePermissions,
+                categories, permissionsToApply(contentlet, user, contentTypePermissions),
                 user, false);
 
         if (live) {
@@ -4476,9 +4482,33 @@ public class ImportUtil {
     }
 
     /**
+     * Returns the permissions to send along with an imported row: the content type's permissions
+     * when the importing user may change the row's permissions, and {@code null} otherwise, so the
+     * row keeps the permissions it has instead of the import line being refused.
+     *
+     * @param contentlet             the imported row
+     * @param user                   the importing user
+     * @param contentTypePermissions the permissions of the row's content type
+     * @return the content type's permissions, or {@code null} when the user may not change the
+     *         row's permissions
+     * @throws DotDataException if the user's permissions cannot be read
+     */
+    private static List<Permission> permissionsToApply(final Contentlet contentlet, final User user,
+            final List<Permission> contentTypePermissions) throws DotDataException {
+
+        return ESContentletAPIHelper.INSTANCE.canEditPermissions(permissionAPI, contentlet, user)
+                ? contentTypePermissions
+                : null;
+    }
+
+    /**
      * Executes a workflow publish action on the provided contentlet if associated with a publish
      * workflow action. If not, the contentlet will be directly published. The contentlet may also
      * be updated with relationships, categories, and permissions before being published.
+     * <p>
+     * The given permissions are sent along with the row only when the importing user may change
+     * the row's permissions; otherwise no permissions are sent and the row keeps the permissions it
+     * has (see {@link #permissionsToApply(Contentlet, User, List)}).
      *
      * @param contentletRelationships an object representing the relationships associated with the
      *                                contentlet
@@ -4512,7 +4542,8 @@ public class ImportUtil {
                         (savedContent, new ContentletDependencies.Builder()
                                 .workflowActionId(workflowActionPublishOpt.get().getId())
                                 .relationships(contentletRelationships).categories(categories)
-                                .permissions(permissions).modUser(user).build());
+                                .permissions(permissionsToApply(savedContent, user, permissions))
+                                .modUser(user).build());
             } else {
 
                 savedContent.setActionId(workflowActionPublishOpt.get().getId());
