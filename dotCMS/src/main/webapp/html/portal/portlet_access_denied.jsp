@@ -1,6 +1,3 @@
-
-portlet_access_denied.jsp
-
 <%@ include file="/html/portal/init.jsp" %>
 
 <table border="0" cellpadding="4" cellspacing="0" width="100%" height="300">
