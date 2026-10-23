@@ -147,8 +147,9 @@ inputs:
     description: >-
       Space-separated docker.image.* property names from environments/environment.properties
       (e.g. "docker.image.postgres docker.image.search") for the test images the Maven run
-      starts. They are pulled, with retries and a Docker Hub fallback for mirror.gcr.io
-      images, before Maven runs, because docker-maven-plugin makes a single pull attempt.
+      starts. They are pulled, with retries and fallbacks (Docker Hub, then Amazon's public
+      gallery for OpenSearch) for mirror.gcr.io images, before Maven runs, because
+      docker-maven-plugin makes a single pull attempt.
       Empty skips the step.
     required: false
     default: ''
@@ -386,9 +387,10 @@ runs:
     # mirror.gcr.io (a shared Google mirror: anonymous, with a project-wide request quota that
     # no Docker Hub login raises) fails the whole Maven build before any test runs. Pull the
     # images here instead, where a failure can be retried, and fall back to the same image on
-    # Docker Hub, which the login above authenticates. The plugin's default pull policy
-    # (IfNotPresent) then finds them locally. Never fails the job: if every attempt fails the
-    # plugin makes its own pull and reports the error as before.
+    # Docker Hub, which the login above authenticates, and for OpenSearch on Amazon's public
+    # gallery. The plugin's default pull policy (IfNotPresent) then finds them locally. Never
+    # fails the job: if every attempt fails the plugin makes its own pull and reports the
+    # error as before.
     - name: Pre-pull test images
       if: ${{ inputs.pre-pull-images != '' }}
       shell: bash
@@ -398,13 +400,14 @@ runs:
         set -uo pipefail
         PROPS=environments/environment.properties
         MIRROR='mirror.gcr.io/'
+        ECR='public.ecr.aws/'
         ATTEMPTS=3  # per source; the pause between tries grows 10s, 20s, so at most 30s of waiting
         PULL_TIMEOUT=300  # seconds per pull, so one stalled download cannot hold the job
 
         # A blob download that stalls without erroring would block `wait` until the job
         # timeout, and a composite step cannot take timeout-minutes. GNU timeout exits 124
         # when it kills the pull, which counts as a failed attempt like any other, so the
-        # retries and the Docker Hub fallback still run. Without `timeout` pull unbounded.
+        # retries and the fallbacks still run. Without `timeout` pull unbounded.
         bounded() {
           if command -v timeout > /dev/null; then timeout "$PULL_TIMEOUT" "$@"; else "$@"; fi
         }
@@ -424,25 +427,36 @@ runs:
           return 1
         }
 
+        # Sources for one image, in order: the reference as configured, then, for a mirror.gcr.io
+        # reference, the same image on Docker Hub and, for OpenSearch, on Amazon's public gallery.
+        # All of them serve the identical manifest digest for these tags (checked with a manifest
+        # request per registry). The gallery carries only the OpenSearch images; pgvector and
+        # WireMock return 404 there, so they have no third source.
         pull_image() { # <ref>
-          local ref="$1" hub
+          local ref="$1" hub src
+          local sources=("$ref")
+          if [[ "$ref" == "$MIRROR"* ]]; then
+            hub="${ref#"$MIRROR"}"
+            sources+=("$hub")
+            [[ "$hub" == opensearchproject/* ]] && sources+=("$ECR$hub")
+          fi
           if docker image inspect "$ref" > /dev/null 2>&1; then
             echo "$ref is already present"
             return 0
           fi
-          if pull_with_retry "$ref"; then
-            echo "pulled $ref"
-            return 0
-          fi
-          if [[ "$ref" == "$MIRROR"* ]]; then
-            hub="${ref#"$MIRROR"}"
-            echo "::warning::could not pull $ref, falling back to Docker Hub: $hub"
-            # Tag it with the name the Maven build asks for so the plugin finds it locally.
-            if pull_with_retry "$hub" && docker tag "$hub" "$ref"; then
-              echo "pulled $hub, tagged as $ref"
+          for src in "${sources[@]}"; do
+            if pull_with_retry "$src"; then
+              if [ "$src" = "$ref" ]; then
+                echo "pulled $ref"
+              else
+                # Tag it with the name the Maven build asks for so the plugin finds it locally.
+                docker tag "$src" "$ref" || continue
+                echo "pulled $src, tagged as $ref"
+              fi
               return 0
             fi
-          fi
+            echo "::warning::could not pull $src"
+          done
           echo "::warning::could not pre-pull $ref, docker-maven-plugin will try to pull it"
           return 1
         }
