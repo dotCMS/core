@@ -99,7 +99,6 @@ export class DotUveToolbarComponent {
 
     translatePage = output<{ page: DotCMSPage; newLanguage: number }>();
     editUrlContentMap = output<DotCMSURLContentMap>();
-    deviceSelectorChange = output<DeviceSelectorChange>();
 
     readonly #store = inject(UVEStore);
     readonly #messageService = inject(MessageService);
@@ -229,14 +228,7 @@ export class DotUveToolbarComponent {
     // Computed properties for presentational children
     readonly isTraditionalPage = computed(() => this.#store.pageType() === PageType.TRADITIONAL);
 
-    // Build unified device selector state
-    readonly $deviceSelectorState = computed(() => {
-        return {
-            device: this.#store.viewDevice(),
-            socialMedia: this.#store.viewSocialMedia(),
-            orientation: this.#store.viewDeviceOrientation()
-        };
-    });
+    readonly $deviceSelectorState = this.#store.$viewDeviceSelectorState;
 
     // Build complete toggle lock options for presentational component
     readonly $lockOptions = computed(() => {
@@ -308,6 +300,15 @@ export class DotUveToolbarComponent {
             event.isLockedByCurrentUser,
             event.lockedBy
         );
+    }
+
+    /**
+     * Handle a device, social-media or orientation change from the presentational
+     * DotUveDeviceSelectorComponent
+     * @param change The change the user picked
+     */
+    protected applyDeviceSelectorChange(change: DeviceSelectorChange): void {
+        this.#store.viewApplyDeviceSelectorChange(change);
     }
 
     /**
