@@ -646,6 +646,16 @@ test('anonymous GraphQL postscripts require a cookie-free 401 without disclosing
   }
 });
 
+test('bundle import fixtures assert existence as an authenticated reader, never anonymously', () => {
+  // The bundle "content exists" check asserts the import created the contentlet, not that it is
+  // publicly readable; under the CONTENT_APIS_ALLOW_ANONYMOUS=NONE default an anonymous read is
+  // 401, which bails the runner and silently skips every later collection in the shard.
+  const exists = find('Bundle_Resource.postman_collection.json', 'Upload Bundle / ContentShouldExist');
+  assert.equal(exists.auth?.type, 'bearer', label(exists));
+  assert.equal(resolve(value(exists.auth, 'token'), effectiveVariables(exists)), 'synthetic.runner.jwt', label(exists));
+  assert.equal(exists.names[0], 'Upload Bundle');
+});
+
 test('Add-Remove render postscripts pass an authorized 200 and fail a 401 on the status assertion', () => {
   const rendered = [
     'content_1 content_2 content_3',
