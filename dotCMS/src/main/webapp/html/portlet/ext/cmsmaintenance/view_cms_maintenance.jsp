@@ -424,13 +424,19 @@ function doReplace () {
 			replaceString: document.getElementById("replaceString").value
 		})
 	})
-	.then(response => response.json().then(data => ({ ok: response.ok, data: data })))
-	.then(result => {
-		if (result.ok && result.data.entity && !result.data.entity.hasErrors) {
-			alert("<%= LanguageUtil.get(pageContext,"Search-and-Replace-Finished") %>");
-		} else {
-			alert("<%= LanguageUtil.get(pageContext,"Search-and-Replace-Finished-with-Errors") %>");
+	.then(response => {
+		if (response.status === 401 || response.status === 403) {
+			alert("<%= LanguageUtil.get(pageContext,"message.cmsmaintenance.notauthorized") %>");
+			return;
 		}
+		return response.json().then(data => {
+			if (response.ok && data.entity && !data.entity.hasErrors) {
+				alert("<%= LanguageUtil.get(pageContext,"Search-and-Replace-Finished") %>");
+				window.location.reload();
+			} else {
+				alert("<%= LanguageUtil.get(pageContext,"Search-and-Replace-Finished-with-Errors") %>");
+			}
+		});
 	})
 	.catch(() => alert("<%= LanguageUtil.get(pageContext,"Search-and-Replace-Finished-with-Errors") %>"));
   }
