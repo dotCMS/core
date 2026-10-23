@@ -175,6 +175,10 @@
                                     <DOT_INDEX_POLICY_SINGLE_CONTENT>FORCE</DOT_INDEX_POLICY_SINGLE_CONTENT>
                                     <DOT_ASYNC_REINDEX_COMMIT_LISTENERS>false</DOT_ASYNC_REINDEX_COMMIT_LISTENERS>
                                     <DOT_ASYNC_COMMIT_LISTENERS>false</DOT_ASYNC_COMMIT_LISTENERS>
+                                    <!-- With synchronous commit listeners, the cache-flush delay is a sleep on the
+                                         request thread after every write (3000 ms by default). One node needs no
+                                         wait for a cluster to catch up; the integration tests use 10 as well. -->
+                                    <DOT_NETWORK_CACHE_FLUSH_DELAY>10</DOT_NETWORK_CACHE_FLUSH_DELAY>
                                     <DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>600</DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>
                                     <JVM_ENDPOINT_TEST_PASS>obfuscate_me</JVM_ENDPOINT_TEST_PASS>
                                     <DOT_ENABLE_SCRIPTING>true</DOT_ENABLE_SCRIPTING>
