@@ -493,6 +493,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.business.PermissionAPITest.class,
         com.dotmarketing.business.ajax.PermissionAjaxIntegrationTest.class,
         com.dotmarketing.business.ajax.RoleAjaxIntegrationTest.class,
+        com.dotmarketing.portlets.user.ajax.UserAjaxIntegrationTest.class,
         com.dotmarketing.servlets.BinaryExporterServletTest.class,
         com.dotmarketing.servlets.ShortyServletAndTitleImageTest.class,
         com.dotmarketing.servlets.InitRunnerTest.class,
