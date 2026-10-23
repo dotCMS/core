@@ -38,7 +38,8 @@ import { DotUveZoomControlsComponent } from '../dot-uve-zoom-controls/dot-uve-zo
         DotUveZoomControlsComponent
     ],
     templateUrl: './dot-uve-browser-toolbar.component.html',
-    styleUrls: ['./dot-uve-browser-toolbar.component.scss']
+    // The toolbar stays a row of the editor content grid, so its sticky top keeps working.
+    host: { class: 'contents' }
 })
 export class DotUveBrowserToolbarComponent {
     protected readonly store = inject(UVEStore);

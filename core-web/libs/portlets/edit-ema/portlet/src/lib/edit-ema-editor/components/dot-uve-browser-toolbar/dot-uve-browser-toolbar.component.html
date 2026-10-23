@@ -1,14 +1,16 @@
+<!-- PrimeNG's toolbar CSS is unlayered and outranks utilities, so nowrap and the border widths need `!`. -->
 <p-toolbar
-    class="browser-toolbar"
     [pt]="{
         root: {
-            style: {
-                borderRadius: '0',
-                border: 'none',
-                borderBottom: 'solid 1px var(--color-gray-200)'
-            }
-        }
-    }">
+            class: 'sticky top-0 left-0 z-1000 box-border w-full min-w-0 max-w-full flex-nowrap! overflow-hidden border-0! border-b!'
+        },
+        start: { class: 'shrink-0' },
+        center: {
+            class: '@container/toolbar-center flex min-w-0 flex-1 items-center gap-2 overflow-x-auto'
+        },
+        end: { class: 'shrink-0' }
+    }"
+    [dt]="{ root: { borderColor: '{gray.200}' } }">
     <ng-template #start>
         <div class="flex items-center gap-1">
             @if (store.viewMode() === UVE_MODE.EDIT) {
@@ -39,7 +41,8 @@
         </div>
     </ng-template>
     <ng-template #center>
-        <div class="browser-url-pill bg-gray-100">
+        <div
+            class="ml-auto flex max-w-md min-w-0 flex-initial items-center gap-2 rounded-full bg-gray-100 pr-4 @max-3xl/toolbar-center:max-w-none @max-3xl/toolbar-center:flex-none @max-3xl/toolbar-center:pr-0">
             <p-button
                 (click)="copyUrlOverlay.toggle($event)"
                 [pTooltip]="'editpage.header.copy' | dm"
@@ -51,15 +54,19 @@
                 [pt]="{ icon: { class: 'text-gray-900!' } }"
                 data-testid="uve-toolbar-copy-url">
                 <p-popover #copyUrlOverlay>
-                    <div class="url-list">
+                    <div class="flex max-w-100 flex-col gap-4">
                         @for (url of $pageURLS(); track url.value) {
-                            <div class="url-item">
-                                <div class="url-info">
-                                    <span class="url-label" data-testid="copy-url-label">
+                            <div
+                                class="flex items-center gap-3 not-last:border-b not-last:border-gray-200 not-last:pb-4">
+                                <div class="flex min-w-0 flex-1 flex-col gap-2">
+                                    <span
+                                        class="text-xs leading-[1.2] font-semibold text-gray-700"
+                                        data-testid="copy-url-label">
                                         {{ url.label | dm }}
                                     </span>
+                                    <!-- The global unlayered `a` rules in style.css outrank utilities, so the link's color and underline need `!`. -->
                                     <a
-                                        class="url-value"
+                                        class="truncate text-sm leading-[1.2] text-gray-900! no-underline! hover:underline!"
                                         [href]="url.value"
                                         target="_blank"
                                         rel="noreferrer noopener"
@@ -80,13 +87,17 @@
                     </div>
                 </p-popover>
             </p-button>
-            <div class="browser-url-bar" data-testid="uve-toolbar-page-url">{{ $pageURL() }}</div>
+            <div
+                class="min-w-0 flex-1 truncate text-sm leading-normal text-gray-900 @max-3xl/toolbar-center:hidden"
+                data-testid="uve-toolbar-page-url">
+                {{ $pageURL() }}
+            </div>
         </div>
         <dot-uve-device-controls
             [state]="store.$viewDeviceSelectorState()"
             (stateChange)="store.viewApplyDeviceSelectorChange($event)"
             data-testid="uve-device-controls" />
-        <div class="flex items-center gap-2 rounded-full bg-gray-100 pr-3">
+        <div class="mr-auto flex items-center gap-2 rounded-full bg-gray-100 pr-3">
             <p-button
                 icon="pi pi-undo"
                 size="small"
