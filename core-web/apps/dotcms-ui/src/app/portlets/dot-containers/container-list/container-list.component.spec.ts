@@ -49,6 +49,7 @@ import {
     DotActionBulkResult,
     DotCMSResponse,
     DotContainer,
+    DotContainerDependencies,
     DotSite
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
@@ -71,6 +72,7 @@ import { ContainerListComponent } from './container-list.component';
 import { DotContainerListStore } from './store/dot-container-list.store';
 
 import { DotContainersService } from '../../../api/services/dot-containers/dot-containers.service';
+import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotEmptyStateComponent } from '../../../view/components/_common/dot-empty-state/dot-empty-state.component';
 import { DotContentTypeSelectorComponent } from '../../../view/components/dot-content-type-selector/dot-content-type-selector.component';
 import { ActionHeaderComponent } from '../../../view/components/dot-listing-data-table/action-header/action-header.component';
@@ -189,6 +191,7 @@ const messages = {
     'message.containers.fieldName.name': 'Name',
     'message.containers.fieldName.status': 'Status',
     'Delete-Container': 'Delete Container',
+    'container-used-templates': 'This Container is used by Templates.',
     Archive: 'Archive',
     Archived: 'Archived',
     Copy: 'Copy',
@@ -394,6 +397,126 @@ describe('ContainerListComponent', () => {
                 { menuItem: { label: 'Delete', command: expect.any(Function) } }
             ];
             expect(comp.setContainerActions(archivedContainer)).toEqual(actions);
+        });
+
+        describe('delete container', () => {
+            const dependencies = (templates: DotContainerDependencies['templates']) =>
+                ({
+                    inode: 'inode-1',
+                    identifier: '123Archived',
+                    title: 'Archived container',
+                    templates
+                }) as DotContainerDependencies;
+
+            const usedBy = [
+                {
+                    inode: 'tpl-inode',
+                    identifier: 'tpl-id',
+                    title: '<b>Home</b> & more',
+                    siteName: 'demo.dotcms.com'
+                }
+            ];
+
+            let containersService: DotContainersService;
+            let alertConfirmService: DotAlertConfirmService;
+            let dialogService: DialogService;
+
+            const clickDelete = () => {
+                const archivedContainer = containersMock.find(
+                    (c) => c.identifier === '123Archived'
+                ) as DotContainer;
+
+                const deleteAction = comp
+                    .setContainerActions(archivedContainer)
+                    .find(({ menuItem }) => menuItem['label'] === 'Delete');
+
+                expect(deleteAction).toBeDefined();
+                deleteAction?.menuItem.command?.({});
+            };
+
+            beforeEach(() => {
+                containersService = fixture.debugElement.injector.get(DotContainersService);
+                alertConfirmService = TestBed.inject(DotAlertConfirmService);
+                dialogService = fixture.debugElement.injector.get(DialogService);
+
+                vi.spyOn(alertConfirmService, 'confirm').mockImplementation(() => undefined);
+                vi.spyOn(dialogService, 'open').mockReturnValue(null);
+                vi.spyOn(containersService, 'delete').mockReturnValue(of(mockBulkResponseSuccess));
+            });
+
+            it('should list the templates and not delete when the container is in use', () => {
+                vi.spyOn(containersService, 'getDependencies').mockReturnValue(
+                    of(dependencies(usedBy))
+                );
+
+                clickDelete();
+
+                expect(containersService.getDependencies).toHaveBeenCalledWith('123Archived');
+                expect(alertConfirmService.confirm).not.toHaveBeenCalled();
+                expect(containersService.delete).not.toHaveBeenCalled();
+
+                const [component, config] = (dialogService.open as ReturnType<typeof vi.fn>).mock
+                    .calls[0];
+
+                expect(component).toBe(DotBulkInformationComponent);
+                expect(config.data.fails[0].errorMessage).toContain(
+                    'This Container is used by Templates.'
+                );
+                // titles are kept as typed: they are rendered as text by the dialog
+                expect(config.data.fails[0].errorMessage).toContain(
+                    '<b>Home</b> & more (tpl-id) - demo.dotcms.com'
+                );
+            });
+
+            it('should ask for confirmation and delete when no template uses the container', () => {
+                vi.spyOn(containersService, 'getDependencies').mockReturnValue(
+                    of(dependencies([]))
+                );
+
+                clickDelete();
+
+                expect(alertConfirmService.confirm).toHaveBeenCalledTimes(1);
+                expect(containersService.delete).not.toHaveBeenCalled();
+
+                (alertConfirmService.confirm as ReturnType<typeof vi.fn>).mock.calls[0][0].accept();
+
+                expect(containersService.delete).toHaveBeenCalledWith(['123Archived']);
+                expect(dialogService.open).not.toHaveBeenCalled();
+            });
+
+            it('should not delete anything when a bulk selection has one container in use', () => {
+                vi.spyOn(containersService, 'getDependencies').mockImplementation((id: string) =>
+                    of(id === 'in-use' ? dependencies(usedBy) : dependencies([]))
+                );
+
+                store['deleteContainer'](['free', 'in-use']);
+
+                expect(alertConfirmService.confirm).not.toHaveBeenCalled();
+                expect(containersService.delete).not.toHaveBeenCalled();
+                expect(dialogService.open).toHaveBeenCalledTimes(1);
+            });
+
+            it('should not delete when the dependencies lookup fails', () => {
+                vi.spyOn(containersService, 'getDependencies').mockReturnValue(of(null));
+
+                clickDelete();
+
+                expect(alertConfirmService.confirm).not.toHaveBeenCalled();
+                expect(containersService.delete).not.toHaveBeenCalled();
+                expect(dialogService.open).not.toHaveBeenCalled();
+            });
+
+            it('should not notify when the delete request fails', () => {
+                vi.spyOn(containersService, 'getDependencies').mockReturnValue(
+                    of(dependencies([]))
+                );
+                vi.spyOn(containersService, 'delete').mockReturnValue(of(null));
+
+                clickDelete();
+                (alertConfirmService.confirm as ReturnType<typeof vi.fn>).mock.calls[0][0].accept();
+
+                expect(dialogService.open).not.toHaveBeenCalled();
+            });
         });
 
         it('should select all except system and file container', () => {

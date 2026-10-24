@@ -372,6 +372,27 @@ public interface TemplateAPI {
 	List<Template> findTemplatesByContainerInode(final String containerInode) throws DotDataException;
 
 	/**
+	 * Finds the Templates that use a Container, archived ones included.
+	 * <p>Which Templates are inspected depends on the given user: only the ones that user can read.
+	 * Which Containers each Template uses does not: they are resolved as the system user, so a
+	 * Container the user cannot read inside some Template does not make the lookup fail. A drawn
+	 * Template uses the Container when its layout references it; an advanced (non-drawn) Template
+	 * only when the Container holds content (see
+	 * {@link #getContainersInTemplate(Template, User, boolean)}). Containers are matched by
+	 * identifier, so any version of the Container counts. File-based Templates are not listed
+	 * because {@link #findTemplates} reads the database.</p>
+	 *
+	 * @param containerIdentifier the identifier of the {@link Container}; a blank value matches nothing
+	 * @param user                the {@link User} whose read permission selects the Templates to inspect
+	 *                            (the system user inspects all of them)
+	 * @return the Templates that use the Container; empty when none does
+	 * @throws DotDataException     if the Templates or their Containers cannot be read from the data source
+	 * @throws DotSecurityException if the Templates cannot be listed
+	 */
+	List<Template> findTemplatesUsingContainer(String containerIdentifier, User user)
+			throws DotDataException, DotSecurityException;
+
+	/**
 	 * Check if a template is archived.
 	 * @param template
 	 * @return true if template is archived, false if not.

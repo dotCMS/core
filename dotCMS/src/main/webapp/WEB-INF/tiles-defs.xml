@@ -560,46 +560,6 @@
 	</definition>
 	<!-- Contentlet -->
 
-	<!-- container -->
-	<definition name="portlet.ext.containers.view" extends="portal">
-		<put name="content" value="/portlet/ext/containers/view.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.containers" extends="portal">
-		<put name="portlet_sub_nav"
-			value="/portlet/ext/containers/sub_nav.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.containers.view_containers"
-		extends="portlet.ext.containers">
-		<put name="content"
-			value="/portlet/ext/containers/view_containers.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.containers.view_containers_popup"
-		extends="portlet.ext.containers">
-		<put name="content"
-			value="/portlet/ext/containers/view_containers_popup.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.containers.edit_container"
-		extends="portlet.ext.containers">
-		<put name="content"
-			value="/portlet/ext/containers/edit_container.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.containers.publish_containers"
-		extends="portlet.ext.containers">
-		<put name="content"
-			value="/portlet/ext/containers/publish_containers.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.containers.add_variables"
-		extends="portlet.ext.containers">
-		<put name="content"
-			value="/portlet/ext/containers/add_variables.jsp" />
-	</definition>
-
 	<!-- Layout -->
 
 	<!-- Template -->
@@ -893,11 +853,6 @@
 		extends="portlet.ext.director">
 		<put name="content"
 			value="/portlet/ext/director/unlock_htmlpage.jsp" />
-	</definition>
-	<definition name="portlet.ext.director.unlock_container"
-		extends="portlet.ext.director">
-		<put name="content"
-			value="/portlet/ext/director/unlock_container.jsp" />
 	</definition>
 	<definition name="portlet.ext.director.unlock_template"
 		extends="portlet.ext.director">

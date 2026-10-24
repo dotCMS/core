@@ -62,6 +62,7 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -75,6 +76,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -1200,6 +1202,59 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 			throw new DotSecurityException("User does not have READ permissions over the Template, so unable to view Versions");
 		}
 		return templateAllVersions;
+	}
+
+	/**
+	 * Number of Templates read per request when looking for the Templates that use a Container.
+	 * {@link #findTemplates} returns about one page of this size per call, so the Templates are
+	 * read page by page.
+	 */
+	private static final int CONTAINER_USAGE_PAGE_SIZE = 100;
+
+	@Override
+	@CloseDBIfOpened
+	public List<Template> findTemplatesUsingContainer(final String containerIdentifier, final User user)
+			throws DotDataException, DotSecurityException {
+
+		return this.findTemplatesUsingContainer(containerIdentifier, user, CONTAINER_USAGE_PAGE_SIZE);
+	}
+
+	/**
+	 * Same as {@link #findTemplatesUsingContainer(String, User)} with a configurable page size,
+	 * so a test can exercise the paging with a few Templates.
+	 */
+	@VisibleForTesting
+	List<Template> findTemplatesUsingContainer(final String containerIdentifier, final User user,
+			final int pageSize) throws DotDataException, DotSecurityException {
+
+		if (!UtilMethods.isSet(containerIdentifier)) {
+			return Collections.emptyList();
+		}
+
+		// findTemplates serves the first page again for an offset past the end, so the loop also
+		// stops as soon as a page adds no Template it has not seen
+		final Map<String, Template> readable = new LinkedHashMap<>();
+		List<Template> page;
+		boolean progressed;
+		int offset = 0;
+		do {
+			page = this.findTemplates(user, true, null, null, null, null, null, offset, pageSize, null);
+			progressed = false;
+			for (final Template template : page) {
+				progressed |= null == readable.putIfAbsent(template.getInode(), template);
+			}
+			offset += pageSize;
+		} while (progressed && page.size() >= pageSize);
+
+		final User systemUser = APILocator.systemUser();
+		final List<Template> used = new ArrayList<>();
+		for (final Template template : readable.values()) {
+			if (this.getContainersInTemplate(template, systemUser, false).stream()
+					.anyMatch(container -> containerIdentifier.equals(container.getIdentifier()))) {
+				used.add(template);
+			}
+		}
+		return used;
 	}
 
 	@Override

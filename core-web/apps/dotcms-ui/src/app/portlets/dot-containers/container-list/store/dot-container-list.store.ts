@@ -1,4 +1,5 @@
 import { ComponentStore } from '@ngrx/component-store';
+import { forkJoin } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -20,7 +21,8 @@ import {
     DotActionBulkResult,
     DotActionMenuItem,
     DotBulkFailItem,
-    DotContainer
+    DotContainer,
+    DotContainerDependencies
 } from '@dotcms/dotcms-models';
 
 import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
@@ -578,13 +580,46 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             : this.dotRouterService.goToEditContainer(container.identifier);
     }
 
+    /**
+     * Deletes the containers once none of them is used by a template. If any is in use nothing is
+     * deleted and the containers in use are listed with their templates. A failed lookup also
+     * stops the delete (the error is already shown by the http error manager).
+     */
     private deleteContainer(identifiers: string[]): void {
+        forkJoin(
+            identifiers.map((identifier) => this.dotContainersService.getDependencies(identifier))
+        )
+            .pipe(take(1))
+            .subscribe((lookups) => {
+                const dependencies = lookups.filter(
+                    (dependency): dependency is DotContainerDependencies => !!dependency
+                );
+
+                if (dependencies.length !== lookups.length) {
+                    return;
+                }
+
+                const inUse = dependencies.filter((dependency) => dependency.templates.length);
+
+                if (inUse.length) {
+                    this.notifyContainersInUse(inUse);
+                } else {
+                    this.confirmDelete(identifiers);
+                }
+            });
+    }
+
+    private confirmDelete(identifiers: string[]): void {
         this.dotAlertConfirmService.confirm({
             accept: () => {
                 this.dotContainersService
                     .delete(identifiers)
                     .pipe(take(1))
                     .subscribe((payload: DotActionBulkResult) => {
+                        if (!payload) {
+                            return;
+                        }
+
                         this.updateNotifyMessages({
                             payload,
                             message: this.dotMessageService.get('message.containers.full_delete')
@@ -597,6 +632,30 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             header: this.dotMessageService.get('Delete-Container'),
             message: this.dotMessageService.get('message.containers.confirm.delete.container')
         });
+    }
+
+    private notifyContainersInUse(inUse: DotContainerDependencies[]): void {
+        this.updateNotifyMessages({
+            payload: {
+                skippedCount: inUse.length,
+                successCount: 0,
+                fails: inUse.map(({ identifier, templates }) => ({
+                    element: identifier,
+                    errorMessage: this.getInUseMessage(templates)
+                }))
+            },
+            message: this.dotMessageService.get('Delete-Container')
+        });
+    }
+
+    private getInUseMessage(templates: DotContainerDependencies['templates']): string {
+        const names = templates
+            .map(({ title, identifier, siteName }) =>
+                siteName ? `${title} (${identifier}) - ${siteName}` : `${title} (${identifier})`
+            )
+            .join(', ');
+
+        return `${this.dotMessageService.get('container-used-templates')} ${names}`;
     }
 
     private publishContainer(identifiers: string[]): void {
@@ -668,9 +727,11 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
     private getContainerName(identifier: string): string {
         const { selectedContainers } = this.get();
 
-        return selectedContainers.find((container: DotContainer) => {
-            return container.identifier === identifier;
-        }).name;
+        return (
+            selectedContainers.find((container: DotContainer) => {
+                return container.identifier === identifier;
+            })?.name ?? identifier
+        );
     }
 
     /**

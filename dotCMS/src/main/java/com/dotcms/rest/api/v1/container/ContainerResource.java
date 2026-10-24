@@ -16,6 +16,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.BulkResultView;
 import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.rest.api.v1.page.ResponseEntityPaginatedArrayListMapView;
+import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.DotPreconditions;
@@ -114,6 +115,7 @@ public class ContainerResource implements Serializable {
     private final VelocityUtil   velocityUtil;
     private final ShortyIdAPI    shortyAPI;
     private final ContentletAPI  contentletAPI;
+    private final ContainerDependenciesHelper dependenciesHelper;
 
     public ContainerResource() {
         this(new WebResource(),
@@ -123,9 +125,23 @@ public class ContainerResource implements Serializable {
                 APILocator.getVersionableAPI(),
                 VelocityUtil.getInstance(),
                 APILocator.getShortyAPI(),
-                APILocator.getContentletAPI());
+                APILocator.getContentletAPI(),
+                new ContainerDependenciesHelper());
     }
 
+    /**
+     * Builds the resource with explicit collaborators, so tests can pass mocks.
+     *
+     * @param webResource        the {@link WebResource} that authenticates each request
+     * @param paginationUtil     the {@link PaginationUtil} used by the listing endpoint
+     * @param formAPI            the {@link FormAPI} that resolves forms rendered into containers
+     * @param containerAPI       the {@link ContainerAPI} that loads and saves containers
+     * @param versionableAPI     the {@link VersionableAPI} (kept for callers that still pass it)
+     * @param velocityUtil       the {@link VelocityUtil} that renders container content
+     * @param shortyAPI          the {@link ShortyIdAPI} that resolves short and long ids
+     * @param contentletAPI      the {@link ContentletAPI} that loads contentlets
+     * @param dependenciesHelper the {@link ContainerDependenciesHelper} behind {@code /dependencies}
+     */
     @VisibleForTesting
     public ContainerResource(final WebResource    webResource,
                              final PaginationUtil paginationUtil,
@@ -134,7 +150,8 @@ public class ContainerResource implements Serializable {
                              final VersionableAPI versionableAPI,
                              final VelocityUtil   velocityUtil,
                              final ShortyIdAPI    shortyAPI,
-                             final ContentletAPI  contentletAPI) {
+                             final ContentletAPI  contentletAPI,
+                             final ContainerDependenciesHelper dependenciesHelper) {
 
         this.webResource    = webResource;
         this.paginationUtil = paginationUtil;
@@ -143,6 +160,7 @@ public class ContainerResource implements Serializable {
         this.velocityUtil   = velocityUtil;
         this.shortyAPI      = shortyAPI;
         this.contentletAPI  = contentletAPI;
+        this.dependenciesHelper = dependenciesHelper;
     }
 
     /**
@@ -539,6 +557,29 @@ public class ContainerResource implements Serializable {
 
         final VelocityResourceKey pageKey = new VelocityResourceKey((HTMLPageAsset) htmlPage, mode, languageId);
         velocityUtil.merge(pageKey.path, context);
+    }
+
+    /**
+     * Refuses to delete a Container that any Template still uses.
+     *
+     * @param container the {@link Container} about to be deleted
+     * @throws ConflictException    if one or more Templates use the Container; the response is a 409
+     * @throws DotDataException     if the Templates cannot be read from the data source
+     * @throws DotSecurityException if the Templates cannot be listed
+     */
+    private void assertNotUsedByTemplates(final Container container)
+            throws DotDataException, DotSecurityException {
+
+        if (Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
+            return;
+        }
+
+        final int templates = this.dependenciesHelper.countTemplatesUsing(container);
+        if (templates > 0) {
+            throw new ConflictException(String.format(
+                    "The container is used by %d template(s). Remove it from them before deleting it.",
+                    templates));
+        }
     }
 
     private Container getContainerWorking(final String containerId, final User user, final Host host) throws DotDataException, DotSecurityException {
@@ -1066,6 +1107,81 @@ public class ContainerResource implements Serializable {
     }
 
     /**
+     * Lists the Templates that use a Container, so a client can warn before deleting it.
+     *
+     * <p>The Container must be readable by the requesting user, only the Templates that user can
+     * read are reported, and a Site the user cannot read is reported with a {@code null} site name.
+     * Front-end roles are not considered because the endpoint requires a back-end user.
+     *
+     * <p>A drawn Template is listed when its layout references the Container; an advanced Template
+     * only when the Container holds content.
+     *
+     * @param request      the current {@link HttpServletRequest}
+     * @param httpResponse the current {@link HttpServletResponse}
+     * @param containerId  the Container's identifier, inode or folder path
+     * @return a 200 {@link Response} whose entity wraps a {@link ContainerDependenciesView} with the
+     * Container's data and the Templates that use it (empty list when none does)
+     * @throws DotDataException     if the Container or the Templates cannot be read from the data source
+     * @throws DotSecurityException if the user cannot read the Container
+     */
+    @GET
+    @Path("/dependencies")
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(
+            operationId = "getContainerDependencies",
+            summary = "Lists the templates that use a container",
+            description = "Returns the container (inode, identifier, title; the working version when looked up " +
+                    "by identifier or folder path) and the templates, readable by the requesting user, that use it. The list is " +
+                    "empty when no template uses the container. Intended to be checked before deleting a container. " +
+                    "Requires a back-end user. A drawn template is listed when its layout references the container; " +
+                    "an advanced template only when the container holds content.",
+            tags = {"Containers"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Container data and the templates that use it",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityContainerDependenciesView.class))),
+                    @ApiResponse(responseCode = "400", description = "Bad request - Container ID is required"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated or not a back-end user"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks read permission on the container"),
+                    @ApiResponse(responseCode = "404", description = "Container not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
+    public final Response getContainerDependencies(@Context final HttpServletRequest request,
+                                                   @Context final HttpServletResponse httpResponse,
+                                                   @Parameter(description = "Container identifier, inode or folder path", required = true)
+                                                   @QueryParam("containerId") final String containerId)
+            throws DotDataException, DotSecurityException {
+
+        final InitDataObject initData = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, httpResponse)
+                .rejectWhenNoUser(true)
+                .requiredBackendUser(true)
+                .init();
+        final User user = initData.getUser();
+
+        if (!UtilMethods.isSet(containerId)) {
+
+            Logger.warn(this, MessageConstants.CONTAINER_ID_IS_REQUIRED);
+            throw new IllegalArgumentException(MessageConstants.CONTAINER_ID_IS_REQUIRED);
+        }
+
+        Logger.debug(this, () -> "Listing the templates that use the container: " + SecurityUtils.sanitizeForLogging(containerId));
+
+        final Host      host      = WebAPILocator.getHostWebAPI().getHost(request);
+        final Container container = this.getContainerWorking(containerId, user, host);
+        if (null == container || UtilMethods.isNotSet(container.getIdentifier())) {
+
+            Logger.warn(this, MessageConstants.CONTAINER_ID_WITH + SecurityUtils.sanitizeForLogging(containerId) + MessageConstants.DOES_NOT_EXIST);
+            throw new DoesNotExistException("Container" + MessageConstants.DOES_NOT_EXIST);
+        }
+
+        return Response.ok(new ResponseEntityView<>(
+                this.dependenciesHelper.dependenciesOf(container, user))).build();
+    }
+
+    /**
      * Publishes a Container
      *
      * This method receives an identifier and publish it
@@ -1361,7 +1477,8 @@ public class ContainerResource implements Serializable {
     @Operation(
             operationId = "deleteContainer",
             summary = "Deletes a container",
-            description = "Permanently deletes the specified container. The user must have Edit permissions on the container.",
+            description = "Permanently deletes the specified container. The user must have Edit permissions on the container. " +
+                    "A container that any template still uses is not deleted (409).",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Container deletion result (true if deleted, false otherwise)",
                             content = @Content(mediaType = "application/json",
@@ -1369,7 +1486,8 @@ public class ContainerResource implements Serializable {
                     @ApiResponse(responseCode = "400", description = "Bad request - Container ID is required"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks edit permissions"),
-                    @ApiResponse(responseCode = "404", description = "Container not found")
+                    @ApiResponse(responseCode = "404", description = "Container not found"),
+                    @ApiResponse(responseCode = "409", description = "Conflict - The container is used by one or more templates")
             }
     )
     public final Response delete(@Context final HttpServletRequest  request,
@@ -1392,6 +1510,8 @@ public class ContainerResource implements Serializable {
         if (null != container && InodeUtils.isSet(container.getInode())) {
 
             Logger.debug(this,()->"Calling Delete Container");
+
+            this.assertNotUsedByTemplates(container);
 
             if(this.containerAPI.delete(container, user, pageMode.respectAnonPerms)) {
 
@@ -1502,7 +1622,8 @@ public class ContainerResource implements Serializable {
             operationId = "bulkDeleteContainers",
             summary = "Deletes multiple containers",
             description = "Deletes a list of containers by their identifiers. Returns a summary of successful " +
-                    "and failed deletions. The user must have Edit permissions on each container.",
+                    "and failed deletions. The user must have Edit permissions on each container. A container " +
+                    "that any template still uses is not deleted and is reported as a failure.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Bulk delete results with success and failure counts",
                             content = @Content(mediaType = "application/json",
@@ -1538,6 +1659,7 @@ public class ContainerResource implements Serializable {
                         WebAPILocator.getHostWebAPI().getHost(request));
 
                 if (null != container && InodeUtils.isSet(container.getInode())){
+                    this.assertNotUsedByTemplates(container);
                     this.containerAPI.delete(container, user, pageMode.respectAnonPerms);
                     ActivityLogger.logInfo(this.getClass(),
                             "Delete Container Action",

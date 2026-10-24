@@ -35,17 +35,6 @@
     </portlet>
 
     <portlet>
-        <portlet-name>containers-legacy</portlet-name>
-        <display-name>Container Manager (Legacy)</display-name>
-        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-        <init-param>
-            <name>view-action</name>
-            <value>/ext/containers/view_containers</value>
-        </init-param>
-        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-    </portlet>
-
-    <portlet>
         <portlet-name>html-pages</portlet-name>
         <display-name>HTML Pages Manager</display-name>
         <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
