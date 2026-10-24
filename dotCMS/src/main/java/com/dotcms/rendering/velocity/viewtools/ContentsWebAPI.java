@@ -67,22 +67,6 @@ public class ContentsWebAPI implements ViewTool {
 		}
 	}
 
-	public CategoryAPI getCategoryAPI() {
-		return categoryAPI;
-	}
-
-	public void setCategoryAPI(CategoryAPI categoryAPI) {
-		this.categoryAPI = categoryAPI;
-	}
-
-	public ContentletAPI getContentletAPI() {
-		return conAPI;
-	}
-
-	public void setContentletAPI(ContentletAPI conAPI) {
-		this.conAPI = conAPI;
-	}
-
 
 	/**
 	 *
