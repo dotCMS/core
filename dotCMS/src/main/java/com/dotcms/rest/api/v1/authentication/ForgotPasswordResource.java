@@ -22,6 +22,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.SecurityUtils;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.SendPasswordException;
 import com.liferay.portal.UserEmailAddressException;
@@ -29,6 +30,7 @@ import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.ejb.UserLocalManagerFactory;
 import com.liferay.portal.model.Company;
 import com.liferay.util.LocaleUtil;
+import com.liferay.util.Validator;
 import java.io.Serializable;
 import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
@@ -43,7 +45,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import javax.ws.rs.Consumes;
 
 /**
- * This resource sends email with a link to recovery your password, if it is successfully returns the User email where the message is gonna be sent,
+ * This resource sends email with a link to recovery your password. A request that is accepted returns the submitted user id or email address,
  * If there is a known error returns 500 and the error messages related.
  * Otherwise returns 500 and the exception as Json.
  * @author jsanca
@@ -79,17 +81,33 @@ public class ForgotPasswordResource implements Serializable {
         this.responseUtil = responseUtil;
     }
 
+    /**
+     * Requests a password reset email for the account matching the submitted value: the user id
+     * when the company logs in by user id, otherwise the email address.
+     * <p>
+     * Every request whose value is accepted gets the same 200 response carrying the submitted
+     * value, whether or not an account matches and whether or not the reset could be completed. With
+     * login by email address, a value that is not an email address is rejected with 400, as is a
+     * request with no body. When
+     * {@code CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD} is enabled, an unknown account
+     * is reported with 400.
+     *
+     * @param request            the HTTP request
+     * @param response           the HTTP response
+     * @param forgotPasswordForm the {@link ForgotPasswordForm} holding the user id or email address
+     * @return the {@link Response}
+     */
     @Operation(
         summary = "Send password reset email",
-        description = "Sends a password reset email to the specified user. Returns the email address where the reset link was sent."
+        description = "Sends a password reset email to the account matching the submitted user ID or email address. Returns the submitted value."
     )
     @ApiResponses(value = {
         @ApiResponse(responseCode = "200", 
-                    description = "Password reset email sent successfully",
+                    description = "Request accepted. The entity is the submitted user ID or email address",
                     content = @Content(mediaType = "application/json",
                                       schema = @Schema(implementation = ResponseEntityForgotPasswordView.class))),
         @ApiResponse(responseCode = "400", 
-                    description = "Bad request - invalid email address or user not found (if configured to show)",
+                    description = "Bad request - with login by email address, the submitted value is not a valid email address; or user not found (if configured to show)",
                     content = @Content(mediaType = "application/json")),
         @ApiResponse(responseCode = "500", 
                     description = "Internal server error",
@@ -108,18 +126,30 @@ public class ForgotPasswordResource implements Serializable {
                                                     content = @Content(schema = @Schema(implementation = ForgotPasswordForm.class)))
                                          final ForgotPasswordForm forgotPasswordForm) {
 
+        if (null == forgotPasswordForm) {
+
+            return ExceptionMapperUtil.createResponse("A request body with a userId is required",
+                    Response.Status.BAD_REQUEST);
+        }
+
         Response res;
-        String emailAddress = null;
+        final String submittedValue = forgotPasswordForm.getUserId();
         final Locale locale = LocaleUtil.getLocale(request);
 
         try {
 
             final Company company = this.companyAPI.getCompany(request);
+            final boolean loginByUserId = Company.AUTH_TYPE_ID.equals(company.getAuthType());
 
-            emailAddress = (Company.AUTH_TYPE_ID.equals(company.getAuthType()))?
-                        this.userLocalManager.getUserById
-                                (forgotPasswordForm.getUserId()).getEmailAddress():
-                        forgotPasswordForm.getUserId();
+            if (!loginByUserId && !Validator.isEmailAddress(submittedValue.trim().toLowerCase())) {
+
+                return this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
+                        "please-enter-a-valid-email-address");
+            }
+
+            final String emailAddress = loginByUserId?
+                        this.userLocalManager.getUserById(submittedValue).getEmailAddress():
+                        submittedValue;
 
             SecurityLogger.logInfo(this.getClass(),
                     String.format(
@@ -129,7 +159,7 @@ public class ForgotPasswordResource implements Serializable {
             this.userService.sendResetPassword(
                     this.companyAPI.getCompanyId(request), emailAddress, locale);
 
-            res = Response.ok(new ResponseEntityView<>(emailAddress)).build(); // 200
+            res = Response.ok(new ResponseEntityView<>(submittedValue)).build(); // 200
 
         } catch (NoSuchUserException e) {
 
@@ -142,7 +172,7 @@ public class ForgotPasswordResource implements Serializable {
                 SecurityLogger.logInfo(this.getClass(),
                         String.format(
                                 "User [%s] does NOT exist in the Database. IP [%s]. %s property is TRUE",
-                                emailAddress, request.getRemoteAddr(),
+                                SecurityUtils.sanitizeForLogging(submittedValue), request.getRemoteAddr(),
                                 CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD));
 
                 res = this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
@@ -152,9 +182,9 @@ public class ForgotPasswordResource implements Serializable {
                 SecurityLogger.logInfo(this.getClass(),
                         String.format(
                                 "User [%s] does NOT exist in the Database, returning OK message for security reasons. IP [%s]",
-                                emailAddress, request.getRemoteAddr()));
+                                SecurityUtils.sanitizeForLogging(submittedValue), request.getRemoteAddr()));
 
-                res = Response.ok(new ResponseEntityView<>(emailAddress)).build(); // 200
+                res = Response.ok(new ResponseEntityView<>(submittedValue)).build(); // 200
             }
         } catch (SendPasswordException e) {
 
@@ -162,8 +192,11 @@ public class ForgotPasswordResource implements Serializable {
                       "a-new-password-can-only-be-sent-to-an-external-email-address");
         } catch (UserEmailAddressException e) {
 
-            res = this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
-                    "please-enter-a-valid-email-address");
+            // the request itself was accepted above; the reset could not be completed for the matching account
+            SecurityLogger.logInfo(this.getClass(),
+                    String.format("The password reset for [%s] could not be completed. IP [%s]",
+                            SecurityUtils.sanitizeForLogging(submittedValue), request.getRemoteAddr()));
+            res = Response.ok(new ResponseEntityView<>(submittedValue)).build(); // 200
         } catch (Exception e) {
 
             Logger.error(this.getClass(), "Error processing forgot password request", e);
