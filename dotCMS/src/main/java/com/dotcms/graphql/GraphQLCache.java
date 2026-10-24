@@ -18,6 +18,7 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.TemporalUnit;
 import java.util.Optional;
 import java.util.function.Supplier;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.logging.log4j.util.Strings;
 
 /**
@@ -138,13 +139,15 @@ public class GraphQLCache implements Cachable {
         this.put(key, result, -1);
     }
 
-    private String hashKey(final String query) {
-        long hashCode = 1125899906842597L;
-        for (int i = 0; i < query.length(); i++) {
-            hashCode = 31 * hashCode + query.charAt(i);
-        }
-
-        return String.valueOf(hashCode);
+    /**
+     * Derives the key stored in the underlying cache from the caller's key. A cryptographic
+     * digest is used so that two different keys cannot be made to land on the same entry.
+     *
+     * @param key the caller's key
+     * @return the SHA-256 hex digest of the key
+     */
+    private String hashKey(final String key) {
+        return DigestUtils.sha256Hex(key);
     }
 
     @Override
