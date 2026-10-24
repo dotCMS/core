@@ -590,8 +590,12 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             identifiers.map((identifier) => this.dotContainersService.getDependencies(identifier))
         )
             .pipe(take(1))
-            .subscribe((dependencies: DotContainerDependencies[]) => {
-                if (dependencies.some((dependency) => !dependency)) {
+            .subscribe((lookups) => {
+                const dependencies = lookups.filter(
+                    (dependency): dependency is DotContainerDependencies => !!dependency
+                );
+
+                if (dependencies.length !== lookups.length) {
                     return;
                 }
 

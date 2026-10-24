@@ -424,11 +424,14 @@ describe('ContainerListComponent', () => {
             const clickDelete = () => {
                 const archivedContainer = containersMock.find(
                     (c) => c.identifier === '123Archived'
-                );
+                ) as DotContainer;
 
-                comp.setContainerActions(archivedContainer)
-                    .find(({ menuItem }) => menuItem.label === 'Delete')
-                    .menuItem.command({});
+                const deleteAction = comp
+                    .setContainerActions(archivedContainer)
+                    .find(({ menuItem }) => menuItem['label'] === 'Delete');
+
+                expect(deleteAction).toBeDefined();
+                deleteAction?.menuItem.command?.({});
             };
 
             beforeEach(() => {
