@@ -25,6 +25,8 @@ import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -251,6 +253,106 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Given: a two-sided relationship whose relationship row lost the name of its other-side field
+     * ({@code parent_relation_name} is empty), as happens to every two-sided relationship
+     * imported from the demo starter.
+     * When: a contentlet of the child type is populated with an empty value for that field, which
+     * is how the Edit Content sends a relationship the editor emptied.
+     * Then: the populator still finds the relationship through the field that points to it, and
+     * returns it with no related content so the relationship is wiped on checkin.
+     */
+    @Test
+    public void testPopulateTwoSidedRelationshipWithoutParentRelationName_emptyValueWipesIt()
+            throws DotDataException, DotSecurityException {
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType");
+            childContentType = createAndSaveSimpleContentType("childContentType");
+            Contentlet contentlet = createContentlet(childContentType);
+
+            final Field childTypeRelationshipField = createTwoSidedRelationshipWithoutParentRelationName(
+                    parentContentType, childContentType);
+
+            final Map<String, Object> properties = new HashMap<>();
+            properties.put(Contentlet.STRUCTURE_INODE_KEY, childContentType.id());
+            properties.put(childTypeRelationshipField.variable(), StringPool.BLANK);
+
+            contentlet = populator.populate(contentlet, properties);
+
+            final ContentletRelationships resultMap = (ContentletRelationships) contentlet
+                    .get(Contentlet.RELATIONSHIP_KEY);
+            assertNotNull("The emptied relationship must reach the checkin", resultMap);
+            assertEquals(1, resultMap.getRelationshipsRecords().size());
+
+            final ContentletRelationships.ContentletRelationshipRecords result =
+                    resultMap.getRelationshipsRecords().get(0);
+            assertEquals(childContentType.inode(), result.getRelationship().getChildStructureInode());
+            assertFalse("The child type is not the parent side", result.isHasParent());
+            assertTrue("An empty value wipes the relationship", result.getRecords().isEmpty());
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
+    /**
+     * Given: the same two-sided relationship with an empty {@code parent_relation_name}.
+     * When: a contentlet of the child type is populated with a related identifier for that field.
+     * Then: the populator relates it, so changes made from the other-side field are saved too.
+     */
+    @Test
+    public void testPopulateTwoSidedRelationshipWithoutParentRelationName_identifierRelatesIt()
+            throws DotDataException, DotSecurityException {
+        final MapToContentletPopulator populator = new MapToContentletPopulator();
+
+        ContentType parentContentType = null;
+        ContentType childContentType  = null;
+        try {
+            parentContentType = createAndSaveSimpleContentType("parentContentType");
+            childContentType = createAndSaveSimpleContentType("childContentType");
+            Contentlet contentlet = createContentlet(childContentType);
+            final Contentlet relatedContentlet = createContentlet(parentContentType);
+
+            final Field childTypeRelationshipField = createTwoSidedRelationshipWithoutParentRelationName(
+                    parentContentType, childContentType);
+
+            final Map<String, Object> properties = new HashMap<>();
+            properties.put(Contentlet.STRUCTURE_INODE_KEY, childContentType.id());
+            properties.put(childTypeRelationshipField.variable(), relatedContentlet.getIdentifier());
+
+            contentlet = populator.populate(contentlet, properties);
+
+            final ContentletRelationships resultMap = (ContentletRelationships) contentlet
+                    .get(Contentlet.RELATIONSHIP_KEY);
+            assertNotNull("The relationship must reach the checkin", resultMap);
+            assertEquals(1, resultMap.getRelationshipsRecords().size());
+
+            final ContentletRelationships.ContentletRelationshipRecords result =
+                    resultMap.getRelationshipsRecords().get(0);
+            assertFalse("The child type is not the parent side", result.isHasParent());
+            assertEquals(1, result.getRecords().size());
+            assertEquals(relatedContentlet.getIdentifier(),
+                    result.getRecords().get(0).getIdentifier());
+        } finally {
+            if (UtilMethods.isSet(parentContentType) && UtilMethods.isSet(parentContentType.id())) {
+                contentTypeAPI.delete(parentContentType);
+            }
+
+            if (UtilMethods.isSet(childContentType) && UtilMethods.isSet(childContentType.id())) {
+                contentTypeAPI.delete(childContentType);
+            }
+        }
+    }
+
     @Test
     public void testPopulateSelfJoinedRelationshipWithLuceneQuery() throws DotDataException, DotSecurityException {
         final MapToContentletPopulator populator = new MapToContentletPopulator();
@@ -377,6 +479,38 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
                 .relationType(childTypeVar).build();
 
         return fieldAPI.save(field, user);
+    }
+
+    /**
+     * Creates a two-sided relationship between the given types and then empties the name of its
+     * other-side field in the database, the way the starter import leaves two-sided relationships.
+     *
+     * @param parentContentType The type that owns the relationship.
+     * @param childContentType  The type that holds the other-side field.
+     * @return The other-side relationship field, on the child type.
+     */
+    private Field createTwoSidedRelationshipWithoutParentRelationName(
+            final ContentType parentContentType, final ContentType childContentType)
+            throws DotSecurityException, DotDataException {
+
+        final Field parentTypeRelationshipField = createAndSaveRelationshipField("newRel",
+                parentContentType.id(), childContentType.variable());
+        final String relationTypeValue =
+                parentContentType.variable() + StringPool.PERIOD + parentTypeRelationshipField.variable();
+        final Field childTypeRelationshipField = createAndSaveRelationshipField("otherSideRel",
+                childContentType.id(), relationTypeValue);
+
+        new DotConnect()
+                .setSQL("update relationship set parent_relation_name = null where relation_type_value = ?")
+                .addParam(relationTypeValue)
+                .loadResult();
+        CacheLocator.getRelationshipCache().clearCache();
+
+        final Relationship relationship = APILocator.getRelationshipAPI().byTypeValue(relationTypeValue);
+        assertFalse("Precondition: the other-side name is empty, as in the starter",
+                UtilMethods.isSet(relationship.getParentRelationName()));
+
+        return childTypeRelationshipField;
     }
 
     private Contentlet createContentlet(final ContentType contentType) {
