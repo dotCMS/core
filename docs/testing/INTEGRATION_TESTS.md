@@ -35,7 +35,7 @@ For JUnit4 tests that need `@DataProvider`-style parameterization (from the
 - **`DataProviderRunner`** (`com.tngtech.java.junit.dataprovider.DataProviderRunner`): plain data-provider-driven parameterized tests, no CDI container — **68 real usages** (`@RunWith(DataProviderRunner.class)`) in this module (e.g. `LanguageUtilTest.java`)
 - **`DataProviderWeldRunner`** (`com.dotcms.DataProviderWeldRunner`): same, but extends `DataProviderRunner` to additionally spin up a real Weld CDI container so test classes can be resolved as CDI beans — **~41 real usages**. This is a CDI-aware superset, not a replacement for the plain runner; both stay in active use for different needs.
 
-### Naming: use the `Test` suffix, not `IT` ⚠️
+### Naming: use the `Test` suffix, not `IT`
 
 Integration test classes in this module are named `FooTest` or `FooIntegrationTest` — **not**
 `FooIT`. The standard Maven Failsafe `*IT` convention does **not** apply here: failsafe in
@@ -47,7 +47,7 @@ in this module, so a `*Test` name here can't be mistaken for a unit test either.
 
 Match the siblings already in your package — the module is ~680 `*Test.java` to ~19 `*IT.java`.
 
-### Registering Tests in a MainSuite (CI gate) ⚠️
+### Registering Tests in a MainSuite (CI gate)
 
 CI runs integration tests **only** through the JUnit `@SuiteClasses` aggregator suites in
 `dotcms-integration/src/test/java/com/dotcms/` — currently `MainSuite1a`, `MainSuite1b`,
@@ -87,14 +87,17 @@ Whenever you add integration-test coverage:
    samples. Record the run links, compared runtimes, and chosen suite in the PR description.
    If timing data is unavailable, report that and ask the developer; do not guess a default.
    If every current `MainSuite*` is consistently near-saturated and none is meaningfully faster,
-   that's a signal a
-   new `MainSuite` class may be needed — that's a call for whoever owns the CI/test infra, not
+   a new `MainSuite` class may be needed — that's a call for whoever owns the CI/test infra, not
    something to decide unilaterally from a PR sample.
 2. **Recheck existing class placement.** If the class receiving new methods is in a slower suite,
    move its registration to the selected suite, or put the new tests in a separate class
    registered there. Do not leave new coverage in a slower suite just to reuse its class.
    When moving a class, remove its old import and suite entry; keep exactly one registration
    across the regular CI suites, without duplicating its existing tests.
+   Moving a class can expose test-order or shared DB/search-state coupling. Before merging, run
+   the destination suite with `-Dmaven.build.cache.enabled=false` and confirm it passes with a
+   nonzero `Tests run: N` (a matching PR CI run is sufficient). Compilation or a standalone
+   class run does not validate interactions with the destination suite.
 3. Add the `import` (alphabetized, matching the file's existing import block) **and** append the
    `Foo.class,` entry to the **end** of the `@SuiteClasses({ ... })` list — the real
    `@SuiteClasses` lists are not alphabetized or grouped by feature/package at all; new tests are
@@ -120,7 +123,7 @@ Verify the suite still resolves the new class:
 ./mvnw test-compile -pl :dotcms-integration -DskipTests
 ```
 
-### The build cache can skip the tests entirely ⚠️
+### The build cache can skip the tests entirely
 
 A second way to get a **green build that ran nothing** — distinct from the suite-registration gate
 above, and with the identical symptom.
