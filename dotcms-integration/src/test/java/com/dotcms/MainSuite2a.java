@@ -104,9 +104,13 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderHandlerTest.class,
         ContentAnalyticsPersistenceModeIT.class,
         EventAnalyticsProxyResourceIntegrationTest.class,
+        com.dotmarketing.portlets.contentlet.action.ExportContentletsToCSVTest.class,
         GenericBundleActivatorIntegrationTest.class,
         com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest.class,
         com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class,
+        com.dotcms.rest.ClusterResourceIntegrationTest.class,
+        com.dotcms.rest.api.v1.cluster.ClusterNodesResourceIntegrationTest.class,
+        com.dotcms.rest.api.v1.system.ConfigurationHelperTest.class,
         com.dotcms.rest.api.v1.container.ContainerResourceDependenciesIntegrationTest.class,
         com.dotmarketing.startup.runonce.Task261023RemoveContainersLegacyPortletFromLayoutsTest.class,
         com.dotmarketing.portlets.templates.business.TemplateAPIFindUsingContainerTest.class
