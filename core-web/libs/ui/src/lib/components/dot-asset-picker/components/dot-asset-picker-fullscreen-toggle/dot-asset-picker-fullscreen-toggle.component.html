@@ -1,6 +1,7 @@
 <p-button
     [text]="true"
     [rounded]="true"
+    severity="secondary"
     [attr.aria-pressed]="store.isFullscreen()"
     [attr.aria-label]="$fullscreenLabelKey() | dm"
     [pTooltip]="$fullscreenLabelKey() | dm"
