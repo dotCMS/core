@@ -1,5 +1,6 @@
 package com.dotcms.system.event.local.business;
 
+import com.dotcms.cdn.pushpublish.receiver.event.PushPublishOnReceiverEndSubscriber;
 import com.dotcms.ai.listener.AIAppListener;
 import com.dotcms.analytics.listener.AnalyticsAppListener;
 import com.dotcms.analytics.listener.ContentAnalyticsAppListener;
@@ -99,6 +100,8 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
         // for the same reason as the delete listener above.
         APILocator.getLocalSystemEventsAPI().subscribe(JobCompletedEvent.class,
                 new FolderBulkDuplicateCompletionListener());
+
+        APILocator.getLocalSystemEventsAPI().subscribe(new PushPublishOnReceiverEndSubscriber());
 
         this.initDotVelocityMacrosVtlFiles();
     }
