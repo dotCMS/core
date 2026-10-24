@@ -54,8 +54,8 @@ The tainted version must not appear as any track's target.
 ### GitHub Release title and site record
 
 On `apply`, taint/untaint on `dotcms/dotcms` also retitles the GitHub Release `v<version>` to
-`⚠️ TAINTED Release <v>` (untaint removes the marker), and the corpsites `EvergreenState` record
-is re-synced. In `dry-run` the log shows `DRY-RUN would retitle v<version>: '<old>' -> '<new>'`.
+`⚠️ TAINTED Release <v>` (untaint removes the marker), and the `EvergreenState` record on the
+auth instance is re-synced (and Push Published to prod). In `dry-run` the log shows `DRY-RUN would retitle v<version>: '<old>' -> '<new>'`.
 
 If the title step fails, #dot-releases gets "GitHub Release title NOT updated": the registry
 action DID apply. Fix the title by hand (`gh release edit v<version> --title ...`) or re-run.
@@ -73,7 +73,9 @@ action DID apply. Fix the title by hand (`gh release edit v<version> --title ...
   heals it.
 - **"Evergreen site record drifted"**: after the daily sync the record still differs from Hub in
   the named fields. Re-run `evergreen-tracks-promote`; if it persists, check the record on
-  corpsites for a human edit or a stuck publish.
+  the auth instance for a human edit, and check auth's push-publishing queue for a failed or
+  stuck bundle. The sync reads back from auth only, so a push that failed on its way to prod does
+  not turn the job red.
 
 ### ⚠️ Taint does not roll anything back
 

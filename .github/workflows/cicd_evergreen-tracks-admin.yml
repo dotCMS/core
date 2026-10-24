@@ -83,10 +83,10 @@ jobs:
           FORCE: ${{ inputs.force }}
           MODE: ${{ inputs.mode }}
         run: |
-          EXTRA=""
-          if [ "$FORCE" = "true" ]; then EXTRA="$EXTRA --force"; fi
+          EXTRA=()
+          if [ "$FORCE" = "true" ]; then EXTRA+=(--force); fi
           if [ "$MODE" = "apply" ]; then
-            EXTRA="$EXTRA --apply"
+            EXTRA+=(--apply)
           else
             echo "::notice::DRY-RUN — printing the plan only. Nothing in the registry will change. Re-dispatch with mode=apply to make it real."
           fi
@@ -95,7 +95,7 @@ jobs:
             --action "$ACTION" \
             --version "$VERSION" \
             --track "$TRACK" \
-            $EXTRA
+            "${EXTRA[@]}"
       - name: Retitle GitHub Release
         id: title
         if: (inputs.action == 'taint' || inputs.action == 'untaint') && inputs.repo == 'dotcms/dotcms'
@@ -130,7 +130,7 @@ jobs:
             Fix it by hand or re-run this workflow.
             <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>
 
-  # Reconcile the corpsites EvergreenState record. Outside the registry lock (job-level
+  # Reconcile the auth-instance EvergreenState record. Outside the registry lock (job-level
   # above) so it never blocks the next mutation. A dry-run previews via --as-if-*.
   site-sync:
     needs: [ admin ]
@@ -148,5 +148,5 @@ jobs:
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-      DOTCMS_DEVSITE_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITE_RELEASENOTES_TOKEN }}
+      DOTCMS_DEVSITEAUTH_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITEAUTH_RELEASENOTES_TOKEN }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}

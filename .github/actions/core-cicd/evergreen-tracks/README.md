@@ -82,7 +82,7 @@ Full procedure, rules, and exit path: [RUNBOOK → `force`](RUNBOOK.md#force--ho
 
 ## Site sync
 
-`state` and `release-title` are read-only helpers for the corpsites mirror:
+`state` and `release-title` are read-only helpers for the dev-site `EvergreenState` mirror:
 
     uv run evergreen-tracks state --repo dotcms/dotcms --out hub-state.json
     uv run evergreen-tracks release-title --action taint --title "Release 26.08.31-01"

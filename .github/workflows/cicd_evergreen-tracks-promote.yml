@@ -300,7 +300,7 @@ jobs:
             Environments on these tracks pick this up at their next reconciler maintenance window,
             not immediately. <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>
 
-  # Reconcile the corpsites EvergreenState record with whatever Hub now holds.
+  # Reconcile the auth-instance EvergreenState record with whatever Hub now holds.
   # Runs on every apply, including no-move days (daily heal), and after a failed
   # apply too, since the mirror must match what actually landed. Deliberately a
   # separate job OUTSIDE the evergreen-tracks-registry lock (held only by `apply`):
@@ -319,5 +319,5 @@ jobs:
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-      DOTCMS_DEVSITE_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITE_RELEASENOTES_TOKEN }}
+      DOTCMS_DEVSITEAUTH_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITEAUTH_RELEASENOTES_TOKEN }}
       SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
