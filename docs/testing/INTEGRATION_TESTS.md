@@ -59,49 +59,47 @@ class that is not listed in one of these suites compiles fine but is silently ne
 CI** — green build, zero coverage. This is easy to miss because the class runs locally via
 `-Dit.test=MyTestClass`.
 
-**Mandatory placement rule: ALL new integration-test coverage MUST go in the currently
-shortest-running compatible CI suite.** This includes new classes **and new test methods added
-to existing classes**; reusing a class does not exempt its new tests from this rule. An example,
-feature grouping, existing registration, or old timing comment is not placement evidence.
-Keep JUnit 5 and required-profile tests in suites that support their framework and environment.
+**Placement rule: a new integration-test class goes in the last `MainSuite*` of the current
+set** — `MainSuite3a` at the time of writing. Read
+`dotcms-integration/src/test/java/com/dotcms/MainSuite*.java` for the current set rather than
+trusting that name: the set grows, and the rule follows whatever is last at the time.
+
+**"Last" means the highest group number, and within that number the highest letter.** The names
+are a group number plus a shard letter, so the order is `MainSuite1a` → `MainSuite1b` →
+`MainSuite2a` → `MainSuite2b` → `MainSuite3a`, and the next shard is `MainSuite3b` or
+`MainSuite4a` depending on how it is opened. Do not read the list as plain text sorted
+alphabetically: once the set reaches two digits, `MainSuite10a` sorts *before* `MainSuite1a`
+character by character, which would hide the newest shard exactly when the set has grown enough
+for this rule to matter.
+
+The reason it is the last one and not a measured one: the wall clock of the PR build is set by
+the **slowest** suite, so adding to the emptiest shard costs nothing at all until that shard stops
+being the emptiest. The last shard is the most recently created and therefore the emptiest, which
+makes it a free proxy for "the fastest" without anyone querying CI timings on every pull request.
+When the proxy stops holding, the answer is a new shard, not a measurement — see
+[When to recommend a new MainSuite](#when-to-recommend-a-new-mainsuite) below.
+
+**Compatibility decides before the last-shard rule does.** A JUnit 5 test belongs in
+`Junit5Suite1` whatever it covers, because the `MainSuite*` run JUnit 4's `@SuiteClasses` and
+silently skip an `org.junit.jupiter` class listed there; a test that needs a live OpenSearch
+cluster belongs in `OpenSearchUpgradeSuite`, which runs under the `opensearch-upgrade` profile.
+Neither is a general destination, and neither takes part in the last-shard rule.
 
 Whenever you add integration-test coverage:
 
-1. **Measure and select the shortest-running compatible suite before adding coverage.**
-   The `MainSuite*` jobs (currently five — see the note above on this list growing over time)
-   run in parallel in CI, so the goal is to keep their wall-clock times roughly balanced; adding
-   to whichever suite already finishes fastest keeps the overall PR build time down. **Don't
-   hardcode a specific suite name as "the fast one" in this doc or in memory** — suite runtimes
-   shift over time as tests are added/removed elsewhere, so check current timings for every
-   addition, even when no new class is needed. Pull job start/completion times from **at least
-   3 recent, independent PR CI runs**, using successful, completed jobs that actually executed
-   the compatible suites; ignore skipped, cancelled, incomplete, or cache-short-circuited jobs —
-   ```bash
-   gh pr view <recent-PR-number> --repo dotCMS/core --json statusCheckRollup \
-     -q '.statusCheckRollup[] | select(.name? and (.name | test("Integration Tests"))) | "\(.name) \(.startedAt) \(.completedAt)"'
-   ```
-   repeated across 3 different recent PR numbers, and compute the duration of each `MainSuite*`
-   job in each (ignore `Junit5Suite1` and `OpenSearchUpgradeSuite` — those are structurally
-   different, purpose-built suites, not general destinations for a new JUnit4 test). Add the new
-   coverage to the compatible suite with the lowest median elapsed job runtime across the
-   samples. Record the run links, compared runtimes, and chosen suite in the PR description.
-   If timing data is unavailable, report that and ask the developer; do not guess a default.
-   If every current `MainSuite*` is consistently near-saturated and none is meaningfully faster,
-   that's a signal a
-   new `MainSuite` class may be needed — that's a call for whoever owns the CI/test infra, not
-   something to decide unilaterally from a PR sample.
-2. **Recheck existing class placement.** If the class receiving new methods is in a slower suite,
-   move its registration to the selected suite, or put the new tests in a separate class
-   registered there. Do not leave new coverage in a slower suite just to reuse its class.
-   When moving a class, remove its old import and suite entry; keep exactly one registration
-   across the regular CI suites, without duplicating its existing tests.
-3. Add the `import` (alphabetized, matching the file's existing import block) **and** append the
-   `Foo.class,` entry to the **end** of the `@SuiteClasses({ ... })` list — the real
-   `@SuiteClasses` lists are not alphabetized or grouped by feature/package at all; new tests are
-   consistently appended at the end.
+1. **A new class goes in the last `MainSuite*`.** Add the `import` (alphabetized, matching the
+   file's existing import block) **and** append the `Foo.class,` entry to the **end** of the
+   `@SuiteClasses({ ... })` list — the real lists are not alphabetized or grouped by
+   feature/package at all; entries are consistently appended at the end. Register the class
+   **exactly once** across the regular CI suites.
+2. **A new method in an existing class stays with its class.** That class already runs in CI, and
+   moving its registration to chase a different shard buys nothing measurable while guaranteeing a
+   conflict in two suite files — those lists are appended to by everyone, which is where suite
+   merge conflicts come from. Move a registration only when the class is being split or renamed
+   anyway, and then delete the old import and entry so it is not registered twice.
 
 ```java
-// In the suite selected from current CI timings, not a fixed example suite:
+// In the last MainSuite* of the current set, not a fixed example suite:
 // alphabetize the import and append the class entry at the end of @SuiteClasses.
 // MyNewFeatureIntegrationTest is a placeholder, not an existing suite member.
 import com.dotcms.myfeature.MyNewFeatureIntegrationTest; // alphabetized import
@@ -113,6 +111,25 @@ import com.dotcms.myfeature.MyNewFeatureIntegrationTest; // alphabetized import
     MyNewFeatureIntegrationTest.class,   // <-- appended at the end
 })
 ```
+
+#### When to recommend a new MainSuite
+
+The last shard fills up, and the day it is no longer meaningfully faster than the rest, appending
+to it starts pushing the critical path of every PR build. The trigger for proposing a new shard:
+**the last `MainSuite*` has a median runtime within 10% of the slowest `MainSuite*`**, measured
+across at least 3 recent, independent PR runs — successful, completed jobs that actually executed
+the suites; ignore skipped, cancelled, incomplete or cache-short-circuited ones.
+
+```bash
+gh pr view <recent-PR-number> --repo dotCMS/core --json statusCheckRollup \
+  -q '.statusCheckRollup[] | select(.name? and (.name | test("Integration Tests"))) | "\(.name) \(.startedAt) \(.completedAt)"'
+```
+
+This measurement is **periodic, not per-pull-request**: nobody runs it to register a test, only to
+answer whether the shard is full. Creating the shard is a call for whoever owns the CI/test infra
+— a PR recommends it with the measured numbers attached, it does not add `MainSuite3b` on its own
+authority.
+
 
 Verify the suite still resolves the new class:
 

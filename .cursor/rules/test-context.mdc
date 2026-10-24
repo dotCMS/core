@@ -19,7 +19,7 @@ alwaysApply: false
 
 ## Backend (Java)
 - DotConnect for DB; APILocator for services. Structure: *Test.java (unit), *IT.java (integration).
-- **Suite placement (CRITICAL)**: ALL new integration-test coverage, **including methods added to existing classes**, MUST go in the shortest-running compatible CI suite, measured across at least **3 recent independent PR runs**. Never default to an example, feature grouping, or existing class registration. Read `@docs/testing/INTEGRATION_TESTS.md` → "Registering Tests in a MainSuite (CI gate)" before adding coverage; record the timing evidence in the PR.
+- **Suite placement (CRITICAL)**: a new integration-test class goes in the **last `MainSuite*`** of the current set — highest group number, then highest shard letter, not plain alphabetical order (read `dotcms-integration/src/test/java/com/dotcms/MainSuite*.java`, the set grows) — with the import alphabetized and the entry appended at the **end** of `@SuiteClasses`. A new method in an existing class stays with its class. Compatibility decides first: JUnit 5 → `Junit5Suite*`, a live OpenSearch cluster → `OpenSearchUpgradeSuite`. Read `@docs/testing/INTEGRATION_TESTS.md` → "Registering Tests in a MainSuite (CI gate)".
 - **Suite registration (CRITICAL)**: register each new or moved class exactly once across the regular CI suites and remove any old registration. An unregistered class still runs locally via `-Dit.test=` but is **silently never run in CI** — green build, zero coverage.
 
 ## Commands
