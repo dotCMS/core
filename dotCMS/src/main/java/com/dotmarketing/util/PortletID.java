@@ -25,6 +25,8 @@ public enum PortletID {
     ES_SEARCH_LEGACY("es-search-legacy"),
     EVENTS,
     EVENTS_APPROVAL,
+    /** The Experiments tool; also gates the Variants REST resource that serves it. */
+    EXPERIMENTS,
     FOLDERS,
     FORMS, 
     HTML_PAGES,

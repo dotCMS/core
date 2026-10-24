@@ -84,6 +84,7 @@ import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
@@ -260,6 +261,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     private static Lazy<Boolean> FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION = Lazy.of(() ->
             Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION, true));
+    /**
+     * Whether a new contentlet also needs "Can Add Children" on its destination folder or site,
+     * see {@link FeatureFlagName#FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK}. Read on every
+     * call rather than cached so integration tests can toggle it at runtime; the lookup is a map
+     * read, not I/O.
+     */
+    private static boolean isCheckinDestinationPermissionCheckEnabled() {
+        return Config.getBooleanProperty(
+                FeatureFlagName.FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK, true);
+    }
     private static final String CAN_T_CHANGE_STATE_OF_CHECKED_OUT_CONTENT = "Can't change state of checked out content or where inode is not set. Use Search or Find then use method";
     private static final String CANT_GET_LOCK_ON_CONTENT = "Only the CMS Admin or the user who locked the contentlet can lock/unlock it";
     private static final String FAILED_TO_DELETE_UNARCHIVED_CONTENT = "Failed to delete unarchived content. Content must be archived first before it can be deleted.";
@@ -6944,6 +6955,20 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return binaryHandled;
     }
 
+    /**
+     * Verifies the user may save the given contentlet. An existing contentlet needs WRITE on
+     * itself. A new contentlet needs WRITE on its content type and, unless
+     * {@link FeatureFlagName#FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK} is off,
+     * "Can Add Children" or WRITE on the folder or site it is being placed in when that is not
+     * the type's default placement (see
+     * {@link #checkDestinationPermission(Contentlet, boolean, User)}).
+     *
+     * @param contentlet           the {@link Contentlet} about to be checked in
+     * @param respectFrontendRoles whether front-end roles (anonymous, logged-in site user) count
+     * @param user                 the {@link User} performing the checkin
+     * @throws DotSecurityException when the user lacks any of the required permissions
+     * @throws DotDataException     when a permission or asset lookup fails
+     */
     private void checkPermission(
             final Contentlet contentlet,
             final boolean respectFrontendRoles,
@@ -6956,9 +6981,123 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     user, respectFrontendRoles)) {
                 this.throwSecurityException(contentlet, user);
             }
-        } else if (!permissionAPI.doesUserHavePermission(contentlet.getContentType(),
+        } else {
+            if (!permissionAPI.doesUserHavePermission(contentlet.getContentType(),
+                    PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+                this.throwSecurityException(contentlet, user);
+            }
+            if (isCheckinDestinationPermissionCheckEnabled()) {
+                checkDestinationPermission(contentlet, respectFrontendRoles, user);
+            }
+        }
+    }
+
+    /**
+     * Requires a grant on the place a new contentlet is going to live in, "Can Add Children" or
+     * WRITE, when that place was chosen rather than being where the content type puts its
+     * content anyway. "Can Add Children" is the rule the content editor applies when a site or
+     * folder is picked and that {@link #move(Contentlet, User, Host, Folder, boolean)} applies to
+     * the destination folder; WRITE on the destination is accepted as well, since a user who may
+     * change a site's content may add to it.
+     * <p>
+     * The destination is resolved like {@link Contentlet#getParentPermissionable()}: the folder
+     * when one other than the System Folder is set, otherwise the site when one other than the
+     * System Host is set. The check is skipped when the destination is the type's own folder or
+     * site, or the default site for a type that lives on the System Host, because that is where
+     * the content would land without anyone choosing a place; WRITE on the type keeps covering
+     * that case as before. Content placed on the System Host, Host contentlets, and destinations
+     * that cannot be loaded are also left to the content-type check and to validation, so this
+     * never turns a validation error into a permission error.
+     *
+     * @param contentlet           the new {@link Contentlet}, before it has an identifier
+     * @param respectFrontendRoles whether front-end roles count towards the permission
+     * @param user                 the {@link User} performing the checkin
+     * @throws DotSecurityException when the user has neither "Can Add Children" nor WRITE on the
+     *                              destination
+     * @throws DotDataException     when the folder or site lookup fails
+     */
+    private void checkDestinationPermission(final Contentlet contentlet,
+            final boolean respectFrontendRoles,
+            final User user) throws DotDataException, DotSecurityException {
+
+        final ContentType type = contentlet.getContentType();
+        if (type != null && Host.HOST_VELOCITY_VAR_NAME.equalsIgnoreCase(type.variable())) {
+            return;
+        }
+
+        final String folderId = InodeUtils.isSet(contentlet.getFolder())
+                && !FolderAPI.SYSTEM_FOLDER.equals(contentlet.getFolder())
+                ? contentlet.getFolder() : null;
+        final String hostId = InodeUtils.isSet(contentlet.getHost())
+                && !Host.SYSTEM_HOST.equals(contentlet.getHost())
+                ? contentlet.getHost() : null;
+        if ((folderId == null && hostId == null) || isDefaultPlacement(type, folderId, hostId)) {
+            return;
+        }
+
+        Permissionable destination;
+        final String destinationLabel;
+        try {
+            if (folderId != null) {
+                destination = APILocator.getFolderAPI().find(folderId, APILocator.systemUser(), false);
+                destinationLabel = "folder " + folderId;
+            } else {
+                destination = APILocator.getHostAPI().find(hostId, APILocator.systemUser(), false);
+                destinationLabel = "site " + hostId;
+            }
+        } catch (final DotSecurityException e) {
+            // the lookup runs as the system user, so this cannot happen in practice
+            throw new DotDataException(e.getMessage(), e);
+        }
+
+        if (destination == null || !UtilMethods.isSet(destination.getPermissionId())) {
+            return;
+        }
+
+        if (!permissionAPI.doesUserHavePermission(destination,
+                PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)
+                && !permissionAPI.doesUserHavePermission(destination,
                 PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
-            this.throwSecurityException(contentlet, user);
+            final String userId = user != null ? user.getUserId() : "Unknown";
+            final String message = "User: " + userId
+                    + " doesn't have Add Children or Write permissions on " + destinationLabel
+                    + " to create the Contentlet";
+            Logger.warn(this, message);
+            throw new DotSecurityException(message);
+        }
+    }
+
+    /**
+     * Tells whether a destination is where the given content type places its content when no
+     * site or folder is chosen: the type's own folder when it has one, otherwise the type's own
+     * site, or the default site for a type that lives on the System Host. Such a placement adds
+     * nothing the user could not reach already, so it is governed by the type permission alone.
+     *
+     * @param type     the {@link ContentType} of the new contentlet, possibly {@code null}
+     * @param folderId the destination folder, or {@code null} when the content is not in a folder
+     * @param hostId   the destination site, or {@code null} when none other than the System Host
+     * @return {@code true} when the destination is the type's default placement
+     * @throws DotDataException when the default site cannot be loaded
+     */
+    private boolean isDefaultPlacement(final ContentType type, final String folderId,
+            final String hostId) throws DotDataException {
+
+        if (type == null) {
+            return false;
+        }
+        if (folderId != null) {
+            return folderId.equals(type.folder());
+        }
+        if (UtilMethods.isSet(type.host()) && !Host.SYSTEM_HOST.equals(type.host())) {
+            return hostId.equals(type.host());
+        }
+        try {
+            final Host defaultHost = APILocator.getHostAPI()
+                    .findDefaultHost(APILocator.systemUser(), false);
+            return defaultHost != null && hostId.equals(defaultHost.getIdentifier());
+        } catch (final DotSecurityException e) {
+            // the lookup runs as the system user, so this cannot happen in practice
+            throw new DotDataException(e.getMessage(), e);
         }
     }
 

@@ -3,6 +3,7 @@ package com.dotcms;
 import com.dotcms.analytics.ContentAnalyticsPersistenceModeIT;
 import com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyResourceIntegrationTest;
 import com.dotcms.business.interceptor.InterceptorHandlerTest;
+import com.dotcms.content.elasticsearch.business.ContentletCheckinDestinationPermissionTest;
 import com.dotcms.enterprise.publishing.remote.handler.FolderHandlerTest;
 import com.dotcms.inference.rest.ChatCompletionsStreamingTest;
 import com.dotcms.inference.rest.ChatCompletionsTest;
@@ -19,6 +20,7 @@ import com.dotcms.inference.rest.InferenceSiteResolutionTest;
 import com.dotcms.inference.rest.InferenceTestsAreRegisteredTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.rest.api.v1.maintenance.MaintenanceResourceIntegrationTest;
+import com.dotcms.variant.VariantPromotePermissionTest;
 import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
 import org.junit.runner.RunWith;
@@ -110,7 +112,9 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class,
         com.dotcms.rest.ClusterResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.cluster.ClusterNodesResourceIntegrationTest.class,
-        com.dotcms.rest.api.v1.system.ConfigurationHelperTest.class
+        com.dotcms.rest.api.v1.system.ConfigurationHelperTest.class,
+        ContentletCheckinDestinationPermissionTest.class,
+        VariantPromotePermissionTest.class
 })
 public class MainSuite2a {
 
