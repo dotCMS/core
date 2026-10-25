@@ -1,6 +1,5 @@
 @let ogTagsResults = ogTagsResults$;
 @let showSEOTool = $seoResults() && ogTagsResults;
-@let dropzone = $dropzone();
 
 <dot-uve-toolbar />
 
@@ -20,65 +19,11 @@
 
 <div
     class="editor-content bg-gray-100"
-    #editorContent
     [ngStyle]="$editorContentStyles()"
     [ngClass]="{ 'editor-content-preview': $mode() === UVE_MODE.PREVIEW }"
     data-testId="editor-content">
     <dot-uve-browser-toolbar data-testid="uve-browser-toolbar" />
-    @if (uveStore.$editorIsIframeLoading()) {
-        <div class="progress-bar-wrapper">
-            <p-progressBar
-                [style]="{ height: '3px' }"
-                data-testId="progress-bar"
-                mode="indeterminate" />
-        </div>
-    }
-    <div class="canvas-viewport" dotUveCanvasSizing data-testid="canvas-viewport">
-        <div class="canvas-outer" #zoomContainer [ngStyle]="$viewCanvasOuterStyles()">
-            <dot-uve-iframe-resize-handles data-testid="iframe-resize-handles" />
-            <div class="canvas-inner" [ngStyle]="$viewCanvasInnerStyles()">
-                <div
-                    [ngClass]="{
-                        'iframe-wrapper--device': !uveStore.$viewIsResponsiveMode()
-                    }"
-                    class="iframe-wrapper transition-all duration-300">
-                    @if (uveStore.uveStatus() === UVE_STATUS.ERROR) {
-                        <dot-uve-page-version-not-found />
-                    }
-                    <dot-uve-iframe
-                        (load)="onIframePageLoad()"
-                        (internalNav)="handleInternalNavFromIframe($event)"
-                        (inlineEditing)="handleInlineEditingFromIframe($event)"
-                        [src]="$iframeSrc()"
-                        [title]="host"
-                        [pointerEvents]="$iframePointerEvents()"
-                        [opacity]="$iframeOpacity()"
-                        #iframe
-                        data-testId="iframe" />
-
-                    @if ($showContentletControls()) {
-                        <dot-uve-contentlet-tools
-                            (deleteContent)="deleteContent($event)"
-                            [contentletArea]="$contentArea"
-                            [allowContentDelete]="$allowContentDelete()"
-                            [showStyleEditorOption]="uveStore.editorCanEditStyles()"
-                            data-testId="contentlet-tools" />
-                    }
-                    @if (!$showLockOverlay() && dropzone) {
-                        <dot-ema-page-dropzone
-                            [containers]="dropzone.bounds"
-                            [dragItem]="dropzone.dragItem"
-                            [zoomLevel]="uveStore.$viewZoomFactor()"
-                            data-testId="dropzone" />
-                    }
-
-                    @if ($showLockOverlay()) {
-                        <dot-uve-lock-overlay />
-                    }
-                </div>
-            </div>
-        </div>
-    </div>
+    <dot-uve-canvas data-testid="uve-canvas" />
 </div>
 
 @if (uveStore.viewMode() === UVE_MODE.EDIT) {
@@ -101,11 +46,3 @@
     acceptIcon="hidden"
     rejectButtonStyleClass="p-button-outlined"
     data-testId="confirm-dialog" />
-
-<div
-    #customDragImage
-    class="border-round-lg absolute z-1 border bg-white p-3"
-    style="top: -1000px; left: -1000px; width: fit-content"
-    data-testId="drag-image">
-    {{ uveStore.$areaContentType() }}
-</div>

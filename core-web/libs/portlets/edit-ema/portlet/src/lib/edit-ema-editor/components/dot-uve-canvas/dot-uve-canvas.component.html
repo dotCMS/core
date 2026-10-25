@@ -1,0 +1,77 @@
+@let dropzone = $dropzone();
+
+@if (uveStore.$editorIsIframeLoading()) {
+    <div class="relative z-1001 h-0">
+        <!-- `absolute!`: PrimeNG's unlayered `.p-progressbar { position: relative }` outranks the utility. -->
+        <p-progressBar
+            [style]="{ height: '3px' }"
+            class="absolute! inset-x-0 -top-[3px] block"
+            data-testId="progress-bar"
+            mode="indeterminate" />
+    </div>
+}
+<!-- 0.5rem more padding on the right and bottom, so the resize handles, which reach past the
+     iframe's edges, are not clipped. The iframe scrolls its own content and the canvas never
+     overflows the viewport (responsive mode clamps to it, device mode zooms to fit), so centering
+     is safe. -->
+<div
+    class="relative flex min-h-full w-full items-start justify-center overflow-hidden pt-4 pr-6 pb-6 pl-4"
+    dotUveCanvasSizing
+    data-testid="canvas-viewport">
+    <div class="relative block select-none" [style]="uveStore.$viewCanvasOuterStyles()">
+        <dot-uve-iframe-resize-handles data-testid="iframe-resize-handles" />
+        <div class="relative" [style]="uveStore.$viewCanvasInnerStyles()">
+            <div
+                [class]="
+                    uveStore.$viewIsResponsiveMode()
+                        ? ''
+                        : 'bg-[linear-gradient(135deg,#ffffff_0%,rgba(240,240,240,1)_100%)] shadow-[0px_10px_18px_0px_hsla(230,13%,9%,0.1)]'
+                "
+                class="group relative mx-auto size-full border border-solid border-gray-300 transition-all duration-300">
+                @if (uveStore.uveStatus() === UVE_STATUS.ERROR) {
+                    <dot-uve-page-version-not-found data-testid="page-version-not-found" />
+                }
+                <dot-uve-iframe
+                    (load)="onIframePageLoad()"
+                    (internalNav)="handleInternalNav($event)"
+                    (inlineEditing)="handleInlineEditing($event)"
+                    [src]="$iframeSrc()"
+                    [title]="host"
+                    [pointerEvents]="$iframePointerEvents()"
+                    [opacity]="$iframeOpacity()"
+                    #iframe />
+
+                @if (uveStore.$showContentletControls()) {
+                    <dot-uve-contentlet-tools
+                        (deleteContent)="deleteContent($event)"
+                        [contentletArea]="uveStore.editorContentArea()"
+                        [allowContentDelete]="uveStore.$allowContentDelete()"
+                        [showStyleEditorOption]="uveStore.editorCanEditStyles()"
+                        data-testId="contentlet-tools" />
+                }
+                @if (!$showLockOverlay() && dropzone) {
+                    <dot-ema-page-dropzone
+                        [containers]="dropzone.bounds"
+                        [dragItem]="dropzone.dragItem"
+                        [zoomLevel]="uveStore.$viewZoomFactor()"
+                        class="absolute inset-0"
+                        data-testId="dropzone" />
+                }
+
+                @if ($showLockOverlay()) {
+                    <dot-uve-lock-overlay
+                        class="opacity-0 transition-opacity delay-200 duration-300 ease-[ease-in-out] [.group:hover_&]:[pointer-events:all] [.group:hover_&]:opacity-100 [.group:hover_&]:delay-0"
+                        data-testid="lock-overlay" />
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div
+    #customDragImage
+    class="border-round-lg absolute z-1 border bg-white p-3"
+    style="top: -1000px; left: -1000px; width: fit-content"
+    data-testId="drag-image">
+    {{ uveStore.$areaContentType() }}
+</div>
