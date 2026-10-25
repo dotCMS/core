@@ -3,7 +3,15 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, Observable, forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectorRef, Component, inject, signal, viewChild } from '@angular/core';
+import {
+    ChangeDetectorRef,
+    Component,
+    effect,
+    inject,
+    signal,
+    untracked,
+    viewChild
+} from '@angular/core';
 
 import { MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -159,6 +167,15 @@ export class DotUveContentEditorComponent {
             inputs: (request) => ({ request }),
             outputs: { saved: () => this.uveStore.pageReload() },
             closed: () => this.$sourceEditorPanel.set(null)
+        });
+
+        // The legacy dialog keeps the container position a create or add opened it for, and sends
+        // it back with every event. Once the page content reloads, what was saved is in, so the
+        // position is forgotten: a second save in the same create form then only reloads, instead
+        // of inserting again.
+        effect(() => {
+            this.uveStore.$reloadEditorContent();
+            untracked(() => this.$legacyDialog()?.resetActionPayload());
         });
 
         this.#handleEditContentRequest(

@@ -54,14 +54,21 @@ import {
     UVE_STATUS
 } from '../../../shared/enums';
 import { EDIT_ACTION_PAYLOAD_MOCK } from '../../../shared/mocks';
-import { ActionPayload, DialogAction, VTLFile } from '../../../shared/models';
+import {
+    ActionPayload,
+    CreateFromPaletteAction,
+    DialogAction,
+    VTLFile
+} from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
-import { EditorInsertResult } from '../../../store/features/editor/models';
+import { EditorInsertResult, ReloadEditorContent } from '../../../store/features/editor/models';
+import { PageType } from '../../../store/models';
 
 /**
  * Stands in for the legacy JSP dialog, which needs a running dotCMS. It exposes what the content
  * editor calls and the outputs it listens to, so a test can tell whether the dialog was asked to
- * open and can answer for it.
+ * open and can answer for it. Like the real dialog, it keeps the container position its create
+ * form was opened for until it is told to forget it.
  */
 @Component({
     selector: 'dot-edit-ema-dialog',
@@ -70,14 +77,21 @@ import { EditorInsertResult } from '../../../store/features/editor/models';
 class DotEmaDialogStubComponent {
     readonly action = output<DialogAction>();
     readonly reloadFromDialog = output<void>();
+    /** The container position the dialog sends back with every event, as the real one does. */
+    actionPayload: ActionPayload | undefined;
     readonly editContentlet = vi.fn();
     readonly editVTLContentlet = vi.fn();
-    readonly createContentletFromPalette = vi.fn();
+    readonly createContentletFromPalette = vi.fn(({ actionPayload }: CreateFromPaletteAction) => {
+        this.actionPayload = actionPayload;
+    });
     readonly createContentlet = vi.fn();
     readonly addContentlet = vi.fn();
     readonly addWidget = vi.fn();
     readonly addForm = vi.fn();
     readonly resetDialog = vi.fn();
+    readonly resetActionPayload = vi.fn(() => {
+        this.actionPayload = undefined;
+    });
 }
 
 const CONTENTLET = createFakeContentlet({
@@ -225,6 +239,12 @@ function createStoreMock() {
         pageAsset: signal<{ urlContentMap?: DotCMSURLContentMap } | null>(null),
         pageParams: signal({ url: 'index' }),
         pageLanguageId: signal(1),
+        $reloadEditorContent: signal<ReloadEditorContent>({
+            code: undefined,
+            pageType: PageType.TRADITIONAL,
+            enableInlineEdit: false,
+            pageAssetRef: {}
+        }),
         getCurrentTreeNode: vi.fn().mockReturnValue(TREE_NODE),
         editorInsertContentlet: vi.fn<() => EditorInsertResult>(() => ({ didInsert: true })),
         setUveStatus: vi.fn(),
@@ -1292,6 +1312,46 @@ describe('DotUveContentEditorComponent', () => {
                         actionPayload: INTO
                     });
                     expect(dialogService.open).not.toHaveBeenCalled();
+                });
+            });
+
+            // A save into a container reloads the page content, and the legacy create form stays
+            // open after its first save.
+            describe('after the page content reloads', () => {
+                /** What the store reports each time the page content reloads. */
+                const reloadPageContent = () => {
+                    store.$reloadEditorContent.set({
+                        ...store.$reloadEditorContent(),
+                        pageAssetRef: {}
+                    });
+                    spectator.detectChanges();
+                };
+
+                /** Saves in the legacy create form, which sends back the position it holds. */
+                const saveInCreateForm = () =>
+                    emitFromLegacyDialog(
+                        NG_CUSTOM_EVENTS.SAVE_PAGE,
+                        { contentletIdentifier: 'saved-contentlet-identifier' },
+                        { actionPayload: legacyDialog()?.actionPayload }
+                    );
+
+                it("should clear the legacy dialog's container position", () => {
+                    legacyDialog()?.resetActionPayload.mockClear();
+
+                    reloadPageContent();
+
+                    expect(legacyDialog()?.resetActionPayload).toHaveBeenCalledTimes(1);
+                });
+
+                it('should only reload, without inserting again, when the create form saves a second time', () => {
+                    createContent({ contentType: CONTENT_TYPE_TO_CREATE, into: INTO });
+
+                    saveInCreateForm();
+                    reloadPageContent();
+                    saveInCreateForm();
+
+                    expect(store.editorInsertContentlet).toHaveBeenCalledTimes(1);
+                    expect(store.pageReload).toHaveBeenCalledTimes(1);
                 });
             });
         });

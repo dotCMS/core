@@ -335,10 +335,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         const isClientReady = untracked(() => this.uveStore.isClientReady());
         const isGraphQLSourced = untracked(() => this.uveStore.pageAsset()?.source === 'graphql');
 
-        untracked(() => {
-            this.uveStore.resetEditorProperties();
-            this.dialog?.resetActionPayload();
-        });
+        untracked(() => this.uveStore.resetEditorProperties());
 
         if (pageType === PageType.TRADITIONAL || !isClientReady) {
             return;
