@@ -14,7 +14,7 @@ import { MessageService } from 'primeng/api';
 
 import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID } from '@dotcms/dotcms-models';
-import { DotCMSUVEAction } from '@dotcms/types';
+import { DotCMSInlineEditingPayload, DotCMSUVEAction } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService } from '@dotcms/ui';
 import { createFakeContentlet } from '@dotcms/utils-testing';
@@ -87,7 +87,6 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
                 inlineEditingService: null,
                 contentWindow: null,
                 host: 'http://localhost',
@@ -110,7 +109,6 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
                 inlineEditingService: null,
                 contentWindow: null,
                 host: 'http://localhost',
@@ -133,7 +131,6 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
                 inlineEditingService: null,
                 contentWindow: null,
                 host: 'http://localhost',
@@ -152,7 +149,6 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
             { action: DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING, payload: null },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
                 inlineEditingService: null,
                 contentWindow: null,
                 host: 'http://localhost',
@@ -178,7 +174,6 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
                 inlineEditingService: null,
                 contentWindow: null,
                 host: 'http://localhost',
@@ -221,7 +216,6 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
             },
             {
                 uveStore: buildMockStore() as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
                 inlineEditingService: null,
                 contentWindow,
                 host: 'http://localhost',
@@ -273,7 +267,6 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                 },
                 {
                     uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                    dialog: null,
                     inlineEditingService: null,
                     contentWindow: null,
                     host: 'http://localhost',
@@ -302,7 +295,6 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                 },
                 {
                     uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                    dialog: null,
                     inlineEditingService: null,
                     contentWindow: null,
                     host: 'http://localhost',
@@ -333,7 +325,6 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
                         inlineEditingService: null,
                         contentWindow: null,
                         host: 'http://localhost',
@@ -360,7 +351,6 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
                         inlineEditingService: null,
                         contentWindow: null,
                         host: 'http://localhost',
@@ -386,7 +376,6 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
                         inlineEditingService: null,
                         contentWindow: null,
                         host: 'http://localhost',
@@ -412,7 +401,6 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
                         inlineEditingService: null,
                         contentWindow: null,
                         host: 'http://localhost',
@@ -440,7 +428,6 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
                         inlineEditingService: null,
                         contentWindow: null,
                         host: 'http://localhost',
@@ -467,7 +454,6 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
                         inlineEditingService: null,
                         contentWindow: null,
                         host: 'http://localhost',
@@ -517,7 +503,6 @@ describe('DotUveActionsHandlerService – REGISTER_STYLE_SCHEMAS', () => {
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
                 inlineEditingService: null,
                 contentWindow: null,
                 host: 'http://localhost',
@@ -553,17 +538,15 @@ describe('DotUveActionsHandlerService – EDIT_CONTENTLET', () => {
         vi.spyOn(dispatcher, 'dispatch');
     });
 
-    it("should ask the content editor to edit the client's contentlet instead of opening the dialog itself", () => {
+    it("should ask the content editor to edit the client's contentlet", () => {
         // The same request every other edit sends: the content editor picks the editor from the
         // content type, so the SDK's editContentlet() no longer forces the legacy dialog.
         const contentlet = createFakeContentlet({ inode: 'sdk-inode', contentType: 'Blog' });
-        const editContentlet = vi.fn();
 
         service.handleAction(
             { action: DotCMSUVEAction.EDIT_CONTENTLET, payload: contentlet },
             {
                 uveStore: buildMockStore() as unknown as InstanceType<typeof UVEStore>,
-                dialog: { editContentlet } as never,
                 // Not used by EDIT_CONTENTLET.
                 inlineEditingService: {} as InlineEditService,
                 contentWindow: null,
@@ -576,7 +559,6 @@ describe('DotUveActionsHandlerService – EDIT_CONTENTLET', () => {
             uveContentEditorEvents.uveEditContentRequested({ contentlet }),
             { scope: 'self' }
         );
-        expect(editContentlet).not.toHaveBeenCalled();
     });
 });
 
@@ -604,18 +586,15 @@ describe('DotUveActionsHandlerService – CREATE_CONTENTLET', () => {
         vi.spyOn(dispatcher, 'dispatch');
     });
 
-    it('should ask the content editor to create a contentlet of the content type instead of opening the dialog itself', () => {
+    it('should ask the content editor to create a contentlet of the content type', () => {
         // The same request a palette drop sends, without a container position: the contentlet is
         // only created, and the page reloads once it is saved. The content editor picks the
         // editor from the content type, so the SDK's createContentlet() no longer forces the
         // legacy dialog.
-        const createContentletFromPalette = vi.fn();
-
         service.handleAction(
             { action: DotCMSUVEAction.CREATE_CONTENTLET, payload: { contentType: 'Event' } },
             {
                 uveStore: buildMockStore() as unknown as InstanceType<typeof UVEStore>,
-                dialog: { createContentletFromPalette } as never,
                 // Not used by CREATE_CONTENTLET.
                 inlineEditingService: {} as InlineEditService,
                 contentWindow: null,
@@ -630,7 +609,52 @@ describe('DotUveActionsHandlerService – CREATE_CONTENTLET', () => {
             }),
             { scope: 'self' }
         );
-        expect(createContentletFromPalette).not.toHaveBeenCalled();
+    });
+});
+
+describe('DotUveActionsHandlerService – REORDER_MENU', () => {
+    let spectator: SpectatorService<DotUveActionsHandlerService>;
+    let service: DotUveActionsHandlerService;
+    let dispatcher: SpyObject<Dispatcher>;
+
+    const createService = createServiceFactory({
+        service: DotUveActionsHandlerService,
+        providers: [
+            Dispatcher,
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotMessageService),
+            mockProvider(MessageService),
+            mockProvider(DotCopyContentModalService),
+            { provide: UVEStore, useValue: buildMockStore() }
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        service = spectator.service;
+        dispatcher = spectator.inject(Dispatcher);
+        vi.spyOn(dispatcher, 'dispatch');
+    });
+
+    it("should ask the content editor to open the menu reorder for the client's start level and depth", () => {
+        // The content editor owns the legacy dialog, and builds the reorder screen's URL from the
+        // page it shows.
+        service.handleAction(
+            { action: DotCMSUVEAction.REORDER_MENU, payload: { startLevel: 1, depth: 2 } },
+            {
+                uveStore: buildMockStore() as unknown as InstanceType<typeof UVEStore>,
+                // Not used by REORDER_MENU.
+                inlineEditingService: {} as InlineEditService,
+                contentWindow: null,
+                host: 'http://localhost',
+                onCopyContent: vi.fn()
+            }
+        );
+
+        expect(dispatcher.dispatch).toHaveBeenCalledWith(
+            uveContentEditorEvents.uveReorderMenuRequested({ startLevel: 1, depth: 2 }),
+            { scope: 'self' }
+        );
     });
 });
 
@@ -668,7 +692,6 @@ describe('DotUveActionsHandlerService – CLIENT_READY', () => {
 
     const buildDeps = (mockStore: ReturnType<typeof buildClientReadyStore>) => ({
         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-        dialog: null,
         inlineEditingService: null,
         contentWindow: null,
         host: 'http://localhost',
@@ -784,7 +807,6 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
                 inlineEditingService: null,
                 contentWindow,
                 host: HOST,
@@ -823,7 +845,6 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
                 inlineEditingService,
                 contentWindow: null,
                 host: HOST,
@@ -854,7 +875,6 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
                 inlineEditingService: null,
                 contentWindow,
                 host: HOST,
@@ -871,12 +891,29 @@ describe('DotUveActionsHandlerService – INIT_INLINE_EDITING permission gate (#
     let spectator: SpectatorService<DotUveActionsHandlerService>;
     let service: DotUveActionsHandlerService;
     let messageService: MessageService;
-    let blockSidebar: { open: Mock };
+    let dispatcher: SpyObject<Dispatcher>;
     let inlineEditingService: { initEditor: Mock };
+
+    /** The Block Editor field the user clicked. */
+    const BLOCK_EDITOR_FIELD: DotCMSInlineEditingPayload = {
+        inode: 'inode-123',
+        fieldName: 'body',
+        language: 1,
+        contentType: 'Blog',
+        content: { type: 'doc', content: [] }
+    };
+
+    /** Whether the content editor was asked to open the block editor sidebar on that field. */
+    const expectBlockEditorRequested = () =>
+        expect(dispatcher.dispatch).toHaveBeenCalledWith(
+            uveContentEditorEvents.uveEditBlockEditorFieldRequested(BLOCK_EDITOR_FIELD),
+            { scope: 'self' }
+        );
 
     const createService = createServiceFactory({
         service: DotUveActionsHandlerService,
         providers: [
+            Dispatcher,
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(DotMessageService, { get: (key: string) => key }),
             mockProvider(MessageService),
@@ -928,15 +965,10 @@ describe('DotUveActionsHandlerService – INIT_INLINE_EDITING permission gate (#
         service.handleAction(
             {
                 action: DotCMSUVEAction.INIT_INLINE_EDITING,
-                payload: {
-                    type: 'BLOCK_EDITOR',
-                    data: { inode: 'inode-123', fieldName: 'body', language: 1 }
-                }
+                payload: { type: 'BLOCK_EDITOR', data: BLOCK_EDITOR_FIELD }
             } as never,
             {
                 uveStore: buildMockStore() as never,
-                dialog: {} as never,
-                blockSidebar: blockSidebar as never,
                 inlineEditingService: inlineEditingService as never,
                 contentWindow,
                 host: 'http://localhost',
@@ -950,14 +982,15 @@ describe('DotUveActionsHandlerService – INIT_INLINE_EDITING permission gate (#
         spectator = createService();
         service = spectator.service;
         messageService = spectator.inject(MessageService);
-        blockSidebar = { open: vi.fn() };
+        dispatcher = spectator.inject(Dispatcher);
+        vi.spyOn(dispatcher, 'dispatch');
         inlineEditingService = { initEditor: vi.fn() };
     });
 
-    it('should not open the block editor sidebar for a contentlet the user cannot edit', () => {
+    it('should not ask to open the block editor sidebar for a contentlet the user cannot edit', () => {
         fireBlockEditor('false');
 
-        expect(blockSidebar.open).not.toHaveBeenCalled();
+        expect(dispatcher.dispatch).not.toHaveBeenCalled();
     });
 
     it('should tell the user why with a toast instead of failing silently', () => {
@@ -971,27 +1004,27 @@ describe('DotUveActionsHandlerService – INIT_INLINE_EDITING permission gate (#
         );
     });
 
-    it('should open the block editor sidebar when the user can edit', () => {
+    it('should ask the content editor to open the block editor sidebar on the field when the user can edit', () => {
         fireBlockEditor('true');
 
-        expect(blockSidebar.open).toHaveBeenCalled();
+        expectBlockEditorRequested();
         expect(messageService.add).not.toHaveBeenCalled();
     });
 
-    it('should open the block editor sidebar when the permission attribute is absent', () => {
+    it('should ask the content editor to open the block editor sidebar when the permission attribute is absent', () => {
         // Headless pages never emit the attribute; fail open.
         fireBlockEditor(undefined);
 
-        expect(blockSidebar.open).toHaveBeenCalled();
+        expectBlockEditorRequested();
     });
 
-    it('should open the block editor sidebar when the iframe is cross-origin (#37820)', () => {
+    it('should ask the content editor to open the block editor sidebar when the iframe is cross-origin (#37820)', () => {
         // Headless apps are served from another origin, so the iframe document
         // cannot be read. That must fail open like a missing attribute, not
         // throw and leave the click doing nothing.
         expect(() => fireBlockEditor(undefined, buildCrossOriginContentWindow())).not.toThrow();
 
-        expect(blockSidebar.open).toHaveBeenCalled();
+        expectBlockEditorRequested();
         expect(messageService.add).not.toHaveBeenCalled();
     });
 });

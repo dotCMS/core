@@ -1,3 +1,5 @@
+import { injectDispatch } from '@ngrx/signals/events';
+
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
@@ -5,7 +7,6 @@ import {
     Signal,
     computed,
     inject,
-    output,
     signal,
     viewChild
 } from '@angular/core';
@@ -66,6 +67,7 @@ import {
 } from '../../../utils';
 import { readExperimentsPortletSwitch } from '../../../utils/experiments-portlet-switch.util';
 import { CLEARED_VARIANT_PARAMS, leaveTheVariant } from '../../../utils/leave-the-variant.util';
+import { uveContentEditorEvents } from '../dot-uve-content-editor/dot-uve-content-editor.events';
 
 @Component({
     selector: 'dot-uve-toolbar',
@@ -97,10 +99,8 @@ export class DotUveToolbarComponent {
     $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
     $languageSelector = viewChild<DotLanguageSelectorComponent>('languageSelector');
 
-    translatePage = output<{ page: DotCMSPage; newLanguage: number }>();
-    editUrlContentMap = output<DotCMSURLContentMap>();
-
     readonly #store = inject(UVEStore);
+    readonly #contentEditor = injectDispatch(uveContentEditorEvents);
     readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #confirmationService = inject(ConfirmationService);
@@ -518,6 +518,15 @@ export class DotUveToolbarComponent {
     }
 
     /**
+     * Asks the content editor to edit the contentlet a URL-mapped page shows.
+     *
+     * @param contentlet the page's URL-mapped contentlet
+     */
+    protected editUrlContentMap(contentlet: DotCMSURLContentMap): void {
+        this.#contentEditor.uveEditUrlContentMapRequested(contentlet);
+    }
+
+    /**
      * Handle the language selection
      *
      * @param {number} language
@@ -652,7 +661,7 @@ export class DotUveToolbarComponent {
             acceptIcon: 'hidden',
             key: 'shell-confirm-dialog',
             accept: () => {
-                this.translatePage.emit({
+                this.#contentEditor.uveTranslatePageRequested({
                     page: page,
                     newLanguage: language.id
                 });

@@ -18,8 +18,6 @@ import {
 import { __DOTCMS_UVE_EVENT__, StyleEditorFormSchema } from '@dotcms/types/internal';
 import { DotCopyContentModalService } from '@dotcms/ui';
 
-import { DotBlockEditorSidebarComponent } from '../../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
-import { DotEmaDialogComponent } from '../../components/dot-ema-dialog/dot-ema-dialog.component';
 import { uveContentEditorEvents } from '../../edit-ema-editor/components/dot-uve-content-editor/dot-uve-content-editor.events';
 import {
     ClientContentletArea,
@@ -39,15 +37,12 @@ import { PageType } from '../../store/models';
 import {
     compareUrlPaths,
     convertClientParamsToPageParams,
-    createReorderMenuURL,
     isSamePageNavigation
 } from '../../utils';
 import { InlineEditService } from '../inline-edit/inline-edit.service';
 
 export interface ActionsHandlerDependencies {
     uveStore: InstanceType<typeof UVEStore>;
-    dialog: DotEmaDialogComponent;
-    blockSidebar?: DotBlockEditorSidebarComponent;
     inlineEditingService: InlineEditService;
     contentWindow: Window | null;
     host: string;
@@ -63,7 +58,7 @@ export class DotUveActionsHandlerService {
     private readonly contentEditor = injectDispatch(uveContentEditorEvents);
 
     handleAction({ action, payload }: PostMessage, deps: ActionsHandlerDependencies): void {
-        const { uveStore, dialog, inlineEditingService, contentWindow, host, onCopyContent } = deps;
+        const { uveStore, inlineEditingService, contentWindow, host, onCopyContent } = deps;
 
         const CLIENT_ACTIONS_FUNC_MAP: Record<DotCMSUVEAction, (payload: unknown) => void> = {
             [DotCMSUVEAction.NAVIGATION_UPDATE]: (payload: SetUrlPayload) => {
@@ -351,18 +346,12 @@ export class DotUveActionsHandlerService {
                     contentType: { variable: contentType, name: contentType }
                 });
             },
+            /**
+             * Handles the `REORDER_MENU` postMessage action sent by the SDK's `reorderMenu()`: the
+             * content editor opens the menu reorder screen for the page.
+             */
             [DotCMSUVEAction.REORDER_MENU]: ({ startLevel, depth }: ReorderMenuPayload) => {
-                const urlObject = createReorderMenuURL({
-                    startLevel,
-                    depth,
-                    pagePath: uveStore.pageParams().url,
-                    hostId: uveStore.pageAsset()?.site?.identifier
-                });
-
-                dialog.openDialogOnUrl(
-                    urlObject,
-                    this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
-                );
+                this.contentEditor.uveReorderMenuRequested({ startLevel, depth });
             },
             [DotCMSUVEAction.INIT_INLINE_EDITING]: (payload: {
                 type: DotCMSInlineEditingType;
@@ -411,7 +400,7 @@ export class DotUveActionsHandlerService {
         { type, data }: { type: DotCMSInlineEditingType; data?: DotCMSInlineEditingPayload },
         deps: ActionsHandlerDependencies
     ): void {
-        const { uveStore, blockSidebar, inlineEditingService, contentWindow } = deps;
+        const { uveStore, inlineEditingService, contentWindow } = deps;
 
         // The Block Editor inline flow arrives as a postMessage rather than a
         // DOM event, so the owning contentlet is resolved from the payload's
@@ -427,7 +416,11 @@ export class DotUveActionsHandlerService {
         // Note: Enterprise check should be done by caller if needed
         switch (type) {
             case 'BLOCK_EDITOR':
-                blockSidebar?.open(data);
+                // The SDK always names the field; a message without one opens nothing.
+                if (data) {
+                    this.contentEditor.uveEditBlockEditorFieldRequested(data);
+                }
+
                 break;
 
             case 'WYSIWYG':

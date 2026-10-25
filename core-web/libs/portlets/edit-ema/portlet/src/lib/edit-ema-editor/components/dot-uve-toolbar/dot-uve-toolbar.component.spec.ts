@@ -1,3 +1,4 @@
+import { Dispatcher } from '@ngrx/signals/events';
 import {
     byTestId,
     createComponentFactory,
@@ -40,12 +41,13 @@ import {
     EXPERIMENT_RETURN_PORTLET
 } from '@dotcms/dotcms-models';
 import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
-import { UVE_MODE } from '@dotcms/types';
+import { DotCMSURLContentMap, UVE_MODE } from '@dotcms/types';
 import { DotLanguageSelectorComponent } from '@dotcms/ui';
 import {
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
     DotLicenseServiceMock,
+    createFakeContentlet,
     getRunningExperimentMock,
     mockDotDevices
 } from '@dotcms/utils-testing';
@@ -84,6 +86,7 @@ import {
     getFullPageURL,
     sanitizeURL
 } from '../../../utils';
+import { uveContentEditorEvents } from '../dot-uve-content-editor/dot-uve-content-editor.events';
 
 /**
  * Stub used in tests to avoid ng-mocks auto-mocking `DotLanguageSelectorComponent`,
@@ -447,6 +450,8 @@ describe('DotUveToolbarComponent', () => {
         ],
         providers: [
             UVEStore,
+            // A fresh one per test, so a spy on what the toolbar dispatches starts clean.
+            Dispatcher,
             provideHttpClientTesting(),
             {
                 provide: DotAnalyticsTrackerService,
@@ -569,14 +574,15 @@ describe('DotUveToolbarComponent', () => {
         });
 
         describe('Events', () => {
-            it('should emit editUrlContentMap', () => {
-                const contentlet = {
+            it("should ask the content editor to edit the URL-mapped page's contentlet", () => {
+                const contentlet = createFakeContentlet({
                     identifier: '123',
                     inode: '456',
                     title: 'My super awesome blog post',
                     contentType: 'Blog'
-                };
-                const spy = vi.spyOn(spectator.component.editUrlContentMap, 'emit');
+                }) as unknown as DotCMSURLContentMap;
+                const dispatcher = spectator.inject(Dispatcher);
+                vi.spyOn(dispatcher, 'dispatch');
 
                 // The edit URL content map button is only rendered in EDIT mode and when the map exists
                 baseUVEState.pageParams.set({ ...params, mode: UVE_MODE.EDIT });
@@ -587,7 +593,10 @@ describe('DotUveToolbarComponent', () => {
 
                 spectator.click(button);
 
-                expect(spy).toHaveBeenCalledWith(contentlet);
+                expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                    uveContentEditorEvents.uveEditUrlContentMapRequested(contentlet),
+                    { scope: 'self' }
+                );
             });
         });
 
@@ -924,8 +933,9 @@ describe('DotUveToolbarComponent', () => {
                 expect(spyConfirmationService).toHaveBeenCalled();
             });
 
-            it('should emit translatePage with page and newLanguage when user confirms new translation', () => {
-                const translatePageSpy = vi.spyOn(spectator.component.translatePage, 'emit');
+            it('should ask the content editor to open the new language version of the page when the user confirms it', () => {
+                const dispatcher = spectator.inject(Dispatcher);
+                vi.spyOn(dispatcher, 'dispatch');
                 const languageWithoutTranslation = MOCK_PAGE_LANGUAGES[1]; // Spanish, id 2, translated: false
 
                 spectator.triggerEventHandler(
@@ -939,11 +949,13 @@ describe('DotUveToolbarComponent', () => {
                     .accept;
                 acceptCallback();
 
-                const expectedPage = pageSnapshotSignal().page;
-                expect(translatePageSpy).toHaveBeenCalledWith({
-                    page: expectedPage,
-                    newLanguage: 2
-                });
+                expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                    uveContentEditorEvents.uveTranslatePageRequested({
+                        page: pageSnapshotSignal().page,
+                        newLanguage: 2
+                    }),
+                    { scope: 'self' }
+                );
             });
 
             it('should reset language selector to current language when user rejects new translation', () => {
@@ -964,6 +976,25 @@ describe('DotUveToolbarComponent', () => {
                 rejectCallback();
 
                 expect(valueSetSpy).toHaveBeenCalledWith(currentLanguage);
+            });
+
+            it('should not ask the content editor for a new language version when the user rejects it', () => {
+                const dispatcher = spectator.inject(Dispatcher);
+                vi.spyOn(dispatcher, 'dispatch');
+                const languageWithoutTranslation = MOCK_PAGE_LANGUAGES[1]; // Spanish, id 2, translated: false
+
+                spectator.triggerEventHandler(
+                    StubDotLanguageSelectorComponent,
+                    'onLanguageChange',
+                    languageWithoutTranslation
+                );
+                spectator.detectChanges();
+
+                const rejectCallback = (confirmationService.confirm as Mock).mock.calls[0][0]
+                    .reject;
+                rejectCallback();
+
+                expect(dispatcher.dispatch).not.toHaveBeenCalled();
             });
         });
 

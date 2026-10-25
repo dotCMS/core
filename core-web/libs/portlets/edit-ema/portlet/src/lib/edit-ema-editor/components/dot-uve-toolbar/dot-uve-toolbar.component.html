@@ -42,7 +42,7 @@
             @if ($showUrlContentMap()) {
                 @let urlContentMap = $urlContentMap();
                 <p-button
-                    (click)="editUrlContentMap.emit(urlContentMap)"
+                    (click)="editUrlContentMap(urlContentMap)"
                     [pTooltip]="
                         'editpage.toolbar.edit.url.map.content' | dm: [urlContentMap.contentType]
                     "

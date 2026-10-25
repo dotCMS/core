@@ -9,9 +9,11 @@ import {
 import { EMPTY, Observable, Subject, of, throwError } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
-import { Component, output, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Component, input, output, signal } from '@angular/core';
+import { Router } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { Confirmation, ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
@@ -19,11 +21,18 @@ import {
     DotContentletService,
     DotCopyContentService,
     DotHttpErrorManagerService,
-    DotMessageService
+    DotMessageService,
+    DotRouterService
 } from '@dotcms/data-access';
+import { HttpCode } from '@dotcms/dotcms-js';
 import { DotContentletCanLock, DotTreeNode, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotEditContentDialogComponent, EditContentDialogData } from '@dotcms/edit-content';
-import { DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import {
+    DotCMSInlineEditingPayload,
+    DotCMSURLContentMap,
+    DotCMSUVEAction,
+    UVE_MODE
+} from '@dotcms/types';
 import {
     DOT_VELOCITY_LANGUAGE_ID,
     DotCopyContentModalService,
@@ -34,7 +43,8 @@ import { WINDOW } from '@dotcms/utils';
 import {
     MockDotMessageService,
     createFakeContentType,
-    createFakeContentlet
+    createFakeContentlet,
+    createFakeLanguage
 } from '@dotcms/utils-testing';
 
 import { DotUveContentEditorComponent } from './dot-uve-content-editor.component';
@@ -42,27 +52,32 @@ import {
     DotUveAddContentRequest,
     DotUveCreateContentRequest,
     DotUveEditContentRequest,
+    DotUveTranslatePageRequest,
     uveContentEditorEvents
 } from './dot-uve-content-editor.events';
 
+import { DotBlockEditorSidebarComponent } from '../../../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../../../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageApiService } from '../../../services/dot-page-api/dot-page-api.service';
+import { UveIframeMessengerService } from '../../../services/iframe-messenger/uve-iframe-messenger.service';
 import {
     CONTAINER_INSERT_ERROR,
+    EDITOR_STATE,
     FormStatus,
     NG_CUSTOM_EVENTS,
     UVE_STATUS
 } from '../../../shared/enums';
-import { EDIT_ACTION_PAYLOAD_MOCK } from '../../../shared/mocks';
+import { EDIT_ACTION_PAYLOAD_MOCK, MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
 import {
     ActionPayload,
     CreateFromPaletteAction,
     DialogAction,
+    ReorderMenuPayload,
     VTLFile
 } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { EditorInsertResult, ReloadEditorContent } from '../../../store/features/editor/models';
-import { PageType } from '../../../store/models';
+import { PageType, TranslateProps } from '../../../store/models';
 
 /**
  * Stands in for the legacy JSP dialog, which needs a running dotCMS. It exposes what the content
@@ -88,10 +103,28 @@ class DotEmaDialogStubComponent {
     readonly addContentlet = vi.fn();
     readonly addWidget = vi.fn();
     readonly addForm = vi.fn();
+    readonly translatePage = vi.fn();
+    readonly editUrlContentMapContentlet = vi.fn();
+    readonly openDialogOnUrl = vi.fn();
     readonly resetDialog = vi.fn();
     readonly resetActionPayload = vi.fn(() => {
         this.actionPayload = undefined;
     });
+}
+
+/**
+ * Stands in for the block editor sidebar, which loads a full Block Editor. It exposes what the
+ * content editor calls and binds, so a test can tell whether it was asked to open and can save
+ * for it.
+ */
+@Component({
+    selector: 'dot-block-editor-sidebar',
+    template: ''
+})
+class DotBlockEditorSidebarStubComponent {
+    readonly variantName = input<string>();
+    readonly onSaved = output<void>();
+    readonly open = vi.fn();
 }
 
 const CONTENTLET = createFakeContentlet({
@@ -227,6 +260,41 @@ const NEW_EDITOR_DIALOG_OPTIONS = {
     contentStyle: { padding: '0' }
 };
 
+const PAGE = MOCK_RESPONSE_HEADLESS.page;
+
+/** The language the page is loaded in, and has a version in. */
+const ENGLISH = createFakeLanguage({ id: 1, language: 'English', translated: true });
+
+/** A language the page has no version in yet. */
+const SPANISH = createFakeLanguage({ id: 2, language: 'Spanish', translated: false });
+
+/** What the toolbar asks for once the user agreed to translate the page into Spanish. */
+const TRANSLATE_TO_SPANISH: DotUveTranslatePageRequest = { page: PAGE, newLanguage: 2 };
+
+/** The contentlet a URL-mapped page shows. */
+const URL_MAPPED_CONTENTLET = createFakeContentlet({
+    identifier: 'url-map-identifier',
+    inode: 'url-map-inode',
+    title: 'My blog post',
+    contentType: 'Blog',
+    URL_MAP_FOR_CONTENT: '/blog/my-blog-post'
+});
+
+/** The same contentlet, as the page asset names it. */
+const URL_CONTENT_MAP = URL_MAPPED_CONTENTLET as unknown as DotCMSURLContentMap;
+
+/** What the SDK's reorderMenu() asks for. */
+const REORDER_MENU: ReorderMenuPayload = { startLevel: 1, depth: 2 };
+
+/** A Block Editor field the user clicked to edit inline. */
+const BLOCK_EDITOR_FIELD: DotCMSInlineEditingPayload = {
+    inode: 'block-contentlet-inode',
+    content: { type: 'doc', content: [] },
+    language: 1,
+    fieldName: 'body',
+    contentType: 'Blog'
+};
+
 /**
  * The slice of `UVEStore` the content editor reads. Signals so a test can switch the mode or the flags and
  * see the template follow; methods as spies.
@@ -236,9 +304,15 @@ function createStoreMock() {
         flags: signal<Record<string, boolean>>({}),
         editorCanEditContent: signal(true),
         viewMode: signal(UVE_MODE.EDIT),
-        pageAsset: signal<{ urlContentMap?: DotCMSURLContentMap } | null>(null),
+        uveStatus: signal(UVE_STATUS.LOADED),
+        pageAsset: signal<{
+            urlContentMap?: DotCMSURLContentMap;
+            site?: { identifier: string };
+        } | null>({ site: { identifier: 'site-identifier' } }),
         pageParams: signal({ url: 'index' }),
         pageLanguageId: signal(1),
+        pageVariantId: signal('DEFAULT'),
+        pageTranslateProps: signal<TranslateProps>({ page: PAGE, currentLanguage: ENGLISH }),
         $reloadEditorContent: signal<ReloadEditorContent>({
             code: undefined,
             pageType: PageType.TRADITIONAL,
@@ -248,6 +322,7 @@ function createStoreMock() {
         getCurrentTreeNode: vi.fn().mockReturnValue(TREE_NODE),
         editorInsertContentlet: vi.fn<() => EditorInsertResult>(() => ({ didInsert: true })),
         setUveStatus: vi.fn(),
+        setEditorState: vi.fn(),
         pageReload: vi.fn(),
         pageLoad: vi.fn()
     };
@@ -264,6 +339,10 @@ describe('DotUveContentEditorComponent', () => {
     let dialogService: SpyObject<DialogService>;
     let pageApiService: SpyObject<DotPageApiService>;
     let messageService: SpyObject<MessageService>;
+    let confirmationService: SpyObject<ConfirmationService>;
+    let dotRouterService: SpyObject<DotRouterService>;
+    let router: SpyObject<Router>;
+    let iframeMessenger: SpyObject<UveIframeMessengerService>;
 
     /** The side panels the content editor opened, recorded instead of rendered. */
     let opened: {
@@ -277,8 +356,10 @@ describe('DotUveContentEditorComponent', () => {
             [
                 DotUveContentEditorComponent,
                 {
-                    remove: { imports: [DotEmaDialogComponent] },
-                    add: { imports: [DotEmaDialogStubComponent] }
+                    remove: { imports: [DotEmaDialogComponent, DotBlockEditorSidebarComponent] },
+                    add: {
+                        imports: [DotEmaDialogStubComponent, DotBlockEditorSidebarStubComponent]
+                    }
                 }
             ]
         ],
@@ -292,6 +373,10 @@ describe('DotUveContentEditorComponent', () => {
             mockProvider(DotSidePanelService),
             mockProvider(DotPageApiService),
             mockProvider(MessageService),
+            mockProvider(ConfirmationService),
+            mockProvider(DotRouterService),
+            mockProvider(Router),
+            mockProvider(UveIframeMessengerService),
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
@@ -301,7 +386,15 @@ describe('DotUveContentEditorComponent', () => {
                         'This content is already added to this container',
                     'editpage.content.container.limit.title': 'Container full',
                     'editpage.content.container.limit.message':
-                        'This container holds up to {0} contentlets'
+                        'This container holds up to {0} contentlets',
+                    'editpage.language-change-missing-lang-populate.confirm.header':
+                        'Create a new language version?',
+                    'editpage.language-change-missing-lang-populate.confirm.message':
+                        'This page has no {0} version yet. Do you want to create it?',
+                    'editpage.content.contentlet.menu.reorder.title': 'Reorder Menu',
+                    'message.menu.reordered': 'Menu reordered',
+                    'error.menu.reorder.user_has_not_permission':
+                        'You do not have permission to reorder this menu'
                 })
             },
             { provide: WINDOW, useValue: window }
@@ -342,7 +435,41 @@ describe('DotUveContentEditorComponent', () => {
         spectator.detectChanges();
     };
 
+    /** Asks the content editor to translate the page, as the toolbar's language selector does. */
+    const translatePage = (request: DotUveTranslatePageRequest) => {
+        spectator
+            .inject(Dispatcher)
+            .dispatch(uveContentEditorEvents.uveTranslatePageRequested(request));
+        spectator.detectChanges();
+    };
+
+    /** Asks the content editor to edit a URL-mapped page's contentlet, as the toolbar does. */
+    const editUrlContentMap = (contentlet: DotCMSURLContentMap) => {
+        spectator
+            .inject(Dispatcher)
+            .dispatch(uveContentEditorEvents.uveEditUrlContentMapRequested(contentlet));
+        spectator.detectChanges();
+    };
+
+    /** Asks the content editor to reorder a menu, as the SDK's reorderMenu() does. */
+    const reorderMenu = (request: ReorderMenuPayload) => {
+        spectator
+            .inject(Dispatcher)
+            .dispatch(uveContentEditorEvents.uveReorderMenuRequested(request));
+        spectator.detectChanges();
+    };
+
+    /** Asks the content editor to edit a Block Editor field, as inline editing does. */
+    const editBlockEditorField = (field: DotCMSInlineEditingPayload) => {
+        spectator
+            .inject(Dispatcher)
+            .dispatch(uveContentEditorEvents.uveEditBlockEditorFieldRequested(field));
+        spectator.detectChanges();
+    };
+
     const legacyDialog = () => spectator.query(DotEmaDialogStubComponent);
+
+    const blockSidebar = () => spectator.query(DotBlockEditorSidebarStubComponent);
 
     /**
      * Sends an `ng-event` out of the legacy dialog, as the JSP inside it does. A dialog opened
@@ -387,6 +514,10 @@ describe('DotUveContentEditorComponent', () => {
         dialogService = spectator.inject(DialogService);
         pageApiService = spectator.inject(DotPageApiService);
         messageService = spectator.inject(MessageService);
+        confirmationService = spectator.inject(ConfirmationService);
+        dotRouterService = spectator.inject(DotRouterService);
+        router = spectator.inject(Router);
+        iframeMessenger = spectator.inject(UveIframeMessengerService);
 
         contentTypeService.getContentType.mockReturnValue(of(LEGACY_CONTENT_TYPE));
         contentletService.getContentletByInode.mockReturnValue(of(VELOCITY_FILE));
@@ -1002,6 +1133,306 @@ describe('DotUveContentEditorComponent', () => {
         );
     });
 
+    describe('uveTranslatePageRequested', () => {
+        it('should open the new language version of the page in the legacy dialog', () => {
+            translatePage(TRANSLATE_TO_SPANISH);
+
+            expect(legacyDialog()?.translatePage).toHaveBeenCalledWith(TRANSLATE_TO_SPANISH);
+        });
+    });
+
+    // A page can also load in a language it has no version in, from a link or a typed URL. The
+    // content editor then offers to create that version, in the shell's confirm dialog.
+    describe('a page loaded in a language it has no version in', () => {
+        /** Loads the page in Spanish, as far as the content editor can tell. */
+        const loadPageInSpanish = () => {
+            store.pageTranslateProps.set({ page: PAGE, currentLanguage: SPANISH });
+            spectator.detectChanges();
+        };
+
+        /** The prompt the content editor showed. */
+        const translationPrompt = () =>
+            confirmationService.confirm.mock.calls[0][0] as Confirmation;
+
+        /** Records the URL the user was on before the editor, as `DotRouterService` does. */
+        const setPreviousUrl = (previousUrl: string, isPublicUrl = false) => {
+            Object.defineProperty(dotRouterService, 'previousUrl', {
+                get: () => previousUrl,
+                configurable: true
+            });
+            dotRouterService.isPublicUrl.mockReturnValue(isPublicUrl);
+        };
+
+        it("should ask whether to create the page's version in that language, in the shell's confirm dialog", () => {
+            loadPageInSpanish();
+
+            expect(confirmationService.confirm).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    header: 'Create a new language version?',
+                    message: 'This page has no Spanish version yet. Do you want to create it?',
+                    acceptIcon: 'hidden',
+                    rejectIcon: 'hidden',
+                    key: 'shell-confirm-dialog'
+                })
+            );
+        });
+
+        it('should not ask while the page is still loading', () => {
+            // The language may still be the previous page's.
+            store.uveStatus.set(UVE_STATUS.LOADING);
+
+            loadPageInSpanish();
+
+            expect(confirmationService.confirm).not.toHaveBeenCalled();
+        });
+
+        it('should ask once the page finished loading', () => {
+            store.uveStatus.set(UVE_STATUS.LOADING);
+            loadPageInSpanish();
+
+            store.uveStatus.set(UVE_STATUS.LOADED);
+            spectator.detectChanges();
+
+            expect(confirmationService.confirm).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not ask when the page has a version in its language', () => {
+            store.pageTranslateProps.set({
+                page: PAGE,
+                currentLanguage: createFakeLanguage({ id: 3, language: 'French', translated: true })
+            });
+            spectator.detectChanges();
+
+            expect(confirmationService.confirm).not.toHaveBeenCalled();
+        });
+
+        it('should open the new language version in the legacy dialog when the user accepts', () => {
+            loadPageInSpanish();
+
+            translationPrompt().accept?.();
+
+            expect(legacyDialog()?.translatePage).toHaveBeenCalledWith({
+                page: PAGE,
+                newLanguage: 2
+            });
+        });
+
+        // Reloading the same URL would only show the prompt again (#36661), so declining takes
+        // the user out of the editor, to a page they can use.
+        describe('when the user declines', () => {
+            it('should go back to the dotCMS URL the user was on before the editor', () => {
+                setPreviousUrl('/pages/import');
+                loadPageInSpanish();
+
+                translationPrompt().reject?.();
+
+                expect(router.navigateByUrl).toHaveBeenCalledWith('/pages/import');
+                expect(dotRouterService.gotoPortlet).not.toHaveBeenCalled();
+                expect(store.pageLoad).not.toHaveBeenCalled();
+                expect(store.pageReload).not.toHaveBeenCalled();
+            });
+
+            it('should go to the Pages portlet when there is no previous URL', () => {
+                // The user opened the editor directly.
+                setPreviousUrl('');
+                loadPageInSpanish();
+
+                translationPrompt().reject?.();
+
+                expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/pages');
+                expect(router.navigateByUrl).not.toHaveBeenCalled();
+            });
+
+            it('should go to the Pages portlet when the previous URL is another edit-page route', () => {
+                // It could resolve to the same page in the same language, and ask again.
+                setPreviousUrl('/edit-page/content?url=/index&language_id=2');
+                loadPageInSpanish();
+
+                translationPrompt().reject?.();
+
+                expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/pages');
+                expect(router.navigateByUrl).not.toHaveBeenCalled();
+            });
+
+            it('should go to the Pages portlet when the previous URL is a public route', () => {
+                setPreviousUrl('/public/login', true);
+                loadPageInSpanish();
+
+                translationPrompt().reject?.();
+
+                expect(dotRouterService.gotoPortlet).toHaveBeenCalledWith('/pages');
+                expect(router.navigateByUrl).not.toHaveBeenCalled();
+            });
+        });
+    });
+
+    describe('uveEditUrlContentMapRequested', () => {
+        it("should open the URL-mapped page's contentlet in the legacy dialog", () => {
+            editUrlContentMap(URL_CONTENT_MAP);
+
+            expect(legacyDialog()?.editUrlContentMapContentlet).toHaveBeenCalledWith(
+                URL_CONTENT_MAP
+            );
+        });
+
+        // The legacy dialog flags a URL-mapped contentlet's save (`shouldReloadPage`): the save
+        // may have changed the contentlet's URL, which is the page's URL.
+        describe('after the contentlet is saved', () => {
+            const saveUrlContentMap = () =>
+                emitFromLegacyDialog(NG_CUSTOM_EVENTS.SAVE_PAGE, {
+                    shouldReloadPage: true,
+                    contentletIdentifier: 'url-map-identifier'
+                });
+
+            beforeEach(() => {
+                editUrlContentMap(URL_CONTENT_MAP);
+            });
+
+            it('should show the page as loading while it reads the saved contentlet', () => {
+                contentletService.getContentletByInode.mockReturnValue(new Subject());
+
+                saveUrlContentMap();
+
+                expect(store.setUveStatus).toHaveBeenCalledWith(UVE_STATUS.LOADING);
+                expect(contentletService.getContentletByInode).toHaveBeenCalledWith(
+                    'url-map-identifier'
+                );
+            });
+
+            it("should load the contentlet's new URL when the save changed it", () => {
+                contentletService.getContentletByInode.mockReturnValue(
+                    of({ ...URL_MAPPED_CONTENTLET, URL_MAP_FOR_CONTENT: '/blog/my-renamed-post' })
+                );
+
+                saveUrlContentMap();
+
+                expect(store.pageLoad).toHaveBeenCalledWith({ url: '/blog/my-renamed-post' });
+                expect(store.pageReload).not.toHaveBeenCalled();
+            });
+
+            it('should reload the page when the save kept its URL', () => {
+                store.pageParams.set({ url: '/blog/my-blog-post' });
+                contentletService.getContentletByInode.mockReturnValue(of(URL_MAPPED_CONTENTLET));
+
+                saveUrlContentMap();
+
+                expect(store.pageReload).toHaveBeenCalled();
+                expect(store.pageLoad).not.toHaveBeenCalled();
+            });
+
+            it('should report a failed read and put the editor in its error state', () => {
+                const error = new HttpErrorResponse({ status: HttpCode.SERVER_ERROR });
+                contentletService.getContentletByInode.mockReturnValue(throwError(() => error));
+                httpErrorManager.handle.mockReturnValue(
+                    of({ redirected: false, status: HttpCode.SERVER_ERROR })
+                );
+
+                saveUrlContentMap();
+
+                expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
+                expect(store.setEditorState).toHaveBeenCalledWith(EDITOR_STATE.ERROR);
+                expect(store.pageLoad).not.toHaveBeenCalled();
+                expect(store.pageReload).not.toHaveBeenCalled();
+            });
+        });
+    });
+
+    describe('uveReorderMenuRequested', () => {
+        beforeEach(() => {
+            store.pageParams.set({ url: '/about-us/index' });
+        });
+
+        it("should open the legacy dialog on the menu reorder screen for the page's path and site", () => {
+            reorderMenu(REORDER_MENU);
+
+            const [url, title] = legacyDialog()?.openDialogOnUrl.mock.calls[0] ?? [];
+            const { pathname, searchParams } = new URL(url);
+
+            expect(pathname).toBe('/c/portal/layout');
+            expect(searchParams.get('_site_browser_struts_action')).toBe('/ext/folders/order_menu');
+            expect(searchParams.get('startLevel')).toBe('1');
+            expect(searchParams.get('depth')).toBe('2');
+            expect(searchParams.get('pagePath')).toBe('/about-us/index');
+            expect(searchParams.get('hostId')).toBe('site-identifier');
+            expect(title).toBe('Reorder Menu');
+        });
+
+        describe('after the menu reorder screen answers', () => {
+            beforeEach(() => {
+                reorderMenu(REORDER_MENU);
+            });
+
+            it('should tell the user, reload the page, close the dialog and reload the page in the iframe when the new order is saved', () => {
+                emitFromLegacyDialog(NG_CUSTOM_EVENTS.SAVE_MENU_ORDER);
+
+                expect(messageService.add).toHaveBeenCalledWith({
+                    severity: 'success',
+                    summary: 'Reorder Menu',
+                    detail: 'Menu reordered',
+                    life: 2000
+                });
+                expect(store.pageReload).toHaveBeenCalled();
+                expect(legacyDialog()?.resetDialog).toHaveBeenCalled();
+                // The page in the iframe renders the menu itself, so it reloads too.
+                expect(iframeMessenger.reloadPage).toHaveBeenCalled();
+            });
+
+            it('should tell the user they cannot reorder the menu, and keep the dialog open, when the order cannot be saved', () => {
+                emitFromLegacyDialog(NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER);
+
+                expect(messageService.add).toHaveBeenCalledWith({
+                    severity: 'error',
+                    summary: 'Reorder Menu',
+                    detail: 'You do not have permission to reorder this menu',
+                    life: 2000
+                });
+                expect(store.pageReload).not.toHaveBeenCalled();
+                expect(legacyDialog()?.resetDialog).not.toHaveBeenCalled();
+            });
+
+            it('should close the dialog when the user cancels', () => {
+                emitFromLegacyDialog(NG_CUSTOM_EVENTS.CANCEL_SAVING_MENU_ORDER);
+
+                expect(legacyDialog()?.resetDialog).toHaveBeenCalled();
+                expect(store.pageReload).not.toHaveBeenCalled();
+            });
+        });
+    });
+
+    describe('uveEditBlockEditorFieldRequested', () => {
+        it('should open the block editor sidebar on the field', () => {
+            editBlockEditorField(BLOCK_EDITOR_FIELD);
+
+            expect(blockSidebar()?.open).toHaveBeenCalledWith(BLOCK_EDITOR_FIELD);
+        });
+
+        it("should save the field in the page's variant", () => {
+            store.pageVariantId.set('variant-b');
+            spectator.detectChanges();
+
+            expect(blockSidebar()?.variantName()).toBe('variant-b');
+        });
+
+        it('should reload the page when the block editor sidebar saves', () => {
+            editBlockEditorField(BLOCK_EDITOR_FIELD);
+
+            spectator.triggerEventHandler(DotBlockEditorSidebarStubComponent, 'onSaved', undefined);
+
+            expect(store.pageReload).toHaveBeenCalled();
+        });
+
+        // Unlike the legacy dialog, the sidebar is only there while the user can edit the page's
+        // content, which `editorCanEditContent` already limits to edit mode.
+        it('should not render the block editor sidebar, so a request opens nothing, when the user cannot edit the page content', () => {
+            store.editorCanEditContent.set(false);
+            spectator.detectChanges();
+
+            editBlockEditorField(BLOCK_EDITOR_FIELD);
+
+            expect(spectator.query(byTestId('uve-content-editor-block-sidebar'))).toBeNull();
+        });
+    });
+
     describe('legacy dialog', () => {
         describe('availability', () => {
             // The legacy dialog is always there, so a legacy edit opens in any mode and on any
@@ -1047,6 +1478,28 @@ describe('DotUveContentEditorComponent', () => {
                     editSource(VTL_FILE);
 
                     expect(legacyDialog()?.editVTLContentlet).toHaveBeenCalledWith(VTL_FILE);
+                });
+
+                it('should open a new language version of the page', () => {
+                    translatePage(TRANSLATE_TO_SPANISH);
+
+                    expect(legacyDialog()?.translatePage).toHaveBeenCalledWith(
+                        TRANSLATE_TO_SPANISH
+                    );
+                });
+
+                it("should open a URL-mapped page's contentlet", () => {
+                    editUrlContentMap(URL_CONTENT_MAP);
+
+                    expect(legacyDialog()?.editUrlContentMapContentlet).toHaveBeenCalledWith(
+                        URL_CONTENT_MAP
+                    );
+                });
+
+                it('should open the menu reorder screen', () => {
+                    reorderMenu(REORDER_MENU);
+
+                    expect(legacyDialog()?.openDialogOnUrl).toHaveBeenCalled();
                 });
             });
 

@@ -2,8 +2,14 @@ import { type } from '@ngrx/signals';
 import { eventGroup } from '@ngrx/signals/events';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSInlineEditingPayload, DotCMSPage, DotCMSURLContentMap } from '@dotcms/types';
 
-import { ActionPayload, ContainerPayload, VTLFile } from '../../../shared/models';
+import {
+    ActionPayload,
+    ContainerPayload,
+    ReorderMenuPayload,
+    VTLFile
+} from '../../../shared/models';
 
 /**
  * What a part of the editor asks for when the user wants to edit a contentlet.
@@ -47,6 +53,17 @@ export interface DotUveAddContentRequest {
 }
 
 /**
+ * What the toolbar asks for once the user agreed to create the page's version in a language it has
+ * none in yet.
+ */
+export interface DotUveTranslatePageRequest {
+    /** The page to translate. */
+    page: DotCMSPage;
+    /** The language to create the page's version in. */
+    newLanguage: number;
+}
+
+/**
  * Requests to open a content editor. Any part of the UVE editor may dispatch them; only
  * `DotUveContentEditorComponent` listens, and it alone decides which editor opens. When a request
  * carries a container position (`into`), the content editor also inserts what the user creates or
@@ -58,6 +75,13 @@ export const uveContentEditorEvents = eventGroup({
         uveEditContentRequested: type<DotUveEditContentRequest>(),
         uveEditSourceRequested: type<VTLFile>(),
         uveCreateContentRequested: type<DotUveCreateContentRequest>(),
-        uveAddContentRequested: type<DotUveAddContentRequest>()
+        uveAddContentRequested: type<DotUveAddContentRequest>(),
+        uveTranslatePageRequested: type<DotUveTranslatePageRequest>(),
+        /** Edits the contentlet a URL-mapped page shows. */
+        uveEditUrlContentMapRequested: type<DotCMSURLContentMap>(),
+        /** Opens the menu reorder screen, as the SDK's `reorderMenu()` asks. */
+        uveReorderMenuRequested: type<ReorderMenuPayload>(),
+        /** Opens the block editor sidebar on a Block Editor field the user edits inline. */
+        uveEditBlockEditorFieldRequested: type<DotCMSInlineEditingPayload>()
     }
 });

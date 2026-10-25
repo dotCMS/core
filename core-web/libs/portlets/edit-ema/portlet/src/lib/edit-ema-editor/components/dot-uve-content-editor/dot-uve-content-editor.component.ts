@@ -12,20 +12,27 @@ import {
     untracked,
     viewChild
 } from '@angular/core';
+import { Router } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { catchError, map, mergeMap, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, filter, map, mergeMap, switchMap, take, tap } from 'rxjs/operators';
 
 import {
     DotContentTypeService,
     DotContentletService,
     DotCopyContentService,
     DotHttpErrorManagerService,
-    DotMessageService
+    DotMessageService,
+    DotRouterService
 } from '@dotcms/data-access';
-import { DotCMSContentType, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentType,
+    DotCMSContentlet,
+    DotLanguage,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 import {
     DotEditContentDialogComponent,
     DotSourceEditorRequest,
@@ -34,6 +41,7 @@ import {
     loadDotSourceEditorSidePanel,
     toSourceEditorRequest
 } from '@dotcms/edit-content';
+import { DotCMSInlineEditingPayload, DotCMSPage, DotCMSURLContentMap } from '@dotcms/types';
 import { DotCopyContentModalService, injectSidePanel } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 
@@ -41,36 +49,42 @@ import {
     DotUveAddContentRequest,
     DotUveCreateContentRequest,
     DotUveEditContentRequest,
+    DotUveTranslatePageRequest,
     uveContentEditorEvents
 } from './dot-uve-content-editor.events';
 
+import { DotBlockEditorSidebarComponent } from '../../../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../../../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageApiService } from '../../../services/dot-page-api/dot-page-api.service';
+import { UveIframeMessengerService } from '../../../services/iframe-messenger/uve-iframe-messenger.service';
 import { notifyContainerInsertRefused } from '../../../shared/container-insert';
-import { NG_CUSTOM_EVENTS, UVE_STATUS } from '../../../shared/enums';
+import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../../../shared/enums';
 import {
     ActionPayload,
     CreateContentletAction,
     DialogAction,
+    ReorderMenuPayload,
     VTLFile
 } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { WithPageApiMethods } from '../../../store/features/page-api/withPageApi';
-import { getLanguageChangePageParams } from '../../../utils';
+import { createReorderMenuURL, getLanguageChangePageParams } from '../../../utils';
 
 /**
  * The one place in the UVE editor that opens a content editor: the legacy JSP dialog, the new
- * editor in a centered dialog or in the side panel, and the VTL source editor. Any part of the
- * editor asks for one by dispatching a {@link uveContentEditorEvents} request; this component
- * decides which editor opens and reloads the page when it saves. When a request carries a
- * container position, it also inserts the new or picked contentlet there, through the store.
+ * editor in a centered dialog or in the side panel, the VTL source editor and the block editor
+ * sidebar. Any part of the editor asks for one by dispatching a {@link uveContentEditorEvents}
+ * request; this component decides which editor opens and reloads the page when it saves. When a
+ * request carries a container position, it also inserts the new or picked contentlet there,
+ * through the store. It also offers to create the page's version in a language the page loaded
+ * in without one.
  */
 @Component({
     selector: 'dot-uve-content-editor',
-    imports: [DotEmaDialogComponent],
+    imports: [DotEmaDialogComponent, DotBlockEditorSidebarComponent],
     templateUrl: './dot-uve-content-editor.component.html',
-    styleUrls: ['./dot-uve-content-editor.component.scss'],
-    providers: [DotCopyContentModalService]
+    providers: [DotCopyContentModalService],
+    host: { class: 'contents' }
 })
 export class DotUveContentEditorComponent {
     /**
@@ -92,6 +106,10 @@ export class DotUveContentEditorComponent {
     readonly #copyContentModalService = inject(DotCopyContentModalService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
     readonly #pageApiService = inject(DotPageApiService);
+    readonly #confirmationService = inject(ConfirmationService);
+    readonly #dotRouterService = inject(DotRouterService);
+    readonly #router = inject(Router);
+    readonly #iframeMessenger = inject(UveIframeMessengerService);
 
     /**
      * The legacy dialog. Always rendered, so a legacy edit opens in any mode and on any page, as
@@ -99,6 +117,12 @@ export class DotUveContentEditorComponent {
      * queries cannot target `#private` members.
      */
     private readonly $legacyDialog = viewChild<DotEmaDialogComponent>('dialog');
+
+    /**
+     * The block editor sidebar. Only rendered while the user can edit the page's content.
+     * TS-private because Angular queries cannot target `#private` members.
+     */
+    private readonly $blockSidebar = viewChild<DotBlockEditorSidebarComponent>('blockSidebar');
 
     /**
      * Drives the Edit Content side panel: the contentlet to edit or create, or `null` when closed.
@@ -146,6 +170,35 @@ export class DotUveContentEditorComponent {
         pipe(mergeMap(({ into, formId }) => this.#insertForm(into, formId)))
     );
 
+    /** Opens each new language version of the page a translate request asks for. */
+    readonly #handleTranslatePageRequest = rxMethod<DotUveTranslatePageRequest>(
+        pipe(tap((request: DotUveTranslatePageRequest) => this.#translatePage(request)))
+    );
+
+    /** Opens the legacy dialog on each URL-mapped page's contentlet a request names. */
+    readonly #handleEditUrlContentMapRequest = rxMethod<DotCMSURLContentMap>(
+        pipe(
+            tap((contentlet: DotCMSURLContentMap) =>
+                this.$legacyDialog()?.editUrlContentMapContentlet(contentlet)
+            )
+        )
+    );
+
+    /** Shows the URL-mapped page again each time the legacy dialog saves its contentlet. */
+    readonly #handleUrlContentMapSaved = rxMethod<string>(
+        pipe(mergeMap((inodeOrIdentifier) => this.#reloadUrlContentMapPage(inodeOrIdentifier)))
+    );
+
+    /** Opens the menu reorder screen for each reorder request. */
+    readonly #handleReorderMenuRequest = rxMethod<ReorderMenuPayload>(
+        pipe(tap((request: ReorderMenuPayload) => this.#reorderMenu(request)))
+    );
+
+    /** Opens the block editor sidebar on each Block Editor field a request names. */
+    readonly #handleEditBlockEditorFieldRequest = rxMethod<DotCMSInlineEditingPayload>(
+        pipe(tap((field: DotCMSInlineEditingPayload) => this.$blockSidebar()?.open(field)))
+    );
+
     constructor() {
         // The Edit Content side panel, open while `$editContentPanel` is set. Post-save work runs
         // through the request's `onContentSaved` callback; closing clears the request. Loaded on
@@ -178,6 +231,19 @@ export class DotUveContentEditorComponent {
             untracked(() => this.$legacyDialog()?.resetActionPayload());
         });
 
+        // A page can load in a language it has no version in; the user is then offered to create
+        // it. Only a page that finished loading counts: while one loads, the language may still be
+        // the previous page's. `untracked`: the confirm dialog reads PrimeNG-internal signals,
+        // and tracking them would ask again every time it opens or closes.
+        effect(() => {
+            const { page, currentLanguage } = this.uveStore.pageTranslateProps();
+            const status = this.uveStore.uveStatus();
+
+            if (status === UVE_STATUS.LOADED && currentLanguage && !currentLanguage.translated) {
+                untracked(() => this.#askToTranslate(currentLanguage, page));
+            }
+        });
+
         this.#handleEditContentRequest(
             this.#events
                 .on(uveContentEditorEvents.uveEditContentRequested)
@@ -201,17 +267,42 @@ export class DotUveContentEditorComponent {
                 .on(uveContentEditorEvents.uveAddContentRequested)
                 .pipe(map(({ payload }) => payload))
         );
+
+        this.#handleTranslatePageRequest(
+            this.#events
+                .on(uveContentEditorEvents.uveTranslatePageRequested)
+                .pipe(map(({ payload }) => payload))
+        );
+
+        this.#handleEditUrlContentMapRequest(
+            this.#events
+                .on(uveContentEditorEvents.uveEditUrlContentMapRequested)
+                .pipe(map(({ payload }) => payload))
+        );
+
+        this.#handleReorderMenuRequest(
+            this.#events
+                .on(uveContentEditorEvents.uveReorderMenuRequested)
+                .pipe(map(({ payload }) => payload))
+        );
+
+        this.#handleEditBlockEditorFieldRequest(
+            this.#events
+                .on(uveContentEditorEvents.uveEditBlockEditorFieldRequested)
+                .pipe(map(({ payload }) => payload))
+        );
     }
 
     /**
      * Handles what the legacy dialog reports.
      *
      * An edit only needs the page to show the saved content: a save reloads it, and a save in a
-     * new language loads that language, at the page's new URL when the save moved it. A dialog
-     * opened for a container position sends that position back with every event
+     * new language loads that language, at the page's new URL when the save moved it. A saved
+     * URL-mapped contentlet may have moved the page, so the page follows the contentlet's URL. A
+     * dialog opened for a container position sends that position back with every event
      * (`actionPayload`): the content or form picked in its search, and a contentlet saved in its
      * create form, go into that position, and a content type picked to create opens the editor it
-     * asks for.
+     * asks for. The menu reorder screen reports whether the new order was saved.
      *
      * @param action what the dialog reported
      */
@@ -222,9 +313,55 @@ export class DotUveContentEditorComponent {
             case NG_CUSTOM_EVENTS.SAVE_PAGE: {
                 if (actionPayload) {
                     this.#insertInto(actionPayload, detail.payload?.contentletIdentifier);
+                } else if (detail.payload?.shouldReloadPage) {
+                    // Only a URL-mapped contentlet's save sets it.
+                    this.#handleUrlContentMapSaved(detail.payload.contentletIdentifier);
                 } else {
                     this.uveStore.pageReload();
                 }
+
+                break;
+            }
+
+            case NG_CUSTOM_EVENTS.SAVE_MENU_ORDER: {
+                this.#messageService.add({
+                    severity: 'success',
+                    summary: this.#dotMessageService.get(
+                        'editpage.content.contentlet.menu.reorder.title'
+                    ),
+                    detail: this.#dotMessageService.get('message.menu.reordered'),
+                    life: 2000
+                });
+
+                this.uveStore.pageReload();
+                this.$legacyDialog()?.resetDialog();
+
+                // The page in the iframe renders the menu itself, so it reloads too. A stopgap
+                // until the SDK has a reload strategy of its own.
+                this.#iframeMessenger.reloadPage();
+
+                break;
+            }
+
+            case NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER: {
+                this.#messageService.add({
+                    severity: 'error',
+                    summary: this.#dotMessageService.get(
+                        'editpage.content.contentlet.menu.reorder.title'
+                    ),
+                    detail: this.#dotMessageService.get(
+                        'error.menu.reorder.user_has_not_permission'
+                    ),
+                    life: 2000
+                });
+
+                break;
+            }
+
+            case NG_CUSTOM_EVENTS.CANCEL_SAVING_MENU_ORDER: {
+                this.$legacyDialog()?.resetDialog();
+                // The JSP inside the legacy dialog reports it outside Angular's zone.
+                this.#cd.detectChanges();
 
                 break;
             }
@@ -463,6 +600,146 @@ export class DotUveContentEditorComponent {
         }
 
         return result.didInsert;
+    }
+
+    /**
+     * Asks, in the shell's confirm dialog, whether to create the page's version in a language it
+     * has none in. Accepting opens it in the legacy dialog; declining takes the user out of the
+     * editor.
+     *
+     * @param language the language the page has no version in
+     * @param page the page to translate
+     */
+    #askToTranslate(language: DotLanguage, page: DotCMSPage): void {
+        this.#confirmationService.confirm({
+            header: this.#dotMessageService.get(
+                'editpage.language-change-missing-lang-populate.confirm.header'
+            ),
+            message: this.#dotMessageService.get(
+                'editpage.language-change-missing-lang-populate.confirm.message',
+                language.language
+            ),
+            rejectIcon: 'hidden',
+            acceptIcon: 'hidden',
+            key: 'shell-confirm-dialog',
+            accept: () => {
+                this.#translatePage({ page, newLanguage: language.id });
+            },
+            reject: () => {
+                // The user declined creating the translation, so there is no page to show
+                // in this language. Take them out of the dead-end instead of reloading the
+                // same untranslated URL (which would re-open this dialog — see #36661).
+                this.#redirectAfterTranslationRejected();
+            }
+        });
+    }
+
+    /**
+     * Opens the legacy dialog on the page's new language version.
+     *
+     * @param request the page, and the language to create its version in
+     */
+    #translatePage(request: DotUveTranslatePageRequest): void {
+        this.$legacyDialog()?.translatePage(request);
+    }
+
+    /**
+     * Navigate the user away from an untranslated page after they decline creating a
+     * translation for it.
+     *
+     * Redirects to the last different dotCMS URL the user was on before entering this
+     * UVE session; if there is no usable previous URL, falls back to the Pages portlet.
+     *
+     * Why `DotRouterService.previousUrl` is the right source:
+     * - Intra-UVE navigation (page/language/persona changes) is done with `pageLoad()` +
+     *   a silent `Location.go()` in the shell, which does NOT emit a router `NavigationEnd`.
+     *   So `previousUrl` is not polluted by same-page language switches — it holds the URL
+     *   from before the editor opened (e.g. the Pages portlet, or another portlet).
+     * - It is always an internal Angular route, never an external referrer, so the
+     *   "only follow dotCMS URLs" requirement is satisfied by construction.
+     *
+     * We deliberately skip previous URLs that are:
+     * - empty (no history — user opened the editor directly),
+     * - public routes (e.g. the login page),
+     * - any `/edit-page` route, which could resolve to the same untranslated page and
+     *   re-open this dialog (the #36661 loop).
+     *
+     * In all skipped cases we fall back to the Pages portlet so the user always lands on
+     * a valid page and is never left stuck on the untranslated one.
+     */
+    #redirectAfterTranslationRejected(): void {
+        const previousUrl = this.#dotRouterService.previousUrl;
+
+        const canUsePreviousUrl =
+            !!previousUrl &&
+            !this.#dotRouterService.isPublicUrl(previousUrl) &&
+            !previousUrl.startsWith('/edit-page');
+
+        if (canUsePreviousUrl) {
+            this.#router.navigateByUrl(previousUrl);
+
+            return;
+        }
+
+        this.#dotRouterService.gotoPortlet('/pages');
+    }
+
+    /**
+     * Shows a URL-mapped page again once the legacy dialog saved its contentlet. The save may
+     * have changed the contentlet's URL, which is the page's: a new URL loads, the same one
+     * reloads. The page shows it is loading meanwhile; a failed read is reported and puts the
+     * editor in its error state.
+     *
+     * @param inodeOrIdentifier the saved contentlet
+     * @returns the contentlet read, completing once the page was asked to show it
+     */
+    #reloadUrlContentMapPage(inodeOrIdentifier: string): Observable<unknown> {
+        this.uveStore.setUveStatus(UVE_STATUS.LOADING);
+
+        return this.#contentletService.getContentletByInode(inodeOrIdentifier).pipe(
+            catchError((error: HttpErrorResponse) => {
+                this.uveStore.setEditorState(EDITOR_STATE.ERROR);
+
+                return this.#httpErrorManager.handle(error).pipe(map(() => null));
+            }),
+            filter((contentlet: DotCMSContentlet | null) => !!contentlet),
+            tap(({ URL_MAP_FOR_CONTENT }: DotCMSContentlet) => {
+                if (URL_MAP_FOR_CONTENT != this.uveStore.pageParams()?.url) {
+                    this.uveStore.pageLoad({ url: URL_MAP_FOR_CONTENT });
+
+                    return;
+                }
+
+                this.uveStore.pageReload();
+            })
+        );
+    }
+
+    /**
+     * Opens the legacy dialog on the menu reorder screen for the page's path and site.
+     *
+     * @param request the menu's start level and depth, as the SDK's `reorderMenu()` names them
+     */
+    #reorderMenu({ startLevel, depth }: ReorderMenuPayload): void {
+        const pageParams = this.uveStore.pageParams();
+        const site = this.uveStore.pageAsset()?.site;
+
+        // The SDK asks from the page in the iframe, so a page and its site are always loaded.
+        if (!pageParams || !site) {
+            return;
+        }
+
+        const url = createReorderMenuURL({
+            startLevel,
+            depth,
+            pagePath: pageParams.url,
+            hostId: site.identifier
+        });
+
+        this.$legacyDialog()?.openDialogOnUrl(
+            url,
+            this.#dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
+        );
     }
 
     /**

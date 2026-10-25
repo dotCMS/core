@@ -12,7 +12,7 @@ import { Mock, MockInstance, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { DebugElement, EventEmitter, Input, Output, signal, Component } from '@angular/core';
+import { EventEmitter, Input, Output, signal, Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -59,7 +59,7 @@ import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
-import { DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import { DotCopyContentModalService, SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
@@ -103,7 +103,7 @@ import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import { DEFAULT_PERSONA, HOST, PERSONA_KEY } from '../shared/consts';
-import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
+import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
 import {
     EDIT_ACTION_PAYLOAD_MOCK,
     MOCK_RESPONSE_HEADLESS,
@@ -184,8 +184,6 @@ const mockInlineEditService = {
     standalone: true
 })
 class DotUveToolbarStubComponent {
-    @Output() editUrlContentMap = new EventEmitter<unknown>();
-    @Output() translatePage = new EventEmitter<unknown>();
     @Input() set unknown(value: unknown) {
         // void
     }
@@ -508,14 +506,6 @@ describe('EditEmaEditorComponent', () => {
 
         const createComponent = createRouting();
 
-        const triggerCustomEvent = (
-            element: DebugElement,
-            eventName: string,
-            eventObj: unknown
-        ) => {
-            spectator.triggerEventHandler(element, eventName, eventObj);
-        };
-
         beforeEach(() => {
             spectator = createComponent({
                 queryParams: { language_id: 1, url: 'index' },
@@ -703,7 +693,7 @@ describe('EditEmaEditorComponent', () => {
             });
 
             it('should show the editor components when there is a running experiement and initialize the editor in a default variant', async () => {
-                const componentsToShow = ['palette', 'dialog', 'confirm-dialog'];
+                const componentsToShow = ['palette', 'confirm-dialog'];
 
                 spectator.activatedRouteStub.setQueryParam('variantName', DEFAULT_VARIANT_ID);
 
@@ -724,11 +714,11 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            it('should reload when Block editor is saved', () => {
-                const blockEditorSidebar = spectator.query(DotBlockEditorSidebarComponent);
-                const spy = vi.spyOn(pageApi(), 'pageReload');
-                blockEditorSidebar.onSaved.emit();
-                expect(spy).toHaveBeenCalled();
+            it('should leave the legacy dialog and the block editor sidebar to the content editor', () => {
+                spectator.detectChanges();
+
+                expect(spectator.query(DotEmaDialogComponent)).toBeNull();
+                expect(spectator.query(DotBlockEditorSidebarComponent)).toBeNull();
             });
 
             it('should show the error component when there is no live version', () => {
@@ -1491,92 +1481,6 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            describe('edit', () => {
-                beforeEach(() => {
-                    store.setIsClientReady(true);
-                });
-
-                it('should edit urlContentMap page', () => {
-                    spectator.detectChanges();
-                    const dialog = spectator.query(DotEmaDialogComponent);
-                    vi.spyOn(dialog!, 'editUrlContentMapContentlet');
-
-                    const payload = {
-                        identifier: '123',
-                        inode: '456',
-                        title: 'Hello World'
-                    } as unknown as DotCMSURLContentMap;
-
-                    spectator.triggerEventHandler(
-                        DotUveToolbarStubComponent,
-                        'editUrlContentMap',
-                        payload
-                    );
-
-                    expect(dialog.editUrlContentMapContentlet).toHaveBeenCalledWith(payload);
-                });
-
-                describe('reorder navigation', () => {
-                    it('should reload the page after saving the new navigation order', () => {
-                        const reloadSpy = vi.spyOn(pageApi(), 'pageReload');
-                        const messageSpy = vi.spyOn(messageService, 'add');
-                        const dialog = spectator.debugElement.query(
-                            By.css("[data-testId='ema-dialog']")
-                        );
-
-                        triggerCustomEvent(dialog, 'action', {
-                            event: new CustomEvent('ng-event', {
-                                detail: {
-                                    name: NG_CUSTOM_EVENTS.SAVE_MENU_ORDER
-                                }
-                            })
-                        });
-
-                        expect(reloadSpy).toHaveBeenCalled();
-
-                        expect(messageSpy).toHaveBeenCalledWith({
-                            severity: 'success',
-                            summary: 'editpage.content.contentlet.menu.reorder.title',
-                            detail: 'message.menu.reordered',
-                            life: 2000
-                        });
-
-                        const pDialog = dialog.query(By.css('p-dialog'));
-
-                        // Access the PrimeNG Dialog component instance to verify visible property
-                        expect(pDialog.componentInstance.visible).toBe(false);
-                    });
-
-                    it('should advice the users when they can not save the new order', () => {
-                        const messageSpy = vi.spyOn(messageService, 'add');
-                        const dialog = spectator.debugElement.query(
-                            By.css("[data-testId='ema-dialog']")
-                        );
-
-                        triggerCustomEvent(dialog, 'action', {
-                            event: new CustomEvent('ng-event', {
-                                detail: {
-                                    name: NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER
-                                }
-                            })
-                        });
-
-                        expect(messageSpy).toHaveBeenCalledWith({
-                            severity: 'error',
-                            summary: 'editpage.content.contentlet.menu.reorder.title',
-                            detail: 'error.menu.reorder.user_has_not_permission',
-                            life: 2000
-                        });
-                    });
-
-                    afterEach(() => vi.clearAllMocks());
-                });
-
-                beforeEach(() => {
-                    vi.clearAllMocks();
-                });
-            });
-
             describe('DOM', () => {
                 it('should not show a loader when client is ready and UVE is not loading', () => {
                     const storeRef = (
@@ -1717,8 +1621,8 @@ describe('EditEmaEditorComponent', () => {
                     expect(confirmDialog.getAttribute('rejectIcon')).toBe('hidden');
                 });
 
-                it('should show the dialogs when we can edit a variant', () => {
-                    const componentsToHide = ['dialog', 'confirm-dialog']; // Test id of components that should hide when entering preview modes
+                it('should show the confirm dialog when we can edit a variant', () => {
+                    const componentsToHide = ['confirm-dialog']; // Test id of components that should hide when entering preview modes
 
                     spectator.detectChanges();
 
@@ -1738,286 +1642,6 @@ describe('EditEmaEditorComponent', () => {
                     componentsToHide.forEach((testId) => {
                         expect(spectator.query(byTestId(testId))).not.toBeNull();
                     });
-                });
-            });
-
-            describe('language selected', () => {
-                it('should update the URL and language when the user create a new translation changing the URL', () => {
-                    pageApi().pageLoad({
-                        clientHost: 'http://localhost:3000',
-                        url: 'index',
-                        language_id: '2',
-                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
-                    });
-
-                    const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
-
-                    spectator.detectChanges();
-                    const dialog = spectator.debugElement.query(
-                        By.css('[data-testId="ema-dialog"]')
-                    );
-
-                    spectator.detectComponentChanges();
-
-                    store.setSelected({
-                        bounds: { x: 0, y: 0, width: 0, height: 0 },
-                        payload: EDIT_ACTION_PAYLOAD_MOCK
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED,
-                                payload: {
-                                    htmlPageReferer:
-                                        '/new-url-here?com.dotmarketing.htmlpage.language=1'
-                                }
-                            }
-                        })
-                    });
-
-                    expect(pageLoadSpy).toHaveBeenCalledWith({
-                        url: '/new-url-here',
-                        language_id: '1'
-                    });
-                });
-
-                it('should update the language when the user create a new translation', () => {
-                    pageApi().pageLoad({
-                        clientHost: 'http://localhost:3000',
-                        url: 'test-url',
-                        language_id: '1',
-                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
-                    });
-
-                    const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
-                    spectator.detectChanges();
-
-                    const dialog = spectator.debugElement.query(
-                        By.css('[data-testId="ema-dialog"]')
-                    );
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED,
-                                payload: {
-                                    htmlPageReferer:
-                                        '/test-url?com.dotmarketing.htmlpage.language=2'
-                                }
-                            }
-                        })
-                    });
-
-                    expect(pageLoadSpy).toHaveBeenCalledWith({
-                        language_id: '2'
-                    });
-                });
-
-                it('should call dialog.translatePage when toolbar emits translatePage', () => {
-                    pageApi().pageLoad({
-                        clientHost: 'http://localhost:3000',
-                        url: 'index',
-                        language_id: '1',
-                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
-                    });
-                    spectator.detectChanges();
-
-                    const translatePagePayload = {
-                        page: { identifier: 'test-page-123', inode: 'inode-123' },
-                        newLanguage: 2
-                    };
-                    const dialogTranslatePageSpy = vi.spyOn(
-                        spectator.component.dialog,
-                        'translatePage'
-                    );
-
-                    spectator.triggerEventHandler(
-                        DotUveToolbarStubComponent,
-                        'translatePage',
-                        translatePagePayload
-                    );
-
-                    expect(dialogTranslatePageSpy).toHaveBeenCalledWith(translatePagePayload);
-                });
-            });
-
-            describe('$translatePageEffect — dialog loop prevention', () => {
-                it('should NOT show the translation dialog when uveStatus is LOADING', () => {
-                    const confirmSpy = vi.spyOn(
-                        spectator.inject(ConfirmationService, true),
-                        'confirm'
-                    );
-
-                    // Load with an untranslated language (language_id=2 returns viewAs.language.id=2,
-                    // and mockLanguageArray has id:2 with translated:false)
-                    pageApi().pageLoad({
-                        clientHost: 'http://localhost:3000',
-                        url: 'index',
-                        language_id: '2',
-                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
-                    });
-
-                    // Immediately force LOADING status before effects flush — simulates in-flight state
-                    patchState(store, { uveStatus: UVE_STATUS.LOADING });
-                    spectator.flushEffects();
-                    spectator.detectChanges();
-
-                    expect(confirmSpy).not.toHaveBeenCalled();
-                });
-
-                /**
-                 * Reject the translation dialog raised by the effect and return the
-                 * reject callback's side effects. Loads an untranslated language
-                 * (language_id=2), flushes the effect that opens the dialog, then invokes
-                 * its `reject` handler to simulate the user clicking "No".
-                 */
-                const triggerTranslationReject = () => {
-                    const confirmationService = spectator.inject(ConfirmationService, true);
-                    // Set up the spy BEFORE loading so we capture the confirm call made by the effect
-                    const confirmSpy = vi.spyOn(confirmationService, 'confirm');
-
-                    // language_id=2 → viewAs.language.id=2, pageLanguages has id:2 translated:false
-                    pageApi().pageLoad({
-                        clientHost: 'http://localhost:3000',
-                        url: 'index',
-                        language_id: '2',
-                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
-                    });
-
-                    spectator.flushEffects();
-                    spectator.detectChanges();
-
-                    // The effect should have shown the dialog because currentLanguage.translated=false
-                    expect(confirmSpy).toHaveBeenCalled();
-
-                    // Track navigation triggered only by the reject callback
-                    const dotRouterService = spectator.inject(DotRouterService, true);
-                    const router = spectator.inject(Router);
-                    const navigateByUrlSpy = vi
-                        .spyOn(router, 'navigateByUrl')
-                        .mockResolvedValue(true);
-                    const gotoPortletSpy = vi
-                        .spyOn(dotRouterService, 'gotoPortlet')
-                        .mockResolvedValue(true);
-                    const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
-
-                    const reject = () => (confirmSpy.mock.calls[0][0] as Confirmation).reject?.();
-
-                    return {
-                        dotRouterService,
-                        navigateByUrlSpy,
-                        gotoPortletSpy,
-                        pageLoadSpy,
-                        reject
-                    };
-                };
-
-                /**
-                 * Stub the DotRouterService `previousUrl` getter (it is a mock provider, so
-                 * the getter is not present by default) and its `isPublicUrl` guard.
-                 */
-                const stubPreviousUrl = (
-                    dotRouterService: DotRouterService,
-                    previousUrl: string,
-                    isPublicUrl = false
-                ) => {
-                    Object.defineProperty(dotRouterService, 'previousUrl', {
-                        get: () => previousUrl,
-                        configurable: true
-                    });
-                    vi.spyOn(dotRouterService, 'isPublicUrl').mockReturnValue(isPublicUrl);
-                };
-
-                it('should redirect to the previous dotCMS URL when the user rejects creating a new translation', () => {
-                    const {
-                        dotRouterService,
-                        navigateByUrlSpy,
-                        gotoPortletSpy,
-                        pageLoadSpy,
-                        reject
-                    } = triggerTranslationReject();
-
-                    stubPreviousUrl(dotRouterService, '/pages/import');
-
-                    reject();
-
-                    // Redirect to the last different dotCMS URL, NOT a reload of the same
-                    // untranslated page (which would re-open the dialog — #36661 loop).
-                    expect(navigateByUrlSpy).toHaveBeenCalledWith('/pages/import');
-                    expect(gotoPortletSpy).not.toHaveBeenCalled();
-                    expect(pageLoadSpy).not.toHaveBeenCalled();
-                });
-
-                it('should redirect to the Pages portlet when there is no usable previous URL', () => {
-                    const { dotRouterService, navigateByUrlSpy, gotoPortletSpy, reject } =
-                        triggerTranslationReject();
-
-                    // No history (user opened the editor directly)
-                    stubPreviousUrl(dotRouterService, '');
-
-                    reject();
-
-                    expect(gotoPortletSpy).toHaveBeenCalledWith('/pages');
-                    expect(navigateByUrlSpy).not.toHaveBeenCalled();
-                });
-
-                it('should redirect to the Pages portlet when the previous URL is another edit-page route', () => {
-                    const { dotRouterService, navigateByUrlSpy, gotoPortletSpy, reject } =
-                        triggerTranslationReject();
-
-                    // A previous /edit-page URL could resolve to the same untranslated page
-                    // and re-open the dialog, so it must be skipped in favor of /pages.
-                    stubPreviousUrl(
-                        dotRouterService,
-                        '/edit-page/content?url=/index&language_id=2'
-                    );
-
-                    reject();
-
-                    expect(gotoPortletSpy).toHaveBeenCalledWith('/pages');
-                    expect(navigateByUrlSpy).not.toHaveBeenCalled();
-                });
-
-                it('should redirect to the Pages portlet when the previous URL is a public route', () => {
-                    const { dotRouterService, navigateByUrlSpy, gotoPortletSpy, reject } =
-                        triggerTranslationReject();
-
-                    stubPreviousUrl(dotRouterService, '/public/login', true);
-
-                    reject();
-
-                    expect(gotoPortletSpy).toHaveBeenCalledWith('/pages');
-                    expect(navigateByUrlSpy).not.toHaveBeenCalled();
-                });
-
-                it('should redirect away (no dead-end) even when the page has no translated language', () => {
-                    const { dotRouterService, gotoPortletSpy, pageLoadSpy, reject } =
-                        triggerTranslationReject();
-
-                    // Only untranslated languages exist — the old behavior bailed and left
-                    // the user stuck. The user must still be navigated away.
-                    // protectedState:false on the root store makes patchState available in tests.
-                    patchState(store, {
-                        pageLanguages: [
-                            {
-                                id: 2,
-                                languageCode: 'es',
-                                countryCode: 'ES',
-                                language: 'Spanish',
-                                country: 'España',
-                                translated: false
-                            }
-                        ]
-                    });
-
-                    stubPreviousUrl(dotRouterService, '');
-
-                    reject();
-
-                    expect(gotoPortletSpy).toHaveBeenCalledWith('/pages');
-                    expect(pageLoadSpy).not.toHaveBeenCalled();
                 });
             });
 
