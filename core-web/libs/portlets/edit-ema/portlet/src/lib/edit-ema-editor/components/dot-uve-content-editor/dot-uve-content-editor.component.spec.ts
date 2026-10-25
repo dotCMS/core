@@ -80,6 +80,21 @@ import { EditorInsertResult, ReloadEditorContent } from '../../../store/features
 import { PageType, TranslateProps } from '../../../store/models';
 
 /**
+ * The side panels open through a mocked `DotSidePanelService`, so their content is never rendered.
+ * The real loaders start an `import()` nothing here waits for, which can still be loading when the
+ * file ends and then fails the run; these hand over a stand-in instead.
+ */
+vi.mock('@dotcms/edit-content', async () => {
+    class SidePanelContentStub {}
+
+    return {
+        ...(await vi.importActual<typeof import('@dotcms/edit-content')>('@dotcms/edit-content')),
+        loadDotEditContentSidePanel: () => Promise.resolve(SidePanelContentStub),
+        loadDotSourceEditorSidePanel: () => Promise.resolve(SidePanelContentStub)
+    };
+});
+
+/**
  * Stands in for the legacy JSP dialog, which needs a running dotCMS. It exposes what the content
  * editor calls and the outputs it listens to, so a test can tell whether the dialog was asked to
  * open and can answer for it. Like the real dialog, it keeps the container position its create

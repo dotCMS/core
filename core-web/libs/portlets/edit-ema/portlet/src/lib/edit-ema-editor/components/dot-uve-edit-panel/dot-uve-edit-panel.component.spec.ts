@@ -130,15 +130,41 @@ describe('DotUveEditPanelComponent', () => {
         expect(mirror?.outputs).toEqual([]);
     });
 
-    it('should slide out of view while the panel is closed', () => {
-        spectator.detectChanges();
+    describe('Open state', () => {
+        const body = () => spectator.query(byTestId('edit-panel-body'));
 
-        expect(spectator.element).not.toHaveClass('translate-x-full');
+        it('should show at full width, with a border on its left, while the store holds the panel open', () => {
+            spectator.detectChanges();
 
-        store.editorEditPanelOpen.set(false);
-        spectator.detectChanges();
+            expect(spectator.element).toHaveClass('w-[clamp(360px,20vw,500px)]');
+            expect(spectator.element).toHaveClass('border-l');
+            expect(spectator.element).not.toHaveClass('w-0');
+            expect(body()).toBeTruthy();
+            expect(body()).not.toHaveClass('translate-x-full');
+        });
 
-        expect(spectator.element).toHaveClass('translate-x-full');
+        it('should narrow to nothing and slide its body out while the store holds the panel closed', () => {
+            store.editorEditPanelOpen.set(false);
+            spectator.detectChanges();
+
+            expect(spectator.element).toHaveClass('w-0');
+            expect(spectator.element).not.toHaveClass('w-[clamp(360px,20vw,500px)]');
+            expect(spectator.element).not.toHaveClass('border-l');
+            expect(body()).toHaveClass('translate-x-full');
+        });
+
+        it('should open again when the store opens the panel', () => {
+            store.editorEditPanelOpen.set(false);
+            spectator.detectChanges();
+
+            store.editorEditPanelOpen.set(true);
+            spectator.detectChanges();
+
+            expect(spectator.element).toHaveClass('w-[clamp(360px,20vw,500px)]');
+            expect(spectator.element).toHaveClass('border-l');
+            expect(body()).toBeTruthy();
+            expect(body()).not.toHaveClass('translate-x-full');
+        });
     });
 
     describe('tabs', () => {

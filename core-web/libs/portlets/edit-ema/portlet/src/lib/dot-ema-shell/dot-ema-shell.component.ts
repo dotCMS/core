@@ -1,4 +1,5 @@
 import { patchState, signalMethod } from '@ngrx/signals';
+import { injectDispatch } from '@ngrx/signals/events';
 
 import { Location, NgComponentOutlet } from '@angular/common';
 import {
@@ -48,6 +49,7 @@ import { DotInfoPageComponent, DotMessagePipe, DotNotLicenseComponent, InfoPage 
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
+import { uveContentEditorEvents } from '../edit-ema-editor/components/dot-uve-content-editor/dot-uve-content-editor.events';
 import { DotPageAssetKeys } from '../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
@@ -92,23 +94,6 @@ function crumbQueryParams(cleanedParams: Params, pageParams: Params | null): Par
     };
 }
 
-/** Structural shape of `EditEmaEditorComponent.openContentForEdit` (the 'content' child route). */
-interface RouteWithOpenContentForEdit {
-    openContentForEdit(contentlet: DotCMSContentlet): void;
-}
-
-/**
- * Duck-typed guard instead of `instanceof EditEmaEditorComponent`: that class is lazy-loaded via
- * `loadComponent` in `lib.routes.ts`, and a value import here (required by `instanceof`) would pull
- * it into this shell's eager chunk, defeating the code-split.
- */
-function hasOpenContentForEdit(component: unknown): component is RouteWithOpenContentForEdit {
-    return (
-        !!component &&
-        typeof (component as RouteWithOpenContentForEdit).openContentForEdit === 'function'
-    );
-}
-
 @Component({
     selector: 'dot-ema-shell',
     templateUrl: './dot-ema-shell.component.html',
@@ -149,13 +134,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     @ViewChild('pageTools') pageTools!: DotPageToolsSeoComponent;
     @ViewChild('pageScanner') pageScanner!: DotPageScannerReportComponent;
 
-    /**
-     * The active child route's component, when it's the 'content' route (`EditEmaEditorComponent`)
-     * — captured via the router-outlet `(activate)`/`(deactivate)` below. `null` while on a sibling
-     * route ('layout', 'rules', 'experiments') that doesn't expose `openContentForEdit`.
-     */
-    #activeEditor: RouteWithOpenContentForEdit | null = null;
-
     readonly uveStore = inject(UVEStore);
     readonly destroyRef = inject(DestroyRef);
     readonly #activatedRoute = inject(ActivatedRoute);
@@ -163,6 +141,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     readonly #siteService = inject(SiteService);
     readonly #location = inject(Location);
     readonly #globalStore = inject(GlobalStore);
+    readonly #contentEditor = injectDispatch(uveContentEditorEvents);
     protected readonly experimentsPanel = inject(DotExperimentsPanelStore);
 
     /**
@@ -600,20 +579,6 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Tracks the active child route's component (bound to the `router-outlet` in the template) so
-     * "Properties" can route through the new editor's side panel when it's mounted (the 'content'
-     * route). See {@link RouteWithOpenContentForEdit} for why this isn't `instanceof`-based.
-     */
-    onRouteActivate(component: unknown): void {
-        this.#activeEditor = hasOpenContentForEdit(component) ? component : null;
-    }
-
-    /** Clears the active-editor reference so a sibling route (layout/rules/experiments) falls back. */
-    onRouteDeactivate(): void {
-        this.#activeEditor = null;
-    }
-
-    /**
      * Handle actions from nav bar
      *
      * @param {string} itemId
@@ -634,11 +599,14 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
             // Editing the page's own properties is editing its contentlet — route it through the
             // same feature-flag-aware entry point as every other edit flow (new editor/side panel
-            // when enabled for the page's content type, legacy dialog otherwise). Only available
-            // while the 'content' child route is mounted; on 'layout'/'rules'/'experiments' fall
-            // back to this shell's own legacy dialog (previous, route-independent behavior).
-            if (this.#activeEditor) {
-                this.#activeEditor.openContentForEdit(page as unknown as DotCMSContentlet);
+            // when enabled for the page's content type, legacy dialog otherwise). Only the 'content'
+            // child route places the content editor that answers the request; on
+            // 'layout'/'rules'/'experiments' fall back to this shell's own legacy dialog (previous,
+            // route-independent behavior). No permission check, as Properties never had one.
+            if (this.#activatedRoute.firstChild?.routeConfig?.path === 'content') {
+                this.#contentEditor.uveEditContentRequested({
+                    contentlet: page as unknown as DotCMSContentlet
+                });
                 return;
             }
 

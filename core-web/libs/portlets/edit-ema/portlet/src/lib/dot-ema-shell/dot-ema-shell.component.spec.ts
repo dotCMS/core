@@ -1,4 +1,5 @@
 import { patchState, WritableStateSource } from '@ngrx/signals';
+import { Events } from '@ngrx/signals/events';
 import {
     SpyObject,
     createComponentFactory,
@@ -100,6 +101,10 @@ import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-
 import { DotEmaShellComponent } from './dot-ema-shell.component';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
+import {
+    DotUveEditContentRequest,
+    uveContentEditorEvents
+} from '../edit-ema-editor/components/dot-uve-content-editor/dot-uve-content-editor.events';
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { FormStatus, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
@@ -700,39 +705,57 @@ describe('DotEmaShellComponent', () => {
                 });
             });
 
-            it('routes the properties click through the active editor (new editor/side panel) when the content route is mounted, instead of the legacy dialog', () => {
-                const openContentForEdit = vi.fn();
-                spectator.component.onRouteActivate({ openContentForEdit });
-                const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+            describe('properties on a child screen', () => {
+                let editRequests: DotUveEditContentRequest[];
 
-                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
-                spectator.triggerEventHandler(navBar, 'action', 'properties');
+                /** Puts the shell on one of its child screens, as the router would. */
+                const openChildScreen = (path: string) =>
+                    Object.defineProperty(activatedRoute, 'firstChild', {
+                        value: { routeConfig: { path } },
+                        configurable: true
+                    });
 
-                expect(openContentForEdit).toHaveBeenCalledWith(
-                    expect.objectContaining({ inode: '123', identifier: '123' })
+                const clickProperties = () => {
+                    const navBar = spectator.debugElement.query(
+                        By.css('[data-testid="ema-nav-bar"]')
+                    );
+                    spectator.triggerEventHandler(navBar, 'action', 'properties');
+                };
+
+                beforeEach(() => {
+                    editRequests = [];
+                    spectator
+                        .inject(Events)
+                        .on(uveContentEditorEvents.uveEditContentRequested)
+                        .subscribe(({ payload }) => editRequests.push(payload));
+                });
+
+                it("should ask the content editor to edit the page's contentlet on the content screen, instead of opening the legacy dialog", () => {
+                    openChildScreen('content');
+                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+
+                    clickProperties();
+
+                    expect(editRequests).toEqual([
+                        {
+                            contentlet: expect.objectContaining({ inode: '123', identifier: '123' })
+                        }
+                    ]);
+                    expect(dialogSpy).not.toHaveBeenCalled();
+                });
+
+                it.each(['layout', 'rules/:pageId', 'experiments'])(
+                    "should open the page's properties in the legacy dialog on the %s screen, where no content editor is placed",
+                    (path) => {
+                        openChildScreen(path);
+                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+
+                        clickProperties();
+
+                        expect(dialogSpy).toHaveBeenCalled();
+                        expect(editRequests).toEqual([]);
+                    }
                 );
-                expect(dialogSpy).not.toHaveBeenCalled();
-            });
-
-            it('falls back to the legacy dialog when a sibling route (layout/rules/experiments) is active', () => {
-                spectator.component.onRouteActivate({ openContentForEdit: vi.fn() });
-                spectator.component.onRouteDeactivate();
-                const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-
-                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
-                spectator.triggerEventHandler(navBar, 'action', 'properties');
-
-                expect(dialogSpy).toHaveBeenCalled();
-            });
-
-            it('ignores an activated component that does not expose openContentForEdit (a sibling route)', () => {
-                spectator.component.onRouteActivate({ someOtherMethod: vi.fn() });
-                const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-
-                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
-                spectator.triggerEventHandler(navBar, 'action', 'properties');
-
-                expect(dialogSpy).toHaveBeenCalled();
             });
         });
 

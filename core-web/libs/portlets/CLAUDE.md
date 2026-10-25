@@ -276,5 +276,5 @@ and fail later on `SerializationHelperTest`.
 - **`dot-experiments`** — Full CRUD with guards, resolvers, shell, routed create/edit
 - **`dot-analytics`** — Enterprise license checking, lazy loading
 - **`dot-content-drive`** — Complex nested routing, reference for test config
-- **`edit-ema/portlet`** — Reference for complex portlets: feature slice decomposition, Container/Presentational pattern, flat prefixed state
+- **`edit-ema/portlet`** — Reference for complex portlets: feature slice decomposition, flat prefixed state, and a screen split into regions. `EditEmaEditorComponent` is layout only: it places the regions, decides which show in edit and preview mode, and injects only `UVEStore`. The toolbar, palette, browser toolbar, canvas, SEO results, edit panel and content editor each read and write `UVEStore` directly, with no inputs or outputs between them and the editor, and ask for a content editor by dispatching a `uveContentEditorEvents` request that only the content editor listens to. What each region owns, the store state it uses and the requests it sends: [`edit-ema/ARCHITECTURE.md` → Where to find things](edit-ema/ARCHITECTURE.md#where-to-find-things)
 - **`dot-locales`** — Legacy pattern only (uses `ComponentStore`). Do not use as a model for new work

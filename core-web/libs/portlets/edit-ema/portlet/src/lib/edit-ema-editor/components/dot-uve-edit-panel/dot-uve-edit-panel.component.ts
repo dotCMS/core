@@ -29,9 +29,11 @@ import { DotUveStyleEditorFormComponent } from '../dot-uve-palette/components/do
     ],
     templateUrl: './dot-uve-edit-panel.component.html',
     host: {
-        class: 'block h-full w-[clamp(360px,20vw,500px)] min-w-[clamp(360px,20vw,500px)] transition-transform duration-150 ease-[ease-in-out]',
-        // Slides out while the panel is closed, as the editor's wrapper narrows to nothing.
-        '[class.translate-x-full]': '!store.editorEditPanelOpen()'
+        class: 'block overflow-hidden border-gray-200 transition-[width] duration-150 ease-[ease-in-out]',
+        // Narrows to nothing while the panel is closed, as its body slides out.
+        '[class.w-[clamp(360px,20vw,500px)]]': 'store.editorEditPanelOpen()',
+        '[class.border-l]': 'store.editorEditPanelOpen()',
+        '[class.w-0]': '!store.editorEditPanelOpen()'
     }
 })
 export class DotUveEditPanelComponent {

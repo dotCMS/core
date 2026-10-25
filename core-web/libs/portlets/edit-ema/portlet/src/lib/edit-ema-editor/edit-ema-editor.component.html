@@ -1,38 +1,25 @@
-@let ogTagsResults = ogTagsResults$;
-@let showSEOTool = $seoResults() && ogTagsResults;
+<dot-uve-toolbar class="col-[1/4]" data-testid="uve-toolbar" />
 
-<dot-uve-toolbar />
-
-@if (showSEOTool) {
-    @if ($seoResults(); as seoResults) {
-        <dot-results-seo-tool
-            [seoMedia]="seoResults.socialMedia"
-            [seoOGTags]="seoResults.ogTags"
-            [seoOGTagsResults]="ogTagsResults"
-            data-testId="results-seo-tool" />
-    }
-}
+<!-- Shows in place of the browser and the canvas while a social-media preview is chosen. -->
+<dot-uve-seo-results data-testid="uve-seo-results" />
 
 @if (uveStore.editorCanEditContent()) {
     <dot-uve-palette class="col-[1/2] row-[2/-1]" data-testId="palette" />
 }
 
+<!-- Hidden rather than removed during a social-media preview, so the page in the canvas is not
+     loaded again on return. -->
 <div
-    class="editor-content bg-gray-100"
-    [ngStyle]="$editorContentStyles()"
-    [ngClass]="{ 'editor-content-preview': $mode() === UVE_MODE.PREVIEW }"
+    class="relative col-[2/3] h-full min-h-0 min-w-0 grid-rows-[min-content_1fr] bg-gray-100"
+    [class.grid]="!uveStore.viewSocialMedia()"
+    [class.hidden]="uveStore.viewSocialMedia()"
     data-testId="editor-content">
     <dot-uve-browser-toolbar data-testid="uve-browser-toolbar" />
     <dot-uve-canvas data-testid="uve-canvas" />
 </div>
 
 @if (uveStore.viewMode() === UVE_MODE.EDIT) {
-    <div
-        class="edit-panel-wrapper border-gray-200"
-        [class.border-l]="$editPanelOpen"
-        [class.open]="$editPanelOpen">
-        <dot-uve-edit-panel data-testid="uve-edit-panel" />
-    </div>
+    <dot-uve-edit-panel class="col-[3/-1] row-[2/-1]" data-testid="uve-edit-panel" />
 }
 
 <!-- Opens every content editor, in any mode and on any page: the legacy dialog, the new editor,
