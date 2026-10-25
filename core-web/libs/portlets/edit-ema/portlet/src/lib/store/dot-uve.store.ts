@@ -4,6 +4,7 @@ import { withFlags } from '@dotcms/store';
 import { DotCMSPageAsset } from '@dotcms/types';
 
 import { withContentTypeCache } from './features/content-type-cache/withContentTypeCache';
+import { UVE_EDIT_PANEL_TABS } from './features/editor/models';
 import { withView } from './features/editor/toolbar/withView';
 import { withEditor } from './features/editor/withEditor';
 import { withSelectionAnchor } from './features/editor/withSelectionAnchor';
@@ -48,6 +49,7 @@ const initialState: UVEState = {
     editorSelected: null,
     editorPaletteOpen: true,
     editorEditPanelOpen: false,
+    editorEditPanelTab: UVE_EDIT_PANEL_TABS.QUICK_EDIT,
     editorOgTags: null,
     editorStyleSchemas: [],
     // View state (device, orientation, social media, zoom)

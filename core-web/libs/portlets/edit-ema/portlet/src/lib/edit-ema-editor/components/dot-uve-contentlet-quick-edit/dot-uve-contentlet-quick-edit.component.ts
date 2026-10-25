@@ -18,9 +18,10 @@ import { TEMP_EMPTY_CONTENTLET_TYPE } from '@dotcms/uve/internal';
 
 import { DotUveCopyDecisionComponent } from './dot-uve-copy-decision/dot-uve-copy-decision.component';
 import { DotUveQuickEditFormComponent } from './dot-uve-quick-edit-form/dot-uve-quick-edit-form.component';
-import { ContentletEditData, ContentletField } from './types';
+import { ContentletField } from './types';
 
 import { UVEStore } from '../../../store/dot-uve.store';
+import { ContentletEditData } from '../../../store/features/editor/models';
 import { getQuickEditFields, parseFieldValues } from '../../utils';
 import { uveContentEditorEvents } from '../dot-uve-content-editor/dot-uve-content-editor.events';
 
@@ -74,7 +75,7 @@ export class DotUveContentletQuickEditComponent {
 
     /**
      * Whether the user may edit the selected contentlet. Read from the DOM
-     * payload's `canEdit`, which `$contentletEditData` carries across the
+     * payload's `canEdit`, which the store's `$editorContentletEditData` carries across the
      * page-asset swap. Fail-open: absent means allowed, since headless pages
      * never supply it.
      */

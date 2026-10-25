@@ -6,9 +6,9 @@ import {
     createComponentFactory,
     mockProvider
 } from '@openng/spectator/vitest';
-import { vi } from 'vitest';
+import { Mock, vi } from 'vitest';
 
-import { signal } from '@angular/core';
+import { WritableSignal, reflectComponentType, signal } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -18,6 +18,7 @@ import { DotUveContentletToolsComponent } from './dot-uve-contentlet-tools.compo
 
 import { ContentletPayload, SelectedContentlet, VTLFile } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { UVE_EDIT_PANEL_TABS } from '../../../store/features/editor/models';
 import { uveContentEditorEvents } from '../dot-uve-content-editor/dot-uve-content-editor.events';
 import { ContentletArea } from '../ema-page-dropzone/types';
 
@@ -94,6 +95,10 @@ describe('DotUveContentletToolsComponent', () => {
      * CONTENTLET_CLICKED handler sets this; tests drive it directly.
      */
     let editorSelected: ReturnType<typeof signal<SelectedContentlet | null>>;
+    /** Writable mock for the store's permission check on the selected contentlet. */
+    let editorCanEditSelectedContentlet: WritableSignal<boolean>;
+    let setEditPanelOpen: Mock;
+    let editorSetEditPanelTab: Mock;
 
     const createComponent = createComponentFactory({
         component: DotUveContentletToolsComponent,
@@ -120,9 +125,12 @@ describe('DotUveContentletToolsComponent', () => {
                     // bottom clip offset unless a test overrides it.
                     viewIframeHeight: () => 800,
                     // promoteHoverToSelected calls setSelected on the store
-                    // before emitting select/quick-edit events. Stub it so
-                    // the (click) handler doesn't throw and the output fires.
-                    setSelected: vi.fn()
+                    // before the quick-edit and style buttons open the panel.
+                    // Stub it so the (click) handler doesn't throw.
+                    setSelected: vi.fn(),
+                    editorCanEditSelectedContentlet,
+                    setEditPanelOpen,
+                    editorSetEditPanelTab
                 })
             }
         ],
@@ -134,6 +142,9 @@ describe('DotUveContentletToolsComponent', () => {
         // Tests start with the hovered contentlet also selected so the
         // selected overlay renders alongside the hover overlay.
         editorSelected = signal<SelectedContentlet | null>(toSelected(MOCK_CONTENTLET_AREA));
+        editorCanEditSelectedContentlet = signal(true);
+        setEditPanelOpen = vi.fn();
+        editorSetEditPanelTab = vi.fn();
 
         spectator = createComponent({
             props: {
@@ -396,40 +407,144 @@ describe('DotUveContentletToolsComponent', () => {
         });
     });
 
-    describe('Outputs', () => {
-        describe('selectContent', () => {
-            it('should emit selectContent when clicking palette button', () => {
+    describe('opening the edit panel', () => {
+        /** The selection the quick-edit and style buttons make of the hovered contentlet. */
+        const HOVERED_AS_SELECTED: SelectedContentlet = {
+            ...toSelected(MOCK_CONTENTLET_AREA),
+            payload: { ...MOCK_CONTENTLET_AREA.payload, position: 'after' }
+        };
+
+        const clickHoverButton = (testId: string) => {
+            const host = spectator.query(byTestId(testId)) as HTMLElement;
+            spectator.click(host.querySelector('button') as Element);
+        };
+
+        const actionsMenuEntry = (symbol: string) =>
+            spectator.component.actionsMenuItems().find((item) => item.symbol === symbol);
+
+        /**
+         * Hovers and selects a contentlet carrying the given `canEdit`, as the page renders it.
+         * `undefined` leaves the field out, as headless and SDK-rendered pages do.
+         */
+        const hoverWithPermission = (canEdit: boolean | undefined) => {
+            const area: ContentletArea = {
+                ...MOCK_CONTENTLET_AREA,
+                payload: {
+                    ...MOCK_CONTENTLET_AREA.payload,
+                    contentlet: {
+                        ...(MOCK_CONTENTLET_AREA.payload.contentlet as ContentletPayload),
+                        ...(canEdit === undefined ? {} : { canEdit })
+                    }
+                }
+            };
+            spectator.setInput('contentletArea', area);
+            editorSelected.set(toSelected(area));
+            editorCanEditSelectedContentlet.set(canEdit !== false);
+            spectator.detectChanges();
+        };
+
+        it('should not emit openQuickEdit or selectContent', () => {
+            const outputs = reflectComponentType(DotUveContentletToolsComponent)?.outputs.map(
+                ({ propName }) => propName
+            );
+
+            expect(outputs).not.toContain('openQuickEdit');
+            expect(outputs).not.toContain('selectContent');
+        });
+
+        describe('quick edit', () => {
+            it('should open the panel on the quick-edit tab when clicking the quick-edit button', () => {
+                clickHoverButton('hover-quick-edit-button');
+
+                expect(setEditPanelOpen).toHaveBeenCalledWith(true);
+                expect(editorSetEditPanelTab).toHaveBeenCalledWith(UVE_EDIT_PANEL_TABS.QUICK_EDIT);
+            });
+
+            it('should select the hovered contentlet before opening the panel', () => {
+                const setSelected = spectator.inject(UVEStore).setSelected as Mock;
+
+                clickHoverButton('hover-quick-edit-button');
+
+                expect(setSelected).toHaveBeenCalledWith(HOVERED_AS_SELECTED);
+                expect(setSelected.mock.invocationCallOrder[0]).toBeLessThan(
+                    setEditPanelOpen.mock.invocationCallOrder[0]
+                );
+            });
+
+            it("should open the panel on the quick-edit tab from the collapsed menu's entry", () => {
+                actionsMenuEntry('edit')?.command?.({});
+
+                expect(setEditPanelOpen).toHaveBeenCalledWith(true);
+                expect(editorSetEditPanelTab).toHaveBeenCalledWith(UVE_EDIT_PANEL_TABS.QUICK_EDIT);
+            });
+
+            it('should open the panel for a contentlet whose page gives no permission', () => {
+                hoverWithPermission(undefined);
+
+                clickHoverButton('hover-quick-edit-button');
+
+                expect(setEditPanelOpen).toHaveBeenCalledWith(true);
+            });
+
+            it('should refuse a contentlet the user cannot edit', () => {
+                // The entry is disabled for it, but a stale menu can still run its command.
+                hoverWithPermission(false);
+
+                actionsMenuEntry('edit')?.command?.({});
+
+                expect(setEditPanelOpen).not.toHaveBeenCalled();
+                expect(editorSetEditPanelTab).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('style editor', () => {
+            beforeEach(() => {
                 spectator.setInput('showStyleEditorOption', true);
                 spectator.detectChanges();
+            });
 
-                const paletteButton = spectator.query(
-                    byTestId('hover-palette-button')
-                ) as HTMLElement;
-                const handler = vi.fn();
-                spectator.output('selectContent').subscribe(handler);
-                spectator.click(paletteButton.querySelector('button') as Element);
+            it('should open the panel on the style tab when clicking the style button', () => {
+                clickHoverButton('hover-palette-button');
 
-                expect(handler).toHaveBeenCalledWith({
-                    ...MOCK_CONTENTLET_AREA.payload,
-                    position: 'after'
-                });
+                expect(setEditPanelOpen).toHaveBeenCalledWith(true);
+                expect(editorSetEditPanelTab).toHaveBeenCalledWith(
+                    UVE_EDIT_PANEL_TABS.STYLE_EDITOR
+                );
+            });
+
+            it('should select the hovered contentlet before opening the panel', () => {
+                const setSelected = spectator.inject(UVEStore).setSelected as Mock;
+
+                clickHoverButton('hover-palette-button');
+
+                expect(setSelected).toHaveBeenCalledWith(HOVERED_AS_SELECTED);
+                expect(setSelected.mock.invocationCallOrder[0]).toBeLessThan(
+                    setEditPanelOpen.mock.invocationCallOrder[0]
+                );
+            });
+
+            it("should open the panel on the style tab from the collapsed menu's entry", () => {
+                actionsMenuEntry('palette')?.command?.({});
+
+                expect(setEditPanelOpen).toHaveBeenCalledWith(true);
+                expect(editorSetEditPanelTab).toHaveBeenCalledWith(
+                    UVE_EDIT_PANEL_TABS.STYLE_EDITOR
+                );
+            });
+
+            it('should refuse a contentlet the user cannot edit', () => {
+                // The entry is disabled for it, but a stale menu can still run its command.
+                hoverWithPermission(false);
+
+                actionsMenuEntry('palette')?.command?.({});
+
+                expect(setEditPanelOpen).not.toHaveBeenCalled();
+                expect(editorSetEditPanelTab).not.toHaveBeenCalled();
             });
         });
+    });
 
-        describe('quick-edit (bolt) button', () => {
-            it('should emit openQuickEdit when clicking the bolt button', () => {
-                const handler = vi.fn();
-                spectator.output('openQuickEdit').subscribe(handler);
-
-                const boltButton = spectator.query(
-                    byTestId('hover-quick-edit-button')
-                ) as HTMLElement;
-                spectator.click(boltButton.querySelector('button') as Element);
-
-                expect(handler).toHaveBeenCalled();
-            });
-        });
-
+    describe('Outputs', () => {
         describe('full-editor (pencil) button', () => {
             /** The request the pencil makes for the hovered contentlet. */
             const EDIT_HOVERED_CONTENTLET = uveContentEditorEvents.uveEditContentRequested({

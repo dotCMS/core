@@ -1,4 +1,5 @@
 import {
+    DotCMSContentlet,
     DotDevice,
     DotDeviceListItem,
     SeoMetaTags,
@@ -13,7 +14,7 @@ import {
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { EDITOR_STATE } from '../../../shared/enums';
-import { ActionPayload } from '../../../shared/models';
+import { ActionPayload, ContainerPayload } from '../../../shared/models';
 import { Orientation, PageType } from '../../models';
 
 export interface EditorState {
@@ -96,4 +97,20 @@ export enum UVE_PALETTE_TABS {
     WIDGETS = 1,
     FAVORITES = 2,
     LAYERS = 3
+}
+
+/**
+ * The tabs of the edit panel: quick edit and the style editor.
+ */
+export enum UVE_EDIT_PANEL_TABS {
+    QUICK_EDIT = 0,
+    STYLE_EDITOR = 1
+}
+
+/**
+ * The selected contentlet as the edit panel shows it, with the container it sits in.
+ */
+export interface ContentletEditData {
+    container: ContainerPayload | undefined;
+    contentlet: DotCMSContentlet;
 }

@@ -37,10 +37,11 @@ import { UveOptimisticSaveService } from '../../../../services/uve-optimistic-sa
 import { UVE_STATUS } from '../../../../shared/enums';
 import { ActionPayload } from '../../../../shared/models';
 import { UVEStore } from '../../../../store/dot-uve.store';
+import { ContentletEditData } from '../../../../store/features/editor/models';
 import { PageType } from '../../../../store/models';
 import { filterFormValues } from '../../dot-uve-palette/utils';
 import { buildQuickEditFormGroup, toPageAssetProperties } from '../quick-edit-form-builder';
-import { ContentletEditData, ContentletField } from '../types';
+import { ContentletField } from '../types';
 
 /**
  * The quick-edit form itself: takes a resolved set of fields, builds

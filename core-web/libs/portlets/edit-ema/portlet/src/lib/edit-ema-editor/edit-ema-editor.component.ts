@@ -1,4 +1,3 @@
-import { patchState, signalState } from '@ngrx/signals';
 import { injectDispatch } from '@ngrx/signals/events';
 import { EMPTY, Observable, fromEvent, of } from 'rxjs';
 
@@ -12,6 +11,7 @@ import {
     DestroyRef,
     ElementRef,
     OnDestroy,
+    OnInit,
     ViewChild,
     WritableSignal,
     computed,
@@ -30,8 +30,6 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { ProgressBarModule } from 'primeng/progressbar';
-import { TabsModule } from 'primeng/tabs';
-import { TooltipModule } from 'primeng/tooltip';
 
 import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
 
@@ -64,22 +62,19 @@ import {
 } from '@dotcms/edit-content';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
-import { StyleEditorFormSchema, __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
-import { DotCopyContentModalService, DotMessagePipe, injectSidePanel } from '@dotcms/ui';
+import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
+import { DotCopyContentModalService, injectSidePanel } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
-import { getContentletsInContainer } from '@dotcms/uve/internal';
 
 import { DotUveBrowserToolbarComponent } from './components/dot-uve-browser-toolbar/dot-uve-browser-toolbar.component';
 import { DotUveContentEditorComponent } from './components/dot-uve-content-editor/dot-uve-content-editor.component';
 import { uveContentEditorEvents } from './components/dot-uve-content-editor/dot-uve-content-editor.events';
-import { DotUveContentletQuickEditComponent } from './components/dot-uve-contentlet-quick-edit/dot-uve-contentlet-quick-edit.component';
 import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
+import { DotUveEditPanelComponent } from './components/dot-uve-edit-panel/dot-uve-edit-panel.component';
 import { DotUveIframeComponent } from './components/dot-uve-iframe/dot-uve-iframe.component';
 import { DotUveIframeResizeHandlesComponent } from './components/dot-uve-iframe-resize-handles/dot-uve-iframe-resize-handles.component';
 import { DotUveLockOverlayComponent } from './components/dot-uve-lock-overlay/dot-uve-lock-overlay.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
-import { DotUveStyleEditorEmptyStateComponent } from './components/dot-uve-palette/components/dot-uve-style-editor-empty-state/dot-uve-style-editor-empty-state.component';
-import { DotUveStyleEditorFormComponent } from './components/dot-uve-palette/components/dot-uve-style-editor-form/dot-uve-style-editor-form.component';
 import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-palette.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
@@ -110,6 +105,7 @@ import {
     PostMessage
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
+import { UVE_EDIT_PANEL_TABS } from '../store/features/editor/models';
 import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
 import { IframeAccessMode, PageType } from '../store/models';
 import {
@@ -157,20 +153,15 @@ const MESSAGE_KEY = {
         DotBlockEditorSidebarComponent,
         DotUvePageVersionNotFoundComponent,
         DotUveContentletToolsComponent,
-        DotUveContentletQuickEditComponent,
-        DotUveStyleEditorEmptyStateComponent,
         DotUveLockOverlayComponent,
         DotUvePaletteComponent,
-        DotUveStyleEditorFormComponent,
         DotUveIframeComponent,
         DotUveIframeResizeHandlesComponent,
-        TabsModule,
         InputGroupModule,
         InputGroupAddonModule,
-        TooltipModule,
-        DotMessagePipe,
         DotUveContentEditorComponent,
-        DotUveBrowserToolbarComponent
+        DotUveBrowserToolbarComponent,
+        DotUveEditPanelComponent
     ],
     providers: [
         DotPaletteListStore,
@@ -183,7 +174,7 @@ const MESSAGE_KEY = {
         DotUveDragDropService
     ]
 })
-export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
+export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit {
     @ViewChild('dialog') dialog: DotEmaDialogComponent;
     @ViewChild('iframe') iframeComponent!: DotUveIframeComponent;
     @ViewChild('blockSidebar') blockSidebar: DotBlockEditorSidebarComponent;
@@ -203,73 +194,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      */
     protected readonly uveStore = inject(UVEStore) as InstanceType<typeof UVEStore> &
         WithPageApiMethods;
-
-    /**
-     * Right sidebar tab management using NgRx signalState (similar to palette component).
-     * Tabs: 0 = Contentlet Quick Edit, 1 = Style Editor
-     */
-    readonly #rightSidebarTabState = signalState({
-        currentTab: 0
-    });
-
-    readonly $editorPanelActiveTab = this.#rightSidebarTabState.currentTab;
-    readonly $showStyleEditorTab = computed(() => this.uveStore.editorCanEditStyles());
-    readonly $styleSchema = computed<StyleEditorFormSchema | undefined>(() => {
-        return this.uveStore.$styleSchema();
-    });
-    readonly $styleSchemaContentTypeVar = computed(
-        () => this.uveStore.editorSelected()?.payload?.contentlet?.contentType ?? ''
-    );
-
-    protected readonly $contentletEditData = computed(() => {
-        const { container, contentlet: contentletPayload } =
-            this.uveStore.editorSelected()?.payload ?? {};
-
-        // Get the full contentlet from containers using the SDK utility.
-        // It handles both uuid-${uuid} and uuid-dotParser_${uuid} key formats.
-        let contentlet: DotCMSContentlet = contentletPayload as DotCMSContentlet;
-        const pageAsset = this.uveStore.pageAsset();
-
-        if (
-            container?.identifier &&
-            container?.uuid &&
-            contentletPayload?.identifier &&
-            pageAsset?.containers?.[container.identifier]
-        ) {
-            const contentlets = getContentletsInContainer(pageAsset, {
-                identifier: container.identifier,
-                uuid: container.uuid,
-                historyUUIDs: []
-            });
-            const foundContentlet = contentlets.find(
-                (c) => c.identifier === contentletPayload.identifier
-            );
-
-            if (foundContentlet) {
-                // The page-asset contentlet is the fresher one (new inode after
-                // a save), but it carries no permission — `canEdit` only exists
-                // on the DOM payload. Carry it across the swap or the quick-edit
-                // panel has nothing to gate on.
-                contentlet = {
-                    ...(foundContentlet as DotCMSContentlet),
-                    ...(contentletPayload?.canEdit === undefined
-                        ? {}
-                        : { canEdit: contentletPayload.canEdit })
-                };
-            }
-        }
-
-        return { container, contentlet };
-    });
-    /**
-     * Whether the currently selected contentlet may be modified. Drives the
-     * side panel's style tab and the style-editor guard, mirroring the
-     * quick-edit gate so neither tab offers a way to change a contentlet the
-     * user has no permission on. Fail-open when the permission is absent.
-     */
-    protected readonly $canEditSelectedContentlet = computed(
-        () => this.$contentletEditData()?.contentlet?.canEdit !== false
-    );
 
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
@@ -325,26 +249,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         const canEditPage = this.uveStore.editorCanEditContent();
         const isEditState = this.uveStore.viewMode() === UVE_MODE.EDIT;
         return canEditPage && isEditState;
-    });
-
-    protected readonly $isIframeLoading = computed<boolean>(() => {
-        const mode = this.uveStore.viewMode();
-        const pageType = this.uveStore.pageType();
-        const isClientReady = this.uveStore.isClientReady();
-        const isEditMode = mode === UVE_MODE.EDIT;
-        const isPageReady = pageType === PageType.TRADITIONAL || isClientReady || !isEditMode;
-
-        return !isPageReady || this.uveStore.uveStatus() === UVE_STATUS.LOADING;
-    });
-
-    protected readonly $progressBar = computed<boolean>(() => {
-        const mode = this.uveStore.viewMode();
-        const pageType = this.uveStore.pageType();
-        const isClientReady = this.uveStore.isClientReady();
-
-        const isEditMode = mode === UVE_MODE.EDIT;
-        const isPageReady = pageType === PageType.TRADITIONAL || isClientReady || !isEditMode;
-        return !isPageReady || this.uveStore.uveStatus() === UVE_STATUS.LOADING;
     });
 
     protected readonly $dropzone = computed(() => {
@@ -452,7 +356,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         return dragIsActive ? 'none' : 'auto';
     });
     readonly $iframeOpacity = computed((): number => {
-        return this.$isIframeLoading() ? 0.5 : 1;
+        return this.uveStore.$editorIsIframeLoading() ? 0.5 : 1;
     });
 
     get contentWindow(): Window | null {
@@ -603,21 +507,9 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         });
     }
 
-    /**
-     * Handle right sidebar tab changes
-     */
-    protected handleRightSidebarTabChange(index: string | number | undefined): void {
-        if (index === undefined) {
-            return;
-        }
-
-        const currentTab = Number(index);
-
-        if (isNaN(currentTab)) {
-            return;
-        }
-
-        patchState(this.#rightSidebarTabState, { currentTab });
+    ngOnInit(): void {
+        // The store outlives the editor, so only the editor knows when it is created again.
+        this.uveStore.editorSetEditPanelTab(UVE_EDIT_PANEL_TABS.QUICK_EDIT);
     }
 
     ngAfterViewInit(): void {
@@ -1456,26 +1348,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Handle edit contentlet
-     *
-     * @protected
-     * @param {ActionPayload} payload
-     * @return {*}
-     * @memberof EditEmaEditorComponent
-     */
-    protected handleOpenQuickEdit(): void {
-        // Same defense in depth as the pencil: the quick-edit button is already
-        // disabled without EDIT permission on this contentlet, but the panel
-        // must not be reachable through a stale toolbar or a programmatic emit.
-        if (this.uveStore.editorSelected()?.payload?.contentlet?.canEdit === false) {
-            return;
-        }
-
-        this.uveStore.setEditPanelOpen(true);
-        patchState(this.#rightSidebarTabState, { currentTab: 0 });
-    }
-
-    /**
      * Fetches the content type and opens the new Angular-based editor if the feature flag is enabled,
      * otherwise calls the legacy fallback.
      */
@@ -1915,26 +1787,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             // Removed pageAPIResponse spread
             params: this.uveStore.pageParams()
         };
-    }
-
-    protected handleSelectContent(_contentletActionPayload: ActionPayload): void {
-        // Same gate as the pencil and Quick Edit: styling changes how this
-        // contentlet presents itself, so it follows contentlet permission.
-        if (!this.$canEditSelectedContentlet()) {
-            return;
-        }
-
-        // The hover toolbar's `promoteHoverToSelected` (called inline in
-        // the (click) before this output fires) has already pinned the
-        // contentlet as `editorSelected`. We just need to open the
-        // style editor — the side panel binds to editorSelected().payload
-        // for its data.
-        this.#openStyleEditor();
-    }
-
-    #openStyleEditor(): void {
-        this.uveStore.setEditPanelOpen(true);
-        patchState(this.#rightSidebarTabState, { currentTab: 1 });
     }
 
     protected handleAddContent(event: {

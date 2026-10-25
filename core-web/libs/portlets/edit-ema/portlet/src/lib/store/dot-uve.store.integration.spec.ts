@@ -31,6 +31,7 @@ import {
 } from '@dotcms/utils-testing';
 
 import { UVEStore } from './dot-uve.store';
+import { UVE_EDIT_PANEL_TABS } from './features/editor/models';
 import { Orientation } from './models';
 
 import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
@@ -156,6 +157,10 @@ describe('UVEStore - Integration Tests ', () => {
             it('should initialize panels with default values', () => {
                 expect(store.editorPaletteOpen()).toBe(true); // Default: palette open
                 expect(store.editorEditPanelOpen()).toBe(false); // Default: sidebar closed
+            });
+
+            it('should open the edit panel on the quick-edit tab by default', () => {
+                expect(store.editorEditPanelTab()).toBe(UVE_EDIT_PANEL_TABS.QUICK_EDIT);
             });
 
             it('should update palette.open via setPaletteOpen', () => {

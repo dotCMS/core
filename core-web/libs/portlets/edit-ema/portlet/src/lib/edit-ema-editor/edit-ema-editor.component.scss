@@ -102,29 +102,6 @@ dot-results-seo-tool {
     &.open {
         width: clamp(360px, 20vw, 500px);
     }
-
-    > * {
-        width: clamp(360px, 20vw, 500px);
-        min-width: clamp(360px, 20vw, 500px);
-        transform: translateX(100%);
-        transition: transform $basic-speed ease-in-out;
-    }
-
-    &.open > * {
-        transform: translateX(0);
-    }
-
-    ::ng-deep {
-        .p-tabpanels {
-            height: 100%;
-            flex: 1;
-            overflow: hidden;
-        }
-
-        p-tabs {
-            height: 100%;
-        }
-    }
 }
 
 .canvas-viewport {

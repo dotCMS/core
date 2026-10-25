@@ -88,6 +88,7 @@ import { DotUveBrowserToolbarComponent } from './components/dot-uve-browser-tool
 import { DotUveContentEditorComponent } from './components/dot-uve-content-editor/dot-uve-content-editor.component';
 import { uveContentEditorEvents } from './components/dot-uve-content-editor/dot-uve-content-editor.events';
 import { DotUveContentletToolsComponent } from './components/dot-uve-contentlet-tools/dot-uve-contentlet-tools.component';
+import { DotUveEditPanelComponent } from './components/dot-uve-edit-panel/dot-uve-edit-panel.component';
 import { DotUvePageVersionNotFoundComponent } from './components/dot-uve-page-version-not-found/dot-uve-page-version-not-found.component';
 import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-palette.component';
 import { DotEmaRunningExperimentComponent } from './components/dot-uve-toolbar/components/dot-ema-running-experiment/dot-ema-running-experiment.component';
@@ -114,6 +115,7 @@ import {
 } from '../shared/mocks';
 import { ActionPayload } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
+import { UVE_EDIT_PANEL_TABS } from '../store/features/editor/models';
 import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
 import { IframeAccessMode, PageType } from '../store/models';
 
@@ -221,6 +223,14 @@ class DotUveContentEditorMockComponent {}
 })
 class DotUveBrowserToolbarMockComponent {}
 
+/** The edit panel has its own spec; here it only needs to be placed. */
+@Component({
+    selector: 'dot-uve-edit-panel',
+    template: '<div></div>',
+    standalone: true
+})
+class DotUveEditPanelMockComponent {}
+
 const createRouting = () =>
     createRoutingFactory({
         component: EditEmaEditorComponent,
@@ -239,7 +249,8 @@ const createRouting = () =>
                             DotUveToolbarComponent,
                             DotUvePaletteComponent,
                             DotUveContentEditorComponent,
-                            DotUveBrowserToolbarComponent
+                            DotUveBrowserToolbarComponent,
+                            DotUveEditPanelComponent
                         ]
                     },
                     add: {
@@ -247,7 +258,8 @@ const createRouting = () =>
                             DotUveToolbarStubComponent,
                             DotUvePaletteStubComponent,
                             DotUveContentEditorMockComponent,
-                            DotUveBrowserToolbarMockComponent
+                            DotUveBrowserToolbarMockComponent,
+                            DotUveEditPanelMockComponent
                         ]
                     }
                 }
@@ -2030,11 +2042,7 @@ describe('EditEmaEditorComponent', () => {
                     spectator.flushEffects();
                     spectator.detectChanges();
 
-                    expect(
-                        (
-                            spectator.component as unknown as { $progressBar: () => boolean }
-                        ).$progressBar()
-                    ).toBe(false);
+                    expect(spectator.query(byTestId('progress-bar'))).toBeNull();
                 });
 
                 it('should show a loader when the client is not ready', () => {
@@ -2498,108 +2506,18 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            describe('quick edit permission (#37376)', () => {
-                const SELECTED_BOUNDS = { x: 0, y: 0, width: 0, height: 0 };
-
-                const selectContentlet = (canEdit?: boolean) => {
-                    store.setSelected({
-                        bounds: SELECTED_BOUNDS,
-                        payload: {
-                            ...EDIT_ACTION_PAYLOAD_MOCK,
-                            contentlet: {
-                                ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
-                                ...(canEdit === undefined ? {} : { canEdit })
-                            }
-                        }
-                    });
-                    spectator.detectChanges();
-                };
-
-                it('should preserve canEdit through the page-asset swap in $contentletEditData', () => {
-                    // $contentletEditData replaces the DOM payload contentlet
-                    // with the page-asset one to pick up a fresh inode after a
-                    // save. The permission exists only on the DOM payload, so
-                    // it has to survive that swap or the panel cannot be gated.
-                    //
-                    // The container is injected into the store so the swap is
-                    // guaranteed to fire — the assertion on the swapped inode
-                    // is what stops this test from passing vacuously.
-                    const componentUveStore = spectator.component['uveStore'];
-                    const pageAsset = componentUveStore.pageAsset();
-
-                    componentUveStore.updatePageResponse({
-                        ...pageAsset,
-                        containers: {
-                            'perm-container': {
-                                container: { identifier: 'perm-container' },
-                                containerStructures: [],
-                                contentlets: {
-                                    'uuid-1': [
-                                        {
-                                            identifier: 'perm-contentlet',
-                                            inode: 'fresh-inode-from-page-asset',
-                                            contentType: 'test'
-                                        }
-                                    ]
-                                }
-                            }
-                        }
-                    } as unknown as Parameters<typeof componentUveStore.updatePageResponse>[0]);
+            describe('edit panel', () => {
+                it('should place the edit panel in edit mode', () => {
                     spectator.detectChanges();
 
-                    componentUveStore.setSelected({
-                        bounds: SELECTED_BOUNDS,
-                        payload: {
-                            ...EDIT_ACTION_PAYLOAD_MOCK,
-                            container: {
-                                ...EDIT_ACTION_PAYLOAD_MOCK.container,
-                                identifier: 'perm-container',
-                                uuid: '1'
-                            },
-                            contentlet: {
-                                ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
-                                identifier: 'perm-contentlet',
-                                inode: 'stale-inode-from-dom',
-                                canEdit: false
-                            }
-                        }
-                    });
-                    spectator.detectChanges();
-
-                    const result = spectator.component['$contentletEditData']();
-
-                    expect(result.contentlet?.inode).toBe('fresh-inode-from-page-asset');
-                    expect(result.contentlet?.canEdit).toBe(false);
+                    expect(spectator.query(byTestId('uve-edit-panel'))).toBeTruthy();
                 });
 
-                it('should leave canEdit undefined when the payload has none', () => {
-                    selectContentlet(undefined);
-
-                    expect(
-                        spectator.component['$contentletEditData']().contentlet?.canEdit
-                    ).toBeUndefined();
-                });
-
-                it('should not open the quick edit panel for a denied contentlet', () => {
-                    const setEditPanelOpenSpy = vi.spyOn(store, 'setEditPanelOpen');
-                    selectContentlet(false);
-                    setEditPanelOpenSpy.mockClear();
-
-                    spectator.component['handleOpenQuickEdit']();
+                it('should not place the edit panel in preview mode', () => {
+                    pageApi().pageUpdateParams({ mode: UVE_MODE.PREVIEW });
                     spectator.detectChanges();
 
-                    expect(setEditPanelOpenSpy).not.toHaveBeenCalled();
-                });
-
-                it('should open the quick edit panel when the user can edit', () => {
-                    const setEditPanelOpenSpy = vi.spyOn(store, 'setEditPanelOpen');
-                    selectContentlet(true);
-                    setEditPanelOpenSpy.mockClear();
-
-                    spectator.component['handleOpenQuickEdit']();
-                    spectator.detectChanges();
-
-                    expect(setEditPanelOpenSpy).toHaveBeenCalledWith(true);
+                    expect(spectator.query(byTestId('uve-edit-panel'))).toBeNull();
                 });
             });
 
@@ -2675,53 +2593,6 @@ describe('EditEmaEditorComponent', () => {
                     clickInlineField(undefined);
 
                     expect(inlineEditSpy).toHaveBeenCalled();
-                });
-            });
-
-            describe('style editor permission (#37376)', () => {
-                const SELECTED = { x: 0, y: 0, width: 0, height: 0 };
-
-                const selectWith = (canEdit?: boolean) => {
-                    spectator.component['uveStore'].setSelected({
-                        bounds: SELECTED,
-                        payload: {
-                            ...EDIT_ACTION_PAYLOAD_MOCK,
-                            contentlet: {
-                                ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
-                                ...(canEdit === undefined ? {} : { canEdit })
-                            }
-                        }
-                    });
-                    spectator.detectChanges();
-                };
-
-                it('should report the selected contentlet as not styleable when denied', () => {
-                    selectWith(false);
-
-                    expect(spectator.component['$canEditSelectedContentlet']()).toBe(false);
-                });
-
-                it('should allow styling when the user can edit', () => {
-                    selectWith(true);
-
-                    expect(spectator.component['$canEditSelectedContentlet']()).toBe(true);
-                });
-
-                it('should allow styling when the permission is absent', () => {
-                    selectWith(undefined);
-
-                    expect(spectator.component['$canEditSelectedContentlet']()).toBe(true);
-                });
-
-                it('should not open the style editor panel for a denied contentlet', () => {
-                    const setEditPanelOpenSpy = vi.spyOn(store, 'setEditPanelOpen');
-                    selectWith(false);
-                    setEditPanelOpenSpy.mockClear();
-
-                    spectator.component['handleSelectContent'](EDIT_ACTION_PAYLOAD_MOCK);
-                    spectator.detectChanges();
-
-                    expect(setEditPanelOpenSpy).not.toHaveBeenCalled();
                 });
             });
 
@@ -3744,6 +3615,25 @@ describe('EditEmaEditorComponent', () => {
                     ).not.toThrow();
                 });
             });
+        });
+    });
+
+    describe('when the editor is created', () => {
+        const createComponent = createRouting();
+
+        it('should open the edit panel on the quick-edit tab', () => {
+            const spectator = createComponent({
+                queryParams: { language_id: 1, url: 'index' },
+                data: { data: { url: 'http://localhost:3000' } }
+            });
+            const store = spectator.inject(UVEStore, true);
+
+            // The store outlives the editor: coming back from Layout, Rules or Experiments, it
+            // still holds the tab the panel was last on.
+            store.editorSetEditPanelTab(UVE_EDIT_PANEL_TABS.STYLE_EDITOR);
+            spectator.detectChanges();
+
+            expect(store.editorEditPanelTab()).toBe(UVE_EDIT_PANEL_TABS.QUICK_EDIT);
         });
     });
 

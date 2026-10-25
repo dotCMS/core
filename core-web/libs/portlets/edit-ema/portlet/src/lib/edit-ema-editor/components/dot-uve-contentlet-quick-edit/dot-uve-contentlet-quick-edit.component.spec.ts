@@ -11,10 +11,11 @@ import { createFakeTextField } from '@dotcms/utils-testing';
 import { DotUveContentletQuickEditComponent } from './dot-uve-contentlet-quick-edit.component';
 import { DotUveCopyDecisionComponent } from './dot-uve-copy-decision/dot-uve-copy-decision.component';
 import { DotUveQuickEditFormComponent } from './dot-uve-quick-edit-form/dot-uve-quick-edit-form.component';
-import { ContentletEditData, TEMP_EMPTY_CONTENTLET_TYPE } from './types';
+import { TEMP_EMPTY_CONTENTLET_TYPE } from './types';
 
 import { EDIT_ACTION_PAYLOAD_MOCK } from '../../../shared/mocks';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { ContentletEditData } from '../../../store/features/editor/models';
 import { uveContentEditorEvents } from '../dot-uve-content-editor/dot-uve-content-editor.events';
 
 const makeContentlet = (overrides: Partial<DotCMSContentlet> = {}): DotCMSContentlet =>

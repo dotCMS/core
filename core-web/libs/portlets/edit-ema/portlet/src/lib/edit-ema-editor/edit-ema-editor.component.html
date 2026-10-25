@@ -29,7 +29,7 @@
     [ngClass]="{ 'editor-content-preview': $mode() === UVE_MODE.PREVIEW }"
     data-testId="editor-content">
     <dot-uve-browser-toolbar data-testid="uve-browser-toolbar" />
-    @if ($progressBar()) {
+    @if (uveStore.$editorIsIframeLoading()) {
         <div class="progress-bar-wrapper">
             <p-progressBar
                 [style]="{ height: '3px' }"
@@ -62,10 +62,8 @@
 
                     @if ($showContentletControls()) {
                         <dot-uve-contentlet-tools
-                            (openQuickEdit)="handleOpenQuickEdit()"
                             (deleteContent)="deleteContent($event)"
                             (addContent)="handleAddContent($event)"
-                            (selectContent)="handleSelectContent($event)"
                             [contentletArea]="$contentArea"
                             [allowContentDelete]="$allowContentDelete()"
                             [showStyleEditorOption]="uveStore.editorCanEditStyles()"
@@ -93,68 +91,7 @@
         class="edit-panel-wrapper border-gray-200"
         [class.border-l]="$editPanelOpen"
         [class.open]="$editPanelOpen">
-        <p-tabs
-            [value]="$editorPanelActiveTab()"
-            [dt]="{ tabpanel: { padding: '0' } }"
-            [pt]="{ tablist: { class: 'bg-gray-100' } }"
-            (valueChange)="handleRightSidebarTabChange($event)">
-            <p-tablist>
-                <p-tab [value]="0">
-                    <div [pTooltip]="'uve.toolbar.content.editor' | dm" tooltipPosition="bottom">
-                        <i class="pi pi-pencil"></i>
-                    </div>
-                </p-tab>
-                @if ($showStyleEditorTab()) {
-                    <p-tab [value]="1">
-                        <div
-                            class="flex h-full flex-1 items-center justify-center"
-                            [pTooltip]="'uve.toolbar.style.editor' | dm"
-                            tooltipPosition="bottom">
-                            <i class="pi pi-palette"></i>
-                        </div>
-                    </p-tab>
-                }
-            </p-tablist>
-            <p-tabpanels>
-                <p-tabpanel [value]="0">
-                    @if ($editorPanelActiveTab() === 0) {
-                        <dot-uve-contentlet-quick-edit
-                            [data]="$contentletEditData()"
-                            [loading]="$isIframeLoading()" />
-                    }
-                </p-tabpanel>
-                @if ($showStyleEditorTab()) {
-                    <p-tabpanel [value]="1">
-                        @if ($editorPanelActiveTab() === 1) {
-                            <div
-                                class="flex-column justify-content-center align-items-center flex size-full gap-2">
-                                @if (!$canEditSelectedContentlet()) {
-                                    <!-- Neither panel tab may modify a contentlet the user has no
-                                         edit permission on; the quick-edit tab shows the same
-                                         message through its own no-permission mode. -->
-                                    <div
-                                        data-testId="style-editor-no-permission"
-                                        class="flex size-full flex-col items-center justify-center gap-3 px-6 text-center">
-                                        <span
-                                            class="material-symbols-outlined text-[5rem]! text-gray-300">
-                                            lock
-                                        </span>
-                                        <p class="m-0 text-sm text-gray-800">
-                                            {{ 'uve.contentlet.no.edit.permission' | dm }}
-                                        </p>
-                                    </div>
-                                } @else if ($styleSchema()) {
-                                    <dot-uve-style-editor-form [schema]="$styleSchema()!" />
-                                } @else {
-                                    <dot-uve-style-editor-empty-state
-                                        [contentTypeVar]="$styleSchemaContentTypeVar()" />
-                                }
-                            </div>
-                        }
-                    </p-tabpanel>
-                }
-            </p-tabpanels>
-        </p-tabs>
+        <dot-uve-edit-panel data-testid="uve-edit-panel" />
     </div>
 }
 

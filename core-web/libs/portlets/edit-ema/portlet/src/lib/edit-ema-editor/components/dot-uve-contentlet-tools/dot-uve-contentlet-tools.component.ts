@@ -26,6 +26,7 @@ import { TEMP_EMPTY_CONTENTLET_TYPE } from '@dotcms/uve/internal';
 
 import { ActionPayload } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { UVE_EDIT_PANEL_TABS } from '../../../store/features/editor/models';
 import { uveContentEditorEvents } from '../dot-uve-content-editor/dot-uve-content-editor.events';
 import { ContentletArea } from '../ema-page-dropzone/types';
 
@@ -90,11 +91,6 @@ export class DotUveContentletToolsComponent {
     readonly showStyleEditorOption = input<boolean>(false, { alias: 'showStyleEditorOption' });
 
     /**
-     * Emitted when the user clicks the quick-edit (sliders) button to
-     * open the side panel for inline-style edits.
-     */
-    readonly openQuickEdit = output<void>();
-    /**
      * Emitted when the user requests deletion of the current contentlet.
      * The parent component is responsible for performing and confirming the deletion.
      */
@@ -107,11 +103,6 @@ export class DotUveContentletToolsComponent {
         type: 'content' | 'form' | 'widget';
         payload: ActionPayload;
     }>();
-
-    /**
-     * Emitted when the contentlet is selected from the tools (for example, via a drag handle).
-     */
-    readonly selectContent = output<ActionPayload>();
 
     /**
      * Opt-in flag indicating this drag source should use the custom drag image.
@@ -323,7 +314,7 @@ export class DotUveContentletToolsComponent {
             disabled: !this.canEditContentlet(),
             command: () => {
                 this.promoteHoverToSelected();
-                this.openQuickEdit.emit();
+                this.openQuickEdit();
             }
         });
 
@@ -334,7 +325,7 @@ export class DotUveContentletToolsComponent {
                 disabled: !this.canEditContentlet(),
                 command: () => {
                     this.promoteHoverToSelected();
-                    this.selectContent.emit(context);
+                    this.openStyleEditor();
                 }
             });
         }
@@ -508,6 +499,39 @@ export class DotUveContentletToolsComponent {
             contentlet: contentlet as unknown as DotCMSContentlet,
             forkFrom: container
         });
+    }
+
+    /**
+     * Quick-edit button: opens the edit panel on its quick-edit tab. Runs after
+     * {@link promoteHoverToSelected}, so the panel shows the contentlet just clicked.
+     *
+     * Same defense in depth as the pencil: the button is already disabled without EDIT
+     * permission on this contentlet, but the panel must not be reachable through a stale
+     * toolbar or menu. Fail-open: only an explicit `false` denies.
+     */
+    protected openQuickEdit(): void {
+        if (this.#uveStore.editorSelected()?.payload?.contentlet?.canEdit === false) {
+            return;
+        }
+
+        this.#uveStore.setEditPanelOpen(true);
+        this.#uveStore.editorSetEditPanelTab(UVE_EDIT_PANEL_TABS.QUICK_EDIT);
+    }
+
+    /**
+     * Style button: opens the edit panel on its style tab. Runs after
+     * {@link promoteHoverToSelected}, so the panel binds to the contentlet just clicked.
+     *
+     * Same gate as the pencil and quick edit: styling changes how this contentlet presents
+     * itself, so it follows contentlet permission.
+     */
+    protected openStyleEditor(): void {
+        if (!this.#uveStore.editorCanEditSelectedContentlet()) {
+            return;
+        }
+
+        this.#uveStore.setEditPanelOpen(true);
+        this.#uveStore.editorSetEditPanelTab(UVE_EDIT_PANEL_TABS.STYLE_EDITOR);
     }
 
     /**
