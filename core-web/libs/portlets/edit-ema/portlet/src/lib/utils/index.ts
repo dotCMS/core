@@ -25,7 +25,8 @@ import {
     ContentTypeDragPayload,
     DotPageAssetParams,
     DragDatasetItem,
-    PageContainer
+    PageContainer,
+    SelectedContentlet
 } from '../shared/models';
 import { IframeAccessMode, Orientation } from '../store/models';
 
@@ -400,6 +401,36 @@ export function areContainersEquals(
         currentContainer.identifier === containerToFind?.identifier &&
         currentContainer.uuid === containerToFind?.uuid
     );
+}
+
+/**
+ * Whether the selected contentlet is gone from the container it was selected in, once the page's
+ * containers become `pageContainers`. False when no contentlet is selected.
+ *
+ * @param {SelectedContentlet | null} selected - The editor's selection.
+ * @param {PageContainer[]} pageContainers - The page's containers after a change.
+ * @return {boolean} True when the selection points at a contentlet that is no longer there.
+ */
+export function isSelectedContentletGone(
+    selected: SelectedContentlet | null,
+    pageContainers: PageContainer[]
+): boolean {
+    const payload = selected?.payload;
+
+    if (!payload?.contentlet?.identifier) {
+        return false;
+    }
+
+    const selectedContentletId = payload.contentlet.identifier;
+
+    return !pageContainers.some((container) => {
+        // For now, if is not the same container, we deactivate the active contentlet
+        // This can be improved in the future to check if the contentlet was moved, but we need to implement optimistic updates in UVE first
+        // Because moving contentlets change the container structure, and we need to have a rollback mechanism in case the update fails
+        const isSameContainer = areContainersEquals(container, payload.container);
+
+        return container.contentletsId?.includes(selectedContentletId) && isSameContainer;
+    });
 }
 
 /**

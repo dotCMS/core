@@ -13,7 +13,7 @@ import {
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
-import { EDITOR_STATE } from '../../../shared/enums';
+import { CONTAINER_INSERT_ERROR, EDITOR_STATE } from '../../../shared/enums';
 import { ActionPayload, ContainerPayload } from '../../../shared/models';
 import { Orientation, PageType } from '../../models';
 
@@ -114,3 +114,21 @@ export interface ContentletEditData {
     container: ContainerPayload | undefined;
     contentlet: DotCMSContentlet;
 }
+
+/**
+ * Why a container refused a contentlet: it is full, holding `maxContentlets` already, or it
+ * already holds that contentlet.
+ */
+export type EditorInsertRefusal =
+    | {
+          didInsert: false;
+          errorCode: CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED;
+          maxContentlets: number;
+      }
+    | { didInsert: false; errorCode: CONTAINER_INSERT_ERROR.DUPLICATE_CONTENT };
+
+/**
+ * What `editorInsertContentlet` reports: the contentlet went into the container, or why the
+ * container refused it.
+ */
+export type EditorInsertResult = { didInsert: true } | EditorInsertRefusal;

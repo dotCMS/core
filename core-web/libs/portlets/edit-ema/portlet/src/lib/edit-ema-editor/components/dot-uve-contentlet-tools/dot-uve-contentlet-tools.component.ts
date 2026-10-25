@@ -95,14 +95,6 @@ export class DotUveContentletToolsComponent {
      * The parent component is responsible for performing and confirming the deletion.
      */
     readonly deleteContent = output<ActionPayload>();
-    /**
-     * Emitted when the user invokes the "add content" menu.
-     * The `type` indicates what the user wants to add (content, form or widget).
-     */
-    readonly addContent = output<{
-        type: 'content' | 'form' | 'widget';
-        payload: ActionPayload;
-    }>();
 
     /**
      * Opt-in flag indicating this drag source should use the custom drag image.
@@ -243,23 +235,26 @@ export class DotUveContentletToolsComponent {
 
     /**
      * Menu items used for adding new content to the layout (content, widget, and optionally form).
-     * Items are localized and wired so that selecting them emits `addContent`.
-     * Uses selected context when available, otherwise falls back to hovered context.
+     * Items are localized and wired so that selecting one asks the content editor to add it at
+     * that position. Uses selected context when available, otherwise falls back to hovered context.
      */
     readonly menuItems = computed<MenuItem[]>(() => {
         const context = this.selected() ? this.selectedContentContext() : this.contentContext();
         return [
             {
                 label: this.#dotMessageService.get('content'),
-                command: () => this.addContent.emit({ type: 'content', payload: context })
+                command: () =>
+                    this.#contentEditor.uveAddContentRequested({ type: 'content', into: context })
             },
             {
                 label: this.#dotMessageService.get('Widget'),
-                command: () => this.addContent.emit({ type: 'widget', payload: context })
+                command: () =>
+                    this.#contentEditor.uveAddContentRequested({ type: 'widget', into: context })
             },
             {
                 label: this.#dotMessageService.get('form'),
-                command: () => this.addContent.emit({ type: 'form', payload: context })
+                command: () =>
+                    this.#contentEditor.uveAddContentRequested({ type: 'form', into: context })
             }
         ];
     });

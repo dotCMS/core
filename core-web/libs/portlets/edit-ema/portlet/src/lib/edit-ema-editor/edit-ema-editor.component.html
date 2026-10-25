@@ -61,7 +61,6 @@
                     @if ($showContentletControls()) {
                         <dot-uve-contentlet-tools
                             (deleteContent)="deleteContent($event)"
-                            (addContent)="handleAddContent($event)"
                             [contentletArea]="$contentArea"
                             [allowContentDelete]="$allowContentDelete()"
                             [showStyleEditorOption]="uveStore.editorCanEditStyles()"

@@ -257,32 +257,6 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
         expect(() => handleSectionOffset(450, null)).not.toThrow();
     });
 
-    it('should call dialog.createContentletFromPalette when action is CREATE_CONTENTLET', () => {
-        const createContentletFromPalette = vi.fn();
-        const mockStore = {
-            ...buildMockStore(),
-            pageLanguageId: signal(1)
-        };
-
-        service.handleAction(
-            { action: DotCMSUVEAction.CREATE_CONTENTLET, payload: { contentType: 'Event' } },
-            {
-                uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: { createContentletFromPalette } as never,
-                inlineEditingService: null,
-                contentWindow: null,
-                host: 'http://localhost',
-                onCopyContent: vi.fn()
-            }
-        );
-
-        expect(createContentletFromPalette).toHaveBeenCalledWith({
-            variable: 'Event',
-            name: 'Event',
-            language_id: 1
-        });
-    });
-
     describe('NAVIGATION_UPDATE', () => {
         it('should call pageLoad when navigating to a different page', () => {
             const pageLoad = vi.fn();
@@ -603,6 +577,60 @@ describe('DotUveActionsHandlerService – EDIT_CONTENTLET', () => {
             { scope: 'self' }
         );
         expect(editContentlet).not.toHaveBeenCalled();
+    });
+});
+
+describe('DotUveActionsHandlerService – CREATE_CONTENTLET', () => {
+    let spectator: SpectatorService<DotUveActionsHandlerService>;
+    let service: DotUveActionsHandlerService;
+    let dispatcher: SpyObject<Dispatcher>;
+
+    const createService = createServiceFactory({
+        service: DotUveActionsHandlerService,
+        providers: [
+            Dispatcher,
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotMessageService),
+            mockProvider(MessageService),
+            mockProvider(DotCopyContentModalService),
+            { provide: UVEStore, useValue: buildMockStore() }
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createService();
+        service = spectator.service;
+        dispatcher = spectator.inject(Dispatcher);
+        vi.spyOn(dispatcher, 'dispatch');
+    });
+
+    it('should ask the content editor to create a contentlet of the content type instead of opening the dialog itself', () => {
+        // The same request a palette drop sends, without a container position: the contentlet is
+        // only created, and the page reloads once it is saved. The content editor picks the
+        // editor from the content type, so the SDK's createContentlet() no longer forces the
+        // legacy dialog.
+        const createContentletFromPalette = vi.fn();
+
+        service.handleAction(
+            { action: DotCMSUVEAction.CREATE_CONTENTLET, payload: { contentType: 'Event' } },
+            {
+                uveStore: buildMockStore() as unknown as InstanceType<typeof UVEStore>,
+                dialog: { createContentletFromPalette } as never,
+                // Not used by CREATE_CONTENTLET.
+                inlineEditingService: {} as InlineEditService,
+                contentWindow: null,
+                host: 'http://localhost',
+                onCopyContent: vi.fn()
+            }
+        );
+
+        expect(dispatcher.dispatch).toHaveBeenCalledWith(
+            uveContentEditorEvents.uveCreateContentRequested({
+                contentType: { variable: 'Event', name: 'Event' }
+            }),
+            { scope: 'self' }
+        );
+        expect(createContentletFromPalette).not.toHaveBeenCalled();
     });
 });
 

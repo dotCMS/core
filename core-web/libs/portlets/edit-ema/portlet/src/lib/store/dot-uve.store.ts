@@ -7,6 +7,7 @@ import { withContentTypeCache } from './features/content-type-cache/withContentT
 import { UVE_EDIT_PANEL_TABS } from './features/editor/models';
 import { withView } from './features/editor/toolbar/withView';
 import { withEditor } from './features/editor/withEditor';
+import { withEditorInsert } from './features/editor/withEditorInsert';
 import { withSelectionAnchor } from './features/editor/withSelectionAnchor';
 import { withLayout } from './features/layout/withLayout';
 import { withPage } from './features/page/withPage';
@@ -90,6 +91,7 @@ const initialState: UVEState = {
  * 9. withView - View modes + zoom (needs page params)
  * 10. withEditor - Editor UI (needs PageComputed, WorkflowLockComputed, ViewComputed)
  * 11. withPageApi - Backend API (needs all above, provides pageReload)
+ * 12. withEditorInsert - Inserts into a container and saves (needs editorSave from withPageApi)
  *
  * Note: withWorkflow needs pageReload() from withPageApi (accessed via type assertion).
  * Workflow fetch runs reactively when page inode changes (withWorkflow onInit effect), not from page-api.
@@ -165,5 +167,7 @@ export const UVEStore = signalStore(
             // Page access
             pageAsset: () => store.pageAsset()
         })
-    )
+    ),
+    // 14. Insert into a container and save (needs editorSave from withPageApi above)
+    withEditorInsert()
 );

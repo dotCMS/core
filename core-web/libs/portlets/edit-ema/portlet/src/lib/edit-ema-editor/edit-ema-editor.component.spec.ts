@@ -7,7 +7,7 @@ import {
     mockProvider
 } from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
-import { of, Subject, throwError } from 'rxjs';
+import { of } from 'rxjs';
 import { Mock, MockInstance, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -19,7 +19,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { Confirmation, ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService } from 'primeng/dynamicdialog';
 
 import { map } from 'rxjs/operators';
 
@@ -75,7 +75,6 @@ import {
     MockDotHttpErrorManagerService,
     MockDotMessageService,
     URL_MAP_CONTENTLET,
-    createFakeContentType,
     createFakeContentlet,
     getDraftExperimentMock,
     getRunningExperimentMock,
@@ -94,6 +93,7 @@ import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-pal
 import { DotEmaRunningExperimentComponent } from './components/dot-uve-toolbar/components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-toolbar/components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
+import { EmaDragItem } from './components/ema-page-dropzone/types';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
@@ -107,7 +107,6 @@ import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
     EDIT_ACTION_PAYLOAD_MOCK,
     MOCK_RESPONSE_HEADLESS,
-    PAYLOAD_MOCK,
     QUERY_PARAMS_MOCK,
     UVE_PAGE_RESPONSE_MAP,
     dotPropertiesServiceMock,
@@ -1578,441 +1577,6 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            describe('add', () => {
-                it('should add contentlet after backend emit SAVE_CONTENTLET', () => {
-                    spectator.detectChanges();
-
-                    const editorSaveMock = vi.spyOn(pageApi(), 'editorSave');
-
-                    const payload: ActionPayload = { ...PAYLOAD_MOCK };
-
-                    store.setContentletArea({
-                        x: 100,
-                        y: 100,
-                        width: 500,
-                        height: 500,
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
-                        type: 'content',
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    const dialog = spectator.debugElement.query(
-                        By.css('[data-testId="ema-dialog"]')
-                    );
-
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.CREATE_CONTENTLET,
-                                data: {
-                                    url: 'test/url',
-                                    contentType: 'test'
-                                }
-                            }
-                        })
-                    });
-
-                    spectator.detectChanges();
-
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.SAVE_PAGE,
-                                payload: {
-                                    contentletIdentifier: 'some-random-identifier'
-                                }
-                            }
-                        }),
-                        actionPayload: PAYLOAD_MOCK
-                    });
-
-                    spectator.detectChanges();
-
-                    expect(editorSaveMock).toHaveBeenCalledWith(PAYLOAD_MOCK.pageContainers);
-
-                    spectator.detectChanges();
-                });
-
-                it('should not add contentlet after backend emit SAVE_CONTENTLET and contentlet is dupe', () => {
-                    spectator.detectChanges();
-
-                    const payload: ActionPayload = { ...PAYLOAD_MOCK };
-
-                    store.setContentletArea({
-                        x: 100,
-                        y: 100,
-                        width: 500,
-                        height: 500,
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
-                        type: 'content',
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    const dialog = spectator.debugElement.query(
-                        By.css('[data-testId="ema-dialog"]')
-                    );
-
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.CREATE_CONTENTLET,
-                                data: {
-                                    url: 'test/url',
-                                    contentType: 'test'
-                                }
-                            }
-                        })
-                    });
-
-                    spectator.detectChanges();
-
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.SAVE_PAGE,
-                                payload: {
-                                    contentletIdentifier: PAYLOAD_MOCK.container.contentletsId[0] // An already added contentlet
-                                }
-                            }
-                        }),
-                        actionPayload: payload
-                    });
-
-                    spectator.detectChanges();
-
-                    expect(addMessageSpy).toHaveBeenCalledWith({
-                        severity: 'info',
-                        summary: 'Content already added',
-                        detail: 'This content is already added to this container',
-                        life: 2000
-                    });
-                });
-
-                it('should add contentlet after backend emit CONTENT_SEARCH_SELECT', () => {
-                    const saveMock = vi.spyOn(pageApi(), 'editorSave');
-
-                    spectator.detectChanges();
-
-                    const payload: ActionPayload = {
-                        language_id: '1',
-                        pageContainers: [
-                            {
-                                identifier: 'container-identifier-123',
-                                uuid: 'uuid-123',
-                                contentletsId: ['contentlet-identifier-123']
-                            }
-                        ],
-                        contentlet: {
-                            identifier: 'contentlet-identifier-123',
-                            inode: 'contentlet-inode-123',
-                            title: 'Hello World',
-                            contentType: 'test',
-                            onNumberOfPages: 1
-                        },
-                        container: {
-                            identifier: 'container-identifier-123',
-                            acceptTypes: 'test',
-                            uuid: 'uuid-123',
-                            maxContentlets: 2,
-                            contentletsId: ['123']
-                        },
-                        pageId: 'test',
-                        position: 'after'
-                    };
-
-                    store.setContentletArea({
-                        x: 100,
-                        y: 100,
-                        width: 500,
-                        height: 500,
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
-                        type: 'content',
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    const dialog = spectator.debugElement.query(
-                        By.css('[data-testId="ema-dialog"]')
-                    );
-
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
-                                data: {
-                                    identifier: 'new-contentlet-identifier-123',
-                                    inode: '123'
-                                }
-                            }
-                        }),
-                        actionPayload: payload
-                    });
-
-                    spectator.detectChanges();
-
-                    expect(saveMock).toHaveBeenCalledWith([
-                        {
-                            identifier: 'container-identifier-123',
-                            uuid: 'uuid-123',
-                            contentletsId: [
-                                'contentlet-identifier-123',
-                                'new-contentlet-identifier-123'
-                            ],
-                            personaTag: undefined
-                        }
-                    ]);
-                });
-
-                it('should not add contentlet after backend emit CONTENT_SEARCH_SELECT and contentlet is dupe', () => {
-                    spectator.detectChanges();
-
-                    const payload: ActionPayload = {
-                        language_id: '1',
-                        pageContainers: [
-                            {
-                                identifier: 'container-identifier-123',
-                                uuid: 'uuid-123',
-                                contentletsId: ['contentlet-identifier-123']
-                            }
-                        ],
-                        contentlet: {
-                            identifier: 'contentlet-identifier-123',
-                            inode: 'contentlet-inode-123',
-                            title: 'Hello World',
-                            contentType: 'test',
-                            onNumberOfPages: 1
-                        },
-                        container: {
-                            identifier: 'container-identifier-123',
-                            acceptTypes: 'test',
-                            uuid: 'uuid-123',
-                            maxContentlets: 1,
-                            contentletsId: ['contentlet-identifier-123']
-                        },
-                        pageId: 'test',
-                        position: 'before'
-                    };
-
-                    store.setContentletArea({
-                        x: 100,
-                        y: 100,
-                        width: 500,
-                        height: 500,
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
-                        type: 'content',
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    const dialog = spectator.debugElement.query(
-                        By.css('[data-testId="ema-dialog"]')
-                    );
-
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
-                                data: {
-                                    identifier: 'contentlet-identifier-123',
-                                    inode: '123'
-                                }
-                            }
-                        }),
-                        actionPayload: payload
-                    });
-
-                    spectator.detectChanges();
-
-                    expect(addMessageSpy).toHaveBeenCalledWith({
-                        severity: 'info',
-                        summary: 'Content already added',
-                        detail: 'This content is already added to this container',
-                        life: 2000
-                    });
-                });
-
-                it('should add widget after backend emit CONTENT_SEARCH_SELECT', () => {
-                    const saveMock = vi.spyOn(pageApi(), 'editorSave');
-
-                    spectator.detectChanges();
-
-                    const payload: ActionPayload = {
-                        language_id: '1',
-                        pageContainers: [
-                            {
-                                identifier: 'container-identifier-123',
-                                uuid: 'uuid-123',
-                                contentletsId: ['contentlet-identifier-123']
-                            }
-                        ],
-                        contentlet: {
-                            identifier: 'contentlet-identifier-123',
-                            inode: 'contentlet-inode-123',
-                            title: 'Hello World',
-                            contentType: 'test',
-                            onNumberOfPages: 1
-                        },
-                        container: {
-                            identifier: 'container-identifier-123',
-                            acceptTypes: 'test',
-                            uuid: 'uuid-123',
-                            maxContentlets: 2,
-                            contentletsId: ['123']
-                        },
-                        pageId: 'test',
-                        position: 'after'
-                    };
-
-                    store.setContentletArea({
-                        x: 100,
-                        y: 100,
-                        width: 500,
-                        height: 500,
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
-                        type: 'widget',
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    const dialog = spectator.debugElement.query(
-                        By.css('[data-testId="ema-dialog"]')
-                    );
-
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
-                                data: {
-                                    identifier: 'new-contentlet-identifier-123',
-                                    inode: '123'
-                                }
-                            }
-                        }),
-                        actionPayload: payload
-                    });
-
-                    spectator.detectChanges();
-
-                    expect(saveMock).toHaveBeenCalledWith([
-                        {
-                            identifier: 'container-identifier-123',
-                            uuid: 'uuid-123',
-                            contentletsId: [
-                                'contentlet-identifier-123',
-                                'new-contentlet-identifier-123'
-                            ],
-                            personaTag: undefined
-                        }
-                    ]);
-                });
-
-                it('should not add widget after backend emit CONTENT_SEARCH_SELECT and widget is dupe', () => {
-                    spectator.detectChanges();
-
-                    const payload: ActionPayload = {
-                        language_id: '1',
-                        pageContainers: [
-                            {
-                                identifier: 'container-identifier-123',
-                                uuid: 'uuid-123',
-                                contentletsId: ['contentlet-identifier-123']
-                            }
-                        ],
-                        contentlet: {
-                            identifier: 'contentlet-identifier-123',
-                            inode: 'contentlet-inode-123',
-                            title: 'Hello World',
-                            contentType: 'test',
-                            onNumberOfPages: 1
-                        },
-                        container: {
-                            identifier: 'container-identifier-123',
-                            acceptTypes: 'test',
-                            uuid: 'uuid-123',
-                            maxContentlets: 1,
-                            contentletsId: ['contentlet-identifier-123']
-                        },
-                        pageId: 'test',
-                        position: 'before'
-                    };
-
-                    store.setContentletArea({
-                        x: 100,
-                        y: 100,
-                        width: 500,
-                        height: 500,
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
-                        type: 'widget',
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    const dialog = spectator.debugElement.query(
-                        By.css('[data-testId="ema-dialog"]')
-                    );
-
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
-                                data: {
-                                    identifier: 'contentlet-identifier-123',
-                                    inode: '123'
-                                }
-                            }
-                        }),
-                        actionPayload: payload
-                    });
-
-                    spectator.detectChanges();
-
-                    expect(addMessageSpy).toHaveBeenCalledWith({
-                        severity: 'info',
-                        summary: 'Content already added',
-                        detail: 'This content is already added to this container',
-                        life: 2000
-                    });
-                });
-            });
-
             describe('DOM', () => {
                 it('should not show a loader when client is ready and UVE is not loading', () => {
                     const storeRef = (
@@ -2581,252 +2145,183 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            describe('placeItem - content-type drag', () => {
-                const contentTypeDragItem = {
-                    baseType: 'CONTENT',
-                    contentType: 'TestContentType',
-                    draggedPayload: {
-                        type: 'content-type' as const,
-                        item: {
-                            variable: 'TestContentType',
-                            name: 'Test Content Type'
+            describe('placeItem', () => {
+                describe('a content type dropped from the palette', () => {
+                    const contentTypeDragItem: EmaDragItem = {
+                        baseType: 'CONTENT',
+                        contentType: 'TestContentType',
+                        draggedPayload: {
+                            type: 'content-type',
+                            item: {
+                                variable: 'TestContentType',
+                                name: 'Test Content Type'
+                            }
                         }
-                    }
-                };
-
-                afterEach(() => {
-                    vi.restoreAllMocks();
-                });
-
-                it('should open the new edit content dialog when CONTENT_EDITOR2_ENABLED is true', () => {
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of(
-                            createFakeContentType({
-                                variable: 'TestContentType',
-                                name: 'Test Content Type',
-                                metadata: {
-                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
-                                }
-                            })
-                        )
-                    );
-
-                    const dialogRefMock = {
-                        onClose: new Subject<void | unknown>(),
-                        close: vi.fn()
                     };
-                    const dialogServiceOpenSpy = vi
-                        .spyOn(spectator.inject(DialogService), 'open')
-                        .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
-                    const createFromPaletteSpy = vi.spyOn(
-                        spectator.component.dialog,
-                        'createContentletFromPalette'
-                    );
 
-                    spectator.component.placeItem(EDIT_ACTION_PAYLOAD_MOCK, contentTypeDragItem);
-                    spectator.detectChanges();
+                    it('should ask the content editor to create a contentlet of that content type for the drop position', () => {
+                        const dispatcher = spectator.inject(Dispatcher, true);
+                        vi.spyOn(dispatcher, 'dispatch');
 
-                    expect(createFromPaletteSpy).not.toHaveBeenCalled();
-                    expect(dialogServiceOpenSpy).toHaveBeenCalled();
-                    const [, config] = dialogServiceOpenSpy.mock.calls[0];
-                    expect(config.data).toEqual(
-                        expect.objectContaining({
-                            mode: 'new',
-                            contentTypeId: 'TestContentType'
-                        })
-                    );
+                        spectator.component.placeItem(
+                            EDIT_ACTION_PAYLOAD_MOCK,
+                            contentTypeDragItem
+                        );
+
+                        expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                            uveContentEditorEvents.uveCreateContentRequested({
+                                contentType: {
+                                    variable: 'TestContentType',
+                                    name: 'Test Content Type'
+                                },
+                                into: store.getPageSavePayload(EDIT_ACTION_PAYLOAD_MOCK)
+                            }),
+                            { scope: 'self' }
+                        );
+                    });
+
+                    it('should open no editor itself', () => {
+                        const getContentType = vi.spyOn(
+                            spectator.debugElement.injector.get(DotContentTypeService),
+                            'getContentType'
+                        );
+                        const openDialog = vi.spyOn(spectator.inject(DialogService), 'open');
+
+                        spectator.component.placeItem(
+                            EDIT_ACTION_PAYLOAD_MOCK,
+                            contentTypeDragItem
+                        );
+
+                        expect(getContentType).not.toHaveBeenCalled();
+                        expect(openDialog).not.toHaveBeenCalled();
+                    });
                 });
 
-                it('should open the legacy dialog when CONTENT_EDITOR2_ENABLED is false', () => {
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of(
-                            createFakeContentType({
-                                variable: 'TestContentType',
-                                name: 'Test Content Type',
-                                metadata: {
-                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
+                // Drops that insert right away go through the store's editorInsertContentlet.
+                describe('a contentlet dropped on a container', () => {
+                    /** The first container on the page, as a drop reports it. */
+                    const firstContainer = () => {
+                        const [{ identifier, uuid, contentletsId }] = store.$pageData().containers;
+
+                        return { identifier, uuid, contentletsId };
+                    };
+
+                    /** Drags a contentlet from outside the page (not a move). */
+                    const contentletDragItem = (identifier: string): EmaDragItem => ({
+                        baseType: 'CONTENT',
+                        contentType: 'test',
+                        draggedPayload: {
+                            type: 'contentlet',
+                            move: false,
+                            item: {
+                                contentlet: {
+                                    identifier,
+                                    inode: `${identifier}-inode`,
+                                    title: identifier,
+                                    contentType: 'test'
                                 }
-                            })
-                        )
-                    );
-
-                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
-                    const createFromPaletteSpy = vi.spyOn(
-                        spectator.component.dialog,
-                        'createContentletFromPalette'
-                    );
-
-                    spectator.component.placeItem(EDIT_ACTION_PAYLOAD_MOCK, contentTypeDragItem);
-                    spectator.detectChanges();
-
-                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
-                    expect(createFromPaletteSpy).toHaveBeenCalledWith(
-                        expect.objectContaining({
-                            variable: 'TestContentType',
-                            name: 'Test Content Type'
-                        })
-                    );
-                });
-
-                it('should fall back to legacy dialog when getContentType throws', () => {
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        throwError(() => new Error('network error'))
-                    );
-
-                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
-                    const createFromPaletteSpy = vi.spyOn(
-                        spectator.component.dialog,
-                        'createContentletFromPalette'
-                    );
-
-                    spectator.component.placeItem(EDIT_ACTION_PAYLOAD_MOCK, contentTypeDragItem);
-                    spectator.detectChanges();
-
-                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
-                    expect(createFromPaletteSpy).toHaveBeenCalledWith(
-                        expect.objectContaining({
-                            variable: 'TestContentType',
-                            name: 'Test Content Type'
-                        })
-                    );
-                });
-            });
-
-            describe('handleNgEvent - CREATE_CONTENTLET', () => {
-                const createContentletEvent = new CustomEvent('ng-event', {
-                    detail: {
-                        name: NG_CUSTOM_EVENTS.CREATE_CONTENTLET,
-                        data: {
-                            url: 'test/url',
-                            contentType: 'TestContentType'
+                            }
                         }
-                    }
-                });
+                    });
 
-                afterEach(() => {
-                    vi.restoreAllMocks();
-                });
+                    /** A drop at the end of the first container. */
+                    const dropOnFirstContainer = (dragItem: EmaDragItem) => {
+                        const { identifier, uuid } = firstContainer();
 
-                it('should open the new edit content dialog when CONTENT_EDITOR2_ENABLED is true', () => {
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of(
-                            createFakeContentType({
-                                variable: 'TestContentType',
-                                name: 'Test Content Type',
-                                metadata: {
-                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
+                        spectator.component.placeItem(
+                            {
+                                container: {
+                                    identifier,
+                                    uuid,
+                                    acceptTypes: '*',
+                                    maxContentlets: 25
                                 }
-                            })
-                        )
-                    );
-
-                    const dialogRefMock = {
-                        onClose: new Subject<void | unknown>(),
-                        close: vi.fn()
+                            },
+                            dragItem
+                        );
                     };
-                    const dialogServiceOpenSpy = vi
-                        .spyOn(spectator.inject(DialogService), 'open')
-                        .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
-                    const createContentletSpy = vi.spyOn(
-                        spectator.component.dialog,
-                        'createContentlet'
-                    );
 
-                    spectator.component['handleNgEvent']({
-                        event: createContentletEvent,
-                        actionPayload: EDIT_ACTION_PAYLOAD_MOCK,
-                        clientAction: DotCMSUVEAction.NOOP,
-                        form: null
-                    })?.();
-                    spectator.detectChanges();
+                    /** Watches the page being saved through the page API. */
+                    const spyOnPageSave = () =>
+                        vi.spyOn(spectator.inject(DotPageApiService), 'save');
 
-                    expect(createContentletSpy).not.toHaveBeenCalled();
-                    expect(dialogServiceOpenSpy).toHaveBeenCalled();
-                    const [, config] = dialogServiceOpenSpy.mock.calls[0];
-                    expect(config.data).toEqual(
-                        expect.objectContaining({
-                            mode: 'new',
-                            contentTypeId: 'TestContentType'
-                        })
-                    );
-                });
+                    it('should save the page with the contentlet in the container', () => {
+                        const save = spyOnPageSave();
+                        const { identifier, uuid } = firstContainer();
 
-                it('should open the legacy create dialog when CONTENT_EDITOR2_ENABLED is false', () => {
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of(
-                            createFakeContentType({
-                                variable: 'TestContentType',
-                                name: 'Test Content Type',
-                                metadata: {
-                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                                }
+                        dropOnFirstContainer(contentletDragItem('dropped-contentlet'));
+
+                        expect(save).toHaveBeenCalledWith(
+                            expect.objectContaining({
+                                pageContainers: expect.arrayContaining([
+                                    expect.objectContaining({
+                                        identifier,
+                                        uuid,
+                                        contentletsId: expect.arrayContaining([
+                                            'dropped-contentlet'
+                                        ])
+                                    })
+                                ])
                             })
-                        )
-                    );
+                        );
+                    });
 
-                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
-                    const createContentletSpy = vi.spyOn(
-                        spectator.component.dialog,
-                        'createContentlet'
-                    );
+                    it('should tell the user and not save when the container already holds it', () => {
+                        const save = spyOnPageSave();
+                        const [alreadyThere] = firstContainer().contentletsId;
+                        // Without a contentlet in the container there is no duplicate to drop.
+                        expect(alreadyThere).toBeTruthy();
 
-                    spectator.component['handleNgEvent']({
-                        event: createContentletEvent,
-                        actionPayload: EDIT_ACTION_PAYLOAD_MOCK,
-                        clientAction: DotCMSUVEAction.NOOP,
-                        form: null
-                    })?.();
-                    spectator.detectChanges();
+                        dropOnFirstContainer(contentletDragItem(alreadyThere));
 
-                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
-                    expect(createContentletSpy).toHaveBeenCalledWith(
-                        expect.objectContaining({
-                            contentType: 'TestContentType',
-                            url: 'test/url',
-                            actionPayload: EDIT_ACTION_PAYLOAD_MOCK
-                        })
-                    );
-                });
+                        expect(addMessageSpy).toHaveBeenCalledWith({
+                            severity: 'info',
+                            summary: 'Content already added',
+                            detail: 'This content is already added to this container',
+                            life: 2000
+                        });
+                        expect(save).not.toHaveBeenCalled();
+                    });
 
-                it('should fall back to legacy create dialog when getContentType throws', () => {
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        throwError(() => new Error('network error'))
-                    );
+                    it('should save the page with an uploaded file dropped into the container', () => {
+                        const save = spyOnPageSave();
+                        const { identifier, uuid } = firstContainer();
 
-                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
-                    const createContentletSpy = vi.spyOn(
-                        spectator.component.dialog,
-                        'createContentlet'
-                    );
+                        spectator.component.placeItem(
+                            {
+                                container: {
+                                    identifier,
+                                    uuid,
+                                    acceptTypes: '*',
+                                    maxContentlets: 25
+                                },
+                                newContentlet: {
+                                    identifier: 'uploaded-image',
+                                    inode: 'uploaded-image-inode',
+                                    title: 'image.png',
+                                    contentType: 'dotAsset',
+                                    baseType: 'DOTASSET'
+                                }
+                            },
+                            {
+                                baseType: 'dotAsset',
+                                contentType: 'dotAsset',
+                                draggedPayload: { type: 'temp' }
+                            }
+                        );
 
-                    spectator.component['handleNgEvent']({
-                        event: createContentletEvent,
-                        actionPayload: EDIT_ACTION_PAYLOAD_MOCK,
-                        clientAction: DotCMSUVEAction.NOOP,
-                        form: null
-                    })?.();
-                    spectator.detectChanges();
-
-                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
-                    expect(createContentletSpy).toHaveBeenCalledWith(
-                        expect.objectContaining({
-                            contentType: 'TestContentType',
-                            url: 'test/url',
-                            actionPayload: EDIT_ACTION_PAYLOAD_MOCK
-                        })
-                    );
+                        expect(save).toHaveBeenCalledWith(
+                            expect.objectContaining({
+                                pageContainers: expect.arrayContaining([
+                                    expect.objectContaining({
+                                        identifier,
+                                        uuid,
+                                        contentletsId: expect.arrayContaining(['uploaded-image'])
+                                    })
+                                ])
+                            })
+                        );
+                    });
                 });
             });
 

@@ -11,13 +11,15 @@ import { Mock, vi } from 'vitest';
 
 import { Component, output, signal } from '@angular/core';
 
+import { MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
     DotContentTypeService,
     DotContentletService,
     DotCopyContentService,
-    DotHttpErrorManagerService
+    DotHttpErrorManagerService,
+    DotMessageService
 } from '@dotcms/data-access';
 import { DotContentletCanLock, DotTreeNode, FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotEditContentDialogComponent, EditContentDialogData } from '@dotcms/edit-content';
@@ -29,16 +31,32 @@ import {
     DotSidePanelService
 } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
-import { createFakeContentType, createFakeContentlet } from '@dotcms/utils-testing';
+import {
+    MockDotMessageService,
+    createFakeContentType,
+    createFakeContentlet
+} from '@dotcms/utils-testing';
 
 import { DotUveContentEditorComponent } from './dot-uve-content-editor.component';
-import { DotUveEditContentRequest, uveContentEditorEvents } from './dot-uve-content-editor.events';
+import {
+    DotUveAddContentRequest,
+    DotUveCreateContentRequest,
+    DotUveEditContentRequest,
+    uveContentEditorEvents
+} from './dot-uve-content-editor.events';
 
 import { DotEmaDialogComponent } from '../../../components/dot-ema-dialog/dot-ema-dialog.component';
-import { FormStatus, NG_CUSTOM_EVENTS } from '../../../shared/enums';
+import { DotPageApiService } from '../../../services/dot-page-api/dot-page-api.service';
+import {
+    CONTAINER_INSERT_ERROR,
+    FormStatus,
+    NG_CUSTOM_EVENTS,
+    UVE_STATUS
+} from '../../../shared/enums';
 import { EDIT_ACTION_PAYLOAD_MOCK } from '../../../shared/mocks';
-import { DialogAction, VTLFile } from '../../../shared/models';
+import { ActionPayload, DialogAction, VTLFile } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { EditorInsertResult } from '../../../store/features/editor/models';
 
 /**
  * Stands in for the legacy JSP dialog, which needs a running dotCMS. It exposes what the content
@@ -54,6 +72,12 @@ class DotEmaDialogStubComponent {
     readonly reloadFromDialog = output<void>();
     readonly editContentlet = vi.fn();
     readonly editVTLContentlet = vi.fn();
+    readonly createContentletFromPalette = vi.fn();
+    readonly createContentlet = vi.fn();
+    readonly addContentlet = vi.fn();
+    readonly addWidget = vi.fn();
+    readonly addForm = vi.fn();
+    readonly resetDialog = vi.fn();
 }
 
 const CONTENTLET = createFakeContentlet({
@@ -126,6 +150,51 @@ const CAN_LOCK: DotContentletCanLock = {
     lockedBy: ''
 };
 
+/** The container position a palette drop or a container's "add" menu asks to insert into. */
+const INTO: ActionPayload = EDIT_ACTION_PAYLOAD_MOCK;
+
+/** The content type to create, as the SDK names it: by its variable only. */
+const CONTENT_TYPE_TO_CREATE: DotUveCreateContentRequest['contentType'] = {
+    variable: 'test',
+    name: 'test'
+};
+
+/** A contentlet the new editor reports it created. */
+const CREATED_CONTENTLET = createFakeContentlet({
+    identifier: 'created-contentlet-identifier-789',
+    inode: 'created-contentlet-inode-789',
+    contentType: 'test'
+});
+
+/** What the store answers when the container is full. */
+const CONTAINER_FULL: EditorInsertResult = {
+    didInsert: false,
+    errorCode: CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED,
+    maxContentlets: 1
+};
+
+/** What the store answers when the container already holds the contentlet. */
+const ALREADY_IN_CONTAINER: EditorInsertResult = {
+    didInsert: false,
+    errorCode: CONTAINER_INSERT_ERROR.DUPLICATE_CONTENT
+};
+
+/** The toast for a full container, naming how many contentlets it holds. */
+const CONTAINER_FULL_TOAST = {
+    severity: 'warn',
+    summary: 'Container full',
+    detail: 'This container holds up to 1 contentlets',
+    life: 3000
+};
+
+/** The toast for a contentlet the container already holds. */
+const ALREADY_IN_CONTAINER_TOAST = {
+    severity: 'info',
+    summary: 'Content already added',
+    detail: 'This content is already added to this container',
+    life: 2000
+};
+
 /** The options the editor has always opened the new editor's centered dialog with. */
 const NEW_EDITOR_DIALOG_OPTIONS = {
     appendTo: 'body',
@@ -155,7 +224,10 @@ function createStoreMock() {
         viewMode: signal(UVE_MODE.EDIT),
         pageAsset: signal<{ urlContentMap?: DotCMSURLContentMap } | null>(null),
         pageParams: signal({ url: 'index' }),
+        pageLanguageId: signal(1),
         getCurrentTreeNode: vi.fn().mockReturnValue(TREE_NODE),
+        editorInsertContentlet: vi.fn<() => EditorInsertResult>(() => ({ didInsert: true })),
+        setUveStatus: vi.fn(),
         pageReload: vi.fn(),
         pageLoad: vi.fn()
     };
@@ -170,6 +242,8 @@ describe('DotUveContentEditorComponent', () => {
     let copyContentModalService: SpyObject<DotCopyContentModalService>;
     let httpErrorManager: SpyObject<DotHttpErrorManagerService>;
     let dialogService: SpyObject<DialogService>;
+    let pageApiService: SpyObject<DotPageApiService>;
+    let messageService: SpyObject<MessageService>;
 
     /** The side panels the content editor opened, recorded instead of rendered. */
     let opened: {
@@ -196,6 +270,20 @@ describe('DotUveContentEditorComponent', () => {
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DialogService),
             mockProvider(DotSidePanelService),
+            mockProvider(DotPageApiService),
+            mockProvider(MessageService),
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({
+                    'contenttypes.content.create.contenttype': 'Create {0}',
+                    'editpage.content.add.already.title': 'Content already added',
+                    'editpage.content.add.already.message':
+                        'This content is already added to this container',
+                    'editpage.content.container.limit.title': 'Container full',
+                    'editpage.content.container.limit.message':
+                        'This container holds up to {0} contentlets'
+                })
+            },
             { provide: WINDOW, useValue: window }
         ],
         componentProviders: [mockProvider(DotCopyContentModalService)]
@@ -215,12 +303,39 @@ describe('DotUveContentEditorComponent', () => {
         spectator.detectChanges();
     };
 
+    /**
+     * Asks the content editor to create a contentlet, as a palette drop does with a container
+     * position and the SDK's createContentlet() does without one.
+     */
+    const createContent = (request: DotUveCreateContentRequest) => {
+        spectator
+            .inject(Dispatcher)
+            .dispatch(uveContentEditorEvents.uveCreateContentRequested(request));
+        spectator.detectChanges();
+    };
+
+    /** Asks the content editor to add content to a container, as its "add" menu does. */
+    const addContent = (request: DotUveAddContentRequest) => {
+        spectator
+            .inject(Dispatcher)
+            .dispatch(uveContentEditorEvents.uveAddContentRequested(request));
+        spectator.detectChanges();
+    };
+
     const legacyDialog = () => spectator.query(DotEmaDialogStubComponent);
 
-    /** Sends an `ng-event` out of the legacy dialog, as the JSP inside it does. */
-    const emitFromLegacyDialog = (name: NG_CUSTOM_EVENTS, payload?: unknown) => {
+    /**
+     * Sends an `ng-event` out of the legacy dialog, as the JSP inside it does. A dialog opened
+     * for a container position sends that position back with every event (`actionPayload`).
+     */
+    const emitFromLegacyDialog = (
+        name: NG_CUSTOM_EVENTS,
+        payload?: unknown,
+        { data, actionPayload }: { data?: unknown; actionPayload?: ActionPayload } = {}
+    ) => {
         const action: DialogAction = {
-            event: new CustomEvent('ng-event', { detail: { name, payload } }),
+            event: new CustomEvent('ng-event', { detail: { name, payload, data } }),
+            actionPayload,
             form: { status: FormStatus.PRISTINE, isTranslation: false },
             clientAction: DotCMSUVEAction.NOOP
         };
@@ -234,6 +349,10 @@ describe('DotUveContentEditorComponent', () => {
     const newEditorDialogData = () =>
         dialogService.open.mock.calls[0][1].data as EditContentDialogData;
 
+    /** The data the new editor was opened with, in the side panel. */
+    const sidePanelData = () =>
+        (opened[0].config.inputs?.['data'] as () => EditContentDialogData)();
+
     beforeEach(() => {
         store = createStoreMock();
         opened = [];
@@ -246,6 +365,8 @@ describe('DotUveContentEditorComponent', () => {
         copyContentModalService = spectator.inject(DotCopyContentModalService, true);
         httpErrorManager = spectator.inject(DotHttpErrorManagerService);
         dialogService = spectator.inject(DialogService);
+        pageApiService = spectator.inject(DotPageApiService);
+        messageService = spectator.inject(MessageService);
 
         contentTypeService.getContentType.mockReturnValue(of(LEGACY_CONTENT_TYPE));
         contentletService.getContentletByInode.mockReturnValue(of(VELOCITY_FILE));
@@ -677,6 +798,190 @@ describe('DotUveContentEditorComponent', () => {
         });
     });
 
+    describe('uveCreateContentRequested', () => {
+        describe('choosing the editor', () => {
+            it("should open the legacy create form, in the page's language, when the content type does not enable the new editor", () => {
+                createContent({ contentType: CONTENT_TYPE_TO_CREATE, into: INTO });
+
+                expect(contentTypeService.getContentType).toHaveBeenCalledWith('test');
+                expect(legacyDialog()?.createContentletFromPalette).toHaveBeenCalledWith({
+                    variable: 'test',
+                    name: 'test',
+                    actionPayload: INTO,
+                    language_id: 1
+                });
+                expect(dialogService.open).not.toHaveBeenCalled();
+            });
+
+            it('should fall back to the legacy create form when the content type lookup fails', () => {
+                contentTypeService.getContentType.mockReturnValue(
+                    throwError(() => new Error('network error'))
+                );
+
+                createContent({ contentType: CONTENT_TYPE_TO_CREATE, into: INTO });
+
+                expect(legacyDialog()?.createContentletFromPalette).toHaveBeenCalledWith(
+                    expect.objectContaining({ variable: 'test', actionPayload: INTO })
+                );
+                expect(dialogService.open).not.toHaveBeenCalled();
+            });
+
+            it('should open the new editor, titled with the content type name, when CONTENT_EDITOR2_ENABLED is true on the content type', () => {
+                contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_CONTENT_TYPE));
+
+                createContent({ contentType: CONTENT_TYPE_TO_CREATE, into: INTO });
+
+                expect(legacyDialog()?.createContentletFromPalette).not.toHaveBeenCalled();
+                expect(dialogService.open).toHaveBeenCalledWith(DotEditContentDialogComponent, {
+                    ...NEW_EDITOR_DIALOG_OPTIONS,
+                    data: {
+                        mode: 'new',
+                        contentTypeId: 'test',
+                        onContentSaved: expect.any(Function)
+                    },
+                    header: 'Create Test'
+                });
+            });
+
+            it("should title the new editor with the request's name when the content type has none", () => {
+                contentTypeService.getContentType.mockReturnValue(
+                    of(createFakeContentType({ ...NEW_EDITOR_CONTENT_TYPE, name: undefined }))
+                );
+
+                createContent({ contentType: { variable: 'test', name: 'Blog' }, into: INTO });
+
+                expect(dialogService.open.mock.calls[0][1].header).toBe('Create Blog');
+            });
+
+            it('should close the legacy dialog before opening the new editor', () => {
+                contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_CONTENT_TYPE));
+
+                createContent({ contentType: CONTENT_TYPE_TO_CREATE, into: INTO });
+
+                expect(legacyDialog()?.resetDialog).toHaveBeenCalled();
+            });
+
+            it('should open the new editor in the side panel instead of the dialog when its flag is on', () => {
+                contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_CONTENT_TYPE));
+                store.flags.set({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true });
+
+                createContent({ contentType: CONTENT_TYPE_TO_CREATE, into: INTO });
+
+                expect(dialogService.open).not.toHaveBeenCalled();
+                expect(opened).toHaveLength(1);
+                expect((opened[0].config.heading as () => string)()).toBe('Create Test');
+                expect(sidePanelData()).toEqual(
+                    expect.objectContaining({
+                        mode: 'new',
+                        contentTypeId: 'test',
+                        title: 'Create Test'
+                    })
+                );
+            });
+        });
+
+        describe('with a container position', () => {
+            beforeEach(() => {
+                contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_CONTENT_TYPE));
+            });
+
+            it('should insert what the new editor saves into the requested position', () => {
+                createContent({ contentType: CONTENT_TYPE_TO_CREATE, into: INTO });
+
+                newEditorDialogData().onContentSaved?.(CREATED_CONTENTLET);
+
+                expect(store.editorInsertContentlet).toHaveBeenCalledWith(
+                    INTO,
+                    'created-contentlet-identifier-789'
+                );
+                expect(store.pageReload).not.toHaveBeenCalled();
+                expect(messageService.add).not.toHaveBeenCalled();
+            });
+
+            it('should tell the user why when the container refuses what the new editor saved', () => {
+                store.editorInsertContentlet.mockReturnValue(CONTAINER_FULL);
+                createContent({ contentType: CONTENT_TYPE_TO_CREATE, into: INTO });
+
+                newEditorDialogData().onContentSaved?.(CREATED_CONTENTLET);
+
+                expect(messageService.add).toHaveBeenCalledWith(CONTAINER_FULL_TOAST);
+            });
+
+            it('should insert what the side panel editor saves into the requested position', () => {
+                store.flags.set({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true });
+                createContent({ contentType: CONTENT_TYPE_TO_CREATE, into: INTO });
+
+                sidePanelData().onContentSaved?.(CREATED_CONTENTLET);
+
+                expect(store.editorInsertContentlet).toHaveBeenCalledWith(
+                    INTO,
+                    'created-contentlet-identifier-789'
+                );
+            });
+
+            it('should insert nothing when the new editor saves without an identifier', () => {
+                createContent({ contentType: CONTENT_TYPE_TO_CREATE, into: INTO });
+
+                newEditorDialogData().onContentSaved?.(
+                    createFakeContentlet({ ...CREATED_CONTENTLET, identifier: undefined })
+                );
+
+                expect(store.editorInsertContentlet).not.toHaveBeenCalled();
+            });
+        });
+
+        // What the SDK's createContentlet() asks for: the contentlet is only created, so nothing
+        // goes into a container and the page reloads once it is saved.
+        describe('without a container position', () => {
+            it('should follow the content type and open the new editor when it enables it', () => {
+                contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_CONTENT_TYPE));
+
+                createContent({ contentType: CONTENT_TYPE_TO_CREATE });
+
+                expect(legacyDialog()?.createContentletFromPalette).not.toHaveBeenCalled();
+                expect(newEditorDialogData()).toEqual(
+                    expect.objectContaining({ mode: 'new', contentTypeId: 'test' })
+                );
+            });
+
+            it('should reload the page instead of inserting when the new editor saves', () => {
+                contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_CONTENT_TYPE));
+                createContent({ contentType: CONTENT_TYPE_TO_CREATE });
+
+                newEditorDialogData().onContentSaved?.(CREATED_CONTENTLET);
+
+                expect(store.pageReload).toHaveBeenCalled();
+                expect(store.editorInsertContentlet).not.toHaveBeenCalled();
+            });
+
+            it('should open the legacy create form with no position when the content type does not enable the new editor', () => {
+                createContent({ contentType: CONTENT_TYPE_TO_CREATE });
+
+                expect(legacyDialog()?.createContentletFromPalette).toHaveBeenCalledWith({
+                    variable: 'test',
+                    name: 'test',
+                    actionPayload: undefined,
+                    language_id: 1
+                });
+            });
+        });
+    });
+
+    describe('uveAddContentRequested', () => {
+        it.each([
+            ['content', 'addContentlet'],
+            ['widget', 'addWidget'],
+            ['form', 'addForm']
+        ] as const)(
+            'should open the legacy dialog to pick %s for the requested position',
+            (type, method) => {
+                addContent({ type, into: INTO });
+
+                expect(legacyDialog()?.[method]).toHaveBeenCalledWith(INTO);
+            }
+        );
+    });
+
     describe('legacy dialog', () => {
         describe('availability', () => {
             // The legacy dialog is always there, so a legacy edit opens in any mode and on any
@@ -807,6 +1112,187 @@ describe('DotUveContentEditorComponent', () => {
 
                 expect(store.pageReload).not.toHaveBeenCalled();
                 expect(store.pageLoad).not.toHaveBeenCalled();
+            });
+        });
+
+        // A dialog opened by a container's "add" menu or a palette drop sends back the container
+        // position it was opened for with every event, and what the user picks or creates in it
+        // goes into that position.
+        describe('content picked or created for a container position', () => {
+            describe('CONTENT_SEARCH_SELECT', () => {
+                const selectContent = () =>
+                    emitFromLegacyDialog(NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT, undefined, {
+                        data: { identifier: 'picked-contentlet-identifier', inode: 'picked-inode' },
+                        actionPayload: INTO
+                    });
+
+                it('should insert the picked contentlet into the position and close the dialog', () => {
+                    selectContent();
+
+                    expect(store.editorInsertContentlet).toHaveBeenCalledWith(
+                        INTO,
+                        'picked-contentlet-identifier'
+                    );
+                    expect(legacyDialog()?.resetDialog).toHaveBeenCalled();
+                });
+
+                it('should tell the user why and close the dialog when the container refuses the contentlet', () => {
+                    store.editorInsertContentlet.mockReturnValue(ALREADY_IN_CONTAINER);
+
+                    selectContent();
+
+                    expect(messageService.add).toHaveBeenCalledWith(ALREADY_IN_CONTAINER_TOAST);
+                    expect(legacyDialog()?.resetDialog).toHaveBeenCalled();
+                });
+            });
+
+            describe('SAVE_PAGE', () => {
+                const saveInDialog = () =>
+                    emitFromLegacyDialog(
+                        NG_CUSTOM_EVENTS.SAVE_PAGE,
+                        { contentletIdentifier: 'saved-contentlet-identifier' },
+                        { actionPayload: INTO }
+                    );
+
+                it('should insert the saved contentlet into the position instead of reloading the page', () => {
+                    saveInDialog();
+
+                    expect(store.editorInsertContentlet).toHaveBeenCalledWith(
+                        INTO,
+                        'saved-contentlet-identifier'
+                    );
+                    expect(store.pageReload).not.toHaveBeenCalled();
+                });
+
+                it('should leave the dialog open when the contentlet went in', () => {
+                    saveInDialog();
+
+                    expect(legacyDialog()?.resetDialog).not.toHaveBeenCalled();
+                });
+
+                it('should tell the user why and close the dialog when the container refuses the contentlet', () => {
+                    store.editorInsertContentlet.mockReturnValue(CONTAINER_FULL);
+
+                    saveInDialog();
+
+                    expect(messageService.add).toHaveBeenCalledWith(CONTAINER_FULL_TOAST);
+                    expect(legacyDialog()?.resetDialog).toHaveBeenCalled();
+                });
+            });
+
+            describe('FORM_SELECTED', () => {
+                const selectForm = () =>
+                    emitFromLegacyDialog(NG_CUSTOM_EVENTS.FORM_SELECTED, undefined, {
+                        data: { identifier: 'form-identifier' },
+                        actionPayload: INTO
+                    });
+
+                beforeEach(() => {
+                    pageApiService.getFormIndetifier.mockReturnValue(
+                        of('form-in-container-identifier')
+                    );
+                });
+
+                it('should insert the form under the identifier its container gives it, showing the page as loading meanwhile', () => {
+                    selectForm();
+
+                    expect(pageApiService.getFormIndetifier).toHaveBeenCalledWith(
+                        INTO.container.identifier,
+                        'form-identifier'
+                    );
+                    expect(store.setUveStatus).toHaveBeenCalledWith(UVE_STATUS.LOADING);
+                    expect(store.editorInsertContentlet).toHaveBeenCalledWith(
+                        INTO,
+                        'form-in-container-identifier'
+                    );
+                    expect(legacyDialog()?.resetDialog).toHaveBeenCalled();
+                });
+
+                it('should tell the user why, stop loading and close the dialog when the container refuses the form', () => {
+                    store.editorInsertContentlet.mockReturnValue(ALREADY_IN_CONTAINER);
+
+                    selectForm();
+
+                    expect(messageService.add).toHaveBeenCalledWith(ALREADY_IN_CONTAINER_TOAST);
+                    expect(store.setUveStatus).toHaveBeenLastCalledWith(UVE_STATUS.LOADED);
+                    expect(legacyDialog()?.resetDialog).toHaveBeenCalled();
+                });
+
+                it('should insert nothing when the container cannot resolve the form', () => {
+                    pageApiService.getFormIndetifier.mockReturnValue(
+                        throwError(() => new Error('network error'))
+                    );
+
+                    selectForm();
+
+                    expect(store.editorInsertContentlet).not.toHaveBeenCalled();
+                    expect(store.setUveStatus).not.toHaveBeenCalled();
+                });
+            });
+
+            // The content search's "create new" button: the JSP names the content type and the
+            // legacy create form's URL.
+            describe('CREATE_CONTENTLET', () => {
+                const createFromSearch = () =>
+                    emitFromLegacyDialog(NG_CUSTOM_EVENTS.CREATE_CONTENTLET, undefined, {
+                        data: { contentType: 'test', url: 'test/url' },
+                        actionPayload: INTO
+                    });
+
+                it('should close the legacy dialog and open the new editor, titled with the content type name, when the content type enables it', () => {
+                    contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_CONTENT_TYPE));
+
+                    createFromSearch();
+
+                    expect(contentTypeService.getContentType).toHaveBeenCalledWith('test');
+                    expect(legacyDialog()?.resetDialog).toHaveBeenCalled();
+                    expect(legacyDialog()?.createContentlet).not.toHaveBeenCalled();
+                    expect(dialogService.open).toHaveBeenCalledWith(
+                        DotEditContentDialogComponent,
+                        expect.objectContaining({
+                            data: expect.objectContaining({ mode: 'new', contentTypeId: 'test' }),
+                            header: 'Create Test'
+                        })
+                    );
+                });
+
+                it('should insert what the new editor saves into the position the dialog was opened for', () => {
+                    contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_CONTENT_TYPE));
+                    createFromSearch();
+
+                    newEditorDialogData().onContentSaved?.(CREATED_CONTENTLET);
+
+                    expect(store.editorInsertContentlet).toHaveBeenCalledWith(
+                        INTO,
+                        'created-contentlet-identifier-789'
+                    );
+                });
+
+                it("should open the legacy create form at the dialog's URL when the content type does not enable the new editor", () => {
+                    createFromSearch();
+
+                    expect(legacyDialog()?.createContentlet).toHaveBeenCalledWith({
+                        contentType: 'test',
+                        url: 'test/url',
+                        actionPayload: INTO
+                    });
+                    expect(dialogService.open).not.toHaveBeenCalled();
+                });
+
+                it("should fall back to the legacy create form at the dialog's URL when the content type lookup fails", () => {
+                    contentTypeService.getContentType.mockReturnValue(
+                        throwError(() => new Error('network error'))
+                    );
+
+                    createFromSearch();
+
+                    expect(legacyDialog()?.createContentlet).toHaveBeenCalledWith({
+                        contentType: 'test',
+                        url: 'test/url',
+                        actionPayload: INTO
+                    });
+                    expect(dialogService.open).not.toHaveBeenCalled();
+                });
             });
         });
     });

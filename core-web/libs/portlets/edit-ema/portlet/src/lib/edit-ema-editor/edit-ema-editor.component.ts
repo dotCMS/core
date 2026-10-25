@@ -1,5 +1,5 @@
 import { injectDispatch } from '@ngrx/signals/events';
-import { EMPTY, Observable, fromEvent, of } from 'rxjs';
+import { Observable, fromEvent, of } from 'rxjs';
 
 import { NgClass, NgStyle } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -26,15 +26,13 @@ import { Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogService } from 'primeng/dynamicdialog';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { ProgressBarModule } from 'primeng/progressbar';
 
-import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, filter, map, switchMap, tap } from 'rxjs/operators';
 
 import {
-    DotContentTypeService,
     DotContentletService,
     DotCopyContentService,
     DotHttpErrorManagerService,
@@ -45,25 +43,18 @@ import {
 } from '@dotcms/data-access';
 import {
     DotCMSClazzes,
-    DotCMSContentType,
     DotCMSContentlet,
     DotCMSTempFile,
     DotLanguage,
     DotTreeNode,
     EXPERIMENT_RETURN_PARAM,
-    FeaturedFlags,
     SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
-import {
-    DotEditContentDialogComponent,
-    EditContentDialogData,
-    loadDotEditContentSidePanel
-} from '@dotcms/edit-content';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
-import { DotCopyContentModalService, injectSidePanel } from '@dotcms/ui';
+import { DotCopyContentModalService } from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
 
 import { DotUveBrowserToolbarComponent } from './components/dot-uve-browser-toolbar/dot-uve-browser-toolbar.component';
@@ -82,18 +73,14 @@ import { EmaDragItem } from './components/ema-page-dropzone/types';
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
-import { DotPageApiService, DotPageAssetKeys } from '../services/dot-page-api/dot-page-api.service';
+import { DotPageAssetKeys } from '../services/dot-page-api/dot-page-api.service';
 import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler/dot-uve-actions-handler.service';
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
 import { UveIframeMessengerService } from '../services/iframe-messenger/uve-iframe-messenger.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
+import { notifyContainerInsertRefused } from '../shared/container-insert';
 import { canEditOwningContentlet, notifyNoEditPermission } from '../shared/contentlet-permission';
-import {
-    CONTAINER_INSERT_ERROR,
-    EDITOR_STATE,
-    NG_CUSTOM_EVENTS,
-    UVE_STATUS
-} from '../shared/enums';
+import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
     ActionPayload,
     ClientData,
@@ -110,29 +97,16 @@ import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
 import { IframeAccessMode, PageType } from '../store/models';
 import {
     TEMPORAL_DRAG_ITEM,
-    areContainersEquals,
     deleteContentletFromContainer,
     getLanguageChangePageParams,
-    insertContentletInContainer,
     isAssetPath,
     isNavigableHref,
     isSamePageNavigation,
+    isSelectedContentletGone,
     measureCanvasAvailableSize,
     resolveClickedAnchor,
     scrollIframeToFragment
 } from '../utils';
-
-// Message keys constants
-const MESSAGE_KEY = {
-    DUPLICATE_CONTENT: {
-        TITLE: 'editpage.content.add.already.title',
-        MESSAGE: 'editpage.content.add.already.message'
-    },
-    CONTAINER_LIMIT: {
-        TITLE: 'editpage.content.container.limit.title',
-        MESSAGE: 'editpage.content.container.limit.message'
-    }
-} as const;
 
 @Component({
     selector: 'dot-edit-ema-editor',
@@ -204,13 +178,10 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     private readonly cd = inject(ChangeDetectorRef);
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private readonly dotCopyContentService = inject(DotCopyContentService);
-    private readonly dotContentTypeService = inject(DotContentTypeService);
     private readonly dotContentletService = inject(DotContentletService);
-    private readonly dialogService = inject(DialogService);
     private readonly tempFileUploadService = inject(DotTempFileUploadService);
     private readonly dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
     private readonly inlineEditingService = inject(InlineEditService);
-    private readonly dotPageApiService = inject(DotPageApiService);
     private readonly destroyRef = inject(DestroyRef);
     private readonly actionsHandler = inject(DotUveActionsHandlerService);
     private readonly dragDropService = inject(DotUveDragDropService);
@@ -219,24 +190,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
-
-    /**
-     * Drives the Edit Content side panel for the create flows: the content to create, or `null`
-     * when closed. Editing an existing contentlet goes through the content editor instead.
-     * Only used when {@link $sidePanelEnabled} is on; the panel is open while it is set (see the
-     * constructor).
-     */
-    protected readonly $editContentPanel = signal<EditContentDialogData | null>(null);
-
-    /**
-     * Feature flag: when on, the editor opens in the side panel; when off, it opens in the centered
-     * dialog (previous behavior). Read from the UVE store's `withFlags` slice (batch-fetched once on
-     * init, degrades to `false` on a failed config read) — defaults to `false` until it resolves, so
-     * the dialog is used meanwhile.
-     */
-    protected readonly $sidePanelEnabled = computed(
-        () => this.uveStore.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] ?? false
-    );
 
     // Component builds its own editor props locally
     protected readonly $showDialogs = computed<boolean>(() => {
@@ -491,18 +444,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             this.uveStore.viewSetIframeSize({ width, height });
         });
     });
-
-    constructor() {
-        // The Edit Content side panel, open while `$editContentPanel` is set. Post-save work runs
-        // through the request's `onContentSaved`/`onCancel` callbacks; closing clears the request.
-        // Loaded on its first open, so the editor stays out of this portlet's chunk.
-        injectSidePanel(this.$editContentPanel, {
-            component: loadDotEditContentSidePanel,
-            heading: (data) => data.title ?? '',
-            inputs: (data) => ({ data }),
-            closed: () => this.$editContentPanel.set(null)
-        });
-    }
 
     ngOnInit(): void {
         // The store outlives the editor, so only the editor knows when it is created again.
@@ -912,23 +853,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      * @memberof EditEmaEditorComponent
      */
     #checkAndResetActiveContentlet(pageContainers: PageContainer[]): void {
-        const selected = this.uveStore.editorSelected();
-        const payload = selected?.payload;
-
-        if (!payload?.contentlet?.identifier) {
-            return;
-        }
-
-        const activeContentletId = payload.contentlet.identifier;
-        const stillExists = pageContainers.some((container) => {
-            // For now, if is not the same container, we deactivate the active contentlet
-            // This can be improved in the future to check if the contentlet was moved, but we need to implement optimistic updates in UVE first
-            // Because moving contentlets change the container structure, and we need to have a rollback mechanism in case the update fails
-            const isSameContainer = areContainersEquals(container, payload.container);
-            return container.contentletsId?.includes(activeContentletId) && isSameContainer;
-        });
-
-        if (!stillExists) {
+        if (isSelectedContentletGone(this.uveStore.editorSelected(), pageContainers)) {
             this.uveStore.resetSelected();
         }
     }
@@ -973,69 +898,38 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 });
             }
 
-            const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
-                ...payload,
-                newContentletId: draggedPayload.item.contentlet.identifier
-            });
-
-            if (!didInsert) {
-                if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
-                    this.handleContainerLimitReached(payload.container.maxContentlets);
-                } else {
-                    this.handleDuplicatedContentlet();
-                }
-
-                return;
-            }
-
-            // Check if active contentlet was removed during move operation
-            this.#checkAndResetActiveContentlet(pageContainers);
-
-            this.uveStore.editorSave(pageContainers);
+            this.#insertDropped(payload, draggedPayload.item.contentlet.identifier);
 
             return;
         } else if (dragItem.draggedPayload.type === 'content-type') {
             this.uveStore.resetEditorProperties(); // In case the user cancels the creation of the contentlet, we already have the editor in idle state
 
-            const item = dragItem.draggedPayload.item;
-            const languageId = this.uveStore.pageLanguageId();
+            const { variable, name } = dragItem.draggedPayload.item;
 
-            this.#openNewContentDialogOrFallback(
-                item.variable,
-                (contentType) =>
-                    this.#openNewEditContentDialogForPaletteDrop(
-                        payload,
-                        item.variable,
-                        contentType?.name ?? item.name
-                    ),
-                () => {
-                    this.dialog.createContentletFromPalette({
-                        ...item,
-                        actionPayload: payload,
-                        language_id: languageId
-                    });
-                }
-            );
-        } else if (dragItem.draggedPayload.type === 'temp') {
-            const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
-                ...payload,
-                newContentletId: payload.newContentlet.identifier
+            this.contentEditor.uveCreateContentRequested({
+                contentType: { variable, name },
+                into: payload
             });
+        } else if (dragItem.draggedPayload.type === 'temp' && payload.newContentlet) {
+            // A temp drop is a file uploaded on drop, which always carries the new contentlet.
+            this.#insertDropped(payload, payload.newContentlet.identifier);
+        }
+    }
 
-            if (!didInsert) {
-                if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
-                    this.handleContainerLimitReached(payload.container.maxContentlets);
-                } else {
-                    this.handleDuplicatedContentlet();
-                }
+    /**
+     * Inserts a dropped contentlet into its container position through the store, and tells the
+     * user why when the container refuses it.
+     *
+     * @param into the drop position
+     * @param contentletId the dropped contentlet
+     */
+    #insertDropped(into: ActionPayload, contentletId: string): void {
+        const result = this.uveStore.editorInsertContentlet(into, contentletId);
 
-                return;
-            }
-
-            // Check if active contentlet was removed during temp insert operation
-            this.#checkAndResetActiveContentlet(pageContainers);
-
-            this.uveStore.editorSave(pageContainers);
+        // `=== false`: without strictNullChecks, as this library compiles, `!` does not narrow the
+        // result to a refusal.
+        if (result.didInsert === false) {
+            notifyContainerInsertRefused(result, this.messageService, this.dotMessageService);
         }
     }
     /**
@@ -1073,31 +967,12 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         this.handleInlineEditing(e);
     }
 
-    protected handleNgEvent({ event, actionPayload, clientAction }: DialogAction) {
+    protected handleNgEvent({ event }: DialogAction) {
         const { detail } = event;
 
         return (<Record<NG_CUSTOM_EVENTS, () => void>>{
             [NG_CUSTOM_EVENTS.EDIT_CONTENTLET_LOADED]: () => {
                 /* */
-            },
-            [NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT]: () => {
-                const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
-                    ...actionPayload,
-                    newContentletId: detail.data.identifier
-                });
-
-                if (!didInsert) {
-                    if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
-                        this.handleContainerLimitReached(actionPayload.container.maxContentlets);
-                    } else {
-                        this.handleDuplicatedContentlet();
-                    }
-
-                    return;
-                }
-
-                this.uveStore.editorSave(pageContainers);
-                this.dialog.resetDialog();
             },
             [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
                 const { shouldReloadPage, contentletIdentifier } = detail.payload ?? {};
@@ -1108,101 +983,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                     return;
                 }
 
-                if (!actionPayload) {
-                    this.uveStore.pageReload();
-
-                    return;
-                }
-
-                if (clientAction === DotCMSUVEAction.EDIT_CONTENTLET) {
-                    this.sendMessageToIframe(
-                        {
-                            name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
-                        },
-                        this.host
-                    );
-                }
-
-                const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
-                    ...actionPayload,
-                    newContentletId: contentletIdentifier
-                });
-
-                if (!didInsert) {
-                    if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
-                        this.handleContainerLimitReached(actionPayload.container.maxContentlets);
-                    } else {
-                        this.handleDuplicatedContentlet();
-                    }
-
-                    return;
-                }
-
-                this.uveStore.editorSave(pageContainers);
-            },
-            /**
-             * Handles the create contentlet event emitted from within the JSP/iframe
-             * when a content type is selected (e.g. via the + button in a container).
-             *
-             * Opens the contentlet creation dialog with the pre-resolved action URL and
-             * inserts the new contentlet into the target container on save.
-             *
-             * @see {NG_CUSTOM_EVENTS.CREATE_CONTENTLET}
-             * @memberof EditEmaEditorComponent
-             */
-            [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
-                this.#openNewContentDialogOrFallback(
-                    detail.data.contentType,
-                    (contentType) =>
-                        this.#openNewEditContentDialogForPaletteDrop(
-                            actionPayload,
-                            detail.data.contentType,
-                            contentType?.name ?? detail.data.contentType
-                        ),
-                    () => {
-                        this.dialog.createContentlet({
-                            contentType: detail.data.contentType,
-                            url: detail.data.url,
-                            actionPayload
-                        });
-                        this.cd.detectChanges();
-                    }
-                );
-            },
-            [NG_CUSTOM_EVENTS.FORM_SELECTED]: () => {
-                const formId = detail.data.identifier;
-
-                this.dotPageApiService
-                    .getFormIndetifier(actionPayload.container.identifier, formId)
-                    .pipe(
-                        tap(() => {
-                            this.uveStore.setUveStatus(UVE_STATUS.LOADING);
-                        }),
-                        map((newFormId: string) => {
-                            return {
-                                ...actionPayload,
-                                newContentletId: newFormId
-                            };
-                        }),
-                        catchError(() => EMPTY),
-                        take(1)
-                    )
-                    .subscribe((response) => {
-                        const { pageContainers, didInsert, errorCode } =
-                            insertContentletInContainer(response);
-
-                        if (!didInsert) {
-                            if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
-                                this.handleContainerLimitReached(response.container.maxContentlets);
-                            } else {
-                                this.handleDuplicatedContentlet();
-                            }
-                            this.uveStore.setUveStatus(UVE_STATUS.LOADED);
-                        } else {
-                            this.uveStore.editorSave(pageContainers);
-                            this.dialog.resetDialog();
-                        }
-                    });
+                this.uveStore.pageReload();
             },
             [NG_CUSTOM_EVENTS.SAVE_MENU_ORDER]: () => {
                 this.messageService.add({
@@ -1298,63 +1079,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         return !!data && typeof data === 'object' && 'action' in data;
     }
 
-    private handleDuplicatedContentlet() {
-        this.messageService.add({
-            severity: 'info',
-            summary: this.dotMessageService.get(MESSAGE_KEY.DUPLICATE_CONTENT.TITLE),
-            detail: this.dotMessageService.get(MESSAGE_KEY.DUPLICATE_CONTENT.MESSAGE),
-            life: 2000
-        });
-
-        this.uveStore.resetEditorProperties();
-
-        this.dialog.resetDialog();
-    }
-
-    private handleContainerLimitReached(maxContentlets: number) {
-        this.messageService.add({
-            severity: 'warn',
-            summary: this.dotMessageService.get(MESSAGE_KEY.CONTAINER_LIMIT.TITLE),
-            detail: this.dotMessageService.get(
-                MESSAGE_KEY.CONTAINER_LIMIT.MESSAGE,
-                maxContentlets.toString()
-            ),
-            life: 3000
-        });
-
-        this.uveStore.resetEditorProperties();
-
-        this.dialog.resetDialog();
-    }
-
-    /**
-     * Fetches the content type and opens the new Angular-based editor if the feature flag is enabled,
-     * otherwise calls the legacy fallback.
-     */
-    #openNewContentDialogOrFallback(
-        contentTypeVariable: string,
-        onNewEditor: (contentType: DotCMSContentType | null) => void,
-        legacyFallback: () => void
-    ): void {
-        this.dotContentTypeService
-            .getContentType(contentTypeVariable)
-            .pipe(
-                take(1),
-                takeUntilDestroyed(this.destroyRef),
-                catchError(() => of(null))
-            )
-            .subscribe((contentType) => {
-                if (
-                    contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] ===
-                    true
-                ) {
-                    onNewEditor(contentType);
-                } else {
-                    legacyFallback();
-                }
-            });
-    }
-
     /**
      * Asks the content editor to edit a contentlet. Public because DotEmaShellComponent calls
      * it for the "Properties" nav action (editing the page's own contentlet), through the
@@ -1366,85 +1090,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
      */
     openContentForEdit(contentlet: DotCMSContentlet): void {
         this.contentEditor.uveEditContentRequested({ contentlet });
-    }
-
-    /**
-     * Create flow when a content type is dropped from the palette and the type uses the new editor.
-     */
-    #openNewEditContentDialogForPaletteDrop(
-        actionPayload: ActionPayload,
-        contentTypeVariable: string,
-        contentTypeName: string
-    ): void {
-        this.dialog.resetDialog();
-
-        const dialogData: EditContentDialogData = {
-            mode: 'new',
-            contentTypeId: contentTypeVariable,
-            onContentSaved: (contentlet) => {
-                if (!contentlet?.identifier) {
-                    return;
-                }
-
-                const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
-                    ...actionPayload,
-                    newContentletId: contentlet.identifier
-                });
-
-                if (!didInsert) {
-                    if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
-                        this.handleContainerLimitReached(actionPayload.container.maxContentlets);
-                    } else {
-                        this.handleDuplicatedContentlet();
-                    }
-
-                    return;
-                }
-
-                this.#checkAndResetActiveContentlet(pageContainers);
-                this.uveStore.editorSave(pageContainers);
-            }
-        };
-
-        this.#openDotEditContentShell(
-            this.dotMessageService.get('contenttypes.content.create.contenttype', contentTypeName),
-            dialogData
-        );
-    }
-
-    /**
-     * Opens the new Edit Content editor with the given header and dialog data — in the side panel
-     * when the feature flag is on, otherwise in the centered dialog (previous behavior).
-     */
-    #openDotEditContentShell(header: string, dialogData: EditContentDialogData): void {
-        if (this.$sidePanelEnabled()) {
-            // Side panel: shows `title` in its header (the dialog used `header`) and fires
-            // `dialogData.onContentSaved`/`onCancel` on close — so the create flows work
-            // unchanged.
-            this.$editContentPanel.set({ ...dialogData, title: header });
-
-            return;
-        }
-
-        // Side panel disabled: open the centered dialog (previous behavior).
-        this.dialogService.open(DotEditContentDialogComponent, {
-            appendTo: 'body',
-            baseZIndex: 10000,
-            closable: true,
-            closeOnEscape: true,
-            draggable: false,
-            keepInViewport: true,
-            modal: true,
-            resizable: true,
-            position: 'center',
-            width: '95%',
-            height: '95%',
-            maskStyleClass: 'p-dialog-mask-dynamic p-dialog-create-content',
-            style: { 'max-width': '1400px', 'max-height': '900px' },
-            contentStyle: { padding: '0' },
-            data: dialogData,
-            header
-        });
     }
 
     private handleCopyContent(treeNode: DotTreeNode): Observable<DotCMSContentlet> {
@@ -1767,22 +1412,5 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             // Removed pageAPIResponse spread
             params: this.uveStore.pageParams()
         };
-    }
-
-    protected handleAddContent(event: {
-        type: 'content' | 'form' | 'widget';
-        payload: ActionPayload;
-    }): void {
-        switch (event.type) {
-            case 'content':
-                this.dialog.addContentlet(event.payload);
-                break;
-            case 'form':
-                this.dialog.addForm(event.payload);
-                break;
-            case 'widget':
-                this.dialog.addWidget(event.payload);
-                break;
-        }
     }
 }

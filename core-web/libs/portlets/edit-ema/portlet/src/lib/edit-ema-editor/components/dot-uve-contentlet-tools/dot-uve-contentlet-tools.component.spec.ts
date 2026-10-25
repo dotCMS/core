@@ -636,68 +636,71 @@ describe('DotUveContentletToolsComponent', () => {
             });
         });
 
-        describe('addContent', () => {
-            it('should emit addContent with type "content" when selecting content from menu', () => {
+        describe('uveAddContentRequested', () => {
+            it('should ask to add content above the contentlet when selecting content from the top menu', () => {
                 const addTopButton = spectator.query(byTestId('hover-add-top-button'));
                 const button = addTopButton?.querySelector('button');
                 spectator.click(button as Element);
                 spectator.detectChanges();
 
                 // Get the menu items and trigger the first command
-                const handler = vi.fn();
-                spectator.output('addContent').subscribe(handler);
                 const menuItems = spectator.component.menuItems();
                 menuItems[0].command?.({});
 
-                expect(handler).toHaveBeenCalledWith({
-                    type: 'content',
-                    payload: {
-                        ...MOCK_CONTENTLET_AREA.payload,
-                        position: 'before'
-                    }
-                });
+                expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                    uveContentEditorEvents.uveAddContentRequested({
+                        type: 'content',
+                        into: {
+                            ...MOCK_CONTENTLET_AREA.payload,
+                            position: 'before'
+                        }
+                    }),
+                    { scope: 'self' }
+                );
             });
 
-            it('should emit addContent with type "widget" when selecting widget from menu', () => {
+            it('should ask to add a widget below the contentlet when selecting widget from the bottom menu', () => {
                 const addBottomButton = spectator.query(byTestId('hover-add-bottom-button'));
                 const button = addBottomButton?.querySelector('button');
                 spectator.click(button as Element);
                 spectator.detectChanges();
 
                 // Get the menu items and trigger the second command
-                const handler = vi.fn();
-                spectator.output('addContent').subscribe(handler);
                 const menuItems = spectator.component.menuItems();
                 menuItems[1].command?.({});
 
-                expect(handler).toHaveBeenCalledWith({
-                    type: 'widget',
-                    payload: {
-                        ...MOCK_CONTENTLET_AREA.payload,
-                        position: 'after'
-                    }
-                });
+                expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                    uveContentEditorEvents.uveAddContentRequested({
+                        type: 'widget',
+                        into: {
+                            ...MOCK_CONTENTLET_AREA.payload,
+                            position: 'after'
+                        }
+                    }),
+                    { scope: 'self' }
+                );
             });
 
-            it('should emit addContent with type "form" when selecting form from menu', () => {
+            it('should ask to add a form below the contentlet when selecting form from the bottom menu', () => {
                 const addBottomButton = spectator.query(byTestId('hover-add-bottom-button'));
                 const button = addBottomButton?.querySelector('button');
                 spectator.click(button as Element);
                 spectator.detectChanges();
 
                 // Get the menu items and trigger the third command (form)
-                const handler = vi.fn();
-                spectator.output('addContent').subscribe(handler);
                 const menuItems = spectator.component.menuItems();
                 menuItems[2].command?.({});
 
-                expect(handler).toHaveBeenCalledWith({
-                    type: 'form',
-                    payload: {
-                        ...MOCK_CONTENTLET_AREA.payload,
-                        position: 'after'
-                    }
-                });
+                expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                    uveContentEditorEvents.uveAddContentRequested({
+                        type: 'form',
+                        into: {
+                            ...MOCK_CONTENTLET_AREA.payload,
+                            position: 'after'
+                        }
+                    }),
+                    { scope: 'self' }
+                );
             });
         });
 
@@ -998,10 +1001,7 @@ describe('DotUveContentletToolsComponent', () => {
     });
 
     describe('Position flag behavior', () => {
-        it('should emit addContent with "before" position when clicking top add button', () => {
-            const handler = vi.fn();
-            spectator.output('addContent').subscribe(handler);
-
+        it('should ask to add "before" the contentlet when clicking top add button', () => {
             const addTopButton = spectator.query(byTestId('hover-add-top-button'));
             const button = addTopButton?.querySelector('button');
             spectator.click(button as Element);
@@ -1011,18 +1011,16 @@ describe('DotUveContentletToolsComponent', () => {
             const menuItems = spectator.component.menuItems();
             menuItems[0].command?.({});
 
-            expect(handler).toHaveBeenCalledWith({
-                type: 'content',
-                payload: expect.objectContaining({
-                    position: 'before'
-                })
-            });
+            expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                uveContentEditorEvents.uveAddContentRequested({
+                    type: 'content',
+                    into: expect.objectContaining({ position: 'before' })
+                }),
+                { scope: 'self' }
+            );
         });
 
-        it('should emit addContent with "after" position when clicking bottom add button', () => {
-            const handler = vi.fn();
-            spectator.output('addContent').subscribe(handler);
-
+        it('should ask to add "after" the contentlet when clicking bottom add button', () => {
             const addBottomButton = spectator.query(byTestId('hover-add-bottom-button'));
             const button = addBottomButton?.querySelector('button');
             spectator.click(button as Element);
@@ -1032,12 +1030,13 @@ describe('DotUveContentletToolsComponent', () => {
             const menuItems = spectator.component.menuItems();
             menuItems[0].command?.({});
 
-            expect(handler).toHaveBeenCalledWith({
-                type: 'content',
-                payload: expect.objectContaining({
-                    position: 'after'
-                })
-            });
+            expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                uveContentEditorEvents.uveAddContentRequested({
+                    type: 'content',
+                    into: expect.objectContaining({ position: 'after' })
+                }),
+                { scope: 'self' }
+            );
         });
     });
 
