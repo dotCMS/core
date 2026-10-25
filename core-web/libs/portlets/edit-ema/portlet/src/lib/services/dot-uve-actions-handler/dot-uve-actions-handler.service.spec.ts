@@ -212,43 +212,49 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
         service = spectator.service;
     });
 
-    it('should call onSectionOffset with the payload when the action is SECTION_OFFSET', () => {
-        const onSectionOffset = vi.fn();
-        const payload = { sectionIndex: 2, offsetTop: 450 };
-
+    /** Answers a scroll-to-section request the way the SDK does, with the section's offset. */
+    const handleSectionOffset = (offsetTop: number, contentWindow: Window | null) =>
         service.handleAction(
-            { action: DotCMSUVEAction.SECTION_OFFSET, payload },
+            {
+                action: DotCMSUVEAction.SECTION_OFFSET,
+                payload: { sectionIndex: 2, offsetTop }
+            },
             {
                 uveStore: buildMockStore() as unknown as InstanceType<typeof UVEStore>,
                 dialog: null,
                 inlineEditingService: null,
-                contentWindow: null,
+                contentWindow,
                 host: 'http://localhost',
-                onCopyContent: vi.fn(),
-                onSectionOffset
+                onCopyContent: vi.fn()
             }
         );
 
-        expect(onSectionOffset).toHaveBeenCalledWith(payload);
+    it('should scroll the page in the iframe smoothly to the section the SDK reports', () => {
+        const contentWindow = { scrollTo: vi.fn() } as unknown as Window;
+
+        handleSectionOffset(450, contentWindow);
+
+        expect(contentWindow.scrollTo).toHaveBeenCalledWith({
+            top: 450,
+            left: 0,
+            behavior: 'smooth'
+        });
     });
 
-    it('should not throw when onSectionOffset is not provided', () => {
-        expect(() => {
-            service.handleAction(
-                {
-                    action: DotCMSUVEAction.SECTION_OFFSET,
-                    payload: { sectionIndex: 1, offsetTop: 100 }
-                },
-                {
-                    uveStore: buildMockStore() as unknown as InstanceType<typeof UVEStore>,
-                    dialog: null,
-                    inlineEditingService: null,
-                    contentWindow: null,
-                    host: 'http://localhost',
-                    onCopyContent: vi.fn()
-                }
-            );
-        }).not.toThrow();
+    it('should scroll to the top of the page when the SDK reports a negative offset', () => {
+        const contentWindow = { scrollTo: vi.fn() } as unknown as Window;
+
+        handleSectionOffset(-100, contentWindow);
+
+        expect(contentWindow.scrollTo).toHaveBeenCalledWith({
+            top: 0,
+            left: 0,
+            behavior: 'smooth'
+        });
+    });
+
+    it('should do nothing when the iframe window is unavailable', () => {
+        expect(() => handleSectionOffset(450, null)).not.toThrow();
     });
 
     it('should call dialog.createContentletFromPalette when action is CREATE_CONTENTLET', () => {

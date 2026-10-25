@@ -22,30 +22,6 @@
     height: 0;
 }
 
-.palette-wrapper {
-    grid-column: 1 / 2;
-    grid-row: 2 / -1;
-    overflow: hidden;
-    width: 0;
-    transition: width $slow-animation-speed ease-in-out;
-
-    &.open {
-        width: clamp(280px, 15vw, 320px);
-    }
-
-    dot-uve-palette {
-        width: clamp(280px, 15vw, 320px);
-        min-width: clamp(280px, 15vw, 320px);
-        display: block;
-        transform: translateX(-100%);
-        transition: transform $slow-animation-speed ease-in-out;
-    }
-
-    &.open dot-uve-palette {
-        transform: translateX(0);
-    }
-}
-
 dot-device-selector-seo {
     display: none;
 }

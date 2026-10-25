@@ -17,9 +17,7 @@
 }
 
 @if (uveStore.editorCanEditContent()) {
-    <div class="palette-wrapper border-r border-gray-200" [class.open]="$paletteOpen">
-        <dot-uve-palette (onNodeSelect)="handlePaletteNodeSelect($event)" data-testId="palette" />
-    </div>
+    <dot-uve-palette class="col-[1/2] row-[2/-1]" data-testId="palette" />
 }
 
 <div

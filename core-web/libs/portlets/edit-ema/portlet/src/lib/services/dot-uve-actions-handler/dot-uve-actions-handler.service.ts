@@ -52,8 +52,6 @@ export interface ActionsHandlerDependencies {
     contentWindow: Window | null;
     host: string;
     onCopyContent: (currentTreeNode: DotTreeNode) => Observable<DotCMSContentlet>;
-    /** Called when the iframe reports the offsetTop of a section so the editor can scroll to it. */
-    onSectionOffset?: (payload: { sectionIndex: number; offsetTop: number }) => void;
 }
 
 @Injectable()
@@ -65,15 +63,7 @@ export class DotUveActionsHandlerService {
     private readonly contentEditor = injectDispatch(uveContentEditorEvents);
 
     handleAction({ action, payload }: PostMessage, deps: ActionsHandlerDependencies): void {
-        const {
-            uveStore,
-            dialog,
-            inlineEditingService,
-            contentWindow,
-            host,
-            onCopyContent,
-            onSectionOffset
-        } = deps;
+        const { uveStore, dialog, inlineEditingService, contentWindow, host, onCopyContent } = deps;
 
         const CLIENT_ACTIONS_FUNC_MAP: Record<DotCMSUVEAction, (payload: unknown) => void> = {
             [DotCMSUVEAction.NAVIGATION_UPDATE]: (payload: SetUrlPayload) => {
@@ -402,7 +392,14 @@ export class DotUveActionsHandlerService {
                 sectionIndex: number;
                 offsetTop: number;
             }) => {
-                onSectionOffset?.(payload);
+                // The SDK's answer to the palette's scroll-to-section request. The iframe scrolls
+                // internally (the canvas viewport is overflow:hidden), and offsetTop is already in
+                // the iframe's CSS coordinate space, so no zoom math is needed.
+                contentWindow?.scrollTo({
+                    top: Math.max(0, payload.offsetTop),
+                    left: 0,
+                    behavior: 'smooth'
+                });
             }
         };
 

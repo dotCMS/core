@@ -292,9 +292,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
     readonly ogTagsResults$ = toObservable<SeoMetaTagsResult[]>(this.uveStore.viewOgTagsResults);
 
-    get $paletteOpen() {
-        return this.uveStore.editorPaletteOpen();
-    }
     get $editPanelOpen() {
         return this.uveStore.editorEditPanelOpen();
     }
@@ -633,24 +630,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             inlineEditingService: this.inlineEditingService,
             contentWindow: this.contentWindow,
             host: this.host,
-            onCopyContent: (currentTreeNode) => this.handleCopyContent(currentTreeNode),
-            onSectionOffset: (payload) => this.handleSectionOffset(payload)
-        });
-    }
-
-    /**
-     * Scroll the iframe to the given y offset (sent by the SDK from inside the
-     * iframe, e.g. when a section node is selected in the palette).
-     *
-     * Pre-PR-35539 this scrolled the canvas viewport, but the canvas viewport
-     * is now overflow:hidden and the iframe scrolls internally. offsetTop is
-     * already in the iframe's CSS coordinate space, so no zoom math is needed.
-     */
-    protected handleSectionOffset({ offsetTop }: { offsetTop: number }): void {
-        this.iframeComponent?.contentWindow?.scrollTo({
-            top: Math.max(0, offsetTop),
-            left: 0,
-            behavior: 'smooth'
+            onCopyContent: (currentTreeNode) => this.handleCopyContent(currentTreeNode)
         });
     }
 
@@ -1804,28 +1784,5 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
                 this.dialog.addWidget(event.payload);
                 break;
         }
-    }
-
-    /**
-     * Handles palette node selection by asking the iframe SDK for the section's offsetTop,
-     * then scrolling the editor-content container once the reply arrives.
-     *
-     * @param event Event containing selector and type of the selected node
-     */
-    protected handlePaletteNodeSelect(event: { selector: string; type: string }): void {
-        // Extract 1-based section index from '#section-N' or '#dot-section-N'
-        const match = event.selector.match(/#(?:dot-)?section-(\d+)/);
-
-        if (!match) {
-            return;
-        }
-
-        this.sendMessageToIframe(
-            {
-                name: __DOTCMS_UVE_EVENT__.UVE_SCROLL_TO_SECTION,
-                sectionIndex: parseInt(match[1], 10)
-            },
-            this.host
-        );
     }
 }

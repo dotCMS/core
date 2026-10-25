@@ -596,21 +596,6 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            it('should hide palette when state changes', () => {
-                const wrapper = spectator.query('.palette-wrapper');
-
-                // First, make sure palette wrapper is open by default
-                expect(wrapper.classList).toContain('open');
-
-                // Simulate Click the toggle button
-                store.setPaletteOpen(false);
-
-                spectator.detectChanges();
-
-                // Palette wrapper should no longer have the open class
-                expect(wrapper.classList).not.toContain('open');
-            });
-
             it('should ignore iframe height postMessage when the iframe is locally accessible', () => {
                 const iframe = spectator.debugElement.query(By.css('[data-testId="iframe"]'));
                 const mockDoc = document.implementation.createHTMLDocument();
@@ -3572,47 +3557,6 @@ describe('EditEmaEditorComponent', () => {
 
                 afterEach(() => {
                     vi.clearAllMocks();
-                });
-            });
-
-            describe('handleSectionOffset', () => {
-                it('scrolls the iframe contentWindow (not the canvas viewport) to the offset', () => {
-                    const scrollToSpy = vi.fn();
-                    Object.defineProperty(spectator.component.iframeComponent, 'contentWindow', {
-                        value: { scrollTo: scrollToSpy },
-                        configurable: true
-                    });
-
-                    spectator.component['handleSectionOffset']({ offsetTop: 750 });
-
-                    expect(scrollToSpy).toHaveBeenCalledWith({
-                        top: 750,
-                        left: 0,
-                        behavior: 'smooth'
-                    });
-                });
-
-                it('clamps negative offsetTop to 0', () => {
-                    const scrollToSpy = vi.fn();
-                    Object.defineProperty(spectator.component.iframeComponent, 'contentWindow', {
-                        value: { scrollTo: scrollToSpy },
-                        configurable: true
-                    });
-
-                    spectator.component['handleSectionOffset']({ offsetTop: -100 });
-
-                    expect(scrollToSpy).toHaveBeenCalledWith(expect.objectContaining({ top: 0 }));
-                });
-
-                it('does nothing when the iframe contentWindow is unavailable', () => {
-                    Object.defineProperty(spectator.component.iframeComponent, 'contentWindow', {
-                        value: null,
-                        configurable: true
-                    });
-
-                    expect(() =>
-                        spectator.component['handleSectionOffset']({ offsetTop: 100 })
-                    ).not.toThrow();
                 });
             });
         });
