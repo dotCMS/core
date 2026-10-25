@@ -42,7 +42,6 @@ import {
     DotCMSContentlet,
     DotCMSTempFile,
     DotTreeNode,
-    EXPERIMENT_RETURN_PARAM,
     SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
@@ -65,8 +64,8 @@ import { DotUvePaletteComponent } from './components/dot-uve-palette/dot-uve-pal
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-page-dropzone.component';
 import { EmaDragItem } from './components/ema-page-dropzone/types';
+import { DotUveCanvasSizingDirective } from './directives/dot-uve-canvas-sizing/dot-uve-canvas-sizing.directive';
 
-import { DotPageAssetKeys } from '../services/dot-page-api/dot-page-api.service';
 import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler/dot-uve-actions-handler.service';
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
 import { UveIframeMessengerService } from '../services/iframe-messenger/uve-iframe-messenger.service';
@@ -90,11 +89,12 @@ import { IframeAccessMode, PageType } from '../store/models';
 import {
     TEMPORAL_DRAG_ITEM,
     deleteContentletFromContainer,
+    getPageOwnedParamKeys,
     isAssetPath,
     isNavigableHref,
+    isPageSiteHost,
     isSamePageNavigation,
     isSelectedContentletGone,
-    measureCanvasAvailableSize,
     resolveClickedAnchor,
     scrollIframeToFragment
 } from '../utils';
@@ -124,7 +124,8 @@ import {
         InputGroupAddonModule,
         DotUveContentEditorComponent,
         DotUveBrowserToolbarComponent,
-        DotUveEditPanelComponent
+        DotUveEditPanelComponent,
+        DotUveCanvasSizingDirective
     ],
     providers: [
         DotPaletteListStore,
@@ -141,7 +142,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     @ViewChild('iframe') iframeComponent!: DotUveIframeComponent;
     @ViewChild('customDragImage') customDragImage: ElementRef<HTMLDivElement>;
     @ViewChild('zoomContainer') zoomContainer!: ElementRef<HTMLDivElement>;
-    @ViewChild('canvasViewport') canvasViewport!: ElementRef<HTMLDivElement>;
     @ViewChild('editorContent') editorContent!: ElementRef<HTMLDivElement>;
 
     get iframe(): ElementRef<HTMLIFrameElement> | undefined {
@@ -380,25 +380,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
     // selected overlay to flash at stale coordinates before snapping to
     // the new ones.
 
-    readonly $responsiveModeSyncEffect = effect(() => {
-        const isResponsive = this.uveStore.$viewIsResponsiveMode();
-        if (!isResponsive) {
-            return;
-        }
-
-        untracked(() => {
-            if (this.uveStore.editorState() === EDITOR_STATE.RESIZING) {
-                return;
-            }
-            const width = this.uveStore.viewCanvasAvailableWidth();
-            const height = this.uveStore.viewCanvasAvailableHeight();
-            if (width <= 0 || height <= 0) {
-                return;
-            }
-            this.uveStore.viewSetIframeSize({ width, height });
-        });
-    });
-
     ngOnInit(): void {
         // The store outlives the editor, so only the editor knows when it is created again.
         this.uveStore.editorSetEditPanelTab(UVE_EDIT_PANEL_TABS.QUICK_EDIT);
@@ -422,66 +403,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             });
 
         this.setupDragDrop();
-        this.#setupCanvasViewportObserver();
-    }
-
-    #canvasResizeObserver: ResizeObserver | null = null;
-
-    #setupCanvasViewportObserver(): void {
-        const el = this.canvasViewport?.nativeElement;
-        if (!el) {
-            return;
-        }
-
-        const apply = () => {
-            const size = measureCanvasAvailableSize(el);
-            if (!size) {
-                return;
-            }
-
-            // Snapshot the previous canvas size *before* the store update so
-            // we can tell whether the iframe was auto-filling it.
-            const prevCanvasW = this.uveStore.viewCanvasAvailableWidth();
-            const prevCanvasH = this.uveStore.viewCanvasAvailableHeight();
-            // viewSetCanvasAvailableSize flips RESIZING internally when the
-            // canvas actually changes size — overlays hide until SET_BOUNDS
-            // settles them.
-            this.uveStore.viewSetCanvasAvailableSize(size);
-
-            if (!this.uveStore.$viewIsResponsiveMode()) {
-                return;
-            }
-
-            const iframeWidth = this.uveStore.viewIframeWidth();
-            const iframeHeight = this.uveStore.viewIframeHeight();
-
-            // The iframe was auto-filling the canvas (its dimensions match the
-            // previous canvas size), so keep it filling. If the user has
-            // explicitly resized it, leave their size alone — but re-apply it
-            // through viewSetIframeSize so its built-in canvas-clamp can
-            // shrink it when the canvas shrinks (e.g. a side panel opens).
-            const wasAutoFilling = iframeWidth === prevCanvasW && iframeHeight === prevCanvasH;
-
-            if (wasAutoFilling) {
-                this.uveStore.viewSetIframeSize(size);
-            } else {
-                this.uveStore.viewSetIframeSize({
-                    width: iframeWidth,
-                    height: iframeHeight
-                });
-            }
-        };
-
-        // Initial sync — runs synchronously in ngAfterViewInit before first paint
-        apply();
-
-        this.#canvasResizeObserver = new ResizeObserver(() => apply());
-        this.#canvasResizeObserver.observe(el);
-
-        this.destroyRef.onDestroy(() => {
-            this.#canvasResizeObserver?.disconnect();
-            this.#canvasResizeObserver = null;
-        });
     }
 
     private setupDragDrop(): void {
@@ -602,7 +523,13 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
             url.searchParams.entries()
         );
 
-        if (!this.#isPageSiteHost(url.hostname)) {
+        if (
+            !isPageSiteHost(
+                url.hostname,
+                this.uveStore.pageAsset()?.site,
+                this.window.location.hostname
+            )
+        ) {
             // Cancel first: without it the anchor also navigates the iframe to the
             // external site, which usually refuses to be framed and blanks the canvas.
             e.preventDefault();
@@ -649,7 +576,7 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
         // the `pageLoad` merge. That holds for any link, not only same-path ones:
         // `/folder/` and `/folder/index` are the same page under two paths, and a
         // filter must not follow the editor to another page either.
-        for (const key of this.#pageOwnedParamKeys()) {
+        for (const key of getPageOwnedParamKeys(this.uveStore.pageParams())) {
             if (!(key in urlQueryParams)) {
                 urlQueryParams[key] = undefined;
             }
@@ -657,53 +584,6 @@ export class EditEmaEditorComponent implements OnInit, OnDestroy, AfterViewInit 
 
         this.uveStore.pageLoad({ url: url.pathname, ...urlQueryParams });
         e.preventDefault();
-    }
-
-    /**
-     * Tells whether a link's hostname points at the site of the page being edited.
-     *
-     * Pages often link to their own site with an absolute URL
-     * (`https://www.site.com/news?year=2025`), and the admin usually runs on a
-     * different host than the site. Those links must load inside the editor like
-     * relative ones, so the site's hostname and aliases count as internal, as
-     * well as the admin host itself.
-     *
-     * @param {string} hostname - Hostname of the clicked link
-     * @return {boolean} `true` when the link belongs to the edited site
-     * @memberof EditEmaEditorComponent
-     */
-    #isPageSiteHost(hostname: string): boolean {
-        const site = this.uveStore.pageAsset()?.site;
-        // Aliases are stored one per line, but commas are accepted too.
-        const aliases = (site?.aliases ?? '').split(/[\s,]+/);
-        const siteHosts = [this.window.location.hostname, site?.hostname, ...aliases];
-
-        return siteHosts.some((host) => !!host && host.toLowerCase() === hostname.toLowerCase());
-    }
-
-    /**
-     * Returns the query params of the current page that the editor does not own,
-     * such as a filter a page link added.
-     *
-     * `pageLoad` merges new params over the current ones, so these would otherwise
-     * survive every later link navigation. Setting them to `undefined` clears
-     * them: `undefined` values are left out of both the Page API request and the
-     * admin URL. Editor params (language, persona, mode, variant, device…) are not
-     * returned, so they still follow the editor.
-     *
-     * @return {string[]} The keys of the page-owned params
-     * @memberof EditEmaEditorComponent
-     */
-    #pageOwnedParamKeys(): string[] {
-        const editorKeys = new Set<string>([
-            ...Object.values(DotPageAssetKeys),
-            EXPERIMENT_RETURN_PARAM,
-            'device',
-            'orientation',
-            'seo'
-        ]);
-
-        return Object.keys(this.uveStore.pageParams() ?? {}).filter((key) => !editorKeys.has(key));
     }
 
     /**

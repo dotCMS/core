@@ -4,18 +4,20 @@ import {
     DotCMSContentlet,
     DotContainerMap,
     DotDevice,
-    DotExperiment
+    DotExperiment,
+    EXPERIMENT_RETURN_PARAM
 } from '@dotcms/dotcms-models';
 import {
     DotCMSPage,
     DotCMSPageAssetContainers,
+    DotCMSSite,
     DotCMSURLContentMap,
     DotCMSVanityUrl,
     DotCMSViewAsPersona
 } from '@dotcms/types';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageApiParams } from '../services/dot-page-api/dot-page-api.service';
+import { DotPageApiParams, DotPageAssetKeys } from '../services/dot-page-api/dot-page-api.service';
 import { COMMON_ERRORS, DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { CONTAINER_INSERT_ERROR } from '../shared/enums';
 import {
@@ -1292,6 +1294,57 @@ export const isSamePageNavigation = (incomingUrl: string, currentUrl: string): b
 
     return target.pathname === current.pathname;
 };
+
+/**
+ * Tells whether a link's hostname points at the site of the page being edited.
+ *
+ * Pages often link to their own site with an absolute URL
+ * (`https://www.site.com/news?year=2025`), and the admin usually runs on a
+ * different host than the site. Those links must load inside the editor like
+ * relative ones, so the site's hostname and aliases count as internal, as
+ * well as the admin host itself.
+ *
+ * @param {string} hostname - Hostname of the clicked link
+ * @param {Pick<DotCMSSite, 'hostname' | 'aliases'> | undefined} site - Site of the edited page
+ * @param {string} adminHostname - Hostname the admin runs on
+ * @returns {boolean} `true` when the link belongs to the edited site
+ */
+export function isPageSiteHost(
+    hostname: string,
+    site: Pick<DotCMSSite, 'hostname' | 'aliases'> | undefined,
+    adminHostname: string
+): boolean {
+    // Aliases are stored one per line, but commas are accepted too.
+    const aliases = (site?.aliases ?? '').split(/[\s,]+/);
+    const siteHosts = [adminHostname, site?.hostname, ...aliases];
+
+    return siteHosts.some((host) => !!host && host.toLowerCase() === hostname.toLowerCase());
+}
+
+/**
+ * Returns the query params of the current page that the editor does not own,
+ * such as a filter a page link added.
+ *
+ * `pageLoad` merges new params over the current ones, so these would otherwise
+ * survive every later link navigation. Setting them to `undefined` clears
+ * them: `undefined` values are left out of both the Page API request and the
+ * admin URL. Editor params (language, persona, mode, variant, device…) are not
+ * returned, so they still follow the editor.
+ *
+ * @param {DotPageAssetParams | null} pageParams - Params of the current page
+ * @returns {string[]} The keys of the page-owned params
+ */
+export function getPageOwnedParamKeys(pageParams: DotPageAssetParams | null): string[] {
+    const editorKeys = new Set<string>([
+        ...Object.values(DotPageAssetKeys),
+        EXPERIMENT_RETURN_PARAM,
+        'device',
+        'orientation',
+        'seo'
+    ]);
+
+    return Object.keys(pageParams ?? {}).filter((key) => !editorKeys.has(key));
+}
 
 /**
  * Scrolls a traditional page's iframe to the element a URL fragment points at.

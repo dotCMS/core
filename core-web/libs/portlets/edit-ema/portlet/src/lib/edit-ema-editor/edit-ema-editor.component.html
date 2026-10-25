@@ -33,7 +33,7 @@
                 mode="indeterminate" />
         </div>
     }
-    <div class="canvas-viewport" #canvasViewport>
+    <div class="canvas-viewport" dotUveCanvasSizing data-testid="canvas-viewport">
         <div class="canvas-outer" #zoomContainer [ngStyle]="$viewCanvasOuterStyles()">
             <dot-uve-iframe-resize-handles data-testid="iframe-resize-handles" />
             <div class="canvas-inner" [ngStyle]="$viewCanvasInnerStyles()">

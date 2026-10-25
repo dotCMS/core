@@ -94,6 +94,7 @@ import { DotEmaRunningExperimentComponent } from './components/dot-uve-toolbar/c
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-toolbar/components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-toolbar.component';
 import { EmaDragItem } from './components/ema-page-dropzone/types';
+import { DotUveCanvasSizingDirective } from './directives/dot-uve-canvas-sizing/dot-uve-canvas-sizing.directive';
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
@@ -651,6 +652,15 @@ describe('EditEmaEditorComponent', () => {
 
             it('should place the browser toolbar', () => {
                 expect(spectator.query(byTestId('uve-browser-toolbar'))).toBeTruthy();
+            });
+
+            it('should size the canvas from its viewport', () => {
+                const sizing = spectator.debugElement.query(
+                    By.directive(DotUveCanvasSizingDirective)
+                );
+
+                expect(sizing).not.toBeNull();
+                expect(sizing.nativeElement).toBe(spectator.query(byTestId('canvas-viewport')));
             });
 
             /**
