@@ -24,9 +24,9 @@ import { DotPageApiParams } from '../../../services/dot-page-api/dot-page-api.se
 import { DEFAULT_DEVICE, DEFAULT_DEVICES, PERSONA_KEY } from '../../../shared/consts';
 import { MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { DeviceSelectorState } from '../../../store/features/editor/models';
 import { Orientation } from '../../../store/models';
 import { DotUveDeviceControlsComponent } from '../dot-uve-device-controls/dot-uve-device-controls.component';
-import { DeviceSelectorState } from '../dot-uve-toolbar/components/dot-uve-device-selector/dot-uve-device-selector.models';
 
 const PAGE_PARAMS: DotPageApiParams = {
     url: '/my-page',

@@ -7,11 +7,8 @@ import { DotDevice } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DEFAULT_DEVICE, DEFAULT_DEVICES } from '../../../shared/consts';
+import { DeviceSelectorChange, DeviceSelectorState } from '../../../store/features/editor/models';
 import { Orientation } from '../../../store/models';
-import {
-    DeviceSelectorChange,
-    DeviceSelectorState
-} from '../dot-uve-toolbar/components/dot-uve-device-selector/dot-uve-device-selector.models';
 
 @Component({
     selector: 'dot-uve-device-controls',

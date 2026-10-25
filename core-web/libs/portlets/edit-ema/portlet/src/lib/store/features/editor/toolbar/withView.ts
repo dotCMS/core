@@ -5,17 +5,13 @@ import { computed } from '@angular/core';
 import { DotDevice, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 import { DotCMSURLContentMap, UVE_MODE } from '@dotcms/types';
 
-import {
-    DeviceSelectorChange,
-    DeviceSelectorState
-} from '../../../../edit-ema-editor/components/dot-uve-toolbar/components/dot-uve-device-selector/dot-uve-device-selector.models';
 import { DEFAULT_PERSONA, MIN_IFRAME_HEIGHT, MIN_IFRAME_WIDTH } from '../../../../shared/consts';
 import { EDITOR_STATE } from '../../../../shared/enums';
 import { InfoOptions } from '../../../../shared/models';
 import { getFullPageURL, getIsDefaultVariant, getOrientation } from '../../../../utils';
 import { PageComputed } from '../../../features/page/withPage';
 import { Orientation, PageType, UVEState } from '../../../models';
-import { PersonaSelectorProps } from '../models';
+import { DeviceSelectorChange, DeviceSelectorState, PersonaSelectorProps } from '../models';
 
 /**
  * Resolve a device + orientation to pixel dimensions for the iframe.

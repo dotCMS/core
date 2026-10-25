@@ -51,13 +51,13 @@ import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/do
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotToggleLockButtonComponent } from './components/dot-toggle-lock-button/dot-toggle-lock-button.component';
 import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
-import { DeviceSelectorChange } from './components/dot-uve-device-selector/dot-uve-device-selector.models';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
 import { InfoOptions } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { DeviceSelectorChange } from '../../../store/features/editor/models';
 import { PageType } from '../../../store/models';
 import {
     convertLocalTimeToUTC,

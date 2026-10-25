@@ -1,4 +1,9 @@
-import { DotDeviceListItem, SeoMetaTags, SeoMetaTagsResult } from '@dotcms/dotcms-models';
+import {
+    DotDevice,
+    DotDeviceListItem,
+    SeoMetaTags,
+    SeoMetaTagsResult
+} from '@dotcms/dotcms-models';
 import { DotCMSViewAsPersona } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/types/internal';
 
@@ -36,6 +41,23 @@ export interface EditorToolbarState {
     orientation?: Orientation;
     ogTagsResults?: SeoMetaTagsResult[];
 }
+
+/**
+ * What the device selector shows: the active device, social-media preview and orientation.
+ */
+export interface DeviceSelectorState {
+    device: DotDevice | null;
+    socialMedia: string | null;
+    orientation: Orientation | null;
+}
+
+/**
+ * One change picked in the device selector: a device, a social-media preview or an orientation.
+ */
+export type DeviceSelectorChange =
+    | { type: 'device'; device: DotDevice }
+    | { type: 'socialMedia'; socialMedia: string }
+    | { type: 'orientation'; orientation: Orientation };
 
 export interface PageDataContainer {
     identifier: string;

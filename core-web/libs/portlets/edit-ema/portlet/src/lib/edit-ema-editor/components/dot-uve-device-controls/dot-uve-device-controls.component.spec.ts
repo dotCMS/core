@@ -7,11 +7,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotUveDeviceControlsComponent } from './dot-uve-device-controls.component';
 
 import { DEFAULT_DEVICE, DEFAULT_DEVICES } from '../../../shared/consts';
+import { DeviceSelectorChange, DeviceSelectorState } from '../../../store/features/editor/models';
 import { Orientation } from '../../../store/models';
-import {
-    DeviceSelectorChange,
-    DeviceSelectorState
-} from '../dot-uve-toolbar/components/dot-uve-device-selector/dot-uve-device-selector.models';
 
 const TABLET = DEFAULT_DEVICES[1];
 const MOBILE = DEFAULT_DEVICES[2];
