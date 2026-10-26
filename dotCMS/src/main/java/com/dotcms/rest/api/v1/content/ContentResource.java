@@ -402,7 +402,7 @@ public class ContentResource {
                                @Parameter(description = "Relationship depth to include (-1 for no relationships)") @DefaultValue("-1") @QueryParam("depth") final int depth
 
 
-    ) {
+    ) throws DotDataException, DotSecurityException {
 
         final User user =
                 new WebResource.InitBuilder(this.webResource)
@@ -464,7 +464,7 @@ public class ContentResource {
                                @Context final HttpServletResponse response,
                                @Parameter(description = "Content identifier", required = true)
                                @PathParam("identifier") final String identifier
-    ) throws DotDataException {
+    ) throws DotDataException, DotSecurityException {
 
         new WebResource.InitBuilder(this.webResource)
                         .requestAndResponse(request, response)
@@ -821,7 +821,8 @@ public class ContentResource {
      * @param user the user
      * @return the contentlet object
      */
-    private Contentlet resolveContentletOrFallBack (final String inodeOrIdentifier, final PageMode mode, final long languageId, final User user) {
+    private Contentlet resolveContentletOrFallBack (final String inodeOrIdentifier, final PageMode mode, final long languageId, final User user)
+            throws DotSecurityException {
         return resolveContentletOrFallBack (inodeOrIdentifier, mode, languageId, user, VariantAPI.DEFAULT_VARIANT.name());
     }
     /**
@@ -835,7 +836,7 @@ public class ContentResource {
      * @return the contentlet object
      */
     private Contentlet resolveContentletOrFallBack (final String inodeOrIdentifier, final PageMode mode, final long languageId, final User user,
-                                                    final String variantName) {
+                                                    final String variantName) throws DotSecurityException {
         // This property is used to determine if we should map the contentlet to the default language
         final boolean mapToDefault = isDefaultContentToDefaultLanguageEnabled.get();
         // default language supplier, we only get the language id if we need it
@@ -870,7 +871,7 @@ public class ContentResource {
                                                     final PageMode mode,
                                                     final long languageId,
                                                     final User user,
-                                                    final String variantName) {
+                                                    final String variantName) throws DotSecurityException {
 
         final Optional<ShortyId> shortyId = APILocator.getShortyAPI().getShorty(inodeOrIdentifier);
 
@@ -890,7 +891,18 @@ public class ContentResource {
         }
 
         final String finalInode = testInode;
-        return Optional.ofNullable(Try.of(() -> contentletAPI.find(finalInode, user, mode.respectAnonPerms)).getOrNull());
+        try {
+            return Optional.ofNullable(contentletAPI.find(finalInode, user, mode.respectAnonPerms));
+        } catch (final DotSecurityException e) {
+            // Propagate the permission denial so the caller answers 403. The previous
+            // Try.of(...).getOrNull() swallowed it and the caller answered 404 "does not exist",
+            // misreporting the refusal and hiding an access decision behind a missing-resource
+            // status (the count endpoint documented the same 403).
+            throw e;
+        } catch (final Exception e) {
+            // Preserve the previous swallowing behavior for every other failure: a miss.
+            return Optional.empty();
+        }
     }
 
 
