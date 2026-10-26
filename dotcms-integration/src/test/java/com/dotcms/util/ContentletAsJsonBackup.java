@@ -1,10 +1,16 @@
 package com.dotcms.util;
 
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Keeps a copy of the {@code contentlet_as_json} column of every contentlet while a test drops and
@@ -50,12 +56,18 @@ public class ContentletAsJsonBackup {
     }
 
     /**
-     * Writes the copy made by {@link #save()} back into the column and removes the backup table. Does
-     * nothing when {@link #save()} found no column to copy.
+     * Writes the copy made by {@link #save()} back into the column, removes the backup table and any
+     * {@code noDefault-<millis>} site that was created while the column was empty, and empties the
+     * site and contentlet caches. Does nothing when {@link #save()} found no column to copy.
+     * <p>
+     * A default site lookup that finds no default site creates that unpublished site and saves it as
+     * the default, so it would otherwise stay next to the real one and be served to the tests that run
+     * next. The caches go for the same reason.
      *
-     * @throws DotDataException if the JSON cannot be restored
+     * @throws DotDataException     if the JSON cannot be restored
+     * @throws DotSecurityException if a leftover site cannot be removed
      */
-    public void restore() throws DotDataException {
+    public void restore() throws DotDataException, DotSecurityException {
         if (!saved) {
             return;
         }
@@ -65,7 +77,32 @@ public class ContentletAsJsonBackup {
                 + " where inode in (select inode from " + backupTable + ")").loadResult();
         new DotConnect().setSQL("drop table " + backupTable).loadResult();
         DbConnectionFactory.closeSilently();
+        removeFakeDefaultSites();
+        CacheLocator.getHostCache().clearCache();
+        CacheLocator.getContentletCache().clearCache();
         saved = false;
+    }
+
+    /**
+     * Archives and deletes every site named {@code noDefault-<millis>}.
+     *
+     * @throws DotDataException     if the sites cannot be listed
+     * @throws DotSecurityException if a site cannot be removed
+     */
+    private void removeFakeDefaultSites() throws DotDataException, DotSecurityException {
+        final List<Map<String, Object>> fakeSites = new DotConnect().setSQL(
+                "select distinct c.identifier from contentlet c join structure s on s.inode = c.structure_inode"
+                        + " where s.name = 'Host' and (c.text1 like 'noDefault-%'"
+                        + " or c.contentlet_as_json -> 'fields' -> 'hostName' ->> 'value' like 'noDefault-%')")
+                .loadObjectResults();
+        for (final Map<String, Object> row : fakeSites) {
+            final Host fakeSite = APILocator.getHostAPI().find(
+                    String.valueOf(row.get("identifier")), APILocator.systemUser(), false);
+            if (null != fakeSite) {
+                APILocator.getHostAPI().archive(fakeSite, APILocator.systemUser(), false);
+                APILocator.getHostAPI().delete(fakeSite, APILocator.systemUser(), false);
+            }
+        }
     }
 
     /**

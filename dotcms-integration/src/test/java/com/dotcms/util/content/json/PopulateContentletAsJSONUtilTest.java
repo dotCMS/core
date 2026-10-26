@@ -59,10 +59,11 @@ public class PopulateContentletAsJSONUtilTest extends IntegrationTestBase {
     /**
      * Puts back the JSON saved by {@link #saveContentletAsJson()}.
      *
-     * @throws DotDataException if the JSON cannot be restored
+     * @throws DotDataException     if the JSON cannot be restored
+     * @throws DotSecurityException if a leftover site cannot be removed
      */
     @After
-    public void restoreContentletAsJson() throws DotDataException {
+    public void restoreContentletAsJson() throws DotDataException, DotSecurityException {
         jsonBackup.restore();
     }
 
