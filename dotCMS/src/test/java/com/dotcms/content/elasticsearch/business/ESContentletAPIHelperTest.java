@@ -439,10 +439,10 @@ public class ESContentletAPIHelperTest extends UnitTestBase {
      * Given an allowed user and a save that fails after the removal (e.g. a role locked for
      * editing permissions)
      * When the prepared task runs
-     * Then the failure is logged and does not escape the task, which may run as a commit listener
+     * Then the failure is logged and not rethrown from the task, which may run as a commit listener
      */
     @Test
-    public void permissionReplacement_taskFailure_doesNotEscapeTheTask() throws Exception {
+    public void permissionReplacement_taskFailure_isLoggedNotRethrown() throws Exception {
 
         final PermissionAPI permissionAPI = mock(PermissionAPI.class);
         final Contentlet contentlet = contentlet();
