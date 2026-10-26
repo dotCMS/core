@@ -1,4 +1,7 @@
 import { EventEmitter } from 'node:events';
+import { Agent as HttpAgent, type ClientRequest, type IncomingMessage } from 'node:http';
+import { Agent as HttpsAgent, type RequestOptions as HttpsRequestOptions } from 'node:https';
+import { isIP, Socket } from 'node:net';
 import { PassThrough } from 'node:stream';
 import { brotliCompressSync, deflateSync, gzipSync } from 'node:zlib';
 
@@ -18,9 +21,6 @@ import {
     TimeoutError,
     ValidationError
 } from '../sandbox/errors';
-
-import type { ClientRequest, IncomingMessage } from 'node:http';
-import type { RequestOptions as HttpsRequestOptions } from 'node:https';
 
 /**
  * Remote file descriptors (`formData` fields with a `url`) are downloaded on the host.
@@ -139,7 +139,7 @@ describe('assertSafeRemoteUrl', () => {
         expect(() => assertSafeRemoteUrl(url)).toThrow(ValidationError);
     });
 
-    it.each(['http://127.0.0.1/', 'http://169.254.1.1/'])(
+    it.each(['http://127.0.0.1/', 'http://169.254.1.1/', 'http://10.0.0.5/', 'http://100.64.0.1/'])(
         'rejects non-public IPv4 literals: %s',
         (url) => {
             expect(() => assertSafeRemoteUrl(url)).toThrow(ValidationError);
@@ -150,6 +150,8 @@ describe('assertSafeRemoteUrl', () => {
         'http://[::1]/',
         'http://[::ffff:127.0.0.1]/',
         'http://[::ffff:169.254.1.1]/',
+        'http://[::ffff:192.168.0.1]/',
+        'http://[::ffff:100.64.0.1]/',
         'http://[::127.0.0.1]/',
         'http://[64:ff9b::a9fe:a9fe]/'
     ])('rejects non-public IPv6 literals in every notation: %s', (url) => {
@@ -182,6 +184,10 @@ interface Reply {
     requestError?: Error;
     /** Throw this synchronously from the transport. */
     throwSync?: Error;
+    /** Never answer: no response, no error (an address that does not accept the connection). */
+    silent?: boolean;
+    /** Overrides for the request opened to a given address (`options.hostname`). */
+    perAddress?: Record<string, Omit<Reply, 'perAddress'>>;
 }
 
 interface FakeRequest extends EventEmitter {
@@ -194,10 +200,17 @@ interface FakeRequest extends EventEmitter {
  * A transport that never opens a socket: it records the call and replies from `reply`.
  * `destroy()` without an error emits ECONNRESET, as Node's `ClientRequest` does.
  */
-function fakeTransport(reply: Reply = {}) {
+function fakeTransport(defaults: Reply = {}) {
     const calls: { url: URL; options: HttpsRequestOptions }[] = [];
     const requests: FakeRequest[] = [];
+    let markDelivered: () => void = () => undefined;
+    /** Resolves once a response and its chunks have been handed to the download. */
+    const delivered = new Promise<void>((resolve) => (markDelivered = resolve));
     const transport: RequestTransport = (url, options, onResponse) => {
+        const reply: Reply = {
+            ...defaults,
+            ...(defaults.perAddress?.[String(options.hostname)] ?? {})
+        };
         if (reply.throwSync) {
             throw reply.throwSync;
         }
@@ -214,6 +227,9 @@ function fakeTransport(reply: Reply = {}) {
             return req;
         };
         req.end = () => {
+            if (reply.silent) {
+                return req;
+            }
             setImmediate(() => {
                 if (reply.requestError) {
                     req.emit('error', reply.requestError);
@@ -231,6 +247,7 @@ function fakeTransport(reply: Reply = {}) {
                 for (const chunk of reply.chunks ?? []) {
                     res.write(chunk);
                 }
+                markDelivered();
                 if (reply.responseError) {
                     res.emit('error', reply.responseError);
                 } else if (reply.truncate) {
@@ -245,7 +262,7 @@ function fakeTransport(reply: Reply = {}) {
         requests.push(req);
         return req as unknown as ClientRequest;
     };
-    return { transport, calls, requests };
+    return { transport, calls, requests, delivered };
 }
 
 const resolvingTo =
@@ -328,6 +345,138 @@ describe('fetchRemoteFile', () => {
         });
 
         expect(calls[0].options.hostname).toBe(PUBLIC_V6);
+    });
+
+    it('moves on to the next checked address when one refuses the connection', async () => {
+        const OTHER_V4 = '93.184.216.35';
+        const { transport, calls } = fakeTransport({
+            chunks: [Buffer.from('ok')],
+            perAddress: {
+                [PUBLIC_V6]: {
+                    requestError: Object.assign(new Error('connect ENETUNREACH'), {
+                        code: 'ENETUNREACH'
+                    })
+                },
+                [PUBLIC_V4]: {
+                    requestError: Object.assign(new Error('connect ECONNREFUSED'), {
+                        code: 'ECONNREFUSED'
+                    })
+                }
+            }
+        });
+
+        const blob = await fetchRemoteFile(url, {
+            ...base,
+            resolve: resolvingTo(
+                { address: PUBLIC_V6, family: 6 },
+                { address: PUBLIC_V4, family: 4 },
+                { address: OTHER_V4, family: 4 }
+            ),
+            transport
+        });
+
+        expect(await blob.text()).toBe('ok');
+        expect(calls.map((c) => c.options.hostname)).toEqual([PUBLIC_V6, PUBLIC_V4, OTHER_V4]);
+        expect(calls.every((c) => c.options.servername === 'files.example')).toBe(true);
+    });
+
+    it('moves on when an address does not accept the connection in time', async () => {
+        const { transport, calls, requests } = fakeTransport({
+            chunks: [Buffer.from('ok')],
+            perAddress: { [PUBLIC_V6]: { silent: true } }
+        });
+
+        const blob = await fetchRemoteFile(url, {
+            ...base,
+            connectAttemptMs: 20,
+            resolve: resolvingTo(
+                { address: PUBLIC_V6, family: 6 },
+                { address: PUBLIC_V4, family: 4 }
+            ),
+            transport
+        });
+
+        expect(await blob.text()).toBe('ok');
+        expect(calls.map((c) => c.options.hostname)).toEqual([PUBLIC_V6, PUBLIC_V4]);
+        expect(requests[0].destroyed).toBe(true);
+    });
+
+    it('gives the last address no connect limit of its own', async () => {
+        const { transport, calls } = fakeTransport({ silent: true });
+        const controller = new AbortController();
+
+        const download = fetchRemoteFile(url, {
+            ...base,
+            connectAttemptMs: 20,
+            signal: controller.signal,
+            transport
+        });
+        const outcome = download.then(
+            () => 'resolved',
+            () => 'rejected'
+        );
+        await new Promise((r) => setTimeout(r, 80));
+
+        expect(calls).toHaveLength(1);
+        expect(await Promise.race([outcome, Promise.resolve('pending')])).toBe('pending');
+        controller.abort();
+        await expect(download).rejects.toBeInstanceOf(AbortError);
+    });
+
+    it('reports the last connection error when no address can be reached', async () => {
+        const { transport, calls } = fakeTransport({
+            requestError: Object.assign(new Error('connect ECONNREFUSED'), {
+                code: 'ECONNREFUSED'
+            })
+        });
+
+        const failure = fetchRemoteFile(url, {
+            ...base,
+            resolve: resolvingTo(
+                { address: PUBLIC_V6, family: 6 },
+                { address: PUBLIC_V4, family: 4 }
+            ),
+            transport
+        });
+
+        await expect(failure).rejects.toBeInstanceOf(NetworkError);
+        await expect(failure).rejects.toMatchObject({ reason: 'ECONNREFUSED' });
+        expect(calls).toHaveLength(2);
+    });
+
+    it('does not try another address once a response has started', async () => {
+        const { transport, calls } = fakeTransport({
+            chunks: [Buffer.from('partial')],
+            responseError: Object.assign(new Error('read ECONNRESET'), { code: 'ECONNRESET' })
+        });
+
+        await expect(
+            fetchRemoteFile(url, {
+                ...base,
+                resolve: resolvingTo(
+                    { address: PUBLIC_V4, family: 4 },
+                    { address: PUBLIC_V6, family: 6 }
+                ),
+                transport
+            })
+        ).rejects.toBeInstanceOf(NetworkError);
+        expect(calls).toHaveLength(1);
+    });
+
+    it('does not try another address after an HTTP error status', async () => {
+        const { transport, calls } = fakeTransport({ status: 503, statusMessage: 'Unavailable' });
+
+        await expect(
+            fetchRemoteFile(url, {
+                ...base,
+                resolve: resolvingTo(
+                    { address: PUBLIC_V4, family: 4 },
+                    { address: PUBLIC_V6, family: 6 }
+                ),
+                transport
+            })
+        ).rejects.toMatchObject({ status: 503 });
+        expect(calls).toHaveLength(1);
     });
 
     it('uses an IP literal host as its own address without resolving it or naming it for TLS', async () => {
@@ -636,32 +785,131 @@ describe('fetchRemoteFile', () => {
         expect(calls).toHaveLength(0);
     });
 
-    it('surfaces an SDK error used as the abort reason as that error', async () => {
-        const { transport } = fakeTransport({ chunks: [Buffer.from('partial')], hang: true });
+    it('rejects at once when aborted during a resolution that does not answer', async () => {
+        const { transport, calls } = fakeTransport();
         const controller = new AbortController();
+        let resolverCalled = false;
+        const resolve: AddressResolver = () => {
+            resolverCalled = true;
+            return new Promise(() => undefined);
+        };
 
-        const download = fetchRemoteFile(url, { ...base, signal: controller.signal, transport });
+        const download = fetchRemoteFile(url, {
+            ...base,
+            signal: controller.signal,
+            resolve,
+            transport
+        });
         await new Promise((r) => setImmediate(r));
+        expect(resolverCalled).toBe(true);
         const timeout = new TimeoutError('timed out after 15000 ms', 15000);
         controller.abort(timeout);
 
         await expect(download).rejects.toBe(timeout);
+        expect(calls).toHaveLength(0);
     });
 
-    it('aborts the download when the surrounding execution is aborted', async () => {
-        const { transport, requests } = fakeTransport({
+    it('surfaces an SDK error used as the abort reason as that error', async () => {
+        const { transport, delivered } = fakeTransport({
             chunks: [Buffer.from('partial')],
             hang: true
         });
         const controller = new AbortController();
 
         const download = fetchRemoteFile(url, { ...base, signal: controller.signal, transport });
-        await new Promise((r) => setImmediate(r));
+        // Abort while the body is arriving: the response and its first chunk are delivered.
+        await delivered;
+        const timeout = new TimeoutError('timed out after 15000 ms', 15000);
+        controller.abort(timeout);
+
+        await expect(download).rejects.toBe(timeout);
+    });
+
+    it('aborts the download while the body is arriving', async () => {
+        const { transport, requests, delivered } = fakeTransport({
+            chunks: [Buffer.from('partial')],
+            hang: true
+        });
+        const controller = new AbortController();
+
+        const download = fetchRemoteFile(url, { ...base, signal: controller.signal, transport });
+        await delivered;
         controller.abort();
 
         await expect(download).rejects.toBeInstanceOf(AbortError);
         expect(requests[0].destroyed).toBe(true);
         // A late error from the destroyed request changes nothing and throws nowhere.
         expect(() => requests[0].emit('error', new Error('late'))).not.toThrow();
+    });
+});
+
+/**
+ * The same download through the real `node:http` / `node:https` request code. Only the agent's
+ * connect step is replaced: it records what the socket would be opened to and refuses, so no
+ * network is used. This pins that the connection goes to the checked addresses, in order, and
+ * that nothing hands the host name to the connect step to be resolved again.
+ */
+describe('fetchRemoteFile with the default transport', () => {
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    /** What the agent's connect step receives. */
+    interface ConnectOptions {
+        host?: string;
+        port?: unknown;
+        servername?: string;
+    }
+
+    /** Replaces `createConnection` on an agent class with one that records and refuses. */
+    function refuseConnections(agent: typeof HttpAgent | typeof HttpsAgent) {
+        const connections: ConnectOptions[] = [];
+        const target = agent.prototype as unknown as {
+            createConnection: (options: ConnectOptions) => Socket;
+        };
+        vi.spyOn(target, 'createConnection').mockImplementation((options) => {
+            connections.push({
+                host: options.host,
+                port: options.port,
+                servername: options.servername
+            });
+            const socket = new Socket();
+            process.nextTick(() =>
+                socket.destroy(
+                    Object.assign(new Error('connection refused by test'), {
+                        code: 'ECONNREFUSED'
+                    })
+                )
+            );
+            return socket;
+        });
+        return connections;
+    }
+
+    it('connects over http to each checked address in turn, never to the name', async () => {
+        const OTHER_V4 = '93.184.216.35';
+        const connections = refuseConnections(HttpAgent);
+
+        const failure = fetchRemoteFile('http://files.example:8080/logo.png', {
+            ...base,
+            resolve: resolvingTo(
+                { address: PUBLIC_V4, family: 4 },
+                { address: OTHER_V4, family: 4 }
+            )
+        });
+
+        await expect(failure).rejects.toBeInstanceOf(NetworkError);
+        await expect(failure).rejects.toMatchObject({ reason: 'ECONNREFUSED' });
+        expect(connections.map((c) => c.host)).toEqual([PUBLIC_V4, OTHER_V4]);
+        expect(connections.every((c) => isIP(c.host ?? '') !== 0)).toBe(true);
+        expect(connections.every((c) => String(c.port) === '8080')).toBe(true);
+    });
+
+    it('connects over https to the checked address and verifies the certificate for the name', async () => {
+        const connections = refuseConnections(HttpsAgent);
+
+        await expect(fetchRemoteFile(url, { ...base })).rejects.toBeInstanceOf(NetworkError);
+
+        expect(connections).toEqual([{ host: PUBLIC_V4, port: 443, servername: 'files.example' }]);
     });
 });

@@ -1,7 +1,7 @@
 import { lookup as dnsLookup } from 'node:dns/promises';
 import { request as httpRequest, type ClientRequest, type IncomingMessage } from 'node:http';
 import { request as httpsRequest, type RequestOptions as HttpsRequestOptions } from 'node:https';
-import { BlockList, isIP } from 'node:net';
+import { BlockList, isIP, type Socket } from 'node:net';
 import { createBrotliDecompress, createGunzip, createInflate } from 'node:zlib';
 
 import {
@@ -57,6 +57,11 @@ export interface RemoteFileOptions {
     signal?: AbortSignal;
     resolve?: AddressResolver;
     transport?: RequestTransport;
+    /**
+     * How long one resolved address may take to accept the connection before the next one is
+     * tried (default 3000 ms). The last address has no such limit: `signal` bounds it.
+     */
+    connectAttemptMs?: number;
 }
 
 /** What the download identifies itself as; `fetch` used to send a user agent too. */
@@ -250,14 +255,48 @@ function decodedBody(res: IncomingMessage): Readable | null {
 }
 
 /**
+ * `work`, or the aborted-download error as soon as `signal` aborts, whichever comes first. The
+ * resolver cannot be cancelled, so a late answer is ignored rather than waited for.
+ */
+function untilAborted<T>(work: Promise<T>, url: URL, signal?: AbortSignal): Promise<T> {
+    if (!signal) {
+        return work;
+    }
+    if (signal.aborted) {
+        work.catch(() => undefined);
+        return Promise.reject(abortedDownload(url, signal));
+    }
+    return new Promise<T>((resolve, reject) => {
+        const onAbort = () => reject(abortedDownload(url, signal));
+        signal.addEventListener('abort', onAbort, { once: true });
+        work.then(
+            (value) => {
+                signal.removeEventListener('abort', onAbort);
+                resolve(value);
+            },
+            (err: unknown) => {
+                signal.removeEventListener('abort', onAbort);
+                reject(err);
+            }
+        );
+    });
+}
+
+/** How long one address may take to accept the connection while others remain to be tried. */
+const CONNECT_ATTEMPT_MS = 3000;
+
+/**
  * Downloads a file URL into a Blob of `options.type`. The URL text is validated
  * (`assertSafeRemoteUrl`), the host is resolved, every address is checked, and the request is
- * opened to the first checked address with the host name kept for TLS and the `Host` header,
- * so no second resolution can change where the connection goes. Any status outside 2xx is an
- * `HttpError` (redirects included: they are not followed); a body over `maxBytes`, declared or
- * received, is a `ValidationError`; a failed resolution or connection, or a response cut short,
- * is a `NetworkError`; an aborted signal, before or during the request, is an `AbortError` or
- * the signal's own SDK error.
+ * opened to a checked address with the host name kept for TLS and the `Host` header, so no
+ * second resolution can change where the connection goes. The checked addresses are tried in
+ * order: when one refuses the connection, cannot be reached, or does not accept it within
+ * `connectAttemptMs`, the next one is tried; once a response has started, there is no retry.
+ * Any status outside 2xx is an `HttpError` (redirects included: they are not followed); a body
+ * over `maxBytes`, declared or received, is a `ValidationError`; a failed resolution, a failed
+ * connection to every address, or a response cut short, is a `NetworkError`; an aborted
+ * signal, at any point including while the host is being resolved, is an `AbortError` or the
+ * signal's own SDK error.
  */
 export async function fetchRemoteFile(
     rawUrl: string | URL,
@@ -268,31 +307,38 @@ export async function fetchRemoteFile(
     if (signal?.aborted) {
         throw abortedDownload(url, signal);
     }
-    const [{ address }] = await resolvePublicAddresses(url, options.resolve ?? defaultResolver);
-    // The resolver cannot be cancelled, so an abort that happened meanwhile is honored here.
-    if (signal?.aborted) {
-        throw abortedDownload(url, signal);
-    }
+    const addresses = await untilAborted(
+        resolvePublicAddresses(url, options.resolve ?? defaultResolver),
+        url,
+        signal
+    );
     const secure = url.protocol === 'https:';
     const send = options.transport ?? (secure ? httpsRequest : httpRequest);
     const hostname = bareHostname(url);
+    const connectAttemptMs = options.connectAttemptMs ?? CONNECT_ATTEMPT_MS;
     // `hostname` (not `host`) is what the socket connects to when a URL is also given: the
     // URL's own host name would otherwise win and be resolved a second time.
-    const requestOptions: HttpsRequestOptions = {
+    const optionsFor = (address: string): HttpsRequestOptions => ({
         method: 'GET',
         hostname: address,
         port: url.port || (secure ? 443 : 80),
         // TLS verifies the certificate against the name, never against the address.
         ...(isIP(hostname) ? {} : { servername: hostname }),
         headers: { ...REQUEST_HEADERS, host: url.host }
-    };
+    });
 
     return new Promise<Blob>((resolve, reject) => {
         let settled = false;
         let req: ClientRequest | undefined;
+        let connectTimer: ReturnType<typeof setTimeout> | undefined;
+        const stopConnectTimer = () => {
+            clearTimeout(connectTimer);
+            connectTimer = undefined;
+        };
         const fail = (err: unknown) => {
             if (settled) return;
             settled = true;
+            stopConnectTimer();
             signal?.removeEventListener('abort', onAbort);
             reject(toRemoteFileError(err, url, signal));
             req?.destroy();
@@ -300,6 +346,7 @@ export async function fetchRemoteFile(
         const onAbort = () => fail(abortedDownload(url, signal));
 
         const onResponse = (res: IncomingMessage) => {
+            stopConnectTimer();
             const status = res.statusCode ?? 0;
             if (status < 200 || status >= 300) {
                 const body =
@@ -358,14 +405,60 @@ export async function fetchRemoteFile(
             res.on('error', fail);
         };
 
-        try {
-            req = send(url, requestOptions, onResponse);
-        } catch (err) {
-            fail(err);
-            return;
-        }
-        req.on('error', fail);
+        /** Opens the request to `addresses[index]`, moving on to the next one if it cannot connect. */
+        const attempt = (index: number) => {
+            const { address } = addresses[index];
+            const last = index === addresses.length - 1;
+            let responded = false;
+            let current: ClientRequest;
+            try {
+                current = send(url, optionsFor(address), (res) => {
+                    if (settled || req !== current) {
+                        res.resume();
+                        return;
+                    }
+                    responded = true;
+                    onResponse(res);
+                });
+            } catch (err) {
+                fail(err);
+                return;
+            }
+            req = current;
+            current.on('error', (err) => {
+                if (settled || req !== current) return;
+                stopConnectTimer();
+                if (!responded && !last) {
+                    // Detach before destroying, so the abandoned request's own errors are ignored.
+                    req = undefined;
+                    current.destroy();
+                    attempt(index + 1);
+                    return;
+                }
+                fail(err);
+            });
+            if (!last) {
+                connectTimer = setTimeout(
+                    () =>
+                        current.destroy(
+                            Object.assign(new Error(`connection to ${address} timed out`), {
+                                code: 'ETIMEDOUT'
+                            })
+                        ),
+                    connectAttemptMs
+                );
+                current.once('socket', (socket: Socket) => {
+                    if (socket.connecting) {
+                        socket.once('connect', stopConnectTimer);
+                    } else {
+                        stopConnectTimer();
+                    }
+                });
+            }
+            current.end();
+        };
+
         signal?.addEventListener('abort', onAbort, { once: true });
-        req.end();
+        attempt(0);
     });
 }
