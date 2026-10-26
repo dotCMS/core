@@ -21,8 +21,8 @@ import java.util.Map;
  *
  * includes:
  *  - x-dot-server header, contains the node name + server id (this helps to identified on a cluster context which node has committed the response)
- *    Only requests with valid credentials get it by default (see {@link ResponseMetaHeaderAudience}); add
- *    {@code ?nodeid=true} to a request to get it without credentials.
+ *    Only requests with valid credentials get it (see {@link ResponseMetaHeaderAudience}); add
+ *    {@code ?nodeid=true} to such a request to get it even when {@link #RESPONSE_HEADER_ADD_NODE_ID} is off.
  *
  * @author jsanca
  */
@@ -53,9 +53,9 @@ public class ResponseMetaDataWebInterceptor implements WebInterceptor {
     }
 
     /**
-     * Adds the {@code x-dot-server} header when the request asks for it with {@code ?nodeid=true},
-     * or when {@link #RESPONSE_HEADER_ADD_NODE_ID} is on and the request is one that should see
-     * it (see {@link ResponseMetaHeaderAudience}; requests without valid credentials do not).
+     * Adds the {@code x-dot-server} header when the request is one that should see it (see
+     * {@link ResponseMetaHeaderAudience}; requests without valid credentials do not) and either
+     * {@link #RESPONSE_HEADER_ADD_NODE_ID} is on or the request asks for it with {@code ?nodeid=true}.
      *
      * @param request  the incoming request
      * @param response the response the header is added to
@@ -64,8 +64,8 @@ public class ResponseMetaDataWebInterceptor implements WebInterceptor {
     @Override
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) {
 
-        if (TRUE_VALUE.equals(request.getParameter(NODEID_PARAM)) ||
-                (responseHeaderAddNodeId.get() && ResponseMetaHeaderAudience.includes(request))) {
+        if ((TRUE_VALUE.equals(request.getParameter(NODEID_PARAM)) || responseHeaderAddNodeId.get())
+                && ResponseMetaHeaderAudience.includes(request)) {
 
             response.addHeader(X_DOT_SERVER_HEADER,
                             nodeName.get()

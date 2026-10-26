@@ -14,6 +14,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -73,6 +74,24 @@ public class MetaWebInterceptorTest {
         Assert.assertEquals(tokenHeader, header);
     }
 
+
+    /**
+     * Method to test: {@link ResponseMetaDataWebInterceptor#intercept(HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: a request with no credentials asks for the header with nodeid=true while the
+     * anonymous flag is off
+     * ExpectedResult: the header is not added
+     */
+    @Test
+    public void check_header_x_dot_server_nodeid_param_without_credentials()  {
+
+        Config.setProperty(FeatureFlagName.FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS, false);
+        Mockito.when(request.getParameter("nodeid")).thenReturn("true");
+
+        final MockHeaderResponse mockHeaderResponse = new MockHeaderResponse(response);
+        new ResponseMetaDataWebInterceptor().intercept(request, mockHeaderResponse);
+
+        Assert.assertNull(mockHeaderResponse.getHeader(ResponseMetaDataWebInterceptor.X_DOT_SERVER_HEADER));
+    }
 
     /**
      * Method to test: {@link ResponseMetaDataWebInterceptor#intercept(HttpServletRequest, HttpServletResponse)}
