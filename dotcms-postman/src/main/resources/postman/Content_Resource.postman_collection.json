@@ -6475,6 +6475,606 @@
 			]
 		},
 		{
+			"name": "Widget field scripting warnings",
+			"item": [
+				{
+					"name": "Create widget type whose code lives in a field",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableWidgetContentType\",\n    \"defaultType\": false,\n    \"fixed\": false,\n    \"system\": false,\n    \"description\": \"Widget whose Velocity lives in the code field, like the starter Code Snippet\",\n    \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"name\": \"WidgetFieldScriptingWarning{{$timestamp}}\",\n    \"workflow\": [\n        \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n    ],\n    \"fields\": [\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextAreaField\",\n            \"dataType\": \"LONG_TEXT\",\n            \"name\": \"Code\",\n            \"variable\": \"code\",\n            \"indexed\": false,\n            \"listed\": false,\n            \"required\": false,\n            \"searchable\": false,\n            \"sortOrder\": 10,\n            \"fixed\": false,\n            \"readOnly\": false,\n            \"unique\": false,\n            \"fieldVariables\": []\n        },\n        {\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableConstantField\",\n            \"dataType\": \"SYSTEM\",\n            \"name\": \"Widget Code\",\n            \"variable\": \"widgetCode\",\n            \"values\": \"$code\",\n            \"indexed\": true,\n            \"listed\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 3,\n            \"fixed\": true,\n            \"readOnly\": true,\n            \"unique\": false,\n            \"fieldVariables\": []\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Widget type created\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"var contentType = pm.response.json().entity[0];",
+									"pm.collectionVariables.set(\"widgetWarningTypeId\", contentType.id);",
+									"pm.collectionVariables.set(\"widgetWarningTypeVar\", contentType.variable);",
+									"pm.test(\"The widget code only prints the code field\", function () {",
+									"    var widgetCode = contentType.fields.find(f => f.variable === \"widgetCode\");",
+									"    pm.expect(widgetCode.values).to.eql(\"$code\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					]
+				},
+				{
+					"name": "Create an author without the Scripting Developer role",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"firstName\": \"Widget\",\n    \"lastName\": \"Author\",\n    \"email\": \"widget.warning.author@dotcms.com\",\n    \"password\": [\n        \"d\",\n        \"o\",\n        \"t\",\n        \"c\",\n        \"m\",\n        \"s\",\n        \"1\",\n        \"2\",\n        \"3\",\n        \"4\",\n        \"5\",\n        \"6\",\n        \"7\",\n        \"8\"\n    ],\n    \"roles\": [\n        \"DOTCMS_BACK_END_USER\",\n        \"CMS Administrator\"\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Author created\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.collectionVariables.set(\"widgetWarningAuthorId\", pm.response.json().entity.userID);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					]
+				},
+				{
+					"name": "Publish a widget as the admin (a Scripting Developer)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"{{widgetWarningTypeVar}}\",\n            \"widgetTitle\": \"Saved by a Scripting Developer\",\n            \"code\": \"$math.add(20,22)\",\n            \"contentHost\": \"default\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Widget published\", function () {",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"    pm.expect(jsonData.entity.summary.affected).to.eql(1);",
+									"});",
+									"var first = jsonData.entity.results[0];",
+									"pm.collectionVariables.set(\"widgetByScriptingDeveloper\", first[Object.keys(first)[0]].identifier);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					]
+				},
+				{
+					"name": "Drop the admin session so the next request authenticates as the author",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Session dropped\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					]
+				},
+				{
+					"name": "Publish a widget as the author without the role",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "dotcms12345678",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "widget.warning.author@dotcms.com",
+									"type": "string"
+								}
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"contentlets\": [\n        {\n            \"contentType\": \"{{widgetWarningTypeVar}}\",\n            \"widgetTitle\": \"Saved by a user without the role\",\n            \"code\": \"$math.add(20,22)\",\n            \"contentHost\": \"default\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"pm.test(\"Widget published\", function () {",
+									"    pm.expect(jsonData.errors.length).to.eql(0);",
+									"    pm.expect(jsonData.entity.summary.affected).to.eql(1);",
+									"});",
+									"var first = jsonData.entity.results[0];",
+									"pm.collectionVariables.set(\"widgetByPlainAuthor\", first[Object.keys(first)[0]].identifier);"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					]
+				},
+				{
+					"name": "Drop the author session, the rest runs as the admin",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Session dropped\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					]
+				},
+				{
+					"name": "_search: the Scripting Developer's widget is evaluated, no warning",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/content/_search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"_search"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\"query\": \"+identifier:{{widgetByScriptingDeveloper}} +live:true\", \"render\": \"true\", \"offset\": 0, \"limit\": 10}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"var widget = jsonData.entity.jsonObjectView.contentlets[0];",
+									"pm.test(\"Field value is evaluated\", function () {",
+									"    pm.expect(widget.parsedCode.trim()).to.eql(\"42\");",
+									"    pm.expect(widget).to.not.have.property(\"parsedCodeWarning\");",
+									"});",
+									"pm.test(\"No warnings\", function () {",
+									"    pm.expect(jsonData.entity.warnings).to.eql([]);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					]
+				},
+				{
+					"name": "_search: the other author's widget comes back as text, with a warning",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/content/_search",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"_search"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\"query\": \"+identifier:{{widgetByPlainAuthor}} +live:true\", \"render\": \"true\", \"offset\": 0, \"limit\": 10}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"var widget = jsonData.entity.jsonObjectView.contentlets[0];",
+									"pm.test(\"Field value comes back as text, not evaluated\", function () {",
+									"    pm.expect(widget.parsedCode.trim()).to.eql(\"$math.add(20,22)\");",
+									"    pm.expect(widget.parsedCodeWarning).to.eql(\"Widget field scripting is off; widget field values were rendered as text.\");",
+									"});",
+									"pm.test(\"The search result carries the warning once\", function () {",
+									"    pm.expect(jsonData.entity.warnings).to.eql([\"Widget field scripting is off; widget field values were rendered as text.\"]);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					]
+				},
+				{
+					"name": "GET render=true: the other author's widget comes back as text, with a warning",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/content/render/true/query/+identifier:{{widgetByPlainAuthor}} +live:true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"content",
+								"render",
+								"true",
+								"query",
+								"+identifier:{{widgetByPlainAuthor}} +live:true"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var widget = pm.response.json().contentlets[0];",
+									"pm.test(\"Field value comes back as text, not evaluated\", function () {",
+									"    pm.expect(widget.parsedCode.trim()).to.eql(\"$math.add(20,22)\");",
+									"    pm.expect(widget.parsedCodeWarning).to.eql(\"Widget field scripting is off; widget field values were rendered as text.\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					]
+				},
+				{
+					"name": "Widget endpoint: the Scripting Developer's widget is evaluated, no header",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/widget/id/{{widgetByScriptingDeveloper}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"widget",
+								"id",
+								"{{widgetByScriptingDeveloper}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Field value is evaluated\", function () {",
+									"    pm.expect(pm.response.text().trim()).to.eql(\"42\");",
+									"});",
+									"pm.test(\"No field scripting header\", function () {",
+									"    pm.expect(pm.response.headers.has(\"X-DotCMS-Widget-Render\")).to.eql(false);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					]
+				},
+				{
+					"name": "Widget endpoint: the other author's widget comes back as text, with a header",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/widget/id/{{widgetByPlainAuthor}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"widget",
+								"id",
+								"{{widgetByPlainAuthor}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Field value comes back as text, not evaluated\", function () {",
+									"    pm.expect(pm.response.text().trim()).to.eql(\"$math.add(20,22)\");",
+									"});",
+									"pm.test(\"The response says field scripting is off\", function () {",
+									"    pm.expect(pm.response.headers.get(\"X-DotCMS-Widget-Render\")).to.eql(\"field-scripting-off\");",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					]
+				},
+				{
+					"name": "Delete the widget type",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/id/{{widgetWarningTypeId}}?indexPolicy=WAIT_FOR",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"id",
+								"{{widgetWarningTypeId}}"
+							],
+							"query": [
+								{
+									"key": "indexPolicy",
+									"value": "WAIT_FOR"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Widget type deleted\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					]
+				}
+			],
+			"description": "Velocity written in a widget field value is evaluated by the REST render paths only when the widget was last saved by a Scripting Developer (FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER is on by default). Otherwise it comes back as text and each path says so: _search adds entity.warnings, the legacy GET adds parsedCodeWarning next to parsedCode, and /api/widget sets the X-DotCMS-Widget-Render header."
+		},
+		{
 			"name": "invalidateSession",
 			"event": [
 				{
