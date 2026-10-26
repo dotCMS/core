@@ -599,11 +599,16 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
             // Editing the page's own properties is editing its contentlet — route it through the
             // same feature-flag-aware entry point as every other edit flow (new editor/side panel
-            // when enabled for the page's content type, legacy dialog otherwise). Only the 'content'
-            // child route places the content editor that answers the request; on
-            // 'layout'/'rules'/'experiments' fall back to this shell's own legacy dialog (previous,
-            // route-independent behavior). No permission check, as Properties never had one.
-            if (this.#activatedRoute.firstChild?.routeConfig?.path === 'content') {
+            // when enabled for the page's content type, legacy dialog otherwise). The content editor
+            // only answers while the editor is placed, which needs the 'content' child route and a
+            // page the user can read (the outlet sits under `@if ($canRead())`); everywhere else,
+            // fall back to this shell's own legacy dialog (previous, route-independent behavior).
+            // Properties itself has no permission check, as it never had one: read permission only
+            // decides which editor answers.
+            if (
+                this.#activatedRoute.firstChild?.routeConfig?.path === 'content' &&
+                this.$canRead()
+            ) {
                 this.#contentEditor.uveEditContentRequested({
                     contentlet: page as unknown as DotCMSContentlet
                 });

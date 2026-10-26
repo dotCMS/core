@@ -43,6 +43,8 @@ const MOCK_UPDATED_CONTENTLET: UpdatedContentlet = {
 function buildMockStore(variantId = DEFAULT_VARIANT_ID) {
     return {
         pageVariantId: signal(variantId),
+        // Edit mode, with edit permission on the page.
+        editorCanEditContent: signal(true),
         setEditorState: vi.fn(),
         setUveStatus: vi.fn(),
         pageReload: vi.fn()
@@ -560,6 +562,30 @@ describe('DotUveActionsHandlerService – EDIT_CONTENTLET', () => {
             { scope: 'self' }
         );
     });
+
+    it('should not ask the content editor to edit the contentlet when the user cannot edit content', () => {
+        // Preview or live mode, or no edit permission on the page. The SDK sends the request
+        // without checking either, so the page's request has to open nothing here.
+        const uveStore = buildMockStore();
+        uveStore.editorCanEditContent.set(false);
+
+        service.handleAction(
+            {
+                action: DotCMSUVEAction.EDIT_CONTENTLET,
+                payload: createFakeContentlet({ inode: 'sdk-inode', contentType: 'Blog' })
+            },
+            {
+                uveStore: uveStore as unknown as InstanceType<typeof UVEStore>,
+                // Not used by EDIT_CONTENTLET.
+                inlineEditingService: {} as InlineEditService,
+                contentWindow: null,
+                host: 'http://localhost',
+                onCopyContent: vi.fn()
+            }
+        );
+
+        expect(dispatcher.dispatch).not.toHaveBeenCalled();
+    });
 });
 
 describe('DotUveActionsHandlerService – CREATE_CONTENTLET', () => {
@@ -610,6 +636,26 @@ describe('DotUveActionsHandlerService – CREATE_CONTENTLET', () => {
             { scope: 'self' }
         );
     });
+
+    it('should not ask the content editor to create a contentlet when the user cannot edit content', () => {
+        // Preview or live mode, or no edit permission on the page.
+        const uveStore = buildMockStore();
+        uveStore.editorCanEditContent.set(false);
+
+        service.handleAction(
+            { action: DotCMSUVEAction.CREATE_CONTENTLET, payload: { contentType: 'Event' } },
+            {
+                uveStore: uveStore as unknown as InstanceType<typeof UVEStore>,
+                // Not used by CREATE_CONTENTLET.
+                inlineEditingService: {} as InlineEditService,
+                contentWindow: null,
+                host: 'http://localhost',
+                onCopyContent: vi.fn()
+            }
+        );
+
+        expect(dispatcher.dispatch).not.toHaveBeenCalled();
+    });
 });
 
 describe('DotUveActionsHandlerService – REORDER_MENU', () => {
@@ -655,6 +701,26 @@ describe('DotUveActionsHandlerService – REORDER_MENU', () => {
             uveContentEditorEvents.uveReorderMenuRequested({ startLevel: 1, depth: 2 }),
             { scope: 'self' }
         );
+    });
+
+    it('should not ask the content editor to open the menu reorder when the user cannot edit content', () => {
+        // Preview or live mode, or no edit permission on the page.
+        const uveStore = buildMockStore();
+        uveStore.editorCanEditContent.set(false);
+
+        service.handleAction(
+            { action: DotCMSUVEAction.REORDER_MENU, payload: { startLevel: 1, depth: 2 } },
+            {
+                uveStore: uveStore as unknown as InstanceType<typeof UVEStore>,
+                // Not used by REORDER_MENU.
+                inlineEditingService: {} as InlineEditService,
+                contentWindow: null,
+                host: 'http://localhost',
+                onCopyContent: vi.fn()
+            }
+        );
+
+        expect(dispatcher.dispatch).not.toHaveBeenCalled();
     });
 });
 

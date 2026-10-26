@@ -8,7 +8,7 @@ import {
     mockProvider
 } from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
-import { Subject, of, throwError } from 'rxjs';
+import { Subject, Subscription, of, throwError } from 'rxjs';
 import { describe, expect, vi } from 'vitest';
 
 /**
@@ -722,13 +722,19 @@ describe('DotEmaShellComponent', () => {
                     spectator.triggerEventHandler(navBar, 'action', 'properties');
                 };
 
+                let editRequestsSubscription: Subscription;
+
                 beforeEach(() => {
                     editRequests = [];
-                    spectator
+                    editRequestsSubscription = spectator
                         .inject(Events)
                         .on(uveContentEditorEvents.uveEditContentRequested)
                         .subscribe(({ payload }) => editRequests.push(payload));
                 });
+
+                // The events outlive each test, so a subscription left open would record the
+                // next tests' requests too.
+                afterEach(() => editRequestsSubscription.unsubscribe());
 
                 it("should ask the content editor to edit the page's contentlet on the content screen, instead of opening the legacy dialog", () => {
                     openChildScreen('content');
@@ -756,6 +762,30 @@ describe('DotEmaShellComponent', () => {
                         expect(editRequests).toEqual([]);
                     }
                 );
+
+                it("should open the page's properties in the legacy dialog on the content screen when the user cannot read the page", () => {
+                    // Without read permission the shell does not render its router outlet, so the
+                    // editor and its content editor are not there to answer a request.
+                    openChildScreen('content');
+                    // Loaded by the setup above.
+                    const pageAsset = store.pageAsset()!;
+                    store.setPageAsset({
+                        pageAsset: { ...pageAsset, page: { ...pageAsset.page, canRead: false } }
+                    });
+                    spectator.detectChanges();
+                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+
+                    clickProperties();
+
+                    expect(editRequests).toEqual([]);
+                    expect(dialogSpy).toHaveBeenCalledWith({
+                        contentType: undefined,
+                        identifier: '123',
+                        inode: '123',
+                        title: 'hello world',
+                        angularCurrentPortlet: 'edit-page'
+                    });
+                });
             });
         });
 

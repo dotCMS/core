@@ -322,9 +322,14 @@ export class DotUveActionsHandlerService {
             /**
              * Handles the `EDIT_CONTENTLET` postMessage action sent by the SDK's `editContentlet()`,
              * as every other edit: the content type decides between the new editor and the legacy
-             * dialog.
+             * dialog. Ignored outside edit mode or without edit permission on the page, as before
+             * the split, because the SDK sends it without checking.
              */
             [DotCMSUVEAction.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
+                if (!uveStore.editorCanEditContent()) {
+                    return;
+                }
+
                 this.contentEditor.uveEditContentRequested({ contentlet });
             },
             /**
@@ -336,21 +341,33 @@ export class DotUveActionsHandlerService {
              * legacy dialog. The request carries no container position, so the newly created
              * contentlet is saved to the system but is NOT inserted into the page layout — the
              * page simply reloads after save. This supports use cases like widgets that pull
-             * content automatically (e.g. an events widget).
+             * content automatically (e.g. an events widget). Ignored outside edit mode or without
+             * edit permission on the page, as before the split, because the SDK sends it without
+             * checking.
              *
              * @param {string} contentType - The content type variable (e.g. `'Event'`)
              * @see {DotCMSUVEAction.CREATE_CONTENTLET}
              */
             [DotCMSUVEAction.CREATE_CONTENTLET]: ({ contentType }: { contentType: string }) => {
+                if (!uveStore.editorCanEditContent()) {
+                    return;
+                }
+
                 this.contentEditor.uveCreateContentRequested({
                     contentType: { variable: contentType, name: contentType }
                 });
             },
             /**
              * Handles the `REORDER_MENU` postMessage action sent by the SDK's `reorderMenu()`: the
-             * content editor opens the menu reorder screen for the page.
+             * content editor opens the menu reorder screen for the page. Ignored outside edit mode
+             * or without edit permission on the page, as before the split, because the SDK sends
+             * it without checking.
              */
             [DotCMSUVEAction.REORDER_MENU]: ({ startLevel, depth }: ReorderMenuPayload) => {
+                if (!uveStore.editorCanEditContent()) {
+                    return;
+                }
+
                 this.contentEditor.uveReorderMenuRequested({ startLevel, depth });
             },
             [DotCMSUVEAction.INIT_INLINE_EDITING]: (payload: {
