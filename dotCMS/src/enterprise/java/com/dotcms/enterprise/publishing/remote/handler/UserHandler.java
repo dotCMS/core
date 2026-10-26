@@ -81,6 +81,8 @@ public class UserHandler implements IHandler {
      * one in the bundle, so the person signs in through SSO or resets the password. Its own role
      * keeps the ID it has on the sending instance, so other pushed assets that refer to it still
      * match, while every other attribute of that role is set the way dotCMS sets it for any user.
+     * A new user whose ID is the key of an existing role is not created, because a user's own
+     * role is found by the user ID.
      *
      * @param bundleFolder the folder where the bundle was extracted
      * @throws Exception if a user file cannot be read or a new user cannot be saved
@@ -117,12 +119,20 @@ public class UserHandler implements IHandler {
 
                 if ( this.existsLocally( user ) ) {
                     Logger.info( this, String.format( "User '%s' already exists on this instance, it is kept as it is",
-                            user.getUserId() ) );
+                            forLog( user.getUserId() ) ) );
                     continue;
                 }
 
                 if ( operation.equals( PushPublisherConfig.Operation.UNPUBLISH ) ) {
                     //Nothing to remove, the user does not exist here
+                    continue;
+                }
+
+                //A user's own role is found by the user ID, so the ID cannot be the key of another role
+                if ( UtilMethods.isSet( user.getUserId() )
+                        && null != APILocator.getRoleAPI().loadRoleByKey( user.getUserId() ) ) {
+                    Logger.warn( this, String.format( "User '%s' was not created: its ID is the key of an existing role",
+                            forLog( user.getUserId() ) ) );
                     continue;
                 }
 
@@ -139,8 +149,8 @@ public class UserHandler implements IHandler {
             }
         } catch (final Exception e) {
             final String errorMsg = String.format("An error occurred when processing User in '%s' with email '%s' [%s]: %s",
-                    workingOn, (null == user ? "(empty)" : user.getEmailAddress()), (null == user ? "(empty)" : user
-                            .getUserId()), ExceptionUtil.getErrorMessage(e));
+                    workingOn, (null == user ? "(empty)" : forLog( user.getEmailAddress() )),
+                    (null == user ? "(empty)" : forLog( user.getUserId() )), ExceptionUtil.getErrorMessage(e));
             Logger.error(this.getClass(), errorMsg, e);
             throw new DotPublishingException(errorMsg, e);
         }
@@ -181,11 +191,10 @@ public class UserHandler implements IHandler {
      * Creates the own role of a new user with the ID that role has on the sending instance, so
      * workflows and other pushed assets that refer to it by ID still match. Only the ID is taken
      * from the bundle; the name, key, parent and flags are the ones dotCMS gives any user's own
-     * role. When the bundle has no usable ID, or a role with that ID or with the user's key
-     * already exists, nothing is created here and dotCMS sets up the user's own role when the
-     * user is saved.
+     * role. When the bundle has no usable ID, or a role with that ID already exists, nothing is
+     * created here and dotCMS sets up the user's own role, with a new ID, when the user is saved.
      *
-     * @param user the new {@link User}
+     * @param user the new {@link User}, whose ID is not the key of any existing role
      * @param roleFromBundle the user's own {@link Role} as it came in the bundle, may be {@code null}
      * @throws DotDataException if the role cannot be saved
      */
@@ -195,7 +204,9 @@ public class UserHandler implements IHandler {
         }
         final RoleAPI roleAPI = APILocator.getRoleAPI();
         final String roleId = roleFromBundle.getId();
-        if ( null != roleAPI.loadRoleById( roleId ) || null != roleAPI.loadRoleByKey( user.getUserId() ) ) {
+        if ( null != roleAPI.loadRoleById( roleId ) ) {
+            Logger.info( this, String.format( "Role ID '%s' of user '%s' is already used on this instance, "
+                    + "the user gets a new one", forLog( roleId ), forLog( user.getUserId() ) ) );
             return;
         }
         final Role usersRoot = roleAPI.loadRoleByKey( RoleAPI.USERS_ROOT_ROLE_KEY );
@@ -223,6 +234,21 @@ public class UserHandler implements IHandler {
         final byte[] bytes = new byte[32];
         RANDOM.nextBytes( bytes );
         return Base64.getEncoder().encodeToString( bytes );
+    }
+
+    /**
+     * Turns a value read from the bundle into a single line of limited length, so it can be
+     * written to the log as one entry.
+     *
+     * @param value the value to log, may be {@code null}
+     * @return the value without line breaks, cut at 128 characters
+     */
+    private static String forLog ( final String value ) {
+        if ( null == value ) {
+            return "null";
+        }
+        final String oneLine = value.replaceAll( "[\\r\\n]", "_" );
+        return oneLine.length() > 128 ? oneLine.substring( 0, 128 ) + "..." : oneLine;
     }
 
 }

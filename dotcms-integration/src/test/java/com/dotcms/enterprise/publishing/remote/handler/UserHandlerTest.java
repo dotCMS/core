@@ -8,6 +8,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.PasswordFactoryProxy.AuthenticationStatus;
@@ -154,8 +155,8 @@ public class UserHandlerTest extends IntegrationTestBase {
                 assertNotEquals(existing.getUserId(), fromBundle.getUserId());
                 userIds.add(fromBundle.getUserId());
 
-                withLoginBy(authType, () -> Try.run(() -> handle(origin,
-                        bundleWith(fromBundle, personalRoleFor(fromBundle), Operation.PUBLISH))));
+                withLoginBy(authType, () -> handle(origin,
+                        bundleWith(fromBundle, personalRoleFor(fromBundle), Operation.PUBLISH)));
 
                 final String context = describe(authType, origin);
                 assertKeptAsItIs(existing, context);
@@ -181,6 +182,57 @@ public class UserHandlerTest extends IntegrationTestBase {
                     bundleWith(fromBundle, personalRoleFor(fromBundle), Operation.UNPUBLISH)));
 
             assertKeptAsItIs(existing, describe(Company.AUTH_TYPE_EA, origin));
+        }
+    }
+
+    /**
+     * Method to Test: {@link UserHandler#handle(File)}
+     * Given: a user that exists on the receiver, and a bundle that asks to remove a user with a
+     * different user ID and the same email address
+     * When: the bundle is handled, for every bundle origin
+     * Should: keep the stored user exactly as it was, and not create a user with the bundle's ID.
+     */
+    @Test
+    public void test_handle_removeRequestMatchedByEmailOnly_keepsTheUser() throws Exception {
+        for (final BundleOrigin origin : ORIGINS) {
+            final User existing = existingUser();
+            final User fromBundle = new UserDataGen()
+                    .id(uniqueId())
+                    .emailAddress(existing.getEmailAddress())
+                    .next();
+            userIds.add(fromBundle.getUserId());
+
+            withLoginBy(Company.AUTH_TYPE_EA, () -> handle(origin,
+                    bundleWith(fromBundle, personalRoleFor(fromBundle), Operation.UNPUBLISH)));
+
+            final String context = describe(Company.AUTH_TYPE_EA, origin);
+            assertKeptAsItIs(existing, context);
+            assertNull(context + ": no user may be created with the bundle's ID",
+                    findById(fromBundle.getUserId()));
+        }
+    }
+
+    /**
+     * Method to Test: {@link UserHandler#handle(File)}
+     * Given: a bundle that asks to remove a user that does not exist on the receiver
+     * When: the bundle is handled, for every bundle origin
+     * Should: complete without creating the user or its role.
+     */
+    @Test
+    public void test_handle_removeRequestForUnknownUser_createsNothing() throws Exception {
+        for (final BundleOrigin origin : ORIGINS) {
+            final User fromBundle = newUserFromBundle();
+            final Role fromBundleRole = personalRoleFor(fromBundle);
+
+            withLoginBy(Company.AUTH_TYPE_EA, () -> handle(origin,
+                    bundleWith(fromBundle, fromBundleRole, Operation.UNPUBLISH)));
+
+            final String context = describe(Company.AUTH_TYPE_EA, origin);
+            assertNull(context + ": the user must not be created",
+                    findById(fromBundle.getUserId()));
+            CacheLocator.getCmsRoleCache().clearCache();
+            assertNull(context + ": the user's role must not be created",
+                    APILocator.getRoleAPI().loadRoleById(fromBundleRole.getId()));
         }
     }
 
@@ -288,7 +340,151 @@ public class UserHandlerTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to Test: {@link UserHandler#handle(File)}
+     * Given: a role that exists on the receiver, and a bundle that carries a new user whose ID is
+     * that role's key
+     * When: the bundle is handled, for every bundle origin
+     * Should: not create the user, and keep the existing role with its name and without the
+     * user, since a user's own role is found by the user's ID.
+     */
+    @Test
+    public void test_handle_newUserWithIdOfAnExistingRoleKey_isNotCreated() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        for (final BundleOrigin origin : ORIGINS) {
+            final String sharedKey = uniqueId();
+            final Role existingRole = new RoleDataGen()
+                    .name("Existing Role " + UUIDGenerator.shorty())
+                    .key(sharedKey)
+                    .nextPersisted();
+            roleIds.add(existingRole.getId());
+
+            final User fromBundle = new UserDataGen()
+                    .id(sharedKey)
+                    .emailAddress(uniqueEmail())
+                    .firstName("Pushed")
+                    .lastName("User")
+                    .next();
+            userIds.add(fromBundle.getUserId());
+
+            withLoginBy(Company.AUTH_TYPE_EA, () -> handle(origin,
+                    bundleWith(fromBundle, personalRoleFor(fromBundle), Operation.PUBLISH)));
+
+            final String context = describe(Company.AUTH_TYPE_EA, origin);
+            assertNull(context + ": no user may be created with the ID of an existing role key",
+                    findById(fromBundle.getUserId()));
+            CacheLocator.getCmsRoleCache().clearCache();
+            final Role stored = roleAPI.loadRoleById(existingRole.getId());
+            assertNotNull(context + ": the existing role must still exist", stored);
+            assertEquals(context + ": the existing role must keep its name",
+                    existingRole.getName(), stored.getName());
+            assertEquals(context, sharedKey, stored.getRoleKey());
+        }
+    }
+
+    /**
+     * Method to Test: {@link UserHandler#handle(File)}
+     * Given: a bundle that carries a new user without its own role, or with a role that has no ID
+     * When: the bundle is handled, for every bundle origin
+     * Should: create the user with the own role dotCMS gives any user.
+     */
+    @Test
+    public void test_handle_newUserWithoutUsableRole_getsStandardPersonalRole() throws Exception {
+        final Role roleWithoutId = new Role();
+        roleWithoutId.setName("Role From Bundle " + UUIDGenerator.shorty());
+        for (final Role fromBundleRole : Arrays.asList(null, roleWithoutId)) {
+            for (final BundleOrigin origin : ORIGINS) {
+                final User fromBundle = newUserFromBundle();
+
+                withLoginBy(Company.AUTH_TYPE_EA, () -> handle(origin,
+                        bundleWith(fromBundle, fromBundleRole, Operation.PUBLISH)));
+
+                final String context = describe(Company.AUTH_TYPE_EA, origin)
+                        + ", bundle role " + (fromBundleRole == null ? "missing" : "without ID");
+                final User created = findById(fromBundle.getUserId());
+                assertNotNull(context + ": the new user must be created", created);
+                assertStandardPersonalRole(created, context);
+            }
+        }
+    }
+
+    /**
+     * Method to Test: {@link UserHandler#handle(File)}
+     * Given: a role that exists on the receiver, and a bundle that carries a new user whose own
+     * role has that role's ID
+     * When: the bundle is handled, for every bundle origin
+     * Should: create the user with a standard own role under a different ID, and keep the
+     * existing role with its name and key and without the new user.
+     */
+    @Test
+    public void test_handle_newUserWithRoleIdOfAnExistingRole_keepsTheExistingRole() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        for (final BundleOrigin origin : ORIGINS) {
+            final Role existingRole = new RoleDataGen()
+                    .name("Existing Role " + UUIDGenerator.shorty())
+                    .key(uniqueId())
+                    .nextPersisted();
+            roleIds.add(existingRole.getId());
+
+            final User fromBundle = newUserFromBundle();
+            final Role fromBundleRole = personalRoleFor(fromBundle);
+            fromBundleRole.setId(existingRole.getId());
+
+            withLoginBy(Company.AUTH_TYPE_EA, () -> handle(origin,
+                    bundleWith(fromBundle, fromBundleRole, Operation.PUBLISH)));
+
+            final String context = describe(Company.AUTH_TYPE_EA, origin);
+            final User created = findById(fromBundle.getUserId());
+            assertNotNull(context + ": the new user must be created", created);
+            final Role personal = assertStandardPersonalRole(created, context);
+            assertNotEquals(context + ": the user's own role must not take the existing role's ID",
+                    existingRole.getId(), personal.getId());
+            final Role stored = roleAPI.loadRoleById(existingRole.getId());
+            assertNotNull(context + ": the existing role must still exist", stored);
+            assertEquals(context, existingRole.getName(), stored.getName());
+            assertEquals(context, existingRole.getRoleKey(), stored.getRoleKey());
+            assertEquals(context + ": the new user must not get the existing role", false,
+                    roleAPI.doesUserHaveRole(created, stored));
+        }
+    }
+
     // ---------------------------------------------------------------- helpers
+
+    /**
+     * Builds a user that does not exist on the receiver, with a password hash for a known
+     * password, and registers it for cleanup.
+     */
+    private User newUserFromBundle() throws Exception {
+        final User user = new UserDataGen()
+                .id(uniqueId())
+                .emailAddress(uniqueEmail())
+                .firstName("Pushed")
+                .lastName("User")
+                .password(PasswordFactoryProxy.generateHash(KNOWN_PASSWORD))
+                .next();
+        userIds.add(user.getUserId());
+        return user;
+    }
+
+    /**
+     * Checks that the user has its own role with the key, name, parent and flags dotCMS gives
+     * any user, and returns that role.
+     */
+    private static Role assertStandardPersonalRole(final User user, final String context)
+            throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        CacheLocator.getCmsRoleCache().clearCache();
+        final Role personal = roleAPI.loadRoleByKey(user.getUserId());
+        assertNotNull(context + ": the user must have its own role", personal);
+        final Role usersRoot = roleAPI.loadRoleByKey(RoleAPI.USERS_ROOT_ROLE_KEY);
+        assertEquals(context, user.getFullName(), personal.getName());
+        assertEquals(context, usersRoot.getId(), personal.getParent());
+        assertEquals(context, true, personal.isSystem());
+        assertEquals(context, false, personal.isEditUsers());
+        assertEquals(context + ": the user must be in its own role", true,
+                roleAPI.doesUserHaveRole(user, personal));
+        return personal;
+    }
 
     private User existingUser() {
         final User user = new UserDataGen()
