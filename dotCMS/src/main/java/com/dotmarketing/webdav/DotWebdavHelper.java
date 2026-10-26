@@ -2033,9 +2033,16 @@ public class DotWebdavHelper {
 		}
 		return returnValue;
 	}
+	/**
+	 * Writes a resource with the current date and no auto-publish, wrapping any failure as a
+	 * {@link DotRuntimeException}. A refused file name is passed through unchanged, so the
+	 * resource layer can answer it as a client error rather than a server one.
+	 */
 	private void setResourceContent(String resourceUri, InputStream content, String contentType, String characterEncoding, User user) throws Exception {
 		try {
 			setResourceContent(resourceUri, content, contentType, characterEncoding, Calendar.getInstance().getTime(), user, false);
+		} catch (final IllegalArgumentException e) {
+			throw e;
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(),e);
