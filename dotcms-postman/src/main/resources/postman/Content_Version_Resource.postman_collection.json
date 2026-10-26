@@ -14,6 +14,51 @@
 					"name": "Generate Test Data",
 					"item": [
 						{
+							"name": "Create Second Language",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"The Spanish language exists after the request\", function () {",
+											"    pm.response.to.have.status(200);",
+											"    pm.expect(pm.response.json().errors.length).to.equal(0, \"An error occurred when creating the Spanish Language\");",
+											"});",
+											""
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"languageCode\": \"es\",\n    \"language\": \"Spanish\",\n    \"countryCode\": \"ES\",\n    \"country\": \"Spain\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v2/languages",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v2",
+										"languages"
+									]
+								},
+								"description": "The default starter only has English, so this collection creates the Spanish language it needs instead of relying on another collection having left one behind. The endpoint answers 200 with the existing language when es-ES is already there."
+							},
+							"response": []
+						},
+						{
 							"name": "Find Second Language",
 							"event": [
 								{
@@ -24,9 +69,10 @@
 											"pm.test(\"A second language must be present\", function () {",
 											"    const responseBody = pm.response.json();",
 											"    pm.expect(responseBody.errors.length).to.equal(0, \"An error occurred when retrieving the Spanish Language\");",
-											"    pm.expect(responseBody.entity.length).to.greaterThan(1, \"There must be more than 1 language\");",
-											"    pm.collectionVariables.set(\"secondLangId\", responseBody.entity[1].id);",
-											"    pm.collectionVariables.set(\"isoCode\", responseBody.entity[1].isoCode);",
+											"    const spanish = responseBody.entity.find(language => language.isoCode === \"es-es\");",
+											"    pm.expect(spanish, \"The Spanish language (es-es) must be present\").to.be.an(\"object\");",
+											"    pm.collectionVariables.set(\"secondLangId\", spanish.id);",
+											"    pm.collectionVariables.set(\"isoCode\", spanish.isoCode);",
 											"});",
 											""
 										],

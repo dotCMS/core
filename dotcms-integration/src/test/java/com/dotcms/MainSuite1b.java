@@ -112,7 +112,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ContentletDestroyIndexRemovalTest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexPartialFailurePhaseTest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexProviderSkipTest.class,
-        com.dotcms.rendering.velocity.viewtools.ScriptingFileForgeryIntegrationTest.class
+        com.dotcms.rendering.velocity.viewtools.ScriptingFileForgeryIntegrationTest.class,
+        com.dotcms.graphql.GraphqlCacheWebInterceptorIntegrationTest.class
 })
 
 public class MainSuite1b {
