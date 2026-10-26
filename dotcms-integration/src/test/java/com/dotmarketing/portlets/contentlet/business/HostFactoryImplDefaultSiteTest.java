@@ -23,6 +23,11 @@ import org.junit.Test;
  */
 public class HostFactoryImplDefaultSiteTest {
 
+    /**
+     * Starts the integration test environment.
+     *
+     * @throws Exception if the environment cannot be started
+     */
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
@@ -53,8 +58,17 @@ public class HostFactoryImplDefaultSiteTest {
         } finally {
             Config.setProperty(SAVE_CONTENTLET_AS_JSON, previousValue);
             if (null != foundSite && !defaultSite.getIdentifier().equals(foundSite.getIdentifier())) {
-                APILocator.getHostAPI().archive(foundSite, systemUser, false);
-                APILocator.getHostAPI().delete(foundSite, systemUser, false);
+                // Saving the second default site took the default flag off the real one
+                CacheLocator.getHostCache().clearCache();
+                final Host previousDefault = APILocator.getHostAPI().find(
+                        defaultSite.getIdentifier(), systemUser, false);
+                if (!previousDefault.isDefault()) {
+                    APILocator.getHostAPI().makeDefault(previousDefault, systemUser, false);
+                }
+                final Host secondDefault = APILocator.getHostAPI().find(
+                        foundSite.getIdentifier(), systemUser, false);
+                APILocator.getHostAPI().archive(secondDefault, systemUser, false);
+                APILocator.getHostAPI().delete(secondDefault, systemUser, false);
             }
             CacheLocator.getHostCache().clearCache();
         }
