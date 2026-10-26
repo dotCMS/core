@@ -89,6 +89,12 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
      */
     private static final int MAX_QUERY_LIMIT = 10000;
 
+    /** Marker added to the variable of a Content Type whose real variable has been released. */
+    private static final String DELETED_VARIABLE_SUFFIX = "_deleted_";
+
+    /** Size of the {@code structure.velocity_var_name} column. */
+    private static final int VARIABLE_MAX_LENGTH = 255;
+
     final ContentTypeSql contentTypeSql;
   final ContentTypeCache2 cache;
 
@@ -1884,6 +1890,48 @@ public class ContentTypeFactoryImpl implements ContentTypeFactory {
        dotConnect.addParam(type.inode());
        dotConnect.loadResult();
        cache.remove(type);
+    }
+
+    /**
+     * {@inheritDoc}
+     * @param type
+     * @return the throw-away variable the type now carries
+     * @throws DotDataException
+     */
+    @Override
+    public String releaseVariable(final ContentType type) throws DotDataException {
+
+        final String releasedVariable = releasedVariableFor(type);
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL(ContentTypeSql.UPDATE_TYPE_VELOCITY_VAR_NAME);
+        dotConnect.addParam(releasedVariable);
+        dotConnect.addParam(type.inode());
+        dotConnect.loadResult();
+        // Evicting with the pre-rename object clears both the inode key and the old variable key
+        cache.remove(type);
+        Logger.info(ContentTypeFactoryImpl.class, String.format(
+                "::: CT (%s) with inode:(%s) renamed to (%s), its variable is available again :::",
+                type.variable(), type.inode(), releasedVariable));
+        return releasedVariable;
+    }
+
+    /**
+     * Builds the throw-away variable a Content Type gets when its real one is released. The inode
+     * keeps it unique, and the original variable is kept as a prefix so the row is still
+     * recognizable to anyone looking at the database; the prefix is trimmed when the two together
+     * would not fit the column.
+     *
+     * @param type the {@link ContentType} whose variable is being released
+     * @return the new variable, never longer than the column allows
+     */
+    private static String releasedVariableFor(final ContentType type) {
+
+        final String suffix = DELETED_VARIABLE_SUFFIX + type.inode().replace("-", "");
+        final int roomForPrefix = VARIABLE_MAX_LENGTH - suffix.length();
+        final String variable = type.variable();
+        return (variable.length() > roomForPrefix
+                ? variable.substring(0, roomForPrefix)
+                : variable) + suffix;
     }
 
 }

@@ -16,7 +16,6 @@ import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.contenttype.business.ContentTypeAPI;
-import com.dotcms.contenttype.model.event.ContentTypeDeletedEvent;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.exception.ExceptionUtil;
@@ -309,20 +308,22 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		this.localSystemEventsAPI.subscribe(this);
 	}
 
-	@Subscriber
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>Called by the Content Type deletion itself rather than by a listener on
+	 * {@link com.dotcms.contenttype.model.event.ContentTypeDeletedEvent}: the event fires once the type is gone, by which time its
+	 * variable — the key these mappings are stored under — may already belong to a different
+	 * type.</p>
+	 */
+	@Override
 	@WrapInTransaction
-	public void onDeleteContentType (final ContentTypeDeletedEvent contentTypeDeletedEvent) {
+	public void deleteSystemActionsByContentType(final ContentType contentType) throws DotDataException {
 
-		try {
+		Logger.debug(this, ()-> "Deleting system mapping actions associated to the content type: "
+				+ contentType.variable());
 
-			Logger.debug(this, ()-> "Deleting system mapping actions associated to the content type: "
-					+ contentTypeDeletedEvent.getContentTypeVar() );
-
-			this.workFlowFactory.deleteSystemActionsByContentType(contentTypeDeletedEvent.getContentTypeVar());
-		} catch (final DotDataException e) {
-            Logger.error(this, String.format("Cannot delete system mapping actions associated to Content Type '%s': " +
-                    "%s", contentTypeDeletedEvent.getContentTypeVar(), e.getMessage()), e);
-        }
+		this.workFlowFactory.deleteSystemActionsByContentType(contentType.variable());
 	}
 
 	@Subscriber

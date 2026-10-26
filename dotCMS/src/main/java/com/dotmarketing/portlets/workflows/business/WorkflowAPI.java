@@ -1010,6 +1010,20 @@ public interface WorkflowAPI {
 	List<SystemActionWorkflowActionMapping> findSystemActionsByContentType (final ContentType contentType, final User user) throws DotSecurityException, DotDataException;
 
 	/**
+	 * Removes every {@link SystemActionWorkflowActionMapping} that belongs to the given
+	 * {@link ContentType}.
+	 *
+	 * <p>The mappings are stored against the Content Type's variable rather than its id, so this
+	 * has to be called while that variable still belongs to this type. Once the variable has been
+	 * released — which happens as soon as the type is scheduled for deletion — another type may
+	 * legitimately take the name, and a later cleanup would hit the wrong mappings.</p>
+	 *
+	 * @param contentType the {@link ContentType} whose system action mappings are removed
+	 * @throws DotDataException if the mappings cannot be removed
+	 */
+	void deleteSystemActionsByContentType(final ContentType contentType) throws DotDataException;
+
+	/**
 	 * Finds the {@link SystemActionWorkflowActionMapping}'s associated to a {@link WorkflowScheme}
 	 * @param workflowScheme {@link WorkflowScheme}
 	 * @param user {@link User}  user used to check permissions

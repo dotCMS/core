@@ -237,6 +237,21 @@ public interface ContentTypeFactory {
 	void markForDeletion(ContentType type) throws DotDataException;
 
 	/**
+	 * Renames the Content Type's variable to a throw-away name derived from its inode, so the
+	 * original variable becomes available to a new Content Type right away instead of staying
+	 * taken until the asynchronous deletion finishes relocating and removing the old one.
+	 *
+	 * <p>Callers are expected to have already marked the type for deletion. Anything still
+	 * holding a reference to the old variable will stop resolving it, which is the point: the
+	 * type is on its way out.</p>
+	 *
+	 * @param type the {@link ContentType} being deleted
+	 * @return the throw-away variable the type now carries
+	 * @throws DotDataException if the update fails
+	 */
+	String releaseVariable(ContentType type) throws DotDataException;
+
+	/**
 	 * Return the count of {@link ContentType} assigned to not SYSTEM_WORFLOW
 	 * @return
 	 */

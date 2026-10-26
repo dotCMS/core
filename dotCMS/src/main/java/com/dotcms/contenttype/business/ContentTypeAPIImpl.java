@@ -182,6 +182,10 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @WrapInTransaction
   private void transactionalDelete(ContentType type) throws DotDataException {
       try {
+        // The system action mappings are keyed by the Content Type variable, so they are removed
+        // here rather than from a listener on the deletion event, which fires once the variable
+        // is already free for another type to claim.
+        APILocator.getWorkflowAPI().deleteSystemActionsByContentType(type);
         contentTypeFactory.delete(type);
       } catch (DotStateException | DotDataException e) {
         Logger.error(ContentType.class, e.getMessage(), e);
@@ -259,10 +263,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
 
   /**
-   * triggers the async delete of the content type
-   * @param type content type to delete
+   * Triggers the asynchronous delete of a Content Type. By the time this returns, the type is
+   * marked for deletion, its workflow system action mappings are gone and its variable has been
+   * handed back, so a new type can take that variable immediately. Removing the contentlets and
+   * the row itself happens afterwards, in the background.
+   *
+   * @param type the {@link ContentType} to delete
    * @param asyncDeleteWithJob this flag allows me to skip the Quartz Job and call the method directly
-   * @throws DotDataException
+   * @throws DotDataException if the type cannot be marked, copied or renamed
    */
    @WrapInTransaction
    void triggerAsyncDelete(final ContentType type, final boolean asyncDeleteWithJob) throws DotDataException {
@@ -270,6 +278,14 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       //Then this quickly hides the content from the front end and APIS
      contentTypeFactory.markForDeletion(type);
      final ContentType copy = makeDisposableCopy(type);
+     // Same reason as in transactionalDelete: the mappings are keyed by the variable, and the
+     // variable is about to be handed back.
+     APILocator.getWorkflowAPI().deleteSystemActionsByContentType(type);
+     // Hand the variable back within this transaction instead of waiting for the disposal to
+     // finish. Relocating the contentlets takes as long as the type is big and queues behind
+     // every other pending deletion, so a caller that deletes a type and immediately recreates
+     // one with the same variable would otherwise be rejected.
+     contentTypeFactory.releaseVariable(type);
      //Once a copy has been made, we need to relocate all the content to the dummy CT and then delete the original
      HibernateUtil.addCommitListener(() -> relocateThenDispose(type, copy, asyncDeleteWithJob));
 
