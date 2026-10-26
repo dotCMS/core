@@ -193,7 +193,7 @@
 
 			</td>
 			<td onClick="editTask(event, '<%=task.getId()%>', '<%=contentlet.getLanguageId()%>', '<%= contentlet.getContentType().variable()%>')">
-				<%=contentlet.getTitle() %>
+				<%=Xss.encodeForHTML(contentlet.getTitle()) %>
 			</td>
 			<td nowrap="true" align="center" width="1%" onClick="editTask(event, '<%=task.getId()%>', '<%=contentlet.getLanguageId()%>' , '<%= contentlet.getContentType().variable()%>')">
 				<%if (contentlet.isLive()) {%>

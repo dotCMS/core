@@ -1,3 +1,4 @@
+<%@ page import="com.liferay.util.Xss" %>
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
 <%@ page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>
 <%@ page import="java.util.List"%>
@@ -158,7 +159,7 @@
 						for(Map<String, Object> asset : assetsTransformed){
 
 							final String title = UtilMethods.isSet(asset.get(PublishQueueElementTransformer.TITLE_KEY)) ?
-								StringEscapeUtils.escapeJavaScript(asset.get(PublishQueueElementTransformer.TITLE_KEY).toString()) : StringPool.BLANK;
+								StringEscapeUtils.escapeJavaScript(Xss.encodeForHTML(asset.get(PublishQueueElementTransformer.TITLE_KEY).toString())) : StringPool.BLANK;
 
 							if (!title.equals( "" ) ) {%>
 
@@ -166,7 +167,7 @@
 									title:'<%= title %>',
 									inode:'<%=asset.get(PublishQueueElementTransformer.INODE_KEY)%>',
 									type:'<%=asset.get(PublishQueueElementTransformer.TYPE_KEY)%>',
-									content_type_name:'<%= asset.get(PublishQueueElementTransformer.CONTENT_TYPE_NAME_KEY) %>',
+									content_type_name:'<%= StringEscapeUtils.escapeJavaScript(Xss.encodeForHTML(String.valueOf(asset.get(PublishQueueElementTransformer.CONTENT_TYPE_NAME_KEY)))) %>',
 									language_code:'<%= asset.get(PublishQueueElementTransformer.LANGUAGE_CODE_KEY)  %>',
 									country_code:'<%= asset.get(PublishQueueElementTransformer.COUNTRY_CODE_KEY) %>',
 									asset:'<%= asset.get(PublishQueueElementTransformer.ASSET_KEY) %>'

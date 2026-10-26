@@ -13,6 +13,7 @@ import org.apache.commons.lang.StringUtils;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.ClusterStats;
 import com.dotcms.content.index.domain.CreateIndexStatus;
+import com.dotcms.content.index.domain.SearchClusterHealth;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.exception.DotDataException;
@@ -45,9 +46,12 @@ import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import jakarta.json.stream.JsonParser;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.core5.util.Timeout;
 import org.opensearch.client.json.JsonpMapper;
 import org.opensearch.client.opensearch._types.ExpandWildcard;
 import org.opensearch.client.opensearch._types.Time;
+import org.opensearch.client.transport.httpclient5.ApacheHttpClient5Options;
 import org.opensearch.client.opensearch.indices.ClearCacheRequest;
 import org.opensearch.client.opensearch.indices.ClearCacheResponse;
 import org.opensearch.client.opensearch.indices.CreateIndexRequest;
@@ -533,6 +537,62 @@ public class OSIndexAPIImpl implements IndexAPI {
             Logger.error(this.getClass(), "Error fetching OS cluster health: " + e.getMessage(), e);
             return new HashMap<>();
         }
+    }
+
+    /**
+     * Returns the health of this install's indices in OpenSearch (the cluster prefix), with the
+     * {@link #INDEX_OPERATIONS_TIMEOUT} server-side timeout. The status and shard counts cover only
+     * those indices; node counts and pending work stay cluster-wide. Each attempt gives up on the
+     * client side after {@link SearchClusterHealth#TIMEOUT_PROPERTY} milliseconds; after a failed
+     * attempt the client tries the next configured host, so with several hung hosts the call takes
+     * a multiple of the limit. Unlike
+     * {@link #getClusterHealth()}, which lists this cluster's indices and answers an empty map on
+     * failure, an unreachable cluster is reported as an unchecked exception: {@code PhaseRouter}
+     * only falls back to Elasticsearch in phase 2 on a {@link RuntimeException}, and the client
+     * signals a refused connection or a timeout with a checked {@link IOException}.
+     *
+     * @return the OpenSearch health, stamped as {@link SearchClusterHealth.Engine#OPENSEARCH}
+     * @throws DotRuntimeException if OpenSearch can't be asked or doesn't answer in time
+     */
+    @Override
+    public SearchClusterHealth getClusterHealthSummary() {
+        final Timeout timeLimit = Timeout.ofMilliseconds(SearchClusterHealth.timeoutMillis());
+        final ApacheHttpClient5Options options = ApacheHttpClient5Options.DEFAULT.toBuilder()
+                .setRequestConfig(RequestConfig.custom()
+                        .setConnectTimeout(timeLimit)
+                        .setResponseTimeout(timeLimit)
+                        .setConnectionRequestTimeout(timeLimit)
+                        .build())
+                .build();
+
+        final org.opensearch.client.opensearch.cluster.HealthResponse response;
+        try {
+            response = clientProvider.getClient().cluster()
+                    .withTransportOptions(options)
+                    .health(r -> r.index(getClusterPrefix() + "*")
+                            .timeout(t -> t.time(INDEX_OPERATIONS_TIMEOUT)));
+        } catch (final IOException e) {
+            throw new DotRuntimeException("Could not read OpenSearch cluster health: " + e.getMessage(), e);
+        }
+
+        return SearchClusterHealth.builder()
+                .engine(SearchClusterHealth.Engine.OPENSEARCH)
+                .clusterName(response.clusterName())
+                .status(response.status().name().toLowerCase())
+                .timedOut(response.timedOut())
+                .numberOfNodes(response.numberOfNodes())
+                .numberOfDataNodes(response.numberOfDataNodes())
+                .activePrimaryShards(response.activePrimaryShards())
+                .activeShards(response.activeShards())
+                .relocatingShards(response.relocatingShards())
+                .initializingShards(response.initializingShards())
+                .unassignedShards(response.unassignedShards())
+                .delayedUnassignedShards(response.delayedUnassignedShards())
+                .numberOfPendingTasks(response.numberOfPendingTasks())
+                .numberOfInFlightFetch(response.numberOfInFlightFetch())
+                .taskMaxWaitingInQueueMillis(response.taskMaxWaitingInQueueMillis())
+                .activeShardsPercent(response.activeShardsPercentAsNumber())
+                .build();
     }
 
     private static String toHumanReadableSize(final long bytes) {
