@@ -6,7 +6,6 @@
 export const __DEFAULT_TINYMCE_CONFIG__ = {
     menubar: false,
     inline: true,
-    license_key: 'gpl', // Agree to the TinyMCE open-source (GPL) license terms; avoids evaluation mode
     valid_styles: {
         '*': 'font-size,font-family,color,text-decoration,text-align'
     },

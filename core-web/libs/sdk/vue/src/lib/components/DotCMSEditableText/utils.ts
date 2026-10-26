@@ -24,8 +24,10 @@ export interface DotCMSEditableTextProps<T extends DotCMSBasicContentlet = DotCM
 
 type TinyMCEInit = Record<string, unknown>;
 
+// The GPL license is set via the Editor's `license-key` prop, not here: the
+// tinymce-vue integration overwrites `init.license_key` with that prop's value.
 const DEFAULT_TINYMCE_CONFIG: TinyMCEInit = {
-    ...__DEFAULT_TINYMCE_CONFIG__ // license_key: 'gpl' comes from the shared config
+    ...__DEFAULT_TINYMCE_CONFIG__
 };
 
 /**
