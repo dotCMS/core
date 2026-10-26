@@ -7,6 +7,8 @@ import {
     FolderRunPreview,
     acceptSubmissionsWithoutRunning,
     advertiseFolderCeilings,
+    expectSeen,
+    recordFromNextLoad,
     refuseFolderRunsWith
 } from './helpers/content-drive-folder-runs';
 
@@ -39,6 +41,12 @@ import { type ContentDriveApiHelpers, expect, test } from '../../fixtures/conten
 // toast or restored status could be another's. `default`, not `serial`: a failure does not
 // skip the tests after it.
 test.describe.configure({ mode: 'default', timeout: 300000 });
+
+/** Where Content Drive reads the duplicates still running when it loads. */
+const ACTIVE_DUPLICATES_URL = '/api/v1/jobs/folderBulkDuplicate/active';
+
+/** The status toast's one-line summary of a run in progress. */
+const STATUS_SUMMARY = '[data-testid="status-toast-summary"]';
 
 /**
  * Seeds a container folder holding the given subfolders, opens it, and removes it however the
@@ -151,23 +159,43 @@ test.describe('Content Drive folder duplicate', () => {
         adminPage,
         apiHelpers,
         testSuffix
-    }) =>
-        inSeededContainer(
-            { adminPage, apiHelpers, name: `cd-dup-reload-${testSuffix}`, children: ['source'] },
+    }) => {
+        const name = `cd-dup-reload-${testSuffix}`;
+
+        return inSeededContainer(
+            { adminPage, apiHelpers, name, children: ['source'] },
             async (drive) => {
-                const duplicate = new FolderDuplicate(adminPage);
-                await duplicate.fromContextMenu('source');
-                await drive.expectStatusToastContaining('in the background');
+                const site = await apiHelpers.getDefaultSite();
 
                 // The status used to go with the page while the run carried on. It is put back
-                // from the queue's active listing, and the completion ends it and reloads the
-                // listing as it would have.
+                // from the queue's active listing, so the run must still be going when the
+                // reloaded page reads it, and a one-folder duplicate ends in well under a second.
+                // So the read is held, the duplicate queued, and only then does the read reach
+                // the server. That narrows the race rather than closing it: the queue could still
+                // pick up and finish the run within the read's own round trip.
+                await adminPage.route(
+                    (url) => url.pathname === ACTIVE_DUPLICATES_URL,
+                    async (route) => {
+                        await apiHelpers.submitFolderDuplicate(site.hostname, [`/${name}/source`]);
+                        await route.continue();
+                    },
+                    { times: 1 }
+                );
+
+                // The restored status lasts only until the run ends, which can be too brief for an
+                // assertion's retries to catch, so it is recorded from the moment the page loads.
+                const statuses = await recordFromNextLoad(adminPage, STATUS_SUMMARY);
+
                 await adminPage.reload();
-                await drive.expectStatusToastContaining('in the background');
+                // "Duplicating", not "in the background": an upload's indicator says that too.
+                await expectSeen(statuses, 'Duplicating');
+
+                // The completion ends it and reloads the listing as it would have.
                 await drive.expectStatusToastGone();
                 await drive.expectListContainsTitle('source_copy');
             }
-        ));
+        );
+    });
 
     test('does not offer Duplicate where the author cannot add folders', ({
         adminPage,
