@@ -40,8 +40,7 @@ export interface DotCMSEditableTextProps<T extends DotCMSBasicContentlet> {
 }
 
 const DEFAULT_TINYMCE_CONFIG: IAllProps['init'] = {
-    ...__DEFAULT_TINYMCE_CONFIG__,
-    licenseKey: 'gpl' // Using self-hosted license key
+    ...__DEFAULT_TINYMCE_CONFIG__ // license_key: 'gpl' comes from the shared config
 };
 
 export const TINYMCE_CONFIG: {

@@ -10,8 +10,7 @@ export type DOT_EDITABLE_TEXT_MODE = 'minimal' | 'full' | 'plain';
 export type DOT_EDITABLE_TEXT_FORMAT = 'html' | 'text';
 
 const DEFAULT_TINYMCE_CONFIG: EditorComponent['init'] = {
-    ...__DEFAULT_TINYMCE_CONFIG__,
-    license_key: 'gpl' // Using self-hosted license key
+    ...__DEFAULT_TINYMCE_CONFIG__ // license_key: 'gpl' comes from the shared config
 };
 
 export const TINYMCE_CONFIG: {

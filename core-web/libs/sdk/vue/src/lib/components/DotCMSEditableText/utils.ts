@@ -25,8 +25,7 @@ export interface DotCMSEditableTextProps<T extends DotCMSBasicContentlet = DotCM
 type TinyMCEInit = Record<string, unknown>;
 
 const DEFAULT_TINYMCE_CONFIG: TinyMCEInit = {
-    ...__DEFAULT_TINYMCE_CONFIG__,
-    licenseKey: 'gpl' // Self-hosted GPL license.
+    ...__DEFAULT_TINYMCE_CONFIG__ // license_key: 'gpl' comes from the shared config
 };
 
 /**
