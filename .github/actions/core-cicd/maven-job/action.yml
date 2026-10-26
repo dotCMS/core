@@ -69,6 +69,15 @@ inputs:
     description: 'Download artifacts from a previous job'
     required: false
     default: ''
+  restore-maven-cache:
+    description: |
+      Restore the shared third-party Maven dependency cache. The maven-repo artifact
+      carries only what the build installed, so a job that compiles or runs the
+      dotCMS modules needs this cache for their dependencies. A job whose modules
+      declare no dependencies (Postman, E2E) can turn it off and let Maven fetch its
+      few plugins instead of restoring several hundred megabytes it never reads.
+    required: false
+    default: 'true'
   github-token:
     description: 'GitHub token for authentication'
     required: true
@@ -248,15 +257,25 @@ runs:
         # Changes only when the Maven version does, so this key is ~always a hit.
         key: ${{ runner.os }}-maven-wrapper-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
 
+    # Third-party dependencies only: the build job removes everything it installed
+    # before saving (see Delete Built Artifacts From Cache), and consumers get the
+    # built artifacts from the maven-repo artifact instead. Test jobs restore it
+    # too; the build job saves it before they start, and a miss falls back to an
+    # older entry plus whatever Maven downloads.
+    #
+    # The v2 in the key retires the entries written before that cleanup existed.
+    # They carried a second copy of every dotCMS module under old release versions
+    # (about 1 GB), and the restore-keys fallback copies such an entry forward to
+    # every new pom hash, so it would never have aged out on its own.
     - id: restore-cache-maven
       name: Restore Maven Repository Cache
-      if: ${{ inputs.artifacts-from == '' }}
+      if: ${{ inputs.restore-maven-cache == 'true' }}
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.m2/repository
-        key: ${{ runner.os }}-mavencore-${{ hashFiles('**/pom.xml') }}
+        key: ${{ runner.os }}-mavencore-v2-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
-          ${{ runner.os }}-mavencore-
+          ${{ runner.os }}-mavencore-v2-
 
     - id: restore-cache-node
       name: Restore Node Binary Cache
@@ -341,6 +360,7 @@ runs:
         key: ${{ runner.os }}-sonar
         restore-keys: ${{ runner.os }}-sonar
 
+    # Lands on top of the dependency cache restored above: the built artifacts only.
     - id: restore-artifact-maven-repo
       name: Restore Maven Build Repo
       if: ${{ inputs.artifacts-from != '' }}
@@ -539,13 +559,44 @@ runs:
           ./mvnw $FINAL_ARGS --file pom.xml
         fi
 
+    # The artifact carries only what this build installed, not the whole repository:
+    # the third-party dependencies travel through the Maven cache, which is far
+    # smaller to move than the full repository (the 2.7 GB artifact took 37-765 s to
+    # download in each of ~25 test jobs).
+    #
+    # "Installed" is decided per version directory, from the _remote.repositories
+    # file Maven writes beside the files: an installed artifact is recorded with an
+    # empty repository id ("x.jar>="), a downloaded one names the repository it came
+    # from ("x.jar>dotcms-libs="). That covers builds whose version is not a
+    # -SNAPSHOT (release and LTS builds), which a *-SNAPSHOT match would miss, and it
+    # leaves downloaded com.dotcms releases alone: the SAML plugin compiles against
+    # a pinned, downloaded com.dotcms:dotcms-core:26.03.27-01, which must stay in the
+    # cache even though a build of the current version sits in the same artifactId
+    # directory.
+    - id: stage-built-artifacts
+      name: Stage Built Artifacts
+      if: ${{ inputs.generate-artifacts == 'true' }}
+      shell: bash
+      run: |
+        STAGE="${RUNNER_TEMP}/built-artifacts"
+        LIST="${RUNNER_TEMP}/built-artifacts.list"
+        mkdir -p "${STAGE}"
+        cd ~/.m2/repository
+        find . -name _remote.repositories -exec grep -l '>=$' {} + | xargs -n1 dirname > "${LIST}" || true
+        if [ ! -s "${LIST}" ]; then
+          echo "::error::The build installed nothing into ~/.m2/repository, so there is nothing to publish"
+          exit 1
+        fi
+        tar -cf - -T "${LIST}" | tar -xf - -C "${STAGE}"
+        du -sh "${STAGE}"
+
     - id: persist-maven-repo
       name: Persist Maven Repo
       if: ${{ inputs.generate-artifacts == 'true' }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: maven-repo${{ steps.artifact-suffix.outputs.suffix }}
-        path: ~/.m2/repository
+        path: ${{ runner.temp }}/built-artifacts
 
     - id: persist-docker-build-context
       name: Persist Docker Build Context
@@ -617,15 +668,26 @@ runs:
           **/target/test-classes/**/*.class
           LICENSE
 
+    # Release builds neither clean nor save the cache. Removing the release
+    # coordinates would break the caller's check that they were installed, and a
+    # cache entry written from a release build is how release coordinates got into
+    # the shared cache in the first place.
     - id: delete-built-artifacts-from-cache
       name: Delete Built Artifacts From Cache
-      if: ${{ inputs.generate-artifacts == 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' }}
+      if: ${{ inputs.generate-artifacts == 'true' && inputs.release-build != 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' }}
       shell: bash
-      run: find ~/.m2 -name \*-SNAPSHOT -type d -exec rm -rf {} +
+      run: |
+        # Whatever this build installed, under any version (see Stage Built Artifacts for
+        # how that is told from a download), then the artifactId-level metadata files that
+        # listed those versions. Downloaded versions, including pinned com.dotcms releases,
+        # stay.
+        find ~/.m2/repository -name _remote.repositories -exec grep -l '>=$' {} + | xargs -r -n1 dirname | xargs -r rm -rf || true
+        find ~/.m2/repository -name maven-metadata-local.xml -delete
+        find ~/.m2 -name \*-SNAPSHOT -type d -exec rm -rf {} +
 
     - id: save-cache-maven
       name: Save Maven Repository Cache
-      if: ${{ inputs.generate-artifacts == 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' }}
+      if: ${{ inputs.generate-artifacts == 'true' && inputs.release-build != 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' }}
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.m2/repository

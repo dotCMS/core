@@ -25,6 +25,7 @@ This GitHub Action sets up and runs a Maven job with extensive configuration opt
 | `cache-sonar` | Cache the SonarQube files | No | `false` |
 | `dotcms-license` | The license key for dotCMS | No | `''` |
 | `artifacts-from` | Download artifacts from a previous job | No | `''` |
+| `restore-maven-cache` | Restore the third-party Maven dependency cache. Turn off for jobs whose modules declare no dependencies (Postman, E2E) | No | `true` |
 | `github-token` | GitHub token for authentication | Yes | - |
 | `restore-classes` | Restore build classes | No | `false` |
 | `stage-name` | Stage name for the build | Yes | - |

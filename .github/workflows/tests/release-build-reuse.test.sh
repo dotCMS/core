@@ -1061,6 +1061,114 @@ if [[ -d "$SAML_SRC" ]]; then
     "legacy decoder diagnostics use the application logger"
 fi
 
+# ================================================ 13. slim maven-repo artifact ==
+# The maven-repo artifact used to be the whole ~/.m2/repository (2.7 GB, downloaded
+# by every test job). It now holds only what the build installed; third-party jars
+# travel through the Maven cache, which test jobs restore on top of it. Three
+# things have to stay true: "installed" means any version (a release build has no
+# -SNAPSHOT directory), the cache never receives installed artifacts, and a suite
+# that needs no dependencies can skip the cache. (Reads the matrix with yq, which
+# the runner image ships.)
+
+echo "== 13. maven-job: slim maven-repo artifact =="
+
+TEST_PHASE="$REPO_ROOT/.github/workflows/cicd_comp_test-phase.yml"
+TEST_MATRIX="$REPO_ROOT/.github/test-matrix.yml"
+
+block_has "$MAVEN_JOB" persist-maven-repo 'built-artifacts' \
+  "the maven-repo artifact is uploaded from the staged built artifacts, not ~/.m2/repository"
+block_lacks "$MAVEN_JOB" persist-maven-repo '~/\.m2/repository' \
+  "the maven-repo artifact no longer uploads the whole repository"
+block_has_if "$MAVEN_JOB" restore-cache-maven "restore-maven-cache == 'true'" \
+  "the dependency cache restore is controlled by restore-maven-cache, not by artifacts-from"
+block_has_if "$MAVEN_JOB" delete-built-artifacts-from-cache "release-build != 'true'" \
+  "a release build does not delete its release coordinates (the caller verifies them afterwards)"
+block_has_if "$MAVEN_JOB" save-cache-maven "release-build != 'true'" \
+  "a release build does not write the shared dependency cache"
+if [[ "$(input_default "$MAVEN_JOB" restore-maven-cache)" == "true" ]]; then
+  ok "restore-maven-cache defaults to true (shared callers keep their dependencies)"
+else
+  bad "restore-maven-cache defaults to true (shared callers keep their dependencies)"
+fi
+has "$TEST_PHASE" 'restore-maven-cache: \$\{\{ matrix\.needs_maven_deps == true \}\}' \
+  "test phase forwards needs_maven_deps to the cache restore"
+if [[ "$(yq '.defaults.needs_maven_deps' "$TEST_MATRIX")" == "true" \
+   && "$(yq '[.test_types.postman, .test_types.karate, .test_types.e2e][].defaults.needs_maven_deps' "$TEST_MATRIX" | sort -u)" == "false" ]]; then
+  ok "only Postman, Karate and E2E skip the dependency cache"
+else
+  bad "only Postman, Karate and E2E skip the dependency cache" "check .github/test-matrix.yml"
+fi
+
+# Behaviour: run the real stage and delete bodies against a fake repository. Maven
+# records where each file came from in _remote.repositories: "x.jar>=" for an
+# installed file, "x.jar>central=" for a download. The fake holds a third-party jar,
+# an installed snapshot, an installed release version, a stale installed release
+# beside the snapshot (what the old cache contained), and a DOWNLOADED com.dotcms
+# release in the same artifactId directory as the installed snapshot, like the SAML
+# plugin's pinned com.dotcms:dotcms-core:26.03.27-01. Run as GitHub runs `shell:
+# bash`, with -e and pipefail.
+SLIM="$WORKDIR/slim"
+mkdir -p "$SLIM/home/.m2/repository" "$SLIM/tmp"
+SLIM_REPO="$SLIM/home/.m2/repository"
+fake_version_dir() {  # <dir> <repository id, empty for installed>
+  local d="$SLIM_REPO/$1" base; base="$(basename "$(dirname "$d")")-$(basename "$d")"
+  mkdir -p "$d"; : > "$d/$base.jar"; printf '%s.jar>%s=\n' "$base" "$2" > "$d/_remote.repositories"
+}
+fake_version_dir org/example/lib/1.0 central
+fake_version_dir com/dotcms/app/1.0.0-SNAPSHOT ""
+fake_version_dir com/dotcms/app/26.10.26-01 ""
+fake_version_dir com/dotcms/app/26.03.27-01 dotcms-libs
+fake_version_dir com/dotcms/rel/26.01.01-01 ""
+: > "$SLIM_REPO/com/dotcms/app/1.0.0-SNAPSHOT/maven-metadata-local.xml"
+: > "$SLIM_REPO/com/dotcms/app/maven-metadata-local.xml"
+: > "$SLIM_REPO/com/dotcms/rel/maven-metadata-local.xml"
+extract_run_body "$MAVEN_JOB" stage-built-artifacts > "$SLIM/stage.sh"
+extract_run_body "$MAVEN_JOB" delete-built-artifacts-from-cache > "$SLIM/delete.sh"
+STAGE_DIR="$SLIM/tmp/built-artifacts"
+
+if [[ -s "$SLIM/stage.sh" ]] && HOME="$SLIM/home" RUNNER_TEMP="$SLIM/tmp" bash -eo pipefail "$SLIM/stage.sh" >/dev/null 2>&1; then
+  [[ -f "$STAGE_DIR/com/dotcms/app/1.0.0-SNAPSHOT/app-1.0.0-SNAPSHOT.jar" ]] \
+    && ok "staging keeps a snapshot build at its repository path" \
+    || bad "staging keeps a snapshot build at its repository path"
+  [[ -f "$STAGE_DIR/com/dotcms/rel/26.01.01-01/rel-26.01.01-01.jar" ]] \
+    && ok "staging keeps a release-versioned build (no -SNAPSHOT directory needed)" \
+    || bad "staging keeps a release-versioned build (no -SNAPSHOT directory needed)"
+  [[ ! -e "$STAGE_DIR/com/dotcms/app/26.03.27-01" ]] \
+    && ok "staging leaves a downloaded com.dotcms release beside an installed build to the cache" \
+    || bad "staging leaves a downloaded com.dotcms release beside an installed build to the cache"
+  [[ ! -e "$STAGE_DIR/org" ]] \
+    && ok "staging leaves third-party artifacts to the cache" \
+    || bad "staging leaves third-party artifacts to the cache"
+  [[ -f "$SLIM_REPO/com/dotcms/rel/26.01.01-01/rel-26.01.01-01.jar" ]] \
+    && ok "staging copies: the repository still holds the release build for the caller's check" \
+    || bad "staging copies: the repository still holds the release build for the caller's check"
+else
+  bad "stage-built-artifacts runs against a repository holding builds" "body missing or exited non-zero"
+fi
+
+# An empty stage must fail loudly: upload-artifact only warns on an empty path.
+mkdir -p "$SLIM/empty-home/.m2/repository/org/example" "$SLIM/empty-tmp"
+if HOME="$SLIM/empty-home" RUNNER_TEMP="$SLIM/empty-tmp" bash -eo pipefail "$SLIM/stage.sh" >/dev/null 2>&1; then
+  bad "staging fails when the build installed nothing" "exited 0"
+else
+  ok "staging fails when the build installed nothing"
+fi
+
+if [[ -s "$SLIM/delete.sh" ]] && HOME="$SLIM/home" bash -eo pipefail "$SLIM/delete.sh" >/dev/null 2>&1; then
+  [[ -f "$SLIM_REPO/org/example/lib/1.0/lib-1.0.jar" ]] \
+    && ok "cleaning the cache keeps third-party artifacts" \
+    || bad "cleaning the cache keeps third-party artifacts"
+  [[ -f "$SLIM_REPO/com/dotcms/app/26.03.27-01/app-26.03.27-01.jar" ]] \
+    && ok "cleaning the cache keeps a downloaded com.dotcms release beside an installed build" \
+    || bad "cleaning the cache keeps a downloaded com.dotcms release beside an installed build"
+  [[ ! -e "$SLIM_REPO/com/dotcms/app/1.0.0-SNAPSHOT" && ! -e "$SLIM_REPO/com/dotcms/app/26.10.26-01" \
+     && ! -e "$SLIM_REPO/com/dotcms/rel/26.01.01-01" && ! -e "$SLIM_REPO/com/dotcms/app/maven-metadata-local.xml" ]] \
+    && ok "cleaning the cache removes installed artifacts of every version, and their local metadata" \
+    || bad "cleaning the cache removes installed artifacts of every version, and their local metadata"
+else
+  bad "delete-built-artifacts-from-cache runs against a repository holding builds" "body missing or exited non-zero"
+fi
+
 # ---------------------------------------------------------------------- done --
 echo
 echo "pass=$pass fail=$fail"

@@ -828,7 +828,11 @@ Our CI/CD process extensively uses caching and artifacts to optimize performance
 - **GraalVM Native Images**: CLI native build caches
 
 ### Artifact Sharing
-- **maven-repo**: Complete Maven repository shared between jobs
+- **maven-repo**: The version directories the build installed into `~/.m2/repository` (any version; told from
+  downloads by an empty repository id in `_remote.repositories`), without third-party jars or downloaded
+  `com.dotcms` releases such as the SAML plugin's pinned `dotcms-core:26.03.27-01`
+  - Third-party dependencies come from the `<os>-mavencore-v2-<pom hash>` cache, which jobs restore
+    before downloading this artifact; the build job saves it (never a release build)
   - Enables artifact reuse from merge queue in trunk workflow
   - Allows skipping rebuild if commit already built and tested
   - Retention: 2-90 days depending on artifact type
