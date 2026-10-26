@@ -437,7 +437,7 @@
                         ${vipsffm.libpath.args}
                         -Dnet.bytebuddy.experimental=true
                         ${bytebuddy.agent.argline}
-                        -Xlog:gc*:file=${project.build.directory}/gc-it-%p.log:time,uptime,level,tags
+                        -Xlog:gc*:file=${project.build.directory}/gc-it-%p.log:time,uptime,level,tags:filecount=5,filesize=20M
                         ${debug.args}
                     </argLine>
                     <forkCount>${it.test.forkcount}</forkCount>
