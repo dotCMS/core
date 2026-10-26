@@ -436,6 +436,33 @@ public class ESContentletAPIHelperTest extends UnitTestBase {
     }
 
     /**
+     * Given an allowed user and a save that fails after the removal (e.g. a role locked for
+     * editing permissions)
+     * When the prepared task runs
+     * Then the failure is logged and does not escape the task, which may run as a commit listener
+     */
+    @Test
+    public void permissionReplacement_taskFailure_doesNotEscapeTheTask() throws Exception {
+
+        final PermissionAPI permissionAPI = mock(PermissionAPI.class);
+        final Contentlet contentlet = contentlet();
+        final User user = user();
+        final User systemUser = systemUser();
+        when(permissionAPI.doesUserHavePermission(contentlet, EDIT_PERMISSIONS, user)).thenReturn(true);
+        doThrow(new DotSecurityException("locked role")).when(permissionAPI)
+                .save(anyCollection(), eq(contentlet), same(systemUser), eq(false));
+        final List<Permission> requested = Collections.singletonList(permission(ROLE_B, READ));
+
+        final Optional<Runnable> replacement = helper.permissionReplacement(
+                permissionAPI, contentlet, requested, user, systemUser);
+
+        assertTrue("An allowed user must get a replacement task", replacement.isPresent());
+        replacement.get().run();
+
+        verify(permissionAPI).removePermissions(contentlet);
+    }
+
+    /**
      * Given an allowed user and requested entries without the contentlet's permission id
      * When the prepared task runs
      * Then every saved entry carries the contentlet's permission id with the requested role and bits
