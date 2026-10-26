@@ -65,3 +65,4 @@ Release-25.07.10 LTS
 59. https://github.com/dotCMS/core/pull/38023 : fix(publishing): validate bundle receipt and restrict endpoint management #38023
 60. https://github.com/dotCMS/core/pull/38095 : chore(push-publish): remove leftover debug logging #38095
 61. https://github.com/dotCMS/core/pull/38099 : fix(achecker): validate request values and harden the embedded database access #38099
+62. https://github.com/dotCMS/core/pull/38097 : fix(workflow): record the requesting user on bulk task actions #38097
