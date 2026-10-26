@@ -19,6 +19,7 @@ import com.dotcms.inference.rest.InferenceSiteResolutionTest;
 import com.dotcms.inference.rest.InferenceTestsAreRegisteredTest;
 import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.rest.api.v1.maintenance.MaintenanceResourceIntegrationTest;
+import com.dotmarketing.business.UserDeletionCacheInvalidationTest;
 import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
 import com.dotmarketing.portlets.cmsmaintenance.action.ViewCMSMaintenanceActionTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
@@ -112,7 +113,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.ClusterResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.cluster.ClusterNodesResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.system.ConfigurationHelperTest.class,
-        ViewCMSMaintenanceActionTest.class
+        ViewCMSMaintenanceActionTest.class,
+        UserDeletionCacheInvalidationTest.class
 })
 public class MainSuite2a {
 
