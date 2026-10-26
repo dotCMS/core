@@ -323,7 +323,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"remoteUrl\": \"https://www.google.com/images/branding/googlelogo/2x/googlelogo_color_272x92dp.png\"\n}\n",
+							"raw": "{\n    \"remoteUrl\": \"http://wm:8080/s/googlelogo_color_272x92dp.png\"\n}\n",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -389,7 +389,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"remoteUrl\": \"https://images.unsplash.com/photo-1575936123452-b67c3203c357?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aW1hZ2V8ZW58MHx8MHx8fDA%3D&w=1000&q=80\"\n}\n",
+							"raw": "{\n    \"remoteUrl\": \"http://wm:8080/s/photo-1575936123452-b67c3203c357?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mnx8aW1hZ2V8ZW58MHx8MHx8fDA%3D&w=1000&q=80\"\n}\n",
 							"options": {
 								"raw": {
 									"language": "json"
