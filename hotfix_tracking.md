@@ -63,3 +63,4 @@ Release-25.07.10 LTS
 57. https://github.com/dotCMS/core/issues/37592 : Remove pgjdbc-ng and PostgresPubSubImpl (superseded by JDBCPubSubImpl) #37592
 58. https://github.com/dotCMS/core/pull/37626 : chore(deps): bump six libraries with published security fixes #37626
 59. https://github.com/dotCMS/core/pull/38023 : fix(publishing): validate bundle receipt and restrict endpoint management #38023
+60. https://github.com/dotCMS/core/pull/38095 : chore(push-publish): remove leftover debug logging #38095
