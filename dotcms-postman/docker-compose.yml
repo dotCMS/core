@@ -65,6 +65,16 @@ services:
             DOT_INDEX_POLICY_SINGLE_CONTENT: 'FORCE'
             DOT_ASYNC_REINDEX_COMMIT_LISTENERS: 'false'
             DOT_ASYNC_COMMIT_LISTENERS: 'false'
+            # With synchronous commit listeners, the cache-flush delay is a sleep on the request
+            # thread after every write (3000 ms by default). One node needs no wait for a cluster.
+            DOT_NETWORK_CACHE_FLUSH_DELAY: 10
+            # Drop the GraphQL schema as soon as a content type changes (default: 5 s debounce).
+            # Safe only because newman runs one request at a time: field delete and type destroy
+            # drop the schema before their transaction commits.
+            DOT_GRAPHQL_SCHEMA_DEBOUNCE_DELAY_MILLIS: 0
+            # Tomcat's keep-alive timeout defaults to this (3000 ms in server.xml). It must exceed the
+            # longest script wait before a request (70 s in GraphQLTests), or newman reuses a closing connection.
+            CMS_CONNECTION_TIMEOUT: 120000
             DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS: 600
             WAIT_FOR_DEPS: 30
             JVM_ENDPOINT_TEST_PASS: 'obfuscate_me'
