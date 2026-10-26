@@ -302,14 +302,14 @@ public class RulesAPIImpl implements RulesAPI {
      * Checks that the user holds the given Rules permission on the rule parent with the given
      * identifier. The parent must be a site or a page (live or archived), checked through
      * {@link #checkRulePermission(User, Contentlet, int, boolean)}, or an experiment, which
-     * requires EDIT on the experiment's page for every operation: the same requirement
-     * {@code ExperimentsAPIImpl} applies to reading and editing an experiment, so front-end roles do
-     * not apply to it. Any other parent is refused, except for the system user.
+     * requires EDIT on the experiment's page for every operation, checked the way
+     * {@code ExperimentsAPIImpl} checks reading and editing an experiment (EDIT granted through a
+     * front-end role counts there too). Any other parent is refused, except for the system user.
      *
      * @param user                 the user to check
      * @param parentId             identifier of the rule's parent
      * @param permissionLevel      the Rules permission level required
-     * @param respectFrontendRoles whether front-end roles are respected
+     * @param respectFrontendRoles whether front-end roles are respected for a site or page parent
      * @throws DotDataException     if the parent cannot be looked up
      * @throws DotSecurityException if the parent is not a site, page or experiment the user may
      *                              work on
