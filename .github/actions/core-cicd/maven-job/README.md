@@ -35,6 +35,7 @@ This GitHub Action sets up and runs a Maven job with extensive configuration opt
 | `java-version` | The version of Java to install | No | - |
 | `graalvm-version` | Override the sdkman version of GraalVM to install | No | - |
 | `require-graalvm` | Require GraalVM to be installed | Yes | `false` |
+| `pre-pull-images` | Space-separated `docker.image.*` names from `environments/environment.properties` to pull, with retries and fallbacks (Docker Hub, then Amazon's public gallery for OpenSearch) for `mirror.gcr.io` images, before Maven runs | No | `''` |
 
 ## Usage
 

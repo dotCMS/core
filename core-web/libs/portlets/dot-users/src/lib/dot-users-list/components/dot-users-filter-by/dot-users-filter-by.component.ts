@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal } from '@angular/core';
+import { Component, computed, inject, linkedSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ListboxModule } from 'primeng/listbox';
@@ -13,16 +13,13 @@ import {
     DotMessagePipe
 } from '@dotcms/ui';
 
-import { DotUsersListStore } from '../../store/dot-users-list.store';
-
-/**
- * Role-key values used by dotCMS system roles. Mirrors
- * `com.dotmarketing.business.Role.DOTCMS_BACK_END_USER` and
- * `Role.DOTCMS_FRONT_END_USER`. Empty string means "no role filter".
- */
-export const USERS_FILTER_ALL = '';
-export const USERS_FILTER_BACKEND = 'DOTCMS_BACK_END_USER';
-export const USERS_FILTER_FRONTEND = 'DOTCMS_FRONT_END_USER';
+import {
+    DotUsersListStore,
+    USERS_FILTER_ALL,
+    USERS_FILTER_BACKEND,
+    USERS_FILTER_CMS_ADMIN,
+    USERS_FILTER_FRONTEND
+} from '../../store/dot-users-list.store';
 
 interface FilterOption {
     value: string;
@@ -39,8 +36,7 @@ interface FilterOption {
         DotFilterListItemComponent,
         DotMessagePipe
     ],
-    templateUrl: './dot-users-filter-by.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    templateUrl: './dot-users-filter-by.component.html'
 })
 export class DotUsersFilterByComponent {
     readonly #store = inject(DotUsersListStore);
@@ -49,7 +45,14 @@ export class DotUsersFilterByComponent {
     protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
     protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
 
-    protected readonly $options: FilterOption[] = [
+    /**
+     * Whether the chip is shown. Every role filter, the access roles included,
+     * is gated like `includeRoles`, so the backend answers 403 for anyone the
+     * store has not cleared.
+     */
+    protected readonly $canFilterByRole = this.#store.canFilterByRole;
+
+    protected readonly options: FilterOption[] = [
         {
             value: USERS_FILTER_ALL,
             label: this.#dotMessageService.get('users.filter.all-access')
@@ -61,6 +64,10 @@ export class DotUsersFilterByComponent {
         {
             value: USERS_FILTER_FRONTEND,
             label: this.#dotMessageService.get('users.access.frontend')
+        },
+        {
+            value: USERS_FILTER_CMS_ADMIN,
+            label: this.#dotMessageService.get('users.access.cms-admin')
         }
     ];
 
@@ -75,7 +82,7 @@ export class DotUsersFilterByComponent {
     protected readonly $selections = computed(() => {
         const value = this.$selectedValue();
         if (!value) return [];
-        const option = this.$options.find((opt) => opt.value === value);
+        const option = this.options.find((opt) => opt.value === value);
 
         return option ? [option.label] : [];
     });

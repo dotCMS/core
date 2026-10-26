@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.ajax;
 import static com.dotcms.integrationtestutil.content.ContentUtils.createTestKeyValueContent;
 import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentlets;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -43,6 +44,7 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.ImmutableList;
+import com.liferay.util.Xss;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import com.liferay.util.FileUtil;
@@ -419,6 +421,46 @@ public class ContentletAjaxTest {
 			assertEquals(event.getInode(), ((HashMap) results.get(3)).get("inode"));
 		}finally {
 			contentTypeAPI.delete(eventContentType);
+		}
+	}
+
+	/**
+	 * <b>Method to Test:</b> {@link ContentletAjax#searchContentletsByUser(List, String, List, List,
+	 * boolean, boolean, boolean, boolean, int, String, int, User, HttpSession, String, String, String)}<p>
+	 * <b>When:</b> the content type name contains HTML characters<p>
+	 * <b>Should:</b> Return the name encoded inside the {@code __type__} cell, which is rendered as HTML
+	 */
+	@Test
+	public void test_searchContentletsByUser_typeNameWithMarkup_isEncodedInTypeCell()
+			throws DotDataException, DotSecurityException {
+
+		final String typeName = "Type <b>name</b> & \"quotes\" " + System.currentTimeMillis();
+		final ContentType contentType = new ContentTypeDataGen().name(typeName).nextPersisted();
+
+		try {
+			ContentTypeDataGen.addField(new FieldDataGen()
+					.velocityVarName("title")
+					.contentTypeId(contentType.id())
+					.type(TextField.class)
+					.nextPersisted());
+
+			final Contentlet contentlet = new ContentletDataGen(contentType.id())
+					.setProperty("title", "Title " + System.currentTimeMillis())
+					.nextPersisted();
+
+			final List results = new ContentletAjax().searchContentletsByUser(
+					ImmutableList.of(BaseContentType.ANY), contentType.inode(),
+					CollectionsUtils.list("identifier", contentlet.getIdentifier()),
+					Collections.emptyList(), false, false, false,
+					false, 0, "moddate", 0, systemUser, null, null, null);
+
+			assertEquals(1L, ((Map) results.get(0)).get("total"));
+			final String typeCell = (String) ((Map) results.get(3)).get("__type__");
+			assertTrue("The type cell should keep its markup", typeCell.startsWith("<div class='typeCCol'>"));
+			assertTrue("The type name should be encoded", typeCell.contains(Xss.encodeForHTML(typeName)));
+			assertFalse("The type name markup should not be passed through", typeCell.contains("<b>name</b>"));
+		} finally {
+			contentTypeAPI.delete(contentType);
 		}
 	}
 

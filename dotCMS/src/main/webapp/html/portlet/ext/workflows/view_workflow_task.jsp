@@ -263,7 +263,7 @@ public String getGravatar(String postedBy){
 	                <span class="pageIcon"></span>
 
 	            </div>
-	            <h1 style="margin:15px 0 15px 10px;"><a href="javascript:doEdit()"><%= contentlet.getTitle() %></a></h1>
+	            <h1 style="margin:15px 0 15px 10px;"><a href="javascript:doEdit()"><%= Xss.encodeForHTML(contentlet.getTitle()) %></a></h1>
 	        </th>
 	        <th>
 	        <!-- START Actions -->
@@ -450,7 +450,7 @@ public String getGravatar(String postedBy){
 			    <tr>
 			        <td>
 			            <strong><%=LanguageUtil.get(pageContext, "Type") %>:</strong>
-			            <%=structure.getName()%>
+			            <%=Xss.encodeForHTML(structure.getName())%>
 			        </td>
 			    </tr>
 			    <tr>
@@ -465,7 +465,7 @@ public String getGravatar(String postedBy){
 			        <td>
 			            <strong><%= LanguageUtil.get(pageContext, "by") %>:</strong>
 			            <% if(createdBy != null){%>
-			                <%= createdBy.getName() %>
+			                <%= Xss.encodeForHTML(createdBy.getName()) %>
 			            <% } else  { %>
 			                <%= LanguageUtil.get(pageContext, "Nobody") %>
 			            <% } %>

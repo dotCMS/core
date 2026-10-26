@@ -58,7 +58,7 @@
 				],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n\t\"fileName\":\"250px-Bocas2.jpg\",\n\t\"remoteUrl\": \"https://dotcms-storage.b-cdn.net/Bocas2.jpg\"\n}",
+					"raw": "{\n\t\"fileName\":\"250px-Bocas2.jpg\",\n\t\"remoteUrl\": \"http://wm:8080/s/Bocas2.jpg\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
