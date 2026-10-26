@@ -68,3 +68,4 @@ Release-25.07.10 LTS
 62. https://github.com/dotCMS/core/pull/38097 : fix(workflow): record the requesting user on bulk task actions #38097
 63. https://github.com/dotCMS/core/pull/38114 : fix(workflows): encode scheme, step and action names in legacy admin JSPs #38114
 64. https://github.com/dotCMS/core/pull/38106 : chore(push-publish): compare endpoint keys with MessageDigest.isEqual #38106
+65. https://github.com/dotCMS/core/pull/38113 : fix(folders): require EDIT on the source folder when moving it #38113

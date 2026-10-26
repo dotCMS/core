@@ -427,7 +427,8 @@ import java.util.function.Predicate;
 	 * @param respectFrontEndPermissions
 	 * @return
 	 * @throws DotDataException
-	 * @throws DotSecurityException
+	 * @throws DotSecurityException if the user lacks READ or EDIT permission on the folder to move,
+	 *         or CAN_ADD_CHILDREN permission on the new parent folder
 	 */
 	boolean move(Folder folderToMove, Folder newParentFolder,User user,boolean respectFrontEndPermissions)throws DotDataException, DotSecurityException;
 
@@ -440,7 +441,8 @@ import java.util.function.Predicate;
 	 * @param respectFrontEndPermissions
 	 * @return
 	 * @throws DotDataException
-	 * @throws DotSecurityException
+	 * @throws DotSecurityException if the user lacks READ or EDIT permission on the folder to move,
+	 *         or CAN_ADD_CHILDREN permission on the host
 	 */
 	boolean move(Folder folderToMove, Host newParentHost,User user,boolean respectFrontEndPermissions) throws DotDataException, DotSecurityException;
 
