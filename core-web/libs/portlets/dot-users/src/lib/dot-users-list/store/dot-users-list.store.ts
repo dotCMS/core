@@ -27,6 +27,17 @@ import {
 
 export type DotUsersListSortDirection = 'ASC' | 'DESC';
 
+/**
+ * Role-key values the list can be filtered by. Mirrors
+ * `com.dotmarketing.business.Role.DOTCMS_BACK_END_USER`,
+ * `Role.DOTCMS_FRONT_END_USER` and `Role.CMS_ADMINISTRATOR_ROLE`.
+ * Empty string means "no role filter".
+ */
+export const USERS_FILTER_ALL = '';
+export const USERS_FILTER_BACKEND = 'DOTCMS_BACK_END_USER';
+export const USERS_FILTER_FRONTEND = 'DOTCMS_FRONT_END_USER';
+export const USERS_FILTER_CMS_ADMIN = 'CMS Administrator';
+
 export interface DotUsersListState {
     users: DotUserListItem[];
     selectedUsers: DotUserListItem[];
@@ -39,6 +50,19 @@ export interface DotUsersListState {
      * Empty string means "no role filter" (the `All access` UI option).
      */
     roleFilter: string;
+    /**
+     * Whether the viewer may filter by role at all, the Back-end /
+     * Front-end access roles included. The backend gates every role
+     * filter exactly like `includeRoles`, so list loads keep it current:
+     * a load that succeeds with the flag sets it `true`, one that falls
+     * back on the gate's 403 sets it `false`, and any other error leaves
+     * it unchanged. Starts `false` so the filter is not offered before
+     * the first load has answered. Once the gate has refused, later loads
+     * stop asking for the flag, so a privilege granted meanwhile shows up
+     * the next time the list is opened (the store lives with the list
+     * component), as the portlet menu itself only updates on reload.
+     */
+    canFilterByRole: boolean;
     sortField: string;
     sortOrder: DotUsersListSortDirection;
     status: ComponentStatus;
@@ -60,6 +84,7 @@ const initialState: DotUsersListState = {
     rows: 20,
     filter: '',
     roleFilter: '',
+    canFilterByRole: false,
     sortField: 'lastLoginDate',
     sortOrder: 'DESC',
     status: ComponentStatus.INIT,
@@ -94,21 +119,31 @@ function buildFilterParams(store: ListQueryStoreSnapshot, includeRoles = true) {
 }
 
 /**
- * Runs the list request with `includeRoles=true` and, on the specific
- * 403 the #37236 gate raises (viewer lacks CMS Administrator or the
- * Roles + Users portlets), retries once without the flag. Everything
+ * Runs the list request. When a request with `includeRoles=true`
+ * succeeds, `onRolesAllowed` records that the viewer passes the gate. On a 403
+ * for a request with `includeRoles=true`, which is taken to mean the
+ * viewer lacks CMS Administrator or the Roles + Users portlets (the
+ * #37236 gate), retries once with the params `onRolesForbidden` returns — the caller's chance to drop everything
+ * that gate covers (the flag and any gated role filter). Everything
  * else — 4xx on filter/paging inputs, 5xx, network errors — is
- * re-thrown for the outer `catchError` to surface via
+ * re-thrown for the caller's `catchError` to surface via
  * `httpErrorManager`.
  */
 function fetchUsersPage(
     usersService: DotUsersService,
-    params: ReturnType<typeof buildFilterParams>
+    params: ReturnType<typeof buildFilterParams>,
+    onRolesAllowed: () => void,
+    onRolesForbidden: () => ReturnType<typeof buildFilterParams>
 ): Observable<DotCMSAPIResponse<DotUserListItem[]>> {
     return usersService.getUsersPaginated(params).pipe(
+        tap(() => {
+            if (params.includeRoles) {
+                onRolesAllowed();
+            }
+        }),
         catchError((error: unknown) => {
             if (params.includeRoles && error instanceof HttpErrorResponse && error.status === 403) {
-                return usersService.getUsersPaginated({ ...params, includeRoles: false });
+                return usersService.getUsersPaginated(onRolesForbidden());
             }
 
             throw error;
@@ -125,42 +160,79 @@ export const DotUsersListStore = signalStore(
         const messageService = inject(DotMessageService);
 
         /**
+         * Set once the gate has answered 403, so later loads skip
+         * `includeRoles` instead of being refused and retried every time.
+         */
+        let rolesForbidden = false;
+
+        /**
+         * Called on the gate's 403: records that this viewer may not
+         * filter by role, drops any role filter (and goes back to page 1,
+         * as any filter change does) and rebuilds the params without the
+         * flag for the retry.
+         */
+        const paramsAfterRolesForbidden = () => {
+            rolesForbidden = true;
+            if (store.roleFilter() === USERS_FILTER_ALL) {
+                patchState(store, { canFilterByRole: false });
+            } else {
+                patchState(store, {
+                    canFilterByRole: false,
+                    roleFilter: USERS_FILTER_ALL,
+                    page: 1
+                });
+            }
+
+            return buildFilterParams(store, false);
+        };
+
+        /**
          * `rxMethod` + `switchMap` cancels the previous in-flight request
          * when a new one is dispatched, so rapid sort/filter/page changes
-         * cannot let a stale response overwrite a fresh page.
+         * cannot let a stale response overwrite a fresh page. The
+         * `catchError` lives inside the `switchMap` so a failed load ends
+         * that request only — the method keeps serving later calls.
          */
         const loadUsers = rxMethod<void>(
             pipe(
                 tap(() => patchState(store, { status: ComponentStatus.LOADING })),
-                switchMap(() => fetchUsersPage(usersService, buildFilterParams(store))),
-                tap((response) => {
-                    // Backend returns `roles: [{id, name, roleKey}]` per
-                    // row when `includeRoles=true` (#37236). Build the
-                    // userRoles map synchronously from the response —
-                    // personal role and inherited grants are already
-                    // filtered out server-side. Rows without a `roles`
-                    // field (a viewer whose 403-fallback stripped the
-                    // flag) leave that user's cell empty; we no longer
-                    // fan out N `/v1/roles/users/{id}` requests.
-                    const rolesMap: Record<string, string[]> = {};
-                    for (const user of response.entity) {
-                        rolesMap[user.userId] = (user.roles ?? [])
-                            .map((role) => role.name)
-                            .filter((name): name is string => !!name);
-                    }
-                    patchState(store, {
-                        users: response.entity,
-                        totalRecords: response.pagination?.totalEntries ?? 0,
-                        status: ComponentStatus.LOADED,
-                        userRoles: rolesMap
-                    });
-                }),
-                catchError((error) => {
-                    httpErrorManager.handle(error);
-                    patchState(store, { status: ComponentStatus.ERROR });
+                switchMap(() =>
+                    fetchUsersPage(
+                        usersService,
+                        buildFilterParams(store, !rolesForbidden),
+                        () => patchState(store, { canFilterByRole: true }),
+                        paramsAfterRolesForbidden
+                    ).pipe(
+                        tap((response) => {
+                            // Backend returns `roles: [{id, name, roleKey}]` per
+                            // row when `includeRoles=true` (#37236). Build the
+                            // userRoles map synchronously from the response —
+                            // personal role and inherited grants are already
+                            // filtered out server-side. Rows without a `roles`
+                            // field (a viewer whose 403-fallback stripped the
+                            // flag) leave that user's cell empty; we no longer
+                            // fan out N `/v1/roles/users/{id}` requests.
+                            const rolesMap: Record<string, string[]> = {};
+                            for (const user of response.entity) {
+                                rolesMap[user.userId] = (user.roles ?? [])
+                                    .map((role) => role.name)
+                                    .filter((name): name is string => !!name);
+                            }
+                            patchState(store, {
+                                users: response.entity,
+                                totalRecords: response.pagination?.totalEntries ?? 0,
+                                status: ComponentStatus.LOADED,
+                                userRoles: rolesMap
+                            });
+                        }),
+                        catchError((error) => {
+                            httpErrorManager.handle(error);
+                            patchState(store, { status: ComponentStatus.ERROR });
 
-                    return EMPTY;
-                })
+                            return EMPTY;
+                        })
+                    )
+                )
             )
         );
 
