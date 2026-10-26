@@ -23,6 +23,7 @@ public enum PortletID {
     HTML_PAGES,
     JOBS,
     LANGUAGES, 
+    LOCALES,
     LEGACY_PAGE_VIEWS,
     LINKS,
     LINK_CHECKER,

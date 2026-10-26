@@ -72,3 +72,4 @@ Release-25.07.10 LTS
 66. https://github.com/dotCMS/core/pull/38077 : fix(permissions): require EDIT_PERMISSIONS before PermissionAjax changes an asset's permissions #38077
 67. https://github.com/dotCMS/core/pull/38121 : fix(publishing): check permissions before deleting push history #38121
 68. https://github.com/dotCMS/core/pull/38096 : fix(containers): restrict sortContentletsBy to the supported sort columns #38096
+69. https://github.com/dotCMS/core/pull/38126 : fix(legacy-ui): check user permissions in legacy Ajax and Struts handlers #38126
