@@ -15,7 +15,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
-import com.dotcms.UnitTestBase;
+import com.dotcms.saml.DotSamlConstants;
 import com.dotmarketing.portlets.rules.actionlet.RuleActionlet;
 import com.dotmarketing.portlets.rules.actionlet.SetRequestAttributeActionlet;
 import com.dotmarketing.portlets.rules.actionlet.SetResponseHeaderActionlet;
@@ -43,10 +43,11 @@ import org.junit.jupiter.api.Test;
  * parameter values: the action is validated without an error and ignored when the rule fires,
  * while actions with ordinary names keep running.
  */
-class RuleActionRefusedNameTest extends UnitTestBase {
+class RuleActionRefusedNameTest {
 
     private static final String SESSION_KEY = "sessionKey";
     private static final String SESSION_VALUE = "sessionValue";
+    private static final String SITE_ID = "48190c8c-42c4-46af-8d1a-0cd5db894797";
 
     /**
      * Given a stored session-attribute action with a reserved name,
@@ -103,6 +104,80 @@ class RuleActionRefusedNameTest extends UnitTestBase {
 
         assertFalse(action.evaluate(null, response));
         verifyNoInteractions(response);
+    }
+
+    /**
+     * Given a stored response-header action whose name has characters outside the HTTP token set,
+     * When the rule validates and fires it,
+     * Then validation does not throw, the action reports false and the response is not touched.
+     */
+    @Test
+    void responseHeaderActionWithNonTokenNameIsIgnored() {
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final RuleAction action = action(new SetResponseHeaderActionlet(),
+                SetResponseHeaderActionlet.HEADER_KEY, "X-Header Name",
+                SetResponseHeaderActionlet.HEADER_VALUE, "value");
+
+        assertDoesNotThrow(action::checkValid);
+
+        assertFalse(action.evaluate(null, response));
+        verifyNoInteractions(response);
+    }
+
+    /**
+     * Given a stored session-attribute action named after a site's SAML user key,
+     * When the rule validates and fires it,
+     * Then validation does not throw, the action reports false and the session is not touched.
+     */
+    @Test
+    void siteSamlUserSessionAttributeActionIsIgnored() {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpSession session = mock(HttpSession.class);
+        when(request.getSession()).thenReturn(session);
+        when(request.getSession(anyBoolean())).thenReturn(session);
+        final RuleAction action = action(new SetSessionAttributeActionlet(),
+                SESSION_KEY, SITE_ID + DotSamlConstants.SAML_USER_ID, SESSION_VALUE, "value");
+
+        assertDoesNotThrow(action::checkValid);
+
+        assertFalse(action.evaluate(request, null));
+        verifyNoInteractions(request);
+        verifyNoInteractions(session);
+    }
+
+    /**
+     * Given a stored session-attribute action named after a site's SAML user key,
+     * When it is asked for the refused name and validated,
+     * Then the refusal and its warning name the SAML user key, never the stored text with the
+     * site id in front of it.
+     */
+    @Test
+    void siteSamlUserKeyIsReportedAsTheKey() {
+        assertEquals(Optional.of(DotSamlConstants.SAML_USER_ID), new SetSessionAttributeActionlet()
+                .getRefusedName(parameters(SESSION_KEY, SITE_ID + DotSamlConstants.SAML_USER_ID)));
+
+        final Logger ruleActionLogger = (Logger) LogManager.getLogger(RuleAction.class);
+        final Level previousLevel = ruleActionLogger.getLevel();
+        final CapturingAppender appender = new CapturingAppender();
+        appender.start();
+        ruleActionLogger.addAppender(appender);
+        ruleActionLogger.setLevel(Level.WARN);
+        try {
+            final RuleAction action = action(new SetSessionAttributeActionlet(),
+                    SESSION_KEY, SITE_ID + DotSamlConstants.SAML_USER_ID, SESSION_VALUE, "value");
+            action.setActionlet("SetSessionAttributeActionlet-" + UUID.randomUUID());
+
+            action.checkValid();
+
+            final List<String> warnings = appender.messages(Level.WARN);
+            assertEquals(1, warnings.size(), () -> "warnings: " + warnings);
+            assertTrue(warnings.get(0).contains(DotSamlConstants.SAML_USER_ID));
+            assertFalse(warnings.get(0).contains(SITE_ID));
+        } finally {
+            ruleActionLogger.removeAppender(appender);
+            ruleActionLogger.setLevel(previousLevel);
+            appender.stop();
+        }
     }
 
     /**

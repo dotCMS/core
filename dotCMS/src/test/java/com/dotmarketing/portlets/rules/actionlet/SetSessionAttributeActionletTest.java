@@ -6,11 +6,11 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.dotcms.UnitTestBase;
 import com.dotcms.auth.providers.oauth.OAuthConstants;
+import com.dotcms.filters.interceptor.saml.SamlWebInterceptor;
 import com.dotcms.rest.exception.InvalidRuleParameterException;
+import com.dotcms.saml.DotSamlConstants;
 import com.dotmarketing.filters.TimeMachineFilter;
-import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.liferay.portal.util.WebKeys;
@@ -25,19 +25,22 @@ import org.junit.jupiter.params.provider.MethodSource;
 /**
  * Tests which session attributes {@link SetSessionAttributeActionlet} accepts and writes.
  */
-class SetSessionAttributeActionletTest extends UnitTestBase {
+class SetSessionAttributeActionletTest {
 
     private static final String SESSION_KEY = "sessionKey";
     private static final String SESSION_VALUE = "sessionValue";
+    private static final String SITE_ID = "48190c8c-42c4-46af-8d1a-0cd5db894797";
 
     /**
-     * Session attribute names that only dotCMS itself sets.
+     * Session attribute names that only dotCMS itself sets, including the login-flow keys and the
+     * per-site SAML user key.
      */
     static Stream<String> reservedNames() {
         return Stream.of(WebKeys.USER_ID, WebKeys.USER, WebKeys.PRINCIPAL_USER_ID,
                 WebKeys.LOGIN_TO_EDIT_MODE, OAuthConstants.SESSION_NATIVE_LOGIN,
                 TimeMachineFilter.TM_DATE_VAR, TimeMachineFilter.TM_LANG_VAR,
-                TimeMachineFilter.TM_HOST_VAR);
+                TimeMachineFilter.TM_HOST_VAR, OAuthConstants.SESSION_STATE,
+                SamlWebInterceptor.ORIGINAL_REQUEST, SITE_ID + DotSamlConstants.SAML_USER_ID);
     }
 
     /**
@@ -79,16 +82,10 @@ class SetSessionAttributeActionletTest extends UnitTestBase {
     }
 
     /**
-     * Validates the action as a save does and, when it is accepted, evaluates it.
+     * Validates the action as a save does and evaluates it; a validation error fails the test.
      */
     private static void validateAndRun(final SetSessionAttributeActionlet actionlet,
             final RuleAction action, final HttpServletRequest request) {
-        final SetSessionAttributeActionlet.Instance instance;
-        try {
-            instance = actionlet.doCheckValid(action);
-        } catch (final InvalidRuleParameterException | RuleEngineException e) {
-            return;
-        }
-        actionlet.evaluate(request, null, instance);
+        actionlet.evaluate(request, null, actionlet.doCheckValid(action));
     }
 }

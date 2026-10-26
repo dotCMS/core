@@ -16,6 +16,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.auth.providers.oauth.OAuthConstants;
+import com.dotcms.saml.DotSamlConstants;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
 import com.dotcms.datagen.RoleDataGen;
@@ -147,7 +148,8 @@ public class RuleRefusedActionsIntegrationTest extends IntegrationTestBase {
         for (final String name : List.of(WebKeys.USER_ID, WebKeys.USER, WebKeys.PRINCIPAL_USER_ID,
                 WebKeys.LOGIN_TO_EDIT_MODE, OAuthConstants.SESSION_NATIVE_LOGIN,
                 TimeMachineFilter.TM_DATE_VAR, TimeMachineFilter.TM_LANG_VAR,
-                TimeMachineFilter.TM_HOST_VAR)) {
+                TimeMachineFilter.TM_HOST_VAR, OAuthConstants.SESSION_STATE,
+                restSite.getIdentifier() + DotSamlConstants.SAML_USER_ID)) {
             assertRefused(() -> new ActionResource().add(backEndRequest(), response(),
                     restSite.getIdentifier(), restAction(SetSessionAttributeActionlet.class,
                             SESSION_KEY, name, SESSION_VALUE, "value")), name);

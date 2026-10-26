@@ -32,18 +32,19 @@ public abstract class RuleActionlet<T extends RuleComponentInstance> extends Rul
     }
 
     /**
-     * Returns the value of the given parameter when it is an attribute name that only dotCMS sets
-     * (see {@link ReservedAttributeNames}), for actionlets that write session or request attributes.
+     * Tells whether the given parameter holds an attribute name that only dotCMS sets (see
+     * {@link ReservedAttributeNames}), for actionlets that write session or request attributes.
      *
      * @param parameters The action parameters, keyed by parameter name; may be {@code null}.
      * @param key        The parameter that holds the attribute name.
-     * @return The reserved attribute name, or empty when the name is missing or an ordinary one.
+     * @return The reserved name the attribute name matches, as {@link ReservedAttributeNames#reservedName}
+     * returns it (for a site SAML key, the key without the site id); empty when the name is
+     * missing or an ordinary one.
      */
     protected static Optional<String> reservedAttributeName(final Map<String, ParameterModel> parameters,
             final String key) {
         final ParameterModel parameter = parameters == null ? null : parameters.get(key);
-        final String name = parameter == null ? null : parameter.getValue();
-        return ReservedAttributeNames.isReserved(name) ? Optional.of(name) : Optional.empty();
+        return ReservedAttributeNames.reservedName(parameter == null ? null : parameter.getValue());
     }
 
     @Override

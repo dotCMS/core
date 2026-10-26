@@ -6,9 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-import com.dotcms.UnitTestBase;
 import com.dotcms.rest.exception.InvalidRuleParameterException;
-import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.RuleAction;
 import java.util.List;
@@ -20,7 +18,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 /**
  * Tests which response headers {@link SetResponseHeaderActionlet} accepts and sets.
  */
-class SetResponseHeaderActionletTest extends UnitTestBase {
+class SetResponseHeaderActionletTest {
 
     /**
      * Given an action that sets a cookie-setting header,
@@ -85,13 +83,13 @@ class SetResponseHeaderActionletTest extends UnitTestBase {
     }
 
     /**
-     * Given a header name that is not a valid HTTP token, such as one carrying a colon, a space or a
-     * line break,
+     * Given a header name with characters outside the HTTP token set, such as a colon, a space, a
+     * line break or a non-ASCII letter,
      * When the action is validated,
      * Then it is rejected with a client error.
      */
     @ParameterizedTest
-    @ValueSource(strings = {"Set-Cookie:name=value", "X-Header Name", "X-Header\r\nSet-Cookie"})
+    @ValueSource(strings = {"X-Header:value", "X-Header Name", "X-First\r\nX-Second", "X-H\u00ebader"})
     void headerNameThatIsNotAnHttpTokenIsRejected(final String header) {
         assertThrows(InvalidRuleParameterException.class,
                 () -> new SetResponseHeaderActionlet().doCheckValid(action(header, "value")));
@@ -134,16 +132,10 @@ class SetResponseHeaderActionletTest extends UnitTestBase {
     }
 
     /**
-     * Validates the action as a save does and, when it is accepted, evaluates it.
+     * Validates the action as a save does and evaluates it; a validation error fails the test.
      */
     private static void validateAndRun(final RuleAction action, final HttpServletResponse response) {
         final SetResponseHeaderActionlet actionlet = new SetResponseHeaderActionlet();
-        final SetResponseHeaderActionlet.Instance instance;
-        try {
-            instance = actionlet.doCheckValid(action);
-        } catch (final InvalidRuleParameterException | RuleEngineException e) {
-            return;
-        }
-        actionlet.evaluate(null, response, instance);
+        actionlet.evaluate(null, response, actionlet.doCheckValid(action));
     }
 }

@@ -2,6 +2,8 @@ package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.auth.providers.oauth.OAuthConstants;
+import com.dotcms.filters.interceptor.saml.SamlWebInterceptor;
+import com.dotcms.saml.DotSamlConstants;
 import com.dotcms.rest.exception.InvalidRuleParameterException;
 import com.dotmarketing.filters.TimeMachineFilter;
 import com.liferay.portal.util.WebKeys;
@@ -98,14 +100,17 @@ public class SetRequestAttributeActionletTest extends UnitTestBase {
     }
 
     /**
-     * Request attribute names that only dotCMS itself sets.
+     * Request attribute names that only dotCMS itself sets, including the login-flow keys and the
+     * per-site SAML user key.
      */
     @DataProvider
     public static Object[] reservedNames() {
         return new Object[]{WebKeys.USER_ID, WebKeys.USER, WebKeys.PRINCIPAL_USER_ID,
                 WebKeys.LOGIN_TO_EDIT_MODE, OAuthConstants.SESSION_NATIVE_LOGIN,
                 TimeMachineFilter.TM_DATE_VAR, TimeMachineFilter.TM_LANG_VAR,
-                TimeMachineFilter.TM_HOST_VAR};
+                TimeMachineFilter.TM_HOST_VAR, OAuthConstants.SESSION_STATE,
+                SamlWebInterceptor.ORIGINAL_REQUEST,
+                "48190c8c-42c4-46af-8d1a-0cd5db894797" + DotSamlConstants.SAML_USER_ID};
     }
 
     /**
