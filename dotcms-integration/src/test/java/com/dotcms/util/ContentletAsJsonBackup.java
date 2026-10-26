@@ -72,9 +72,8 @@ public class ContentletAsJsonBackup {
             return;
         }
         enableAutoCommit();
-        new DotConnect().setSQL("update contentlet set contentlet_as_json = (select b.contentlet_as_json"
-                + " from " + backupTable + " b where b.inode = contentlet.inode)"
-                + " where inode in (select inode from " + backupTable + ")").loadResult();
+        new DotConnect().setSQL("update contentlet c set contentlet_as_json = b.contentlet_as_json"
+                + " from " + backupTable + " b where b.inode = c.inode").loadResult();
         new DotConnect().setSQL("drop table " + backupTable).loadResult();
         DbConnectionFactory.closeSilently();
         removeFakeDefaultSites();
