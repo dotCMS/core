@@ -90,6 +90,7 @@ public class ConfigurationHelper implements Serializable {
 	public static final String CLUSTER = "cluster";
 	public static final String CLUSTER_ID = "clusterId";
 	public static final String KEY_DIGEST = "companyKeyDigest";
+	public static final String HEARTBEAT_ENABLED = "heartbeatEnabled";
 	public static final String LOGOS = "logos";
 	public static final String LOGIN_SCREEN_LOGO = "loginScreen";
 	public static final String NAV_BAR_LOGO = "navBar";
@@ -303,17 +304,21 @@ public class ConfigurationHelper implements Serializable {
 	}
 
 	/**
-	 * We only need to show the Key if's an authenticated user
-	 * Since it's kind of sensitive.
-	 * @param user
-	 * @return
+	 * Builds the {@code cluster} section of the app configuration. Everyone gets the cluster id.
+	 * Authenticated back-end users also get the company key digest, which is sensitive, and
+	 * whether the server heartbeat is enabled ({@code ENABLE_SERVER_HEARTBEAT}), which the
+	 * Network portlet uses to decide whether it can show server status.
+	 *
+	 * @param user the current user, or {@code null}
+	 * @return the cluster section
 	 */
-	Map<String,String> clusterMap(final User user){
+	Map<String,Object> clusterMap(final User user){
 		final boolean validAuthenticatedUser = null != user && !user.isAnonymousUser() && user.isBackendUser();
-		final Map<String,String> clusterMap = new HashMap<>();
+		final Map<String,Object> clusterMap = new HashMap<>();
 		 if(validAuthenticatedUser){
 			 clusterMap.put(CLUSTER_ID, getClusterId());
 			 clusterMap.put(KEY_DIGEST, keyDigest());
+			 clusterMap.put(HEARTBEAT_ENABLED, Config.getBooleanProperty("ENABLE_SERVER_HEARTBEAT", true));
 		 } else {
 			 clusterMap.put(
 					 CLUSTER_ID, getClusterId()
