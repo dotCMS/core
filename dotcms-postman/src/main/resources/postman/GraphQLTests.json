@@ -4308,7 +4308,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"siteName\":\"page.detail.host.com.{{$timestamp}}\",\n    \"variables\":[]\n}\n",
+									"raw": "{\n    \"siteName\":\"page.detail.host.com.no-experiment.{{$timestamp}}\",\n    \"variables\":[]\n}\n",
 									"options": {
 										"raw": {
 											"language": "json"
