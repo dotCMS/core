@@ -18328,50 +18328,6 @@ paths:
           description: default response
       tags:
       - Internationalization
-  /v1/system/request-draining-test/long-request:
-    get:
-      operationId: longRunningRequest
-      parameters:
-      - in: query
-        name: duration
-        schema:
-          type: integer
-          format: int64
-          default: 5000
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringObject"
-          description: default response
-  /v1/system/request-draining-test/simulate-active-requests:
-    get:
-      operationId: simulateActiveRequests
-      parameters:
-      - in: query
-        name: count
-        schema:
-          type: integer
-          format: int32
-          default: 1
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringObject"
-          description: default response
-  /v1/system/request-draining-test/status:
-    get:
-      operationId: getShutdownStatus
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringObject"
-          description: default response
   /v1/system/ruleengine/actionlets:
     get:
       operationId: list_8
