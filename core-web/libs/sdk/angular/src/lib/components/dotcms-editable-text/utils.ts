@@ -11,7 +11,7 @@ export type DOT_EDITABLE_TEXT_FORMAT = 'html' | 'text';
 
 const DEFAULT_TINYMCE_CONFIG: EditorComponent['init'] = {
     ...__DEFAULT_TINYMCE_CONFIG__,
-    license_key: 'gpl' // Using self-hosted license key
+    license_key: 'gpl' // Agree to the TinyMCE open-source (GPL) license; avoids evaluation mode
 };
 
 export const TINYMCE_CONFIG: {
