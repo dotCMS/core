@@ -51,7 +51,7 @@ public class Task211101AddContentletAsJsonColumnTest {
     public void Test_Upgrade_Task() throws DotDataException, DotSecurityException, SQLException {
         final ContentletAsJsonBackup backup = new ContentletAsJsonBackup("task211101_contentlet_as_json_backup");
         backup.save();
-        try {
+        try (backup) {
             removeConstraintIfAny();
             final Task211101AddContentletAsJsonColumn task = new Task211101AddContentletAsJsonColumn();
             assertTrue(task.forceRun());
@@ -65,8 +65,6 @@ public class Task211101AddContentletAsJsonColumnTest {
                         assertTrue(rowMap.containsKey("contentlet_as_json"));
                         assertNull(rowMap.get("contentlet_as_json"));
                     });
-        } finally {
-            backup.restore();
         }
     }
 

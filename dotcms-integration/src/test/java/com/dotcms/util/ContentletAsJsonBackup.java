@@ -8,6 +8,8 @@ import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.startup.runonce.Task211101AddContentletAsJsonColumn;
+import com.dotmarketing.util.Logger;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
@@ -22,7 +24,7 @@ import java.util.Map;
  * default site named {@code noDefault-<millis>}, and tests that resolve the current site, such as the
  * Shorty servlet tests, fail on their first attempt.
  */
-public class ContentletAsJsonBackup {
+public class ContentletAsJsonBackup implements AutoCloseable {
 
     private final String backupTable;
     private boolean saved;
@@ -63,15 +65,24 @@ public class ContentletAsJsonBackup {
      * A default site lookup that finds no default site creates that unpublished site and saves it as
      * the default, so it would otherwise stay next to the real one and be served to the tests that run
      * next. The caches go for the same reason.
+     * <p>
+     * If a test failed between dropping the column and adding it back, the column is added again
+     * first, with the type the upgrade task gives it.
      *
      * @throws DotDataException     if the JSON cannot be restored
      * @throws DotSecurityException if a leftover site cannot be removed
+     * @throws SQLException         if the column cannot be looked up
      */
-    public void restore() throws DotDataException, DotSecurityException {
+    public void restore() throws DotDataException, DotSecurityException, SQLException {
         if (!saved) {
             return;
         }
         enableAutoCommit();
+        if (!new DotDatabaseMetaData().hasColumn("contentlet", "contentlet_as_json")) {
+            Logger.warn(this, "contentlet_as_json was dropped and not re-added, adding it again");
+            new Task211101AddContentletAsJsonColumn().executeUpgrade();
+            enableAutoCommit();
+        }
         new DotConnect().setSQL("update contentlet c set contentlet_as_json = b.contentlet_as_json"
                 + " from " + backupTable + " b where b.inode = c.inode").loadResult();
         new DotConnect().setSQL("drop table " + backupTable).loadResult();
@@ -80,6 +91,19 @@ public class ContentletAsJsonBackup {
         CacheLocator.getHostCache().clearCache();
         CacheLocator.getContentletCache().clearCache();
         saved = false;
+    }
+
+    /**
+     * Calls {@link #restore()}, so a try-with-resources block keeps the test's own failure and adds
+     * a failed restore to it as a suppressed exception.
+     *
+     * @throws DotDataException     if the JSON cannot be restored
+     * @throws DotSecurityException if a leftover site cannot be removed
+     * @throws SQLException         if the column cannot be looked up
+     */
+    @Override
+    public void close() throws DotDataException, DotSecurityException, SQLException {
+        restore();
     }
 
     /**
