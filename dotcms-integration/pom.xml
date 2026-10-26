@@ -509,6 +509,10 @@
                     <imagesMap>
                         <database>
                             <run>
+                                <!-- Replaces the parent's <cmd> (it is not merged), so the parent's
+                                     max_connections and shared_buffers are repeated here. Durability is
+                                     off because the test database is thrown away after the run. -->
+                                <cmd>postgres -c max_connections=1024 -c shared_buffers=256MB -c fsync=off -c synchronous_commit=off -c full_page_writes=off</cmd>
                                 <volumes>
                                     <bind combine.children="append">
                                         <volume>${project.basedir}/src/docker-compose/it-test/initdb.sh:/docker-entrypoint-initdb.d/initdb.sh</volume>
