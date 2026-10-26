@@ -81,6 +81,9 @@
         <test.os.upgrade.port>${os.upgrade.port}</test.os.upgrade.port>
         <test.os.upgrade.endpoints>${test.os.upgrade.scheme}://${test.os.upgrade.host}:${os.upgrade.port}</test.os.upgrade.endpoints>
         <maven.failsafe.debugArgs/>
+        <!-- Preload the agent so ByteBuddyFactory doesn't fall back to runtime self-attach;
+             the path is filled in by the resolve-bytebuddy-agent-path execution below. -->
+        <bytebuddy.agent.argline>-javaagent:${net.bytebuddy:byte-buddy-agent:jar}</bytebuddy.agent.argline>
         <coreit.test.skip>true</coreit.test.skip>
         <docker.filter>database,opensearch</docker.filter>
           <!-- Force to use node v18.20.3 -->
@@ -269,6 +272,14 @@
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
                     <execution>
+                        <!-- Populate ${net.bytebuddy:byte-buddy-agent:jar} for bytebuddy.agent.argline. -->
+                        <id>resolve-bytebuddy-agent-path</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
+                    <execution>
                         <id>unpack-webapp</id>
                         <goals>
                             <goal>unpack</goal>
@@ -415,7 +426,20 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <skip>${coreit.test.skip}</skip>
-                    <argLine>${debug.args}</argLine>
+                    <!-- An argLine here replaces the parent's, so its flags are repeated, except
+                         -Xmx1024m: the suites have always run with the JVM's default max heap, and
+                         the GC log is there to show whether a fixed heap would be safe. -->
+                    <argLine>@{argLine}
+                        ${java.module.args}
+                        --enable-preview
+                        -XX:+UseCompactObjectHeaders
+                        --enable-native-access=ALL-UNNAMED
+                        ${vipsffm.libpath.args}
+                        -Dnet.bytebuddy.experimental=true
+                        ${bytebuddy.agent.argline}
+                        -Xlog:gc*:file=${project.build.directory}/gc-it-%p.log:time,uptime,level,tags
+                        ${debug.args}
+                    </argLine>
                     <forkCount>${it.test.forkcount}</forkCount>
                     <reuseForks>true</reuseForks>
                     <rerunFailingTestsCount>3</rerunFailingTestsCount>
