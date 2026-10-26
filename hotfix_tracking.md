@@ -69,3 +69,4 @@ Release-25.07.10 LTS
 63. https://github.com/dotCMS/core/pull/38114 : fix(workflows): encode scheme, step and action names in legacy admin JSPs #38114
 64. https://github.com/dotCMS/core/pull/38106 : chore(push-publish): compare endpoint keys with MessageDigest.isEqual #38106
 65. https://github.com/dotCMS/core/pull/38113 : fix(folders): require EDIT on the source folder when moving it #38113
+66. https://github.com/dotCMS/core/pull/38077 : fix(permissions): require EDIT_PERMISSIONS before PermissionAjax changes an asset's permissions #38077
