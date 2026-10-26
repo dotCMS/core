@@ -10,6 +10,8 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
@@ -30,7 +32,11 @@ import com.liferay.portal.UserEmailAddressException;
 import com.liferay.portal.ejb.UserLocalManager;
 import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -55,6 +61,7 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
 
     @After
     public void cleanupTest(){
+        Config.setProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, false);
         RestUtilTest.cleanupContext();
     }
 
@@ -122,7 +129,7 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
 
             final ForgotPasswordResource authenticationResource =
                     new ForgotPasswordResource(userLocalManager, userService,
-                            companyAPI, responseUtil);
+                            companyAPI, responseUtil, Runnable::run);
 
 
             final Response response1 = authenticationResource.forgotPassword(request, response, forgotPasswordForm);
@@ -253,9 +260,12 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
 
 
 
+            // the user is looked up on the request thread only when unknown accounts are reported
+            Config.setProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, true);
+
             final ForgotPasswordResource authenticationResource =
                     new ForgotPasswordResource(userLocalManager, userService,
-                            companyAPI, authenticationHelper);
+                            companyAPI, authenticationHelper, Runnable::run);
 
 
             final Response response1 = authenticationResource.forgotPassword(request, response, forgotPasswordForm);
@@ -351,6 +361,97 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
     }
 
     /**
+     * Given login by email and any address (default configuration),
+     * when a reset is requested,
+     * then nothing that depends on the account runs before the response is returned: the lookup,
+     * token and email are handed to the reset pool, and run there.
+     */
+    @Test
+    public void emailLogin_accountWork_runsOnTheResetPool() throws Exception {
+
+        final UserService userService = mock(UserService.class);
+        final List<Runnable> queued = new ArrayList<>();
+
+        final Response response = requestReset(Company.AUTH_TYPE_EA,
+                new ForgotPasswordForm.Builder().userId("owner@example.com").build(),
+                mock(UserLocalManager.class), userService, queued::add);
+
+        assertEquals(Status.OK.getStatusCode(), response.getStatus());
+        assertEquals("owner@example.com", entityOf(response));
+        assertEquals(1, queued.size());
+        verifyNoInteractions(userService);
+
+        queued.get(0).run();
+
+        verify(userService).sendResetPassword(any(), eq("owner@example.com"), any(Locale.class));
+    }
+
+    /**
+     * Given login by user id,
+     * when a reset is requested,
+     * then the user is looked up on the reset pool, not on the request thread.
+     */
+    @Test
+    public void userIdLogin_lookup_runsOnTheResetPool() throws Exception {
+
+        final UserLocalManager userLocalManager = mock(UserLocalManager.class);
+        final UserService userService = mock(UserService.class);
+        final User account = mock(User.class);
+        when(account.getEmailAddress()).thenReturn("owner@example.com");
+        when(userLocalManager.getUserById("owner.id")).thenReturn(account);
+        final List<Runnable> queued = new ArrayList<>();
+
+        requestReset(Company.AUTH_TYPE_ID, new ForgotPasswordForm.Builder().userId("owner.id").build(),
+                userLocalManager, userService, queued::add);
+
+        verifyNoInteractions(userLocalManager, userService);
+
+        queued.get(0).run();
+
+        verify(userService).sendResetPassword(any(), eq("owner@example.com"), any(Locale.class));
+    }
+
+    /**
+     * Given the reset fails for an unexpected reason on the reset pool,
+     * when the queued work runs,
+     * then the failure is logged and does not propagate out of the pool thread.
+     */
+    @Test
+    public void resetPool_unexpectedFailure_isContained() throws Exception {
+
+        final UserService userService = mock(UserService.class);
+        doThrow(new IllegalStateException("mail relay down")).when(userService)
+                .sendResetPassword(any(), eq("owner@example.com"), any(Locale.class));
+        final List<Runnable> queued = new ArrayList<>();
+
+        requestReset(Company.AUTH_TYPE_EA, new ForgotPasswordForm.Builder().userId("owner@example.com").build(),
+                mock(UserLocalManager.class), userService, queued::add);
+
+        queued.get(0).run();
+
+        verify(userService).sendResetPassword(any(), eq("owner@example.com"), any(Locale.class));
+    }
+
+    /**
+     * Given the reset pool cannot take more work,
+     * when a reset is requested,
+     * then the response is 429, the same for any submitted value.
+     */
+    @Test
+    public void resetPool_full_returnsTooManyRequests() throws Exception {
+
+        final Executor full = command -> {
+            throw new RejectedExecutionException("queue full");
+        };
+
+        final Response response = requestReset(Company.AUTH_TYPE_EA,
+                new ForgotPasswordForm.Builder().userId("owner@example.com").build(),
+                mock(UserLocalManager.class), mock(UserService.class), full);
+
+        assertEquals(429, response.getStatus());
+    }
+
+    /**
      * Given a request with no body,
      * when a reset is requested,
      * then the request is rejected with 400.
@@ -386,6 +487,17 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
                                   final UserLocalManager userLocalManager,
                                   final UserService userService) throws Exception {
 
+        return requestReset(authType, form, userLocalManager, userService, Runnable::run);
+    }
+
+    /**
+     * Same as above, with the given executor standing in for the reset pool.
+     */
+    private Response requestReset(final String authType, final ForgotPasswordForm form,
+                                  final UserLocalManager userLocalManager,
+                                  final UserService userService,
+                                  final Executor executor) throws Exception {
+
         final HttpServletRequest request = mock(HttpServletRequest.class);
         final HttpSession session = mock(HttpSession.class);
         final CompanyAPI companyAPI = mock(CompanyAPI.class);
@@ -410,8 +522,8 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
             when(companyAPI.getCompanyId(request)).thenReturn(RestUtilTest.DEFAULT_COMPANY);
             Config.setProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, false);
 
-            return new ForgotPasswordResource(userLocalManager, userService, companyAPI, ResponseUtil.INSTANCE)
-                    .forgotPassword(request, mock(HttpServletResponse.class), form);
+            return new ForgotPasswordResource(userLocalManager, userService, companyAPI, ResponseUtil.INSTANCE,
+                    executor).forgotPassword(request, mock(HttpServletResponse.class), form);
         } finally {
             Config.setProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, previousDisplayFlag);
             Config.CONTEXT = null;
