@@ -284,7 +284,8 @@ one has to earn its place.
   reflection and `Class.forName`, class names in config and the database, OSGi export lists
   (`dotCMS/src/main/resources/osgi/**/osgi-extra.conf`), and bytecode references from other jars.
   Search with `rg -uu --glob '!*.class'` — some sources contain NUL bytes and are skipped as binary
-  by default.
+  by default. No grep finds class names assembled at runtime (string concatenation, values read
+  from config or the database), so a zero-hit search is evidence, not proof.
 - **Remove from both places**: the module `pom.xml` entry and the BOM `dependencyManagement` entry —
   unless the BOM entry still pins a transitive version (often for a CVE fix), in which case keep it.
 - **Removing a feature is not a dependency change.** If a library backs a user-visible feature
