@@ -69,13 +69,15 @@ inputs:
     description: 'Download artifacts from a previous job'
     required: false
     default: ''
-  restore-maven-cache:
+  needs-maven-repo:
     description: |
-      Restore the shared third-party Maven dependency cache. The maven-repo artifact
-      carries only what the build installed, so a job that compiles or runs the
-      dotCMS modules needs this cache for their dependencies. A job whose modules
-      declare no dependencies (Postman, E2E) can turn it off and let Maven fetch its
-      few plugins instead of restoring several hundred megabytes it never reads.
+      Whether the job needs the dotCMS build in ~/.m2: restores the shared third-party
+      dependency cache and, with artifacts-from, downloads the maven-repo artifact on
+      top of it. The artifact carries only what the build installed, so a job that
+      compiles or runs the dotCMS modules needs both. A job whose modules use none of
+      them (Postman and E2E declare no dependencies, Karate only karate-junit5) turns
+      this off and gets a small Maven plugin cache instead, which holds just the
+      plugins those modules run.
     required: false
     default: 'true'
   github-token:
@@ -136,9 +138,8 @@ inputs:
         the maven-repo artifact no longer contains.
 
       Fails if .mvn/maven.config has no -Drevision=: the CI-friendly version
-      would collapse to the parent default (1.0.0), which is not a *-SNAPSHOT,
-      so it would escape delete-built-artifacts-from-cache and be written into
-      the shared Maven cache as a bogus release coordinate.
+      would collapse to the parent default (1.0.0) and the build would install
+      and upload release-looking 1.0.0 coordinates.
     required: false
     default: 'false'
   artifact-suffix:
@@ -259,9 +260,9 @@ runs:
 
     # Third-party dependencies only: the build job removes everything it installed
     # before saving (see Delete Built Artifacts From Cache), and consumers get the
-    # built artifacts from the maven-repo artifact instead. Test jobs restore it
-    # too; the build job saves it before they start, and a miss falls back to an
-    # older entry plus whatever Maven downloads.
+    # built artifacts from the maven-repo artifact instead. Test jobs that need the
+    # dotCMS build restore it too; the build job saves it before they start, and a
+    # miss falls back to an older entry plus whatever Maven downloads.
     #
     # The v2 in the key retires the entries written before that cleanup existed.
     # They carried a second copy of every dotCMS module under old release versions
@@ -269,13 +270,33 @@ runs:
     # every new pom hash, so it would never have aged out on its own.
     - id: restore-cache-maven
       name: Restore Maven Repository Cache
-      if: ${{ inputs.restore-maven-cache == 'true' }}
+      if: ${{ inputs.needs-maven-repo == 'true' }}
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.m2/repository
         key: ${{ runner.os }}-mavencore-v2-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
           ${{ runner.os }}-mavencore-v2-
+
+    # Postman, Karate and E2E run no dotCMS module, so they skip the cache above and the
+    # maven-repo artifact, and Maven fetches the plugins they run (about 170-220 MB, thousands
+    # of small files) from Maven Central. Maven 3.9.2's resolver (1.9.10) retries only I/O
+    # errors, three times (aether.connector.http.retryHandler.count), and never an HTTP 429 or
+    # 503, so 15 jobs resolving the same files at once are one rate limit away from failing.
+    # This small cache takes Central out of the path: whichever of those jobs finds no entry
+    # saves the repository after its Maven run (Save Maven Plugin Cache), and the rest restore
+    # it. The key covers the poms that decide which plugins run. It is only a head start:
+    # a stale entry just means Maven downloads the difference, so a pom outside the list
+    # cannot make a job wrong, only slower.
+    - id: restore-cache-maven-plugins
+      name: Restore Maven Plugin Cache
+      if: ${{ inputs.needs-maven-repo != 'true' }}
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-mavenplugins-v1-${{ hashFiles('pom.xml', 'parent/pom.xml', 'nodejs-parent/pom.xml', 'dotcms-postman/pom.xml', 'core-web/apps/dotcms-ui-e2e/pom.xml', 'test-karate/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-mavenplugins-v1-
 
     - id: restore-cache-node
       name: Restore Node Binary Cache
@@ -361,9 +382,12 @@ runs:
         restore-keys: ${{ runner.os }}-sonar
 
     # Lands on top of the dependency cache restored above: the built artifacts only.
+    # Suites that need no dotCMS module (needs-maven-repo off) do not download it: their
+    # modules build from an empty repository (checked for Postman, Karate and E2E), and
+    # their Docker image comes from the docker-image artifact below.
     - id: restore-artifact-maven-repo
       name: Restore Maven Build Repo
-      if: ${{ inputs.artifacts-from != '' }}
+      if: ${{ inputs.artifacts-from != '' && inputs.needs-maven-repo == 'true' }}
       uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
       with:
         digest-mismatch: error
@@ -514,9 +538,8 @@ runs:
         # Verified: a CLI -Dchangelist overrides the -Dchangelist= in that file.
         if [[ "${{ inputs.release-build }}" == "true" ]]; then
           # Guardrail: without -Drevision the version collapses to the parent
-          # default (1.0.0). That is not a *-SNAPSHOT, so it would survive
-          # delete-built-artifacts-from-cache below and be saved into the shared
-          # Maven cache as a release-looking coordinate. release-prepare writes
+          # default (1.0.0), and the build would install and upload release-looking
+          # 1.0.0 coordinates in place of the release. release-prepare writes
           # -Drevision= onto the release branch; require it.
           #
           # Require a non-empty value: a bare '-Drevision=' sets the CI-friendly
@@ -582,12 +605,16 @@ runs:
         LIST="${RUNNER_TEMP}/built-artifacts.list"
         mkdir -p "${STAGE}"
         cd ~/.m2/repository
-        find . -name _remote.repositories -exec grep -l '>=$' {} + | xargs -n1 dirname > "${LIST}" || true
+        # The list is NUL-separated so a path with a space cannot split. grep exits 1 when
+        # nothing matches: the empty-list check below reports that, so only a real grep
+        # error (2) fails here.
+        { grep -rl --null --include=_remote.repositories '>=$' . || [ $? -eq 1 ]; } \
+          | while IFS= read -r -d '' f; do printf '%s\0' "${f%/*}"; done > "${LIST}"
         if [ ! -s "${LIST}" ]; then
           echo "::error::The build installed nothing into ~/.m2/repository, so there is nothing to publish"
           exit 1
         fi
-        tar -cf - -T "${LIST}" | tar -xf - -C "${STAGE}"
+        tar --null -cf - -T "${LIST}" | tar -xf - -C "${STAGE}"
         du -sh "${STAGE}"
 
     - id: persist-maven-repo
@@ -681,8 +708,15 @@ runs:
         # how that is told from a download), then the artifactId-level metadata files that
         # listed those versions. Downloaded versions, including pinned com.dotcms releases,
         # stay.
-        find ~/.m2/repository -name _remote.repositories -exec grep -l '>=$' {} + | xargs -r -n1 dirname | xargs -r rm -rf || true
-        find ~/.m2/repository -name maven-metadata-local.xml -delete
+        #
+        # The list is written out before anything is deleted, so grep never walks a
+        # directory that is being removed under it, and a failed delete fails the step.
+        LIST="${RUNNER_TEMP}/installed-versions.list"
+        cd ~/.m2/repository
+        { grep -rl --null --include=_remote.repositories '>=$' . || [ $? -eq 1 ]; } \
+          | while IFS= read -r -d '' f; do printf '%s\0' "${f%/*}"; done > "${LIST}"
+        xargs -0 -r rm -rf < "${LIST}"
+        find . -name maven-metadata-local.xml -delete
         find ~/.m2 -name \*-SNAPSHOT -type d -exec rm -rf {} +
 
     - id: save-cache-maven
@@ -692,6 +726,16 @@ runs:
       with:
         path: ~/.m2/repository
         key: ${{ steps.restore-cache-maven.outputs.cache-primary-key }}
+
+    # Jobs that start together on a miss all reach this step; the first reserves the key and
+    # the rest log a warning and carry on, so a lost race does not fail a job.
+    - id: save-cache-maven-plugins
+      name: Save Maven Plugin Cache
+      if: ${{ inputs.needs-maven-repo != 'true' && steps.restore-cache-maven-plugins.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.m2/repository
+        key: ${{ steps.restore-cache-maven-plugins.outputs.cache-primary-key }}
 
     - id: save-cache-node
       name: Save Node Binary Cache

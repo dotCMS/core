@@ -12,11 +12,10 @@ defaults:
   requires_checkout: true
   generates_test_results: true
   cleanup_runner: true
-  # Restore the third-party Maven dependency cache. The maven-repo artifact holds only the
-  # dotCMS modules the build installed, so a suite that compiles or runs them needs it. The
-  # suites that only drive Docker (Postman, Karate, E2E) declare no dotCMS dependencies:
-  # they need a few hundred megabytes less than the cache holds, and Maven fetches their
-  # plugins itself.
+  # Restore the third-party Maven dependency cache and download the maven-repo artifact (the
+  # dotCMS modules the build installed): any suite that compiles or runs a dotCMS module
+  # needs both. Postman, Karate and E2E only drive Docker and resolve a few plugins (Karate
+  # also karate-junit5), so they set this to false and use a small plugin cache instead.
   needs_maven_deps: true
 
 test_types:

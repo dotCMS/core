@@ -392,7 +392,7 @@ jobs:
           cleanup-runner: ${{ matrix.cleanup_runner }}
           dotcms-license: ${{ matrix.needs_license == true && secrets.DOTCMS_LICENSE || '' }}
           requires-node: ${{ matrix.needs_node == true }}
-          restore-maven-cache: ${{ matrix.needs_maven_deps == true }}
+          needs-maven-repo: ${{ matrix.needs_maven_deps == true }}
           needs-docker-image: ${{ matrix.needs_docker == true }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           artifacts-from: ${{ env.ARTIFACT_RUN_ID }}
