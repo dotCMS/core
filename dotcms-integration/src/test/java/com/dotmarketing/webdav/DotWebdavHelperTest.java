@@ -121,9 +121,9 @@ public class DotWebdavHelperTest {
             final Request mockedRequest = Mockito.mock(Request.class);
             when(mockedRequest.getUserAgentHeader()).thenReturn("Cyberduck");
             mocked.when(HttpManager::request).thenReturn(mockedRequest);
-            for (final String name : new String[] {"shell.jsp", "shell.JSP"}) {
+            for (final String name : new String[] {"sample-1.jsp", "sample-2.JSP"}) {
                 final var resourceUri = String.format("/webdav/live/1/%s/%s", host.getName(), name);
-                try (InputStream content = new ByteArrayInputStream("<% out.println(1); %>".getBytes())) {
+                try (InputStream content = new ByteArrayInputStream("qa".getBytes())) {
                     Assert.assertThrows(name, IllegalArgumentException.class,
                             () -> helper.setResourceContent(resourceUri, content, "",
                                     null, java.util.Calendar.getInstance().getTime(), user, true));

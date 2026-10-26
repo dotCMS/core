@@ -91,7 +91,7 @@ public class TempFileAPITest {
     @Test
     public void testCreateEmptyTempFile_listedExtensionAnyCase_isRefused() {
         final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
-        for (final String name : new String[] {"shell.jsp", "shell.JSP", "page.JSPX"}) {
+        for (final String name : new String[] {"sample-1.jsp", "sample-2.JSP", "sample-6.JSPX"}) {
             assertThrows(name, IllegalArgumentException.class,
                     () -> tempFileAPI.createEmptyTempFile(name, mockHttpServletRequest()));
         }

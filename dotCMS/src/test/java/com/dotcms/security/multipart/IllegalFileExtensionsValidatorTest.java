@@ -17,7 +17,7 @@ public class IllegalFileExtensionsValidatorTest {
      */
     @Test
     public void listedExtension_anyCase_isRefused() {
-        for (final String name : new String[] {"shell.jsp", "shell.JSP", "shell.Jsp", "tool.EXE", "run.Sh"}) {
+        for (final String name : new String[] {"sample-1.jsp", "sample-2.JSP", "sample-3.Jsp", "sample-4.EXE", "sample-5.Sh"}) {
             assertThrows(name, IllegalArgumentException.class, () -> validator.validate(name));
         }
     }
@@ -27,7 +27,7 @@ public class IllegalFileExtensionsValidatorTest {
      */
     @Test
     public void jspFamily_isRefusedByDefault() {
-        for (final String name : new String[] {"page.jspx", "fragment.jspf", "PAGE.JSPX", "FRAGMENT.JSPF"}) {
+        for (final String name : new String[] {"sample-6.jspx", "sample-7.jspf", "SAMPLE-8.JSPX", "SAMPLE-9.JSPF"}) {
             assertThrows(name, IllegalArgumentException.class, () -> validator.validate(name));
         }
     }
@@ -38,7 +38,7 @@ public class IllegalFileExtensionsValidatorTest {
      */
     @Test
     public void unlistedExtension_isAccepted() {
-        for (final String name : new String[] {"report.txt", "archive.tar.gz", "shell.jsp.txt", "README", "photo.JPG"}) {
+        for (final String name : new String[] {"report.txt", "archive.tar.gz", "sample-1.jsp.txt", "README", "photo.JPG"}) {
             validator.validate(name);
         }
     }

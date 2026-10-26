@@ -455,13 +455,13 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
         final ContentType fileAssetType = contentTypeAPI.find("FileAsset");
         HttpServletRequestThreadLocal.INSTANCE.setRequest(TempFileAPITest.mockHttpServletRequest());
         try {
-            for (final String name : new String[] {"shell.jsp", "shell.JSP"}) {
+            for (final String name : new String[] {"sample-1.jsp", "sample-2.JSP"}) {
                 final Contentlet contentlet = new Contentlet();
                 contentlet.setContentTypeId(fileAssetType.id());
                 final Map<String, Object> map = new HashMap<>();
                 map.put("contentType", "FileAsset");
                 map.put("fileName", name);
-                map.put("fileAsset", Map.of("fileName", name, "content", "<% out.println(1); %>"));
+                map.put("fileAsset", Map.of("fileName", name, "content", "qa"));
 
                 assertThrows(name, IllegalArgumentException.class,
                         () -> new MapToContentletPopulator().populate(contentlet, map));
