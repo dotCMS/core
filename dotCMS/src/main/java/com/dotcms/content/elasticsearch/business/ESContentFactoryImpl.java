@@ -42,6 +42,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.db.DotDatabaseMetaData;
 import com.dotmarketing.common.db.Params;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.portlets.containers.business.ContainerSortBy;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.db.commands.DatabaseCommand.QueryReplacements;
@@ -1585,9 +1586,8 @@ public class ESContentFactoryImpl extends ContentletFactory {
             condition.append(" and contentletvi.lang = ").append(languageId);
         }
 
-        if (!UtilMethods.isSet(orderby) || orderby.equals("tree_order")) {
-            orderby = "multi_tree.tree_order";
-        }
+        // Only a supported container sort resolves to a column; anything else uses the page order
+        final String effectiveOrderBy = ContainerSortBy.resolveOrDefault(orderby, containerIdentifier);
         final StringBuilder query = new StringBuilder();
         query.append("SELECT contentlet.*, contentlet_1_.owner FROM contentlet JOIN inode contentlet_1_ ON (contentlet.inode=contentlet_1_.inode) ")
                 .append(" JOIN multi_tree ON (multi_tree.child = contentlet.identifier) ")
@@ -1595,7 +1595,7 @@ public class ESContentFactoryImpl extends ContentletFactory {
                 .append(" where multi_tree.parent1 = ? and multi_tree.parent2 = ? and ")
                 .append(condition.toString())
                 .append(" order by ")
-                .append(orderby);
+                .append(effectiveOrderBy);
 
         final DotConnect dotConnect = new DotConnect();
         dotConnect.setSQL(query.toString());
@@ -1610,14 +1610,16 @@ public class ESContentFactoryImpl extends ContentletFactory {
 	}
 
 
+    /**
+     * Cache-backed variant of
+     * {@link #findPageContentlets(String, String, String, boolean, long)}. The query only collects
+     * the inodes placed in the page container and applies no order, so {@code orderby} is not used.
+     */
 	protected List<Contentlet> findPageContentletFromCache(final String HTMLPageIdentifier,
-            final String containerIdentifier, String orderby, final boolean working,
+            final String containerIdentifier, final String orderby, final boolean working,
             long languageId) throws DotDataException, DotStateException, DotSecurityException {
         StringBuilder condition = new StringBuilder();
-        
-        if (!UtilMethods.isSet(orderby) || orderby.equals("tree_order")) {
-            orderby = " multi_tree.tree_order ";
-        }
+
         languageId = (languageId==0) ?  languageAPI.getDefaultLanguage().getId() : languageId;
 
         condition
