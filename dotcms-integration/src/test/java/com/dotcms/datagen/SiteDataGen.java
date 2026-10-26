@@ -39,6 +39,12 @@ public class SiteDataGen extends AbstractDataGen<Host> {
         return this;
     }
 
+    /**
+     * Builds a new, unsaved test {@link Host} from this generator's settings, set to index with
+     * {@link IndexPolicy#FORCE}.
+     *
+     * @return the unsaved site
+     */
     @Override
     public Host next() {
 

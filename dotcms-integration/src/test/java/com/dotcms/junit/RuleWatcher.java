@@ -35,6 +35,13 @@ public class RuleWatcher extends TestWatcher {
     public static final String USE_TEST_TRANSACTION_TRACKER = "USE_TEST_TRANSACTION_TRACKER";
     public static final String TEST_TRANSACTION_TRACKER_AUTO_CLOSE_TYPE = "TEST_TRANSACTION_TRACKER_AUTO_CLOSE_TYPE";
     public static final String TRANSACTION_AUTO_CLOSE_DEFAULT = "rollback";
+    /**
+     * How long to wait for the reindex queue to drain after a test before pausing the reindex
+     * thread and deleting what is left. Longer than {@code DEFAULT_INDEX_QUEUE_WAIT} because a
+     * slow-draining test would otherwise leave the thread paused for the tests that follow; it
+     * costs nothing when the queue drains quickly.
+     */
+    private static final int INDEXER_DRAIN_TIMEOUT_SECONDS = 60;
     private Map<Integer, Map<String, String>> overrides = new ConcurrentHashMap<>();
 
     private Set<String> contentTypes = new HashSet<>();
@@ -124,8 +131,8 @@ public class RuleWatcher extends TestWatcher {
 
     /**
      * After a test, waits for the reindex queue to drain so pending index work does not leak into
-     * the next test. If it does not drain within {@code DEFAULT_INDEX_QUEUE_WAIT}, the remaining
-     * reindex records are deleted.
+     * the next test. If it does not drain within {@link #INDEXER_DRAIN_TIMEOUT_SECONDS}, the
+     * reindex thread is paused and the remaining reindex records are deleted.
      */
     private static void indexerTrackerAfter() {
         if (Config.getBooleanProperty(USE_TEST_INDEXER_TRACKER, false)) {
@@ -139,7 +146,8 @@ public class RuleWatcher extends TestWatcher {
                         Logger.info(MainBaseSuite.class, "Indexer was not running, unpausing now");
                         ReindexThread.unpause();
                     }
-                    boolean queueEmpty = TestDataUtils.waitForEmptyQueue();
+                    boolean queueEmpty =
+                            TestDataUtils.waitForEmptyQueue(INDEXER_DRAIN_TIMEOUT_SECONDS);
                     Logger.info(MainBaseSuite.class, "Indexer Complete=" + queueEmpty);
                     if (!queueEmpty) {
                         ReindexThread.pause();
