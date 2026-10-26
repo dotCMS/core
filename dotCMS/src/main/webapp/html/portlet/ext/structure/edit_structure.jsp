@@ -1,4 +1,4 @@
-<%@page import="com.dotcms.contenttype.model.field.DataTypes"%>
+<%@ page import="com.liferay.util.Xss" %><%@page import="com.dotcms.contenttype.model.field.DataTypes"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
 <%@ page import="java.util.ArrayList"%>
 <%@ page import="com.dotcms.repackage.javax.portlet.WindowState"%>
@@ -682,7 +682,7 @@
 												}
 
 											%>
-											<option value="<%=scheme.getId()%>" <%=selected%> ><%=scheme.getName() %></option>
+											<option value="<%=scheme.getId()%>" <%=selected%> ><%=Xss.encodeForHTML(scheme.getName())%></option>
 											<%} %>
 										</select>
 										<%}else{ %>

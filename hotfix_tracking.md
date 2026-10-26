@@ -66,3 +66,4 @@ Release-25.07.10 LTS
 60. https://github.com/dotCMS/core/pull/38095 : chore(push-publish): remove leftover debug logging #38095
 61. https://github.com/dotCMS/core/pull/38099 : fix(achecker): validate request values and harden the embedded database access #38099
 62. https://github.com/dotCMS/core/pull/38097 : fix(workflow): record the requesting user on bulk task actions #38097
+63. https://github.com/dotCMS/core/pull/38114 : fix(workflows): encode scheme, step and action names in legacy admin JSPs #38114
