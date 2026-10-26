@@ -243,9 +243,9 @@ public class HostVariableAPIImplTest {
     }
 
     /**
-     * Given two variables of Site A, when a user who can edit Site A saves Site A's list with the first one changed by
-     * id, the second one left out and a new one without id, then the first is updated, the second is removed and the
-     * new one is created, all on Site A.
+     * Given two variables of a new Site, when its list is saved with the first one changed by id, the second one left
+     * out and a new one without id, then the first is updated, the second is removed and the new one is created, all
+     * on that Site.
      */
     @Test
     public void saveList_withOwnIdsAndNewVariables_updatesCreatesAndRemoves() throws Exception {
@@ -286,6 +286,49 @@ public class HostVariableAPIImplTest {
         assertEquals("ownValueChanged", storedRow(ownId).orElseThrow().get("variable_value"));
         assertEquals(siteA.getIdentifier(), storedRow(ownId).orElseThrow().get("host_id"));
         assertEquals(otherBefore, storedRow(otherId).orElseThrow());
+    }
+
+    /**
+     * Given an id that matches no variable at all, when Site A's list is saved with it and a new key, then the save is
+     * refused with the same exception and message as a list that carries an id of another Site's variable, and the
+     * new key is not stored.
+     */
+    @Test
+    public void saveList_withUnknownId_isRejectedWithTheSameMessageAsAnIdOfAnotherSite() throws Exception {
+        final String otherSiteId = createVariable(siteB, uniqueKey("listmsg"), "valueOnB");
+        final String unknownKey = uniqueKey("listunknown");
+        final List<HostVariable> withOtherSiteId = new ArrayList<>(variablesOf(siteA));
+        withOtherSiteId.add(variable(otherSiteId, siteA, uniqueKey("listchanged"), "changedValue", editorOfSiteA));
+        final List<HostVariable> withUnknownId = new ArrayList<>(variablesOf(siteA));
+        withUnknownId.add(variable(UUIDGenerator.generateUuid(), siteA, unknownKey, "changedValue", editorOfSiteA));
+
+        final DotDataException otherSite = assertThrows(DotDataException.class,
+                () -> hostVariableAPI.save(withOtherSiteId, siteA.getIdentifier(), editorOfSiteA, false));
+        final DotDataException unknown = assertThrows(DotDataException.class,
+                () -> hostVariableAPI.save(withUnknownId, siteA.getIdentifier(), editorOfSiteA, false));
+
+        assertEquals(unknown.getClass(), otherSite.getClass());
+        assertEquals(unknown.getMessage(), otherSite.getMessage());
+        assertFalse(storedRowByKey(unknownKey).isPresent());
+    }
+
+    /**
+     * Given a variable of Site A, when a user who can only read Site A saves Site A's list with that variable changed,
+     * then the save is refused with a {@link DotSecurityException} and the stored row is unchanged.
+     */
+    @Test
+    public void saveList_withoutEditPermissionOnTheSite_throwsSecurityExceptionAndNothingChanges() throws Exception {
+        final String key = uniqueKey("listro");
+        final String id = createVariable(siteA, key, "storedValue");
+        final Map<String, Object> before = storedRow(id).orElseThrow();
+        final List<HostVariable> list = variablesOf(siteA).stream()
+                .filter(variable -> !id.equals(variable.getId())).collect(Collectors.toList());
+        list.add(variable(id, siteA, key, "changedValue", readerOfBothSites));
+
+        assertThrows(DotSecurityException.class,
+                () -> hostVariableAPI.save(list, siteA.getIdentifier(), readerOfBothSites, false));
+
+        assertEquals(before, storedRow(id).orElseThrow());
     }
 
     /**
