@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
@@ -46,6 +47,8 @@ public class SiteSearchAjaxActionIntegrationTest {
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        // getJobProgress needs an enterprise license: its task list is null below the STANDARD level
+        LicenseTestUtil.getLicense();
         final RoleAPI roleAPI = APILocator.getRoleAPI();
         siteSearchLayout = new LayoutDataGen()
                 .name("site-search-" + System.nanoTime())
