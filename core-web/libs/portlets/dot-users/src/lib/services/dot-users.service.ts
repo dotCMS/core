@@ -37,7 +37,12 @@ export interface DotUserListItem {
     emailAddress: string;
     gravitar: string;
     active: boolean;
-    admin: boolean;
+    /**
+     * Whether the user is a CMS Administrator. Only returned to viewers
+     * who are CMS Administrators or have access to both the Roles and
+     * Users portlets; `undefined` for anyone else.
+     */
+    admin?: boolean;
     backendUser: boolean;
     frontendUser: boolean;
     hasConsoleAccess: boolean;
