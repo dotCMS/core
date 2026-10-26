@@ -552,7 +552,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"javascript\": \"import('/application/js/modules/{{jsModuleName}}').then(function (m) { dotJSON.put('module', m.value); }, function (e) { dotJSON.put('module', 'ERR:' + e.message); });\\ndotJSON\"\n}",
+					"raw": "{\n    \"javascript\": \"import('//default/application/js/modules/{{jsModuleName}}').then(function (m) { dotJSON.put('module', m.value); }, function (e) { dotJSON.put('module', 'ERR:' + e.message); });\\ndotJSON\"\n}",
 					"options": {
 						"raw": {
 							"language": "json"
