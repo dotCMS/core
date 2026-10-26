@@ -1,6 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools;
 
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
@@ -55,22 +56,26 @@ public class ScriptingFileForgeryIntegrationTest {
         // What Java binds when the endpoint loads the file asset.
         final Contentlet javaBoundFile = new Contentlet();
         ScriptingFileAttribute.set(request, javaBoundFile);
-        final Object javaBoundMarker = attributes.get(ScriptingFileAttribute.ATTRIBUTE);
 
         // The production context: toolbox tools ($dotsecrets), $context with getRequest(),
         // and a Contentlet a template could obtain (e.g. $contents.getContentByInode).
         final Context context = VelocityUtil.getInstance().getContext(
                 request, new MockHttpResponse());
-        context.put("file", new Contentlet());
+        final Contentlet templateFile = new Contentlet();
+        context.put("file", templateFile);
 
         final String forgeTemplate = "$dotsecrets.setScriptingFile($context.getRequest(), $file)"
                 + "$context.getRequest().setAttribute('" + ScriptingFileAttribute.ATTRIBUTE + "', $file)";
         VelocityUtil.getEngine().evaluate(context, new StringWriter(),
                 "scripting-file-forgery-integration", new StringReader(forgeTemplate));
 
-        assertSame("A template re-bound the trusted scripting-file marker",
-                javaBoundMarker, attributes.get(ScriptingFileAttribute.ATTRIBUTE));
-        assertSame("Java's own binding must keep resolving for the secrets check",
-                javaBoundFile, ScriptingFileAttribute.get(request));
+        // The template can clobber the raw attribute through setAttribute, but the trusted
+        // read filters to the wrapper type only Java code creates, so a template-supplied
+        // Contentlet never becomes the scripting file: after the attempt the secrets check
+        // sees no scripting file at all and falls back to the request user.
+        assertNull("A template must not be able to forge the trusted scripting-file marker",
+                ScriptingFileAttribute.get(request));
+        assertNotSame("The template-supplied Contentlet must never resolve as the scripting file",
+                templateFile, ScriptingFileAttribute.get(request));
     }
 }

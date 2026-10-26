@@ -97,7 +97,10 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
         APILocator.getApiTokenAPI().deleteToken(token, APILocator.systemUser());
       }
       for (final User user : authenticationUsers) {
-        UserDataGen.remove(user, false);
+        // Silent like every other fixture cleanup: UserAPIImpl.delete NPEs when the default
+        // replacement user has no personal role, and a throw here would abort the rest of the
+        // cleanup and error every test in the class.
+        UserDataGen.remove(user);
       }
     } finally {
       Config.setProperty("ALLOW_BASIC_AUTH", previousBasicAuth);
