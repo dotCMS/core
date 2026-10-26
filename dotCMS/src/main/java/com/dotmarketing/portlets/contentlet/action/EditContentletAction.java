@@ -147,6 +147,8 @@ import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isNewFiel
  */
 public class EditContentletAction extends DotPortletAction implements DotPortletActionInterface {
 
+	private static final String CANNOT_READ_MESSAGE = "User '%s' cannot read the selected content";
+
 	private Contentlet contentletToEdit;
 	
 	private CategoryAPI catAPI;
@@ -761,6 +763,27 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 	}
 
 	/**
+	 * Loads a contentlet with the requesting user. When the user can't read it, the exception
+	 * thrown carries a generic message, because the error page shows the message as is and the
+	 * original one describes the contentlet. The original is kept in the debug log.
+	 *
+	 * @param inode inode of the contentlet
+	 * @param user  user making the request
+	 * @return the contentlet
+	 * @throws DotDataException     if the contentlet cannot be loaded
+	 * @throws DotSecurityException if the user cannot read the contentlet
+	 */
+	private Contentlet findForUser(final String inode, final User user)
+			throws DotDataException, DotSecurityException {
+		try {
+			return conAPI.find(inode, user, false);
+		} catch (final DotSecurityException e) {
+			Logger.debug(this, e::getMessage);
+			throw new DotSecurityException(String.format(CANNOT_READ_MESSAGE, user.getUserId()));
+		}
+	}
+
+	/**
 	 * 
 	 * @param req
 	 *            - The Struts wrapper for the HTTP Request object.
@@ -794,7 +817,7 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			   contentlet = conAPI.checkout(inodeStr, user, false);
 			   contentlet.setInode(inodeStr);
 			}else{
-			   contentlet = conAPI.find(inodeStr, user, false);
+			   contentlet = findForUser(inodeStr, user);
 			}
 		}else {
 			/*In case of multi-language first ocurrence new contentlet*/
@@ -802,7 +825,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			String langId = req.getParameter("lang");
 
 			if(InodeUtils.isSet(sibblingInode) && !sibblingInode.equals("0")){
-				Contentlet sibblingContentlet = conAPI.find(sibblingInode,APILocator.getUserAPI().getSystemUser(), false);
+				// Loaded with the requesting user, so the sibling must be readable to be used as the source
+				Contentlet sibblingContentlet = findForUser(sibblingInode, user);
 
 				if (UtilMethods.isSet(langId) && sibblingContentlet.getLanguageId() == Long.parseLong(langId)) {
 					contentlet = sibblingContentlet;
@@ -830,7 +854,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			}
 		}
 
-		if(perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false));
+		// A new contentlet or a new translation has nothing to read yet; an existing one must be readable
+		if (InodeUtils.isSet(contentlet.getInode())
+				&& !perAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, user, false)) {
+			throw new DotSecurityException(String.format(CANNOT_READ_MESSAGE, user.getUserId()));
+		}
 		req.setAttribute(WebKeys.CONTENTLET_EDIT, contentlet);
 		contentletToEdit = contentlet;
 
