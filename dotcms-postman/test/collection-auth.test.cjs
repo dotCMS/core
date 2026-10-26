@@ -656,6 +656,22 @@ test('bundle import fixtures assert existence as an authenticated reader, never 
   assert.equal(exists.names[0], 'Upload Bundle');
 });
 
+test('language i18n fixtures authenticate; only the designated default-language probe stays anonymous', () => {
+  // getAllMessages asserts the served message bundle, not anonymous access; under the
+  // CONTENT_APIS_ALLOW_ANONYMOUS=NONE default a noauth read is 401 and bails the shard. The
+  // _getdefault probe stays anonymous: that endpoint serves the default language without the
+  // content-API gate and is asserted in CI as 200 while anonymous.
+  const messages = requests.filter((r) => r.file === 'LanguageResourceTests.json' &&
+    /getAllMessages/.test(r.names.join(' / ')));
+  assert.equal(messages.length, 4, 'Keep the four getAllMessages fixtures');
+  for (const r of messages) {
+    assert.equal(r.auth?.type, 'bearer', label(r));
+    assert.equal(resolve(value(r.auth, 'token'), effectiveVariables(r)), 'synthetic.runner.jwt', label(r));
+  }
+  const probe = find('LanguageResourceTests.json', 'GetLanguage / Get Default Language');
+  assert.equal(probe.auth?.type, 'noauth', label(probe));
+});
+
 test('Add-Remove render postscripts pass an authorized 200 and fail a 401 on the status assertion', () => {
   const rendered = [
     'content_1 content_2 content_3',
