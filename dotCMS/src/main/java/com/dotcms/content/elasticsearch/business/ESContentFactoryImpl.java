@@ -231,22 +231,27 @@ public class ESContentFactoryImpl implements ContentletFactory {
             () -> Config.getIntProperty("OLD_CONTENT_BATCHES_BEFORE_PAUSE", 10));
 
     /**
-     * Current (working or live) Contentlet versions last modified by a user. Both legs of the
-     * union resolve through the {@code idx_contentlet_vi_working} and {@code idx_contentlet_vi_live}
-     * indexes. Takes the user id twice.
+     * Rewrites {@code contentlet.mod_user} from one user to another and returns the inodes of
+     * the rewritten rows that are a current (working or live) version. Reading the rows back
+     * from the same statement, rather than enumerating them first, makes the result exactly the
+     * set the {@code UPDATE} touched, however many concurrent writes land in between. Takes the
+     * replacement user id, then the user id being replaced.
      */
-    private static final String SELECT_CURRENT_INODES_BY_MOD_USER_SQL =
-            "SELECT cvi.working_inode AS inode FROM contentlet c "
-                    + "JOIN contentlet_version_info cvi ON cvi.working_inode = c.inode "
-                    + "WHERE c.mod_user = ? "
-                    + "UNION "
-                    + "SELECT cvi.live_inode AS inode FROM contentlet c "
-                    + "JOIN contentlet_version_info cvi ON cvi.live_inode = c.inode "
-                    + "WHERE c.mod_user = ?";
+    private static final String REWRITE_MOD_USER_RETURNING_CURRENT_INODES_SQL =
+            "WITH rewritten AS ("
+                    + "UPDATE contentlet SET mod_user = ? WHERE mod_user = ? RETURNING inode) "
+                    + "SELECT r.inode FROM rewritten r WHERE EXISTS ("
+                    + "SELECT 1 FROM contentlet_version_info cvi "
+                    + "WHERE cvi.working_inode = r.inode OR cvi.live_inode = r.inode)";
 
-    /** Version-info rows currently locked by a user. Takes the user id once. */
-    private static final String SELECT_VERSION_INFOS_BY_LOCKED_BY_SQL =
-            "SELECT identifier, lang, variant_id FROM contentlet_version_info WHERE locked_by = ?";
+    /**
+     * Rewrites {@code contentlet_version_info.locked_by} from one user to another and returns
+     * the {@code identifier}, {@code lang} and {@code variant_id} of every rewritten row. Takes
+     * the replacement user id, then the user id being replaced.
+     */
+    private static final String REWRITE_LOCKED_BY_RETURNING_VERSION_INFOS_SQL =
+            "UPDATE contentlet_version_info SET locked_by = ? WHERE locked_by = ? "
+                    + "RETURNING identifier, lang, variant_id";
 
     private final ContentletCache contentletCache;
 	private final LanguageAPI languageAPI;
@@ -1746,12 +1751,12 @@ public class ESContentFactoryImpl implements ContentletFactory {
      * {@code contentlet_version_info.locked_by} with {@code replacementUserId}, and keeps the
      * caches on every node and the search index consistent with that rewrite.
      * <p>
-     * The affected rows are enumerated from the database <b>before</b> the rewrite (afterwards
-     * they are indistinguishable from the replacement user's own content), so the set of cached
-     * objects to evict and documents to reindex never depends on what the search index happens
-     * to return (issue #37116). Eviction runs in a synchronous commit listener, so by the time
-     * the caller's transaction returns no node serves the deleted user's id any more. The reindex
-     * stays asynchronous and notifies {@code user} when it ends.
+     * Each rewrite statement returns the rows it touched, so the set of cached objects to evict
+     * and documents to reindex is exactly what the database rewrote: it never depends on what
+     * the search index happens to return, nor on a separate enumeration that a concurrent write
+     * could outdate (issue #37116). Eviction runs in a synchronous commit listener, so by the
+     * time the caller's transaction returns no node serves the deleted user's id any more. The
+     * reindex stays asynchronous and notifies {@code user} when it ends.
      *
      * @param userToReplace     the user whose references will be replaced
      * @param replacementUserId the id of the user that takes over those references
@@ -1760,22 +1765,11 @@ public class ESContentFactoryImpl implements ContentletFactory {
      * @throws DotSecurityException The user cannot perform the operation
      */
 	public void updateUserReferences(final User userToReplace, final String replacementUserId, final User user) throws DotDataException, DotStateException, DotSecurityException {
-        final DotConnect dc = new DotConnect();
         try {
             final List<String> inodesToRefresh =
-                    findCurrentInodesModifiedBy(userToReplace.getUserId());
+                    rewriteModUser(userToReplace.getUserId(), replacementUserId);
             final List<Map<String, Object>> versionInfosLockedBy =
-                    findVersionInfosLockedBy(userToReplace.getUserId());
-
-            dc.setSQL("UPDATE contentlet SET mod_user = ? WHERE mod_user = ?");
-            dc.addParam(replacementUserId);
-            dc.addParam(userToReplace.getUserId());
-            dc.loadResult();
-
-            dc.setSQL("UPDATE contentlet_version_info SET locked_by = ? WHERE locked_by = ?");
-            dc.addParam(replacementUserId);
-            dc.addParam(userToReplace.getUserId());
-            dc.loadResult();
+                    rewriteLockedBy(userToReplace.getUserId(), replacementUserId);
 
             HibernateUtil.addSyncCommitListener(() ->
                     evictReplacedUserReferences(inodesToRefresh, versionInfosLockedBy));
@@ -1788,19 +1782,23 @@ public class ESContentFactoryImpl implements ContentletFactory {
     }
 
     /**
-     * Lists the inodes of every working or live Contentlet version last modified by
-     * {@code userId}. Only current versions are returned: those are the ones the index holds
-     * and the ones listings serve from cache, and bounding the result to them keeps the list
-     * proportional to the amount of current content rather than to the full version history.
+     * Replaces {@code userId} with {@code replacementUserId} as the modifying user of every
+     * Contentlet version, and returns the inodes of the rewritten rows that are a current
+     * (working or live) version. Only current versions are returned: those are the ones the
+     * index holds and the ones listings serve from cache, and bounding the result to them keeps
+     * the list proportional to the amount of current content rather than to the full version
+     * history.
      *
-     * @param userId the user whose current content versions are wanted
-     * @return the distinct inodes, possibly empty, never {@code null}
-     * @throws DotDataException the query failed
+     * @param userId            the user whose references are replaced
+     * @param replacementUserId the user that takes them over
+     * @return the inodes of the rewritten current versions, possibly empty, never {@code null}
+     * @throws DotDataException the statement failed
      */
-    private List<String> findCurrentInodesModifiedBy(final String userId) throws DotDataException {
+    private List<String> rewriteModUser(final String userId, final String replacementUserId)
+            throws DotDataException {
         final DotConnect dc = new DotConnect();
-        dc.setSQL(SELECT_CURRENT_INODES_BY_MOD_USER_SQL);
-        dc.addParam(userId);
+        dc.setSQL(REWRITE_MOD_USER_RETURNING_CURRENT_INODES_SQL);
+        dc.addParam(replacementUserId);
         dc.addParam(userId);
         return dc.loadObjectResults().stream()
                 .map(row -> (String) row.get("inode"))
@@ -1809,18 +1807,21 @@ public class ESContentFactoryImpl implements ContentletFactory {
     }
 
     /**
-     * Lists the version-info rows currently locked by {@code userId}, as maps with the
-     * {@code identifier}, {@code lang} and {@code variant_id} columns, so the matching
-     * {@link ContentletVersionInfo} cache entries can be evicted once the lock holder changes.
+     * Replaces {@code userId} with {@code replacementUserId} as the lock holder of every locked
+     * version-info row, and returns the rewritten rows as maps with the {@code identifier},
+     * {@code lang} and {@code variant_id} columns, so the matching
+     * {@link ContentletVersionInfo} cache entries can be evicted.
      *
-     * @param userId the user holding the locks
-     * @return the matching rows, possibly empty, never {@code null}
-     * @throws DotDataException the query failed
+     * @param userId            the user whose locks are handed over
+     * @param replacementUserId the user that takes them over
+     * @return the rewritten rows, possibly empty, never {@code null}
+     * @throws DotDataException the statement failed
      */
-    private List<Map<String, Object>> findVersionInfosLockedBy(final String userId)
-            throws DotDataException {
+    private List<Map<String, Object>> rewriteLockedBy(final String userId,
+            final String replacementUserId) throws DotDataException {
         final DotConnect dc = new DotConnect();
-        dc.setSQL(SELECT_VERSION_INFOS_BY_LOCKED_BY_SQL);
+        dc.setSQL(REWRITE_LOCKED_BY_RETURNING_VERSION_INFOS_SQL);
+        dc.addParam(replacementUserId);
         dc.addParam(userId);
         return dc.loadObjectResults();
     }
