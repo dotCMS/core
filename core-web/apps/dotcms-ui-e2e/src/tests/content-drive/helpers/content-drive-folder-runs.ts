@@ -8,6 +8,42 @@ import { expect, type Locator, type Page } from '@playwright/test';
  */
 const OUTCOME_TIMEOUT = 60000;
 
+/**
+ * Records the text of every element matching `selector` that appears from the next page load on.
+ *
+ * For a state that lasts only until a background run ends. On a fast instance that can be a few
+ * hundred milliseconds, short enough to fall between an assertion's retries and never be seen. An
+ * observer started with the document misses nothing. Read it back with {@link expectSeen}.
+ *
+ * @returns a reader for what has been seen so far, each text once, in order of appearance
+ */
+export async function recordFromNextLoad(
+    page: Page,
+    selector: string
+): Promise<() => Promise<string[]>> {
+    await page.addInitScript((watched) => {
+        const seen: string[] = [];
+        Object.assign(window, { __e2eSeen: seen });
+        new MutationObserver(() => {
+            document.querySelectorAll(watched).forEach((element) => {
+                const text = element.textContent?.trim() ?? '';
+                if (!seen.includes(text)) {
+                    seen.push(text);
+                }
+            });
+        }).observe(document, { childList: true, subtree: true, characterData: true });
+    }, selector);
+
+    return () => page.evaluate(() => (window as Window & { __e2eSeen?: string[] }).__e2eSeen ?? []);
+}
+
+/** Waits until a recorder from {@link recordFromNextLoad} has seen a text containing `text`. */
+export async function expectSeen(read: () => Promise<string[]>, text: string) {
+    await expect
+        .poll(read, { timeout: OUTCOME_TIMEOUT })
+        .toContainEqual(expect.stringContaining(text));
+}
+
 /** The endpoints a folder duplicate or delete is submitted to. */
 export const FOLDER_RUN_URL = {
     duplicate: '/api/v1/assets/folders/_bulkduplicate',
@@ -145,13 +181,6 @@ export class FolderRunPreview {
         await expect(
             this.page.getByTestId('action-preview').getByTestId('item-title-text')
         ).toHaveCount(count);
-    }
-
-    /** The folder is marked as being worked on, in the listing. */
-    async expectMarkedInFlight(folderName: string) {
-        await expect(this.row(folderName).getByTestId('row-busy')).toBeVisible({
-            timeout: OUTCOME_TIMEOUT
-        });
     }
 
     /** The folder is gone from the listing and from the sidebar tree. */
