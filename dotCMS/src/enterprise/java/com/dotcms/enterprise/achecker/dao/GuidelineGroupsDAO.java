@@ -71,23 +71,24 @@ public class GuidelineGroupsDAO extends BaseDAO {
 	}
 
 	/**
-	* Return array of groups info whose name is NOT null, and belong to the given guideline id
-	* @access  public
-	* @param   $guidelineID : guideline id
-	* @return  group id rows : array of group ids, if successful
-	*          false : if not successful
-	* @author  Cindy Qi Li
-	 * @throws SQLException 
-	*/
+	 * Returns the named groups of the given guideline together with their text in the given
+	 * language, sorted by that text.
+	 *
+	 * @param guidelineID the guideline id; sent to the database as a bound value
+	 * @param languageCode the 3 letter language code of the text, for example {@code eng}; sent to
+	 *                     the database as a bound value
+	 * @return one row per named group, keyed by lower-cased column name
+	 * @throws SQLException if the query fails
+	 */
 	public List<Map<String, Object>> getNamedGroupsByGuidelineID(Long guidelineID, String languageCode) throws SQLException
 	{
 		String sql = "SELECT * FROM " + tablePrefix + "guideline_groups gg, " + tablePrefix + "language_text l";
-        sql += " WHERE gg.guideline_id = " + guidelineID;
+        sql += " WHERE gg.guideline_id = ?";
         sql += " AND gg.name is not NULL ";
         sql += " AND gg.name = l.term ";
-        sql += " AND l.language_code = '" + languageCode + "' ORDER BY l.text";
+        sql += " AND l.language_code = ? ORDER BY l.text";
 
-		return Utility.sortArrayByNumInField(execute(sql), "text");
+		return Utility.sortArrayByNumInField(execute(sql, guidelineID, languageCode), "text");
 	}
 
 	/**

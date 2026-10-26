@@ -180,7 +180,7 @@ jobs:
         if: >-
           fromJSON(needs.initialize.outputs.filters).sdk_libs == 'true' ||
           fromJSON(needs.initialize.outputs.filters).sdk_package_shapes == 'true'
-        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+        uses: ./.github/actions/core-cicd/setup-pnpm
         with:
           working-directory: core-web
           install: false

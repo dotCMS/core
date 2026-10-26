@@ -1,4 +1,4 @@
-<%@page import="java.util.ArrayList"%>
+<%@ page import="com.liferay.util.Xss" %><%@page import="java.util.ArrayList"%>
 <%@page import="com.dotmarketing.portlets.contentlet.model.Contentlet"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.*"%>
@@ -141,7 +141,7 @@ function jumpToContentType(){
    	   <option value=""><%=LanguageUtil.get(pageContext, "dot.common.select.workflow")%></option>
    		<%for(String key :schemesAvailable.keySet()) {%>
 
-   		  <option value="<%=key%>"><%=schemesAvailable.get(key) %></option>
+   		  <option value="<%=key%>"><%=Xss.encodeForHTML(schemesAvailable.get(key))%></option>
 
    		<%} %>
    	</select>
@@ -244,7 +244,7 @@ function jumpToContentType(){
 						style="<%if(schemesAvailable.size()>1){%>display:none;<%} %>" class="schemeId<%=action.getSchemeId()%> schemeActionsDiv"
 						onclick="contentAdmin.executeWfAction('<%=action.getId()%>', <%= action.hasPushPublishActionlet() || action.isAssignable() || action.isCommentable() || (action.hasMoveActionletActionlet() && !action.hasMoveActionletHasPathActionlet()) || UtilMethods.isSet(action.getCondition()) %>)"
 					>
-						<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, action.getName())) %>
+						<%= Xss.encodeForHTML(LanguageUtil.get(pageContext, action.getName())) %>
 						<%if(action.hasSaveActionlet()){ %>
 							<i class="fa fa-save" style="opacity:.35;float:right"></i>
 						<%} %>
@@ -265,17 +265,17 @@ function jumpToContentType(){
             <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Content-Type") %>:</th>
             <td>
                 <%if(canEditContentType){%><a id="contentTypeLink" ><%}%>
-                <%=contentlet!=null && contentlet.getContentType()!=null ? contentlet.getContentType().name() : LanguageUtil.get(pageContext, "not-available") %>
+                <%=contentlet!=null && contentlet.getContentType()!=null ? Xss.encodeForHTML(contentlet.getContentType().name()) : LanguageUtil.get(pageContext, "not-available") %>
                 <%if(canEditContentType){%></a><%}%>
             </td>
         </tr>
         <tr>
             <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Workflow") %>:</th>
-            <td><%=(scheme==null) ? LanguageUtil.get(pageContext, "not-available") : scheme.getName() %></td>
+            <td><%=(scheme==null) ? LanguageUtil.get(pageContext, "not-available") : Xss.encodeForHTML(scheme.getName()) %></td>
         </tr>
         <tr>
             <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Step") %>:</th>
-            <td><%=(wfStep==null) ? LanguageUtil.get(pageContext, "New") : wfStep.getName() %></td>
+            <td><%=(wfStep==null) ? LanguageUtil.get(pageContext, "New") : Xss.encodeForHTML(wfStep.getName()) %></td>
         </tr>
         <tr>
             <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Assignee") %>:</th>

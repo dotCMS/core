@@ -8,6 +8,7 @@ import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.publisher.bundle.bean.Bundle;
@@ -20,6 +21,8 @@ import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublishQueueElement;
 import com.dotcms.publisher.business.PublishQueueElementTransformer;
 import com.dotcms.publisher.business.PublisherAPIImpl;
+import com.dotcms.publisher.receiver.BundleOrigin;
+import com.dotcms.publisher.receiver.BundlePluginAccess;
 import com.dotcms.publishing.BundlerUtil;
 import com.dotcms.publishing.FilterDescriptor;
 import com.dotcms.publishing.PublisherConfig;
@@ -27,19 +30,25 @@ import com.dotcms.publishing.manifest.ManifestUtil;
 import com.dotcms.publishing.output.TarGzipBundleOutput;
 import org.apache.commons.io.IOUtils;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.system.permission.AssetPermissionHelper;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.NotFoundException;
+import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.rest.param.ISODateParam;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.FileUtil;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
@@ -51,12 +60,14 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.LocaleUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.vavr.CheckedFunction0;
 import io.vavr.Tuple;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.io.Reader;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.StreamingOutput;
 import org.apache.commons.lang.StringEscapeUtils;
@@ -85,6 +96,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
+import org.apache.commons.io.FileUtils;
 
 import static com.dotcms.publisher.business.PublishAuditAPIImpl.NO_LIMIT_ASSETS;
 import static com.dotcms.publisher.business.PublishAuditStatus.Status.FAILED_TO_BUNDLE;
@@ -103,6 +115,8 @@ public class BundleResource {
     private final WebResource            webResource            = new WebResource();
     private final BundleAPI              bundleAPI              = APILocator.getBundleAPI();
     private final SystemMessageEventUtil systemMessageEventUtil = SystemMessageEventUtil.getInstance();
+    private final AssetPermissionHelper  assetPermissionHelper  =
+            CDIUtils.getBean(AssetPermissionHelper.class).orElseGet(AssetPermissionHelper::new);
 
     private final PublishQueueElementTransformer publishQueueElementTransformer =
             new PublishQueueElementTransformer();
@@ -324,6 +338,7 @@ public class BundleResource {
                 return responseResource.response( "false" );
 			}
 
+			checkCanEditAsset(initData.getUser(), assetId);
 			APILocator.getPushedAssetsAPI().deletePushedAssets(assetId);
 
 		} catch (DotDataException e) {
@@ -358,6 +373,7 @@ public class BundleResource {
                 return responseResource.response( "false" );
 			}
 
+			checkCanManageEnvironments(initData.getUser());
 			APILocator.getPushedAssetsAPI().deletePushedAssetsByEnvironment(environmentId);
 
 		} catch (DotDataException e) {
@@ -366,6 +382,71 @@ public class BundleResource {
 		}
 
         return responseResource.response( "true" );
+	}
+
+	/**
+	 * Makes sure the user may delete the push history of an asset. Administrators always can;
+	 * anyone else needs publish permission on the asset.
+	 *
+	 * @param user    the user making the request
+	 * @param assetId the id of the asset whose push history is being deleted
+	 * @throws DotDataException   if the permissions cannot be read
+	 * @throws NotFoundException  if the id does not match any supported asset
+	 * @throws ForbiddenException if the user does not have publish permission on the asset
+	 */
+	private void checkCanEditAsset(final User user, final String assetId) throws DotDataException {
+		if (user.isAdmin()) {
+			return;
+		}
+		final Permissionable asset = findPermissionable(assetId);
+		if (asset == null) {
+			throw new NotFoundException(String.format("Asset '%s' was not found", assetId));
+		}
+		if (!APILocator.getPermissionAPI().doesUserHavePermission(asset, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+			throw new ForbiddenException(String.format(
+					"User '%s' is not allowed to delete the push history of asset '%s'",
+					user.getUserId(), assetId));
+		}
+	}
+
+	/**
+	 * Finds the asset a push history entry belongs to. Content types, menu links, categories,
+	 * folders, sites, contentlets, templates and containers are supported, tried in that order.
+	 *
+	 * @param assetId the id the push history is recorded under
+	 * @return the asset, or {@code null} when the id matches none of the supported types
+	 */
+	private Permissionable findPermissionable(final String assetId) {
+		final User systemUser = APILocator.systemUser();
+		return Stream.<CheckedFunction0<Permissionable>>of(
+						() -> APILocator.getContentTypeAPI(systemUser).find(assetId),
+						() -> APILocator.getMenuLinkAPI().findWorkingLinkById(assetId, systemUser, false),
+						() -> APILocator.getCategoryAPI().find(assetId, systemUser, false),
+						() -> assetPermissionHelper.resolveAsset(assetId))
+				.map(lookup -> Try.of(lookup).getOrNull())
+				.filter(Objects::nonNull)
+				.findFirst()
+				.orElse(null);
+	}
+
+	/**
+	 * Makes sure the user may delete the push history of a publishing environment. Administrators
+	 * and users with access to the Configuration tool, where environments are managed, can.
+	 *
+	 * @param user the user making the request
+	 * @throws DotDataException   if the user's tools cannot be read
+	 * @throws ForbiddenException if the user is not allowed
+	 */
+	private void checkCanManageEnvironments(final User user) throws DotDataException {
+		final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+		final boolean canManage = user.isAdmin()
+				|| layoutAPI.doesUserHaveAccessToPortlet(PortletID.CONFIGURATION.toString(), user)
+				|| layoutAPI.doesUserHaveAccessToPortlet(PortletID.CONFIGURATION_BETA.toString(), user);
+		if (!canManage) {
+			throw new ForbiddenException(String.format(
+					"User '%s' is not allowed to delete the push history of an environment",
+					user.getUserId()));
+		}
 	}
 
     /**
@@ -895,6 +976,35 @@ public class BundleResource {
         }
     }
     
+    /**
+     * Checks that a user who uploaded a bundle file may bring in the plugins it carries.
+     * If the bundle has a plugins folder and the user has no access to the plugins portlet, the
+     * stored file is removed and the request is rejected.
+     *
+     * @param user    The user that uploaded the bundle.
+     * @param archive The stored bundle file.
+     * @throws SecurityException with 401 if the bundle carries plugins and the user cannot deploy them.
+     */
+    private void checkPluginAccess(final User user, final File archive) {
+        if (!BundlePluginAccess.canDeployPlugins(user) && BundlePluginAccess.carriesPlugins(archive)) {
+            FileUtils.deleteQuietly(archive);
+            Logger.warn(this, "Bundle upload rejected: the user has no access to deploy plugins");
+            throw new SecurityException(user.getFullName() + ":" + user.getEmailAddress(),
+                    Response.Status.UNAUTHORIZED);
+        }
+    }
+
+    /**
+     * Receives a bundle file and processes it right away. The caller needs access to the
+     * publishing queue; if the bundle carries plugins the caller also needs access to the plugins
+     * portlet.
+     *
+     * @param request   The current request.
+     * @param response  The current response.
+     * @param multipart The uploaded bundle file.
+     * @return The bundle name and the resulting publishing status.
+     * @throws DotPublisherException If the audit of the bundle cannot be updated.
+     */
     @Path("/sync")
     @POST
     @JSONP
@@ -908,6 +1018,7 @@ public class BundleResource {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
+                .requiredPortlet("publishing-queue")
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .requireLicense(true)
@@ -930,6 +1041,8 @@ public class BundleResource {
 
                 FileUtil.writeToFile(inputStream, bundlePath + bundleName);
 
+                this.checkPluginAccess(initData.getUser(), new File(bundlePath + bundleName));
+
                 final String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
                 final String endpointId   = initData.getUser().getUserId();
                 response.setContentType("text/html; charset=utf-8");
@@ -937,7 +1050,7 @@ public class BundleResource {
                         .getInstance().updateAuditTable(endpointId, endpointId, bundleFolder);
 
                 final PublisherConfig config = !previousStatus.getStatus().equals(Status.PUBLISHING_BUNDLE)?
-                        new PushPublisherJob().processBundle(bundleName, previousStatus): null;
+                        new PushPublisherJob().processBundle(bundleName, previousStatus, BundleOrigin.USER_UPLOAD, initData.getUser().getUserId()): null;
 
                 final String finalStatus = config != null ?
                         config.getPublishAuditStatus().getStatus().name():
@@ -955,6 +1068,16 @@ public class BundleResource {
         return Response.ok().build();
     } // uploadBundleSync.
 
+    /**
+     * Receives a bundle file and processes it in the background. Same access rules as
+     * {@link #uploadBundleSync(HttpServletRequest, HttpServletResponse, FormDataMultiPart)}.
+     *
+     * @param request       The current request.
+     * @param response      The current response.
+     * @param asyncResponse Resumed with the bundle name and the resulting publishing status.
+     * @param multipart     The uploaded bundle file.
+     * @throws DotPublisherException If the audit of the bundle cannot be updated.
+     */
     @POST
     @JSONP
     @NoCache
@@ -967,6 +1090,7 @@ public class BundleResource {
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
+                .requiredPortlet("publishing-queue")
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
                 .requireLicense(true)
@@ -988,6 +1112,8 @@ public class BundleResource {
 
                 FileUtil.writeToFile(inputStream, bundlePath + bundleName);
 
+                this.checkPluginAccess(initData.getUser(), new File(bundlePath + bundleName));
+
                 final String bundleFolder = bundleName.substring(0, bundleName.indexOf(".tar.gz"));
                 final String endpointId = initData.getUser().getUserId();
                 response.setContentType("text/html; charset=utf-8");
@@ -1001,7 +1127,7 @@ public class BundleResource {
                     dotSubmitter.execute(() -> {
 
                         final PublisherConfig config = new PushPublisherJob()
-                                .processBundle(bundleName, previousStatus);
+                                .processBundle(bundleName, previousStatus, BundleOrigin.USER_UPLOAD, initData.getUser().getUserId());
 
                         final String finalStatus =
                                 config != null ? config.getPublishAuditStatus().getStatus().name()

@@ -12,6 +12,7 @@ public enum PortletID {
     CATEGORIES,
     CATEGORIES_LEGACY("categories-legacy"),
     CONFIGURATION, 
+    CONFIGURATION_BETA("configuration-beta"),
     CONTAINERS,
     CONTENT,
     CONTENT_TYPES,
@@ -69,6 +70,12 @@ public enum PortletID {
      * (#37356).
      */
     TOOLS_BETA("tools-beta"),
+    /**
+     * Beta-period alias for the Network portlet. The cluster nodes endpoint accepts it alongside
+     * {@link #CONFIGURATION} while the Angular Network portlet ships opt-in as {@code network-beta}.
+     * Remove when the Network portlet is promoted (#37875).
+     */
+    NETWORK_BETA("network-beta"),
     /**
      * Language Variables ships with the product but is created as a database row by
      * {@code Task241016AddCustomLanguageVariablesPortletToLayout}, in the same shape as an

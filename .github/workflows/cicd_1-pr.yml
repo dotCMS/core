@@ -66,6 +66,7 @@ jobs:
     with:
       core-build: true
       run-pr-checks: true
+      cleanup-runner: false
     secrets:
       # READ-ONLY key: PR code is untrusted, and a build cache an attacker can
       # write is replayed as a build output on trunk (CVE-2025-36852). Fork PRs
@@ -110,13 +111,19 @@ jobs:
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_test-phase.yml
     with:
+      skip-runner-cleanup: true
       jvm_unit_test: ${{ fromJSON(needs.initialize.outputs.filters).jvm_unit_test == 'true' }}
-      integration: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
-      postman: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
-      karate: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
+      # The long suites (integration, postman, karate, cli, e2e) only run when the PR's own base is
+      # main/master. A PR in a GitHub native stack passes the trigger's branches filter because
+      # github.base_ref reports the stack's trunk (main), while github.event.pull_request.base.ref
+      # holds the real parent branch. Those layers get build + unit + frontend tests only; the
+      # merge queue runs the full suite once the stack lands on main.
+      integration: ${{ contains(fromJSON('["main","master"]'), github.event.pull_request.base.ref) && fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
+      postman: ${{ contains(fromJSON('["main","master"]'), github.event.pull_request.base.ref) && fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
+      karate: ${{ contains(fromJSON('["main","master"]'), github.event.pull_request.base.ref) && fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
       frontend: ${{ fromJSON(needs.initialize.outputs.filters).frontend == 'true' }}
-      cli: ${{ fromJSON(needs.initialize.outputs.filters).cli == 'true' || fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
-      e2e: ${{ fromJSON(needs.initialize.outputs.filters).build == 'true' }}
+      cli: ${{ contains(fromJSON('["main","master"]'), github.event.pull_request.base.ref) && (fromJSON(needs.initialize.outputs.filters).cli == 'true' || fromJSON(needs.initialize.outputs.filters).backend == 'true') }}
+      e2e: ${{ contains(fromJSON('["main","master"]'), github.event.pull_request.base.ref) && fromJSON(needs.initialize.outputs.filters).build == 'true' }}
       # Run the integration battery under an ES->OS migration phase when the PR carries an
       # "OpenSearch:Phase-<N>" label. No label -> empty -> default phase-0 behavior.
       opensearch_phase: >-
@@ -216,7 +223,7 @@ jobs:
         if: >-
           fromJSON(needs.initialize.outputs.filters).sdk_libs == 'true' ||
           fromJSON(needs.initialize.outputs.filters).sdk_package_shapes == 'true'
-        uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+        uses: ./.github/actions/core-cicd/setup-pnpm
         with:
           working-directory: core-web
           install: false

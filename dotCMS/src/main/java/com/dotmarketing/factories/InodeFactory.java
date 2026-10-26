@@ -27,7 +27,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
@@ -40,6 +42,25 @@ import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
  * @deprecated
  */
 public class InodeFactory {
+
+	private static final Pattern PLAIN_ORDER_BY = Pattern.compile(
+			"[a-z_][a-z0-9_]*(\\.[a-z_][a-z0-9_]*)?( (asc|desc))?");
+
+	/**
+	 * Keeps an {@code order by} argument only when it is a single column name, optionally
+	 * qualified with a table name and followed by {@code asc} or {@code desc}. Anything else,
+	 * including an unset value, returns an empty string so the caller applies its default order.
+	 *
+	 * @param orderby the requested sort
+	 * @return the normalized sort expression, or an empty string
+	 */
+	static String plainOrderBy(final String orderby) {
+		if (!UtilMethods.isSet(orderby)) {
+			return "";
+		}
+		final String normalized = orderby.trim().toLowerCase(Locale.ROOT).replaceAll("\\s+", " ");
+		return PLAIN_ORDER_BY.matcher(normalized).matches() ? normalized : "";
+	}
 
 	public static java.util.List getChildrenClassByConditionAndOrderBy(String p, Class<? extends Inode> c, String condition,
 			String orderby, int limit, int offset) {
@@ -65,6 +86,8 @@ public class InodeFactory {
 		try {
 			final String tableName = c.getDeclaredConstructor().newInstance().getType();
 			final HibernateUtil dh = new HibernateUtil(c);
+			// Only a plain column name, optionally qualified and with a direction, may order this query
+			orderby = plainOrderBy(orderby);
 
 			String sql = "SELECT {" + tableName + ".*} from " + tableName + " " + tableName + ", tree tree, inode "
 					+ tableName + "_1_ where tree.parent = ? and tree.child = " + tableName + ".inode and " + tableName
