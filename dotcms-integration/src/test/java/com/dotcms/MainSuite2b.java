@@ -407,6 +407,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.business.PermissionAPIIntegrationTest.class,
         com.dotmarketing.business.PermissionAPITest.class,
         com.dotmarketing.business.ajax.PermissionAjaxIntegrationTest.class,
+        com.dotmarketing.business.ajax.RoleAjaxIntegrationTest.class,
+        com.dotcms.rest.api.v1.system.role.RoleResourceMembershipIntegrationTest.class,
         com.dotmarketing.servlets.BinaryExporterServletTest.class,
         com.dotmarketing.servlets.ShortyServletAndTitleImageTest.class,
         com.dotmarketing.servlets.ajax.AjaxDirectorServletIntegrationTest.class,

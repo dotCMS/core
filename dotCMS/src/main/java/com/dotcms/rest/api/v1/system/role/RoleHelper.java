@@ -4,12 +4,15 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.business.WrapInTransaction;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +25,23 @@ import java.util.stream.Collectors;
  * @author jsanca
  */
 public class RoleHelper {
+
+    /**
+     * Whether a user may see which users hold a role and which roles a user holds. Role
+     * membership carries user details, so it takes an administrator, or a user with access to
+     * both the Roles and the Users portlets. The REST and the legacy DWR listings share this rule.
+     *
+     * @param user the user making the request
+     * @return {@code true} when the user may read role membership
+     * @throws DotDataException if the user's portlet access cannot be resolved
+     */
+    public boolean canReadRoleMembership(final User user) throws DotDataException {
+
+        final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+        return user.isAdmin() ||
+                (layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user) &&
+                        layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), user));
+    }
 
     /**
      * Saves only the existing layouts on layoutIds, any issue previous added not in the list will be removed
