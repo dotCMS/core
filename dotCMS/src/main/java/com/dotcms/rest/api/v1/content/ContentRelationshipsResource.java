@@ -14,6 +14,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONException;
@@ -95,6 +96,8 @@ public class ContentRelationshipsResource {
      * @param response The {@link HttpServletResponse} object.
      * @param params   A Map of parameters that will define the search criteria.
      * @return The list of associated contents.
+     * @throws DotSecurityException An error occurred when checking the user's permissions on the
+     *                              related contents.
      */
     @Operation(
             operationId = "getContentRelationships",
@@ -120,7 +123,8 @@ public class ContentRelationshipsResource {
     public Response getContent(@Context final HttpServletRequest request,
                                @Context final HttpServletResponse response,
                                @Parameter(description = "Query parameters, identifier, or inode for content lookup", required = true)
-                               @PathParam("params") final String params) {
+                               @PathParam("params") final String params)
+            throws DotSecurityException {
         final InitDataObject initData = this.webResource.init(params, request, response, false, null);
         final Map<String, String> paramsMap = initData.getParamsMap();
         final User user = initData.getUser();
@@ -128,7 +132,7 @@ public class ContentRelationshipsResource {
         try {
             final List<Contentlet> cons = this.contentRelationshipsHelper.getRelatedContent
                     (request, user, paramsMap);
-            final String relatedContents = this.contentRelationshipsHelper.contentsAsJson(cons);
+            final String relatedContents = this.contentRelationshipsHelper.contentsAsJson(cons, user);
             final Response.ResponseBuilder builder = Response.ok(relatedContents, MediaType
                     .APPLICATION_JSON);
 
