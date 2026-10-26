@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.content;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -155,6 +156,32 @@ class ContentRelationshipsHelperTest {
 
         // Then each set is filtered on its own and each key holds only its own readable records
         assertEquals(List.of("first-b-id"), identifiers(json, "rel-one"));
+        assertEquals(List.of("second-a-id"), identifiers(json, "rel-two"));
+    }
+
+    @Test
+    void contentsAsJson_leavesOutRelatedContentWhenItsPermissionsCannotBeChecked()
+            throws Exception {
+        // Given a parent with two relationships, where the permission check fails for the first
+        //   and keeps one record of the second
+        final Contentlet parent = content("parent-id");
+        final List<Contentlet> firstRecords = List.of(content("first-a-id"));
+        final Contentlet secondA = content("second-a-id");
+        final List<Contentlet> secondRecords = List.of(secondA);
+        final ContentletRelationships relationships = new ContentletRelationships(parent);
+        addRecords(relationships, relationship("rel-one"), firstRecords);
+        addRecords(relationships, relationship("rel-two"), secondRecords);
+        when(contentletAPI.getAllRelationships(parent)).thenReturn(relationships);
+        when(permissionAPI.filterCollection(firstRecords, PermissionAPI.PERMISSION_READ, true, user))
+                .thenThrow(new DotSecurityException("check failed"));
+        when(permissionAPI.filterCollection(secondRecords, PermissionAPI.PERMISSION_READ, true, user))
+                .thenReturn(List.of(secondA));
+
+        // When the contents are serialized
+        final String json = assertDoesNotThrow(() -> helper.contentsAsJson(List.of(parent), user));
+
+        // Then the first relationship is empty and the second keeps its readable record
+        assertEquals(List.of(), identifiers(json, "rel-one"));
         assertEquals(List.of("second-a-id"), identifiers(json, "rel-two"));
     }
 

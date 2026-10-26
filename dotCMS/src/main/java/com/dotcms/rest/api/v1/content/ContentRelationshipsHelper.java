@@ -166,21 +166,15 @@ public class ContentRelationshipsHelper implements Serializable {
      * Converts the specified list of {@link Contentlet} objects to JSON format, including, for
      * each relationship of a content, the related contents the user can read. A relationship
      * whose related contents the user cannot read is kept with an empty list.
-     * <p>
-     * Related contents are checked one by one with
-     * {@link PermissionAPI#filterCollection(List, int, boolean, User)} rather than the batch
-     * overload, because that check also leaves out versions that are not live for users without
-     * back-end access, and applies category permissions.
      *
      * @param contentlets The list of {@link Contentlet} objects.
      * @param user        The {@link User} the contents are converted for.
      * @return The contents as JSON.
-     * @throws JSONException        An error occurred when generating the JSON data.
-     * @throws DotDataException     An error occurred when accessing the data source.
-     * @throws DotSecurityException An error occurred when checking the user's permissions.
+     * @throws JSONException    An error occurred when generating the JSON data.
+     * @throws DotDataException An error occurred when accessing the data source.
      */
     public String contentsAsJson(final List<Contentlet> contentlets, final User user)
-            throws JSONException, DotDataException, DotSecurityException {
+            throws JSONException, DotDataException {
         final JSONArray resultArray = new JSONArray();
         for (Contentlet contentlet : contentlets) {
             final JSONObject jsonObject = toJson(contentlet);
@@ -193,8 +187,7 @@ public class ContentRelationshipsHelper implements Serializable {
                 if (jsonArray == null) {
                     jsonArray = new JSONArray();
                 }
-                for (final Contentlet relatedContent : this.permissionAPI.filterCollection(
-                        rel.getRecords(), PermissionAPI.PERMISSION_READ, RESPECT_FE_ROLES, user)) {
+                for (final Contentlet relatedContent : readableRecords(rel.getRecords(), user)) {
                     jsonArray.add(toJson(relatedContent));
                 }
                 jsonObject.put(rel.getRelationship().getRelationTypeValue(), jsonArray);
@@ -202,6 +195,34 @@ public class ContentRelationshipsHelper implements Serializable {
             resultArray.add(jsonObject);
         }
         return resultArray.toString();
+    }
+
+    /**
+     * Returns the related contents the user can read. When their permissions cannot be checked,
+     * none of them is returned.
+     * <p>
+     * Related contents are checked one by one with
+     * {@link PermissionAPI#filterCollection(List, int, boolean, User)} rather than the batch
+     * overload, because that check also leaves out versions that are not live for users without
+     * back-end access, and applies category permissions.
+     *
+     * @param records The related {@link Contentlet} objects of one relationship.
+     * @param user    The {@link User} the contents are returned for.
+     * @return The related contents the user can read.
+     * @throws DotDataException An error occurred when accessing the data source.
+     */
+    private List<Contentlet> readableRecords(final List<Contentlet> records, final User user)
+            throws DotDataException {
+        try {
+            return this.permissionAPI.filterCollection(records, PermissionAPI.PERMISSION_READ,
+                    RESPECT_FE_ROLES, user);
+        } catch (final DotSecurityException e) {
+            final String message =
+                    "Permissions on related content could not be checked, so it is left out";
+            Logger.warn(ContentRelationshipsHelper.class, message);
+            Logger.debug(ContentRelationshipsHelper.class, message, e);
+            return List.of();
+        }
     }
 
     /**

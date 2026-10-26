@@ -91,10 +91,12 @@ public class ContentRelationshipsResourceIntegrationTest {
 
         publishedWithNewerVersion = new ContentletDataGen(childType).nextPersistedAndPublish();
         grantRead(publishedWithNewerVersion, anonymousRole);
+        grantRead(publishedWithNewerVersion, readerRole);
         ContentletDataGen.checkin(ContentletDataGen.checkout(publishedWithNewerVersion));
 
         neverPublished = new ContentletDataGen(childType).nextPersisted();
         grantRead(neverPublished, anonymousRole);
+        grantRead(neverPublished, readerRole);
 
         APILocator.getContentletAPI().relateContent(parent, relationship,
                 List.of(notReadable, published, publishedWithNewerVersion, neverPublished),
@@ -147,6 +149,27 @@ public class ContentRelationshipsResourceIntegrationTest {
     public void getContent_leavesOutRelatedContentAnonymousCannotRead() throws Exception {
         final String body = getRelatedContent(anonymousRequest(), parent.getIdentifier());
 
+        assertFalse("A related item anonymous visitors cannot read must not be returned",
+                body.contains(notReadable.getIdentifier()));
+    }
+
+    /**
+     * Method to test: {@link ContentRelationshipsResource#getContent}
+     * <p>
+     * Given scenario: the same parent requested by inode instead of identifier.
+     * <p>
+     * Expected result: an anonymous request does not get the item only a role can read.
+     */
+    @Test
+    public void getContent_leavesOutRelatedContentAnonymousCannotReadWhenRequestedByInode()
+            throws Exception {
+        final Response response = new ContentRelationshipsResource().getContent(
+                anonymousRequest(), mock(HttpServletResponse.class), "inode/" + parent.getInode());
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        final String body = (String) response.getEntity();
+
+        assertTrue("A published related item anonymous visitors can read must be returned",
+                relatedIdentifiers(body).contains(published.getIdentifier()));
         assertFalse("A related item anonymous visitors cannot read must not be returned",
                 body.contains(notReadable.getIdentifier()));
     }
@@ -232,6 +255,26 @@ public class ContentRelationshipsResourceIntegrationTest {
     /**
      * Method to test: {@link ContentRelationshipsResource#getContent}
      * <p>
+     * Given scenario: a back-end user who can read, through one of their roles, a related item
+     * with a version that is not published yet and a related item that was never published.
+     * <p>
+     * Expected result: the user gets both items, as before.
+     */
+    @Test
+    public void getContent_includesUnpublishedRelatedContentForBackendUsersWhoCanReadIt()
+            throws Exception {
+        final List<String> related = relatedIdentifiers(
+                getRelatedContent(requestFor(backendReader), parent.getIdentifier()));
+
+        assertTrue("A related item with a newer version must be returned to a back-end reader",
+                related.contains(publishedWithNewerVersion.getIdentifier()));
+        assertTrue("A never published related item must be returned to a back-end reader",
+                related.contains(neverPublished.getIdentifier()));
+    }
+
+    /**
+     * Method to test: {@link ContentRelationshipsResource#getContent}
+     * <p>
      * Given scenario: an identifier that does not belong to any content.
      * <p>
      * Expected result: an empty list, as for content the caller cannot read.
@@ -266,14 +309,13 @@ public class ContentRelationshipsResourceIntegrationTest {
     }
 
     /**
-     * Reads the identifiers listed under the test relationship for the first content returned.
+     * Reads the identifiers listed under the test relationship for the first content returned,
+     * failing when no content was returned at all.
      */
     private static List<String> relatedIdentifiers(final String body) {
         final JSONArray contents = new JSONArray(body);
+        assertEquals("Exactly the requested content must be returned", 1, contents.length());
         final List<String> identifiers = new ArrayList<>();
-        if (contents.length() == 0) {
-            return identifiers;
-        }
         final JSONArray related = contents.getJSONObject(0)
                 .getJSONArray(relationship.getRelationTypeValue());
         for (int i = 0; i < related.length(); i++) {

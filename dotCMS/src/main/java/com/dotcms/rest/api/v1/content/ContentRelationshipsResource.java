@@ -14,7 +14,6 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.json.JSONException;
@@ -96,8 +95,6 @@ public class ContentRelationshipsResource {
      * @param response The {@link HttpServletResponse} object.
      * @param params   A Map of parameters that will define the search criteria.
      * @return The list of associated contents.
-     * @throws DotSecurityException An error occurred when checking the user's permissions on the
-     *                              related contents.
      */
     @Operation(
             operationId = "getContentRelationships",
@@ -105,8 +102,8 @@ public class ContentRelationshipsResource {
             description = "Retrieves content with relationships based on query parameters, identifier, or inode. This endpoint is deprecated - use /v1/content with depth parameter instead."
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", 
-                    description = "Content with relationships retrieved successfully",
+        @ApiResponse(responseCode = "200",
+                    description = "Content with relationships retrieved successfully. Related content the caller cannot read is not included, and an identifier or inode that matches no content returns an empty array",
                     content = @Content(mediaType = "application/json",
                                       schema = @Schema(type = "object", description = "Content with relationships in JSON format including contentlets and their related content"))),
         @ApiResponse(responseCode = "401", 
@@ -123,8 +120,7 @@ public class ContentRelationshipsResource {
     public Response getContent(@Context final HttpServletRequest request,
                                @Context final HttpServletResponse response,
                                @Parameter(description = "Query parameters, identifier, or inode for content lookup", required = true)
-                               @PathParam("params") final String params)
-            throws DotSecurityException {
+                               @PathParam("params") final String params) {
         final InitDataObject initData = this.webResource.init(params, request, response, false, null);
         final Map<String, String> paramsMap = initData.getParamsMap();
         final User user = initData.getUser();
@@ -137,16 +133,14 @@ public class ContentRelationshipsResource {
                     .APPLICATION_JSON);
 
             res = builder.build();
-        } catch (JSONException e) {
-            final String errorMsg = "An error occurred when generating the JSON response (" + e
-                    .getMessage() + ")";
+        } catch (final JSONException e) {
             Logger.error(this, e.getMessage(), e);
-            res = ExceptionMapperUtil.createResponse(null, errorMsg);
-        } catch (DotDataException e) {
-            final String errorMsg = "An error occurred when accessing the content information ("
-                    + e.getMessage() + ")";
+            res = ExceptionMapperUtil.createResponse(null,
+                    "An error occurred when generating the JSON response");
+        } catch (final DotDataException e) {
             Logger.error(this, e.getMessage(), e);
-            res = ExceptionMapperUtil.createResponse(null, errorMsg);
+            res = ExceptionMapperUtil.createResponse(null,
+                    "An error occurred when accessing the content information");
         }
         return res;
     }
