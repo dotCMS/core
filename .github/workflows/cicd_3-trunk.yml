@@ -67,6 +67,7 @@ jobs:
     if: needs.initialize.outputs.found_artifacts == 'false'
     uses: ./.github/workflows/cicd_comp_build-phase.yml
     with:
+      cleanup-runner: false
       java-version: ${{ github.event.inputs.java-version || '' }}
       maven-compiler-release: ${{ github.event.inputs.maven-compiler-release || '' }}
       artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
@@ -87,6 +88,7 @@ jobs:
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_test-phase.yml
     with:
+      skip-runner-cleanup: true
       run-all-tests: ${{ inputs.run-all-tests || false }}
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       e2e: false

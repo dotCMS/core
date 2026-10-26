@@ -242,6 +242,13 @@
                     </td>
                     <td data-testid="users-cell-access">
                         <div class="flex flex-wrap gap-1">
+                            @if (user.admin) {
+                                <p-tag
+                                    [value]="'users.access.cms-admin' | dm"
+                                    severity="secondary"
+                                    styleClass="whitespace-nowrap"
+                                    data-testid="users-access-cms-admin-chip" />
+                            }
                             @if (user.backendUser) {
                                 <p-tag
                                     [value]="'users.access.backend' | dm"
