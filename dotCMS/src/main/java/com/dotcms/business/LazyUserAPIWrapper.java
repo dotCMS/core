@@ -211,6 +211,11 @@ public class LazyUserAPIWrapper implements UserAPI {
     }
 
     @Override
+    public void invalidateLoginTokens(final String userId) throws DotDataException {
+        this.getUserAPI().invalidateLoginTokens(userId);
+    }
+
+    @Override
     public void markToDelete(User userToDelete) throws DotDataException {
         this.getUserAPI().markToDelete(userToDelete);
     }

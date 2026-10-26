@@ -207,10 +207,16 @@ public class LoginServiceAPIFactory implements Serializable {
                     APILocator.getUserAPI());
         }
 
+        /**
+         * Logs out the user of this request: runs the logout events, expires the cookies,
+         * invalidates the HTTP session and its portlet sessions, and invalidates every login token
+         * issued to the user so a copy of the login cookie cannot be used afterwards.
+         */
         @Override
         public void doActionLogout(final HttpServletRequest req,
                 final HttpServletResponse res) throws Exception {
 
+            this.invalidateLoginTokens(req);
             final HttpSession session = req.getSession(false);
             if (null != session) {
                 log.debug("Logout - Events Processor Pre Logout events.");
@@ -675,10 +681,37 @@ public class LoginServiceAPIFactory implements Serializable {
             return LoginServiceAPI.super.doLogin(userName, password);
         }
 
+        /**
+         * Invalidates the login tokens of the user of this request, then invalidates the HTTP
+         * session.
+         */
         @Override
         public void doLogout(final HttpServletRequest request, final HttpServletResponse response) {
 
+            this.invalidateLoginTokens(request);
             LoginServiceAPI.super.doLogout(request, response);
+        }
+
+        /**
+         * Gives the logged-in user of the request (request attribute or session) a new login token
+         * id, so every login token issued to that user before the logout is rejected, on every node.
+         * This must run before the session is invalidated. A failure is logged and does not stop
+         * the logout.
+         *
+         * @param request the logout request
+         */
+        private void invalidateLoginTokens(final HttpServletRequest request) {
+
+            final String userId = PortalUtil.getUserId(request);
+            if (!UtilMethods.isSet(userId)) {
+                return;
+            }
+            try {
+                this.userAPI.invalidateLoginTokens(userId);
+            } catch (final Exception e) {
+                Logger.warn(this, String.format("Unable to invalidate the login tokens of user '%s' on logout: %s",
+                        userId, e.getMessage()));
+            }
         }
 
         @CloseDBIfOpened

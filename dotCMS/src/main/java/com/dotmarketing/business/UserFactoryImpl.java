@@ -465,6 +465,21 @@ public class UserFactoryImpl implements UserFactory {
         return user;
     }
 
+    /**
+     * Writes only the {@code skinid} column, which holds the user's login token id, so a concurrent
+     * save of other user fields is not overwritten. The cache entry is evicted after the update so a
+     * read racing the update cannot leave the old value cached.
+     */
+    @Override
+    public void updateRememberMeToken(final String userId, final String rememberMeToken)
+            throws DotDataException {
+        new DotConnect().setSQL("update user_ set skinid = ? where userid = ?")
+                .addParam(rememberMeToken)
+                .addParam(userId.trim().toLowerCase())
+                .loadResult();
+        userCache.remove(userId);
+    }
+
     private User createUser(final User user) throws DotDataException {
 
         final DotConnect dotConnect = new DotConnect();

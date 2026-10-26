@@ -409,6 +409,16 @@ public interface UserAPI {
 	public void updatePassword(User user, String newpass, User currentUser, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException, DotInvalidPasswordException;
 
 	/**
+	 * Makes every login token issued to the user so far unusable, by giving the user a new login
+	 * token id ({@link User#getRememberMeToken()}). Only that value is written, so concurrent changes
+	 * to other user fields are kept. Called on logout; tokens issued afterwards work as usual.
+	 *
+	 * @param userId the id of the user whose login tokens are invalidated
+	 * @throws DotDataException if the new value cannot be stored
+	 */
+	void invalidateLoginTokens(String userId) throws DotDataException;
+
+	/**
 	 * 
 	 * @param userToDelete
 	 * @throws DotDataException

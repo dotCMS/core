@@ -22,6 +22,16 @@ public interface UserFactory {
      */
     User save(User user) throws DotDataException, DuplicateUserException;
 
+    /**
+     * Stores a new login token id ({@link User#getRememberMeToken()}) for the user, changing only
+     * that column, and evicts the user from the cache so every node reads the new value.
+     *
+     * @param userId          the id of the user to update
+     * @param rememberMeToken the new login token id
+     * @throws DotDataException if the update fails
+     */
+    void updateRememberMeToken(String userId, String rememberMeToken) throws DotDataException;
+
     List<User> findAllUsers(int begin, int end) throws DotDataException;
 
     long getCountUsersByName(String filter, List<Role> roles);

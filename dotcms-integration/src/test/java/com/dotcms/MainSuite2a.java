@@ -3,6 +3,7 @@ package com.dotcms;
 import com.dotcms.analytics.ContentAnalyticsPersistenceModeIT;
 import com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyResourceIntegrationTest;
 import com.dotcms.business.interceptor.InterceptorHandlerTest;
+import com.dotcms.cms.login.LoginTokenInvalidationTest;
 import com.dotcms.enterprise.publishing.remote.handler.FolderHandlerTest;
 import com.dotcms.inference.rest.ChatCompletionsStreamingTest;
 import com.dotcms.inference.rest.ChatCompletionsTest;
@@ -119,7 +120,8 @@ import org.junit.runners.Suite.SuiteClasses;
         JsModuleImportIntegrationTest.class,
         com.dotcms.rendering.velocity.WidgetRendererTest.class,
         CMSUserToolTest.class,
-        UserJsViewToolTest.class
+        UserJsViewToolTest.class,
+        LoginTokenInvalidationTest.class
 })
 public class MainSuite2a {
 

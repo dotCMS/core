@@ -17,6 +17,7 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.DuplicateUserEmailAddressException;
@@ -682,6 +683,16 @@ public class UserAPIImpl implements UserAPI {
                 PropsUtil.get(PropsUtil.PASSWORDS_CHANGE_ON_FIRST_USE)));
         save(user, currentUser, respectFrontEndRoles);
 
+    }
+
+    /**
+     * Gives the user a new login token id with a single-column update, so every login token issued
+     * to the user before now is rejected. Other user fields are left untouched.
+     */
+    @WrapInTransaction
+    @Override
+    public void invalidateLoginTokens(final String userId) throws DotDataException {
+        userFactory.updateRememberMeToken(userId, UUIDGenerator.uuid());
     }
 
     @WrapInTransaction
