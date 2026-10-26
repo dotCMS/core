@@ -112,7 +112,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.ClusterResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.cluster.ClusterNodesResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.system.ConfigurationHelperTest.class,
-        UserDeletionCacheInvalidationTest.class
+        UserDeletionCacheInvalidationTest.class,
+        com.dotcms.enterprise.publishing.remote.handler.UserHandlerTest.class
 })
 public class MainSuite2a {
 
