@@ -10,8 +10,11 @@ import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
+import com.dotcms.auth.providers.jwt.beans.JWToken;
+import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
@@ -68,6 +71,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -693,25 +698,62 @@ public class LoginServiceAPIFactory implements Serializable {
         }
 
         /**
-         * Gives the logged-in user of the request (request attribute or session) a new login token
-         * id, so every login token issued to that user before the logout is rejected, on every node.
-         * This must run before the session is invalidated. A failure is logged and does not stop
-         * the logout.
+         * Gives the user logging out a new login token id, so every login token issued to that
+         * user before the logout is rejected, on every node. This must run before the session is
+         * invalidated. A failure is logged and does not stop the logout.
          *
          * @param request the logout request
          */
         private void invalidateLoginTokens(final HttpServletRequest request) {
 
-            final String userId = PortalUtil.getUserId(request);
-            if (!UtilMethods.isSet(userId)) {
-                return;
-            }
+            String userId = null;
             try {
-                this.userAPI.invalidateLoginTokens(userId);
+                userId = this.loggingOutUserId(request);
+                if (UtilMethods.isSet(userId)) {
+                    this.userAPI.invalidateLoginTokens(userId);
+                }
             } catch (final Exception e) {
                 Logger.warn(this, String.format("Unable to invalidate the login tokens of user '%s' on logout: %s",
                         userId, e.getMessage()));
             }
+        }
+
+        /**
+         * Resolves the user whose login tokens a logout invalidates. During "Login As" this is the
+         * administrator who started it, since the login cookie the browser holds is theirs; else it
+         * is the user of the request attribute or the session. When there is neither, for example
+         * because the session has already expired, it is the owner of a login token sent in the
+         * login cookie or as a Bearer header, but only if that token passes validation (signature,
+         * expiry and current token id).
+         *
+         * @param request the logout request
+         * @return the user id, or {@code null} if the request identifies no user
+         */
+        private String loggingOutUserId(final HttpServletRequest request) {
+
+            final HttpSession session = request.getSession(false);
+            final Object principalUserId = null != session ? session.getAttribute(WebKeys.PRINCIPAL_USER_ID) : null;
+            if (null != principalUserId) {
+                return principalUserId.toString();
+            }
+            final String userId = PortalUtil.getUserId(request);
+            if (UtilMethods.isSet(userId)) {
+                return userId;
+            }
+            final Cookie cookie = UtilMethods.getCookie(request.getCookies(), CookieKeys.REMEMBER_ME_COOKIE.get());
+            final String header = request.getHeader("Authorization");
+            final String bearer = null != header && header.startsWith(JsonWebTokenAuthCredentialProcessor.BEARER) ?
+                    header.substring(JsonWebTokenAuthCredentialProcessor.BEARER.length()).trim() : null;
+            return Stream.of(null != cookie ? cookie.getValue() : null, bearer)
+                    .filter(UtilMethods::isSet)
+                    .map(jwt -> APILocator.getApiTokenAPI().fromJwt(jwt, request.getRemoteAddr()))
+                    .flatMap(Optional::stream)
+                    .filter(UserToken.class::isInstance)
+                    .map(JWToken::getActiveUser)
+                    .flatMap(Optional::stream)
+                    .map(User::getUserId)
+                    .findFirst()
+                    .orElse(null);
         }
 
         @CloseDBIfOpened

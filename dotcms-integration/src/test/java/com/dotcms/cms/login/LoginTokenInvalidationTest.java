@@ -1,6 +1,7 @@
 package com.dotcms.cms.login;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -15,11 +16,14 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.WebKeys;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import org.junit.AfterClass;
@@ -153,6 +157,100 @@ public class LoginTokenInvalidationTest {
         assertEquals(200, response.getStatus());
 
         assertFalse("token issued before the password change must be rejected", resolves(token));
+    }
+
+    /**
+     * Logging out while an administrator is logged in as another user rejects the administrator's
+     * login token, which is the one the browser holds, and leaves the impersonated user's working.
+     */
+    @Test
+    public void test_logoutDuringLoginAs_rejectsAdministratorTokenOnly() throws Exception {
+        final User admin = newUser();
+        final User target = newUser();
+        final String adminToken = loginToken(admin);
+        final String targetToken = loginToken(target);
+
+        final HttpServletRequest request =
+                new MockHttpRequestIntegrationTest("localhost", "/api/v1/logout").request();
+        request.getSession().setAttribute(WebKeys.USER_ID, target.getUserId());
+        request.getSession().setAttribute(WebKeys.PRINCIPAL_USER_ID, admin.getUserId());
+        APILocator.getLoginServiceAPI().doActionLogout(request, mock(HttpServletResponse.class));
+
+        assertFalse("the administrator's token must be rejected", resolves(adminToken));
+        assertTrue("the impersonated user's token must keep working", resolves(targetToken));
+    }
+
+    /**
+     * Logging out with no session, only a valid login cookie (for example after the session has
+     * expired), rejects that cookie's token afterwards.
+     */
+    @Test
+    public void test_logoutWithOnlyLoginCookie_rejectsThatToken() throws Exception {
+        final User user = newUser();
+        final String token = loginToken(user);
+        assertTrue(resolves(token));
+
+        APILocator.getLoginServiceAPI().doActionLogout(requestWithLoginCookie(token),
+                mock(HttpServletResponse.class));
+
+        assertFalse("the cookie's token must be rejected after logout", resolves(token));
+    }
+
+    /**
+     * A login cookie that does not validate (altered signature, or a token id that is no longer
+     * current) does not change any user's login token id on logout.
+     */
+    @Test
+    public void test_logoutWithInvalidLoginCookie_changesNothing() throws Exception {
+        final User user = newUser();
+        final String staleToken = loginToken(user);
+        userAPI.invalidateLoginTokens(user.getUserId());
+        final User reloaded = userAPI.loadUserById(user.getUserId());
+        final String currentToken = loginToken(reloaded);
+        final String tokenIdBefore = reloaded.getRememberMeToken();
+
+        final String altered = currentToken.substring(0, currentToken.length() - 4)
+                + (currentToken.endsWith("AAAA") ? "BBBB" : "AAAA");
+        APILocator.getLoginServiceAPI().doActionLogout(requestWithLoginCookie(altered),
+                mock(HttpServletResponse.class));
+        APILocator.getLoginServiceAPI().doActionLogout(requestWithLoginCookie(staleToken),
+                mock(HttpServletResponse.class));
+
+        assertEquals(tokenIdBefore, userAPI.loadUserById(user.getUserId()).getRememberMeToken());
+        assertTrue("the current token must keep working", resolves(currentToken));
+    }
+
+    /**
+     * The logout used by the SAML integration ({@code LoginServiceAPI#doLogout}) rejects a login
+     * token issued before it.
+     */
+    @Test
+    public void test_doLogout_rejectsLoginTokenIssuedBeforeIt() throws Exception {
+        final User user = newUser();
+        final String token = loginToken(user);
+        final String tokenIdBefore = user.getRememberMeToken();
+        assertTrue(resolves(token));
+
+        final HttpServletRequest request =
+                new MockHttpRequestIntegrationTest("localhost", "/dotsaml/logout").request();
+        request.getSession().setAttribute(WebKeys.USER_ID, user.getUserId());
+        APILocator.getLoginServiceAPI().doLogout(request, mock(HttpServletResponse.class));
+
+        assertNotEquals(tokenIdBefore, userAPI.loadUserById(user.getUserId()).getRememberMeToken());
+        assertFalse("token issued before logout must be rejected", resolves(token));
+    }
+
+    /**
+     * A logout request with no session that carries the given token as its login cookie.
+     */
+    private static HttpServletRequest requestWithLoginCookie(final String token) {
+        return new HttpServletRequestWrapper(
+                new MockHttpRequestIntegrationTest("localhost", "/dotAdmin/logout").request()) {
+            @Override
+            public Cookie[] getCookies() {
+                return new Cookie[]{new Cookie(CookieKeys.REMEMBER_ME_COOKIE.get(), token)};
+            }
+        };
     }
 
     private static User newUser() {
