@@ -40,6 +40,7 @@ import com.dotmarketing.portlets.rules.model.RuleAction;
 import com.dotmarketing.portlets.rules.model.Condition;
 import com.dotmarketing.portlets.rules.model.ConditionGroup;
 import com.dotmarketing.portlets.rules.model.LogicalOperator;
+import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.dotmarketing.portlets.rules.model.Rule;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
@@ -74,6 +75,7 @@ public class RulesAPIImplParentChecksIntegrationTest {
     private static final List<Host> createdSites = new ArrayList<>();
     private static final List<User> createdUsers = new ArrayList<>();
     private static final List<Role> createdRoles = new ArrayList<>();
+    private static final List<Template> createdTemplates = new ArrayList<>();
 
     /** A call on the Rules API that is expected to be refused or allowed. */
     @FunctionalInterface
@@ -115,6 +117,7 @@ public class RulesAPIImplParentChecksIntegrationTest {
         }
 
         createdContentlets.forEach(contentlet -> ContentletDataGen.destroy(contentlet, true));
+        createdTemplates.forEach(TemplateDataGen::remove);
         createdUsers.forEach(user -> UserDataGen.remove(user, true));
         createdRoles.forEach(role -> RoleDataGen.remove(role, true));
 
@@ -216,8 +219,8 @@ public class RulesAPIImplParentChecksIntegrationTest {
 
     /**
      * Method to test: rule, condition group and action reads and writes of {@link RulesAPIImpl}
-     * When: the rule's parent is an experiment and the user has no EDIT permission on the
-     * experiment's page
+     * When: the rule's parent is an experiment and the user has Rules PUBLISH on the site but only
+     * READ on the experiment's page
      * Should: refuse every call with a {@link DotSecurityException}
      */
     @Test
@@ -229,6 +232,7 @@ public class RulesAPIImplParentChecksIntegrationTest {
         final ConditionGroup group = new ConditionGroupDataGen().rule(rule).nextPersisted();
 
         final Role role = newRole();
+        grantRules(role, site, RULES_READ_WRITE_PUBLISH);
         grant(role, page, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
         final User user = newUser(role);
 
@@ -546,6 +550,126 @@ public class RulesAPIImplParentChecksIntegrationTest {
                 rulesAPI.getConditionById(condition.getId(), systemUser, false).getConditionGroup());
     }
 
+    /**
+     * Method to test: {@link com.dotmarketing.portlets.contentlet.business.HostAPI#delete(Host, User, boolean)}
+     * When: a user allowed to delete an archived site that has rules, holding Rules READ but not
+     * Rules PUBLISH on it, deletes the site
+     * Should: the site is deleted and its rules are removed with it
+     */
+    @Test
+    public void deletingArchivedSiteRemovesItsRules() throws Exception {
+        final Host site = newSite();
+        final Rule rule = persistRule(new RuleDataGen().host(site));
+        new ConditionGroupDataGen().rule(rule).nextPersisted();
+        APILocator.getHostAPI().archive(site, systemUser, false);
+
+        final Role role = newRole();
+        grantRules(role, site, PermissionAPI.PERMISSION_READ);
+        grant(role, site, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, RULES_READ_WRITE_PUBLISH);
+        final User user = newUser(role);
+
+        APILocator.getHostAPI().delete(
+                APILocator.getHostAPI().find(site.getIdentifier(), systemUser, false), user, false);
+
+        assertNull(rulesAPI.getRuleById(rule.getId(), systemUser, false));
+    }
+
+    /**
+     * Method to test: {@link RulesAPIImpl#saveConditionGroup}
+     * When: a user who may only view the rules of one site, and may publish the rules of another,
+     * saves a condition group of the first site's rule under the second site's rule
+     * Should: refuse the save and leave the group where it was
+     */
+    @Test
+    public void movingAConditionGroupRequiresPublishOnItsCurrentRule() throws Exception {
+        final Host viewOnlySite = newSite();
+        final Host publishSite = newSite();
+        final Rule viewOnlyRule = persistRule(new RuleDataGen().host(viewOnlySite));
+        final Rule publishRule = persistRule(new RuleDataGen().host(publishSite));
+        final ConditionGroup viewOnlyGroup = new ConditionGroupDataGen().rule(viewOnlyRule).nextPersisted();
+
+        final Role role = newRole();
+        grantRules(role, viewOnlySite, PermissionAPI.PERMISSION_READ);
+        grantRules(role, publishSite, RULES_READ_WRITE_PUBLISH);
+        final User user = newUser(role);
+
+        final ConditionGroup movedGroup = (ConditionGroup) SerializationUtils.clone(viewOnlyGroup);
+        movedGroup.setRuleId(publishRule.getId());
+        assertRefused("saveConditionGroup", () -> rulesAPI.saveConditionGroup(movedGroup, user, false));
+
+        assertEquals(viewOnlyRule.getId(),
+                rulesAPI.getConditionGroupById(viewOnlyGroup.getId(), systemUser, false).getRuleId());
+    }
+
+    /**
+     * Method to test: {@link RulesAPIImpl#saveConditionValue}
+     * When: a user who may only view the rules of one site, and may publish the rules of another,
+     * saves a condition value of the first site's condition under the second site's condition
+     * Should: refuse the save and leave the value where it was
+     */
+    @Test
+    public void movingAConditionValueRequiresPublishOnItsCurrentRule() throws Exception {
+        final Host viewOnlySite = newSite();
+        final Host publishSite = newSite();
+        final Rule viewOnlyRule = persistRule(new RuleDataGen().host(viewOnlySite));
+        final Rule publishRule = persistRule(new RuleDataGen().host(publishSite));
+        final ConditionGroup viewOnlyGroup = new ConditionGroupDataGen().rule(viewOnlyRule).nextPersisted();
+        final ConditionGroup publishGroup = new ConditionGroupDataGen().rule(publishRule).nextPersisted();
+        final Condition viewOnlyCondition = new ConditionDataGen().group(viewOnlyGroup).nextPersisted();
+        final Condition publishCondition = new ConditionDataGen().group(publishGroup).nextPersisted();
+        final ParameterModel value = persistValue(viewOnlyCondition);
+
+        final Role role = newRole();
+        grantRules(role, viewOnlySite, PermissionAPI.PERMISSION_READ);
+        grantRules(role, publishSite, RULES_READ_WRITE_PUBLISH);
+        final User user = newUser(role);
+
+        final ParameterModel movedValue = new ParameterModel(value);
+        movedValue.setOwnerId(publishCondition.getId());
+        assertRefused("saveConditionValue", () -> rulesAPI.saveConditionValue(movedValue, user, false));
+
+        assertEquals(viewOnlyCondition.getId(),
+                rulesAPI.getConditionValueById(value.getId(), systemUser, false).getOwnerId());
+    }
+
+    /**
+     * Method to test: {@link RulesAPIImpl#saveConditionGroup} and
+     * {@link RulesAPIImpl#saveConditionValue}
+     * When: a user who may publish the rules of both sites moves a condition group and a condition
+     * value from one site's rule to the other's
+     * Should: allow both moves
+     */
+    @Test
+    public void movingAConditionGroupOrValueIsAllowedWithPublishOnBothRules() throws Exception {
+        final Host firstSite = newSite();
+        final Host secondSite = newSite();
+        final Rule firstRule = persistRule(new RuleDataGen().host(firstSite));
+        final Rule secondRule = persistRule(new RuleDataGen().host(secondSite));
+        final ConditionGroup firstGroup = new ConditionGroupDataGen().rule(firstRule).nextPersisted();
+        final ConditionGroup secondGroup = new ConditionGroupDataGen().rule(secondRule).nextPersisted();
+        final Condition firstCondition = new ConditionDataGen().group(firstGroup).nextPersisted();
+        final Condition secondCondition = new ConditionDataGen().group(secondGroup).nextPersisted();
+        final ParameterModel value = persistValue(firstCondition);
+
+        final Role role = newRole();
+        grantRules(role, firstSite, RULES_READ_WRITE_PUBLISH);
+        grantRules(role, secondSite, RULES_READ_WRITE_PUBLISH);
+        final User user = newUser(role);
+
+        final ConditionGroup movedGroup = (ConditionGroup) SerializationUtils.clone(firstGroup);
+        movedGroup.setRuleId(secondRule.getId());
+        rulesAPI.saveConditionGroup(movedGroup, user, false);
+
+        final ParameterModel movedValue = new ParameterModel(value);
+        movedValue.setOwnerId(secondCondition.getId());
+        rulesAPI.saveConditionValue(movedValue, user, false);
+
+        assertEquals(secondRule.getId(),
+                rulesAPI.getConditionGroupById(firstGroup.getId(), systemUser, false).getRuleId());
+        assertEquals(secondCondition.getId(),
+                rulesAPI.getConditionValueById(value.getId(), systemUser, false).getOwnerId());
+    }
+
     // ---- assertions ----
 
     /**
@@ -556,6 +680,8 @@ public class RulesAPIImplParentChecksIntegrationTest {
             final ConditionGroup group) throws Exception {
         assertRefused("saveRule", () -> rulesAPI.saveRule(newRule, user, false));
         assertRefused("getRuleById", () -> rulesAPI.getRuleById(rule.getId(), user, false));
+        assertRefused("getAllRulesByParent",
+                () -> rulesAPI.getAllRulesByParent(rule.getParent(), user, false));
         assertRefused("saveConditionGroup", () -> rulesAPI.saveConditionGroup(
                 new ConditionGroupDataGen().rule(rule).next(), user, false));
         assertRefused("saveCondition", () -> rulesAPI.saveCondition(
@@ -576,6 +702,8 @@ public class RulesAPIImplParentChecksIntegrationTest {
         rulesAPI.saveRule(newRule, user, false);
         createdRuleIds.add(newRule.getId());
         assertEquals(rule.getId(), rulesAPI.getRuleById(rule.getId(), user, false).getId());
+        assertTrue(rulesAPI.getAllRulesByParent(rule.getParent(), user, false).stream()
+                .anyMatch(listed -> listed.getId().equals(rule.getId())));
         rulesAPI.saveConditionGroup(new ConditionGroupDataGen().rule(rule).next(), user, false);
         rulesAPI.saveCondition(new ConditionDataGen().group(group).next(), user, false);
         rulesAPI.saveRuleAction(new RuleActionDataGen().rule(rule).next(), user, false);
@@ -607,6 +735,7 @@ public class RulesAPIImplParentChecksIntegrationTest {
     /** Creates a page in the root folder of the given site. */
     private static HTMLPageAsset newPage(final Host site) {
         final Template template = new TemplateDataGen().nextPersisted();
+        createdTemplates.add(template);
         final HTMLPageAsset page = new HTMLPageDataGen(site, template).nextPersisted();
         createdContentlets.add(page);
         return page;
@@ -637,6 +766,15 @@ public class RulesAPIImplParentChecksIntegrationTest {
         rulesAPI.saveRuleNoParentCheck(rule, systemUser, false);
         createdRuleIds.add(rule.getId());
         return rule;
+    }
+
+    /** Persists, as the system user, a value of the given condition. */
+    private static ParameterModel persistValue(final Condition condition)
+            throws DotDataException, DotSecurityException {
+        final ParameterModel value = new ParameterModel("comparison", "is");
+        value.setOwnerId(condition.getId());
+        rulesAPI.saveConditionValue(value, systemUser, false);
+        return value;
     }
 
     /** Builds a targeting condition on a request attribute with the given value. */
