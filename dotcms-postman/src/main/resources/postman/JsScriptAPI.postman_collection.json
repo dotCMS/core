@@ -339,11 +339,288 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "CreateJsModulesFolder",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"var jsonData = pm.response.json();",
+							"pm.test(\"The modules folder is created\", function () {",
+							"    pm.expect(jsonData.entity[0].path).to.eql(\"/application/js/modules/\");",
+							"});",
+							"",
+							"pm.collectionVariables.set(\"jsModulesFolderId\", jsonData.entity[0].identifier);"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "[\n    \"/application/js/modules\"\n]",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/folder/createfolders/default",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"folder",
+						"createfolders",
+						"default"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CreateJsModule",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// A unique file name keeps a second run against the same database from colliding with the first",
+							"pm.collectionVariables.set(\"jsModuleName\", \"js-module-\" + Date.now() + \".mjs\");"
+						],
+						"type": "text/javascript"
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "json",
+							"value": "{\n    \"contentlet\": {\n        \"contentType\": \"FileAsset\",\n        \"title\": \"{{jsModuleName}}\",\n        \"fileName\": \"{{jsModuleName}}\",\n        \"hostFolder\": \"{{jsModulesFolderId}}\"\n    }\n}",
+							"type": "text"
+						},
+						{
+							"key": "file",
+							"type": "file",
+							"src": "resources/JsScriptAPI/js-module.mjs"
+						}
+					]
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"actions",
+						"default",
+						"fire",
+						"PUBLISH"
+					],
+					"query": [
+						{
+							"key": "indexPolicy",
+							"value": "WAIT_FOR"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ImportModuleDyna",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"The script gets the expected import result\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.module).to.eql(\"POSTMAN-MODULE-EXPORT\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"javascript\": \"import('//default/application/js/modules/{{jsModuleName}}').then(function (m) { dotJSON.put('module', m.value); }, function (e) { dotJSON.put('module', 'ERR:' + e.message); });\\ndotJSON\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/js/dynamic",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"js",
+						"dynamic"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ImportPathOutsideModuleFoldersDyna",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"The script gets the expected import result\", function () {",
+							"    var jsonData = pm.response.json();",
+							"    pm.expect(jsonData.module).to.eql(\"ERR:Path is only allowed on: (/javascript/ or /application/)\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"javascript\": \"import('/tmp/{{jsModuleName}}').then(function (m) { dotJSON.put('module', m.value); }, function (e) { dotJSON.put('module', 'ERR:' + e.message); });\\ndotJSON\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/js/dynamic",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"js",
+						"dynamic"
+					]
+				}
+			},
+			"response": []
 		}
 	],
 	"variable": [
 		{
 			"key": "contentletIdentifier",
+			"value": ""
+		},
+		{
+			"key": "jsModulesFolderId",
+			"value": ""
+		},
+		{
+			"key": "jsModuleName",
 			"value": ""
 		}
 	]
