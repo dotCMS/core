@@ -658,9 +658,10 @@
 									"});",
 									"",
 									"pm.test(\"The container is returned with an empty templates list\", function () {",
-									"    pm.expect(jsonData.entity.identifier).to.eql(pm.collectionVariables.get(\"containerDeps_ContainerId\"));",
-									"    pm.expect(jsonData.entity.title).to.eql(\"CONTAINER_dependencies_test\");",
-									"    pm.expect(jsonData.entity.templates).to.be.an(\"array\").that.is.empty;",
+									"    pm.expect(jsonData.entity).to.be.an(\"array\").that.has.lengthOf(1);",
+									"    pm.expect(jsonData.entity[0].identifier).to.eql(pm.collectionVariables.get(\"containerDeps_ContainerId\"));",
+									"    pm.expect(jsonData.entity[0].title).to.eql(\"CONTAINER_dependencies_test\");",
+									"    pm.expect(jsonData.entity[0].templates).to.be.an(\"array\").that.is.empty;",
 									"});"
 								],
 								"type": "text/javascript"
@@ -770,9 +771,9 @@
 									"});",
 									"",
 									"pm.test(\"The template that uses the container is listed\", function () {",
-									"    pm.expect(jsonData.entity.templates).to.have.lengthOf(1);",
-									"    pm.expect(jsonData.entity.templates[0].identifier).to.eql(pm.collectionVariables.get(\"containerDeps_TemplateId\"));",
-									"    pm.expect(jsonData.entity.templates[0].title).to.eql(\"TEMPLATE_dependencies_test\");",
+									"    pm.expect(jsonData.entity[0].templates).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity[0].templates[0].identifier).to.eql(pm.collectionVariables.get(\"containerDeps_TemplateId\"));",
+									"    pm.expect(jsonData.entity[0].templates[0].title).to.eql(\"TEMPLATE_dependencies_test\");",
 									"});"
 								],
 								"type": "text/javascript"
@@ -807,6 +808,120 @@
 								{
 									"key": "containerId",
 									"value": "{{containerDeps_ContainerId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Dependencies with a repeated container id answers once per container",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"The container is answered once, with its template\", function () {",
+									"    pm.expect(jsonData.entity).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity[0].identifier).to.eql(pm.collectionVariables.get(\"containerDeps_ContainerId\"));",
+									"    pm.expect(jsonData.entity[0].templates[0].identifier).to.eql(pm.collectionVariables.get(\"containerDeps_TemplateId\"));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers/dependencies?containerId={{containerDeps_ContainerId}}&containerId={{containerDeps_ContainerId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers",
+								"dependencies"
+							],
+							"query": [
+								{
+									"key": "containerId",
+									"value": "{{containerDeps_ContainerId}}"
+								},
+								{
+									"key": "containerId",
+									"value": "{{containerDeps_ContainerId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Dependencies fail as a whole when one container does not exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 404 Not Found\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers/dependencies?containerId={{containerDeps_ContainerId}}&containerId=this-container-does-not-exist",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers",
+								"dependencies"
+							],
+							"query": [
+								{
+									"key": "containerId",
+									"value": "{{containerDeps_ContainerId}}"
+								},
+								{
+									"key": "containerId",
+									"value": "this-container-does-not-exist"
 								}
 							]
 						}

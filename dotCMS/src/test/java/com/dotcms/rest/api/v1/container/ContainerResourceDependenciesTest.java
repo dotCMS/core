@@ -1,12 +1,12 @@
 package com.dotcms.rest.api.v1.container;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -30,6 +30,8 @@ import com.dotmarketing.portlets.form.business.FormAPI;
 import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
@@ -95,30 +97,73 @@ class ContainerResourceDependenciesTest {
         assertThrows(IllegalArgumentException.class,
                 () -> resource.getContainerDependencies(request, response, null));
         assertThrows(IllegalArgumentException.class,
-                () -> resource.getContainerDependencies(request, response, "  "));
+                () -> resource.getContainerDependencies(request, response, List.of()));
+        assertThrows(IllegalArgumentException.class,
+                () -> resource.getContainerDependencies(request, response, List.of("  ", "")));
+
+        verify(helper, never()).dependenciesOf(any(), any());
+    }
+
+    /**
+     * Given more container ids than the endpoint accepts, when the dependencies are requested,
+     * then an {@link IllegalArgumentException} is raised and no lookup runs.
+     */
+    @Test
+    void rejectsMoreContainerIdsThanTheLimit() throws Exception {
+        final List<String> tooMany = IntStream.rangeClosed(1, ContainerResource.MAX_DEPENDENCY_LOOKUP + 1)
+                .mapToObj(i -> "id-" + i).collect(Collectors.toList());
+
+        assertThrows(IllegalArgumentException.class,
+                () -> resource.getContainerDependencies(request, response, tooMany));
 
         verify(helper, never()).dependenciesOf(any(), any());
     }
 
     /**
      * Given an inode that resolves to a container the user can read, when the dependencies are
-     * requested, then the response is 200 and its entity is the dependencies view of that
-     * container.
+     * requested, then the response is 200 and its entity is a list with the dependencies view of
+     * that container.
      */
     @Test
     void returnsTheDependenciesOfTheWorkingContainer() throws Exception {
-        final Container container = new Container();
-        container.setInode(INODE);
-        container.setIdentifier("container-id");
-        when(shortyAPI.getShorty(INODE)).thenReturn(Optional.of(new ShortyId(INODE, INODE, ShortType.INODE, ShortType.INODE)));
-        when(containerAPI.find(INODE, user, false)).thenReturn(container);
+        final Container container = resolvable(INODE, "container-id");
         final ContainerDependenciesView view = new ContainerDependenciesView(INODE, "container-id", "Main", List.of());
-        when(helper.dependenciesOf(container, user)).thenReturn(view);
+        when(helper.dependenciesOf(List.of(container), user)).thenReturn(List.of(view));
 
-        final Response result = resource.getContainerDependencies(request, response, INODE);
+        final Response result = resource.getContainerDependencies(request, response, List.of(INODE));
 
         assertEquals(Response.Status.OK.getStatusCode(), result.getStatus());
-        assertSame(view, ((ResponseEntityView<?>) result.getEntity()).getEntity());
+        assertEquals(List.of(view), ((ResponseEntityView<?>) result.getEntity()).getEntity());
+    }
+
+    /**
+     * Given two containers and a repeated id, when the dependencies are requested, then the
+     * containers are looked up together, once each, in the order asked.
+     */
+    @Test
+    void looksUpSeveralContainersTogetherInTheOrderAsked() throws Exception {
+        final String otherInode = "fedcba9876543210";
+        final Container first = resolvable(INODE, "first-id");
+        final Container second = resolvable(otherInode, "second-id");
+        final List<ContainerDependenciesView> views = List.of(
+                new ContainerDependenciesView(INODE, "first-id", "First", List.of()),
+                new ContainerDependenciesView(otherInode, "second-id", "Second", List.of()));
+        when(helper.dependenciesOf(List.of(second, first), user)).thenReturn(views);
+
+        final Response result = resource.getContainerDependencies(request, response,
+                List.of(otherInode, INODE, otherInode));
+
+        assertEquals(views, ((ResponseEntityView<?>) result.getEntity()).getEntity());
+        verify(helper, times(1)).dependenciesOf(any(), any());
+    }
+
+    private Container resolvable(final String inode, final String identifier) throws Exception {
+        final Container container = new Container();
+        container.setInode(inode);
+        container.setIdentifier(identifier);
+        when(shortyAPI.getShorty(inode)).thenReturn(Optional.of(new ShortyId(inode, inode, ShortType.INODE, ShortType.INODE)));
+        when(containerAPI.find(inode, user, false)).thenReturn(container);
+        return container;
     }
 
     /**
@@ -131,7 +176,7 @@ class ContainerResourceDependenciesTest {
         when(containerAPI.find(INODE, user, false)).thenReturn(new Container());
 
         assertThrows(DoesNotExistException.class,
-                () -> resource.getContainerDependencies(request, response, INODE));
+                () -> resource.getContainerDependencies(request, response, List.of(INODE)));
 
         verify(helper, never()).dependenciesOf(any(), any());
     }
@@ -145,7 +190,7 @@ class ContainerResourceDependenciesTest {
         when(shortyAPI.getShorty("unknown")).thenReturn(Optional.empty());
 
         assertThrows(ResourceNotFoundException.class,
-                () -> resource.getContainerDependencies(request, response, "unknown"));
+                () -> resource.getContainerDependencies(request, response, List.of("unknown")));
 
         verify(helper, never()).dependenciesOf(any(), any());
     }

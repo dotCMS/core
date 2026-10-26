@@ -17,9 +17,12 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Finds the Templates that use a Container, for the {@code GET /api/v1/containers/dependencies}
@@ -31,8 +34,9 @@ import java.util.Map;
  * nothing about such Containers is returned. A Site the user cannot read is reported as an absent
  * site name. Front-end roles are never considered, because the endpoint is for back-end users.
  *
- * <p>Which Templates use the Container is decided by
- * {@link TemplateAPI#findTemplatesUsingContainer(String, User)}.
+ * <p>Which Templates use the Containers is decided by
+ * {@link TemplateAPI#findTemplatesUsingContainers(Collection, User)}, which looks for all the
+ * Containers of a request in a single pass over the Templates.
  */
 public class ContainerDependenciesHelper {
 
@@ -71,48 +75,76 @@ public class ContainerDependenciesHelper {
     }
 
     /**
-     * Lists the Templates, among those the user can read, that use the given Container.
+     * Lists, for each Container, the Templates among those the user can read that use it. The
+     * Templates are searched once for all the Containers.
      *
-     * @param container the {@link Container} to look up; the user needs READ permission on it
-     * @param user      the {@link User} requesting the list; Template visibility and Site names
-     *                  follow this user's permissions
-     * @return the Container's inode, identifier and title plus one {@link TemplateDependencyView}
-     * per Template that uses it; the list is empty when no Template does
-     * @throws DotDataException     if the Container, the Templates or their sites cannot be read
+     * @param containers the {@link Container}s to look up; the user needs READ permission on each
+     * @param user       the {@link User} requesting the list; Template visibility and Site names
+     *                   follow this user's permissions
+     * @return one view per Container, in the order given, with its inode, identifier and title plus
+     * one {@link TemplateDependencyView} per Template that uses it; the list is empty when no
+     * Template does
+     * @throws DotDataException     if the Containers, the Templates or their sites cannot be read
      *                              from the data source
-     * @throws DotSecurityException if the user cannot read the Container or list Templates
+     * @throws DotSecurityException if the user cannot read one of the Containers or list Templates;
+     *                              nothing is searched in that case
      */
-    public ContainerDependenciesView dependenciesOf(final Container container, final User user)
+    public List<ContainerDependenciesView> dependenciesOf(final List<Container> containers, final User user)
             throws DotDataException, DotSecurityException {
 
-        this.requireRead(container, user);
-        final List<TemplateDependencyView> usages = new ArrayList<>();
-        final Map<String, String> siteNames = new HashMap<>();
-        for (final Template template : this.templateAPI.findTemplatesUsingContainer(
-                container.getIdentifier(), user)) {
-            usages.add(new TemplateDependencyView(template.getInode(), template.getIdentifier(),
-                    template.getTitle(), this.siteNameOf(template, user, siteNames)));
+        for (final Container container : containers) {
+            this.requireRead(container, user);
         }
-        return new ContainerDependenciesView(container.getInode(), container.getIdentifier(),
-                container.getTitle(), usages);
+        final Map<String, List<Template>> templatesByContainer =
+                this.templateAPI.findTemplatesUsingContainers(identifiersOf(containers), user);
+
+        final Map<String, String> siteNames = new HashMap<>();
+        final List<ContainerDependenciesView> views = new ArrayList<>();
+        for (final Container container : containers) {
+            final List<TemplateDependencyView> usages = new ArrayList<>();
+            for (final Template template : templatesByContainer.getOrDefault(container.getIdentifier(), List.of())) {
+                usages.add(new TemplateDependencyView(template.getInode(), template.getIdentifier(),
+                        template.getTitle(), this.siteNameOf(template, user, siteNames)));
+            }
+            views.add(new ContainerDependenciesView(container.getInode(), container.getIdentifier(),
+                    container.getTitle(), usages));
+        }
+        return views;
     }
 
     /**
-     * Counts every Template that uses the Container, whoever can read it. It is meant to guard a
+     * Counts every Template that uses each Container, whoever can read it. It is meant to guard a
      * delete, so it does not depend on the permissions of the user asking: a Template the user
-     * cannot see still blocks the delete. Only the count is returned, so nothing about those
-     * Templates is disclosed.
+     * cannot see still blocks the delete. Only the counts are returned, so nothing about those
+     * Templates is disclosed. The Templates are searched once for all the Containers.
      *
-     * @param container the {@link Container} about to be deleted
-     * @return how many Templates, archived ones included, use the Container
+     * @param containers the {@link Container}s about to be deleted
+     * @return how many Templates, archived ones included, use each Container, by Container
+     * identifier; a Container no Template uses has a zero
      * @throws DotDataException     if the Templates or their containers cannot be read from the
      *                              data source
      * @throws DotSecurityException if the Templates cannot be listed
      */
-    public int countTemplatesUsing(final Container container)
+    public Map<String, Integer> countTemplatesUsing(final Collection<Container> containers)
             throws DotDataException, DotSecurityException {
 
-        return this.templateAPI.findTemplatesUsingContainer(container.getIdentifier(), this.systemUser).size();
+        final List<Container> asked = new ArrayList<>(containers);
+        final Map<String, List<Template>> templatesByContainer =
+                this.templateAPI.findTemplatesUsingContainers(identifiersOf(asked), this.systemUser);
+
+        final Map<String, Integer> counts = new LinkedHashMap<>();
+        for (final Container container : asked) {
+            counts.put(container.getIdentifier(),
+                    templatesByContainer.getOrDefault(container.getIdentifier(), List.of()).size());
+        }
+        return counts;
+    }
+
+    /**
+     * The distinct identifiers of the Containers, in the order given.
+     */
+    private static List<String> identifiersOf(final List<Container> containers) {
+        return containers.stream().map(Container::getIdentifier).distinct().collect(Collectors.toList());
     }
 
     /**

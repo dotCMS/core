@@ -1,5 +1,4 @@
 import { ComponentStore } from '@ngrx/component-store';
-import { forkJoin } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
@@ -581,25 +580,21 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
     }
 
     /**
-     * Deletes the containers once none of them is used by a template. If any is in use nothing is
-     * deleted and the containers in use are listed with their templates. A failed lookup also
-     * stops the delete (the error is already shown by the http error manager).
+     * Deletes the containers once none of them is used by a template. The templates are looked up
+     * with one request for the whole selection. If any container is in use nothing is deleted and
+     * the containers in use are listed with their templates. A failed lookup also stops the delete
+     * (the error is already shown by the http error manager).
      */
     private deleteContainer(identifiers: string[]): void {
-        forkJoin(
-            identifiers.map((identifier) => this.dotContainersService.getDependencies(identifier))
-        )
+        this.dotContainersService
+            .getDependencies(identifiers)
             .pipe(take(1))
             .subscribe((lookups) => {
-                const dependencies = lookups.filter(
-                    (dependency): dependency is DotContainerDependencies => !!dependency
-                );
-
-                if (dependencies.length !== lookups.length) {
+                if (!lookups) {
                     return;
                 }
 
-                const inUse = dependencies.filter((dependency) => dependency.templates.length);
+                const inUse = lookups.filter((dependency) => dependency.templates.length);
 
                 if (inUse.length) {
                     this.notifyContainersInUse(inUse);
@@ -644,7 +639,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
                     errorMessage: this.getInUseMessage(templates)
                 }))
             },
-            message: this.dotMessageService.get('Delete-Container')
+            message: this.dotMessageService.get('message.containers.in_use.header')
         });
     }
 

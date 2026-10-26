@@ -5,7 +5,7 @@ import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
-import io.vavr.control.Try;
+import com.dotmarketing.util.Logger;
 
 /**
  * Removes the legacy Containers portlet ({@code containers-legacy}) from every layout. The portlet
@@ -17,16 +17,25 @@ public class Task261023RemoveContainersLegacyPortletFromLayouts implements Start
     private static final String LEGACY_PORTLET_ID = "containers-legacy";
 
     /**
-     * Tells whether any layout still lists the legacy Containers portlet.
+     * Tells whether any layout still lists the legacy Containers portlet. When the check itself
+     * fails the error is logged and the task runs anyway: answering {@code false} would mark the
+     * task as done and leave the rows in place for good, while running it surfaces a database
+     * problem as a failed upgrade.
      *
-     * @return {@code true} when at least one layout row references it
+     * @return {@code true} when at least one layout row references it, or when that cannot be told
      */
     @Override
     public boolean forceRun() {
-        return Try.of(() -> new DotConnect()
-                .setSQL("select count(portlet_id) as count from cms_layouts_portlets where portlet_id = ?")
-                .addParam(LEGACY_PORTLET_ID)
-                .getInt("count")).getOrElse(0) > 0;
+        try {
+            return new DotConnect()
+                    .setSQL("select count(portlet_id) as count from cms_layouts_portlets where portlet_id = ?")
+                    .addParam(LEGACY_PORTLET_ID)
+                    .getInt("count") > 0;
+        } catch (final Exception e) {
+            Logger.error(this, "Could not check whether any layout still lists the '" + LEGACY_PORTLET_ID
+                    + "' portlet, running the task anyway: " + e.getMessage(), e);
+            return true;
+        }
     }
 
     /**

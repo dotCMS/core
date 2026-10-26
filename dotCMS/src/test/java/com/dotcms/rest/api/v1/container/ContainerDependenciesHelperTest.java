@@ -24,14 +24,17 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
  * Unit tests for the helper behind {@code GET /v1/containers/dependencies} of
  * {@link ContainerResource}. Which Templates use a Container is decided by
- * {@link TemplateAPI#findTemplatesUsingContainer(String, User)}; these tests cover what the helper
- * adds: the READ check, the Site names and the user scoping.
+ * {@link TemplateAPI#findTemplatesUsingContainers(java.util.Collection, User)}; these tests cover what
+ * the helper adds: the READ check, the Site names, the user scoping and a single search for however
+ * many Containers are asked about.
  */
 class ContainerDependenciesHelperTest {
 
@@ -75,7 +78,7 @@ class ContainerDependenciesHelperTest {
         templatesUsing(user, using);
         templateLivesOn(using, "demo.dotcms.com");
 
-        final ContainerDependenciesView view = helper.dependenciesOf(titled, user);
+        final ContainerDependenciesView view = dependenciesOf(titled);
 
         assertEquals(containerTitle, view.title());
         assertEquals(List.of(new TemplateDependencyView("t1-inode", "t1-id", templateTitle, "demo.dotcms.com")),
@@ -88,7 +91,7 @@ class ContainerDependenciesHelperTest {
      */
     @Test
     void returnsAnEmptyListWhenNoTemplateUsesTheContainer() throws Exception {
-        final ContainerDependenciesView view = helper.dependenciesOf(container, user);
+        final ContainerDependenciesView view = dependenciesOf(container);
 
         assertEquals("container-inode", view.inode());
         assertEquals(CONTAINER_ID, view.identifier());
@@ -105,9 +108,9 @@ class ContainerDependenciesHelperTest {
         when(permissionAPI.doesUserHavePermission(container, PermissionAPI.PERMISSION_READ, user, false))
                 .thenReturn(false);
 
-        assertThrows(DotSecurityException.class, () -> helper.dependenciesOf(container, user));
+        assertThrows(DotSecurityException.class, () -> dependenciesOf(container));
 
-        verify(templateAPI, never()).findTemplatesUsingContainer(any(), any());
+        verify(templateAPI, never()).findTemplatesUsingContainers(any(), any());
     }
 
     /**
@@ -119,7 +122,7 @@ class ContainerDependenciesHelperTest {
         templatesUsing(user, template("t1-inode", "t1-id", "Landing"));
         when(identifierAPI.find("t1-id")).thenReturn(null);
 
-        final ContainerDependenciesView view = helper.dependenciesOf(container, user);
+        final ContainerDependenciesView view = dependenciesOf(container);
 
         assertEquals(1, view.templates().size());
         assertNull(view.templates().get(0).siteName());
@@ -136,7 +139,7 @@ class ContainerDependenciesHelperTest {
         templateIdentifierOn(using, SITE_ID);
         when(hostAPI.find(SITE_ID, user, false)).thenReturn(null);
 
-        final ContainerDependenciesView view = helper.dependenciesOf(container, user);
+        final ContainerDependenciesView view = dependenciesOf(container);
 
         assertEquals(1, view.templates().size());
         assertNull(view.templates().get(0).siteName());
@@ -153,7 +156,7 @@ class ContainerDependenciesHelperTest {
         templateIdentifierOn(using, SITE_ID);
         when(hostAPI.find(SITE_ID, user, false)).thenThrow(new DotSecurityException("not readable"));
 
-        final ContainerDependenciesView view = helper.dependenciesOf(container, user);
+        final ContainerDependenciesView view = dependenciesOf(container);
 
         assertEquals(1, view.templates().size());
         assertNull(view.templates().get(0).siteName());
@@ -169,10 +172,10 @@ class ContainerDependenciesHelperTest {
         templatesUsing(user, using);
         templateLivesOn(using, "demo.dotcms.com");
 
-        helper.dependenciesOf(container, user);
+        dependenciesOf(container);
 
         verify(permissionAPI).doesUserHavePermission(container, PermissionAPI.PERMISSION_READ, user, false);
-        verify(templateAPI).findTemplatesUsingContainer(CONTAINER_ID, user);
+        verify(templateAPI).findTemplatesUsingContainers(List.of(CONTAINER_ID), user);
         verify(hostAPI).find(SITE_ID, user, false);
     }
 
@@ -182,9 +185,9 @@ class ContainerDependenciesHelperTest {
      */
     @Test
     void propagatesATemplateSearchFailureInsteadOfAnsweringEmpty() throws Exception {
-        when(templateAPI.findTemplatesUsingContainer(CONTAINER_ID, user)).thenThrow(new DotDataException("read failed"));
+        when(templateAPI.findTemplatesUsingContainers(List.of(CONTAINER_ID), user)).thenThrow(new DotDataException("read failed"));
 
-        assertThrows(DotDataException.class, () -> helper.dependenciesOf(container, user));
+        assertThrows(DotDataException.class, () -> dependenciesOf(container));
     }
 
     /**
@@ -196,7 +199,7 @@ class ContainerDependenciesHelperTest {
         templatesUsing(user, template("t1-inode", "t1-id", "Landing"));
         when(identifierAPI.find("t1-id")).thenThrow(new DotDataException("read failed"));
 
-        assertThrows(DotDataException.class, () -> helper.dependenciesOf(container, user));
+        assertThrows(DotDataException.class, () -> dependenciesOf(container));
     }
 
     /**
@@ -211,7 +214,7 @@ class ContainerDependenciesHelperTest {
         templateLivesOn(first, "demo.dotcms.com");
         templateIdentifierOn(second, SITE_ID);
 
-        final ContainerDependenciesView view = helper.dependenciesOf(container, user);
+        final ContainerDependenciesView view = dependenciesOf(container);
 
         assertEquals(2, view.templates().size());
         assertEquals("demo.dotcms.com", view.templates().get(1).siteName());
@@ -226,9 +229,9 @@ class ContainerDependenciesHelperTest {
     void countsEveryTemplateThatUsesTheContainerWhoeverCanReadIt() throws Exception {
         templatesUsing(systemUser, template("t1-inode", "t1-id", "Landing"), template("t2-inode", "t2-id", "Hidden"));
 
-        assertEquals(2, helper.countTemplatesUsing(container));
+        assertEquals(Map.of(CONTAINER_ID, 2), helper.countTemplatesUsing(List.of(container)));
 
-        verify(templateAPI, never()).findTemplatesUsingContainer(any(), eq(user));
+        verify(templateAPI, never()).findTemplatesUsingContainers(any(), eq(user));
     }
 
     /**
@@ -236,11 +239,73 @@ class ContainerDependenciesHelperTest {
      */
     @Test
     void countsNoTemplatesWhenNoneUsesTheContainer() throws Exception {
-        assertEquals(0, helper.countTemplatesUsing(container));
+        assertEquals(Map.of(CONTAINER_ID, 0), helper.countTemplatesUsing(List.of(container)));
+    }
+
+    /**
+     * Given three containers, when their dependencies are requested, then the templates are
+     * searched once for all of them and each view carries its own templates, in the order asked.
+     */
+    @Test
+    void searchesOnceForSeveralContainers() throws Exception {
+        final Container second = container("second-inode", "second-id", "Second");
+        final Container third = container("third-inode", "third-id", "Third");
+        final Template usingSecond = template("t1-inode", "t1-id", "Landing");
+        when(permissionAPI.doesUserHavePermission(any(Container.class), eq(PermissionAPI.PERMISSION_READ),
+                eq(user), eq(false))).thenReturn(true);
+        when(templateAPI.findTemplatesUsingContainers(List.of(CONTAINER_ID, "second-id", "third-id"), user))
+                .thenReturn(Map.of("second-id", List.of(usingSecond)));
+        templateLivesOn(usingSecond, "demo.dotcms.com");
+
+        final List<ContainerDependenciesView> views = helper.dependenciesOf(List.of(container, second, third), user);
+
+        assertEquals(List.of(CONTAINER_ID, "second-id", "third-id"),
+                views.stream().map(ContainerDependenciesView::identifier).collect(Collectors.toList()));
+        assertTrue(views.get(0).templates().isEmpty());
+        assertEquals(1, views.get(1).templates().size());
+        assertTrue(views.get(2).templates().isEmpty());
+        verify(templateAPI, times(1)).findTemplatesUsingContainers(any(), any());
+    }
+
+    /**
+     * Given the user cannot read the second of two containers, when the dependencies are
+     * requested, then the whole lookup is refused before any template is searched.
+     */
+    @Test
+    void refusesTheWholeLookupWhenOneContainerCannotBeRead() throws Exception {
+        final Container unreadable = container("second-inode", "second-id", "Second");
+        when(permissionAPI.doesUserHavePermission(unreadable, PermissionAPI.PERMISSION_READ, user, false))
+                .thenReturn(false);
+
+        assertThrows(DotSecurityException.class,
+                () -> helper.dependenciesOf(List.of(container, unreadable), user));
+
+        verify(templateAPI, never()).findTemplatesUsingContainers(any(), any());
+    }
+
+    /**
+     * Given three containers, when their usage is counted for a delete, then the templates are
+     * searched once, as the system user, and each container has its own count.
+     */
+    @Test
+    void countsSeveralContainersWithOneSearch() throws Exception {
+        final Container second = container("second-inode", "second-id", "Second");
+        when(templateAPI.findTemplatesUsingContainers(List.of(CONTAINER_ID, "second-id"), systemUser))
+                .thenReturn(Map.of(CONTAINER_ID, List.of(template("t1-inode", "t1-id", "A"), template("t2-inode", "t2-id", "B")),
+                        "second-id", List.of()));
+
+        assertEquals(Map.of(CONTAINER_ID, 2, "second-id", 0), helper.countTemplatesUsing(List.of(container, second)));
+
+        verify(templateAPI, times(1)).findTemplatesUsingContainers(any(), any());
     }
 
     private void templatesUsing(final User searchingUser, final Template... templates) throws Exception {
-        when(templateAPI.findTemplatesUsingContainer(CONTAINER_ID, searchingUser)).thenReturn(List.of(templates));
+        when(templateAPI.findTemplatesUsingContainers(List.of(CONTAINER_ID), searchingUser))
+                .thenReturn(Map.of(CONTAINER_ID, List.of(templates)));
+    }
+
+    private ContainerDependenciesView dependenciesOf(final Container requested) throws Exception {
+        return helper.dependenciesOf(List.of(requested), user).get(0);
     }
 
     private void templateIdentifierOn(final Template template, final String hostId) throws Exception {

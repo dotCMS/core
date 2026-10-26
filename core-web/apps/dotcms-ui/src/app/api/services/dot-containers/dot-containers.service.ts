@@ -124,19 +124,23 @@ export class DotContainersService {
     }
 
     /**
-     * Get the templates that use a container. The result has an empty `templates` list when
-     * nothing uses it.
-     * @param {string} containerId identifier, inode or folder path of the container
-     * @returns Observable<DotContainerDependencies>
+     * Get the templates that use each of the given containers, in a single request. A container's
+     * `templates` list is empty when nothing uses it.
+     * @param {string[]} containerIds identifiers, inodes or folder paths of the containers
+     * @returns Observable<DotContainerDependencies[] | null> one entry per container, in the order
+     * asked; `null` when the request failed (the error is already shown)
      * @memberof DotContainersService
      */
-    getDependencies(containerId: string): Observable<DotContainerDependencies | null> {
-        const url = `${CONTAINER_API_URL}dependencies?containerId=${encodeURIComponent(containerId)}`;
+    getDependencies(containerIds: string[]): Observable<DotContainerDependencies[] | null> {
+        const query = containerIds
+            .map((containerId) => `containerId=${encodeURIComponent(containerId)}`)
+            .join('&');
+        const url = `${CONTAINER_API_URL}dependencies?${query}`;
 
-        return this.http.get<DotCMSResponse<DotContainerDependencies>>(url).pipe(
+        return this.http.get<DotCMSResponse<DotContainerDependencies[]>>(url).pipe(
             map((response) => response.entity),
             catchError((error: HttpErrorResponse) =>
-                this.handleError<DotContainerDependencies>(error)
+                this.handleError<DotContainerDependencies[]>(error)
             )
         );
     }

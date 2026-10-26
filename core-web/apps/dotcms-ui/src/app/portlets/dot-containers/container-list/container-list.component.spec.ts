@@ -47,6 +47,7 @@ import {
 import {
     CONTAINER_SOURCE,
     DotActionBulkResult,
+    DotBulkFailItem,
     DotCMSResponse,
     DotContainer,
     DotContainerDependencies,
@@ -191,6 +192,7 @@ const messages = {
     'message.containers.fieldName.name': 'Name',
     'message.containers.fieldName.status': 'Status',
     'Delete-Container': 'Delete Container',
+    'message.containers.in_use.header': 'Container in use',
     'container-used-templates': 'This Container is used by Templates.',
     Archive: 'Archive',
     Archived: 'Archived',
@@ -400,10 +402,13 @@ describe('ContainerListComponent', () => {
         });
 
         describe('delete container', () => {
-            const dependencies = (templates: DotContainerDependencies['templates']) =>
+            const dependencies = (
+                templates: DotContainerDependencies['templates'],
+                identifier = '123Archived'
+            ) =>
                 ({
-                    inode: 'inode-1',
-                    identifier: '123Archived',
+                    inode: `inode-${identifier}`,
+                    identifier,
                     title: 'Archived container',
                     templates
                 }) as DotContainerDependencies;
@@ -446,12 +451,12 @@ describe('ContainerListComponent', () => {
 
             it('should list the templates and not delete when the container is in use', () => {
                 vi.spyOn(containersService, 'getDependencies').mockReturnValue(
-                    of(dependencies(usedBy))
+                    of([dependencies(usedBy)])
                 );
 
                 clickDelete();
 
-                expect(containersService.getDependencies).toHaveBeenCalledWith('123Archived');
+                expect(containersService.getDependencies).toHaveBeenCalledWith(['123Archived']);
                 expect(alertConfirmService.confirm).not.toHaveBeenCalled();
                 expect(containersService.delete).not.toHaveBeenCalled();
 
@@ -468,9 +473,21 @@ describe('ContainerListComponent', () => {
                 );
             });
 
+            it('should name the dialog after the container being in use, not after a delete', () => {
+                vi.spyOn(containersService, 'getDependencies').mockReturnValue(
+                    of([dependencies(usedBy)])
+                );
+
+                clickDelete();
+
+                const [, config] = (dialogService.open as ReturnType<typeof vi.fn>).mock.calls[0];
+
+                expect(config.data.action).toBe('Container in use');
+            });
+
             it('should ask for confirmation and delete when no template uses the container', () => {
                 vi.spyOn(containersService, 'getDependencies').mockReturnValue(
-                    of(dependencies([]))
+                    of([dependencies([])])
                 );
 
                 clickDelete();
@@ -484,16 +501,24 @@ describe('ContainerListComponent', () => {
                 expect(dialogService.open).not.toHaveBeenCalled();
             });
 
-            it('should not delete anything when a bulk selection has one container in use', () => {
-                vi.spyOn(containersService, 'getDependencies').mockImplementation((id: string) =>
-                    of(id === 'in-use' ? dependencies(usedBy) : dependencies([]))
+            it('should check a bulk selection with one request and delete nothing when one is in use', () => {
+                vi.spyOn(containersService, 'getDependencies').mockReturnValue(
+                    of([dependencies([], 'free'), dependencies(usedBy, 'in-use')])
                 );
 
                 store['deleteContainer'](['free', 'in-use']);
 
+                expect(containersService.getDependencies).toHaveBeenCalledTimes(1);
+                expect(containersService.getDependencies).toHaveBeenCalledWith(['free', 'in-use']);
                 expect(alertConfirmService.confirm).not.toHaveBeenCalled();
                 expect(containersService.delete).not.toHaveBeenCalled();
                 expect(dialogService.open).toHaveBeenCalledTimes(1);
+
+                const [, config] = (dialogService.open as ReturnType<typeof vi.fn>).mock.calls[0];
+
+                expect(config.data.fails.map((fail: DotBulkFailItem) => fail.element)).toEqual([
+                    'in-use'
+                ]);
             });
 
             it('should not delete when the dependencies lookup fails', () => {
@@ -508,7 +533,7 @@ describe('ContainerListComponent', () => {
 
             it('should not notify when the delete request fails', () => {
                 vi.spyOn(containersService, 'getDependencies').mockReturnValue(
-                    of(dependencies([]))
+                    of([dependencies([])])
                 );
                 vi.spyOn(containersService, 'delete').mockReturnValue(of(null));
 

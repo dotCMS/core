@@ -8,8 +8,9 @@ import java.util.List;
  * The Templates that use a Container, as returned by {@code GET /api/v1/containers/dependencies}.
  *
  * <p>The Containers portlet shows this list before deleting a Container. Every value is
- * returned as saved: the client decides how to render it. A drawn Template is listed when its
- * layout references the Container; an advanced Template only when the Container holds content.
+ * returned as saved: the client decides how to render it. A Template is listed when it
+ * references the Container: a drawn one in its layout, an advanced one with a {@code #parseContainer}
+ * call, whether or not the Container holds content yet. Hidden page layouts count too.
  *
  * @param inode      the Container's inode
  * @param identifier the Container's identifier

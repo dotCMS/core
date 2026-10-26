@@ -57,6 +57,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.swagger.v3.oas.annotations.Operation;
@@ -66,17 +67,21 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import io.vavr.control.Try;
 import java.io.IOException;
 import java.io.Serializable;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
@@ -107,6 +112,12 @@ import org.glassfish.jersey.server.JSONP;
 public class ContainerResource implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    /** The most containers {@code GET /dependencies} looks up in one call. */
+    static final int MAX_DEPENDENCY_LOOKUP = 100;
+
+    /** Language.properties key of the message that refuses to delete a container a template uses. */
+    private static final String CONTAINER_IN_USE_KEY = "message.containers.delete.in_use";
 
     private final PaginationUtil paginationUtil;
     private final WebResource    webResource;
@@ -560,25 +571,39 @@ public class ContainerResource implements Serializable {
     }
 
     /**
-     * Refuses to delete a Container that any Template still uses.
+     * Counts the Templates that use each Container, searching them once for all the Containers. The
+     * System Container is never looked up: the Container API refuses to delete it by itself.
      *
-     * @param container the {@link Container} about to be deleted
-     * @throws ConflictException    if one or more Templates use the Container; the response is a 409
+     * @param containers the {@link Container}s about to be deleted
+     * @return the number of Templates that use each Container, by Container identifier
      * @throws DotDataException     if the Templates cannot be read from the data source
      * @throws DotSecurityException if the Templates cannot be listed
      */
-    private void assertNotUsedByTemplates(final Container container)
+    private Map<String, Integer> templatesUsing(final Collection<Container> containers)
             throws DotDataException, DotSecurityException {
 
-        if (Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
-            return;
-        }
+        final List<Container> toCheck = containers.stream()
+                .filter(container -> !Container.SYSTEM_CONTAINER.equals(container.getIdentifier()))
+                .collect(Collectors.toList());
+        return toCheck.isEmpty() ? Map.of() : this.dependenciesHelper.countTemplatesUsing(toCheck);
+    }
 
-        final int templates = this.dependenciesHelper.countTemplatesUsing(container);
+    /**
+     * Refuses to delete a Container that any Template still uses.
+     *
+     * @param container the {@link Container} about to be deleted
+     * @param usage     the number of Templates that use each Container, by identifier, as given by
+     *                  {@link #templatesUsing(Collection)}
+     * @param user      the {@link User} deleting the Container, whose language the message is in
+     * @throws ConflictException if one or more Templates use the Container; the response is a 409
+     */
+    private void assertNotUsedByTemplates(final Container container, final Map<String, Integer> usage,
+                                          final User user) {
+
+        final int templates = usage.getOrDefault(container.getIdentifier(), 0);
         if (templates > 0) {
-            throw new ConflictException(String.format(
-                    "The container is used by %d template(s). Remove it from them before deleting it.",
-                    templates));
+            throw new ConflictException(Try.of(() -> LanguageUtil.get(user, CONTAINER_IN_USE_KEY,
+                    String.valueOf(templates))).getOrElse(CONTAINER_IN_USE_KEY));
         }
     }
 
@@ -1107,22 +1132,25 @@ public class ContainerResource implements Serializable {
     }
 
     /**
-     * Lists the Templates that use a Container, so a client can warn before deleting it.
+     * Lists the Templates that use each of the given Containers, so a client can warn before
+     * deleting them. The Templates are searched once for all the Containers.
      *
-     * <p>The Container must be readable by the requesting user, only the Templates that user can
+     * <p>Each Container must be readable by the requesting user, only the Templates that user can
      * read are reported, and a Site the user cannot read is reported with a {@code null} site name.
      * Front-end roles are not considered because the endpoint requires a back-end user.
      *
-     * <p>A drawn Template is listed when its layout references the Container; an advanced Template
-     * only when the Container holds content.
+     * <p>A Template is listed when it references the Container, whether or not the Container holds
+     * content yet; hidden page layouts and archived Templates count.
      *
      * @param request      the current {@link HttpServletRequest}
      * @param httpResponse the current {@link HttpServletResponse}
-     * @param containerId  the Container's identifier, inode or folder path
-     * @return a 200 {@link Response} whose entity wraps a {@link ContainerDependenciesView} with the
-     * Container's data and the Templates that use it (empty list when none does)
-     * @throws DotDataException     if the Container or the Templates cannot be read from the data source
-     * @throws DotSecurityException if the user cannot read the Container
+     * @param containerIds the Containers' identifiers, inodes or folder paths; repeated values are
+     *                     looked up once, and at most {@link #MAX_DEPENDENCY_LOOKUP} are accepted
+     * @return a 200 {@link Response} whose entity is a list with one {@link ContainerDependenciesView}
+     * per Container, in the order asked: the Container's data and the Templates that use it (an empty
+     * list when none does)
+     * @throws DotDataException     if a Container or the Templates cannot be read from the data source
+     * @throws DotSecurityException if the user cannot read one of the Containers
      */
     @GET
     @Path("/dependencies")
@@ -1130,28 +1158,32 @@ public class ContainerResource implements Serializable {
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(
             operationId = "getContainerDependencies",
-            summary = "Lists the templates that use a container",
-            description = "Returns the container (inode, identifier, title; the working version when looked up " +
-                    "by identifier or folder path) and the templates, readable by the requesting user, that use it. The list is " +
-                    "empty when no template uses the container. Intended to be checked before deleting a container. " +
-                    "Requires a back-end user. A drawn template is listed when its layout references the container; " +
-                    "an advanced template only when the container holds content.",
+            summary = "Lists the templates that use each of the given containers",
+            description = "Returns, for each requested container, its data (inode, identifier, title; the working " +
+                    "version when looked up by identifier or folder path) and the templates, readable by the " +
+                    "requesting user, that use it. Repeat the containerId parameter to ask about several " +
+                    "containers in one call (up to 100); the templates are searched once for all of them. A " +
+                    "container's list is empty when no template uses it. Intended to be checked before deleting " +
+                    "containers. Requires a back-end user. A template uses a container when it references it: a " +
+                    "drawn template in its layout, an advanced template with a #parseContainer call, whether or " +
+                    "not the container holds content. Archived templates and the hidden layouts that pages save " +
+                    "for themselves count too.",
             tags = {"Containers"},
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Container data and the templates that use it",
+                    @ApiResponse(responseCode = "200", description = "One entry per requested container with its data and the templates that use it",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityContainerDependenciesView.class))),
-                    @ApiResponse(responseCode = "400", description = "Bad request - Container ID is required"),
+                                    schema = @Schema(implementation = ResponseEntityContainerDependenciesListView.class))),
+                    @ApiResponse(responseCode = "400", description = "Bad request - A container ID is required, and no more than 100 are accepted"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated or not a back-end user"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks read permission on the container"),
-                    @ApiResponse(responseCode = "404", description = "Container not found"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks read permission on one of the containers"),
+                    @ApiResponse(responseCode = "404", description = "One of the containers was not found"),
                     @ApiResponse(responseCode = "500", description = "Internal server error")
             }
     )
     public final Response getContainerDependencies(@Context final HttpServletRequest request,
                                                    @Context final HttpServletResponse httpResponse,
-                                                   @Parameter(description = "Container identifier, inode or folder path", required = true)
-                                                   @QueryParam("containerId") final String containerId)
+                                                   @Parameter(description = "Container identifier, inode or folder path; repeat the parameter for several containers", required = true)
+                                                   @QueryParam("containerId") final List<String> containerIds)
             throws DotDataException, DotSecurityException {
 
         final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -1161,24 +1193,37 @@ public class ContainerResource implements Serializable {
                 .init();
         final User user = initData.getUser();
 
-        if (!UtilMethods.isSet(containerId)) {
+        final List<String> requested = null == containerIds ? List.of() : containerIds.stream()
+                .filter(UtilMethods::isSet).distinct().collect(Collectors.toList());
+        if (requested.isEmpty()) {
 
             Logger.warn(this, MessageConstants.CONTAINER_ID_IS_REQUIRED);
             throw new IllegalArgumentException(MessageConstants.CONTAINER_ID_IS_REQUIRED);
         }
+        if (requested.size() > MAX_DEPENDENCY_LOOKUP) {
 
-        Logger.debug(this, () -> "Listing the templates that use the container: " + SecurityUtils.sanitizeForLogging(containerId));
-
-        final Host      host      = WebAPILocator.getHostWebAPI().getHost(request);
-        final Container container = this.getContainerWorking(containerId, user, host);
-        if (null == container || UtilMethods.isNotSet(container.getIdentifier())) {
-
-            Logger.warn(this, MessageConstants.CONTAINER_ID_WITH + SecurityUtils.sanitizeForLogging(containerId) + MessageConstants.DOES_NOT_EXIST);
-            throw new DoesNotExistException("Container" + MessageConstants.DOES_NOT_EXIST);
+            Logger.warn(this, "Too many containers requested: " + requested.size());
+            throw new IllegalArgumentException(
+                    "No more than " + MAX_DEPENDENCY_LOOKUP + " containers can be looked up at once");
         }
 
-        return Response.ok(new ResponseEntityView<>(
-                this.dependenciesHelper.dependenciesOf(container, user))).build();
+        Logger.debug(this, () -> "Listing the templates that use the containers: " + SecurityUtils.sanitizeForLogging(String.join(",", requested)));
+
+        final Host host = WebAPILocator.getHostWebAPI().getHost(request);
+        final List<Container> containers = new ArrayList<>();
+        for (final String containerId : requested) {
+
+            final Container container = this.getContainerWorking(containerId, user, host);
+            if (null == container || UtilMethods.isNotSet(container.getIdentifier())) {
+
+                Logger.warn(this, MessageConstants.CONTAINER_ID_WITH + SecurityUtils.sanitizeForLogging(containerId) + MessageConstants.DOES_NOT_EXIST);
+                throw new DoesNotExistException("Container" + MessageConstants.DOES_NOT_EXIST);
+            }
+            containers.add(container);
+        }
+
+        return Response.ok(new ResponseEntityContainerDependenciesListView(
+                this.dependenciesHelper.dependenciesOf(containers, user))).build();
     }
 
     /**
@@ -1511,7 +1556,7 @@ public class ContainerResource implements Serializable {
 
             Logger.debug(this,()->"Calling Delete Container");
 
-            this.assertNotUsedByTemplates(container);
+            this.assertNotUsedByTemplates(container, this.templatesUsing(List.of(container)), user);
 
             if(this.containerAPI.delete(container, user, pageMode.respectAnonPerms)) {
 
@@ -1653,18 +1698,15 @@ public class ContainerResource implements Serializable {
                 "The body must send a collection of container identifier such as: " +
                         "[\"dd60695c-9e0f-4a2e-9fd8-ce2a4ac5c27d\",\"cc59390c-9a0f-4e7a-9fd8-ca7e4ec0c77d\"]");
 
+        // the containers are resolved first so the templates are searched once for all of them
+        final Map<String, Container> toDelete = new LinkedHashMap<>();
         for(final String containerId : containersToDelete){
             try{
                 final Container container = this.getContainerWorking(containerId, user,
                         WebAPILocator.getHostWebAPI().getHost(request));
 
                 if (null != container && InodeUtils.isSet(container.getInode())){
-                    this.assertNotUsedByTemplates(container);
-                    this.containerAPI.delete(container, user, pageMode.respectAnonPerms);
-                    ActivityLogger.logInfo(this.getClass(),
-                            "Delete Container Action",
-                            getInfoMessage(user,MessageConstants.DELETED_TEMPLATE + container.getIdentifier()));
-                    deletedContainersCount++;
+                    toDelete.putIfAbsent(containerId, container);
                 } else {
                     Logger.error(this, MessageConstants.CONTAINER_ID_WITH + SecurityUtils.sanitizeForLogging(containerId) + MessageConstants.DOES_NOT_EXIST);
                     failedToDelete.add(new FailedResultView(SecurityUtils.sanitizeForLogging(containerId),"Container does not exist"));
@@ -1672,6 +1714,33 @@ public class ContainerResource implements Serializable {
             } catch(Exception e){
                 Logger.debug(this,e.getMessage(),e);
                 failedToDelete.add(new FailedResultView(SecurityUtils.sanitizeForLogging(containerId),e.getMessage()));
+            }
+        }
+
+        Map<String, Integer> usage = Map.of();
+        String usageFailure = null;
+        try {
+            usage = this.templatesUsing(toDelete.values());
+        } catch (Exception e) {
+            Logger.debug(this, e.getMessage(), e);
+            usageFailure = e.getMessage();
+        }
+
+        for (final Map.Entry<String, Container> entry : toDelete.entrySet()) {
+            final Container container = entry.getValue();
+            try {
+                if (null != usageFailure) {
+                    throw new DotDataException(usageFailure);
+                }
+                this.assertNotUsedByTemplates(container, usage, user);
+                this.containerAPI.delete(container, user, pageMode.respectAnonPerms);
+                ActivityLogger.logInfo(this.getClass(),
+                        "Delete Container Action",
+                        getInfoMessage(user,MessageConstants.DELETED_TEMPLATE + container.getIdentifier()));
+                deletedContainersCount++;
+            } catch(Exception e){
+                Logger.debug(this,e.getMessage(),e);
+                failedToDelete.add(new FailedResultView(SecurityUtils.sanitizeForLogging(entry.getKey()),e.getMessage()));
             }
         }
 

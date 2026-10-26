@@ -24,6 +24,7 @@ import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.Theme;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -62,8 +63,8 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
-import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
@@ -73,6 +74,7 @@ import org.apache.commons.io.IOUtils;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -1205,56 +1207,115 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	}
 
 	/**
-	 * Number of Templates read per request when looking for the Templates that use a Container.
-	 * {@link #findTemplates} returns about one page of this size per call, so the Templates are
-	 * read page by page.
+	 * Number of Templates read from the database per query when looking for the Templates that use
+	 * a Container.
 	 */
-	private static final int CONTAINER_USAGE_PAGE_SIZE = 100;
+	private static final int CONTAINER_USAGE_PAGE_SIZE = 500;
 
 	@Override
 	@CloseDBIfOpened
-	public List<Template> findTemplatesUsingContainer(final String containerIdentifier, final User user)
-			throws DotDataException, DotSecurityException {
+	public Map<String, List<Template>> findTemplatesUsingContainers(final Collection<String> containerIdentifiers,
+			final User user) throws DotDataException, DotSecurityException {
 
-		return this.findTemplatesUsingContainer(containerIdentifier, user, CONTAINER_USAGE_PAGE_SIZE);
+		return this.findTemplatesUsingContainers(containerIdentifiers, user, CONTAINER_USAGE_PAGE_SIZE);
 	}
 
 	/**
-	 * Same as {@link #findTemplatesUsingContainer(String, User)} with a configurable page size,
+	 * Same as {@link #findTemplatesUsingContainers(Collection, User)} with a configurable page size,
 	 * so a test can exercise the paging with a few Templates.
+	 *
+	 * @param containerIdentifiers the identifiers of the {@link Container}s; blank values are ignored
+	 * @param user                 the {@link User} whose read permission selects the Templates returned
+	 * @param pageSize             how many Templates are read from the database per query
+	 * @return the Templates that use each Container, keyed by identifier in the order given
+	 * @throws DotDataException     if the Templates or their Containers cannot be read from the data source
+	 * @throws DotSecurityException if the Templates cannot be filtered by permission
 	 */
 	@VisibleForTesting
-	List<Template> findTemplatesUsingContainer(final String containerIdentifier, final User user,
-			final int pageSize) throws DotDataException, DotSecurityException {
+	@CloseDBIfOpened
+	Map<String, List<Template>> findTemplatesUsingContainers(final Collection<String> containerIdentifiers,
+			final User user, final int pageSize) throws DotDataException, DotSecurityException {
 
-		if (!UtilMethods.isSet(containerIdentifier)) {
-			return Collections.emptyList();
+		if (pageSize < 1) {
+			throw new IllegalArgumentException("The page size must be at least 1: " + pageSize);
 		}
 
-		// findTemplates serves the first page again for an offset past the end, so the loop also
-		// stops as soon as a page adds no Template it has not seen
-		final Map<String, Template> readable = new LinkedHashMap<>();
-		List<Template> page;
-		boolean progressed;
+		final Map<String, List<Template>> usages = new LinkedHashMap<>();
+		if (null != containerIdentifiers) {
+			containerIdentifiers.stream().filter(UtilMethods::isSet)
+					.forEach(identifier -> usages.putIfAbsent(identifier, new ArrayList<>()));
+		}
+		if (usages.isEmpty()) {
+			return usages;
+		}
+
+		// a layout can name a file container by path, so each distinct reference is resolved once
+		// to the identifier it stands for
+		final Map<String, String> resolvedReferences = new HashMap<>();
+		final User systemUser = APILocator.systemUser();
 		int offset = 0;
+		List<Template> page;
 		do {
-			page = this.findTemplates(user, true, null, null, null, null, null, offset, pageSize, null);
-			progressed = false;
+			page = this.templateFactory.findWorkingTemplatesPage(offset, pageSize);
 			for (final Template template : page) {
-				progressed |= null == readable.putIfAbsent(template.getInode(), template);
+				for (final String reference : this.referencedContainers(template)) {
+					final String identifier = this.resolveContainerReference(reference, systemUser, resolvedReferences);
+					final List<Template> users = usages.get(identifier);
+					if (null != users && !users.contains(template)) {
+						users.add(template);
+					}
+				}
 			}
 			offset += pageSize;
-		} while (progressed && page.size() >= pageSize);
+		} while (page.size() >= pageSize);
 
-		final User systemUser = APILocator.systemUser();
-		final List<Template> used = new ArrayList<>();
-		for (final Template template : readable.values()) {
-			if (this.getContainersInTemplate(template, systemUser, false).stream()
-					.anyMatch(container -> containerIdentifier.equals(container.getIdentifier()))) {
-				used.add(template);
+		if (null != user && !UserAPI.SYSTEM_USER_ID.equals(user.getUserId())) {
+			for (final Map.Entry<String, List<Template>> usage : usages.entrySet()) {
+				usage.setValue(this.permissionAPI.filterCollection(usage.getValue(),
+						PermissionAPI.PERMISSION_READ, user, false));
 			}
 		}
-		return used;
+		return usages;
+	}
+
+	/**
+	 * Lists the Containers a Template references, by identifier or path, without checking that the
+	 * Containers exist or hold content: a drawn Template names them in its layout, an advanced one in
+	 * its {@code #parseContainer} calls.
+	 */
+	private Set<String> referencedContainers(final Template template) {
+
+		final Set<String> references = new LinkedHashSet<>();
+		if (template.isDrawed() && UtilMethods.isSet(template.getDrawedBody())) {
+			final TemplateLayout layout = DotTemplateTool.getTemplateLayout(template.getDrawedBody());
+			if (null != layout) {
+				references.addAll(this.getContainersId(layout));
+			}
+		} else {
+			this.getContainersUUIDFromDrawTemplateBody(template.getBody())
+					.forEach(containerUUID -> references.add(containerUUID.getIdentifier()));
+		}
+		return references;
+	}
+
+	/**
+	 * Gives the identifier of the Container that a reference (identifier or path) stands for, or the
+	 * reference itself when no Container can be found, remembering the answer for the rest of the scan.
+	 */
+	private String resolveContainerReference(final String reference, final User systemUser,
+			final Map<String, String> resolvedReferences) throws DotDataException, DotSecurityException {
+
+		if (!UtilMethods.isSet(reference)) {
+			return reference;
+		}
+		final String known = resolvedReferences.get(reference);
+		if (null != known) {
+			return known;
+		}
+		final String identifier = this.containerAPI.findContainer(reference, systemUser, false, false)
+				.map(Container::getIdentifier).orElse(reference);
+		resolvedReferences.put(reference, identifier);
+		return identifier;
 	}
 
 	@Override

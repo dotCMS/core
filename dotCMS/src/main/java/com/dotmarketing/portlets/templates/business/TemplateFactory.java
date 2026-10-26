@@ -107,6 +107,19 @@ public interface TemplateFactory {
 	List<Template> findTemplatesByContainerInode(final String containerInode) throws DotDataException;
 
 	/**
+	 * Reads one page of the working version of every Template stored in the database, in a stable
+	 * order. Unlike {@link #findTemplates} it applies no permission check and does not skip the
+	 * Templates that are archived or hidden from the menu, such as the layouts a page saves for
+	 * itself. File-based Templates are not in the database and are not returned.
+	 *
+	 * @param offset the number of Templates to skip
+	 * @param limit  the maximum number of Templates to return
+	 * @return the Templates in the page; fewer than {@code limit} (or none) on the last page
+	 * @throws DotDataException if the Templates cannot be read from the data source
+	 */
+	List<Template> findWorkingTemplatesPage(int offset, int limit) throws DotDataException;
+
+	/**
 	 * Get a template based on a folder (non-db)
 	 * A folder could be considered as a template if:
 	 * 1) Is under /application/templates

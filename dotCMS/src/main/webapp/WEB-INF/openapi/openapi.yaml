@@ -6448,38 +6448,47 @@ paths:
       - Containers
   /v1/containers/dependencies:
     get:
-      description: "Returns the container (inode, identifier, title; the working version\
-        \ when looked up by identifier or folder path) and the templates, readable\
-        \ by the requesting user, that use it. The list is empty when no template\
-        \ uses the container. Intended to be checked before deleting a container.\
-        \ Requires a back-end user. A drawn template is listed when its layout references\
-        \ the container; an advanced template only when the container holds content."
+      description: "Returns, for each requested container, its data (inode, identifier,\
+        \ title; the working version when looked up by identifier or folder path)\
+        \ and the templates, readable by the requesting user, that use it. Repeat\
+        \ the containerId parameter to ask about several containers in one call (up\
+        \ to 100); the templates are searched once for all of them. A container's\
+        \ list is empty when no template uses it. Intended to be checked before deleting\
+        \ containers. Requires a back-end user. A template uses a container when it\
+        \ references it: a drawn template in its layout, an advanced template with\
+        \ a #parseContainer call, whether or not the container holds content. Archived\
+        \ templates and the hidden layouts that pages save for themselves count too."
       operationId: getContainerDependencies
       parameters:
-      - description: "Container identifier, inode or folder path"
+      - description: "Container identifier, inode or folder path; repeat the parameter\
+          \ for several containers"
         in: query
         name: containerId
         required: true
         schema:
-          type: string
+          type: array
+          items:
+            type: string
       responses:
         "200":
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityContainerDependenciesView"
-          description: Container data and the templates that use it
+                $ref: "#/components/schemas/ResponseEntityContainerDependenciesListView"
+          description: One entry per requested container with its data and the templates
+            that use it
         "400":
-          description: Bad request - Container ID is required
+          description: "Bad request - A container ID is required, and no more than\
+            \ 100 are accepted"
         "401":
           description: Unauthorized - User not authenticated or not a back-end user
         "403":
-          description: Forbidden - User lacks read permission on the container
+          description: Forbidden - User lacks read permission on one of the containers
         "404":
-          description: Container not found
+          description: One of the containers was not found
         "500":
           description: Internal server error
-      summary: Lists the templates that use a container
+      summary: Lists the templates that use each of the given containers
       tags:
       - Containers
   /v1/containers/form/{formId}:
@@ -34845,11 +34854,13 @@ components:
           type: array
           items:
             type: string
-    ResponseEntityContainerDependenciesView:
+    ResponseEntityContainerDependenciesListView:
       type: object
       properties:
         entity:
-          $ref: "#/components/schemas/ContainerDependenciesView"
+          type: array
+          items:
+            $ref: "#/components/schemas/ContainerDependenciesView"
         errors:
           type: array
           items:

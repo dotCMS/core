@@ -5,9 +5,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -31,9 +33,12 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.PageMode;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
@@ -62,6 +67,7 @@ class ContainerResourceDeleteTest {
     private ContainerResource resource;
     private MockedStatic<WebAPILocator> webAPILocator;
     private MockedStatic<ActivityLogger> activityLogger;
+    private MockedStatic<LanguageUtil> languageUtil;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -83,6 +89,10 @@ class ContainerResourceDeleteTest {
         webAPILocator.when(WebAPILocator::getHostWebAPI).thenReturn(hostWebAPI);
         // the activity log reads its settings from the database, which a unit test does not have
         activityLogger = mockStatic(ActivityLogger.class);
+        // the message comes from Language.properties, which needs the company and the database
+        languageUtil = mockStatic(LanguageUtil.class);
+        languageUtil.when(() -> LanguageUtil.get(eq(user), eq("message.containers.delete.in_use"), any()))
+                .thenAnswer(invocation -> "in use by " + invocation.getArgument(2) + " template(s)");
         // an AJAX request makes PageMode.get return its default mode without touching the session
         when(request.getHeader("X-Requested-With")).thenReturn("XMLHttpRequest");
 
@@ -90,8 +100,11 @@ class ContainerResourceDeleteTest {
         usedContainer = container(USED_INODE, "used-id");
         resolves(freeContainer);
         resolves(usedContainer);
-        when(helper.countTemplatesUsing(freeContainer)).thenReturn(0);
-        when(helper.countTemplatesUsing(usedContainer)).thenReturn(2);
+        when(helper.countTemplatesUsing(any())).thenAnswer(invocation -> {
+            final Collection<Container> asked = invocation.getArgument(0);
+            return asked.stream().collect(Collectors.toMap(Container::getIdentifier,
+                    container -> container.equals(usedContainer) ? 2 : 0));
+        });
         when(containerAPI.delete(any(Container.class), any(User.class), anyBoolean())).thenReturn(true);
 
         resource = new ContainerResource(webResource, mock(PaginationUtil.class), mock(FormAPI.class),
@@ -103,6 +116,7 @@ class ContainerResourceDeleteTest {
     void tearDown() {
         webAPILocator.close();
         activityLogger.close();
+        languageUtil.close();
     }
 
     /**
@@ -119,15 +133,15 @@ class ContainerResourceDeleteTest {
     }
 
     /**
-     * Given a container that templates use, when it is deleted, then a conflict is raised and
-     * nothing is deleted.
+     * Given a container that templates use, when it is deleted, then a conflict is raised with the
+     * message of {@code Language.properties} and nothing is deleted.
      */
     @Test
     void refusesToDeleteAContainerATemplateUses() throws Exception {
         final ConflictException conflict = assertThrows(ConflictException.class,
                 () -> resource.delete(request, response, USED_INODE));
 
-        assertTrue(conflict.getMessage().contains("2 template(s)"));
+        assertEquals("in use by 2 template(s)", conflict.getMessage());
         verify(containerAPI, never()).delete(any(Container.class), any(User.class), anyBoolean());
     }
 
@@ -143,9 +157,20 @@ class ContainerResourceDeleteTest {
         assertEquals(Long.valueOf(1L), view.getSuccessCount());
         assertEquals(1, view.getFails().size());
         assertEquals(USED_INODE, view.getFails().get(0).getElement());
-        assertTrue(view.getFails().get(0).getErrorMessage().contains("2 template(s)"));
+        assertEquals("in use by 2 template(s)", view.getFails().get(0).getErrorMessage());
         verify(containerAPI).delete(freeContainer, user, PageMode.get(request).respectAnonPerms);
         verify(containerAPI, never()).delete(usedContainer, user, PageMode.get(request).respectAnonPerms);
+    }
+
+    /**
+     * Given a bulk request with several containers, when it is deleted, then the templates are
+     * searched once for all of them, not once per container.
+     */
+    @Test
+    void bulkDeleteSearchesTheTemplatesOnce() throws Exception {
+        resource.bulkDelete(request, response, List.of(FREE_INODE, USED_INODE));
+
+        verify(helper, times(1)).countTemplatesUsing(any());
     }
 
     /**
@@ -159,7 +184,7 @@ class ContainerResourceDeleteTest {
 
         resource.delete(request, response, "system-inode-00000");
 
-        verify(helper, never()).countTemplatesUsing(system);
+        verify(helper, never()).countTemplatesUsing(any());
     }
 
     private void resolves(final Container container) throws Exception {

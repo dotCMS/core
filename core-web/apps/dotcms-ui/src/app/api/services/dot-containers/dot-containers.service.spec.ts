@@ -185,22 +185,31 @@ describe('DotContainersService', () => {
         };
 
         let result;
-        service.getDependencies('testId01').subscribe((deps) => (result = deps));
+        service.getDependencies(['testId01']).subscribe((deps) => (result = deps));
 
         const req = httpMock.expectOne(`${CONTAINER_API_URL}dependencies?containerId=testId01`);
         expect(req.request.method).toBe('GET');
-        req.flush({ entity: dependencies });
+        req.flush({ entity: [dependencies] });
 
-        expect(result).toEqual(dependencies);
+        expect(result).toEqual([dependencies]);
     });
-    it('should encode the container id when getting its dependencies', () => {
-        service.getDependencies('/application/containers/a b/').subscribe();
+    it('should ask for several containers in one request', () => {
+        service.getDependencies(['first', 'second', 'third']).subscribe();
+
+        const req = httpMock.expectOne(
+            `${CONTAINER_API_URL}dependencies?containerId=first&containerId=second&containerId=third`
+        );
+        expect(req.request.method).toBe('GET');
+        req.flush({ entity: [] });
+    });
+    it('should encode the container ids when getting their dependencies', () => {
+        service.getDependencies(['/application/containers/a b/']).subscribe();
 
         const req = httpMock.expectOne(
             `${CONTAINER_API_URL}dependencies?containerId=${encodeURIComponent('/application/containers/a b/')}`
         );
         expect(req.request.method).toBe('GET');
-        req.flush({ entity: {} });
+        req.flush({ entity: [] });
     });
     it('should delete a container', () => {
         service.delete(['testId01']).subscribe();
