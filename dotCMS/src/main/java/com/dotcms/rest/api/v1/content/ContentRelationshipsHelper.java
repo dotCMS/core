@@ -198,8 +198,9 @@ public class ContentRelationshipsHelper implements Serializable {
     }
 
     /**
-     * Returns the related contents the user can read. When their permissions cannot be checked,
-     * none of them is returned.
+     * Returns the related contents the user can read. When the permission check fails with a
+     * {@link DotSecurityException}, none of them is returned; an error reading the data source is
+     * thrown to the caller.
      * <p>
      * Related contents are checked one by one with
      * {@link PermissionAPI#filterCollection(List, int, boolean, User)} rather than the batch

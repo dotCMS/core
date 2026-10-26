@@ -8132,6 +8132,11 @@ paths:
           description: "Content with relationships retrieved successfully. Related\
             \ content the caller cannot read is not included, and an identifier or\
             \ inode that matches no content returns an empty array"
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - the content or its related content could not
+            be loaded
         "401":
           content:
             application/json: {}
