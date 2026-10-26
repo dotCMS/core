@@ -20,7 +20,8 @@ import org.mockito.ArgumentCaptor;
 
 /**
  * Checks the {@code Strict-Transport-Security} header written by {@link DotHttpHeaderSecurityFilter}
- * for the default, a configured value and an explicit {@code web.xml} init-param.
+ * for the default, a configured value, unusable values and an explicit {@code web.xml}
+ * init-param.
  */
 public class DotHttpHeaderSecurityFilterTest extends UnitTestBase {
 
@@ -67,6 +68,42 @@ public class DotHttpHeaderSecurityFilterTest extends UnitTestBase {
 
         assertEquals("max-age=120",
                 hstsHeaderFor(Collections.singletonMap("hstsMaxAgeSeconds", "120")));
+    }
+
+    /**
+     * Method to test: {@link DotHttpHeaderSecurityFilter#init}
+     * Given scenario: the property is not a number
+     * Expected result: init does not throw and the header carries the one year default
+     */
+    @Test
+    public void testInit_whenPropertyNotANumber_shouldFallBackToDefault() throws Exception {
+        Config.setProperty(DotHttpHeaderSecurityFilter.HSTS_MAX_AGE_SECONDS, "one-year");
+
+        assertEquals("max-age=31536000", hstsHeaderFor(Collections.emptyMap()));
+    }
+
+    /**
+     * Method to test: {@link DotHttpHeaderSecurityFilter#init}
+     * Given scenario: the property is negative
+     * Expected result: the header carries the one year default rather than max-age=0
+     */
+    @Test
+    public void testInit_whenPropertyNegative_shouldFallBackToDefault() throws Exception {
+        Config.setProperty(DotHttpHeaderSecurityFilter.HSTS_MAX_AGE_SECONDS, -1);
+
+        assertEquals("max-age=31536000", hstsHeaderFor(Collections.emptyMap()));
+    }
+
+    /**
+     * Method to test: {@link DotHttpHeaderSecurityFilter#init}
+     * Given scenario: the property is 0, which an operator may set to clear HSTS in browsers
+     * Expected result: the value is kept and the header carries max-age=0
+     */
+    @Test
+    public void testInit_whenPropertyZero_shouldSendZero() throws Exception {
+        Config.setProperty(DotHttpHeaderSecurityFilter.HSTS_MAX_AGE_SECONDS, 0);
+
+        assertEquals("max-age=0", hstsHeaderFor(Collections.emptyMap()));
     }
 
     /**
