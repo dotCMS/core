@@ -122,6 +122,11 @@ public class RuleWatcher extends TestWatcher {
 
     //TODO: these should be moved to different classes they could be handled as their own Rules
 
+    /**
+     * After a test, waits for the reindex queue to drain so pending index work does not leak into
+     * the next test. If it does not drain within {@code DEFAULT_INDEX_QUEUE_WAIT}, the remaining
+     * reindex records are deleted.
+     */
     private static void indexerTrackerAfter() {
         if (Config.getBooleanProperty(USE_TEST_INDEXER_TRACKER, false)) {
             Logger.info(MainBaseSuite.class, "Checking indexer status...");
@@ -134,7 +139,6 @@ public class RuleWatcher extends TestWatcher {
                         Logger.info(MainBaseSuite.class, "Indexer was not running, unpausing now");
                         ReindexThread.unpause();
                     }
-                    TestDataUtils.waitForEmptyQueue();
                     boolean queueEmpty = TestDataUtils.waitForEmptyQueue();
                     Logger.info(MainBaseSuite.class, "Indexer Complete=" + queueEmpty);
                     if (!queueEmpty) {
