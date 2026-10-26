@@ -1,21 +1,29 @@
 package com.dotcms.rest.api.v1.authentication;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.api.system.user.UserServiceFactory;
 import com.dotcms.company.CompanyAPI;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.repackage.net.sf.hibernate.Session;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.util.EmailUtils;
 import com.dotmarketing.util.MailerWrapper;
 import com.dotmarketing.util.MailerWrapperFactoryImpl;
@@ -27,6 +35,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
+import java.util.concurrent.Callable;
 import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
@@ -221,6 +230,133 @@ public class ForgotPasswordResourceIntegrationTest {
         assertEquals(1, SENT.size());
         assertEquals(user.getEmailAddress(), SENT.get(0).to);
         assertNotNull(APILocator.getUserAPI().loadUserById(user.getUserId()).getIcqId());
+    }
+
+    /** A one-thread pool built the same way as the server's reset pool, so every task shares its thread. */
+    private static DotSubmitter singleThreadPool(final String name) {
+        return DotConcurrentFactory.getInstance().getSubmitter(name,
+                new DotConcurrentFactory.SubmitterConfigBuilder()
+                        .poolSize(1).maxPoolSize(1).queueCapacity(10).build());
+    }
+
+    /** Runs the callable on the pool's thread after everything queued before it, and returns its result. */
+    private static <T> T onPool(final DotSubmitter pool, final Callable<T> callable) throws Exception {
+        return pool.submit(callable).get(30, TimeUnit.SECONDS);
+    }
+
+    private static String column(final String column, final String userId) {
+        return new DotConnect().setSQL("select " + column + " from user_ where userid = ?")
+                .addParam(userId).getString(column);
+    }
+
+    /**
+     * Method to test: {@link ForgotPasswordResource#forgotPassword}
+     * Given Scenario: the reset for an existing account runs on a real pool thread, which starts with
+     *                 no connection of its own.
+     * ExpectedResult: the reset token is committed (read back through the test thread's own
+     *                 connection), and afterwards the pool thread holds no database connection and
+     *                 no Hibernate session.
+     */
+    @Test
+    public void resetOnPoolThread_commitsToken_andReleasesConnectionAndSession() throws Exception {
+
+        final User user = newUser();
+        final String poolName = "forgotPasswordTestPool-" + UUID.randomUUID();
+        final DotSubmitter pool = singleThreadPool(poolName);
+        try {
+
+            final ForgotPasswordResource resource = new ForgotPasswordResource(UserLocalManagerFactory.getManager(),
+                    UserServiceFactory.getInstance().getUserService(), loginBy(Company.AUTH_TYPE_EA),
+                    ResponseUtil.INSTANCE, pool);
+
+            assertEquals(Response.Status.OK.getStatusCode(),
+                    requestReset(resource, user.getEmailAddress()).getStatus());
+
+            assertNothingHeldOnPoolThread(pool);
+
+            final String token = column("icqid", user.getUserId());
+            assertNotNull(token);
+            assertTrue(token.matches(ResetPasswordTokenUtil.VALIDATE_TOKEN_REGEX));
+            assertEquals(1, SENT.size());
+        } finally {
+            DotConcurrentFactory.getInstance().shutdown(poolName);
+        }
+    }
+
+    /**
+     * Method to test: {@link ForgotPasswordResource#forgotPassword}
+     * Given Scenario: the reset for an address with no account runs on a real pool thread, so the
+     *                 lookup fails after it has opened a connection.
+     * ExpectedResult: afterwards the pool thread holds no database connection and no Hibernate session.
+     */
+    @Test
+    public void unknownAccountResetOnPoolThread_releasesConnectionAndSession() throws Exception {
+
+        final String poolName = "forgotPasswordTestPool-" + UUID.randomUUID();
+        final DotSubmitter pool = singleThreadPool(poolName);
+        try {
+
+            final ForgotPasswordResource resource = new ForgotPasswordResource(UserLocalManagerFactory.getManager(),
+                    UserServiceFactory.getInstance().getUserService(), loginBy(Company.AUTH_TYPE_EA),
+                    ResponseUtil.INSTANCE, pool);
+
+            assertEquals(Response.Status.OK.getStatusCode(),
+                    requestReset(resource, "nobody-" + UUID.randomUUID() + "@example.com").getStatus());
+
+            assertNothingHeldOnPoolThread(pool);
+            assertTrue(SENT.isEmpty());
+        } finally {
+            DotConcurrentFactory.getInstance().shutdown(poolName);
+        }
+    }
+
+    /** Checks, from a task queued after everything else, that the pool's thread holds no connection or open session. */
+    private static void assertNothingHeldOnPoolThread(final DotSubmitter pool) throws Exception {
+        final boolean[] held = onPool(pool, () -> new boolean[] {
+                DbConnectionFactory.connectionExists(),
+                // a closed session stays in the holder; the next getSession() replaces it
+                HibernateUtil.getSessionIfOpened().map(Session::isOpen).orElse(false)});
+        assertFalse("connection left open on the pool thread", held[0]);
+        assertFalse("Hibernate session left open on the pool thread", held[1]);
+    }
+
+    /**
+     * Method to test: {@link ForgotPasswordResource#forgotPassword}
+     * Given Scenario: a reset runs on a pool thread, the password is then changed elsewhere, and a
+     *                 second reset for the same account runs on the same pool thread.
+     * ExpectedResult: the second reset keeps the new password: it does not write back the account
+     *                 as it was loaded by the first reset.
+     */
+    @Test
+    public void secondResetOnSamePoolThread_keepsPasswordChangedInBetween() throws Exception {
+
+        final User user = newUser();
+        final String poolName = "forgotPasswordTestPool-" + UUID.randomUUID();
+        final DotSubmitter pool = singleThreadPool(poolName);
+        try {
+
+            final ForgotPasswordResource resource = new ForgotPasswordResource(UserLocalManagerFactory.getManager(),
+                    UserServiceFactory.getInstance().getUserService(), loginBy(Company.AUTH_TYPE_EA),
+                    ResponseUtil.INSTANCE, pool);
+
+            requestReset(resource, user.getEmailAddress());
+            onPool(pool, () -> null);
+            final String firstToken = column("icqid", user.getUserId());
+            assertNotNull(firstToken);
+
+            final String changedPassword = "changed-" + UUID.randomUUID();
+            LocalTransaction.wrap(() -> new DotConnect().executeUpdate(
+                    "update user_ set password_ = ? where userid = ?", changedPassword, user.getUserId()));
+
+            requestReset(resource, user.getEmailAddress());
+            onPool(pool, () -> null);
+
+            assertEquals(changedPassword, column("password_", user.getUserId()));
+            assertFalse(firstToken.equals(column("icqid", user.getUserId())));
+            assertEquals(2, SENT.size());
+        } finally {
+            DotConcurrentFactory.getInstance().shutdown(poolName);
+        }
     }
 
     /**

@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.authentication;
 
 import static com.dotmarketing.util.Constants.CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -10,6 +11,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -17,6 +19,8 @@ import static org.mockito.Mockito.when;
 import com.dotcms.UnitTestBase;
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.company.CompanyAPI;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.dotcms.concurrent.DotSubmitter;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
@@ -35,8 +39,11 @@ import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
-import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import javax.servlet.ServletContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -433,22 +440,113 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
     }
 
     /**
-     * Given the reset pool cannot take more work,
+     * Given the reset pool is the server's kind of bounded submitter and it is full,
      * when a reset is requested,
-     * then the response is 429, the same for any submitted value.
+     * then the response is the same 200 as for an accepted request, nothing is thrown, the
+     * account work is not run, and the value is not left marked as pending.
      */
     @Test
-    public void resetPool_full_returnsTooManyRequests() throws Exception {
+    public void resetPool_full_answersTheSame200() throws Exception {
 
-        final Executor full = command -> {
-            throw new RejectedExecutionException("queue full");
-        };
+        final String poolName = "forgotPasswordTestPool-" + UUID.randomUUID();
+        final DotSubmitter pool = DotConcurrentFactory.getInstance().getSubmitter(poolName,
+                new DotConcurrentFactory.SubmitterConfigBuilder()
+                        .poolSize(1).maxPoolSize(1).queueCapacity(1)
+                        .rejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy())
+                        .build());
+        final CountDownLatch release = new CountDownLatch(1);
+        try {
 
-        final Response response = requestReset(Company.AUTH_TYPE_EA,
-                new ForgotPasswordForm.Builder().userId("owner@example.com").build(),
-                mock(UserLocalManager.class), mock(UserService.class), full);
+            // occupy the only thread and the only queue slot
+            pool.execute(() -> awaitQuietly(release));
+            pool.execute(() -> awaitQuietly(release));
 
-        assertEquals(429, response.getStatus());
+            final UserService userService = mock(UserService.class);
+            final String email = "owner-" + UUID.randomUUID() + "@example.com";
+            final Response response = requestReset(Company.AUTH_TYPE_EA,
+                    new ForgotPasswordForm.Builder().userId(email).build(),
+                    mock(UserLocalManager.class), userService, pool);
+
+            assertEquals(Status.OK.getStatusCode(), response.getStatus());
+            assertEquals(email, entityOf(response));
+            assertTrue(((ResponseEntityView<?>) response.getEntity()).getErrors().isEmpty());
+            verifyNoInteractions(userService);
+            assertFalse(ForgotPasswordResource.isResetPending(
+                    ForgotPasswordResource.pendingKey(RestUtilTest.DEFAULT_COMPANY, email, false)));
+        } finally {
+
+            release.countDown();
+            DotConcurrentFactory.getInstance().shutdown(poolName);
+        }
+    }
+
+    /**
+     * Given a reset is already queued for an address,
+     * when another reset is requested for the same address (in a different case),
+     * then both requests get the same 200 but only one reset is queued, and once it has run the
+     * address can be queued again.
+     */
+    @Test
+    public void duplicatePendingValue_isQueuedOnce() throws Exception {
+
+        final UserService userService = mock(UserService.class);
+        final String email = "owner-" + UUID.randomUUID() + "@example.com";
+        final List<Runnable> queued = new ArrayList<>();
+
+        final Response first = requestReset(Company.AUTH_TYPE_EA,
+                new ForgotPasswordForm.Builder().userId(email).build(),
+                mock(UserLocalManager.class), userService, queued::add);
+        final Response second = requestReset(Company.AUTH_TYPE_EA,
+                new ForgotPasswordForm.Builder().userId(email.toUpperCase()).build(),
+                mock(UserLocalManager.class), userService, queued::add);
+
+        assertEquals(Status.OK.getStatusCode(), first.getStatus());
+        assertEquals(Status.OK.getStatusCode(), second.getStatus());
+        assertEquals(email.toUpperCase(), entityOf(second));
+        assertEquals(1, queued.size());
+
+        queued.get(0).run();
+        requestReset(Company.AUTH_TYPE_EA, new ForgotPasswordForm.Builder().userId(email).build(),
+                mock(UserLocalManager.class), userService, queued::add);
+        assertEquals(2, queued.size());
+        queued.get(1).run();
+
+        verify(userService, times(2)).sendResetPassword(any(), eq(email), any(Locale.class));
+    }
+
+    /**
+     * Given the queued reset fails, either with a known reset error or an unexpected one,
+     * when it has run,
+     * then the value is no longer marked as pending.
+     */
+    @Test
+    public void queuedReset_alwaysReleasesItsPendingEntry() throws Exception {
+
+        for (final Exception failure : List.of(new NoSuchUserException(), new UserEmailAddressException(),
+                new IllegalStateException("mail relay down"))) {
+
+            final UserService userService = mock(UserService.class);
+            final String email = "owner-" + UUID.randomUUID() + "@example.com";
+            doThrow(failure).when(userService).sendResetPassword(any(), eq(email), any(Locale.class));
+            final String key = ForgotPasswordResource.pendingKey(RestUtilTest.DEFAULT_COMPANY, email, false);
+            final List<Runnable> queued = new ArrayList<>();
+
+            requestReset(Company.AUTH_TYPE_EA, new ForgotPasswordForm.Builder().userId(email).build(),
+                    mock(UserLocalManager.class), userService, queued::add);
+            assertTrue(ForgotPasswordResource.isResetPending(key));
+
+            queued.get(0).run();
+
+            assertFalse(failure.getClass().getSimpleName(), ForgotPasswordResource.isResetPending(key));
+        }
+    }
+
+    private static void awaitQuietly(final CountDownLatch latch) {
+        try {
+            latch.await(30, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 
     /**

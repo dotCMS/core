@@ -11747,10 +11747,6 @@ paths:
             application/json: {}
           description: "Bad request - with login by email address, the submitted value\
             \ is not a valid email address; or user not found (if configured to show)"
-        "429":
-          content:
-            application/json: {}
-          description: Too many reset requests are waiting to be processed
         "500":
           content:
             application/json: {}
