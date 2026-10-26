@@ -520,6 +520,16 @@
                                 </volumes>
                             </run>
                         </database>
+                        <opensearch>
+                            <run>
+                                <!-- Keep the throwaway index data in memory. The parent's volume targets
+                                     /usr/share/elasticsearch/data, which this image never uses, so it
+                                     doesn't collide with this mount. OpenSearch runs as uid 1000. -->
+                                <tmpfs>
+                                    <mount>/usr/share/opensearch/data:rw,uid=1000,gid=1000</mount>
+                                </tmpfs>
+                            </run>
+                        </opensearch>
                     </imagesMap>
                 </configuration>
                 <executions>
