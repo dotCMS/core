@@ -3,6 +3,7 @@ package com.dotcms.rest;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -28,6 +29,8 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.rest.api.v1.temp.TempFileAPITest;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
 import com.dotmarketing.portlets.folders.model.Folder;
@@ -440,6 +443,34 @@ public class MapToContentletPopulatorTest extends IntegrationTestBase {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    /**
+     * Scenario: a file asset is created from inline content in the request map, naming the file
+     * with a listed extension spelled in upper case.
+     * Expectation: the name is refused the same way its lower-case spelling is; no content is
+     * populated.
+     */
+    @Test
+    public void Test_Inline_Binary_Content_With_Listed_Extension_Any_Case_Is_Rejected()
+            throws DotDataException, DotSecurityException {
+        final ContentType fileAssetType = contentTypeAPI.find("FileAsset");
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(TempFileAPITest.mockHttpServletRequest());
+        try {
+            for (final String name : new String[] {"shell.jsp", "shell.JSP"}) {
+                final Contentlet contentlet = new Contentlet();
+                contentlet.setContentTypeId(fileAssetType.id());
+                final Map<String, Object> map = new HashMap<>();
+                map.put("contentType", "FileAsset");
+                map.put("fileName", name);
+                map.put("fileAsset", Map.of("fileName", name, "content", "<% out.println(1); %>"));
+
+                assertThrows(name, IllegalArgumentException.class,
+                        () -> new MapToContentletPopulator().populate(contentlet, map));
+            }
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+        }
+    }
+
     @Test
     public void Test_Pass_Categoryless_Contentlet() throws DotDataException, DotSecurityException {
         final ContentType contentType = contentTypeWithCategoryField();

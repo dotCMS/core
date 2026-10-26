@@ -6,10 +6,15 @@ import org.apache.commons.io.FilenameUtils;
 
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
 
 /**
- * Has an invalid set of extension
+ * Refuses file names whose extension is on the configured block list
+ * ({@code MULTI_PART_ILLEGAL_FILE_EXTENSIONS}). Extensions are compared without regard to letter
+ * case, as file systems and servlet containers treat them, so {@code .JSP} and {@code .jsp} are
+ * the same extension. The default list covers the types the servlet container would execute or
+ * the operating system would run.
  * @author jsanca
  */
 public class IllegalFileExtensionsValidator implements SecureFileValidator {
@@ -18,9 +23,15 @@ public class IllegalFileExtensionsValidator implements SecureFileValidator {
             new HashSet<>(Arrays.asList(
                     Config.getCustomArrayProperty("MULTI_PART_ILLEGAL_FILE_EXTENSIONS",
                             String::toLowerCase, String.class,
-                            ()-> new String [] {".bat",".exe",".sh",".bin",".jsp",".swf"}))
+                            ()-> new String [] {".bat",".exe",".sh",".bin",".jsp",".jspx",".jspf",".swf"}))
             );
 
+    /**
+     * Checks the extension of a file name against the block list.
+     *
+     * @param fileName the file name as received
+     * @throws IllegalArgumentException if the name is missing or its extension is blocked
+     */
     @Override
     public void validate(final String fileName) {
 
@@ -30,8 +41,8 @@ public class IllegalFileExtensionsValidator implements SecureFileValidator {
             throw new IllegalArgumentException("Illegal Multipart Request");
         }
 
-        final  String fileExtension = FilenameUtils.getExtension(fileName);
-        if (this.illegalExtensionLowerSet.contains('.'+fileExtension)) {
+        final String fileExtension = FilenameUtils.getExtension(fileName).toLowerCase(Locale.ROOT);
+        if (this.illegalExtensionLowerSet.contains('.' + fileExtension)) {
 
             SecurityLogger.logInfo(this.getClass(), "The filename: '" + fileName + "' is invalid");
             throw new IllegalArgumentException("Illegal Multipart Request");

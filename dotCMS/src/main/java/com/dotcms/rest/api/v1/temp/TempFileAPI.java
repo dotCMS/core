@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.temp;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.security.multipart.IllegalFileExtensionsValidator;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.SecurityUtils;
@@ -73,17 +74,20 @@ public class TempFileAPI {
   private static final String WHO_CAN_USE_TEMP_FILE = "whoCanUse.tmp";
   private static final String TEMP_RESOURCE_BY_URL_ADMIN_ONLY="TEMP_RESOURCE_BY_URL_ADMIN_ONLY";
   private static final Lazy<Boolean> allowAccessToPrivateSubnets = Lazy.of(()->Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
+  private static final IllegalFileExtensionsValidator fileExtensionValidator = new IllegalFileExtensionsValidator();
   
 
   /**
    * Returns an empty TempFile of a unique id and file handle that can be used to write and access a
    * temp file. The request will be used to create a fingerprint that will be written to the "allowList" and can
-   * be used to retreive the temp resource in other requests
-   * 
-   * @param incomingFileName
-   * @param request
-   * @return
-   * @throws DotSecurityException
+   * be used to retreive the temp resource in other requests. A name whose extension is on the
+   * upload block list is refused before anything is created.
+   *
+   * @param incomingFileName the name the file was uploaded with
+   * @param request          the current request, used for the allow list
+   * @return the new temp file handle
+   * @throws DotSecurityException     if the request is not allowed to create temp files
+   * @throws IllegalArgumentException if the name's extension is on the block list
    */
   public DotTempFile createEmptyTempFile(final String incomingFileName,final HttpServletRequest request) throws DotSecurityException {
     final String anon = Try.of(() -> APILocator.getUserAPI().getAnonymousUser().getUserId()).getOrElse("anonymous");
@@ -110,6 +114,9 @@ public class TempFileAPI {
     if (incomingFileName == null) {
       throw new DotRuntimeException("Unable to create temp file without a name");
     }
+    // Every temp file can become an asset, so the extension block list applies here, whichever
+    // API the name arrived through (multipart, JSON content, URL fetch, import, bulk upload)
+    fileExtensionValidator.validate(incomingFileName);
     final String tempFileId = TEMP_RESOURCE_PREFIX + UUIDGenerator.shorty();
     
     final String tempFileUri = File.separator + tempFileId + File.separator + incomingFileName;
