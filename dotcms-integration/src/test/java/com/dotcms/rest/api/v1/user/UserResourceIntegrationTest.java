@@ -16,6 +16,7 @@ import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.business.Role;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -1119,14 +1120,20 @@ public class UserResourceIntegrationTest {
                 adminUser.getUserId(), 1, 40, null, "ASC", false, false, null, 0, null, null, false)),
                 adminUser.getUserId());
 
+        // The account-state fields (minus the admin flag) go to any full-profile caller: the Users-portlet
+        // holder and the administrator alike. The admin flag itself is gated separately on Role-administrator
+        // access (CMS Administrator, or Roles+Users portlets), so a Users-portlet-only holder does not get it.
+        final Set<String> accountStateSansAdmin = new HashSet<>(FULL_PROFILE_ONLY_KEYS);
+        accountStateSansAdmin.remove("admin");
         for (final Map<String, Object> item : List.of(asPortletHolder, asAdmin)) {
             assertTrue("full profile must carry every directory key: " + item.keySet(),
                     item.keySet().containsAll(DIRECTORY_KEYS));
             assertTrue("full profile must carry every account-state key: " + item.keySet(),
-                    item.keySet().containsAll(FULL_PROFILE_ONLY_KEYS));
-            assertEquals(Boolean.TRUE, item.get("admin"));
+                    item.keySet().containsAll(accountStateSansAdmin));
         }
-        assertEquals("both callers must get the same keys", asAdmin.keySet(), asPortletHolder.keySet());
+        assertFalse("a Users-portlet-only holder is not a Role administrator, so it gets no admin flag",
+                asPortletHolder.containsKey("admin"));
+        assertEquals("the administrator keeps the admin flag", Boolean.TRUE, asAdmin.get("admin"));
     }
 
     // ==================== GET /v1/users/filter — orderby / direction (#37458) ====================
