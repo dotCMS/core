@@ -1,6 +1,7 @@
 package com.dotcms.filters.interceptor.meta;
 
 import com.dotcms.enterprise.ClusterUtilProxy;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.mock.response.MockHeaderResponse;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -8,7 +9,9 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.StringUtils;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -33,6 +36,20 @@ public class MetaWebInterceptorTest {
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+    }
+
+    /**
+     * The tests below call the interceptor with a bare mock request that has no credentials, which
+     * only gets the x-dot-server header when the anonymous flag is on.
+     */
+    @Before
+    public void enableHeadersForAnonymous() {
+        Config.setProperty(FeatureFlagName.FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS, true);
+    }
+
+    @After
+    public void restoreAnonymousFlag() {
+        Config.setProperty(FeatureFlagName.FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS, null);
     }
 
     /**

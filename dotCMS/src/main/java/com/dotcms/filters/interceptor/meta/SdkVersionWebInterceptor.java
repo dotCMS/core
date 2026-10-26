@@ -23,6 +23,12 @@ import javax.servlet.http.HttpServletResponse;
  * warn when the installed SDK is older than what the server requires, or newer than the
  * server itself.
  *
+ * <p>The headers are sent only on requests that carry valid credentials (a logged-in session or
+ * a valid bearer token), which covers every request the SDK makes since it always sends its
+ * auth token. Requests without credentials get neither header, and the SDK treats their absence
+ * as "nothing to check". {@link com.dotcms.featureflag.FeatureFlagName#FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS}
+ * sends them to everyone again.
+ *
  * <p>Implemented as a {@link WebInterceptor} (registered in
  * {@link com.dotmarketing.filters.InterceptorFilter}) rather than a JAX-RS
  * {@code ContainerResponseFilter}: a JAX-RS filter only covers requests routed through
@@ -45,11 +51,21 @@ public class SdkVersionWebInterceptor implements WebInterceptor {
     public static final String DOTCMS_VERSION_HEADER = "X-DotCMS-Version";
     public static final String DOTCMS_MIN_SDK_HEADER = "X-DotCMS-Min-SDK";
 
+    /**
+     * Adds the two version headers to the response when the request is one that should see them
+     * (see {@link ResponseMetaHeaderAudience}); requests without valid credentials get none.
+     *
+     * @param request  the incoming request
+     * @param response the response the headers are added to
+     * @return {@link Result#NEXT}, always: this interceptor never stops the chain
+     */
     @Override
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) {
         try {
-            response.setHeader(DOTCMS_VERSION_HEADER, ReleaseInfo.getVersion());
-            response.setHeader(DOTCMS_MIN_SDK_HEADER, MinSdkVersion.VALUE);
+            if (ResponseMetaHeaderAudience.includes(request)) {
+                response.setHeader(DOTCMS_VERSION_HEADER, ReleaseInfo.getVersion());
+                response.setHeader(DOTCMS_MIN_SDK_HEADER, MinSdkVersion.VALUE);
+            }
         } catch (Exception e) {
             // Never let a header-advertisement failure break the actual request, but log it
             // so a systemic failure of the SDK compatibility handshake is discoverable.

@@ -21,6 +21,8 @@ import java.util.Map;
  *
  * includes:
  *  - x-dot-server header, contains the node name + server id (this helps to identified on a cluster context which node has committed the response)
+ *    Only requests with valid credentials get it by default (see {@link ResponseMetaHeaderAudience}); add
+ *    {@code ?nodeid=true} to a request to get it without credentials.
  *
  * @author jsanca
  */
@@ -50,11 +52,20 @@ public class ResponseMetaDataWebInterceptor implements WebInterceptor {
         return UNKNOWN;
     }
 
+    /**
+     * Adds the {@code x-dot-server} header when the request asks for it with {@code ?nodeid=true},
+     * or when {@link #RESPONSE_HEADER_ADD_NODE_ID} is on and the request is one that should see
+     * it (see {@link ResponseMetaHeaderAudience}; requests without valid credentials do not).
+     *
+     * @param request  the incoming request
+     * @param response the response the header is added to
+     * @return {@link Result#NEXT}, always: this interceptor never stops the chain
+     */
     @Override
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) {
 
-        if (responseHeaderAddNodeId.get() ||
-                TRUE_VALUE.equals(request.getParameter(NODEID_PARAM))) {
+        if (TRUE_VALUE.equals(request.getParameter(NODEID_PARAM)) ||
+                (responseHeaderAddNodeId.get() && ResponseMetaHeaderAudience.includes(request))) {
 
             response.addHeader(X_DOT_SERVER_HEADER,
                             nodeName.get()
