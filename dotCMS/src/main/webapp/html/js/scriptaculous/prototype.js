@@ -1057,7 +1057,29 @@ function $w(string) {
   return string ? string.split(/\s+/) : [];
 }
 
-Array.from = $A;
+/*
+ * LOCAL MODIFICATION (dotCMS #35291) - this is not stock Prototype.
+ *
+ * Stock Prototype does `Array.from = $A;`. $A only understands array-likes (via .length) and
+ * objects exposing toArray(), so it returns [] for any other iterable (Set, Map, generators).
+ * Stencil 4 builds the `observedAttributes` of every web component with
+ * `Array.from(new Set([...]))`, which therefore came out empty on the legacy JSP pages that load
+ * this file: attributes such as <dot-contentlet-lock-icon locked="true"> never reached the
+ * component props, so the lock icon always rendered as unlocked.
+ *
+ * Anything that is not a Prototype object (no toArray) is now delegated to the native
+ * Array.from; Prototype objects and arrays still go through $A, exactly as before.
+ * Upstream still ships `Array.from = $A;` (prototypejs/prototype issues #338 and #359).
+ */
+(function() {
+  var nativeFrom = Array.from;
+  Array.from = function(iterable) {
+    if (nativeFrom && iterable && !('toArray' in Object(iterable))) {
+      return nativeFrom.apply(Array, arguments);
+    }
+    return $A(iterable);
+  };
+})();
 
 
 (function() {
