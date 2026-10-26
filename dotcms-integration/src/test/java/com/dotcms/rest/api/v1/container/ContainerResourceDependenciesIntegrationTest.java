@@ -239,6 +239,27 @@ public class ContainerResourceDependenciesIntegrationTest {
     }
 
     /**
+     * Method to test: {@link ContainerResource#delete}
+     * Given Scenario: a back-end user who can read a container but not write it, and the container is
+     * used by templates the user cannot see
+     * ExpectedResult: the delete is refused with a permission error, not with the 409 that would
+     * disclose how many templates use it
+     */
+    @Test
+    public void deleteWithoutWritePermissionIsForbiddenNotAConflict() throws Exception {
+        final Host site = freshSite();
+        final Container container = persistContainer(site, "ReadOnly " + System.currentTimeMillis());
+        persistTemplate(site, "Hidden " + System.currentTimeMillis(), container);
+        final User readOnly = user(TestUserUtils.getBackendRole());
+        grantRead(readOnly, container);
+
+        assertThrows(DotSecurityException.class, () -> resource.delete(
+                request(readOnly.getEmailAddress()), response, container.getIdentifier()));
+        assertNotNull(APILocator.getContainerAPI()
+                .getWorkingContainerById(container.getIdentifier(), adminUser, false));
+    }
+
+    /**
      * Method to test: {@link ContainerResource#bulkDelete}
      * Given Scenario: a bulk delete of a container a template uses and one no template uses
      * ExpectedResult: the free container is deleted and the used one is reported as a failure

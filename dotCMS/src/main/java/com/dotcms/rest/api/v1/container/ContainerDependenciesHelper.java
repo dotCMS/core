@@ -14,6 +14,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
@@ -145,6 +146,29 @@ public class ContainerDependenciesHelper {
      */
     private static List<String> identifiersOf(final List<Container> containers) {
         return containers.stream().map(Container::getIdentifier).distinct().collect(Collectors.toList());
+    }
+
+    /**
+     * Refuses the request when the user cannot write the Container. A delete asks for it before it
+     * looks at the Templates, so a user who may not delete the Container gets a permission error
+     * rather than a count of Templates they may not even be able to see.
+     *
+     * @param container            the {@link Container} about to be deleted
+     * @param user                 the {@link User} deleting it
+     * @param respectFrontendRoles whether front-end roles count towards the permission
+     * @throws DotDataException     if the permission cannot be read from the data source
+     * @throws DotSecurityException if the user does not have WRITE permission on the Container
+     */
+    public void requireWrite(final Container container, final User user, final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
+
+        if (!this.permissionAPI.doesUserHavePermission(container, PermissionAPI.PERMISSION_WRITE, user,
+                respectFrontendRoles)) {
+            SecurityLogger.logInfo(ContainerDependenciesHelper.class, String.format(
+                    "User '%s' does not have WRITE permission on Container '%s'",
+                    user.getUserId(), container.getIdentifier()));
+            throw new DotSecurityException(WebKeys.USER_PERMISSIONS_EXCEPTION);
+        }
     }
 
     /**

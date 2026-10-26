@@ -571,6 +571,26 @@ public class ContainerResource implements Serializable {
     }
 
     /**
+     * Requires WRITE permission on the Container before anything else is said about it, so a user who
+     * may not delete it gets a permission error instead of the "in use" conflict. The System Container
+     * is left to the Container API, which refuses to delete it whoever asks.
+     *
+     * @param container            the {@link Container} about to be deleted
+     * @param user                 the {@link User} deleting it
+     * @param respectFrontendRoles whether front-end roles count towards the permission
+     * @throws DotDataException     if the permission cannot be read from the data source
+     * @throws DotSecurityException if the user does not have WRITE permission on the Container
+     */
+    private void requireWriteUnlessSystem(final Container container, final User user,
+                                          final boolean respectFrontendRoles)
+            throws DotDataException, DotSecurityException {
+
+        if (!Container.SYSTEM_CONTAINER.equals(container.getIdentifier())) {
+            this.dependenciesHelper.requireWrite(container, user, respectFrontendRoles);
+        }
+    }
+
+    /**
      * Counts the Templates that use each Container, searching them once for all the Containers. The
      * System Container is never looked up: the Container API refuses to delete it by itself.
      *
@@ -1556,6 +1576,7 @@ public class ContainerResource implements Serializable {
 
             Logger.debug(this,()->"Calling Delete Container");
 
+            this.requireWriteUnlessSystem(container, user, pageMode.respectAnonPerms);
             this.assertNotUsedByTemplates(container, this.templatesUsing(List.of(container)), user);
 
             if(this.containerAPI.delete(container, user, pageMode.respectAnonPerms)) {
@@ -1732,6 +1753,7 @@ public class ContainerResource implements Serializable {
                 if (null != usageFailure) {
                     throw new DotDataException(usageFailure);
                 }
+                this.requireWriteUnlessSystem(container, user, pageMode.respectAnonPerms);
                 this.assertNotUsedByTemplates(container, usage, user);
                 this.containerAPI.delete(container, user, pageMode.respectAnonPerms);
                 ActivityLogger.logInfo(this.getClass(),

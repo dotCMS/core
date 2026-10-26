@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
@@ -27,6 +28,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -171,6 +173,37 @@ class ContainerResourceDeleteTest {
         resource.bulkDelete(request, response, List.of(FREE_INODE, USED_INODE));
 
         verify(helper, times(1)).countTemplatesUsing(any());
+    }
+
+    /**
+     * Given a user without WRITE permission on a container that templates use, when it is deleted,
+     * then the permission error is raised, not the conflict, and the templates are not even searched.
+     */
+    @Test
+    void refusesAUserWithoutWritePermissionBeforeLookingAtTemplates() throws Exception {
+        doThrow(new DotSecurityException("no write")).when(helper)
+                .requireWrite(eq(usedContainer), eq(user), anyBoolean());
+
+        assertThrows(DotSecurityException.class, () -> resource.delete(request, response, USED_INODE));
+
+        verify(helper, never()).countTemplatesUsing(any());
+        verify(containerAPI, never()).delete(any(Container.class), any(User.class), anyBoolean());
+    }
+
+    /**
+     * Given a bulk request where the user cannot write the container that templates use, when it is
+     * deleted, then that container is reported with the permission error, not the in-use message.
+     */
+    @Test
+    void bulkDeleteReportsAMissingWritePermissionInsteadOfTheUsage() throws Exception {
+        doThrow(new DotSecurityException("no write")).when(helper)
+                .requireWrite(eq(usedContainer), eq(user), anyBoolean());
+
+        final Response result = resource.bulkDelete(request, response, List.of(FREE_INODE, USED_INODE));
+
+        final BulkResultView view = (BulkResultView) ((ResponseEntityView<?>) result.getEntity()).getEntity();
+        assertEquals(Long.valueOf(1L), view.getSuccessCount());
+        assertEquals("no write", view.getFails().get(0).getErrorMessage());
     }
 
     /**

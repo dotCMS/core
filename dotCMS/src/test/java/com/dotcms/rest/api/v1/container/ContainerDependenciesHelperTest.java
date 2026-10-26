@@ -299,6 +299,32 @@ class ContainerDependenciesHelperTest {
         verify(templateAPI, times(1)).findTemplatesUsingContainers(any(), any());
     }
 
+    /**
+     * Given a user with WRITE permission on the container, when WRITE is required, then nothing is
+     * raised and the check runs as that user with the front-end roles setting given.
+     */
+    @Test
+    void requireWriteLetsAUserWhoCanWriteThrough() throws Exception {
+        when(permissionAPI.doesUserHavePermission(container, PermissionAPI.PERMISSION_WRITE, user, true))
+                .thenReturn(true);
+
+        helper.requireWrite(container, user, true);
+
+        verify(permissionAPI).doesUserHavePermission(container, PermissionAPI.PERMISSION_WRITE, user, true);
+    }
+
+    /**
+     * Given a user without WRITE permission on the container, when WRITE is required, then the
+     * request is refused with a {@link DotSecurityException}.
+     */
+    @Test
+    void requireWriteRefusesAUserWhoCannotWrite() throws Exception {
+        when(permissionAPI.doesUserHavePermission(container, PermissionAPI.PERMISSION_WRITE, user, false))
+                .thenReturn(false);
+
+        assertThrows(DotSecurityException.class, () -> helper.requireWrite(container, user, false));
+    }
+
     private void templatesUsing(final User searchingUser, final Template... templates) throws Exception {
         when(templateAPI.findTemplatesUsingContainers(List.of(CONTAINER_ID), searchingUser))
                 .thenReturn(Map.of(CONTAINER_ID, List.of(templates)));
