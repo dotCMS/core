@@ -54,12 +54,8 @@
 	</filter>
     <filter>
         <filter-name>HttpHeaderSecurityFilter</filter-name>
-        <filter-class>org.apache.catalina.filters.HttpHeaderSecurityFilter</filter-class>
+        <filter-class>com.dotcms.filters.DotHttpHeaderSecurityFilter</filter-class>
         <async-supported>true</async-supported>
-        <init-param>
-            <param-name>hstsMaxAgeSeconds</param-name>
-            <param-value>3600</param-value>
-        </init-param>
         <init-param>
             <param-name>hstsIncludeSubDomains</param-name>
             <param-value>true</param-value>
