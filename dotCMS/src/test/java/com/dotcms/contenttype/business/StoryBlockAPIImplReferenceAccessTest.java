@@ -24,6 +24,7 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.model.field.BinaryField;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -91,6 +92,8 @@ public class StoryBlockAPIImplReferenceAccessTest {
     private HttpServletRequest previousRequest;
 
     private final Map<String, Object> parentProperties = new HashMap<>();
+    /** Content types of the contentlets made by {@link #readableContentlet}, by id. */
+    private final Map<String, ContentType> contentTypes = new HashMap<>();
 
     private ContentletAPI contentletAPI;
     private VersionableAPI versionableAPI;
@@ -568,7 +571,73 @@ public class StoryBlockAPIImplReferenceAccessTest {
         assertEquals("deep title", dataOf(nestedContent.get(0)).get("title"));
     }
 
+    /**
+     * Given scenario: a readable referenced contentlet has a non Story Block field (like a loaded
+     * relationship) whose value holds a Story Block three maps deep, the deepest level that is
+     * still read for the reader.
+     * Expected result: the reference in that Story Block is refreshed for the reader.
+     */
+    @Test
+    public void refreshStoryBlockValueReferences_storyBlockAtTheDeepestReadLevel_isRefreshedForTheReader()
+            throws Exception {
+        final Object deep = refreshWithStoryBlockNestedInMaps(3);
+
+        assertEquals("deep-inode", dataOf(contentOf(deep).get(0)).get(Contentlet.INODE_KEY));
+        verify(contentletAPI).find("deep-inode", anonymousUser, true, true);
+    }
+
+    /**
+     * Given scenario: same as above, with the Story Block one map deeper, past the deepest level
+     * that is read.
+     * Expected result: the reference in that Story Block keeps only the keys that identify it, and
+     * its contentlet is not read.
+     */
+    @Test
+    public void refreshStoryBlockValueReferences_storyBlockPastTheDeepestReadLevel_keepsOnlyReferenceKeys()
+            throws Exception {
+        final Object deep = refreshWithStoryBlockNestedInMaps(4);
+
+        assertEquals(referenceKeysOf("deep-id"), dataOf(contentOf(deep).get(0)));
+        verify(contentletAPI, never()).find(eq("deep-inode"), eq(anonymousUser), anyBoolean(), anyBoolean());
+    }
+
     // ----------------------------------------------------------------------------------- helpers
+
+    /**
+     * Refreshes {@link #STORY_BLOCK_JSON} as anonymous, where the referenced contentlet has a
+     * {@code payload} field holding a Story Block (a reference to a readable {@code deep-id} with
+     * stored data) wrapped in {@code maps} nested maps, and returns that Story Block as the reader
+     * gets it.
+     */
+    @SuppressWarnings("unchecked")
+    private Object refreshWithStoryBlockNestedInMaps(final int maps) throws Exception {
+        requestFor(null, null);
+        final Map<String, Object> deepStoryBlock = storyBlockAPI.toMap("{\"type\":\"doc\",\"content\":["
+                + "{\"type\":\"dotContent\",\"attrs\":{\"data\":{\"identifier\":\"deep-id\",\"languageId\":1,"
+                + "\"title\":\"deep stored title\"}}}]}");
+        Object payload = deepStoryBlock;
+        for (int level = 0; level < maps; level++) {
+            payload = Map.of("level" + level, payload);
+        }
+        final RelationshipField payloadField = mock(RelationshipField.class);
+        when(payloadField.variable()).thenReturn("payload");
+        final Contentlet referenced = readableContentlet(Map.of("payload", payload));
+        when(referenced.getContentType().fields()).thenReturn(List.of(payloadField));
+        when(contentletAPI.find(REF_INODE, anonymousUser, true, true)).thenReturn(referenced);
+        storedVersionOf("deep-id", "deep-inode");
+        final Contentlet deepContentlet = readableContentlet("deep-id", "deep-inode", Map.of());
+        when(contentletAPI.find("deep-inode", anonymousUser, true, true)).thenReturn(deepContentlet);
+
+        final StoryBlockReferenceResult result = storyBlockAPI
+                .refreshStoryBlockValueReferences(STORY_BLOCK_JSON, PARENT_ID, anonymousUser, true);
+
+        Object deep = referenceDataIn(result.getValue()).get("payload");
+        for (int level = maps - 1; level >= 0; level--) {
+            deep = ((Map<String, Object>) deep).get("level" + level);
+        }
+        assertNotNull(deep, "the nested Story Block must still be returned");
+        return deep;
+    }
 
     /**
      * Installs a request in the thread-local with map-backed attributes. {@code user} becomes the
@@ -641,18 +710,29 @@ public class StoryBlockAPIImplReferenceAccessTest {
      * @param extraProperties Field values to add on top of the common properties.
      */
     private Contentlet readableContentlet(final Map<String, Object> extraProperties) throws Exception {
+        return readableContentlet(REF_ID, REF_INODE, extraProperties);
+    }
+
+    /**
+     * Same as {@link #readableContentlet(Map)} for any identifier and inode. Each identifier gets
+     * its own mocked content type, so several readable contentlets can be used in one test.
+     */
+    private Contentlet readableContentlet(final String identifier, final String inode,
+                                          final Map<String, Object> extraProperties) throws Exception {
+        final String typeId = REF_ID.equals(identifier) ? REF_TYPE_ID : identifier + "-type-id";
         final ContentType type = mock(ContentType.class);
         when(type.baseType()).thenReturn(BaseContentType.CONTENT);
-        when(type.id()).thenReturn(REF_TYPE_ID);
+        when(type.id()).thenReturn(typeId);
+        contentTypes.put(typeId, type);
         final ContentTypeAPI contentTypeAPI = mock(ContentTypeAPI.class);
-        when(contentTypeAPI.find(REF_TYPE_ID)).thenReturn(type);
+        when(contentTypeAPI.find(anyString())).thenAnswer(inv -> contentTypes.get(inv.<String>getArgument(0)));
         apiLocator.when(() -> APILocator.getContentTypeAPI(any(User.class))).thenReturn(contentTypeAPI);
 
         final Map<String, Object> properties = new HashMap<>(extraProperties);
-        properties.put(Contentlet.IDENTIFIER_KEY, REF_ID);
-        properties.put(Contentlet.INODE_KEY, REF_INODE);
+        properties.put(Contentlet.IDENTIFIER_KEY, identifier);
+        properties.put(Contentlet.INODE_KEY, inode);
         properties.put(Contentlet.LANGUAGEID_KEY, 1L);
-        properties.put(Contentlet.STRUCTURE_INODE_KEY, REF_TYPE_ID);
+        properties.put(Contentlet.STRUCTURE_INODE_KEY, typeId);
         properties.put(Contentlet.TITTLE_KEY, "readable title");
         properties.put(Contentlet.TITLE_IMAGE_KEY, Contentlet.TITLE_IMAGE_NOT_FOUND);
 
@@ -660,8 +740,8 @@ public class StoryBlockAPIImplReferenceAccessTest {
         when(contentlet.getMap()).thenAnswer(inv -> new HashMap<>(properties));
         when(contentlet.get(anyString())).thenAnswer(inv -> properties.get(inv.<String>getArgument(0)));
         when(contentlet.getContentType()).thenReturn(type);
-        when(contentlet.getIdentifier()).thenReturn(REF_ID);
-        when(contentlet.getInode()).thenReturn(REF_INODE);
+        when(contentlet.getIdentifier()).thenReturn(identifier);
+        when(contentlet.getInode()).thenReturn(inode);
         when(contentlet.getLanguageId()).thenReturn(1L);
         when(contentlet.getTitleImage()).thenReturn(Optional.empty());
         return contentlet;

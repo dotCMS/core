@@ -9,6 +9,8 @@ import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -21,14 +23,19 @@ import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.structure.model.ContentletRelationships;
+import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import java.util.Arrays;
@@ -318,10 +325,195 @@ public class StoryBlockReferenceAccessTest extends IntegrationTestBase {
     public void listingTheContentTypeAsAnonymous_doesNotChangeTheCachedCarrier() throws Exception {
         CacheLocator.getContentletCache().remove(carrier.getInode());
 
-        asReader(anonymous(), () -> APILocator.getContentletAPI()
+        final List<Contentlet> listed = asReader(anonymous(), () -> APILocator.getContentletAPI()
                 .findByStructure(carrierType.inode(), anonymous(), true, 0, 0));
 
+        final Contentlet listedCarrier = listed.stream()
+                .filter(contentlet -> carrier.getInode().equals(contentlet.getInode())).findFirst()
+                .orElseThrow(() -> new AssertionError("the carrier must be listed"));
+        final Map<String, Map<String, Object>> references = referencesIn(listedCarrier.get(storyBlockField.variable()));
+        assertOnlyReferenceKeys(references.get(restrictedTarget.getIdentifier()));
+        assertEquals(publicTarget.getTitle(), references.get(publicTarget.getIdentifier()).get("title"));
         assertCachedRestrictedReferenceIsNotReduced();
+    }
+
+    /**
+     * Given scenario: the carrier is not cached; an anonymous reader loads it by inode through
+     * {@code ContentletAPI#findContentlets}, which loads it from the database.
+     * Expected result: the reader gets the restricted reference reduced to its keys and the public
+     * one hydrated, and the shared cache keeps the carrier's stored Story Block.
+     */
+    @Test
+    public void loadingTheCarrierByInodeAsAnonymous_getsNoDataForTheRestrictedReference() throws Exception {
+        CacheLocator.getContentletCache().remove(carrier.getInode());
+
+        final List<Contentlet> found = asReader(anonymous(), () -> APILocator.getContentletAPI()
+                .findContentlets(List.of(carrier.getInode())));
+
+        assertEquals(1, found.size());
+        final Map<String, Map<String, Object>> references = referencesIn(found.get(0).get(storyBlockField.variable()));
+        assertOnlyReferenceKeys(references.get(restrictedTarget.getIdentifier()));
+        assertEquals(publicTarget.getTitle(), references.get(publicTarget.getIdentifier()).get("title"));
+        assertCachedRestrictedReferenceIsNotReduced();
+    }
+
+    /**
+     * Given scenario: the carrier's database row is turned into a Contentlet by the
+     * {@code ContentletTransformer} while an anonymous reader is in the current request.
+     * Expected result: the restricted reference is reduced to its keys and the public one is
+     * hydrated.
+     */
+    @Test
+    public void transformingTheCarrierRowAsAnonymous_getsNoDataForTheRestrictedReference() throws Exception {
+        final List<Map<String, Object>> rows = new DotConnect()
+                .setSQL("select contentlet.*, inode.owner from contentlet, inode "
+                        + "where contentlet.inode = ? and contentlet.inode = inode.inode")
+                .addParam(carrier.getInode())
+                .loadObjectResults();
+
+        final List<Contentlet> transformed = asReader(anonymous(),
+                () -> TransformerLocator.createContentletTransformer(rows).asList());
+
+        assertEquals(1, transformed.size());
+        final Map<String, Map<String, Object>> references =
+                referencesIn(transformed.get(0).get(storyBlockField.variable()));
+        assertOnlyReferenceKeys(references.get(restrictedTarget.getIdentifier()));
+        assertEquals(publicTarget.getTitle(), references.get(publicTarget.getIdentifier()).get("title"));
+    }
+
+    /**
+     * Given scenario: a carrier references a published contentlet everyone can read (a hub). The
+     * hub is related to the restricted and the public contentlets, and has its own Story Block
+     * referencing both of them.
+     * Expected result: an anonymous reader gets the hub hydrated, with the public related content
+     * and the public nested reference, but nothing of the restricted contentlet beyond its keys. A
+     * back-end user with READ on the restricted contentlet gets it in both places.
+     */
+    @Test
+    public void readableReference_withRestrictedRelatedAndNestedContent_showsOnlyWhatTheReaderCanRead()
+            throws Exception {
+        final User systemUser = APILocator.systemUser();
+        final long language = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final long timestamp = System.currentTimeMillis();
+        ContentType hubType = new ContentTypeDataGen()
+                .name("storyBlockHub" + timestamp)
+                .velocityVarName("storyBlockHub" + timestamp)
+                .nextPersisted();
+        Contentlet hub = null;
+        Contentlet hubCarrier = null;
+        try {
+            final Field nestedBlockField = new FieldDataGen()
+                    .type(StoryBlockField.class)
+                    .defaultValue(null)
+                    .contentTypeId(hubType.id())
+                    .nextPersisted();
+            final Field relatedField = APILocator.getContentTypeFieldAPI().save(
+                    FieldBuilder.builder(RelationshipField.class)
+                            .name("related")
+                            .contentTypeId(hubType.id())
+                            .values(String.valueOf(com.dotmarketing.util.WebKeys.Relationship
+                                    .RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal()))
+                            .relationType(restrictedTarget.getContentType().variable())
+                            .build(), systemUser);
+            hubType = APILocator.getContentTypeAPI(systemUser).find(hubType.id());
+
+            final StoryBlockAPI storyBlockAPI = APILocator.getStoryBlockAPI();
+            final Contentlet hubCheckout = ContentletDataGen.checkout(new ContentletDataGen(hubType)
+                    .languageId(language)
+                    .setProperty(nestedBlockField.variable(), storyBlockAPI.addContentlet(
+                            storyBlockAPI.addContentlet(BASE_STORY_BLOCK, restrictedTarget), publicTarget).toString())
+                    .nextPersisted());
+            hub = ContentletDataGen.publish(APILocator.getContentletAPI().checkin(hubCheckout,
+                    relate(relatedField, hubCheckout, restrictedTarget, publicTarget), null, null, systemUser, false));
+            final Contentlet hubForCarrier = hub;
+            hubCarrier = ContentletDataGen.publish(new ContentletDataGen(carrierType.id())
+                    .languageId(language)
+                    .setProperty(storyBlockField.variable(),
+                            storyBlockAPI.addContentlet(BASE_STORY_BLOCK, hubForCarrier).toString())
+                    .nextPersisted());
+            for (final Contentlet readable : List.of(hub, hubCarrier)) {
+                PermissionUtilTest.addAnonymousUser(readable);
+                PermissionUtilTest.addPermission(readable, readerWithRead,
+                        PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+            }
+
+            final Contentlet carrierForReaders = hubCarrier;
+            final Map<String, Object> anonymousHub = referenceDataIn(asReader(anonymous(), () -> APILocator
+                    .getContentletAPI().find(carrierForReaders.getInode(), anonymous(), true))
+                    .get(storyBlockField.variable()));
+            assertEquals("the hub is readable by anyone, so it is hydrated", hub.getInode(),
+                    anonymousHub.get(Contentlet.INODE_KEY));
+            final List<Map<String, Object>> anonymousRelated = relatedItems(anonymousHub.get(relatedField.variable()));
+            assertNoDataOf(restrictedTarget, anonymousRelated);
+            assertEquals(publicTarget.getTitle(), itemOf(publicTarget, anonymousRelated).get("title"));
+            final List<Map<String, Object>> anonymousNested =
+                    referencesInOrder(anonymousHub.get(nestedBlockField.variable()));
+            assertOnlyReferenceKeys(anonymousNested.get(0));
+            assertEquals(publicTarget.getTitle(), anonymousNested.get(1).get("title"));
+
+            final Map<String, Object> readerHub = referenceDataIn(asReader(readerWithRead, () -> APILocator
+                    .getContentletAPI().find(carrierForReaders.getInode(), readerWithRead, false))
+                    .get(storyBlockField.variable()));
+            assertEquals(restrictedTarget.getTitle(), itemOf(restrictedTarget,
+                    relatedItems(readerHub.get(relatedField.variable()))).get("title"));
+            assertEquals(restrictedTarget.getTitle(),
+                    referencesInOrder(readerHub.get(nestedBlockField.variable())).get(0).get("title"));
+        } finally {
+            for (final Contentlet contentlet : Arrays.asList(hubCarrier, hub)) {
+                if (null != contentlet) {
+                    ContentletDataGen.destroy(contentlet);
+                }
+            }
+            ContentTypeDataGen.remove(hubType);
+        }
+    }
+
+    /**
+     * Given scenario: a carrier references a contentlet that has a working version and no live
+     * one, readable by anyone.
+     * Expected result: an anonymous reader (live mode) gets the reference reduced to its keys,
+     * since there is nothing live to read; a back-end user in preview mode gets the working
+     * version.
+     */
+    @Test
+    public void referenceWithoutALiveVersion_isOnlyHydratedInPreviewMode() throws Exception {
+        final long language = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final long timestamp = System.currentTimeMillis();
+        final Contentlet workingOnly = new ContentletDataGen(restrictedTarget.getContentType())
+                .languageId(language)
+                .setProperty("title", "working only " + timestamp)
+                .setProperty("body", "working only body")
+                .nextPersisted();
+        Contentlet workingCarrier = null;
+        try {
+            PermissionUtilTest.addAnonymousUser(workingOnly);
+            PermissionUtilTest.addPermission(workingOnly, readerWithRead,
+                    PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+            workingCarrier = ContentletDataGen.publish(new ContentletDataGen(carrierType.id())
+                    .languageId(language)
+                    .setProperty(storyBlockField.variable(),
+                            APILocator.getStoryBlockAPI().addContentlet(BASE_STORY_BLOCK, workingOnly).toString())
+                    .nextPersisted());
+            PermissionUtilTest.addAnonymousUser(workingCarrier);
+            PermissionUtilTest.addPermission(workingCarrier, readerWithRead,
+                    PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+            final String carrierInode = workingCarrier.getInode();
+
+            final Map<String, Object> liveData = referenceDataIn(asReader(anonymous(), () -> APILocator
+                    .getContentletAPI().find(carrierInode, anonymous(), true)).get(storyBlockField.variable()));
+            assertOnlyReferenceKeys(liveData, workingOnly);
+
+            final Map<String, Object> previewData = referenceDataIn(asReader(readerWithRead,
+                    Map.of(com.dotmarketing.util.WebKeys.PAGE_MODE_PARAMETER, PageMode.PREVIEW_MODE),
+                    () -> APILocator.getContentletAPI().find(carrierInode, readerWithRead, false))
+                    .get(storyBlockField.variable()));
+            assertEquals(workingOnly.getTitle(), previewData.get("title"));
+        } finally {
+            if (null != workingCarrier) {
+                ContentletDataGen.destroy(workingCarrier);
+            }
+            ContentletDataGen.destroy(workingOnly);
+        }
     }
 
     /**
@@ -375,10 +567,15 @@ public class StoryBlockReferenceAccessTest extends IntegrationTestBase {
 
     /** A reference the reader cannot read keeps only the keys that identify it, and nothing else. */
     private static void assertOnlyReferenceKeys(final Map<String, Object> data) {
+        assertOnlyReferenceKeys(data, restrictedTarget);
+    }
+
+    /** Same as {@link #assertOnlyReferenceKeys(Map)} for a reference to the given contentlet. */
+    private static void assertOnlyReferenceKeys(final Map<String, Object> data, final Contentlet referenced) {
         assertNotNull("the reference node must still be in the document", data);
         assertEquals("only the keys identifying the reference may remain",
                 java.util.Set.of(StoryBlockAPI.IDENTIFIER_KEY, StoryBlockAPI.LANGUAGE_ID_KEY), data.keySet());
-        assertEquals(restrictedTarget.getIdentifier(), data.get(StoryBlockAPI.IDENTIFIER_KEY));
+        assertEquals(referenced.getIdentifier(), data.get(StoryBlockAPI.IDENTIFIER_KEY));
     }
 
     /**
@@ -437,6 +634,15 @@ public class StoryBlockReferenceAccessTest extends IntegrationTestBase {
      * restoring the previous request and response afterwards.
      */
     private static <T> T asReader(final User reader, final java.util.concurrent.Callable<T> read) throws Exception {
+        return asReader(reader, Map.of(), read);
+    }
+
+    /**
+     * Same as {@link #asReader(User, java.util.concurrent.Callable)}, with extra attributes (such
+     * as the page mode) set in the request.
+     */
+    private static <T> T asReader(final User reader, final Map<String, Object> attributes,
+                                  final java.util.concurrent.Callable<T> read) throws Exception {
         final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
         final HttpServletResponse previousResponse = HttpServletResponseThreadLocal.INSTANCE.getResponse();
         try {
@@ -445,6 +651,7 @@ public class StoryBlockReferenceAccessTest extends IntegrationTestBase {
                 request.setAttribute(WebKeys.USER, reader);
                 request.setAttribute(WebKeys.USER_ID, reader.getUserId());
             }
+            attributes.forEach(request::setAttribute);
             HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
             HttpServletResponseThreadLocal.INSTANCE.setResponse(mock(HttpServletResponse.class));
             return read.call();
@@ -479,5 +686,66 @@ public class StoryBlockReferenceAccessTest extends IntegrationTestBase {
         }
         assertTrue("both references must still be present in the document", references == 2);
         return byIdentifier;
+    }
+
+    /** The {@code attrs.data} map of every content reference in a Story Block value, in document order. */
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> referencesInOrder(final Object storyBlockValue) throws Exception {
+        assertNotNull("the Story Block value must be present", storyBlockValue);
+        final List<Map<String, Object>> content = (List<Map<String, Object>>) APILocator.getStoryBlockAPI()
+                .toMap(storyBlockValue).get(StoryBlockAPI.CONTENT_KEY);
+        final List<Map<String, Object>> references = new java.util.ArrayList<>();
+        for (final Map<String, Object> node : content) {
+            if ("dotContent".equals(node.get(StoryBlockAPI.TYPE_KEY))) {
+                references.add((Map<String, Object>)
+                        ((Map<String, Object>) node.get(StoryBlockAPI.ATTRS_KEY)).get(StoryBlockAPI.DATA_KEY));
+            }
+        }
+        return references;
+    }
+
+    /** The {@code attrs.data} map of the only content reference in a Story Block value. */
+    private static Map<String, Object> referenceDataIn(final Object storyBlockValue) throws Exception {
+        final List<Map<String, Object>> references = referencesInOrder(storyBlockValue);
+        assertEquals("the document must hold exactly one reference", 1, references.size());
+        return references.get(0);
+    }
+
+    /** The related content loaded in a relationship field, whether one item or a list of them. */
+    @SuppressWarnings("unchecked")
+    private static List<Map<String, Object>> relatedItems(final Object related) {
+        assertNotNull("the related content must be loaded", related);
+        return related instanceof Map ? List.of((Map<String, Object>) related) : (List<Map<String, Object>>) related;
+    }
+
+    /** The related item for the given contentlet; fails if it is missing. */
+    private static Map<String, Object> itemOf(final Contentlet contentlet, final List<Map<String, Object>> items) {
+        return items.stream()
+                .filter(item -> contentlet.getIdentifier().equals(item.get(StoryBlockAPI.IDENTIFIER_KEY)))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("missing related item " + contentlet.getIdentifier()));
+    }
+
+    /** The given contentlet is either absent from the related items or present with its keys only. */
+    private static void assertNoDataOf(final Contentlet contentlet, final List<Map<String, Object>> items) {
+        items.stream()
+                .filter(item -> contentlet.getIdentifier().equals(item.get(StoryBlockAPI.IDENTIFIER_KEY)))
+                .forEach(item -> assertTrue("a related item the reader cannot read keeps only its keys, was: "
+                                + item.keySet(),
+                        java.util.Set.of(StoryBlockAPI.IDENTIFIER_KEY, StoryBlockAPI.LANGUAGE_ID_KEY)
+                                .containsAll(item.keySet())));
+    }
+
+    /** Relationship records relating {@code parent} to {@code related} through {@code relationshipField}. */
+    private static ContentletRelationships relate(final Field relationshipField, final Contentlet parent,
+                                                  final Contentlet... related) throws Exception {
+        final Relationship relationship = APILocator.getRelationshipAPI()
+                .getRelationshipFromField(relationshipField, APILocator.systemUser());
+        final ContentletRelationships relationships = new ContentletRelationships(parent);
+        final ContentletRelationships.ContentletRelationshipRecords records =
+                relationships.new ContentletRelationshipRecords(relationship, true);
+        records.setRecords(Arrays.asList(related));
+        relationships.getRelationshipsRecords().add(records);
+        return relationships;
     }
 }

@@ -578,9 +578,13 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             final Contentlet stored = APILocator.getContentletAPI().find(inode, APILocator.systemUser(), false, true);
             return null != stored && APILocator.getPermissionAPI()
                     .doesUserHavePermission(stored, PermissionAPI.PERMISSION_READ, user, respectFrontendRoles);
-        } catch (final DotDataException | DotSecurityException e) {
+        } catch (final DotSecurityException e) {
             Logger.debug(this, () -> String.format("Could not check READ on contentlet with Inode '%s': %s",
                     inode, ExceptionUtil.getErrorMessage(e)));
+            return false;
+        } catch (final DotDataException e) {
+            Logger.error(this, String.format("An error occurred when checking READ on contentlet with Inode " +
+                    "'%s'; its Story Block data was omitted: %s", inode, ExceptionUtil.getErrorMessage(e)), e);
             return false;
         }
     }
@@ -606,7 +610,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     /**
      * Returns a copy of a stored value keeping only the embedded content the user can read. See
      * {@link #withReadableEmbeddedContent(Map, String, User, boolean)}. If the value cannot be
-     * processed, the embedded content is reduced instead.
+     * read, parsed, or a nested Story Block cannot be processed, the embedded content is reduced
+     * instead; any other error is left to the caller, which reduces the whole reference and logs it.
      */
     @SuppressWarnings("unchecked")
     private Object keepReadableEmbeddedContent(final Object value, final String ownerIdentifier,
@@ -645,9 +650,13 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 return kept;
             }
             return value;
-        } catch (final Exception e) {
+        } catch (final DotSecurityException e) {
             Logger.debug(this, () -> "Embedded content could not be checked; it is reduced: "
                     + ExceptionUtil.getErrorMessage(e));
+            return this.reduceEmbeddedContent(value, true);
+        } catch (final DotDataException | DotRuntimeException | JsonProcessingException e) {
+            Logger.warn(this, String.format("Embedded content of contentlet '%s' could not be checked; " +
+                    "it is reduced: %s", ownerIdentifier, ExceptionUtil.getErrorMessage(e)), e);
             return this.reduceEmbeddedContent(value, true);
         }
     }
@@ -886,12 +895,6 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     }
 
     /**
-     * Loads the common properties of a {@link Contentlet} into the specified data map.
-     *
-     * @param contentlet The Contentlet whose properties will be loaded.
-     * @param dataMap    The Map where the properties will be stored.
-     */
-    /**
      * Copies the common properties of a Contentlet (title, inode, state flags, categories, tags,
      * file links...) into the data map of a Story Block content node.
      *
@@ -1089,12 +1092,13 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
     }
 
     /**
-     * Refreshes the data map from a referenced Contentlet in the Story Block field with the latest
-     * data specified by the live Inode.
+     * Refreshes the data map from a referenced Contentlet in the Story Block field with the data of
+     * the version selected by the page mode.
      *
      * @param dataMap              The Map containing the Contentlet's properties.
-     * @param inode                The live Inode of the Contentlet whose properties will be copied
-     *                             over to the previous data map.
+     * @param inode                The Inode selected by the page mode (live or working) of the
+     *                             Contentlet whose properties will be copied over to the previous
+     *                             data map.
      * @param user                 The user on whose behalf the Contentlet is read.
      * @param respectFrontendRoles If {@code true}, front-end roles are taken into account when
      *                             reading the Contentlet.
@@ -1414,13 +1418,13 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
 
     /**
      * Generates a file link for the specified contentlet and field.
-     *
-     * @param contentlet the contentlet object that contains the data
-     * @param field the field for which the file link will be generated
+     * <p>
      * The link is built with the system user: by the time it is built, the Contentlet has already
      * been read on behalf of the requesting user, and the link only needs the Site the file
      * belongs to.
      *
+     * @param contentlet the contentlet object that contains the data
+     * @param field the field for which the file link will be generated
      * @param request the current request, used to build an absolute link
      * @return an Optional containing the file link as a String if generated successfully,
      *         or an empty Optional if an error occurs or the link cannot be generated
