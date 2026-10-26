@@ -110,7 +110,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class,
         com.dotcms.rest.ClusterResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.cluster.ClusterNodesResourceIntegrationTest.class,
-        com.dotcms.rest.api.v1.system.ConfigurationHelperTest.class
+        com.dotcms.rest.api.v1.system.ConfigurationHelperTest.class,
+        com.dotcms.rest.api.v1.page.PageResourceReadAccessTest.class
 })
 public class MainSuite2a {
 

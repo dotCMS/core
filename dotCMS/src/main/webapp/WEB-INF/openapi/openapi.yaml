@@ -14538,9 +14538,9 @@ paths:
         "401":
           description: Authentication required
         "403":
-          description: User does not have required permissions
+          description: User is not a back-end user
         "404":
-          description: Page not found
+          description: "Page not found, or the user cannot read it"
       summary: Get the multi-tree content structure of a page
       tags:
       - Page
@@ -14682,9 +14682,9 @@ paths:
         "401":
           description: Authentication required
         "403":
-          description: User does not have required permissions
+          description: User is not a back-end user
         "404":
-          description: Page not found
+          description: "Page not found, or the user cannot read it"
       summary: Get personalized personas for a page
       tags:
       - Page
