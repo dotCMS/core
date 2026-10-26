@@ -14,6 +14,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -433,7 +434,7 @@ public  class WebResource {
         }
         for (String roleKey : builder.requiredRolesSet) {
             if (Try.of(() -> APILocator.getRoleAPI()
-                    .doesUserHaveRole(user, roleKey)).getOrElse(false)) {
+                    .doesUserHaveRole(user, resolveRequiredRole(roleKey))).getOrElse(false)) {
                 return;
             }
         }
@@ -441,6 +442,21 @@ public  class WebResource {
                 String.format("User " + (user != null ? user.getFullName() + ":" + user.getEmailAddress() : user)
                         + " lacks one of the required role %s", builder.requiredRolesSet),
                 Response.Status.UNAUTHORIZED);
+    }
+
+    /**
+     * Resolves a required-role entry to a {@link Role} by its key, falling back to its id for
+     * callers that pass one. Key resolution must not depend on the id cache: a role-cache clear
+     * between the caller's role load and this check used to turn valid keys like
+     * {@code DOTCMS_FRONT_END_USER} into silent misses, rejecting users that hold the role.
+     *
+     * @param roleKeyOrId the required-role entry: a role key or a role id
+     * @return the matching {@link Role}, or null when no role has that key or id
+     */
+    private static Role resolveRequiredRole(final String roleKeyOrId) throws DotDataException {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final Role byKey = roleAPI.loadRoleByKey(roleKeyOrId);
+        return null != byKey ? byKey : roleAPI.loadRoleById(roleKeyOrId);
     }
 
 
