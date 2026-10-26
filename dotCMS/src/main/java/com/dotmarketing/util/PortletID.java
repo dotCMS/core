@@ -8,6 +8,7 @@ public enum PortletID {
     CALENDAR,
     CATEGORIES, 
     CONFIGURATION, 
+    CONFIGURATION_BETA("configuration-beta"),
     CONTAINERS,
     CONTENT,
     CONTENT_TYPES,
