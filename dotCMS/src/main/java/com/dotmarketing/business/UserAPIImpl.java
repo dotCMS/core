@@ -468,6 +468,11 @@ public class UserAPIImpl implements UserAPI {
         APILocator.getRoleAPI().getUserRole(userToSave);
     }
 
+    /**
+     * Saves the user. When {@code validatePassword} is true the password on {@code userToSave} is a
+     * new plain-text password: it is checked against the password policy, hashed, and the user gets
+     * a new login token id so login tokens issued before the change stop working.
+     */
     @Override
     public void save(User userToSave, User user, boolean validatePassword,
             boolean respectFrontEndRoles) throws DotDataException,
@@ -495,6 +500,7 @@ public class UserAPIImpl implements UserAPI {
                 Logger.error(UserAPIImpl.class, "An error occurred generating the hashed password for userId: " + userToSave.getUserId(), e);
                 throw new DotDataException("An error occurred generating the hashed password.");
             }
+            userToSave.setRememberMeToken(UUIDGenerator.uuid());
         }
         save(userToSave, user, respectFrontEndRoles);
     }
@@ -664,6 +670,10 @@ public class UserAPIImpl implements UserAPI {
         return roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole());
     }
 
+    /**
+     * Sets a new password on the user and saves it. The user also gets a new login token id, so
+     * login tokens issued before the change stop working.
+     */
     @Override
     public void updatePassword(User user, String newpass, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotInvalidPasswordException, DotSecurityException {
         if(!PwdToolkitUtil.validate(newpass)) {
@@ -681,6 +691,7 @@ public class UserAPIImpl implements UserAPI {
         user.setIcqId("");
         user.setPasswordReset(GetterUtil.getBoolean(
                 PropsUtil.get(PropsUtil.PASSWORDS_CHANGE_ON_FIRST_USE)));
+        user.setRememberMeToken(UUIDGenerator.uuid());
         save(user, currentUser, respectFrontEndRoles);
 
     }

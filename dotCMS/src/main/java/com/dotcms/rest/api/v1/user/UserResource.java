@@ -57,6 +57,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
@@ -1466,7 +1467,8 @@ public class UserResource implements Serializable {
 	 * Updates a user from the payload and, when the payload has a {@code roles} field, reconciles the
 	 * user's roles with it. Changing roles requires a CMS Administrator; the role change is checked
 	 * before anything is saved, so a refused request changes nothing. Sending the roles the user
-	 * already holds is not a change.
+	 * already holds is not a change. A new password also invalidates the login tokens issued to the
+	 * user before the change.
 	 *
 	 * @param modUser        The user performing the request.
 	 * @param request        The current request.
@@ -1541,6 +1543,8 @@ public class UserResource implements Serializable {
         if(UtilMethods.isSet(updateUserForm.getPassword())){
 
             userToSave.setPassword(new String(updateUserForm.getPassword()));
+            // a new login token id makes the login tokens issued before the change stop working
+            userToSave.setRememberMeToken(UUIDGenerator.uuid());
         }
 
 
