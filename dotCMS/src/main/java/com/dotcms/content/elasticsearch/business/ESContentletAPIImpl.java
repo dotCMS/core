@@ -10508,9 +10508,18 @@ public class ESContentletAPIImpl implements ContentletAPI {
         contentFactory.UpdateContentWithSystemHost(hostIdentifier);
     }
 
-    @CloseDBIfOpened
+    /**
+     * Hands every Contentlet reference to {@code userId} over to the system user. Runs in a
+     * transaction, like {@link #updateUserReferences(User, String, User)}, so the two rewrites
+     * commit together and the cache eviction registered on that commit fires once both are in.
+     *
+     * @param userId the user whose references are handed over
+     * @throws DotDataException     There is a data inconsistency
+     * @throws DotSecurityException The user cannot perform the operation
+     */
+    @WrapInTransaction
     @Override
-    public void removeUserReferences(String userId) throws DotDataException, DotSecurityException {
+    public void removeUserReferences(final String userId) throws DotDataException, DotSecurityException {
         contentFactory.removeUserReferences(userId);
     }
 
