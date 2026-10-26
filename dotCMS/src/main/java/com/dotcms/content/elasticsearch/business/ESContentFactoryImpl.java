@@ -1841,10 +1841,16 @@ public class ESContentFactoryImpl implements ContentletFactory {
      */
     private void evictReplacedUserReferences(final List<String> inodes,
             final List<Map<String, Object>> versionInfosLockedBy) {
+        // Each cache gets its own try block so one failing eviction cannot skip the others
         try {
             for (final String inode : inodes) {
                 contentletCache.remove(inode);
             }
+        } catch (final Exception e) {
+            Logger.error(this, String.format("Unable to evict %d cached Contentlets that referenced "
+                    + "a replaced user. Flush the Contentlet cache to clear them.", inodes.size()), e);
+        }
+        try {
             final IdentifierCache identifierCache = CacheLocator.getIdentifierCache();
             for (final Map<String, Object> row : versionInfosLockedBy) {
                 final Object variantId = row.get("variant_id");
@@ -1854,11 +1860,9 @@ public class ESContentFactoryImpl implements ContentletFactory {
                         null != variantId ? variantId.toString() : DEFAULT_VARIANT.name());
             }
         } catch (final Exception e) {
-            Logger.error(this, String.format("Unable to evict cached references to a replaced "
-                    + "user (%d contentlets, %d locks). Flush the caches to clear them.",
-                    inodes.size(), versionInfosLockedBy.size()), e);
+            Logger.error(this, String.format("Unable to evict %d cached locks that named a replaced "
+                    + "user. Flush the Identifier cache to clear them.", versionInfosLockedBy.size()), e);
         }
-        // Own try block: the Site cache must be cleared even if the targeted evictions failed
         try {
             CacheLocator.getHostCache().clearCache();
         } catch (final Exception e) {
