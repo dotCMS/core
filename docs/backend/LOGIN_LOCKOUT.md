@@ -30,6 +30,10 @@ agree on when a lock ends.
 - **Clearing.** A successful login clears the count for its own address. A password reset, or a new
   password set by an administrator, clears everything for the account. Deleting a user deletes their rows,
   and rows that no longer affect any login are purged periodically.
+- **Custom `auth.max.failures` handlers** run each time the account's failed count reaches
+  `auth.max.failures.limit` (the 5th, 10th, 15th failure by default), not on every failure from the 5th on
+  as before lockout, and not for a login refused while a lock is in force. The `auth.failure` handlers still
+  run on every failed login, refused or not.
 
 Every password check goes through it: the backend and front-end login, REST basic auth (and so the
 authentication endpoints and the CLI), WebDAV, the legacy `LoginFactory.doLogin` endpoints, Login As, and
