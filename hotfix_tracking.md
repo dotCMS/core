@@ -81,3 +81,4 @@ Release-25.07.10 LTS
 75. https://github.com/dotCMS/core/pull/38098 : feat(apps): manage Apps configuration as an administrator setting #38098
 76. https://github.com/dotCMS/core/pull/38120 : fix(users): only a CMS Administrator can change a user's roles #38120
 77. https://github.com/dotCMS/core/pull/38178 : fix(js): load JavaScript modules through the content API #38178
+78. https://github.com/dotCMS/private-issues/issues/999 : Remove compromised emSign ECC Root CA - G3 from the shipped JDK truststore #999
