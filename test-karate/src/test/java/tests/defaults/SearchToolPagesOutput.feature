@@ -98,12 +98,11 @@ Feature: Search tool pages output encoding
     When method post
     Then status 200
 
-    # the layout id of the Dev Tools menu, taken from one of its portlet urls
+    # a layout id, taken from the url of the graphql portlet (found by portlet id, not by the menu name)
     Given url baseUrl + '/api/v1/menu'
     When method get
     Then status 200
-    * def devTools = karate.filter(response.entity, function(m){ return m.name == 'Dev Tools' })[0]
-    * def layoutUrl = karate.jsonPath(devTools, "$.menuItems[?(@.id=='graphql')].url")[0]
+    * def layoutUrl = karate.jsonPath(response.entity, "$[*].menuItems[?(@.id=='graphql')].url")[0]
     * assert layoutUrl != null
     * def layoutId = layoutUrl.match(/p_l_id=([^&]+)/)[1]
 
