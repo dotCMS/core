@@ -78,3 +78,4 @@ Release-25.07.10 LTS
 72. https://github.com/dotCMS/core/pull/38128 : fix(rest): return lock owner name to back-end users and normalize forgot-password response #38128
 73. https://github.com/dotCMS/core/pull/38149 : fix(publishing): require access rules for uploaded bundles and plugin jars in received bundles #38149
 74. https://github.com/dotCMS/core/pull/38127 : fix(tags): check the user's permissions when deleting tags #38127
+75. https://github.com/dotCMS/core/pull/38098 : feat(apps): manage Apps configuration as an administrator setting #38098

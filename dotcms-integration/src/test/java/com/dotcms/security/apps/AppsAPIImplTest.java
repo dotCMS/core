@@ -18,6 +18,8 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotmarketing.util.Config;
+import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.api.v1.apps.ExportSecretForm;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.IntegrationTestInitService;
@@ -431,14 +433,49 @@ public class AppsAPIImplTest {
     }
 
     /**
-     * This method test a read secret operation using a non-admin random user with portlet access.
-     * Given scenario: A non-admin user with granted portlet apps access tries to read.
-     * Expected Result: Read operation should succeed
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * Given scenario: A non-admin user with granted portlet apps access tries to save configuration.
+     * Expected Result: DotSecurityException, Apps configuration is an administrator setting.
+     */
+    @Test(expected = DotSecurityException.class)
+    public void Test_Apps_Portlet_User_Without_Admin_Cannot_Save_App_Configuration()
+            throws DotDataException, DotSecurityException {
+        APILocator.getAppsAPI().saveSecrets(new AppSecrets.Builder().build(),
+                APILocator.systemHost(), newAppsPortletUser());
+    }
+
+    /**
+     * Given scenario: FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION is on and a non-admin user with granted
+     * portlet apps access saves configuration.
+     * Expected Result: The value is stored and the system user reads it back.
      */
     @Test
-    public void Test_Non_Admin_User_With_Portlet_Read_Attempt() throws DotDataException, DotSecurityException {
+    public void Test_Apps_Portlet_User_Can_Save_App_Configuration_When_Delegation_Switch_Is_On()
+            throws DotDataException, DotSecurityException {
+        final AppsAPI api = APILocator.getAppsAPI();
+        final User user = newAppsPortletUser();
+        final Host systemHost = APILocator.systemHost();
+        final String appKey = "apps-portlet-save-" + System.currentTimeMillis();
+        Config.setProperty(FeatureFlagName.FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION, true);
+        try {
+            api.saveSecrets(new AppSecrets.Builder().withKey(appKey)
+                    .withHiddenSecret("apiKey", "saved-by-apps-portlet-user").build(),
+                    systemHost, user);
+
+            final Optional<AppSecrets> saved =
+                    api.getSecrets(appKey, systemHost, APILocator.systemUser());
+            assertTrue(saved.isPresent());
+            assertEquals("saved-by-apps-portlet-user",
+                    saved.get().getSecrets().get("apiKey").getString());
+        } finally {
+            Config.setProperty(FeatureFlagName.FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION, false);
+            api.deleteSecrets(appKey, systemHost, APILocator.systemUser());
+        }
+    }
+
+    /**
+     * Creates a back-end, non-admin user whose role grants the Apps portlet.
+     */
+    private User newAppsPortletUser() throws DotDataException {
         final String integrationsPortletId = AppsAPIImpl.APPS_PORTLET_ID;
         final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
         final Role backEndUserRole = TestUserUtils.getBackendRole();
@@ -454,10 +491,8 @@ public class AppsAPIImplTest {
         final User nonAdminUserWithAccessToPortlet = new UserDataGen().roles(role1,backEndUserRole).nextPersisted();
 
         assertTrue(layoutAPI.doesUserHaveAccessToPortlet(integrationsPortletId, nonAdminUserWithAccessToPortlet));
-
-        final AppsAPI api = APILocator.getAppsAPI();
-        final AppSecrets.Builder builder = new AppSecrets.Builder();
-        api.saveSecrets(builder.build(), APILocator.systemHost() , nonAdminUserWithAccessToPortlet);
+        assertFalse(nonAdminUserWithAccessToPortlet.isAdmin());
+        return nonAdminUserWithAccessToPortlet;
     }
 
     /**
