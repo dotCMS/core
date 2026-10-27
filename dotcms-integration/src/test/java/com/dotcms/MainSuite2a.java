@@ -120,7 +120,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rendering.velocity.WidgetRendererTest.class,
         CMSUserToolTest.class,
         UserJsViewToolTest.class,
-        com.dotmarketing.portlets.contentlet.transform.ContentMapWidgetFieldRenderTest.class,
+        com.dotcms.rest.BundleResourceDeleteResponseTest.class,
+        com.dotmarketing.portlets.contentlet.transform.ContentMapWidgetFieldRenderTest.class
 })
 public class MainSuite2a {
 
