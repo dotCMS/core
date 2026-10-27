@@ -470,9 +470,11 @@ public class UserAPIImpl implements UserAPI {
 
     /**
      * Saves the user. When {@code validatePassword} is true the password on {@code userToSave} is a
-     * new plain-text password: it is checked against the password policy, hashed, and the user gets
-     * a new login token id so login tokens issued before the change stop working.
+     * new plain-text password: it is checked against the password policy and hashed, and after the
+     * save {@link #invalidateLoginTokens(String)} runs in the same transaction, so login tokens
+     * issued before the change stop working.
      */
+    @WrapInTransaction
     @Override
     public void save(User userToSave, User user, boolean validatePassword,
             boolean respectFrontEndRoles) throws DotDataException,
@@ -500,9 +502,11 @@ public class UserAPIImpl implements UserAPI {
                 Logger.error(UserAPIImpl.class, "An error occurred generating the hashed password for userId: " + userToSave.getUserId(), e);
                 throw new DotDataException("An error occurred generating the hashed password.");
             }
-            userToSave.setRememberMeToken(UUIDGenerator.uuid());
         }
         save(userToSave, user, respectFrontEndRoles);
+        if (validatePassword) {
+            userToSave.setRememberMeToken(invalidateLoginTokens(userToSave.getUserId()));
+        }
     }
 
     @Override
@@ -671,9 +675,11 @@ public class UserAPIImpl implements UserAPI {
     }
 
     /**
-     * Sets a new password on the user and saves it. The user also gets a new login token id, so
-     * login tokens issued before the change stop working.
+     * Sets a new password on the user and saves it. After the save,
+     * {@link #invalidateLoginTokens(String)} runs in the same transaction, so login tokens issued
+     * before the change stop working.
      */
+    @WrapInTransaction
     @Override
     public void updatePassword(User user, String newpass, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotInvalidPasswordException, DotSecurityException {
         if(!PwdToolkitUtil.validate(newpass)) {
@@ -691,19 +697,22 @@ public class UserAPIImpl implements UserAPI {
         user.setIcqId("");
         user.setPasswordReset(GetterUtil.getBoolean(
                 PropsUtil.get(PropsUtil.PASSWORDS_CHANGE_ON_FIRST_USE)));
-        user.setRememberMeToken(UUIDGenerator.uuid());
         save(user, currentUser, respectFrontEndRoles);
-
+        user.setRememberMeToken(invalidateLoginTokens(user.getUserId()));
     }
 
     /**
-     * Gives the user a new login token id with a single-column update, so every login token issued
-     * to the user before now is rejected. Other user fields are left untouched.
+     * Stores a new random UUID as the user's login token id, with a single-column update that
+     * leaves the other user fields untouched. A random UUID works because a login JWT is accepted
+     * only while its id matches the stored value, and no token issued so far carries the new one;
+     * {@link UserAPI#invalidateLoginTokens(String)} has the full contract.
      */
     @WrapInTransaction
     @Override
-    public void invalidateLoginTokens(final String userId) throws DotDataException {
-        userFactory.updateRememberMeToken(userId, UUIDGenerator.uuid());
+    public String invalidateLoginTokens(final String userId) throws DotDataException {
+        final String rememberMeToken = UUIDGenerator.uuid();
+        userFactory.updateRememberMeToken(userId, rememberMeToken);
+        return rememberMeToken;
     }
 
     @WrapInTransaction

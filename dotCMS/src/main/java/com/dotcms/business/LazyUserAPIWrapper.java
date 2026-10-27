@@ -215,8 +215,8 @@ public class LazyUserAPIWrapper implements UserAPI {
      * token id so the login tokens issued before now are rejected.
      */
     @Override
-    public void invalidateLoginTokens(final String userId) throws DotDataException {
-        this.getUserAPI().invalidateLoginTokens(userId);
+    public String invalidateLoginTokens(final String userId) throws DotDataException {
+        return this.getUserAPI().invalidateLoginTokens(userId);
     }
 
     @Override

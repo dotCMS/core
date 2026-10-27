@@ -38,7 +38,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.PortalException;
@@ -361,7 +360,8 @@ public class LoginServiceAPIFactory implements Serializable {
         /**
          * Executes the authentication process for the specified User ID. Several session-related
          * parameters are loaded as well. Additionally, users/developers can run their own Pre- and
-         * Post-Login code, if necessary.
+         * Post-Login code, if necessary. A user logging in for the first time gets a login token id
+         * through {@link UserAPI#invalidateLoginTokens(String)} before the login JWT is issued.
          *
          * @param userId     The ID of the user to authenticate.
          * @param rememberMe This parameter is no longer useful.
@@ -393,7 +393,8 @@ public class LoginServiceAPIFactory implements Serializable {
             }
 
             if(UtilMethods.isEmpty(user.getRememberMeToken())){
-               user.setRememberMeToken(UUIDGenerator.uuid());
+               // first login: the user has no login token id yet, so store one for the JWT below
+               user.setRememberMeToken(userAPI.invalidateLoginTokens(user.getUserId()));
             }
 
             user.setLastLoginDate(new Date());

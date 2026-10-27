@@ -57,7 +57,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
@@ -1543,8 +1542,6 @@ public class UserResource implements Serializable {
         if(UtilMethods.isSet(updateUserForm.getPassword())){
 
             userToSave.setPassword(new String(updateUserForm.getPassword()));
-            // a new login token id makes the login tokens issued before the change stop working
-            userToSave.setRememberMeToken(UUIDGenerator.uuid());
         }
 
 
@@ -1560,6 +1557,10 @@ public class UserResource implements Serializable {
 
 			this.userAPI.save(userToSave, modUser, validatePassword,
 					!WebAPILocator.getUserWebAPI().isLoggedToBackend(request));
+			if (UtilMethods.isSet(updateUserForm.getPassword())) {
+				// login tokens issued before the password change stop working
+				userToSave.setRememberMeToken(this.userAPI.invalidateLoginTokens(userToSave.getUserId()));
+			}
 			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' has been updated.");
 

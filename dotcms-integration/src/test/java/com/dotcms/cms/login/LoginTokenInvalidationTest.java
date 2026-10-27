@@ -3,6 +3,7 @@ package com.dotcms.cms.login;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
@@ -15,6 +16,7 @@ import com.dotcms.rest.api.v1.user.UserResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.exception.DotDataException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.WebKeys;
@@ -90,11 +92,12 @@ public class LoginTokenInvalidationTest {
         final String token = loginToken(user);
         assertTrue(resolves(token));
 
-        userAPI.updatePassword(userAPI.loadUserById(user.getUserId()), NEW_PASSWORD,
-                APILocator.systemUser(), false);
+        final User toUpdate = userAPI.loadUserById(user.getUserId());
+        userAPI.updatePassword(toUpdate, NEW_PASSWORD, APILocator.systemUser(), false);
 
         assertFalse("token issued before the password change must be rejected", resolves(token));
         assertTrue(resolves(loginToken(userAPI.loadUserById(user.getUserId()))));
+        assertCurrentTokenId(toUpdate);
     }
 
     /**
@@ -112,6 +115,54 @@ public class LoginTokenInvalidationTest {
         userAPI.save(toSave, APILocator.systemUser(), true, false);
 
         assertFalse("token issued before the password change must be rejected", resolves(token));
+        assertCurrentTokenId(toSave);
+    }
+
+    /**
+     * Saving a {@link User} object loaded before a logout, for example one held in memory by a
+     * screen that was open at the time, does not bring back the login token id the logout replaced,
+     * so the token issued before the logout stays rejected.
+     */
+    @Test
+    public void test_staleUserSavedAfterLogout_doesNotRestoreOldToken() throws Exception {
+        final User user = newUser();
+        final String token = loginToken(user);
+        final User loadedBeforeLogout = (User) userAPI.loadUserById(user.getUserId()).clone();
+
+        userAPI.invalidateLoginTokens(user.getUserId());
+        loadedBeforeLogout.setFirstName("Edited");
+        userAPI.save(loadedBeforeLogout, APILocator.systemUser(), false);
+
+        assertNotEquals(user.getRememberMeToken(),
+                userAPI.loadUserById(user.getUserId()).getRememberMeToken());
+        assertFalse("a stale save must not bring back the token issued before logout", resolves(token));
+    }
+
+    /**
+     * Invalidating the login tokens of a user id given in a different case or with surrounding
+     * spaces changes that user and evicts the cached copy, so the earlier token is rejected right
+     * away.
+     */
+    @Test
+    public void test_invalidateLoginTokens_withNonCanonicalUserId_rejectsToken() throws Exception {
+        final User user = newUser();
+        final String token = loginToken(user);
+        // load once so the user is cached under its stored id
+        userAPI.loadUserById(user.getUserId());
+
+        userAPI.invalidateLoginTokens("  " + user.getUserId().toUpperCase() + " ");
+
+        assertFalse("the cached token id must be evicted", resolves(token));
+    }
+
+    /**
+     * A blank user id is refused with a {@link DotDataException} instead of failing with a
+     * {@link NullPointerException}.
+     */
+    @Test
+    public void test_invalidateLoginTokens_withBlankUserId_throwsDotDataException() {
+        assertThrows(DotDataException.class, () -> userAPI.invalidateLoginTokens(null));
+        assertThrows(DotDataException.class, () -> userAPI.invalidateLoginTokens(" "));
     }
 
     /**
@@ -257,6 +308,16 @@ public class LoginTokenInvalidationTest {
         final User user = new UserDataGen().nextPersisted();
         createdUsers.add(user);
         return user;
+    }
+
+    /**
+     * Checks that the object a password change was made on carries the stored login token id, so
+     * the change happened after the save and a JWT issued from that object works.
+     */
+    private static void assertCurrentTokenId(final User changed) throws Exception {
+        assertEquals(userAPI.loadUserById(changed.getUserId()).getRememberMeToken(),
+                changed.getRememberMeToken());
+        assertTrue(resolves(loginToken(changed)));
     }
 
     private static String loginToken(final User user) {
