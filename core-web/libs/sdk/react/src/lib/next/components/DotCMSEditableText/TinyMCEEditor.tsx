@@ -48,6 +48,7 @@ export function TinyMCEEditor({
     return (
         <Editor
             tinymceScriptSrc={scriptSrc}
+            licenseKey="gpl"
             inline={true}
             onInit={(_, editor) => onEditorInit(editor)}
             init={TINYMCE_CONFIG[mode]}
