@@ -27,6 +27,7 @@ export const BASE_UVE_STATE: UVEState = {
     editorPaletteOpen: true,
     editorEditPanelOpen: false,
     editorEditPanelTab: UVE_EDIT_PANEL_TABS.QUICK_EDIT,
+    editorContentEditorPlaced: false,
     editorOgTags: null,
     editorStyleSchemas: [],
     viewDevice: null,

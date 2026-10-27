@@ -11,7 +11,7 @@ import { withEditorInsert } from './features/editor/withEditorInsert';
 import { withSelectionAnchor } from './features/editor/withSelectionAnchor';
 import { withLayout } from './features/layout/withLayout';
 import { withPage } from './features/page/withPage';
-import { withPageApi } from './features/page-api/withPageApi';
+import { WithPageApiMethods, withPageApi } from './features/page-api/withPageApi';
 import { withTrack } from './features/track/withTrack';
 import { withUve } from './features/uve/withUve';
 import { withWorkflow } from './features/workflow/withWorkflow';
@@ -51,6 +51,7 @@ const initialState: UVEState = {
     editorPaletteOpen: true,
     editorEditPanelOpen: false,
     editorEditPanelTab: UVE_EDIT_PANEL_TABS.QUICK_EDIT,
+    editorContentEditorPlaced: false,
     editorOgTags: null,
     editorStyleSchemas: [],
     // View state (device, orientation, social media, zoom)
@@ -171,3 +172,11 @@ export const UVEStore = signalStore(
     // 14. Insert into a container and save (needs editorSave from withPageApi above)
     withEditorInsert()
 );
+
+/**
+ * The UVE store with `withPageApi`'s methods typed. Those methods (`pageLoad`, `pageReload`,
+ * `editorSave`…) reach `UVEStore`'s own type only through an index signature, as plain `Function`,
+ * so a part of the editor that calls them injects the store as this:
+ * `inject(UVEStore) as UVEStoreInstance`.
+ */
+export type UVEStoreInstance = InstanceType<typeof UVEStore> & WithPageApiMethods;

@@ -20,7 +20,6 @@ import { TieredMenu, TieredMenuModule } from 'primeng/tieredmenu';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 import { TEMP_EMPTY_CONTENTLET_TYPE } from '@dotcms/uve/internal';
 
@@ -491,7 +490,7 @@ export class DotUveContentletToolsComponent {
         }
 
         this.#contentEditor.uveEditContentRequested({
-            contentlet: contentlet as unknown as DotCMSContentlet,
+            contentlet,
             forkFrom: container
         });
     }

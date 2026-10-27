@@ -4,7 +4,15 @@ import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, Observable, forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { ChangeDetectorRef, Component, computed, inject, signal, viewChild } from '@angular/core';
+import {
+    ChangeDetectorRef,
+    Component,
+    DestroyRef,
+    computed,
+    inject,
+    signal,
+    viewChild
+} from '@angular/core';
 import { Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -42,6 +50,7 @@ import { WINDOW } from '@dotcms/utils';
 import {
     DotUveAddContentRequest,
     DotUveCreateContentRequest,
+    DotUveEditableContentlet,
     DotUveEditContentRequest,
     DotUveTranslatePageRequest,
     uveContentEditorEvents
@@ -51,7 +60,7 @@ import { DotBlockEditorSidebarComponent } from '../../../components/dot-block-ed
 import { DotEmaDialogComponent } from '../../../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageApiService } from '../../../services/dot-page-api/dot-page-api.service';
 import { UveIframeMessengerService } from '../../../services/iframe-messenger/uve-iframe-messenger.service';
-import { notifyContainerInsertRefused } from '../../../shared/container-insert';
+import { injectContainerInsert } from '../../../shared/container-insert';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../../../shared/enums';
 import {
     ActionPayload,
@@ -60,9 +69,8 @@ import {
     ReorderMenuPayload,
     VTLFile
 } from '../../../shared/models';
-import { UVEStore } from '../../../store/dot-uve.store';
+import { UVEStore, UVEStoreInstance } from '../../../store/dot-uve.store';
 import { ReloadEditorContent } from '../../../store/features/editor/models';
-import { WithPageApiMethods } from '../../../store/features/page-api/withPageApi';
 import { TranslateProps } from '../../../store/models';
 import { createReorderMenuURL, getLanguageChangePageParams } from '../../../utils';
 
@@ -83,13 +91,7 @@ import { createReorderMenuURL, getLanguageChangePageParams } from '../../../util
     host: { class: 'contents' }
 })
 export class DotUveContentEditorComponent {
-    /**
-     * The UVE store. `withPageApi`'s methods (`pageLoad`, `pageReload`…) reach the store's type
-     * only through an index signature, as plain `Function`, so they are typed through that
-     * feature's own interface.
-     */
-    protected readonly uveStore = inject(UVEStore) as InstanceType<typeof UVEStore> &
-        WithPageApiMethods;
+    protected readonly uveStore = inject(UVEStore) as UVEStoreInstance;
     readonly #events = inject(Events);
     readonly #window = inject(WINDOW);
     readonly #cd = inject(ChangeDetectorRef);
@@ -106,6 +108,8 @@ export class DotUveContentEditorComponent {
     readonly #dotRouterService = inject(DotRouterService);
     readonly #router = inject(Router);
     readonly #iframeMessenger = inject(UveIframeMessengerService);
+    /** Inserts what the user creates or picks, and tells them why when the container refuses it. */
+    readonly #insert = injectContainerInsert();
 
     /**
      * The legacy dialog. Always rendered, so a legacy edit opens in any mode and on any page, as
@@ -229,6 +233,11 @@ export class DotUveContentEditorComponent {
     );
 
     constructor() {
+        // While it is placed, the shell sends it the page's Properties instead of opening its own
+        // legacy dialog.
+        this.uveStore.editorSetContentEditorPlaced(true);
+        inject(DestroyRef).onDestroy(() => this.uveStore.editorSetContentEditorPlaced(false));
+
         // The Edit Content side panel, open while `$editContentPanel` is set. Post-save work runs
         // through the request's `onContentSaved` callback; closing clears the request. Loaded on
         // its first open, so the editor stays out of this portlet's chunk.
@@ -432,7 +441,7 @@ export class DotUveContentEditorComponent {
      * @returns the work the request does, completing when it is done
      */
     #editContent({ contentlet, forkFrom }: DotUveEditContentRequest): Observable<unknown> {
-        const onMultiplePages = Number(contentlet['onNumberOfPages'] ?? 1) > 1;
+        const onMultiplePages = Number(contentlet.onNumberOfPages ?? 1) > 1;
 
         if (!forkFrom || !onMultiplePages) {
             return this.#openContentEditor(contentlet);
@@ -600,16 +609,13 @@ export class DotUveContentEditorComponent {
      * @returns whether it went in
      */
     #insertInto(into: ActionPayload, contentletId: string): boolean {
-        const result = this.uveStore.editorInsertContentlet(into, contentletId);
+        const didInsert = this.#insert(into, contentletId);
 
-        // `=== false`: without strictNullChecks, as this library compiles, `!` does not narrow the
-        // result to a refusal.
-        if (result.didInsert === false) {
-            notifyContainerInsertRefused(result, this.#messageService, this.#dotMessageService);
+        if (!didInsert) {
             this.$legacyDialog()?.resetDialog();
         }
 
-        return result.didInsert;
+        return didInsert;
     }
 
     /**
@@ -759,7 +765,7 @@ export class DotUveContentEditorComponent {
      * @param contentlet the contentlet to edit
      * @returns the content type lookup, completing once an editor opened
      */
-    #openContentEditor(contentlet: DotCMSContentlet): Observable<unknown> {
+    #openContentEditor(contentlet: DotUveEditableContentlet): Observable<unknown> {
         if (!contentlet.contentType) {
             this.$legacyDialog()?.editContentlet(contentlet);
 
@@ -815,7 +821,7 @@ export class DotUveContentEditorComponent {
      *
      * @param contentlet the contentlet to edit
      */
-    #openNewEditorToEdit(contentlet: DotCMSContentlet): void {
+    #openNewEditorToEdit(contentlet: DotUveEditableContentlet): void {
         this.#openNewEditor(contentlet.title ?? '', {
             mode: 'edit',
             contentletInode: contentlet.inode,

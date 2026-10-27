@@ -705,15 +705,11 @@ describe('DotEmaShellComponent', () => {
                 });
             });
 
-            describe('properties on a child screen', () => {
+            // The content editor tells the store whether it is placed. It is placed only on the
+            // content screen with a page the user can read; the layout, rules and experiments
+            // screens, and a page the user cannot read (no router outlet), have none.
+            describe('properties and the content editor', () => {
                 let editRequests: DotUveEditContentRequest[];
-
-                /** Puts the shell on one of its child screens, as the router would. */
-                const openChildScreen = (path: string) =>
-                    Object.defineProperty(activatedRoute, 'firstChild', {
-                        value: { routeConfig: { path } },
-                        configurable: true
-                    });
 
                 const clickProperties = () => {
                     const navBar = spectator.debugElement.query(
@@ -736,8 +732,8 @@ describe('DotEmaShellComponent', () => {
                 // next tests' requests too.
                 afterEach(() => editRequestsSubscription.unsubscribe());
 
-                it("should ask the content editor to edit the page's contentlet on the content screen, instead of opening the legacy dialog", () => {
-                    openChildScreen('content');
+                it("should ask the content editor to edit the page's contentlet while one is placed, instead of opening the legacy dialog", () => {
+                    store.editorSetContentEditorPlaced(true);
                     const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
 
                     clickProperties();
@@ -750,29 +746,9 @@ describe('DotEmaShellComponent', () => {
                     expect(dialogSpy).not.toHaveBeenCalled();
                 });
 
-                it.each(['layout', 'rules/:pageId', 'experiments'])(
-                    "should open the page's properties in the legacy dialog on the %s screen, where no content editor is placed",
-                    (path) => {
-                        openChildScreen(path);
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-
-                        clickProperties();
-
-                        expect(dialogSpy).toHaveBeenCalled();
-                        expect(editRequests).toEqual([]);
-                    }
-                );
-
-                it("should open the page's properties in the legacy dialog on the content screen when the user cannot read the page", () => {
-                    // Without read permission the shell does not render its router outlet, so the
-                    // editor and its content editor are not there to answer a request.
-                    openChildScreen('content');
-                    // Loaded by the setup above.
-                    const pageAsset = store.pageAsset()!;
-                    store.setPageAsset({
-                        pageAsset: { ...pageAsset, page: { ...pageAsset.page, canRead: false } }
-                    });
-                    spectator.detectChanges();
+                it("should open the page's properties in the legacy dialog once the content editor is gone", () => {
+                    store.editorSetContentEditorPlaced(true);
+                    store.editorSetContentEditorPlaced(false);
                     const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
 
                     clickProperties();

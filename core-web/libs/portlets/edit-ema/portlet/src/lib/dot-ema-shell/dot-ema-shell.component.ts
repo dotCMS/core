@@ -31,7 +31,6 @@ import { DotMessageService } from '@dotcms/data-access';
 import { SiteService } from '@dotcms/dotcms-js';
 import {
     DEFAULT_VARIANT_ID,
-    DotCMSContentlet,
     DotExperimentStatus,
     DotPageToolUrlParams,
     FeaturedFlags
@@ -599,19 +598,13 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
             // Editing the page's own properties is editing its contentlet — route it through the
             // same feature-flag-aware entry point as every other edit flow (new editor/side panel
-            // when enabled for the page's content type, legacy dialog otherwise). The content editor
-            // only answers while the editor is placed, which needs the 'content' child route and a
-            // page the user can read (the outlet sits under `@if ($canRead())`); everywhere else,
-            // fall back to this shell's own legacy dialog (previous, route-independent behavior).
-            // Properties itself has no permission check, as it never had one: read permission only
-            // decides which editor answers.
-            if (
-                this.#activatedRoute.firstChild?.routeConfig?.path === 'content' &&
-                this.$canRead()
-            ) {
-                this.#contentEditor.uveEditContentRequested({
-                    contentlet: page as unknown as DotCMSContentlet
-                });
+            // when enabled for the page's content type, legacy dialog otherwise). Only a placed
+            // content editor answers, and it is placed only on the content screen with a page the
+            // user can read; everywhere else, fall back to this shell's own legacy dialog
+            // (previous, route-independent behavior). Properties itself has no permission check,
+            // as it never had one.
+            if (this.uveStore.editorContentEditorPlaced()) {
+                this.#contentEditor.uveEditContentRequested({ contentlet: page });
                 return;
             }
 

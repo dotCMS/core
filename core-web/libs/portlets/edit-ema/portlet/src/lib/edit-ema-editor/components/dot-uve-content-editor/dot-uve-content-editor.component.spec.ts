@@ -338,6 +338,7 @@ function createStoreMock() {
         editorInsertContentlet: vi.fn<() => EditorInsertResult>(() => ({ didInsert: true })),
         setUveStatus: vi.fn(),
         setEditorState: vi.fn(),
+        editorSetContentEditorPlaced: vi.fn(),
         pageReload: vi.fn(),
         pageLoad: vi.fn()
     };
@@ -553,6 +554,20 @@ describe('DotUveContentEditorComponent', () => {
             opened.push({ config, ref });
 
             return ref as unknown as ReturnType<DotSidePanelService['open']>;
+        });
+    });
+
+    // The shell sends the page's Properties to a placed content editor, and opens its own legacy
+    // dialog otherwise.
+    describe('placement', () => {
+        it('should tell the store it is placed', () => {
+            expect(store.editorSetContentEditorPlaced).toHaveBeenCalledWith(true);
+        });
+
+        it('should tell the store it is no longer placed once it is destroyed', () => {
+            spectator.fixture.destroy();
+
+            expect(store.editorSetContentEditorPlaced).toHaveBeenLastCalledWith(false);
         });
     });
 

@@ -1007,6 +1007,20 @@ describe('withEditor', () => {
             });
         });
 
+        describe('editorSetContentEditorPlaced', () => {
+            it('should record whether the content editor is placed', () => {
+                expect(store.editorContentEditorPlaced()).toBe(false);
+
+                store.editorSetContentEditorPlaced(true);
+
+                expect(store.editorContentEditorPlaced()).toBe(true);
+
+                store.editorSetContentEditorPlaced(false);
+
+                expect(store.editorContentEditorPlaced()).toBe(false);
+            });
+        });
+
         describe('setPaletteOpen', () => {
             it('should toggle the palette', () => {
                 store.setPaletteOpen(true);

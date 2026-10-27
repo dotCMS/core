@@ -583,6 +583,12 @@ export function withEditor() {
                         editorEditPanelTab: tab
                     });
                 },
+                /** Records whether the content editor is placed; it sets this itself. */
+                editorSetContentEditorPlaced(placed: boolean) {
+                    patchState(store, {
+                        editorContentEditorPlaced: placed
+                    });
+                },
                 cancelContentletEdit() {
                     patchState(store, {
                         editorSelected: null,

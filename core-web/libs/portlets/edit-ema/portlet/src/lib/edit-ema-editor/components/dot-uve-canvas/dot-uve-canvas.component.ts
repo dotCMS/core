@@ -36,7 +36,7 @@ import { DotUveActionsHandlerService } from '../../../services/dot-uve-actions-h
 import { DotUveDragDropService } from '../../../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
 import { UveIframeMessengerService } from '../../../services/iframe-messenger/uve-iframe-messenger.service';
 import { InlineEditService } from '../../../services/inline-edit/inline-edit.service';
-import { notifyContainerInsertRefused } from '../../../shared/container-insert';
+import { injectContainerInsert } from '../../../shared/container-insert';
 import {
     canEditOwningContentlet,
     notifyNoEditPermission
@@ -53,9 +53,8 @@ import {
     PostMessage,
     SelectedContentlet
 } from '../../../shared/models';
-import { UVEStore } from '../../../store/dot-uve.store';
+import { UVEStore, UVEStoreInstance } from '../../../store/dot-uve.store';
 import { ReloadEditorContent } from '../../../store/features/editor/models';
-import { WithPageApiMethods } from '../../../store/features/page-api/withPageApi';
 import { IframeAccessMode, PageType } from '../../../store/models';
 import {
     TEMPORAL_DRAG_ITEM,
@@ -116,13 +115,7 @@ export class DotUveCanvasComponent implements AfterViewInit, OnDestroy {
         return this.iframeComponent?.iframe;
     }
 
-    /**
-     * The UVE store. `withPageApi`'s methods (`pageLoad`, `editorSave`…) reach the store's type
-     * only through an index signature, as plain `Function`, so they are typed through that
-     * feature's own interface.
-     */
-    protected readonly uveStore = inject(UVEStore) as InstanceType<typeof UVEStore> &
-        WithPageApiMethods;
+    protected readonly uveStore = inject(UVEStore) as UVEStoreInstance;
 
     readonly #dotMessageService = inject(DotMessageService);
     readonly #confirmationService = inject(ConfirmationService);
@@ -137,6 +130,8 @@ export class DotUveCanvasComponent implements AfterViewInit, OnDestroy {
     readonly #dragDropService = inject(DotUveDragDropService);
     readonly #iframeMessenger = inject(UveIframeMessengerService);
     readonly #contentEditor = injectDispatch(uveContentEditorEvents);
+    /** Inserts a dropped contentlet, and tells the user why when the container refuses it. */
+    readonly #insert = injectContainerInsert();
 
     protected readonly host = '*';
     protected readonly UVE_STATUS = UVE_STATUS;
@@ -646,7 +641,7 @@ export class DotUveCanvasComponent implements AfterViewInit, OnDestroy {
                 });
             }
 
-            this.#insertDropped(payload, draggedPayload.item.contentlet.identifier);
+            this.#insert(payload, draggedPayload.item.contentlet.identifier);
 
             return;
         } else if (dragItem.draggedPayload.type === 'content-type') {
@@ -660,24 +655,7 @@ export class DotUveCanvasComponent implements AfterViewInit, OnDestroy {
             });
         } else if (dragItem.draggedPayload.type === 'temp' && payload.newContentlet) {
             // A temp drop is a file uploaded on drop, which always carries the new contentlet.
-            this.#insertDropped(payload, payload.newContentlet.identifier);
-        }
-    }
-
-    /**
-     * Inserts a dropped contentlet into its container position through the store, and tells the
-     * user why when the container refuses it.
-     *
-     * @param into the drop position
-     * @param contentletId the dropped contentlet
-     */
-    #insertDropped(into: ActionPayload, contentletId: string): void {
-        const result = this.uveStore.editorInsertContentlet(into, contentletId);
-
-        // `=== false`: without strictNullChecks, as this library compiles, `!` does not narrow the
-        // result to a refusal.
-        if (result.didInsert === false) {
-            notifyContainerInsertRefused(result, this.#messageService, this.#dotMessageService);
+            this.#insert(payload, payload.newContentlet.identifier);
         }
     }
 

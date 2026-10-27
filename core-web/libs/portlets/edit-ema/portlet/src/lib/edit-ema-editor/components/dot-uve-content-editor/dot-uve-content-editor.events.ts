@@ -12,11 +12,23 @@ import {
 } from '../../../shared/models';
 
 /**
+ * What the content editor reads of a contentlet to open it. A full contentlet, one picked on the
+ * page and the page's own all carry it.
+ */
+export type DotUveEditableContentlet = Pick<
+    DotCMSContentlet,
+    'identifier' | 'inode' | 'title' | 'contentType'
+> & {
+    /** How many pages the contentlet is on; a picked one carries it. */
+    onNumberOfPages?: number;
+};
+
+/**
  * What a part of the editor asks for when the user wants to edit a contentlet.
  */
 export interface DotUveEditContentRequest {
     /** The contentlet to open. */
-    contentlet: DotCMSContentlet;
+    contentlet: DotUveEditableContentlet;
     /**
      * The container the contentlet was picked from. When it is set and the contentlet is on more
      * than one page, the user first chooses between editing it on every page and editing a copy
