@@ -153,6 +153,12 @@
                                          dates, so it archives their content at an arbitrary moment, undoing a publish
                                          the request before. No collection tests escalation, so turn it off. -->
                                     <DOT_ESCALATION_ENABLE>false</DOT_ESCALATION_ENABLE>
+                                    <!-- Deleting a content type returns before the type is gone by default: a
+                                         background thread removes the row later, and until then its variable is
+                                         taken. Image, PagesResourceTests and Template_Resource delete the starter
+                                         Image type and then import a bundle with its own Image type, which fails
+                                         when the old row is still there. Delete in the request instead. -->
+                                    <DOT_DELETE_CONTENT_TYPE_ASYNC>false</DOT_DELETE_CONTENT_TYPE_ASYNC>
                                     <DOT_ENABLE_SCRIPTING>true</DOT_ENABLE_SCRIPTING>
                                     <DOT_ANNOUNCEMENTS_BASE_URL>http://localhost:8080</DOT_ANNOUNCEMENTS_BASE_URL>
                                     <DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>true</DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>

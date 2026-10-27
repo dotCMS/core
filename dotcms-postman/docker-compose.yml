@@ -81,6 +81,9 @@ services:
             # The escalation job archives content from imported bundles (old task dates) at an
             # arbitrary moment, undoing a publish the request before. No collection tests it.
             DOT_ESCALATION_ENABLE: 'false'
+            # A content type delete otherwise finishes in the background, keeping the variable taken.
+            # Collections delete the starter Image type and then import a bundle with their own Image type.
+            DOT_DELETE_CONTENT_TYPE_ASYNC: 'false'
             DOT_ENABLE_SCRIPTING: 'true'
             DOT_ANNOUNCEMENTS_BASE_URL: 'http://localhost:8080'
         ports:
