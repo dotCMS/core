@@ -15,6 +15,7 @@ import {
 } from 'rxjs';
 import { vi } from 'vitest';
 
+import { HttpErrorResponse, HttpHeaders } from '@angular/common/http';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { ActivatedRoute } from '@angular/router';
@@ -304,26 +305,62 @@ describe('DotLoginAsComponent', () => {
             expect(component.errorMessage()).toBe('wrong password');
         }));
 
-        it('should show the admin-required message when the server answers 403', fakeAsync(() => {
-            vi.spyOn(spectator.inject(DotMessageService), 'get').mockImplementation(
-                (key: string) => key
-            );
-            const loginServiceInstance = spectator.inject(LoginService);
-            vi.spyOn(loginServiceInstance, 'loginAs').mockReturnValue(
-                observableThrowError({ status: 403 })
-            );
+        describe('error message selection', () => {
+            const fail = (error: unknown) => {
+                vi.spyOn(spectator.inject(DotMessageService), 'get').mockImplementation(
+                    (key: string) => key
+                );
+                vi.spyOn(spectator.inject(LoginService), 'loginAs').mockReturnValue(
+                    observableThrowError(error)
+                );
 
-            spectator.setInput('visible', true);
-            component.needPassword.set(true);
-            spectator.detectChanges();
+                spectator.setInput('visible', true);
+                component.needPassword.set(true);
+                spectator.detectChanges();
 
-            component.form.get('loginAsUser').setValue(mockUser());
-            component.form.get('password').setValue('password');
-            component.doLoginAs();
-            tick();
+                component.form.get('loginAsUser').setValue(mockUser());
+                component.form.get('password').setValue('password');
+                component.doLoginAs();
+            };
 
-            expect(component.errorMessage()).toBe('loginas.error.adminrequired');
-        }));
+            it('should show the admin-required message when the 403 carries its error key', fakeAsync(() => {
+                fail(
+                    new HttpErrorResponse({
+                        status: 403,
+                        headers: new HttpHeaders({ 'error-key': 'loginas.error.adminrequired' })
+                    })
+                );
+                tick();
+
+                expect(component.errorMessage()).toBe('loginas.error.adminrequired');
+            }));
+
+            it('should not show the admin-required message for a 403 without its error key', fakeAsync(() => {
+                fail(new HttpErrorResponse({ status: 403 }));
+                tick();
+
+                expect(component.errorMessage()).toBe('loginas.error.wrong-credentials');
+            }));
+
+            it('should show the server message when the server returns a message key', fakeAsync(() => {
+                fail([{ errorCode: 'loginas.error.nolayouts', message: 'No tools assigned' }]);
+                tick();
+
+                expect(component.errorMessage()).toBe('No tools assigned');
+            }));
+
+            it('should keep the own-password hint when the server reports invalid credentials', fakeAsync(() => {
+                fail([
+                    {
+                        errorCode: 'loginas.error.invalidloginascredentials',
+                        message: 'The specified user or password is invalid.'
+                    }
+                ]);
+                tick();
+
+                expect(component.errorMessage()).toBe('loginas.error.wrong-credentials');
+            }));
+        });
 
         it('should render error message in DOM when errorMessage signal has value', () => {
             // Arrange

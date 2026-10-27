@@ -261,13 +261,15 @@ public class UserResourceIntegrationTest {
         final User nonAdmin = newLoginAsUser(password, false);
         final HttpServletRequest nonAdminRequest = mockRequestAs(nonAdmin.getEmailAddress(), password);
         final LoginAsForm form = new LoginAsForm.Builder().userId(adminUser.getUserId()).build();
+        final Object userIdBefore = nonAdminRequest.getSession().getAttribute(WebKeys.USER_ID);
 
         final Response result = resource.loginAs(nonAdminRequest, response, form);
 
         assertNotNull(result);
         assertEquals(Status.FORBIDDEN.getStatusCode(), result.getStatus());
+        assertEquals("loginas.error.adminrequired", result.getHeaderString("error-key"));
+        assertEquals(userIdBefore, nonAdminRequest.getSession().getAttribute(WebKeys.USER_ID));
         assertNull(nonAdminRequest.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
-        assertNotEquals(adminUser.getUserId(), nonAdminRequest.getSession().getAttribute(WebKeys.USER_ID));
     }
 
     /**

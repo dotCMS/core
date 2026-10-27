@@ -1,5 +1,6 @@
 import { Subject } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -28,11 +29,21 @@ import { Select, SelectModule } from 'primeng/select';
 import { take } from 'rxjs/operators';
 
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
-import { HttpCode, LoginService, User } from '@dotcms/dotcms-js';
+import { LoginService, User } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { LOCATION_TOKEN } from '../../../../../providers';
 import { DotNavigationService } from '../../../dot-navigation/services/dot-navigation.service';
+
+const ERROR_KEY_HEADER = 'error-key';
+const ADMIN_REQUIRED_KEY = 'loginas.error.adminrequired';
+const INVALID_CREDENTIALS_KEY = 'loginas.error.invalidloginascredentials';
+
+/** Error entry the server returns with an HTTP 200 when Login As fails with a message key. */
+interface LoginAsErrorEntity {
+    errorCode?: string;
+    message?: string;
+}
 
 @Component({
     selector: 'dot-login-as',
@@ -100,6 +111,30 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
     }
 
     /**
+     * Picks the message to show for a failed Login As request:
+     * - the `error-key` header names the denial (caller is not an administrator),
+     * - a message-key failure returned by the server (`ErrorEntity[]`) shows the server text,
+     * - anything else, including a wrong password, shows the own-password hint.
+     */
+    #getErrorMessage(response: HttpErrorResponse | LoginAsErrorEntity[]): string {
+        if (
+            !Array.isArray(response) &&
+            response?.headers?.get(ERROR_KEY_HEADER) === ADMIN_REQUIRED_KEY
+        ) {
+            return this.#dotMessageService.get(ADMIN_REQUIRED_KEY);
+        }
+
+        const serverError = Array.isArray(response) ? response[0] : null;
+        if (serverError?.message && serverError.errorCode !== INVALID_CREDENTIALS_KEY) {
+            return serverError.message;
+        }
+
+        this.passwordElem()?.nativeElement.focus();
+
+        return this.#dotMessageService.get('loginas.error.wrong-credentials');
+    }
+
+    /**
      * Do request to login as specified user
      */
     doLoginAs(): void {
@@ -123,20 +158,7 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
                     },
                     error: (response) => {
                         this.loading.set(false);
-                        if (response.errorsMessages) {
-                            this.errorMessage.set(response.errorsMessages);
-                        } else if (response.status === HttpCode.FORBIDDEN) {
-                            this.errorMessage.set(
-                                this.#dotMessageService.get('loginas.error.adminrequired')
-                            );
-                        } else {
-                            this.errorMessage.set(
-                                this.#dotMessageService.get('loginas.error.wrong-credentials')
-                            );
-                            if (this.passwordElem()) {
-                                this.passwordElem().nativeElement.focus();
-                            }
-                        }
+                        this.errorMessage.set(this.#getErrorMessage(response));
                     }
                 });
         }
