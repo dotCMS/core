@@ -76,6 +76,13 @@ on:
         required: false
         type: boolean
         default: false
+      # Default true: release, nightly, LTS and sweep callers keep cleaning up.
+      # Only the PR, merge-queue and trunk callers pass false (#38203).
+      cleanup-runner:
+        description: 'Free runner disk space (cleanup-runner action) before the build'
+        required: false
+        type: boolean
+        default: true
     secrets:
       # Remote build cache (S3). Absent secrets simply disable the cache, so any
       # caller that does not pass these -- every release workflow -- builds from
@@ -185,7 +192,7 @@ jobs:
           maven-args: "clean install ${{ env.VALIDATE_PROFILE }} -Dprod=true -DskipTests=true"
           generate-artifacts: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          cleanup-runner: true
+          cleanup-runner: ${{ inputs.cleanup-runner }}
           version: ${{ inputs.version }}
           generate-docker: ${{ inputs.generate-docker }}
           generate-test-image: ${{ inputs.generate-test-image }}

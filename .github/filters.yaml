@@ -19,6 +19,7 @@ backend: &backend
   - '.github/actions/core-cicd/build-cache-remote/**'
   - '.github/actions/core-cicd/prepare-runner/**'
   - '.github/actions/core-cicd/setup-java/**'
+  - '.github/actions/core-cicd/setup-pnpm/**'
   - '.github/actions/core-cicd/cleanup-runner/**'
   - '.github/test-matrix.yml'
   - '.github/filters.yaml'

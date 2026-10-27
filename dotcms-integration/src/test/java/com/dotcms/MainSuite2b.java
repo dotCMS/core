@@ -119,7 +119,6 @@ import com.dotcms.rest.api.v1.menu.MenuResourceTest;
 import com.dotcms.rest.api.v1.publishing.BundleManagementResourceIntegrationTest;
 import com.dotcms.rest.api.v1.publishing.PublishingResourceIntegrationTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
-import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
 import com.dotcms.rest.api.v1.system.permission.PermissionResourceIntegrationTest;
 import com.dotcms.rest.api.v1.taillog.TailLogResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
@@ -344,7 +343,6 @@ import org.junit.runners.Suite.SuiteClasses;
         CategoryFactoryTest.class,
         Task210805DropUserProxyTableTest.class,
         Task210816DeInodeRelationshipTest.class,
-        ConfigurationHelperTest.class,
         CSVManifestReaderTest.class,
         Task210901UpdateDateTimezonesTest.class,
         DotObjectCodecTest.class,

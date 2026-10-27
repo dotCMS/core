@@ -18,7 +18,11 @@ import com.dotcms.inference.rest.InferenceSiteIsolationTest;
 import com.dotcms.inference.rest.InferenceSiteResolutionTest;
 import com.dotcms.inference.rest.InferenceTestsAreRegisteredTest;
 import com.dotcms.junit.MainBaseSuite;
+import com.dotcms.rendering.js.JsModuleImportIntegrationTest;
+import com.dotcms.rendering.js.viewtools.UserJsViewToolTest;
+import com.dotcms.rendering.velocity.viewtools.CMSUserToolTest;
 import com.dotcms.rest.api.v1.maintenance.MaintenanceResourceIntegrationTest;
+import com.dotmarketing.business.UserDeletionCacheInvalidationTest;
 import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
 import org.junit.runner.RunWith;
@@ -104,9 +108,18 @@ import org.junit.runners.Suite.SuiteClasses;
         FolderHandlerTest.class,
         ContentAnalyticsPersistenceModeIT.class,
         EventAnalyticsProxyResourceIntegrationTest.class,
+        com.dotmarketing.portlets.contentlet.action.ExportContentletsToCSVTest.class,
         GenericBundleActivatorIntegrationTest.class,
         com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest.class,
-        com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class
+        com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class,
+        com.dotcms.rest.ClusterResourceIntegrationTest.class,
+        com.dotcms.rest.api.v1.cluster.ClusterNodesResourceIntegrationTest.class,
+        com.dotcms.rest.api.v1.system.ConfigurationHelperTest.class,
+        UserDeletionCacheInvalidationTest.class,
+        JsModuleImportIntegrationTest.class,
+        com.dotcms.rendering.velocity.WidgetRendererTest.class,
+        CMSUserToolTest.class,
+        UserJsViewToolTest.class
 })
 public class MainSuite2a {
 

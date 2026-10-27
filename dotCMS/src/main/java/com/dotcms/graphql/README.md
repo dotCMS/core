@@ -210,14 +210,30 @@ Configure via properties:
 ```properties
 GRAPHQL_CACHE_RESULTS=true
 cache.graphqlquerycache.seconds=300
+cache.graphqlquerycache.maxseconds=3600
 cache.graphqlquerycache.graceperiod=60
 ```
 
+Entries are keyed on the server (`GraphqlCacheKey`) from the request body plus everything the
+servlet resolves from the request: the caller (auth headers, remember-me cookie or session user,
+or anonymous), the server name, the selector parameters the servlet reads (`Host`, `host_id`,
+`language_id`, the page language, `variantName`, the persona and `mode`; other parameters are
+ignored) and the session attributes that drive those selectors. Different callers never
+share an entry; anonymous callers share entries only among themselves. Bodies that run a
+mutation operation are never cached (the document is parsed, so the word in a literal or a variable
+does not count).
+
+Because entries are partitioned per caller and context, sites that serve many authenticated
+tokens, languages, variants or personas hold more entries than before; raise
+`cache.graphqlquerycache.size` (default 5000) if the hit rate drops because of evictions.
+
 ### Cache Control Headers
 
-- `dotcachettl: Int` - Cache TTL in seconds (0=bypass, -1=invalidate)
-- `dotcachekey: String` - Custom cache key
-- `dotcacherefresh: Boolean` - Background refresh
+- `dotcachettl: Int` - Cache TTL in seconds (0=bypass, -1=bypass and clear the caller's own entry;
+  clearing needs a credential). Capped by `cache.graphqlquerycache.maxseconds`.
+- `dotcachekey: String` - Extra namespace added to the derived key
+- `dotcacherefresh: Boolean` - Background refresh; replays the request with its headers and a
+  snapshot of its session, so it is skipped only for callers known through the remember-me cookie alone
 
 ### Schema Caching
 
@@ -392,6 +408,7 @@ GRAPHQL_REMOVE_DUPLICATED_TYPES=false
 
 # Cache settings
 cache.graphqlquerycache.seconds=15
+cache.graphqlquerycache.maxseconds=3600
 cache.graphqlquerycache.graceperiod=60
 
 # CORS configuration
