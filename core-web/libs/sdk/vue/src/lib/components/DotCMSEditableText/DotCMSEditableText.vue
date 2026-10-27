@@ -151,6 +151,7 @@ onBeforeUnmount(() => {
     <div v-else :style="{ outline: '2px solid #006ce7', borderRadius: '4px' }">
         <Editor
             :tinymce-script-src="scriptSrc"
+            license-key="gpl"
             :inline="true"
             :init="editorConfig"
             :initial-value="content"
