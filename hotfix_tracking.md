@@ -79,3 +79,4 @@ Release-25.07.10 LTS
 73. https://github.com/dotCMS/core/pull/38149 : fix(publishing): require access rules for uploaded bundles and plugin jars in received bundles #38149
 74. https://github.com/dotCMS/core/pull/38127 : fix(tags): check the user's permissions when deleting tags #38127
 75. https://github.com/dotCMS/core/pull/38098 : feat(apps): manage Apps configuration as an administrator setting #38098
+76. https://github.com/dotCMS/core/pull/38120 : fix(users): only a CMS Administrator can change a user's roles #38120

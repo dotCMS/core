@@ -536,4 +536,102 @@ public class RoleAPITest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Creates a back-end user who is not a CMS Administrator.
+     */
+    private static User newNonAdminBackendUser() throws DotDataException {
+        final User user = new UserDataGen()
+                .roles(com.dotcms.datagen.TestUserUtils.getBackendRole()).nextPersisted();
+        assertFalse("precondition: the user must not be a CMS Administrator", user.isAdmin());
+        return user;
+    }
+
+    /**
+     * Method to test: {@link RoleAPI#checkUserRolesChange(User, User, java.util.Collection, java.util.Collection)}
+     * Given Scenario: The system user and a CMS Administrator each request a change that adds a role.
+     * Expected Result: Both are allowed; no exception is thrown.
+     */
+    @Test
+    public void test_checkUserRolesChange_systemUserAndAdmin_allowed() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final User target = newNonAdminBackendUser();
+        final Role role = new RoleDataGen().nextPersisted();
+
+        roleAPI.checkUserRolesChange(APILocator.systemUser(), target, List.of(role), List.of());
+        roleAPI.checkUserRolesChange(com.dotcms.datagen.TestUserUtils.getAdminUser(), target,
+                List.of(role), List.of(role));
+    }
+
+    /**
+     * Method to test: {@link RoleAPI#checkUserRolesChange(User, User, java.util.Collection, java.util.Collection)}
+     * Given Scenario: A user who is not a CMS Administrator requests a change with nothing to add or remove.
+     * Expected Result: Allowed; an unchanged role set never fails.
+     */
+    @Test
+    public void test_checkUserRolesChange_nonAdminEmptyChange_allowed() throws Exception {
+        final User user = newNonAdminBackendUser();
+
+        APILocator.getRoleAPI().checkUserRolesChange(user, user, List.of(), List.of());
+        APILocator.getRoleAPI().checkUserRolesChange(user, user, null, null);
+    }
+
+    /**
+     * Method to test: {@link RoleAPI#checkUserRolesChange(User, User, java.util.Collection, java.util.Collection)}
+     * Given Scenario: A user who is not a CMS Administrator requests adding an ordinary role to their own account.
+     * Expected Result: {@link DotSecurityException}; the role is not granted.
+     */
+    @Test
+    public void test_checkUserRolesChange_nonAdminAddingRole_refused() throws Exception {
+        final User user = newNonAdminBackendUser();
+        final Role role = new RoleDataGen().nextPersisted();
+
+        try {
+            APILocator.getRoleAPI().checkUserRolesChange(user, user, List.of(role), List.of());
+            fail("only a CMS Administrator can add roles");
+        } catch (final DotSecurityException e) {
+            // expected
+        }
+        assertFalse(APILocator.getRoleAPI().doesUserHaveRole(user, role));
+    }
+
+    /**
+     * Method to test: {@link RoleAPI#checkUserRolesChange(User, User, java.util.Collection, java.util.Collection)}
+     * Given Scenario: A user who is not a CMS Administrator requests removing a role they hold.
+     * Expected Result: {@link DotSecurityException}; the role is still held.
+     */
+    @Test
+    public void test_checkUserRolesChange_nonAdminRemovingRole_refused() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        final User user = new UserDataGen()
+                .roles(com.dotcms.datagen.TestUserUtils.getBackendRole(), role).nextPersisted();
+        assertFalse(user.isAdmin());
+
+        try {
+            APILocator.getRoleAPI().checkUserRolesChange(user, user, List.of(), List.of(role));
+            fail("only a CMS Administrator can remove roles");
+        } catch (final DotSecurityException e) {
+            // expected
+        }
+        assertTrue(APILocator.getRoleAPI().doesUserHaveRole(user, role));
+    }
+
+    /**
+     * Method to test: {@link RoleAPI#checkUserRolesChange(User, User, java.util.Collection, java.util.Collection)}
+     * Given Scenario: A user who is not a CMS Administrator requests adding the CMS Administrator role to their own account.
+     * Expected Result: {@link DotSecurityException}; the user is still not a CMS Administrator.
+     */
+    @Test
+    public void test_checkUserRolesChange_nonAdminAddingAdministratorRole_refused() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final User user = newNonAdminBackendUser();
+
+        try {
+            roleAPI.checkUserRolesChange(user, user, List.of(roleAPI.loadCMSAdminRole()), List.of());
+            fail("only a CMS Administrator can add the CMS Administrator role");
+        } catch (final DotSecurityException e) {
+            // expected
+        }
+        assertFalse(user.isAdmin());
+    }
+
 }

@@ -4,6 +4,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
+import java.util.Collection;
 import java.util.List;
 
 public interface RoleAPI {
@@ -133,7 +134,24 @@ public interface RoleAPI {
 	 * @throws DotStateException
 	 */
 	 void removeRoleFromUser(Role role, User user) throws DotDataException, DotStateException;
-	
+
+	/**
+	 * Verifies that the acting user may apply the given change to the target user's roles. Only the
+	 * system user and CMS Administrators may add or remove roles. An empty change is always allowed,
+	 * so saving a user without changing their roles never fails here.
+	 * <p>This method only validates; it never adds or removes a role.</p>
+	 *
+	 * @param actingUser    The user requesting the change.
+	 * @param targetUser    The user whose roles would change. It may not be persisted yet.
+	 * @param rolesToAdd    The roles the request would add. May be empty.
+	 * @param rolesToRemove The roles the request would remove. May be empty.
+	 *
+	 * @throws DotSecurityException The acting user may not apply a non-empty change.
+	 * @throws DotDataException     An error occurred when resolving the acting user's roles.
+	 */
+	void checkUserRolesChange(User actingUser, User targetUser, Collection<Role> rolesToAdd,
+			Collection<Role> rolesToRemove) throws DotSecurityException, DotDataException;
+
 	/**
 	 * Add a role to a user
 	 * @param role
