@@ -1,4 +1,5 @@
 <%@page import="com.liferay.util.Xss"%>
+<%@page import="com.dotmarketing.util.NumberUtil"%>
 <%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.business.web.WebAPILocator"%>
 <%@page import="com.liferay.portal.model.User"%>
@@ -29,12 +30,9 @@ boolean userIsAdmin = false;
 if(!UtilMethods.isSet(sortBy)){
 	sortBy = "";
 }
-if(!UtilMethods.isSet(offset)){
-	offset = "0";
-}
-if(!UtilMethods.isSet(limit)){
-	limit = "20";
-}
+// offset and limit are numbers; anything else falls back to the defaults
+offset = String.valueOf(NumberUtil.toInt(offset, () -> 0));
+limit = String.valueOf(NumberUtil.toInt(limit, () -> 20));
 
 if(APILocator.getRoleAPI().doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())){
 	userIsAdmin = true;
@@ -95,19 +93,34 @@ query = Xss.strip(query);
 		luceneResultTable.innerHTML = htmlRows;
 	}
 
+	/**
+	 * Encodes a value so it is shown as plain text when added to the page with innerHTML.
+	 */
+	function escapeHtml(value) {
+		return String(value ?? '')
+			.replace(/&/g, '&amp;')
+			.replace(/</g, '&lt;')
+			.replace(/>/g, '&gt;')
+			.replace(/"/g, '&quot;')
+			.replace(/'/g, '&#39;');
+	}
+
 	function setContentletItem(contentlet, index) {
+		const inode = escapeHtml(contentlet.inode);
+		const variant = escapeHtml(contentlet.variant ?? 'DEFAULT');
+		const href = '/dotAdmin/#/c/content/' + encodeURIComponent(contentlet.inode) + '&variantName=' + encodeURIComponent(contentlet.variant ?? 'DEFAULT');
 
 		return `<tr><th><strong>${index}.</th><th><strong><%= LanguageUtil.get(pageContext, "Title") %></strong></th>
-				<th><a onclick="return openContent(event, '${contentlet.inode}', '${contentlet.variant}')" href="/dotAdmin/#/c/content/${contentlet.inode}&variantName=${contentlet.variant ?? 'DEFAULT'}">
-				${contentlet.title}</a></th></tr><tr><td></td>
+				<th><a data-inode="${inode}" data-variant="${variant}" onclick="return openContent(event, this.dataset.inode, this.dataset.variant)" href="${escapeHtml(href)}">
+				${escapeHtml(contentlet.title)}</a></th></tr><tr><td></td>
 				<td><strong><%= LanguageUtil.get(pageContext, "ContentType") %>:</strong></td>
-				<td width="90%">${contentlet.contentType}</td>
+				<td width="90%">${escapeHtml(contentlet.contentType)}</td>
 				</tr><tr><td></td>
 				<td><strong><%= LanguageUtil.get(pageContext, "Inode") %>:</strong></td>
-				<td width="90%">${contentlet.inode}</td>
+				<td width="90%">${inode}</td>
 				</tr><tr><td></td>
 				<td><strong><%= LanguageUtil.get(pageContext, "Identifier") %>:</strong></td>
-				<td>${contentlet.identifier}</td>
+				<td>${escapeHtml(contentlet.identifier)}</td>
 				</tr>`
 	}
 
@@ -162,7 +175,7 @@ query = Xss.strip(query);
 
 	function openContent(event, inode, variantName)	{
 		if (! hastModifiers(event)){
-			window.parent.location = `/dotAdmin/#/c/content/${inode}&variantName=${variantName ?? 'DEFAULT'}`;
+			window.parent.location = `/dotAdmin/#/c/content/${encodeURIComponent(inode)}&variantName=${encodeURIComponent(variantName ?? 'DEFAULT')}`;
 			return false;
 		}
 		return true;
@@ -196,7 +209,7 @@ query = Xss.strip(query);
 						<dd><input name="limit" id="limit" dojoType="dijit.form.NumberTextBox" type="text" value="<%=limit%>" size="10" /></dd>
 
 						<dt><label  for="sort"><%= LanguageUtil.get(pageContext, "Sort") %> </label></dt>
-						<dd><input name="sort" id="sort" dojoType="dijit.form.TextBox" type="text" value="<%=sortBy%>" size="10" /></dd>
+						<dd><input name="sort" id="sort" dojoType="dijit.form.TextBox" type="text" value="<%=Xss.encodeForHTMLAttribute(sortBy)%>" size="10" /></dd>
 
 						<dt><label for="userId"><%= LanguageUtil.get(pageContext, "UserID") %> </label></dt>
 						<dd><input name="userId" id="userId" dojoType="dijit.form.TextBox" type="text" value="<%=UtilMethods.webifyString(userToPullID)%>" size="40" <% if(!userIsAdmin){ %> disabled="disabled" <% } %>/></dd>
