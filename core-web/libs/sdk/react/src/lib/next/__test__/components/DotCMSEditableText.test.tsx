@@ -195,10 +195,10 @@ describe('DotCMSEditableText', () => {
             expect(Editor).toHaveBeenCalledWith(
                 {
                     tinymceScriptSrc: 'http://localhost:8080/ext/tinymcev7/tinymce.min.js',
+                    licenseKey: 'gpl',
                     inline: true,
                     init: {
                         inline: true,
-                        licenseKey: 'gpl',
                         menubar: false,
                         plugins: '',
                         powerpaste_html_import: 'clean',
