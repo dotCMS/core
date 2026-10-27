@@ -75,3 +75,4 @@ Release-25.07.10 LTS
 69. https://github.com/dotCMS/core/pull/38126 : fix(legacy-ui): check user permissions in legacy Ajax and Struts handlers #38126
 70. https://github.com/dotCMS/core/pull/38112 : fix(rest): validate remote URL targets and redirects up front; align role membership reads #38112
 71. https://github.com/dotCMS/core/pull/38107 : fix(graphql): scope response cache entries to the caller and request context #38107
+72. https://github.com/dotCMS/core/pull/38128 : fix(rest): return lock owner name to back-end users and normalize forgot-password response #38128

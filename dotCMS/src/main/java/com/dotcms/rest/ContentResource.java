@@ -8,6 +8,8 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.rest.api.v1.content.LockStatusFields;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotcms.util.xstream.XStreamHandler;
@@ -25,7 +27,6 @@ import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.DotLockException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletDependencies;
-import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.contentlet.util.ContentletUtil;
 import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
@@ -368,13 +369,18 @@ public class ContentResource {
 
 
     /**
+     * Tells whether the current user can lock the contentlet given by inode or identifier, and
+     * whether it is locked. When it is locked, every caller gets the lock date; only back-end users
+     * also get the lock owner's user id ({@code lockedBy}) and full name ({@code lockedByName}).
+     *
      * @Deprecated This method is deprecated and will be removed in future versions. Use {@link com.dotcms.rest.api.v1.content.ContentResource#canLockContent(HttpServletRequest, HttpServletResponse, String, String)}
-     * @param request
-     * @param response
-     * @param params
-     * @return
-     * @throws DotDataException
-     * @throws JSONException
+     * @param request  the HTTP request
+     * @param response the HTTP response
+     * @param params   path parameters: {@code id} or {@code inode}, optional {@code language},
+     *                 {@code live} and {@code callback}
+     * @return the lock status as JSON
+     * @throws DotDataException if the contentlet or its lock information cannot be loaded
+     * @throws JSONException    if the response cannot be built
      */
     @Deprecated
     @PUT
@@ -437,17 +443,8 @@ public class ContentResource {
                 }
                 jo.put("canLock", canLock);
                 jo.put("locked", contentlet.isLocked());
-
-                Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI()
-                        .getContentletVersionInfo(id, contentlet.getLanguageId());
-
-                if (contentlet.isLocked() && cvi.isPresent()) {
-                    jo.put("lockedBy", cvi.get().getLockedBy());
-                    jo.put("lockedOn", cvi.get().getLockedOn());
-                    jo.put("lockedByName", APILocator.getUserAPI().loadUserById(cvi.get()
-                            .getLockedBy()));
-
-
+                for (final Map.Entry<String, Object> lockField : LockStatusFields.of(contentlet, user).entrySet()) {
+                    jo.put(lockField.getKey(), lockField.getValue());
                 }
 
                 if (UtilMethods.isSet(callback)) {
