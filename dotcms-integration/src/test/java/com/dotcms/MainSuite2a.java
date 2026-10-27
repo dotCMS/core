@@ -101,7 +101,9 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.links.factories.LinkFactoryTest.class,
         com.dotmarketing.factories.MultiTreeAPITest.class,
         com.dotmarketing.portlets.categories.business.CategoryAPITest.class,
-        com.dotmarketing.filters.FiltersTest.class
+        com.dotmarketing.filters.FiltersTest.class,
+        com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest.class,
+        com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class
 })
 public class MainSuite2a {
 

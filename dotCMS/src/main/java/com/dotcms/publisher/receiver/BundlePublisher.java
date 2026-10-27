@@ -144,7 +144,9 @@ public class BundlePublisher extends Publisher {
      * {@link PublisherConfig#getId()}, must be a plain file name ending in
      * {@code .tar.gz} whose stem is itself a plain segment; otherwise this method fails before
      * updating the audit table or touching the bundles directory, since that stem is later used
-     * on its own to build the bundle's working folder.
+     * on its own to build the bundle's working folder. If the bundle's metadata cannot be read,
+     * no handler runs: the bundle is marked as failed and both the extracted folder and the
+     * received archive are removed.
      *
      * @param status - Current status of the publishing process.
      * @return This bundle configuration ({@link PublisherConfig}).
@@ -201,35 +203,33 @@ public class BundlePublisher extends Publisher {
         }
         folderOut.mkdir();
 
-        // Extract file to a directory
-        InputStream bundleIS = null;
-        try {
-            bundleIS = Files.newInputStream(Paths.get(bundlePath + bundleName));
-            untar(bundleIS, folderOut.getAbsolutePath() + File.separator + bundleName, bundleName);
-        } catch (IOException e) {
-
-            // Notify to anyone subscribed the PP is failed
-            Logger.debug(this, "Notify PushPublishFailureOnReceiverEvent");
-            localSystemEventsAPI.asyncNotify(new PushPublishFailureOnReceiverEvent(config.getAssets(), e));
-            throw new DotPublishingException("Cannot extract the selected archive", e);
-        } finally {
-            CloseUtils.closeQuietly(bundleIS);
-        }
-
         Map<String, String> assetsDetails = null;
-
-        String finalBundlePath = ConfigUtils.getBundlePath() + File.separator + bundleID;
         BundleMetaDataFile bundleMetaDataFile = null;
+        boolean metadataFailed = false;
 
         try {
-            Logger.debug(BundlePublisher.class, "Getting assets list from received bundle with ID '" + bundleName + "'");
-            bundleMetaDataFile = new BundleMetaDataFile(finalBundlePath);
-            assetsDetails = bundleMetaDataFile.getAssetsDetails();
-        } catch (Exception e) {
-            Logger.error(BundlePublisher.class, "Unable to get assets list from received bundle with ID '" + bundleName + "': " + e.getMessage(), e);
-        }
 
-        try {
+            // Extract file to a directory
+            InputStream bundleIS = null;
+            try {
+                bundleIS = Files.newInputStream(Paths.get(bundlePath + bundleName));
+                untar(bundleIS, folderOut.getAbsolutePath() + File.separator + bundleName, bundleName);
+            } finally {
+                CloseUtils.closeQuietly(bundleIS);
+            }
+
+            String finalBundlePath = ConfigUtils.getBundlePath() + File.separator + bundleID;
+
+            try {
+                Logger.debug(BundlePublisher.class, "Getting assets list from received bundle with ID '" + bundleName + "'");
+                bundleMetaDataFile = new BundleMetaDataFile(finalBundlePath);
+                assetsDetails = bundleMetaDataFile.getAssetsDetails();
+            } catch (Exception e) {
+                // the failure is logged once, by the handler of the whole bundle below
+                metadataFailed = true;
+                throw e;
+            }
+
             HibernateUtil.startTransaction();
             // Execute the handlers
             for (IHandler handler : handlers) {
@@ -256,6 +256,11 @@ public class BundlePublisher extends Publisher {
                 Logger.error(BundlePublisher.class, e.getMessage(), e1);
             }
             Logger.error(BundlePublisher.class, "Error publishing bundle with ID '" + bundleName + "': " + e.getMessage(), e);
+
+            if (metadataFailed) {
+                FileUtil.deltree(folderOut);
+                FileUtils.deleteQuietly(new File(bundlePath + bundleName));
+            }
 
             //Update audit
             try {

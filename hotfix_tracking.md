@@ -76,3 +76,4 @@ Release-25.07.10 LTS
 70. https://github.com/dotCMS/core/pull/38112 : fix(rest): validate remote URL targets and redirects up front; align role membership reads #38112
 71. https://github.com/dotCMS/core/pull/38107 : fix(graphql): scope response cache entries to the caller and request context #38107
 72. https://github.com/dotCMS/core/pull/38128 : fix(rest): return lock owner name to back-end users and normalize forgot-password response #38128
+73. https://github.com/dotCMS/core/pull/38149 : fix(publishing): require access rules for uploaded bundles and plugin jars in received bundles #38149
