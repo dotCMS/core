@@ -467,6 +467,7 @@ public class AppsUtil {
             return ObjectInputFilter.Status.UNDECIDED;
         }
         final boolean allowed = EXPORT_FILE_TYPES.contains(type)
+                // the map Guava rebuilds from its written form is checked again once read
                 || ImmutableMap.class.isAssignableFrom(type)
                 || IMMUTABLE_COLLECTION_WRITTEN_FORMS.contains(type.getName())
                 || type.getName().startsWith(JDK_IMMUTABLE_COLLECTIONS_PREFIX);
