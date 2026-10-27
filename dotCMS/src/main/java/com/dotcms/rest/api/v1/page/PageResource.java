@@ -1377,8 +1377,7 @@ public class PageResource {
             @ApiResponse(responseCode = "200", description = "Content tree retrieved successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityMulitreeView.class))),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "User is not a back-end user"),
+            @ApiResponse(responseCode = "401", description = "Authentication required, or the user is not a back-end user"),
             @ApiResponse(responseCode = "404", description = "Page not found, or the user cannot read it")
     })
     @GET
@@ -1431,8 +1430,7 @@ public class PageResource {
             @ApiResponse(responseCode = "200", description = "Personas with personalization flags retrieved successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityListPersonalizationPersonaPageView.class))),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "User is not a back-end user"),
+            @ApiResponse(responseCode = "401", description = "Authentication required, or the user is not a back-end user"),
             @ApiResponse(responseCode = "404", description = "Page not found, or the user cannot read it")
     })
     @GET
