@@ -471,6 +471,44 @@ public class RoleAPIImpl implements RoleAPI {
 		APILocator.getSystemEventsAPI().pushAsync(SystemEventType.UPDATE_PORTLET_LAYOUTS, new Payload(Visibility.USER, user.getUserId()));
 	}
 
+	@CloseDBIfOpened
+	@Override
+	public void checkUserRolesChange(final User actingUser, final User targetUser,
+			final Collection<Role> rolesToAdd, final Collection<Role> rolesToRemove)
+			throws DotSecurityException, DotDataException {
+
+		final boolean nothingToAdd = null == rolesToAdd || rolesToAdd.isEmpty();
+		final boolean nothingToRemove = null == rolesToRemove || rolesToRemove.isEmpty();
+		if (nothingToAdd && nothingToRemove) {
+			return;
+		}
+
+		if (null != actingUser && (APILocator.systemUser().getUserId().equals(actingUser.getUserId())
+				|| actingUser.isAdmin())) {
+			return;
+		}
+
+		final String actingUserId = null != actingUser ? actingUser.getUserId() : "[none]";
+		final String targetUserId = null != targetUser ? targetUser.getUserId() : "[none]";
+		SecurityLogger.logInfo(this.getClass(), String.format(
+				"User '%s' is not allowed to change the roles of user '%s'. Roles to add: %s. Roles to remove: %s",
+				actingUserId, targetUserId, roleIds(rolesToAdd), roleIds(rolesToRemove)));
+		throw new DotSecurityException(String.format(
+				"User '%s' is not allowed to change the roles of user '%s'. Only a CMS Administrator can change user roles.",
+				actingUserId, targetUserId));
+	}
+
+	/**
+	 * Returns the ids of the given roles, for log messages.
+	 *
+	 * @param roles The roles, possibly {@code null}.
+	 *
+	 * @return The role ids, or an empty list.
+	 */
+	private static List<String> roleIds(final Collection<Role> roles) {
+		return null == roles ? List.of() : roles.stream().map(Role::getId).collect(Collectors.toList());
+	}
+
 	@Override
 	public void removeAllRolesFromUser(final User user) throws DotDataException,
 			DotStateException {

@@ -54,6 +54,7 @@ import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UUIDUtil;
@@ -98,6 +99,7 @@ import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.Serializable;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
@@ -132,6 +134,8 @@ public class UserResource implements Serializable {
 	public static final String USER_ID = "userID";
 	public static final String USER_MSG = "User ";
 	public static final String USER_WITH_USER_ID_MSG = "User with userId '";
+	/** Item key carrying whether the User is a CMS Administrator; returned to Role administrators. */
+	private static final String ADMIN_ITEM_KEY = "admin";
 	private final WebResource webResource;
 	private final UserAPI userAPI;
 	private final HostAPI siteAPI;
@@ -409,15 +413,29 @@ public class UserResource implements Serializable {
 	 *                         on it.
 	 * @param permission       The permission type that Users may have on the previous asset.
 	 * @param roleKeys         Optional Role keys -- repeatable and/or comma-separated -- that restrict the results to
-	 *                         Users holding any of them, e.g. {@code roleKey=DOTCMS_BACK_END_USER}.
+	 *                         Users holding any of them, e.g. {@code roleKey=DOTCMS_BACK_END_USER}. Keys are matched
+	 *                         exactly. Filtering by role reveals who holds it, so it takes the same privilege as
+	 *                         {@code includeRoles}; otherwise 403.
+	 * @param roleIds          Optional Role IDs -- repeatable and/or comma-separated -- combined with {@code roleKeys}
+	 *                         to restrict the results to Users directly holding any of them, e.g.
+	 *                         {@code roleId=892ab105-f212-407f-8fb4-58ec59310a5e}. Unlike keys, IDs also reach Roles
+	 *                         created without a key. Requires the same privilege as {@code includeRoles}; otherwise
+	 *                         403.
 	 * @param includeRoles     Opt-in flag. When {@code true}, every returned User carries a {@code roles} list with
 	 *                         its <b>directly assigned</b> Roles -- inherited Roles and the User's personal Role are
 	 *                         excluded -- as {@code {id, name, roleKey}} entries. Defaults to {@code false}, in which
 	 *                         case the response is identical to the one returned before this flag existed. Reading
 	 *                         role membership requires the same privilege as {@code GET /v1/roles/users/{id}}: CMS
 	 *                         Administrator, or access to both the Roles and the Users portlets; otherwise 403.
+	 *                         <p>Each item's {@code admin} flag (whether the User is a CMS Administrator) is only
+	 *                         returned to callers with that same privilege; for anyone else the key is left out.</p>
 	 *
 	 * @return A {@link Response} containing the list of dotCMS users that match the filtering criteria.
+	 *
+	 * @throws ForbiddenException  If {@code includeRoles}, a {@code roleKey} or a {@code roleId} is requested without
+	 *                             the privilege described above.
+	 * @throws BadRequestException If a {@code roleKey} or {@code roleId} matches no Role.
+	 * @throws DotDataException    An error occurred when resolving the User's portlet access.
 	 */
 	@Operation(
 		operationId = "filterUsers",
@@ -428,7 +446,10 @@ public class UserResource implements Serializable {
 				+ "objects (`roleKey` may be null for roles created without a key); roles held through the role "
 				+ "hierarchy and the user's personal role are not included. Requesting roles requires being a CMS "
 				+ "Administrator or having access to both the Roles and Users portlets (403 otherwise). Without the "
-				+ "flag the payload is unchanged."
+				+ "flag the payload is unchanged. Results can be restricted to users directly holding any of the "
+				+ "given roles through `roleKey` and/or `roleId`; filtering by role requires that same privilege. The "
+				+ "`admin` flag on each item is only returned to callers with that same privilege; for anyone else "
+				+ "it is left out."
 	)
 	@io.swagger.v3.oas.annotations.responses.ApiResponses(value = {
 		@ApiResponse(responseCode = "200",
@@ -436,13 +457,13 @@ public class UserResource implements Serializable {
 					content = @Content(mediaType = "application/json",
 									  schema = @Schema(implementation = ResponseEntityListUserView.class))),
 		@ApiResponse(responseCode = "400",
-					description = "Bad request - a provided roleKey does not match any existing Role",
+					description = "Bad request - a provided roleKey or roleId does not match any existing Role",
 					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "401",
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "403",
-					description = "Forbidden - insufficient permissions, or includeRoles=true requested without CMS Administrator / Roles+Users portlet access",
+					description = "Forbidden - insufficient permissions, or includeRoles=true / a role filter requested without CMS Administrator / Roles+Users portlet access",
 					content = @Content(mediaType = "application/json"))
 	})
 	@GET
@@ -460,7 +481,8 @@ public class UserResource implements Serializable {
 						   @Parameter(description = "Include default user in results") @QueryParam(UserPaginator.INCLUDE_DEFAULT) boolean includeDefault,
 						   @Parameter(description = "Asset inode for permission-based filtering") @QueryParam(UserPaginator.ASSET_INODE_PARAM) String assetInode,
 						   @Parameter(description = "Permission type for asset-based filtering") @QueryParam(UserPaginator.PERMISSION_PARAM) int permission,
-						   @Parameter(description = "Role key(s) to restrict results to users holding any of them; repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER") @QueryParam(UserPaginator.ROLE_KEY_PARAM) final List<String> roleKeys,
+						   @Parameter(description = "Role key(s) to restrict results to users holding any of them; repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER (exact match). Requires CMS Administrator or Roles+Users portlet access (403 otherwise)") @QueryParam(UserPaginator.ROLE_KEY_PARAM) final List<String> roleKeys,
+						   @Parameter(description = "Role ID(s) to restrict results to users directly holding any of them, combined with roleKey; repeatable and/or comma-separated. Also matches roles created without a key. Requires CMS Administrator or Roles+Users portlet access (403 otherwise)") @QueryParam(UserPaginator.ROLE_ID_PARAM) final List<String> roleIds,
 						   @Parameter(description = "When true, each user carries a `roles` array of its directly assigned roles as {id, name, roleKey}; inherited roles and the user's personal role are excluded. Requires CMS Administrator or Roles+Users portlet access (403 otherwise). Defaults to false (payload unchanged)") @DefaultValue("false") @QueryParam(UserPaginator.INCLUDE_ROLES_PARAM) final boolean includeRoles)
 			throws DotDataException {
 		final InitDataObject initData = new WebResource.InitBuilder(webResource)
@@ -477,20 +499,25 @@ public class UserResource implements Serializable {
 		extraParams.put(UserAPI.FilteringParams.INCLUDE_DEFAULT_PARAM, includeDefault);
 		extraParams.put(UserAPI.FilteringParams.ORDER_BY_PARAM, orderBy);
 
-		final List<Role> roles = this.resolveRoleKeys(roleKeys);
+		final User user = initData.getUser();
+		final boolean roleAdministrator = this.isRoleAdministrator(user);
+		final List<String> requestedRoleKeys = splitValues(roleKeys);
+		final List<String> requestedRoleIds = splitValues(roleIds);
+		// Authorization is checked before the roles are loaded
+		if (!requestedRoleKeys.isEmpty() || !requestedRoleIds.isEmpty()) {
+			// Filtering by role reveals who holds it: same privilege as includeRoles
+			requireRoleAdministrator(user, roleAdministrator, "filter users by role");
+		}
+		final List<Role> roles = new ArrayList<>(this.resolveRoleKeys(requestedRoleKeys));
+		roles.addAll(this.resolveRoleIds(requestedRoleIds));
 		if (UtilMethods.isSet(roles)) {
 			extraParams.put(UserPaginator.ROLES_PARAM, roles);
 		}
-		final User user = initData.getUser();
 		// Only set when requested: extra params are echoed into the Link header, and the default response must stay
 		// identical to the pre-flag one
 		if (includeRoles) {
-			if (!this.isRoleAdministrator(user)) {
-				// Same privilege as GET /v1/roles/users/{id}: role membership is not visible to every back-end user
-				final String message = USER_MSG + user.getUserId() + " does not have permissions to read user roles";
-				Logger.error(this, message);
-				throw new ForbiddenException(message);
-			}
+			// Same privilege as GET /v1/roles/users/{id}: role membership is not visible to every back-end user
+			requireRoleAdministrator(user, roleAdministrator, "read user roles");
 			extraParams.put(UserPaginator.INCLUDE_ROLES_PARAM, true);
 		}
 
@@ -499,7 +526,24 @@ public class UserResource implements Serializable {
 		// arguments, so the direction is passed here too (same wiring as RoleResource#loadUsersByRoleId).
 		final OrderDirection orderDirection = OrderDirection.valueOf(direction);
 		extraParams.put(UserAPI.FilteringParams.ORDER_DIRECTION_PARAM, UserAPI.FilteringParams.sqlDirection(orderDirection));
-		return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, orderDirection, extraParams);
+		// Applied to the items rather than passed as an extra param, so the Link header stays the same for every caller
+		final Function<PaginatedArrayList<Map<String, Object>>, PaginatedArrayList<Map<String, Object>>> itemsFunction =
+				roleAdministrator ? null : UserResource::withoutAdminFlag;
+		return this.paginationUtil.getPage(request, user, filter, page, perPage, orderBy, orderDirection, extraParams,
+				itemsFunction);
+	}
+
+	/**
+	 * Removes the {@code admin} flag from every paginated User item, for callers who are not Role administrators.
+	 *
+	 * @param items The paginated User items, modified in place.
+	 *
+	 * @return The same items, without the {@code admin} key.
+	 */
+	private static PaginatedArrayList<Map<String, Object>> withoutAdminFlag(
+			final PaginatedArrayList<Map<String, Object>> items) {
+		items.forEach(item -> item.remove(ADMIN_ITEM_KEY));
+		return items;
 	}
 
 	/**
@@ -520,28 +564,83 @@ public class UserResource implements Serializable {
 	}
 
 	/**
-	 * Resolves the {@code roleKey} query parameter values -- each entry may itself be a comma-separated list -- into
-	 * the {@link Role} objects expected by the {@link UserPaginator#ROLES_PARAM} parameter.
+	 * Rejects the request with a 403 unless the calling User is a Role administrator, as computed by
+	 * {@link #isRoleAdministrator(User)}. The denial is recorded in the security log.
 	 *
-	 * @param roleKeys The Role key values provided by the caller, potentially empty.
+	 * @param user               The calling {@link User}.
+	 * @param roleAdministrator  Whether that User is a Role administrator.
+	 * @param action             What the User asked to do, used in the log and error message (e.g. "read user roles").
+	 *
+	 * @throws ForbiddenException If the User is not a Role administrator.
+	 */
+	private static void requireRoleAdministrator(final User user, final boolean roleAdministrator,
+												 final String action) {
+		if (!roleAdministrator) {
+			final String message = USER_MSG + user.getUserId() + " does not have permissions to " + action;
+			SecurityLogger.logInfo(UserResource.class, message);
+			throw new ForbiddenException(message);
+		}
+	}
+
+	/**
+	 * Flattens a repeatable query parameter whose entries may themselves be comma-separated lists, dropping blank
+	 * values.
+	 *
+	 * @param values The raw query parameter values, potentially {@code null}.
+	 *
+	 * @return The individual trimmed values, or an empty list if none were provided.
+	 */
+	private static List<String> splitValues(final List<String> values) {
+		if (!UtilMethods.isSet(values)) {
+			return List.of();
+		}
+		return values.stream()
+				.filter(Objects::nonNull)
+				.flatMap(value -> Arrays.stream(value.split(",")))
+				.map(String::trim)
+				.filter(UtilMethods::isSet)
+				.collect(Collectors.toList());
+	}
+
+	/**
+	 * Resolves the requested Role keys into the {@link Role} objects expected by the
+	 * {@link UserPaginator#ROLES_PARAM} parameter.
+	 *
+	 * @param roleKeys The individual Role keys provided by the caller, potentially empty.
 	 *
 	 * @return The list of resolved {@link Role} objects, or an empty list if no keys were provided.
 	 *
 	 * @throws BadRequestException If any of the provided keys does not match an existing Role.
 	 */
 	private List<Role> resolveRoleKeys(final List<String> roleKeys) {
-		if (!UtilMethods.isSet(roleKeys)) {
-			return List.of();
-		}
 		return roleKeys.stream()
-				.flatMap(value -> Arrays.stream(value.split(",")))
-				.map(String::trim)
-				.filter(UtilMethods::isSet)
 				.map(roleKey -> {
 					final Role role = Try.of(() -> this.roleAPI.loadRoleByKey(roleKey))
 							.getOrElseThrow(DotRuntimeException::new);
 					if (null == role || !UtilMethods.isSet(role.getId())) {
 						throw new BadRequestException(String.format("Role with key '%s' was not found", roleKey));
+					}
+					return role;
+				}).collect(Collectors.toList());
+	}
+
+	/**
+	 * Resolves the requested Role IDs into the {@link Role} objects expected by the
+	 * {@link UserPaginator#ROLES_PARAM} parameter.
+	 *
+	 * @param roleIds The individual Role IDs provided by the caller, potentially empty.
+	 *
+	 * @return The list of resolved {@link Role} objects, or an empty list if no IDs were provided.
+	 *
+	 * @throws BadRequestException If any of the provided IDs does not match an existing Role.
+	 */
+	private List<Role> resolveRoleIds(final List<String> roleIds) {
+		return roleIds.stream()
+				.map(roleId -> {
+					final Role role = Try.of(() -> this.roleAPI.loadRoleById(roleId))
+							.getOrElseThrow(DotRuntimeException::new);
+					if (null == role || !UtilMethods.isSet(role.getId())) {
+						throw new BadRequestException(String.format("Role with id '%s' was not found", roleId));
 					}
 					return role;
 				}).collect(Collectors.toList());
@@ -951,7 +1050,7 @@ public class UserResource implements Serializable {
 	@Operation(
 	    operationId = "createUser",
 	    summary = "Create user",
-	    description = "Creates a new user. Requires admin privileges or access to Users and Roles portlets. FirstName, LastName, Email and Password are required"
+	    description = "Creates a new user. Requires a CMS Administrator. FirstName, LastName, Email and Password are required"
 	)
 	@ApiResponses(value = {
 	    @ApiResponse(responseCode = "200",
@@ -965,7 +1064,7 @@ public class UserResource implements Serializable {
 	                description = "Unauthorized - authentication required",
 	                content = @Content(mediaType = "application/json")),
 	    @ApiResponse(responseCode = "403",
-	                description = "Forbidden - insufficient permissions to create users",
+	                description = "Forbidden - only a CMS Administrator can create users",
 	                content = @Content(mediaType = "application/json")),
 	    @ApiResponse(responseCode = "409",
 	                description = "Conflict - user already exists",
@@ -992,28 +1091,36 @@ public class UserResource implements Serializable {
 				.rejectWhenNoUser(true)
 				.init().getUser();
 
-		final boolean isRoleAdministrator = modUser.isAdmin() ||
-				(
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-				);
+		// creating users requires a CMS Administrator; checked before anything is written
+		if (!modUser.isAdmin()) {
+			throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to create users");
+		}
 
         if (!UtilMethods.isSet(createUserForm.getPassword())) {
             throw new IllegalArgumentException("Password can not be null");
         }
 
-		if (isRoleAdministrator) {
-
-			final User userToUpdated = this.createNewUser(
-					modUser, createUserForm);
-			final Role role = APILocator.getRoleAPI().getUserRole(userToUpdated);
-			return Response.ok(new ResponseEntityView<>(Map.of(USER_ID, userToUpdated.getUserId(), "roleId", role.getId(),
-					"user", userToUpdated.toMap()))).build(); // 200
-		}
-
-		throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to create users");
+		final User userToUpdated = this.createNewUser(
+				modUser, createUserForm);
+		final Role role = APILocator.getRoleAPI().getUserRole(userToUpdated);
+		return Response.ok(new ResponseEntityView<>(Map.of(USER_ID, userToUpdated.getUserId(), "roleId", role.getId(),
+				"user", userToUpdated.toMap()))).build(); // 200
 	} // create.
 
+	/**
+	 * Creates a user from the payload and grants the requested roles, or the Front-end User role when
+	 * none are sent. Only a CMS Administrator can create users; {@link #create} checks this before
+	 * calling this method, so nothing is written for any other caller.
+	 *
+	 * @param modUser        The user performing the request.
+	 * @param createUserForm The payload.
+	 *
+	 * @return The created user.
+	 *
+	 * @throws DotDataException     An error occurred when saving the user or its roles.
+	 * @throws DotSecurityException The caller may not create the user or grant the requested roles.
+	 * @throws ParseException       The birthday is not a valid ISO date.
+	 */
 	@WrapInTransaction
 	protected User createNewUser(final User modUser,
 								 final UserForm createUserForm)
@@ -1023,6 +1130,21 @@ public class UserResource implements Serializable {
 				createUserForm.getUserId(): "userId-" + UUIDUtil.uuid();
 		validateMaximumLength(createUserForm.getFirstName(),createUserForm.getLastName(),createUserForm.getEmail(),
 				createUserForm.getMiddleName(),createUserForm.getNickName(),createUserForm.getBirthday());
+
+		// absent OR empty roles → legacy default (Front-end User); entries are role keys or role IDs
+		final List<String> roleEntries = UtilMethods.isSet(createUserForm.getRoles())?
+				createUserForm.getRoles():list(Role.DOTCMS_FRONT_END_USER);
+		final List<Role> rolesToGrant = new ArrayList<>();
+		for (final String roleEntry : roleEntries) {
+
+			final Role role = this.resolveRole(roleEntry);
+			if (null == role) {
+				Logger.debug(this, ()-> "Role '" + roleEntry + "' (key or id) does NOT exist in dotCMS. Ignoring it...");
+				continue;
+			}
+			rolesToGrant.add(role);
+		}
+
 		final User user = this.userAPI.createUser(userId, createUserForm.getEmail());
 
 		user.setFirstName(createUserForm.getFirstName());
@@ -1057,10 +1179,6 @@ public class UserResource implements Serializable {
 			user.setAdditionalInfo(createUserForm.getAdditionalInfo());
 		}
 
-		// absent OR empty roles → legacy default (Front-end User); entries are role keys or role IDs
-		final List<String> roleEntries = UtilMethods.isSet(createUserForm.getRoles())?
-				createUserForm.getRoles():list(Role.DOTCMS_FRONT_END_USER);
-
 		this.userAPI.save(user, modUser, false);
 		Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 				createUserForm.getEmail() + "' has been created.");
@@ -1068,13 +1186,8 @@ public class UserResource implements Serializable {
 		// same semantics UserHelper#addRole(user, key, false, false) had: unknown → ignored,
 		// already held → skipped, non-assignable (editUsers=false) → addRoleToUser throws and the
 		// whole create rolls back. UserHelper itself is left untouched — SAML provisioning uses it.
-		for (final String roleEntry : roleEntries) {
+		for (final Role role : rolesToGrant) {
 
-			final Role role = this.resolveRole(roleEntry);
-			if (null == role) {
-				Logger.debug(this, ()-> "Role '" + roleEntry + "' (key or id) does NOT exist in dotCMS. Ignoring it...");
-				continue;
-			}
 			if (!this.roleAPI.doesUserHaveRole(user, role)) {
 				this.roleAPI.addRoleToUser(role, user);
 			}
@@ -1128,7 +1241,8 @@ public class UserResource implements Serializable {
 							content = @Content(mediaType = "application/json",
 									schema = @Schema(implementation =
 											ResponseSiteVariablesEntityView.class)),
-							description = "If the user is not an admin or access to the role + user layouts or does have permission, it will return a 403."),
+							description = "If the user is not an admin or access to the role + user layouts or does have permission, it will return a 403. " +
+									"Changing the user's roles also requires a CMS Administrator; otherwise nothing is changed and a 403 is returned."),
 					@ApiResponse(
 							responseCode = "404",
 							content = @Content(mediaType = "application/json",
@@ -1348,6 +1462,18 @@ public class UserResource implements Serializable {
     } // deactivate.
 
 
+	/**
+	 * Updates a user from the payload and, when the payload has a {@code roles} field, reconciles the
+	 * user's roles with it. Changing roles requires a CMS Administrator; the role change is checked
+	 * before anything is saved, so a refused request changes nothing. Sending the roles the user
+	 * already holds is not a change.
+	 *
+	 * @param modUser        The user performing the request.
+	 * @param request        The current request.
+	 * @param updateUserForm The payload.
+	 *
+	 * @return The updated user.
+	 */
 	@WrapInTransaction
 	private User updateUser(final User modUser, final HttpServletRequest request,
 							final UserForm updateUserForm) throws DotDataException, DotSecurityException,
@@ -1422,15 +1548,22 @@ public class UserResource implements Serializable {
 				(APILocator.getUserProxyAPI().getUserProxy(userToSave, modUser, false),
 						PermissionAPI.PERMISSION_EDIT, modUser, false)) {
 
+			// the role change is computed and validated before anything is written
+			final RoleChanges roleChanges = this.computeRoleChanges(updateUserForm, userToSave);
+			if (null != roleChanges) {
+				this.roleAPI.checkUserRolesChange(modUser, userToSave, roleChanges.toAdd(), roleChanges.toRemove());
+			}
+
 			this.userAPI.save(userToSave, modUser, validatePassword,
 					!WebAPILocator.getUserWebAPI().isLoggedToBackend(request));
 			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' has been updated.");
 
-            this.processRoles(updateUserForm, userToSave);
-
-            Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
-					updateUserForm.getEmail() + "' , the roles have been updated.");
+            if (null != roleChanges) {
+                this.applyRoleChanges(roleChanges, userToSave);
+                Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
+                        updateUserForm.getEmail() + "' , the roles have been updated.");
+            }
 
 		} else {
 
@@ -1452,24 +1585,44 @@ public class UserResource implements Serializable {
     }
 
     /**
-     * Reconciles the user's role memberships against the {@code roles} key list sent in the
-     * payload, mirroring the legacy Users portlet behavior (DWR {@code UserAjax#updateUserRoles}):
-     * only user-assignable roles ({@code editUsers = true}) are added or removed. System-managed
-     * memberships — the user's individual role, the default role — are never touched.
+     * The roles an update would add to and remove from a user.
+     *
+     * @param toAdd    User-assignable roles the user does not hold yet. Decides whether the update
+     *                 changes the user's roles at all.
+     * @param toRemove User-assignable roles the user holds directly and that were not sent.
+     * @param toGrant  Every user-assignable role sent. Granted after the removals; roles the user
+     *                 still holds at that point are skipped.
+     */
+    private record RoleChanges(List<Role> toAdd, List<Role> toRemove, List<Role> toGrant) { }
+
+    /**
+     * Works out how the {@code roles} list sent in the payload changes the user's role memberships,
+     * mirroring the legacy Users portlet behavior (DWR {@code UserAjax#updateUserRoles}): only
+     * user-assignable roles ({@code editUsers = true}) are added or removed. System-managed
+     * memberships — the user's individual role, the default role — are never touched. Nothing is
+     * written here; see {@link #applyRoleChanges(RoleChanges, User)}.
      *
      * A {@code null} list (field absent from the payload) leaves roles untouched; an empty list
      * removes all of the user's user-assignable roles; a non-empty list becomes the user's
      * complete user-assignable role set. Each entry is a role key or a role ID (#37209 — roles
      * created in the Roles portlet may have no key); entries that resolve to no role are ignored;
-     * null or blank entries are rejected with 400.
+     * null or blank entries are rejected with 400. Roles the user already holds, directly or through
+     * a parent role, are not added again, so sending every role the user holds changes nothing.
+     *
+     * @param updateUserForm The payload.
+     * @param userToSave     The user being updated.
+     *
+     * @return The roles to add and remove, or {@code null} when the payload has no {@code roles} field.
+     *
+     * @throws DotDataException An error occurred when reading roles.
      */
-    private void processRoles(final UserForm updateUserForm, final User userToSave) throws DotDataException {
+    private RoleChanges computeRoleChanges(final UserForm updateUserForm, final User userToSave) throws DotDataException {
 
         final List<String> roleEntries = updateUserForm.getRoles();
         if (null == roleEntries) {
 
             Logger.debug(this, ()-> "Not roles sent at all, nothing has been modified in terms of roles");
-            return;
+            return null;
         }
 
         // Jackson accepts null elements in a JSON array bound to List<String>; reject them up
@@ -1493,25 +1646,57 @@ public class UserResource implements Serializable {
 
         // the payload is the source of truth for user-assignable roles: remove the ones not sent
         final Set<String> desiredRoleIds = desiredRoles.stream().map(Role::getId).collect(Collectors.toSet());
+        final List<Role> toRemove = new ArrayList<>();
         for (final Role currentRole : this.roleAPI.loadRolesForUser(userToSave.getUserId(), false)) {
 
             if (currentRole.isEditUsers() && !desiredRoleIds.contains(currentRole.getId())) {
-
-                this.roleAPI.removeRoleFromUser(currentRole, userToSave);
-                SecurityLogger.logInfo(this.getClass(), "Removing role:'" + currentRole.getName()
-                        + "' from user:" + userToSave.getUserId() + " email:" + userToSave.getEmailAddress());
+                toRemove.add(currentRole);
             }
         }
 
-        // ...and add the missing ones (addRoleToUser no-ops when the role is already held)
+        // ...and grant the sent ones after the removals; the ones the user does not hold now make
+        // the update a change
+        final List<Role> toAdd = new ArrayList<>();
+        final List<Role> toGrant = new ArrayList<>();
+        final Set<String> toGrantIds = new HashSet<>();
         for (final Role desiredRole : desiredRoles) {
 
-            if (desiredRole.isEditUsers()) {
-                this.roleAPI.addRoleToUser(desiredRole, userToSave);
-            } else {
+            if (!desiredRole.isEditUsers()) {
                 Logger.debug(this, ()-> "Role '" + desiredRole.getName()
                         + "' is not user-assignable. Ignoring it...");
+            } else if (toGrantIds.add(desiredRole.getId())) {
+                toGrant.add(desiredRole);
+                if (!this.roleAPI.doesUserHaveRole(userToSave, desiredRole)) {
+                    toAdd.add(desiredRole);
+                }
             }
+        }
+
+        return new RoleChanges(toAdd, toRemove, toGrant);
+    }
+
+    /**
+     * Writes the role changes computed by {@link #computeRoleChanges(UserForm, User)}: removals
+     * first, then every sent role is granted. Granting after the removals means a role the user only
+     * held through a removed parent role is granted directly; roles the user still holds are skipped
+     * by {@link com.dotmarketing.business.RoleAPI#addRoleToUser(Role, User)}.
+     *
+     * @param roleChanges The roles to add and remove.
+     * @param userToSave  The user being updated.
+     *
+     * @throws DotDataException An error occurred when writing the roles.
+     */
+    private void applyRoleChanges(final RoleChanges roleChanges, final User userToSave) throws DotDataException {
+
+        for (final Role role : roleChanges.toRemove()) {
+
+            this.roleAPI.removeRoleFromUser(role, userToSave);
+            SecurityLogger.logInfo(this.getClass(), "Removing role:'" + role.getName()
+                    + "' from user:" + userToSave.getUserId() + " email:" + userToSave.getEmailAddress());
+        }
+
+        for (final Role role : roleChanges.toGrant()) {
+            this.roleAPI.addRoleToUser(role, userToSave);
         }
     }
 

@@ -236,19 +236,23 @@ jobs:
           # The built-in coordinates below are always required; the repo variable
           # only ADDS to them, so it cannot weaken the guard. Space or comma
           # separated groupId:artifactId.
-          REQUIRED_COORDINATES: com.dotcms:dotcms-core com.dotcms:dotcms-core-web ${{ vars.RELEASE_REQUIRED_COORDINATES }}
+          REQUIRED_COORDINATES: com.dotcms:dotcms-core com.dotcms:dotcms-core-web com.dotcms.samlbundle:com.dotcms.samlbundle ${{ vars.RELEASE_REQUIRED_COORDINATES }}
         run: |
           set -uo pipefail
 
           repo="${MAVEN_REPO:-$HOME/.m2/repository}"
           version="${VERSION:?VERSION is required}"
-          # dotcms-core packages a jar and dotcms-core-web a war; a release
-          # shipping one without the other is partial.
-          coords="${REQUIRED_COORDINATES:-com.dotcms:dotcms-core com.dotcms:dotcms-core-web}"
+          # A release must include core, its webapp, and the matching SAML bundle.
+          coords="${REQUIRED_COORDINATES:-com.dotcms:dotcms-core com.dotcms:dotcms-core-web com.dotcms.samlbundle:com.dotcms.samlbundle}"
           coords="${coords//,/ }"
 
           rc=0
           for coord in $coords; do
+            # Old release tags have no in-reactor SAML and retain their standalone pin.
+            if [[ "$coord" == com.dotcms.samlbundle:com.dotcms.samlbundle &&
+                  ! -f independent-projects/core-plugins/saml-plugin/pom.xml ]]; then
+              continue
+            fi
             group="${coord%%:*}"
             artifact="${coord##*:}"
             if [[ "$coord" != *:* || -z "$group" || -z "$artifact" ]]; then

@@ -76,6 +76,13 @@ on:
         required: false
         type: boolean
         default: false
+      # Default true: release, nightly, LTS and sweep callers keep cleaning up.
+      # Only the PR, merge-queue and trunk callers pass false (#38203).
+      cleanup-runner:
+        description: 'Free runner disk space (cleanup-runner action) before the build'
+        required: false
+        type: boolean
+        default: true
     secrets:
       # Remote build cache (S3). Absent secrets simply disable the cache, so any
       # caller that does not pass these -- every release workflow -- builds from
@@ -185,7 +192,7 @@ jobs:
           maven-args: "clean install ${{ env.VALIDATE_PROFILE }} -Dprod=true -DskipTests=true"
           generate-artifacts: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          cleanup-runner: true
+          cleanup-runner: ${{ inputs.cleanup-runner }}
           version: ${{ inputs.version }}
           generate-docker: ${{ inputs.generate-docker }}
           generate-test-image: ${{ inputs.generate-test-image }}
@@ -226,6 +233,15 @@ jobs:
             echo "::error::$version was not installed into the Maven repository; refusing to deploy images for a release that cannot publish its artifacts"
             ls -1 "$HOME/.m2/repository/com/dotcms/dotcms-core/" 2>/dev/null || true
             exit 1
+          fi
+          # Historical tags keep their standalone SAML pin; only integrated source
+          # lineages produce a bundle matching the core release version.
+          if [[ -f independent-projects/core-plugins/saml-plugin/pom.xml ]]; then
+            dir="$HOME/.m2/repository/com/dotcms/samlbundle/com.dotcms.samlbundle/$version"
+            if [[ ! -f "$dir/com.dotcms.samlbundle-$version.pom" || ! -f "$dir/com.dotcms.samlbundle-$version.jar" ]]; then
+              echo "::error::SAML $version was not installed; refusing to deploy images with an incomplete release"
+              exit 1
+            fi
           fi
           echo "Release coordinates present: $version"
 

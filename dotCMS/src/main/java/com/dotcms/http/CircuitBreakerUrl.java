@@ -344,6 +344,7 @@ public class CircuitBreakerUrl {
                         try (final CloseableHttpClient httpclient = HttpClientBuilder.create()
                                 .setMaxConnTotal(circuitBreakerMaxConnTotal.get())
                                 .setRedirectStrategy(PrivateSubnetRedirectStrategy.INSTANCE)
+                                .setDnsResolver(new RemoteCallDnsResolver())
                                 .setDefaultRequestConfig(config).build()) {
                             
                             if(IPUtils.isIpPrivateSubnet(this.request.getURI().getHost()) && !allowAccessToPrivateSubnets.get()){
@@ -439,6 +440,7 @@ public class CircuitBreakerUrl {
                         try (final CloseableHttpClient httpclient = HttpClientBuilder.create()
                                 .setMaxConnTotal(circuitBreakerMaxConnTotal.get())
                                 .setRedirectStrategy(PrivateSubnetRedirectStrategy.INSTANCE)
+                                .setDnsResolver(new RemoteCallDnsResolver())
                                 .setDefaultRequestConfig(config).build()) {
 
                             if(IPUtils.isIpPrivateSubnet(this.request.getURI().getHost()) && !allowAccessToPrivateSubnets.get()){
