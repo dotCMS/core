@@ -34,7 +34,9 @@ import org.mockito.Mockito;
  * stands in for a public IdP while {@code localhost} keeps its real verdict and serves as the
  * internal redirect target. The connection-level private-subnet check in
  * {@code CircuitBreakerUrl} is off for the same reason, so the internal hop below is refused by
- * {@code fetchValidated} alone.
+ * {@code fetchValidated} alone. Redirects are switched on in the configuration, so if
+ * {@code fetchValidated} stopped turning them off for its own requests, the client would follow
+ * that hop itself and the internal path would be requested.
  */
 class DotAuthResourceFetchValidatedTest {
 
@@ -43,7 +45,8 @@ class DotAuthResourceFetchValidatedTest {
     private static final int MAX_BYTES = 1024 * 1024;
     private static final Map<String, Boolean> FLAGS = Map.of(
             "OAUTH_ALLOW_INSECURE_URLS", true,     // the stub speaks plain http
-            "OAUTH_ALLOW_INTERNAL_HOSTS", false);  // keep the guard's internal-host check on
+            "OAUTH_ALLOW_INTERNAL_HOSTS", false,   // keep the guard's internal-host check on
+            "REMOTE_CALL_ALLOW_REDIRECTS", true);  // fetchValidated must turn redirects off itself
 
     private final Map<String, Integer> hits = new ConcurrentHashMap<>();
     private HttpServer server;
