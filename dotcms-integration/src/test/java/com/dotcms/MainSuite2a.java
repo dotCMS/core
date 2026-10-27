@@ -18,6 +18,9 @@ import com.dotcms.inference.rest.InferenceSiteIsolationTest;
 import com.dotcms.inference.rest.InferenceSiteResolutionTest;
 import com.dotcms.inference.rest.InferenceTestsAreRegisteredTest;
 import com.dotcms.junit.MainBaseSuite;
+import com.dotcms.rendering.js.JsModuleImportIntegrationTest;
+import com.dotcms.rendering.js.viewtools.UserJsViewToolTest;
+import com.dotcms.rendering.velocity.viewtools.CMSUserToolTest;
 import com.dotcms.rest.api.v1.maintenance.MaintenanceResourceIntegrationTest;
 import com.dotmarketing.business.UserDeletionCacheInvalidationTest;
 import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
@@ -115,7 +118,11 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.container.ContainerResourceDependenciesIntegrationTest.class,
         com.dotmarketing.startup.runonce.Task261023RemoveContainersLegacyPortletFromLayoutsTest.class,
         com.dotmarketing.portlets.templates.business.TemplateAPIFindUsingContainerTest.class,
-        UserDeletionCacheInvalidationTest.class
+        UserDeletionCacheInvalidationTest.class,
+        JsModuleImportIntegrationTest.class,
+        com.dotcms.rendering.velocity.WidgetRendererTest.class,
+        CMSUserToolTest.class,
+        UserJsViewToolTest.class
 })
 public class MainSuite2a {
 

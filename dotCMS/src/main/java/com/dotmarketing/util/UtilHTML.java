@@ -33,7 +33,7 @@ import io.vavr.control.Try;
 
 public class UtilHTML {
 
-	private static CategoryAPI categoryAPI = APILocator.getCategoryAPI();
+	private static final CategoryAPI categoryAPI = APILocator.getCategoryAPI();
 	private static LanguageAPI langAPI = APILocator.getLanguageAPI();
 	private static IdentifierAPI identifierAPI = APILocator.getIdentifierAPI();
 	private static HostAPI hostAPI = APILocator.getHostAPI();
@@ -538,13 +538,5 @@ public class UtilHTML {
 	public static String escapeDoubleQuotesToHTMLEspecialChars(String fixme) {
 		fixme = fixme.replaceAll("\"", "&quot;");
 		return fixme;
-	}
-
-	public static CategoryAPI getCategoryAPI() {
-		return categoryAPI;
-	}
-
-	public static void setCategoryAPI(CategoryAPI categoryAPI) {
-		UtilHTML.categoryAPI = categoryAPI;
 	}
 }
