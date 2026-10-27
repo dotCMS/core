@@ -89,6 +89,17 @@ public class XssTest {
         assertEquals("", Xss.encodeForJavaScript(null));
     }
 
+    @Test
+    public void encodeForJavaScript_encodesScriptElementDelimiters() {
+        // A value placed inside a quoted JS literal must not be able to end the enclosing script element
+        final String result = Xss.encodeForJavaScript("</script>x'y");
+        assertFalse("'/' must be encoded so no '</' sequence survives", result.contains("</"));
+        assertTrue("'/' must be written as a backslash sequence", result.contains("\\/"));
+        assertFalse("single quote must be encoded", result.contains("'"));
+        assertTrue("Result must still contain recognizable word content",
+                result.contains("script") && result.contains("x") && result.contains("y"));
+    }
+
     // -------------------------------------------------------------------------
     // encodeForURL
     // -------------------------------------------------------------------------
