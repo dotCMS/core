@@ -82,6 +82,9 @@ public class UserPaginatorTest extends UnitTestBase {
         // every existing scenario lists as a caller who may read the full profile
         layoutAPI = mock(LayoutAPI.class);
         when(layoutAPI.doesUserHaveAccessToPortlet(eq(PortletID.USERS.toString()), any())).thenReturn(true);
+        // doesUserHaveAccessToUsersPortlet is a default method on the interface: run the real one so it
+        // delegates to the per-portlet stubs below (USERS / USERS_BETA) rather than the mock's default false.
+        when(layoutAPI.doesUserHaveAccessToUsersPortlet(any())).thenCallRealMethod();
         userPaginator = new UserPaginator(userAPI, roleAPI, () -> layoutAPI);
     }
 

@@ -26,6 +26,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.PermissionAPI;
@@ -561,9 +562,10 @@ public class UserResource implements Serializable {
 	 * @throws DotDataException An error occurred when resolving the User's portlet access.
 	 */
 	private boolean isRoleAdministrator(final User user) throws DotDataException {
+		final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		return user.isAdmin() ||
-				(APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user) &&
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), user));
+				(layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user) &&
+						layoutAPI.doesUserHaveAccessToUsersPortlet(user));
 	}
 
 	/**
@@ -707,11 +709,7 @@ public class UserResource implements Serializable {
         final User modUser = initData.getUser();
 
         Logger.debug(this, ()-> "Finding the user by id: " + userId);
-        final boolean isRoleAdministrator = modUser.isAdmin() ||
-                (
-                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-                                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-                );
+        final boolean isRoleAdministrator = this.isRoleAdministrator(modUser);
 
         if (isRoleAdministrator) {
 
@@ -1280,11 +1278,7 @@ public class UserResource implements Serializable {
 				.rejectWhenNoUser(true)
 				.init().getUser();
 
-		final boolean isRoleAdministrator = modUser.isAdmin() ||
-				(
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-								APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-				);
+		final boolean isRoleAdministrator = this.isRoleAdministrator(modUser);
 
 		if (isRoleAdministrator) {
 
@@ -1357,11 +1351,7 @@ public class UserResource implements Serializable {
 
         Logger.debug(this, ()-> "Activating user: " + modUser.getUserId());
 
-        final boolean isRoleAdministrator = modUser.isAdmin() ||
-                (
-                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-                                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-                );
+        final boolean isRoleAdministrator = this.isRoleAdministrator(modUser);
 
         if (isRoleAdministrator) {
 
@@ -1440,11 +1430,7 @@ public class UserResource implements Serializable {
 
         Logger.debug(this, ()-> "Deactivating user: " + modUser.getUserId());
 
-        final boolean isRoleAdministrator = modUser.isAdmin() ||
-                (
-                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-                                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-                );
+        final boolean isRoleAdministrator = this.isRoleAdministrator(modUser);
 
         if (isRoleAdministrator) {
 
@@ -1775,11 +1761,7 @@ public class UserResource implements Serializable {
 		Logger.debug(this, ()-> "Deleting user " + userIdToDelete + " by the user id " + modUser.getUserId()
 				+ " will the replacement: " + replacementUserId);
 
-		final boolean isRoleAdministrator = modUser.isAdmin() ||
-				(
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-								APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-				);
+		final boolean isRoleAdministrator = this.isRoleAdministrator(modUser);
 
 		if (isRoleAdministrator) {
 

@@ -111,9 +111,7 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
         if (caller.isAdmin()) {
             return true;
         }
-        final LayoutAPI layouts = this.layoutAPI.get();
-        return layouts.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller)
-                || layouts.doesUserHaveAccessToPortlet(PortletID.USERS_BETA.toString(), caller);
+        return this.layoutAPI.get().doesUserHaveAccessToUsersPortlet(caller);
     }
 
     /**

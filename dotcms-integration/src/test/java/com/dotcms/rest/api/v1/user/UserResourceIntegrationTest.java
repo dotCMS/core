@@ -399,6 +399,52 @@ public class UserResourceIntegrationTest {
 
     /**
      * Method to test: {@link UserResource#filter}
+     * Given Scenario: A back-end user who is NOT a CMS Administrator and does NOT hold the legacy
+     * Users portlet, but holds a Role whose layout carries the Roles portlet and the Angular
+     * {@link PortletID#USERS_BETA} portlet -- the beta-period alias of the Users portlet. The user
+     * filters by the CMS Administrator role key, then asks for {@code includeRoles}.
+     * ExpectedResult: Both calls succeed (200), the listed CMS Administrators still carry the
+     * {@code admin} flag, and {@code includeRoles} is accepted -- the Role-administrator gate honors
+     * the beta Users portlet id exactly like the legacy one, so holders of the new portlet are not
+     * rejected while the legacy portlet is being retired.
+     */
+    @Test
+    public void test_filter_byRole_rolesAndUsersBetaPortletUser_allowedWithAdminFlag() throws Exception {
+        final String suffix = uniq();
+        final String password = "pw" + suffix;
+        final Layout layout = new LayoutDataGen().name("users-beta-roles-" + suffix)
+                .portletIds(PortletID.ROLES.toString(), PortletID.USERS_BETA.toString()).nextPersisted();
+        layoutsToClean.add(layout);
+        final Role portletRole = new RoleDataGen().key("rolesusersbeta" + suffix).nextPersisted();
+        rolesToClean.add(portletRole);
+        APILocator.getRoleAPI().addLayoutToRole(layout, portletRole);
+        final User caller = new UserDataGen().firstName("portletBeta").lastName("RoleFilter")
+                .emailAddress("portletbetarolefilter" + suffix + "@dotcms.com").password(password)
+                .roles(portletRole, TestUserUtils.getBackendRole()).nextPersisted();
+        usersToClean.add(caller);
+        final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+        assertFalse("precondition: caller must not be an admin", caller.isAdmin());
+        assertFalse("precondition: caller must NOT hold the legacy Users portlet",
+                layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller));
+        assertTrue("precondition: caller must hold the Roles portlet and the beta Users portlet",
+                layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), caller)
+                        && layoutAPI.doesUserHaveAccessToUsersPortlet(caller));
+
+        final String cmsAdminRoleId = APILocator.getRoleAPI().loadCMSAdminRole().getId();
+        final Response allowed = resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
+                null, 1, 100, null, "ASC", false, false, null, 0, List.of(cmsAdminRoleId), null, false);
+        assertEquals(Status.OK.getStatusCode(), allowed.getStatus());
+        final Map<String, Object> admin = itemFor(items(allowed), adminUser.getUserId());
+        assertEquals("a Roles + beta-Users portlet user keeps the admin flag", Boolean.TRUE, admin.get("admin"));
+
+        final Response withRoles = resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
+                null, 1, 100, null, "ASC", false, false, null, 0, List.of(cmsAdminRoleId), null, true);
+        assertEquals("includeRoles must be accepted for a Roles + beta-Users portlet holder",
+                Status.OK.getStatusCode(), withRoles.getStatus());
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
      * Given Scenario: Two back-end users who are not CMS Administrators, each holding a Role whose
      * layout carries only ONE of the two portlets: the Users portlet alone, and the Roles portlet
      * alone. Each lists users without any role parameter, then filters by the CMS Administrator
