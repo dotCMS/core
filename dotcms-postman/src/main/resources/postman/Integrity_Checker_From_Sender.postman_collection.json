@@ -1133,8 +1133,8 @@
                           "    pm.collectionVariables.set(\"token\", jsonData.entity.jwt);",
                           "",
                           "    console.log('token', jsonData.entity.jwt);",
-                          "    // The token lives 2 s; wait 3 s (the argument is in ms) so the 401 check below sees it expired.",
-                          "    eval(pm.collectionVariables.get(\"wait\"))(3000);",
+                          "    // The token lives 5 s, because issuing it can take over a second under load; wait 6 s (the argument is in ms) so the 401 check below sees it expired.",
+                          "    eval(pm.collectionVariables.get(\"wait\"))(6000);",
                           "});"
                         ],
                         "type": "text/javascript"
@@ -1161,7 +1161,7 @@
                     "header": [],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n    \"claims\": {\n        \"label\": \"testing\"\n    },\n    \"expirationSeconds\": 2,\n    \"network\": \"0.0.0.0/0\",\n    \"userId\": \"dotcms.org.1\"\n}",
+                      "raw": "{\n    \"claims\": {\n        \"label\": \"testing\"\n    },\n    \"expirationSeconds\": 5,\n    \"network\": \"0.0.0.0/0\",\n    \"userId\": \"dotcms.org.1\"\n}",
                       "options": {
                         "raw": {
                           "language": "json"
