@@ -27,11 +27,12 @@ import javax.crypto.Cipher;
 import javax.crypto.spec.SecretKeySpec;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
-import java.io.InvalidClassException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputFilter;
+import java.io.ObjectStreamException;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -402,10 +403,12 @@ public class AppsUtil {
      * @param incomingFile the encrypted export file
      * @param key the key derived from the passphrase the file was exported with
      * @return the exported {@link AppSecrets}, keyed by site id
-     * @throws DotDataException if the file names a class that does not exist locally
+     * @throws DotDataException not thrown since the file's contents are checked here; kept so
+     *         existing callers still compile
      * @throws IOException if the file cannot be read
      * @throws IllegalArgumentException if the file cannot be decrypted with the key, or is not a
-     *         valid export
+     *         valid export (it holds a type an export is not made of, names a class that does not
+     *         exist locally, or is cut short or unreadable)
      */
      public static Map<String, List<AppSecrets>> importSecrets(final Path incomingFile, final Key key)
             throws DotDataException, IOException {
@@ -417,27 +420,23 @@ public class AppsUtil {
         }catch (EncryptorException e){
             throw new IllegalArgumentException("An error occurred while decrypting file contents. ",e.getCause());
         }
-        try {
-            return readObject(decryptedBytes).getSecrets();
-        } catch (ClassNotFoundException e) {
-            throw new DotDataException(e);
-        }
+        return readObject(decryptedBytes).getSecrets();
     }
 
     /**
      * Reads the decrypted contents of an export file and returns the wrapper holding all its
      * entries. Only the types an export is made of are read (see {@link #checkExportFileType}); a
-     * file holding anything else, or whose top-level object is not an
-     * {@link AppsSecretsImportExport}, is refused as not being a valid export.
+     * file holding anything else, naming a class that does not exist locally, cut short or
+     * otherwise unreadable, or whose top-level object is not an {@link AppsSecretsImportExport},
+     * is refused as not being a valid export.
      *
      * @param decryptedBytes the decrypted contents of the export file
      * @return the {@link AppsSecretsImportExport} the file holds
-     * @throws IOException if the contents cannot be read
-     * @throws ClassNotFoundException if the file names a class that does not exist locally
+     * @throws IOException if the contents cannot be read for a reason other than their format
      * @throws IllegalArgumentException if the file is not a valid export
      */
     private static AppsSecretsImportExport readObject(final byte[] decryptedBytes)
-            throws IOException, ClassNotFoundException {
+            throws IOException {
         try (VersionOverrideObjectInputStream inputStream = new VersionOverrideObjectInputStream(
                 new ByteArrayInputStream(decryptedBytes))) {
             inputStream.setObjectInputFilter(AppsUtil::checkExportFileType);
@@ -446,7 +445,7 @@ public class AppsUtil {
                 return (AppsSecretsImportExport) object;
             }
             throw new IllegalArgumentException(NOT_A_VALID_EXPORT_FILE);
-        } catch (InvalidClassException e) {
+        } catch (ObjectStreamException | EOFException | ClassNotFoundException e) {
             throw new IllegalArgumentException(NOT_A_VALID_EXPORT_FILE, e);
         }
     }

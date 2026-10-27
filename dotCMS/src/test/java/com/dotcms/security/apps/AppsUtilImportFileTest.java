@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Key;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -186,6 +187,52 @@ public class AppsUtilImportFileTest {
     public void test_importSecrets_listed_type_at_top_level_is_refused() throws Exception {
         final Key key = AppsUtil.generateKey(PASSWORD);
         final Path file = writeImportFile(serialize(new HashMap<String, String>()), key);
+
+        assertThrows(IllegalArgumentException.class, () -> AppsUtil.importSecrets(file, key));
+    }
+
+    /**
+     * Given: an import file that names a class which does not exist in this installation
+     * Expected: the file is refused as an invalid export
+     */
+    @Test
+    public void test_importSecrets_class_missing_locally_is_refused() throws Exception {
+        final Key key = AppsUtil.generateKey(PASSWORD);
+        final byte[] stream = serialize(new StandInClass());
+        final byte[] renamed = replaceAscii(stream, StandInClass.class.getName(),
+                StandInClass.class.getName().replace("StandInClass", "MissingClass"));
+        final Path file = writeImportFile(renamed, key);
+
+        assertThrows(IllegalArgumentException.class, () -> AppsUtil.importSecrets(file, key));
+    }
+
+    /**
+     * Given: an import file that decrypts with the right key but is cut short partway through
+     * Expected: the file is refused as an invalid export
+     */
+    @Test
+    public void test_importSecrets_truncated_file_is_refused() throws Exception {
+        final Key key = AppsUtil.generateKey(PASSWORD);
+        final AppSecrets secrets = AppSecrets.builder().withKey("app-truncated")
+                .withSecret("one", "one-value").build();
+        final Map<String, List<AppSecrets>> bySite = new HashMap<>();
+        bySite.computeIfAbsent("SYSTEM_HOST", site -> new LinkedList<>()).add(secrets);
+        final byte[] stream = serialize(new AppsSecretsImportExport(bySite));
+        final Path file = writeImportFile(Arrays.copyOf(stream, stream.length / 2), key);
+
+        assertThrows(IllegalArgumentException.class, () -> AppsUtil.importSecrets(file, key));
+    }
+
+    /**
+     * Given: an import file that decrypts with the right key but does not hold a serialized
+     * object at all
+     * Expected: the file is refused as an invalid export
+     */
+    @Test
+    public void test_importSecrets_unreadable_contents_are_refused() throws Exception {
+        final Key key = AppsUtil.generateKey(PASSWORD);
+        final Path file = writeImportFile(
+                "this is not an Apps export".getBytes(StandardCharsets.US_ASCII), key);
 
         assertThrows(IllegalArgumentException.class, () -> AppsUtil.importSecrets(file, key));
     }
