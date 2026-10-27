@@ -23,6 +23,12 @@ import java.util.Map;
  * any fields. The next call to {@code HostAPI#findDefaultHost} then creates a second, unpublished
  * default site named {@code noDefault-<millis>}, and tests that resolve the current site, such as the
  * Shorty servlet tests, fail on their first attempt.
+ * <p>
+ * The SQL here is PostgreSQL-specific ({@code UPDATE ... FROM} and the {@code ->}/{@code ->>} JSON
+ * operators). That matches the integration suite, which only runs against PostgreSQL: the test
+ * database is the {@code docker.image.postgres} container and {@code dotcms-integration/pom.xml}
+ * sets the PostgreSQL driver. If the suite ever runs on MSSQL, the restore and the fake-site query
+ * need an MSSQL variant ({@code UPDATE ... JOIN} and {@code JSON_VALUE}).
  */
 public class ContentletAsJsonBackup implements AutoCloseable {
 
