@@ -6685,6 +6685,31 @@
 								"type": "text/javascript",
 								"packages": {}
 							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"if (!pm.collectionVariables.get('widgetAuthorJwt')) {",
+									"    pm.sendRequest({",
+									"        url: pm.environment.get('serverURL') + '/api/v1/apitoken',",
+									"        method: 'POST',",
+									"        header: { Authorization: 'Bearer ' + pm.environment.get('jwt'), 'Content-Type': 'application/json' },",
+									"        body: { mode: 'raw', raw: JSON.stringify({",
+									"            userId: pm.collectionVariables.get('widgetWarningAuthorId'),",
+									"            expirationSeconds: 60000, network: '0.0.0.0/0',",
+									"            claims: { label: 'postman-widget-author' } }) }",
+									"    }, function (err, response) {",
+									"        if (err || response.code !== 200) throw new Error('Widget author token issuance failed');",
+									"        const token = response.json().entity.jwt;",
+									"        if (typeof token !== 'string' || !token.trim()) throw new Error('Missing widget author token');",
+									"        pm.collectionVariables.set('widgetAuthorJwt', token);",
+									"    });",
+									"}"
+								]
+							}
 						}
 					]
 				},
@@ -6724,7 +6749,7 @@
 							"bearer": [
 								{
 									"key": "token",
-									"value": "{{jwt}}",
+									"value": "{{widgetAuthorJwt}}",
 									"type": "string"
 								}
 							]
