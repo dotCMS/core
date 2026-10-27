@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.datagen.ContainerAsFileDataGen;
 import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestUserUtils;
@@ -17,10 +18,14 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -261,6 +266,115 @@ public class TemplateAPIFindUsingContainerTest {
 
         assertEquals(5, found.get(container.getIdentifier()).size());
         assertEquals(used, identifiers(found.get(container.getIdentifier())));
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#findTemplatesUsingContainers}
+     * Given Scenario: two advanced Templates name their Containers with literal calls, one with
+     * double quotes and one with single quotes
+     * ExpectedResult: each Container is matched to its own Template
+     */
+    @Test
+    public void advancedTemplatesWithLiteralCallsAreMatched() throws Exception {
+        final Host site = freshSite();
+        final Container doubleQuoted = container(site);
+        final Container singleQuoted = container(site);
+        final Template first = advancedTemplate(site,
+                "<div>#parseContainer(\"" + doubleQuoted.getIdentifier() + "\", \"1\")</div>");
+        final Template second = advancedTemplate(site,
+                "<div>#parseContainer('" + singleQuoted.getIdentifier() + "', '1')</div>");
+
+        final Map<String, List<Template>> found = templateAPI.findTemplatesUsingContainers(
+                List.of(doubleQuoted.getIdentifier(), singleQuoted.getIdentifier()),
+                APILocator.systemUser());
+
+        assertEquals(Set.of(first.getIdentifier()), identifiers(found.get(doubleQuoted.getIdentifier())));
+        assertEquals(Set.of(second.getIdentifier()), identifiers(found.get(singleQuoted.getIdentifier())));
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#findTemplatesUsingContainers}
+     * Given Scenario: an advanced Template whose {@code #parseContainer} gets the Container from a
+     * variable, so the identifier is not written in the body
+     * ExpectedResult: the Template is still returned for that Container
+     */
+    @Test
+    public void advancedTemplateWithContainerInAVariableIsMatched() throws Exception {
+        final Host site = freshSite();
+        final Container container = container(site);
+        final Template advanced = advancedTemplate(site,
+                "#set($containerId = '" + container.getIdentifier() + "')\n"
+                        + "#parseContainer($containerId, '1')");
+
+        final Map<String, List<Template>> found = templateAPI.findTemplatesUsingContainers(
+                List.of(container.getIdentifier()), APILocator.systemUser());
+
+        assertEquals(Set.of(advanced.getIdentifier()), identifiers(found.get(container.getIdentifier())));
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#findTemplatesUsingContainers}
+     * Given Scenario: an advanced Template that names one Container itself and pulls another from
+     * a file with {@code #dotParse}
+     * ExpectedResult: the Template is returned for both Containers; the literal call must not hide
+     * the one the included file brings
+     */
+    @Test
+    public void advancedTemplateWithContainerInAnIncludedFileIsMatched() throws Exception {
+        final Host site = freshSite();
+        final Container direct = container(site);
+        final Container included = container(site);
+        final String includeFolderPath = "application/templates/includes";
+        final String includeFileName = "container_includes_" + System.nanoTime() + ".vtl";
+        final Folder includeFolder = APILocator.getFolderAPI().createFolders(
+                includeFolderPath, site, APILocator.systemUser(), false);
+        final File includeFile = FileUtil.createTemporaryFile("includedTemplate", ".vtl",
+                "#parseContainer('" + included.getIdentifier() + "', '1')\n");
+        final Contentlet savedFile = new FileAssetDataGen(includeFolder, includeFile)
+                .setProperty("title", includeFileName)
+                .setProperty("fileName", includeFileName)
+                .nextPersisted();
+        APILocator.getContentletAPI().publish(savedFile, APILocator.systemUser(), false);
+        final Template advanced = advancedTemplate(site,
+                "#dotParse('//" + site.getHostname() + "/" + includeFolderPath + "/" + includeFileName + "')\n"
+                        + "#parseContainer('" + direct.getIdentifier() + "', '1')");
+
+        final Map<String, List<Template>> found = templateAPI.findTemplatesUsingContainers(
+                List.of(direct.getIdentifier(), included.getIdentifier()), APILocator.systemUser());
+
+        assertEquals(Set.of(advanced.getIdentifier()), identifiers(found.get(direct.getIdentifier())));
+        assertEquals(Set.of(advanced.getIdentifier()), identifiers(found.get(included.getIdentifier())));
+    }
+
+    /**
+     * Method to test: {@link TemplateAPI#findTemplatesUsingContainers}
+     * Given Scenario: the same lookup is made twice in a row, over a Template whose Containers come
+     * from a variable and so are read by running its body
+     * ExpectedResult: both lookups give the same answer
+     */
+    @Test
+    public void aRepeatedLookupGivesTheSameAnswer() throws Exception {
+        final Host site = freshSite();
+        final Container container = container(site);
+        final Template advanced = advancedTemplate(site,
+                "#set($containerId = '" + container.getIdentifier() + "')\n"
+                        + "#parseContainer($containerId, '1')");
+
+        final Map<String, List<Template>> first = templateAPI.findTemplatesUsingContainers(
+                List.of(container.getIdentifier()), APILocator.systemUser());
+        final Map<String, List<Template>> second = templateAPI.findTemplatesUsingContainers(
+                List.of(container.getIdentifier()), APILocator.systemUser());
+
+        assertEquals(Set.of(advanced.getIdentifier()), identifiers(first.get(container.getIdentifier())));
+        assertEquals(identifiers(first.get(container.getIdentifier())),
+                identifiers(second.get(container.getIdentifier())));
+    }
+
+    private static Template advancedTemplate(final Host site, final String body) {
+        final Template template = new TemplateDataGen().site(site)
+                .title("Advanced " + System.nanoTime()).drawed(false).body(body).nextPersisted();
+        templates.add(template);
+        return template;
     }
 
     private static Set<String> identifiers(final List<Template> found) {

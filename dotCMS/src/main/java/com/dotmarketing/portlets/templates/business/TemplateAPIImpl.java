@@ -58,6 +58,7 @@ import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.SystemTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -121,6 +122,17 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	private final  Lazy<Template>   systemTemplate         = Lazy.of(SystemTemplate::new);
 
 	private final transient MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+
+	/**
+	 * Seconds the Containers an advanced Template names are remembered after running its body in
+	 * Velocity to find them; {@code 0} turns the memory off. Default: 60.
+	 */
+	static final String CONTAINER_REFERENCES_CACHE_TTL_PROPERTY = "templates.container-references.cache.ttl-seconds";
+
+	/** The most Templates whose Velocity answer is remembered at once. Default: 5000. */
+	static final String CONTAINER_REFERENCES_CACHE_MAX_PROPERTY = "templates.container-references.cache.max-entries";
+
+	private final Lazy<TemplateContainerReferences> containerReferences = Lazy.of(this::newContainerReferences);
 
 
 	@Override
@@ -1281,7 +1293,12 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	/**
 	 * Lists the Containers a Template references, by identifier or path, without checking that the
 	 * Containers exist or hold content: a drawn Template names them in its layout, an advanced one in
-	 * its {@code #parseContainer} calls.
+	 * its {@code #parseContainer} calls. The calls of an advanced Template are read from its text
+	 * when that is enough, and only otherwise by running the body in Velocity, which is costly; see
+	 * {@link TemplateContainerReferences}.
+	 *
+	 * @param template the {@link Template} whose Containers are listed
+	 * @return the identifiers or paths of the Containers the Template names
 	 */
 	private Set<String> referencedContainers(final Template template) {
 
@@ -1292,10 +1309,26 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 				references.addAll(this.getContainersId(layout));
 			}
 		} else {
-			this.getContainersUUIDFromDrawTemplateBody(template.getBody())
-					.forEach(containerUUID -> references.add(containerUUID.getIdentifier()));
+			references.addAll(this.containerReferences.get()
+					.forAdvancedTemplate(template.getInode(), template.getBody()));
 		}
 		return references;
+	}
+
+	/**
+	 * Builds the reader of the Containers an advanced Template names, with the cache settings read
+	 * from {@link #CONTAINER_REFERENCES_CACHE_TTL_PROPERTY} and
+	 * {@link #CONTAINER_REFERENCES_CACHE_MAX_PROPERTY} when it is first needed.
+	 *
+	 * @return the {@link TemplateContainerReferences} this API uses
+	 */
+	private TemplateContainerReferences newContainerReferences() {
+
+		return new TemplateContainerReferences(
+				body -> this.getContainersUUIDFromDrawTemplateBody(body).stream()
+						.map(ContainerUUID::getIdentifier).collect(Collectors.toList()),
+				Config.getLongProperty(CONTAINER_REFERENCES_CACHE_TTL_PROPERTY, 60),
+				Config.getLongProperty(CONTAINER_REFERENCES_CACHE_MAX_PROPERTY, 5000));
 	}
 
 	/**
