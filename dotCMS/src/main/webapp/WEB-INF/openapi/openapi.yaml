@@ -39526,6 +39526,16 @@ components:
         resultsSize:
           type: integer
           format: int64
+        warnings:
+          type: array
+          description: "Notes about how the contentlets were rendered, such as widget\
+            \ field values returned as text because widget field scripting is off.\
+            \ Empty when there is nothing to report."
+          items:
+            type: string
+            description: "Notes about how the contentlets were rendered, such as widget\
+              \ field values returned as text because widget field scripting is off.\
+              \ Empty when there is nothing to report."
     SecretForm:
       type: object
     SectionForm:
