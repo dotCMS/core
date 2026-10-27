@@ -1597,9 +1597,27 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return search;
     }
 
+    /**
+     * Appends to the given query the clauses that keep a caller from seeing content they cannot
+     * read: the owner clause, one clause per role the caller holds and, for callers who are not
+     * back-end users, the clause that limits the results to live content. The clauses are appended
+     * as text, so the query is first balanced to make sure it cannot escape the separator that
+     * precedes them.
+     *
+     * @param buffy the query being built, modified in place
+     * @param user the {@link User} the query is run for, or {@code null} for an anonymous caller
+     * @param roles the {@link Role}s held by that user; empty for an anonymous caller
+     * @param respectFrontendRoles whether the anonymous and logged-in-site roles grant read as well
+     */
     @Override
-    public void addPermissionsToQuery(StringBuffer buffy, User user, List<Role> roles,
-            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+    public void addPermissionsToQuery(final StringBuffer buffy, final User user,
+            final List<Role> roles, final boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException {
+        // Every clause appended below starts with a space. A query ending in an unbalanced escape
+        // would escape that space, which folds the leading '+' into the caller's last term and
+        // leaves the permission group optional, so balance the escape before appending anything.
+        balanceTrailingEscape(buffy);
+
         if (user != null) {
             buffy.append(" +((+owner:" + user.getUserId() + " +ownerCanRead:true) ");
         } else {
@@ -1628,6 +1646,25 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
 
+    }
+
+    /**
+     * Keeps the query from escaping the separator that precedes the clauses appended by
+     * {@link #addPermissionsToQuery(StringBuffer, User, List, boolean)}. A run of backslashes at
+     * the end of the query is an escape sequence only when its length is odd, so in that case one
+     * more backslash is appended, which leaves the caller searching for a literal backslash.
+     *
+     * @param buffy the query being built, modified in place when it ends in an unbalanced escape
+     */
+    @VisibleForTesting
+    static void balanceTrailingEscape(final StringBuffer buffy) {
+        int trailing = 0;
+        for (int i = buffy.length() - 1; i >= 0 && buffy.charAt(i) == '\\'; i--) {
+            trailing++;
+        }
+        if (trailing % 2 != 0) {
+            buffy.append('\\');
+        }
     }
 
     /**
