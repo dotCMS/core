@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.user;
 
+import com.dotcms.api.web.WebSessionContext;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
 import com.google.common.annotations.VisibleForTesting;
@@ -27,6 +28,7 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.LoginAsSession;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
@@ -825,7 +827,10 @@ public class UserResource implements Serializable {
 	/**
 	 * Updates the current HTTP Session data in order to simulate that the impersonated user - the Login As User - is
 	 * logged into the back-end of the system. This involves refreshing the UI of the back-end to reflect the Portlets
-	 * that the impersonated user has access to.
+	 * that the impersonated user has access to. While a Login As is active the session holds a {@link LoginAsSession},
+	 * which Logout As reads to restore the principal user; reverting removes it. The record holds one level only: a
+	 * further Login As started from the impersonated user replaces it, so Logout As then returns to that user rather
+	 * than to the original principal.
 	 *
 	 * @param request         The {@link HttpServletRequest} object.
 	 * @param site            The {@link Host} object representing the Site that the Login As user is directed to.
@@ -841,6 +846,11 @@ public class UserResource implements Serializable {
 			session.setAttribute(WebKeys.PRINCIPAL_USER_ID, null);
 		}
 		final String userToImpersonate = (UtilMethods.isSet(loginAsUserId) ? loginAsUserId : principalUserId);
+		if (UtilMethods.isSet(loginAsUserId)) {
+			session.setAttribute(LoginAsSession.SESSION_KEY, new LoginAsSession(principalUserId, loginAsUserId));
+		} else {
+			session.removeAttribute(LoginAsSession.SESSION_KEY);
+		}
         session.removeAttribute(WebKeys.USER);
 		session.setAttribute(WebKeys.USER_ID, userToImpersonate);
 		PrincipalThreadLocal.setName(userToImpersonate);
@@ -904,6 +914,15 @@ public class UserResource implements Serializable {
 		session.setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, currentSite.getIdentifier());
 	}
 
+	/**
+	 * Ends the active Login As and makes the user who started it the session user again. The principal user is
+	 * taken from the {@link LoginAsSession} that {@link #loginAs} stored; a session without an active Login As
+	 * gets a 400 and keeps its current user.
+	 *
+	 * @param httpServletRequest  The {@link HttpServletRequest} object.
+	 * @param httpServletResponse The {@link HttpServletResponse} object.
+	 * @return 200 with {@code logoutAs: true}, or 400 when no Login As is active.
+	 */
 	@Operation(
 	    operationId = "logoutAsUser",
 	    summary = "Logout as user",
@@ -940,13 +959,12 @@ public class UserResource implements Serializable {
 
 		final String serverName = httpServletRequest.getServerName();
 		String principalUserId = null;
-		if (httpServletRequest.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID) != null) {
-			principalUserId = httpServletRequest.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID).toString();
-		}
 		User currentLoginAsUser = new User();
 		Response response;
 		try {
 			currentLoginAsUser = PortalUtil.getUser(httpServletRequest);
+			principalUserId = APILocator.getLoginAsAPI()
+					.getPrincipalUserId(WebSessionContext.getInstance(httpServletRequest));
 			final Map<String, Object> sessionData = this.helper.doLogoutAs(principalUserId, currentLoginAsUser, serverName);
 			revertLoginAsSessionInfo(httpServletRequest, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
 					.CURRENT_HOST)), principalUserId);
