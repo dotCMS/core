@@ -232,7 +232,7 @@ public class ForgotPasswordResourceIntegrationTest {
         assertNotNull(APILocator.getUserAPI().loadUserById(user.getUserId()).getIcqId());
     }
 
-    /** A one-thread pool built the same way as the server's reset pool, so every task shares its thread. */
+    /** A one-thread pool, so every task shares the same thread. */
     private static DotSubmitter singleThreadPool(final String name) {
         return DotConcurrentFactory.getInstance().getSubmitter(name,
                 new DotConcurrentFactory.SubmitterConfigBuilder()
