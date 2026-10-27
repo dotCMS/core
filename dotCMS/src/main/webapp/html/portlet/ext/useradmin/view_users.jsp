@@ -492,12 +492,13 @@
 	</div>
 </div>
 
-<div dojoType="dijit.Dialog" id="revealJwtDialog" title="API Token">
+<div dojoType="dijit.Dialog" id="revealJwtDialog" title="API Token" closable="false"
+	onHide="dojo.byId('revealTokenDiv').value='';">
 	<p><%=LanguageUtil.get(pageContext, "users.dialog.tokens.reveal.description")%></p>
 	<textarea class="tokenDivClass" id="revealTokenDiv"></textarea>
 	<div class="buttonRow">
 		<button dojoType="dijit.form.Button" type="button" class=""
-			onClick="dojo.byId('revealTokenDiv').value=''; dijit.byId('revealJwtDialog').hide();"><%=LanguageUtil.get(pageContext, "close")%></button>
+			onClick="dijit.byId('revealJwtDialog').hide();"><%=LanguageUtil.get(pageContext, "close")%></button>
 	</div>
 </div>
 
