@@ -233,14 +233,13 @@ public class ApiTokenResourceTest {
 
         final User owner = newUser();
         final ApiToken token = persistToken(owner);
-        final String jwt = APILocator.getApiTokenAPI().getJWT(token, owner);
 
         final Response restResponse = resourceFor(owner).getApiTokens(
                 mock(HttpServletRequest.class), mock(HttpServletResponse.class), owner.getUserId(), false);
 
         assertEquals(Response.Status.OK.getStatusCode(), restResponse.getStatus());
         assertTrue("The owner should see their own token", tokenIds(restResponse).contains(token.getId()));
-        assertResponseHasNoJwt(restResponse, jwt);
+        assertResponseHasNoJwt(restResponse);
     }
 
     /**
@@ -254,14 +253,13 @@ public class ApiTokenResourceTest {
         final User owner = newUser();
         final User admin = newCmsAdmin();
         final ApiToken token = persistToken(owner);
-        final String jwt = APILocator.getApiTokenAPI().getJWT(token, owner);
 
         final Response restResponse = resourceFor(admin).getApiTokens(
                 mock(HttpServletRequest.class), mock(HttpServletResponse.class), owner.getUserId(), false);
 
         assertEquals(Response.Status.OK.getStatusCode(), restResponse.getStatus());
         assertTrue("An admin should see the other user's token", tokenIds(restResponse).contains(token.getId()));
-        assertResponseHasNoJwt(restResponse, jwt);
+        assertResponseHasNoJwt(restResponse);
     }
 
     /**
@@ -378,11 +376,17 @@ public class ApiTokenResourceTest {
                 .collect(Collectors.toList());
     }
 
-    private static void assertResponseHasNoJwt(final Response restResponse, final String jwt) throws Exception {
+    /**
+     * Asserts that a token listing carries no JWT. A JWT is signed with a new random id each time,
+     * so there is no stored value to compare against; instead this checks for a {@code jwt} field
+     * and for any value shaped like a JWT, whose header always encodes to a string starting with
+     * {@code eyJ}.
+     */
+    private static void assertResponseHasNoJwt(final Response restResponse) throws Exception {
 
         final String json = DotObjectMapperProvider.getInstance().getDefaultObjectMapper()
                 .writeValueAsString(restResponse.getEntity());
-        assertFalse("The token list should not contain a JWT", json.contains(jwt));
         assertFalse("The token list should not have a jwt field", json.contains("\"jwt\""));
+        assertFalse("The token list should not contain a JWT", json.contains("eyJ"));
     }
 }

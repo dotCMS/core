@@ -1118,8 +1118,7 @@
 									"pm.test(\"The JWT is returned when the token is created\", function () {",
 									"    pm.expect(jsonData.entity.jwt).to.be.a('string').and.not.empty;",
 									"});",
-									"pm.collectionVariables.set(\"limitedTokenId\", jsonData.entity.token.id);",
-									"pm.collectionVariables.set(\"limitedJwt\", jsonData.entity.jwt);"
+									"pm.collectionVariables.set(\"limitedTokenId\", jsonData.entity.token.id);"
 								],
 								"type": "text/javascript"
 							}
@@ -1183,8 +1182,7 @@
 									"    pm.response.to.have.status(200);",
 									"});",
 									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"adminTokenId\", jsonData.entity.token.id);",
-									"pm.collectionVariables.set(\"adminJwt\", jsonData.entity.jwt);"
+									"pm.collectionVariables.set(\"adminTokenId\", jsonData.entity.token.id);"
 								],
 								"type": "text/javascript"
 							}
@@ -1247,8 +1245,9 @@
 									"pm.test(\"Status code should be 404\", function () {",
 									"    pm.response.to.have.status(404);",
 									"});",
-									"pm.test(\"Response does not contain the JWT\", function () {",
-									"    pm.expect(pm.response.text()).to.not.include(pm.collectionVariables.get(\"adminJwt\"));",
+									"pm.test(\"Response does not contain a JWT\", function () {",
+									"    pm.expect(pm.response.text()).to.not.include('\"jwt\"');",
+									"    pm.expect(pm.response.text()).to.not.include('eyJ');",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1299,8 +1298,9 @@
 									"pm.test(\"Status code should be 404\", function () {",
 									"    pm.response.to.have.status(404);",
 									"});",
-									"pm.test(\"Response does not contain the JWT\", function () {",
-									"    pm.expect(pm.response.text()).to.not.include(pm.collectionVariables.get(\"limitedJwt\"));",
+									"pm.test(\"Response does not contain a JWT\", function () {",
+									"    pm.expect(pm.response.text()).to.not.include('\"jwt\"');",
+									"    pm.expect(pm.response.text()).to.not.include('eyJ');",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1348,11 +1348,12 @@
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Request is not successful\", function () {",
-									"    pm.expect(pm.response.code).to.not.eql(200);",
+									"pm.test(\"Status code should be 404\", function () {",
+									"    pm.response.to.have.status(404);",
 									"});",
-									"pm.test(\"Response does not contain the JWT\", function () {",
-									"    pm.expect(pm.response.text()).to.not.include(pm.collectionVariables.get(\"adminJwt\"));",
+									"pm.test(\"Response does not contain a JWT\", function () {",
+									"    pm.expect(pm.response.text()).to.not.include('\"jwt\"');",
+									"    pm.expect(pm.response.text()).to.not.include('eyJ');",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1412,8 +1413,8 @@
 									"    pm.expect(ids).to.include(pm.collectionVariables.get(\"limitedTokenId\"));",
 									"});",
 									"pm.test(\"Response does not contain a JWT\", function () {",
-									"    pm.expect(pm.response.text()).to.not.include(pm.collectionVariables.get(\"limitedJwt\"));",
 									"    pm.expect(pm.response.text()).to.not.include('\"jwt\"');",
+									"    pm.expect(pm.response.text()).to.not.include('eyJ');",
 									"});"
 								],
 								"type": "text/javascript"
@@ -1468,8 +1469,9 @@
 									"        pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
 									"    }",
 									"});",
-									"pm.test(\"Response does not contain the JWT\", function () {",
-									"    pm.expect(pm.response.text()).to.not.include(pm.collectionVariables.get(\"adminJwt\"));",
+									"pm.test(\"Response does not contain a JWT\", function () {",
+									"    pm.expect(pm.response.text()).to.not.include('\"jwt\"');",
+									"    pm.expect(pm.response.text()).to.not.include('eyJ');",
 									"});"
 								],
 								"type": "text/javascript"
@@ -2296,15 +2298,7 @@
 			"value": ""
 		},
 		{
-			"key": "limitedJwt",
-			"value": ""
-		},
-		{
 			"key": "adminTokenId",
-			"value": ""
-		},
-		{
-			"key": "adminJwt",
 			"value": ""
 		}
 	]
