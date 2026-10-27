@@ -27,7 +27,6 @@ import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotcms.publisher.environment.bean.Environment;
 import com.dotcms.publisher.receiver.BundlePublisher;
 import com.dotcms.publishing.FilterDescriptor;
-import com.dotcms.publishing.PublisherAPIImpl;
 import com.dotcms.publishing.PublisherConfig;
 import com.dotcms.publishing.PublisherConfig.Operation;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -46,6 +45,7 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.struts.MultiMessageResources;
 import com.liferay.portal.struts.MultiMessageResourcesFactory;
 import java.io.File;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -88,7 +88,7 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
     public static void cleanup() throws Exception {
         for (final PreparedBundle bundle : bundles) {
             PublisherTestUtil.cleanBundleEndpointEnv(bundle.bundle, bundle.endpoint, bundle.environment);
-            bundle.file.delete();
+            Files.deleteIfExists(bundle.file.toPath());
         }
 
         // The test filters only live in memory, so drop them from the list without reloading it from
@@ -98,7 +98,7 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
             final List<FilterDescriptor> otherFilters = new ArrayList<>(
                     APILocator.getPublisherAPI().getFiltersDescriptorsByRole(adminUser));
             otherFilters.removeIf(filter -> filterKeys.contains(filter.getKey()));
-            PublisherAPIImpl.class.cast(APILocator.getPublisherAPI()).clearFilterDescriptorList();
+            APILocator.getPublisherAPI().clearFilterDescriptorList();
             otherFilters.forEach(APILocator.getPublisherAPI()::addFilterDescriptor);
         }
 
@@ -209,6 +209,9 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
         return new TestData(authorType, relationship, article, author);
     }
 
+    /**
+     * Reloads the specified Content Type so that it includes the Fields added after it was created.
+     */
     private static ContentType findContentType(final ContentType contentType) {
         try {
             return APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentType.variable());
@@ -234,6 +237,10 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
         return filter;
     }
 
+    /**
+     * Generates a bundle that pushes only the specified Contentlet with the given filter, the same
+     * as selecting it in the UI and pushing it with that filter.
+     */
     private PreparedBundle generateBundleFor(final Contentlet contentlet, final FilterDescriptor filter)
             throws Exception {
         final Environment environment = createEnvironment(adminUser);
@@ -253,6 +260,11 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
         return preparedBundle;
     }
 
+    /**
+     * Simulates the receiver: registers the bundle in the publish audit table, using the bundle file
+     * name without its {@code .tar.gz} extension as the bundle folder, and runs
+     * {@link BundlePublisher} over the generated file.
+     */
     private void processBundle(final PreparedBundle bundle) throws Exception {
         final String fileName = bundle.file.getName();
         final String bundleFolder = fileName.substring(0, fileName.indexOf(".tar.gz"));
@@ -290,6 +302,9 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * The Author Type, the Relationship and the related Article and Author created for a test.
+     */
     private static final class TestData {
 
         final ContentType authorType;
@@ -307,6 +322,10 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * A generated bundle file with the Bundle, Endpoint and Environment it was generated for, which
+     * are removed after the tests run.
+     */
     private static final class PreparedBundle {
 
         final File file;
