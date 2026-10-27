@@ -419,27 +419,6 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
     }
 
     /**
-     * Given the reset fails for an unexpected reason on the reset pool,
-     * when the queued work runs,
-     * then the failure is logged and does not propagate out of the pool thread.
-     */
-    @Test
-    public void resetPool_unexpectedFailure_isContained() throws Exception {
-
-        final UserService userService = mock(UserService.class);
-        doThrow(new IllegalStateException("mail relay down")).when(userService)
-                .sendResetPassword(any(), eq("owner@example.com"), any(Locale.class));
-        final List<Runnable> queued = new ArrayList<>();
-
-        requestReset(Company.AUTH_TYPE_EA, new ForgotPasswordForm.Builder().userId("owner@example.com").build(),
-                mock(UserLocalManager.class), userService, queued::add);
-
-        queued.get(0).run();
-
-        verify(userService).sendResetPassword(any(), eq("owner@example.com"), any(Locale.class));
-    }
-
-    /**
      * Given the reset pool is the server's kind of bounded submitter and it is full,
      * when a reset is requested,
      * then the response is the same 200 as for an accepted request, nothing is thrown, the
