@@ -81,10 +81,10 @@ public class WebDavAuthenticationFilterTest {
         }
     }
 
-    /** NONE, including the default, does not forward credential-bearing data requests. */
+    /** Explicit NONE, FALSE, empty and unrecognized values do not forward credential-bearing data requests. */
     @Test
     public void credentialsAreNotForwardedWhenBasicAuthenticationIsDisabled() throws Exception {
-        for (final String mode : new String[]{null, "NONE", "false", "invalid-mode", ""}) {
+        for (final String mode : new String[]{"NONE", "false", "invalid-mode", ""}) {
             Config.setProperty("ALLOW_BASIC_AUTH", mode);
             for (final String method : List.of("PROPPATCH", "PROPFIND", "GET", "PUT")) {
                 final FilterChain chain = mock(FilterChain.class);
@@ -111,6 +111,23 @@ public class WebDavAuthenticationFilterTest {
     @Test
     public void jwtTokenForwardsTheBasicPairForHelperValidation() throws Exception {
         verifyForwarded("JWT_TOKEN", TOKEN_CREDENTIALS);
+    }
+
+    /**
+     * The absent-property default resolves to JWT_TOKEN, so a DAV client that sends its
+     * username/API-JWT pair works without configuration; the helper still validates the pair.
+     */
+    @Test
+    public void absentDefaultForwardsTheBasicPairLikeJwtToken() throws Exception {
+        Config.setProperty("ALLOW_BASIC_AUTH", null);
+        final FilterChain chain = mock(FilterChain.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        new WebDavAuthenticationFilter()
+                .doFilter(request("PROPPATCH", TOKEN_CREDENTIALS), response, chain);
+
+        verify(chain).doFilter(any(), any());
+        verify(response, never()).setStatus(anyInt());
     }
 
     /** Nothing but HTTP reaches this mapping, but a non-HTTP request must not be swallowed. */

@@ -94,8 +94,11 @@ public class MySecureForm {
 
 ### Programmatic Basic authentication
 
-`ALLOW_BASIC_AUTH` defaults to `NONE` and is read through `Config` for each authentication
-attempt, not cached at startup. Administrators can change it at runtime through
+`ALLOW_BASIC_AUTH` defaults to `JWT_TOKEN` and is read through `Config` for each authentication
+attempt, not cached at startup. The default validates the same persisted API token a
+`Bearer` header would — no password verification and no session — so a Basic wrapper is
+credential-equivalent to Bearer, and a Basic-only client such as WebDAV works out of the box
+with username + API JWT as its password. Administrators can change it at runtime through
 `POST /api/v1/system-table`, for example with `{"key":"ALLOW_BASIC_AUTH","value":"NONE"}`.
 System-table changes require no restart and apply to subsequent authentication attempts;
 existing sessions are not revoked.
@@ -103,13 +106,14 @@ existing sessions are not revoked.
 Normal configuration precedence still applies: an explicit `DOT_ALLOW_BASIC_AUTH` environment
 override wins over the system table. Changing the process environment requires restarting the
 instance; do not pin that override if administrators need to change this setting at runtime.
-Mode names ignore surrounding whitespace and case. `FALSE`, missing, empty and unrecognized
-values disable Basic authentication rather than enabling a legacy mode.
+Mode names ignore surrounding whitespace and case. Explicit `FALSE`, `NONE`, empty and
+unrecognized values disable the credential transports entirely rather than enabling a legacy
+mode; an absent property is the `JWT_TOKEN` default.
 
 | Mode | Username/account password | Username/API JWT |
 | --- | --- | --- |
-| `NONE` (default) | Disabled | Disabled |
-| `JWT_TOKEN` | Disabled; no password verification | Accepted only for a valid API token belonging to the named user |
+| `NONE` | Disabled | Disabled |
+| `JWT_TOKEN` (default) | Disabled; no password verification | Accepted only for a valid API token belonging to the named user |
 | `ALL` | Legacy compatibility | Accepted after normal token validation; legacy password fallback remains enabled |
 
 API-token authentication validates signature, configured issuer rules, dates, persistence,

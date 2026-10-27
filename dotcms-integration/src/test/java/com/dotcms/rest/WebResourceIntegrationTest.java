@@ -180,16 +180,30 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
     return request;
   }
   
-  /** Default and invalid settings must reject even correct password or API-JWT credentials. */
+  /** Explicit FALSE, NONE, empty and unrecognized settings must reject every credential. */
   @Test
   public void basic_password_and_api_jwt_fail_closed_without_explicit_enablement() throws Exception {
     final User user = authenticationUser();
     final String jwt = apiJwt(authenticationToken(user, null));
-    for (final String mode : new String[]{null, "NONE", "FALSE", "", "invalid"}) {
+    for (final String mode : new String[]{"NONE", "FALSE", "", "invalid"}) {
       Config.setProperty("ALLOW_BASIC_AUTH", mode);
       assertCredentialDenied("Basic", loginName(user), authenticationPassword);
       assertCredentialDenied("Basic", loginName(user), jwt);
     }
+  }
+
+  /**
+   * The absent-property default resolves to JWT_TOKEN: an API JWT as the Basic password
+   * authenticates like a Bearer header (no password verification, no session), while a real
+   * account password is still rejected.
+   */
+  @Test
+  public void absent_default_accepts_api_jwt_but_not_password() throws Exception {
+    final User user = authenticationUser();
+    final String jwt = apiJwt(authenticationToken(user, null));
+    Config.setProperty("ALLOW_BASIC_AUTH", null);
+    assertCredentialUser(user, "Basic", jwt);
+    assertCredentialDenied("Basic", loginName(user), authenticationPassword);
   }
 
   /** Token mode accepts a persisted same-owner API JWT, not a real account password. */

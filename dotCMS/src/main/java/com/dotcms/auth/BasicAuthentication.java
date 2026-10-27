@@ -19,10 +19,14 @@ public final class BasicAuthentication {
     private BasicAuthentication() {
     }
 
-    /** Returns the configured mode; absent, FALSE, empty and unrecognized values fail closed. */
+    /** Returns the configured mode; explicit FALSE, empty and unrecognized values fail closed. */
     public static Mode mode() {
         try {
-            return Mode.valueOf(Config.getStringProperty("ALLOW_BASIC_AUTH", "NONE")
+            // The default accepts API JWTs as the Basic password: it validates the same persisted
+            // token a Bearer header would (no password verification, no session), so a Basic
+            // wrapper is credential-equivalent to Bearer. An absent property is that posture;
+            // explicit NONE or FALSE disables the transports entirely.
+            return Mode.valueOf(Config.getStringProperty("ALLOW_BASIC_AUTH", "JWT_TOKEN")
                     .trim().toUpperCase(Locale.ROOT));
         } catch (IllegalArgumentException e) {
             return Mode.NONE;

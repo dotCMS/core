@@ -55,7 +55,11 @@ public class WebResourceAuthenticationTest extends UnitTestBase {
     private String previousMode;
     private String previousPrincipal;
 
-    /** Supplies each restrictive mode through every live username/password transport. */
+    /**
+     * Supplies every restrictive mode plus the absent-property default through every live
+     * username/password transport. The default resolves to {@code JWT_TOKEN}: an API JWT as the
+     * Basic password validates like a Bearer header, while a real password is still rejected.
+     */
     @Parameterized.Parameters(name = "{index}: mode={0}, transport={1}")
     public static Collection<Object[]> restrictiveModes() {
         final List<Object[]> cases = new ArrayList<>();
@@ -115,7 +119,9 @@ public class WebResourceAuthenticationTest extends UnitTestBase {
                 when(company.getAuthType()).thenReturn(authType);
                 final String username = Company.AUTH_TYPE_EA.equals(authType)
                         ? "OWNER@example.com" : owner.getUserId();
-                if (mode != null && "JWT_TOKEN".equalsIgnoreCase(mode.trim())) {
+                // null exercises the absent-property default, which resolves to JWT_TOKEN.
+                final boolean tokenMode = mode == null || "JWT_TOKEN".equalsIgnoreCase(mode.trim());
+                if (tokenMode) {
                     assertEquals(owner, WebResource.authenticateUser(username, " api-jwt ",
                             request, response, userAPI));
                 } else {

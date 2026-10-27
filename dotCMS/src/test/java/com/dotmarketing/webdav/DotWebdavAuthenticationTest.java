@@ -128,11 +128,11 @@ public class DotWebdavAuthenticationTest {
         Config.setProperty("ALLOW_BASIC_AUTH", previousMode);
     }
 
-    /** A correct password must not bypass NONE or the absent-property default. */
+    /** A correct password must not bypass explicit NONE, FALSE, empty or unrecognized values. */
     @Test
     public void disabledModesDenyBeforeCheckingPasswordsOrTokens() throws Exception {
         passwords.when(() -> LoginFactory.passwordMatch(CREDENTIAL, user)).thenReturn(true);
-        for (final String mode : new String[]{null, "NONE", "false", "invalid-mode", ""}) {
+        for (final String mode : new String[]{"NONE", "false", "invalid-mode", ""}) {
             Config.setProperty("ALLOW_BASIC_AUTH", mode);
             assertThrows(DotSecurityException.class,
                     () -> helper.authorizePrincipal(USERNAME, CREDENTIAL));
