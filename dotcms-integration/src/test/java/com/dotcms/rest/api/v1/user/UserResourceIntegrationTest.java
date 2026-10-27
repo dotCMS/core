@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.user;
 
+import com.dotcms.api.web.WebSessionContext;
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -228,6 +229,51 @@ public class UserResourceIntegrationTest {
         assertEquals(adminUser.getUserId(),request.getSession().getAttribute(WebKeys.USER_ID));
         assertNull(request.getSession().getAttribute(WebKeys.USER));
         assertNull(request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
+    }
+
+    /**
+     * Method to test: {@link UserResource#logoutAs}
+     * Given Scenario: An administrator logs in as another user, and the session reports an active
+     * Login As. The administrator then logs out as that user.
+     * ExpectedResult: The administrator is the session user again and the session no longer
+     * reports an active Login As.
+     */
+    @Test
+    public void test_logoutAs_afterLoginAs_restoresTheAdministrator() throws Exception {
+        loginAs();
+        final WebSessionContext sessionContext = WebSessionContext.getInstance(request);
+        assertTrue(APILocator.getLoginAsAPI().isLoginAsUser(sessionContext));
+        assertEquals(adminUser.getUserId(),
+                APILocator.getLoginAsAPI().getPrincipalUser(sessionContext).getUserId());
+
+        final Response resourceResponse = resource.logoutAs(request, response);
+
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        assertEquals(adminUser.getUserId(), request.getSession().getAttribute(WebKeys.USER_ID));
+        assertFalse(APILocator.getLoginAsAPI().isLoginAsUser(sessionContext));
+    }
+
+    /**
+     * Method to test: {@link UserResource#logoutAs}
+     * Given Scenario: A back-end user who never used Login As has a session that holds a
+     * PRINCIPAL_USER_ID attribute naming the administrator, written directly to the session.
+     * The user calls Logout As.
+     * ExpectedResult: Logout As answers 400 because no Login As is active, and the session user
+     * stays the back-end user.
+     */
+    @Test
+    public void test_logoutAs_withoutLoginAs_keepsTheCurrentUser() throws Exception {
+        final User publisher = TestUserUtils.getPublisher(host);
+        usersToClean.add(publisher);
+        final HttpServletRequest publisherRequest =
+                mockRequestAs(publisher.getEmailAddress(), publisher.getFirstName());
+        publisherRequest.getSession().setAttribute(WebKeys.USER_ID, publisher.getUserId());
+        publisherRequest.getSession().setAttribute(WebKeys.PRINCIPAL_USER_ID, adminUser.getUserId());
+
+        final Response resourceResponse = resource.logoutAs(publisherRequest, new MockHttpResponse());
+
+        assertEquals(Status.BAD_REQUEST.getStatusCode(), resourceResponse.getStatus());
+        assertEquals(publisher.getUserId(), publisherRequest.getSession().getAttribute(WebKeys.USER_ID));
     }
 
     @SuppressWarnings("unchecked")
