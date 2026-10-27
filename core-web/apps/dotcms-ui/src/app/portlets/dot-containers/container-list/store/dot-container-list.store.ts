@@ -4,6 +4,7 @@ import { Injectable, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 
 import { map, switchMap, take, tap } from 'rxjs/operators';
 
@@ -28,6 +29,7 @@ import { DotContainersService } from '../../../../api/services/dot-containers/do
 import { ActionHeaderOptions } from '../../../../shared/models/action-header/action-header-options.model';
 import { DataTableColumn } from '../../../../shared/models/data-table/data-table-column';
 import { DotListingDataTableComponent } from '../../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
+import { DotContainerInUseDialogComponent } from '../dot-container-in-use-dialog/dot-container-in-use-dialog.component';
 
 export interface DotContainerListState {
     containerBulkActions: MenuItem[];
@@ -63,6 +65,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
     private dotSiteBrowserService = inject(DotSiteBrowserService);
     private dotAlertConfirmService = inject(DotAlertConfirmService);
     private dotContainersService = inject(DotContainersService);
+    private dialogService = inject(DialogService);
     private paginatorService = inject(PaginatorService);
     private dotSiteService = inject(SiteService);
 
@@ -629,28 +632,28 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
         });
     }
 
+    /**
+     * Tells the user the delete was blocked and which templates hold each container. Nothing is
+     * deleted, so this is a plain dialog and not a bulk-action result.
+     */
     private notifyContainersInUse(inUse: DotContainerDependencies[]): void {
-        this.updateNotifyMessages({
-            payload: {
-                skippedCount: inUse.length,
-                successCount: 0,
-                fails: inUse.map(({ identifier, templates }) => ({
-                    element: identifier,
-                    errorMessage: this.getInUseMessage(templates)
-                }))
-            },
-            message: this.dotMessageService.get('message.containers.in_use.header')
+        const [first] = inUse;
+
+        this.dialogService.open(DotContainerInUseDialogComponent, {
+            closable: true,
+            closeOnEscape: true,
+            header:
+                inUse.length > 1
+                    ? this.dotMessageService.get(
+                          'message.containers.in_use.header.many',
+                          String(inUse.length)
+                      )
+                    : this.dotMessageService.get('message.containers.in_use.header', first.title),
+            width: '36rem',
+            contentStyle: { 'max-height': '70vh', overflow: 'auto' },
+            baseZIndex: 10000,
+            data: inUse
         });
-    }
-
-    private getInUseMessage(templates: DotContainerDependencies['templates']): string {
-        const names = templates
-            .map(({ title, identifier, siteName }) =>
-                siteName ? `${title} (${identifier}) - ${siteName}` : `${title} (${identifier})`
-            )
-            .join(', ');
-
-        return `${this.dotMessageService.get('container-used-templates')} ${names}`;
     }
 
     private publishContainer(identifiers: string[]): void {

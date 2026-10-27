@@ -47,7 +47,6 @@ import {
 import {
     CONTAINER_SOURCE,
     DotActionBulkResult,
-    DotBulkFailItem,
     DotCMSResponse,
     DotContainer,
     DotContainerDependencies,
@@ -70,10 +69,10 @@ import {
 } from '@dotcms/utils-testing';
 
 import { ContainerListComponent } from './container-list.component';
+import { DotContainerInUseDialogComponent } from './dot-container-in-use-dialog/dot-container-in-use-dialog.component';
 import { DotContainerListStore } from './store/dot-container-list.store';
 
 import { DotContainersService } from '../../../api/services/dot-containers/dot-containers.service';
-import { DotBulkInformationComponent } from '../../../view/components/_common/dot-bulk-information/dot-bulk-information.component';
 import { DotEmptyStateComponent } from '../../../view/components/_common/dot-empty-state/dot-empty-state.component';
 import { DotContentTypeSelectorComponent } from '../../../view/components/dot-content-type-selector/dot-content-type-selector.component';
 import { ActionHeaderComponent } from '../../../view/components/dot-listing-data-table/action-header/action-header.component';
@@ -192,8 +191,8 @@ const messages = {
     'message.containers.fieldName.name': 'Name',
     'message.containers.fieldName.status': 'Status',
     'Delete-Container': 'Delete Container',
-    'message.containers.in_use.header': 'Container in use',
-    'container-used-templates': 'This Container is used by Templates.',
+    'message.containers.in_use.header': 'Cannot delete {0}',
+    'message.containers.in_use.header.many': 'Cannot delete {0} containers',
     Archive: 'Archive',
     Archived: 'Archived',
     Copy: 'Copy',
@@ -463,17 +462,13 @@ describe('ContainerListComponent', () => {
                 const [component, config] = (dialogService.open as ReturnType<typeof vi.fn>).mock
                     .calls[0];
 
-                expect(component).toBe(DotBulkInformationComponent);
-                expect(config.data.fails[0].errorMessage).toContain(
-                    'This Container is used by Templates.'
-                );
-                // titles are kept as typed: they are rendered as text by the dialog
-                expect(config.data.fails[0].errorMessage).toContain(
-                    '<b>Home</b> & more (tpl-id) - demo.dotcms.com'
-                );
+                expect(component).toBe(DotContainerInUseDialogComponent);
+                expect(config.data).toEqual([dependencies(usedBy)]);
+                expect(config.closable).toBe(true);
+                expect(config.closeOnEscape).toBe(true);
             });
 
-            it('should name the dialog after the container being in use, not after a delete', () => {
+            it('should name the container being blocked in the dialog header', () => {
                 vi.spyOn(containersService, 'getDependencies').mockReturnValue(
                     of([dependencies(usedBy)])
                 );
@@ -482,7 +477,7 @@ describe('ContainerListComponent', () => {
 
                 const [, config] = (dialogService.open as ReturnType<typeof vi.fn>).mock.calls[0];
 
-                expect(config.data.action).toBe('Container in use');
+                expect(config.header).toBe('Cannot delete Archived container');
             });
 
             it('should ask for confirmation and delete when no template uses the container', () => {
@@ -516,9 +511,9 @@ describe('ContainerListComponent', () => {
 
                 const [, config] = (dialogService.open as ReturnType<typeof vi.fn>).mock.calls[0];
 
-                expect(config.data.fails.map((fail: DotBulkFailItem) => fail.element)).toEqual([
-                    'in-use'
-                ]);
+                expect(
+                    config.data.map((dependency: DotContainerDependencies) => dependency.identifier)
+                ).toEqual(['in-use']);
             });
 
             it('should not delete when the dependencies lookup fails', () => {
