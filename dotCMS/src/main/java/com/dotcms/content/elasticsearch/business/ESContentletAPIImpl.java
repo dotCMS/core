@@ -1613,9 +1613,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
     public void addPermissionsToQuery(final StringBuffer buffy, final User user,
             final List<Role> roles, final boolean respectFrontendRoles)
             throws DotSecurityException, DotDataException {
-        // Every clause appended below starts with a space. A query ending in an unbalanced escape
-        // would escape that space, which folds the leading '+' into the caller's last term and
-        // leaves the permission group optional, so balance the escape before appending anything.
+        // Every clause appended below is separated from the query by a single space, which a
+        // query ending in an unbalanced escape would consume, so balance the escape first.
         balanceTrailingEscape(buffy);
 
         if (user != null) {
@@ -1650,9 +1649,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     /**
      * Keeps the query from escaping the separator that precedes the clauses appended by
-     * {@link #addPermissionsToQuery(StringBuffer, User, List, boolean)}. A run of backslashes at
-     * the end of the query is an escape sequence only when its length is odd, so in that case one
-     * more backslash is appended, which leaves the caller searching for a literal backslash.
+     * {@link #addPermissionsToQuery(StringBuffer, User, List, boolean)} and
+     * {@link #addCategoryPermissionsToQuery(StringBuffer, User, List, boolean)}. A run of
+     * backslashes at the end of the query is an escape sequence only when its length is odd, so in
+     * that case one more backslash is appended; the run then stands for a literal backslash and
+     * the separator survives. A query that does not end in an unbalanced escape is left alone.
      *
      * @param buffy the query being built, modified in place when it ends in an unbalanced escape
      */
@@ -1759,14 +1760,30 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     }
 
+    /**
+     * Appends the secondary category-permission clause to the given query, so results are narrowed
+     * by the category read permissions the caller's roles hold. The clause is appended as text, so
+     * the query is normalized first, the same way {@link #addPermissionsToQuery} does it: in the
+     * call order used today the query has already been normalized by then, but this method is part
+     * of {@link ContentletAPI} and can be called on its own.
+     *
+     * @param buffy the query being built, modified in place
+     * @param user the {@link User} the query is run for, or {@code null} for an anonymous caller
+     * @param roles the {@link Role}s held by that user; empty for an anonymous caller
+     * @param respectFrontendRoles whether the anonymous role is taken into account as well
+     */
     @Override
-    public void addCategoryPermissionsToQuery(StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles) {
+    public void addCategoryPermissionsToQuery(final StringBuffer buffy, final User user,
+            final List<Role> roles, final boolean respectFrontendRoles) {
         if (!Config.getBooleanProperty("PERMISSION_SECONDARY_CATEGORY_CHECK", true)) {
             return;
         }
         if (user != null && user.isAdmin()) {
             return;
         }
+
+        // Nothing is appended above this line, so the query is only normalized when it has to be
+        balanceTrailingEscape(buffy);
 
         buffy.append(" +(");
 
