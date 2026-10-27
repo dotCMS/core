@@ -24,6 +24,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.workflow.form.FireActionForm;
 import com.dotcms.workflow.helper.WorkflowHelper;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -32,6 +33,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.portlets.workflows.util.WorkflowImportExportUtil;
@@ -235,6 +237,47 @@ public class WorkflowResourceCommentsReadAccessTest {
         assertThrows(DoesNotExistException.class, () -> resource.getWorkflowTasksHistoryComments(
                 requestFor(userWithoutAccess), new EmptyHttpResponse(),
                 otherLanguageContent.getIdentifier(), ANY_LANGUAGE));
+    }
+
+    /**
+     * Given a back-end user with no permission on a contentlet that exists only in a non-default
+     * language,
+     * When the user adds a comment to it without a language,
+     * Then the request answers not found and no comment is saved on the task.
+     */
+    @Test
+    public void saveComment_otherLanguageOnly_withoutRead_returnsNotFoundAndSavesNothing()
+            throws Exception {
+        final WorkflowResource resource = resourceFor(userWithoutAccess);
+        final WorkflowTask task = workflowAPI.findTaskByContentlet(otherLanguageContent);
+        final int commentsBefore = workflowAPI.findWorkFlowComments(task).size();
+
+        assertThrows(DoesNotExistException.class, () -> resource.saveComment(
+                requestFor(userWithoutAccess), new EmptyHttpResponse(),
+                otherLanguageContent.getIdentifier(), ANY_LANGUAGE,
+                new WorkflowCommentForm("comment")));
+
+        assertEquals(commentsBefore, workflowAPI.findWorkFlowComments(task).size());
+    }
+
+    /**
+     * Given a back-end user with no permission on a contentlet that exists only in a non-default
+     * language,
+     * When the user fires the Publish action on it by identifier without a language,
+     * Then the request answers not found and the contentlet is not published.
+     */
+    @Test
+    public void fireAction_byIdentifier_otherLanguageOnly_withoutRead_returnsNotFound()
+            throws Exception {
+        final WorkflowResource resource = resourceFor(userWithoutAccess);
+
+        assertThrows(DoesNotExistException.class, () -> resource.fireActionSinglePart(
+                requestFor(userWithoutAccess), new EmptyHttpResponse(),
+                SystemWorkflowConstants.WORKFLOW_PUBLISH_ACTION_ID, null,
+                otherLanguageContent.getIdentifier(), null, ANY_LANGUAGE,
+                new FireActionForm(new FireActionForm.Builder())));
+
+        assertFalse(APILocator.getVersionableAPI().hasLiveVersion(otherLanguageContent));
     }
 
     /**
