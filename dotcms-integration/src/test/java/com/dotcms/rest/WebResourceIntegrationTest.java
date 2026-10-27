@@ -224,6 +224,43 @@ public class WebResourceIntegrationTest extends IntegrationTestBase {
     }
   }
 
+  /**
+   * Token mode must not turn a valid login name into a user-enumeration oracle: a valid login
+   * name with an invalid token, an invalid login name with an invalid token, and an invalid
+   * login name with a password all answer the same generic 401, and none of them may reach the
+   * legacy login pipeline (which resolves the submitted login name against the user store).
+   */
+  @Test
+  public void jwt_token_mode_denies_valid_and_invalid_logins_identically() throws Exception {
+    final User user = authenticationUser();
+    final String garbage = "not-a-jwt";
+    Config.setProperty("ALLOW_BASIC_AUTH", "JWT_TOKEN");
+    final LoginServiceAPI loginService = mock(LoginServiceAPI.class);
+    try (MockedStatic<APILocator> apis = mockStatic(APILocator.class, CALLS_REAL_METHODS)) {
+      apis.when(APILocator::getLoginServiceAPI).thenReturn(loginService);
+      try {
+        final SecurityException validUserInvalidToken = assertThrows(SecurityException.class,
+            () -> credentialBuilder("Basic", loginName(user), garbage).init());
+        final SecurityException invalidUserInvalidToken = assertThrows(SecurityException.class,
+            () -> credentialBuilder("Basic", "nobody@nohost.invalid", garbage).init());
+        final SecurityException invalidUserPassword = assertThrows(SecurityException.class,
+            () -> credentialBuilder("Basic", "nobody@nohost.invalid", authenticationPassword).init());
+        assertEquals(401, validUserInvalidToken.getResponse().getStatus());
+        assertEquals(401, invalidUserInvalidToken.getResponse().getStatus());
+        assertEquals(401, invalidUserPassword.getResponse().getStatus());
+        // The refusal must be indistinguishable: same status, same message, no login lookup.
+        assertEquals("A valid login name must not change the refusal message",
+            validUserInvalidToken.getMessage(), invalidUserInvalidToken.getMessage());
+        assertEquals("An invalid login name must not change the refusal message",
+            validUserInvalidToken.getMessage(), invalidUserPassword.getMessage());
+      } finally {
+        // The legacy login pipeline resolves the submitted login name against the user store;
+        // a call here would leak which login names exist.
+        verifyNoInteractions(loginService);
+      }
+    }
+  }
+
   /** DOTAUTH and the live user/password path parameters must obey the same policy as Basic. */
   @Test
   public void legacy_header_and_url_credentials_obey_authentication_mode() throws Exception {
