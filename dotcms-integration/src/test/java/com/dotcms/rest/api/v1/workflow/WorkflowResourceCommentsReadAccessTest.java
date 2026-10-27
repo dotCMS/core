@@ -3,9 +3,12 @@ package com.dotcms.rest.api.v1.workflow;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -31,6 +34,9 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
@@ -363,6 +369,32 @@ public class WorkflowResourceCommentsReadAccessTest {
     }
 
     /**
+     * Given a lookup for a given language that fails for a reason other than the user's
+     * permissions,
+     * When the user requests the contentlet's history or adds a comment for that language,
+     * Then the failure reaches the caller as it is and is not answered as not found.
+     */
+    @Test
+    public void endpoints_withLanguage_lookupFailure_isNotReportedAsNotFound() {
+        final DotContentletStateException failure = new DotContentletStateException(
+                "lookup failed", new DotDataException("database unavailable"));
+        final ContentletAPI failingContentletAPI = mock(ContentletAPI.class);
+        when(failingContentletAPI.findContentletByIdentifierOrFallback(anyString(), anyBoolean(),
+                anyLong(), any(User.class), anyBoolean())).thenThrow(failure);
+        final WorkflowResource resource = resourceFor(reader, new WorkflowHelper(workflowAPI,
+                APILocator.getRoleAPI(), APILocator.getContentletAPI(), permissionAPI,
+                WorkflowImportExportUtil.getInstance()), failingContentletAPI);
+        final String language = String.valueOf(content.getLanguageId());
+
+        assertSame(failure, assertThrows(DotContentletStateException.class,
+                () -> resource.getWorkflowTasksHistoryComments(requestFor(reader),
+                        new EmptyHttpResponse(), content.getIdentifier(), language)));
+        assertSame(failure, assertThrows(DotContentletStateException.class,
+                () -> resource.saveComment(requestFor(reader), new EmptyHttpResponse(),
+                        content.getIdentifier(), language, new WorkflowCommentForm("comment"))));
+    }
+
+    /**
      * Builds the resource with the real workflow helper, acting as the given user.
      */
     private static WorkflowResource resourceFor(final User user) {
@@ -374,13 +406,22 @@ public class WorkflowResourceCommentsReadAccessTest {
      * Builds the resource with the given workflow helper, acting as the given user.
      */
     private static WorkflowResource resourceFor(final User user, final WorkflowHelper helper) {
+        return resourceFor(user, helper, APILocator.getContentletAPI());
+    }
+
+    /**
+     * Builds the resource with the given workflow helper and contentlet API, acting as the given
+     * user.
+     */
+    private static WorkflowResource resourceFor(final User user, final WorkflowHelper helper,
+            final ContentletAPI contentletAPI) {
         final InitDataObject initDataObject = mock(InitDataObject.class);
         when(initDataObject.getUser()).thenReturn(user);
         final WebResource webResource = mock(WebResource.class);
         when(webResource.init(any(WebResource.InitBuilder.class))).thenReturn(initDataObject);
 
         return new WorkflowResource(helper, ContentHelper.getInstance(), workflowAPI,
-                APILocator.getContentletAPI(), ResponseUtil.INSTANCE, permissionAPI,
+                contentletAPI, ResponseUtil.INSTANCE, permissionAPI,
                 WorkflowImportExportUtil.getInstance(), new MultiPartUtils(), webResource,
                 SystemActionApiFireCommandFactory.getInstance());
     }
