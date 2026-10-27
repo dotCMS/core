@@ -17,6 +17,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.google.common.annotations.VisibleForTesting;
@@ -40,7 +41,9 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.URISyntaxException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * This endpoint handles the interaction between the IDP callbacks and dotCMS.
@@ -215,30 +218,7 @@ public class DotSamlResource implements Serializable {
 					// Add session based user ID to be used on the redirect.
 					session.setAttribute(identityProviderConfiguration.getId() + DotSamlConstants.SAML_USER_ID, user.getUserId());
 
-					String loginPath = httpServletRequest.getParameter("RelayState");
-					Logger.debug(this, "RelayState, LoginPath: " + loginPath);
-					if (!UtilMethods.isSet(loginPath)) {
-
-						loginPath = (String) session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
-						Logger.debug(this, "REDIRECT_AFTER_LOGIN, LoginPath: " + loginPath);
-						if (null == loginPath) {
-							if (identityProviderConfiguration.containsOptionalProperty(REDIRECT_AFTER_LOGIN_CONFIG)) {
-								loginPath = identityProviderConfiguration.getOptionalProperty(REDIRECT_AFTER_LOGIN_CONFIG).toString();
-							} else {
-								// At this stage we cannot determine whether this was a front
-								// end or back end request since we cannot determine
-								// original request.
-								//
-								// REDIRECT_AFTER_LOGIN should have already been set in relay
-								// request to IdP. 'autoLogin' will check the ORIGINAL_REQUEST
-								// session attribute.
-								loginPath = DotSamlConstants.DEFAULT_LOGIN_PATH;
-							}
-						} else {
-
-							session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
-						}
-					}
+					final String loginPath = this.resolveLoginPath(httpServletRequest, session, identityProviderConfiguration);
 
 					Logger.debug(this, ()-> "Doing login to the user " + (user != null? user.getEmailAddress() : "unknown"));
 					this.samlHelper.doLogin(httpServletRequest, httpServletResponse,
@@ -265,6 +245,96 @@ public class DotSamlResource implements Serializable {
 	
 	
 	
+	/**
+	 * Decides where the SAML callback sends the user after login. The destination is the first usable value of:
+	 * the {@code RelayState} the IdP posted back, the destination saved in the session
+	 * ({@link WebKeys#REDIRECT_AFTER_LOGIN}), the app's {@code redirect.after.login} setting, and finally
+	 * {@code /dotAdmin/}. The RelayState and the session value can carry a value a visitor controls, so they are only
+	 * used when {@link RedirectUtil#toAllowedRedirect(String, Collection, Collection)} accepts them as a destination
+	 * on this site (the callback host, or the hostname or an alias of the site being logged in to), or on a host
+	 * explicitly listed in the app's {@code auth.relaystate.allowed.hosts}; a rejected value is recorded in the
+	 * security log (without the value) and the next source is tried. The admin-configured
+	 * {@code redirect.after.login} is trusted and used as is.
+	 *
+	 * @param request                       the IdP callback request
+	 * @param session                       the session of the callback request
+	 * @param identityProviderConfiguration the site's SAML configuration
+	 * @return the path or URL to redirect the user to
+	 */
+	@VisibleForTesting
+	String resolveLoginPath(final HttpServletRequest request, final HttpSession session,
+							final IdentityProviderConfiguration identityProviderConfiguration) {
+
+		final Collection<String> allowedHosts  = this.allowedRedirectHosts(request, identityProviderConfiguration);
+		final Collection<String> externalHosts = SamlWebUtils.configuredAllowedHosts(identityProviderConfiguration);
+
+		String loginPath = this.acceptedRedirect(request.getParameter("RelayState"), allowedHosts, externalHosts, "RelayState");
+		if (null == loginPath) {
+
+			final Object sessionRedirect = session.getAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+			if (null != sessionRedirect) {
+				session.removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+				loginPath = this.acceptedRedirect(sessionRedirect.toString(), allowedHosts, externalHosts,
+						"session REDIRECT_AFTER_LOGIN");
+			}
+		}
+
+		if (null == loginPath) {
+			if (identityProviderConfiguration.containsOptionalProperty(REDIRECT_AFTER_LOGIN_CONFIG)) {
+				loginPath = identityProviderConfiguration.getOptionalProperty(REDIRECT_AFTER_LOGIN_CONFIG).toString();
+			} else {
+				// At this stage we cannot determine whether this was a front
+				// end or back end request since we cannot determine
+				// original request.
+				//
+				// REDIRECT_AFTER_LOGIN should have already been set in relay
+				// request to IdP. 'autoLogin' will check the ORIGINAL_REQUEST
+				// session attribute.
+				loginPath = DotSamlConstants.DEFAULT_LOGIN_PATH;
+			}
+		}
+
+		return loginPath;
+	}
+
+	/**
+	 * Returns the hosts a post-login redirect may point to: the callback host plus the hostname and aliases of
+	 * the site whose SAML configuration is in use (its id is the site identifier).
+	 *
+	 * @param request                       the IdP callback request
+	 * @param identityProviderConfiguration the site's SAML configuration
+	 * @return the allowed hosts
+	 */
+	@VisibleForTesting
+	Collection<String> allowedRedirectHosts(final HttpServletRequest request,
+											final IdentityProviderConfiguration identityProviderConfiguration) {
+		return SamlWebUtils.siteHosts(request.getServerName(), identityProviderConfiguration.getId());
+	}
+
+	/**
+	 * Returns the candidate as a safe destination (on this site, or on a host listed in
+	 * {@code auth.relaystate.allowed.hosts}), or null when it is absent or rejected.
+	 * Rejections are security-logged with the source, the reason and the length only, never the value.
+	 */
+	private String acceptedRedirect(final String candidate, final Collection<String> allowedHosts,
+									final Collection<String> externalHosts, final String source) {
+
+		if (!UtilMethods.isSet(candidate)) {
+			return null;
+		}
+		final Optional<String> accepted = RedirectUtil.toAllowedRedirect(candidate, allowedHosts, externalHosts);
+		if (accepted.isEmpty()) {
+			final String reason = RedirectUtil.rejectionReason(candidate, allowedHosts, externalHosts)
+					.map(Enum::name).orElse("UNKNOWN");
+			SecurityLogger.logInfo(DotSamlResource.class, () -> "SAML login: ignored an unsafe post-login "
+					+ "destination from " + source + " (reason " + reason + ", length " + candidate.length()
+					+ "); it is neither on this site nor on an allowed host. Falling back to the next destination.");
+			return null;
+		}
+		Logger.debug(this, () -> "SAML login: destination from " + source + ": " + accepted.get());
+		return accepted.get();
+	}
+
 	/**
 	 * Renders the XML metadata.
 	 * @param idpConfigId          {@link String} identifier config (here the host id)

@@ -1,6 +1,8 @@
 package com.dotcms.filters.interceptor.saml;
 
 import com.dotcms.saml.IdentityProviderConfiguration;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.Config;
@@ -17,11 +19,17 @@ import org.apache.velocity.context.Context;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -45,6 +53,13 @@ public class SamlWebUtils {
     public static final String BY_PASS_KEY   = "native";
     public static final Lazy<String> BY_PASS_VALUE = Lazy.of(()->Config.getStringProperty("SAML_BYPASS_VALUE","true"));
     public static final String AUTH_RELAYSTATE_KEY = "auth.relaystate";
+
+    /**
+     * SAML app property listing extra hosts (comma-separated, exact host names) that a post-login redirect may
+     * point to, besides the site's own hosts. A backward-compatibility valve for RelayState values that send users
+     * to another host.
+     */
+    public static final String AUTH_RELAYSTATE_ALLOWED_HOSTS_KEY = "auth.relaystate.allowed.hosts";
 
     protected     final UserWebAPI userWebAPI;
 
@@ -291,4 +306,73 @@ public class SamlWebUtils {
 
         return velocityMessage;
     }
-} // E:O:F:SamlWebUtils.
+
+    /**
+     * Returns the external hosts an admin explicitly allowed for post-login redirects, from the
+     * {@link #AUTH_RELAYSTATE_ALLOWED_HOSTS_KEY} property: comma-separated, trimmed, matched exactly
+     * (case-insensitive). Entries containing a wildcard, scheme, port, path, user-info or whitespace are ignored,
+     * so the list can only name exact hosts.
+     *
+     * @param identityProviderConfiguration the site's SAML configuration
+     * @return the allowed external hosts; empty when none are configured
+     */
+    public static List<String> configuredAllowedHosts(final IdentityProviderConfiguration identityProviderConfiguration) {
+
+        if (null == identityProviderConfiguration
+                || !identityProviderConfiguration.containsOptionalProperty(AUTH_RELAYSTATE_ALLOWED_HOSTS_KEY)) {
+            return Collections.emptyList();
+        }
+        final Object value = identityProviderConfiguration.getOptionalProperty(AUTH_RELAYSTATE_ALLOWED_HOSTS_KEY);
+        if (null == value || !UtilMethods.isSet(value.toString())) {
+            return Collections.emptyList();
+        }
+        final List<String> hosts = new ArrayList<>();
+        for (final String entry : value.toString().split(",")) {
+            final String host = entry.trim();
+            if (host.isEmpty()) {
+                continue;
+            }
+            if (host.matches(".*[*/:@\\s].*")) {
+                Logger.debug(SamlWebUtils.class, () -> "Ignoring an invalid entry in "
+                        + AUTH_RELAYSTATE_ALLOWED_HOSTS_KEY + ": only exact host names are allowed");
+                continue;
+            }
+            hosts.add(host);
+        }
+        return hosts;
+    }
+
+    /**
+     * Returns the hosts a post-login redirect may point to on this site: the host of the current request plus
+     * the hostname and aliases of the site whose SAML configuration is in use. An IdP often sends a RelayState
+     * on one alias of a site while its callback arrives on another, so all of them count as the same host.
+     * Hosts of other sites are never included. If the site cannot be loaded, only the request host is returned.
+     *
+     * @param requestHost    the host of the current request ({@code request.getServerName()})
+     * @param siteIdentifier the identifier of the site being logged in to (the SAML configuration id)
+     * @return the allowed hosts, without duplicates
+     */
+    public static Collection<String> siteHosts(final String requestHost, final String siteIdentifier) {
+
+        final Set<String> hosts = new LinkedHashSet<>();
+        if (UtilMethods.isSet(requestHost)) {
+            hosts.add(requestHost);
+        }
+        if (UtilMethods.isSet(siteIdentifier)) {
+            try {
+                final Host site = APILocator.getHostAPI().find(siteIdentifier, APILocator.systemUser(), false);
+                if (null != site) {
+                    if (UtilMethods.isSet(site.getHostname())) {
+                        hosts.add(site.getHostname());
+                    }
+                    hosts.addAll(APILocator.getHostAPI().parseHostAliases(site));
+                }
+            } catch (final Exception e) {
+                Logger.debug(SamlWebUtils.class, () -> "Unable to load the aliases of site " + siteIdentifier
+                        + "; only the request host is allowed for post-login redirects: " + e.getMessage());
+            }
+        }
+        return hosts;
+    }
+
+}
