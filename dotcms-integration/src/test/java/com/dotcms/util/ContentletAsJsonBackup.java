@@ -25,10 +25,7 @@ import java.util.Map;
  * Shorty servlet tests, fail on their first attempt.
  * <p>
  * The SQL here is PostgreSQL-specific ({@code UPDATE ... FROM} and the {@code ->}/{@code ->>} JSON
- * operators). That matches the integration suite, which only runs against PostgreSQL: the test
- * database is the {@code docker.image.postgres} container and {@code dotcms-integration/pom.xml}
- * sets the PostgreSQL driver. If the suite ever runs on MSSQL, the restore and the fake-site query
- * need an MSSQL variant ({@code UPDATE ... JOIN} and {@code JSON_VALUE}).
+ * operators), which is fine because dotCMS only supports PostgreSQL.
  */
 public class ContentletAsJsonBackup implements AutoCloseable {
 
