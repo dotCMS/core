@@ -189,6 +189,15 @@ public final class LoginLockout {
         public boolean isRefused() {
             return refused;
         }
+
+        /**
+         * @return {@code true} when the attempt was refused because a lock is in force, as opposed to
+         * refused only because too many attempts from its source were in flight at once (no lock is set
+         * then, unless the password turns out to be wrong)
+         */
+        public boolean isLockedOut() {
+            return refused && !counted;
+        }
     }
 
     private static final LoginLockout INSTANCE = new LoginLockout(System::currentTimeMillis);
@@ -528,8 +537,7 @@ public final class LoginLockout {
                 succeeded(attempt);
                 return true;
             }
-            SecurityLogger.logInfo(LoginLockout.class, "Login refused, locked out: user " + user.getUserId()
-                    + " from " + source);
+            logRefused(attempt);
             release(attempt);
             return false;
         }
@@ -538,11 +546,21 @@ public final class LoginLockout {
             return true;
         }
         if (attempt.isRefused()) {
-            SecurityLogger.logInfo(LoginLockout.class, "Login refused, locked out: user " + user.getUserId()
-                    + " from " + source);
+            logRefused(attempt);
         }
         failed(attempt);
         return false;
+    }
+
+    /**
+     * Writes the security log line for a refused attempt, saying whether a lock is in force or the source
+     * only had too many attempts in flight at once, so support does not look for a lock that is not there.
+     */
+    public void logRefused(final Attempt attempt) {
+        SecurityLogger.logInfo(LoginLockout.class, (attempt.isLockedOut()
+                ? "Login refused, locked out: user "
+                : "Login refused, too many concurrent attempts: user ")
+                + attempt.userId + " from " + attempt.source);
     }
 
     /**

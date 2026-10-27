@@ -42,7 +42,6 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.EmailUtils;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.NoSuchUserException;
@@ -562,8 +561,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             } else {
                 LoginLockout.getInstance().failed(attempt);
             }
-            SecurityLogger.logInfo(this.getClass(), "Login refused, locked out: user " + user.getUserId()
-                    + " from " + LoginLockout.clientAddress());
+            LoginLockout.getInstance().logRefused(attempt);
             this.processFailedLogin(user, login, companyId, byEmailAddress, attempt, true);
             return Authenticator.FAILURE;
         }

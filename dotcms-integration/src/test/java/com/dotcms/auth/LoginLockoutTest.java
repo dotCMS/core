@@ -579,7 +579,9 @@ public class LoginLockoutTest {
     /**
      * Given: an address with no failures
      * When: 20 login attempts from it start at the same moment, before any password is checked
-     * Then: exactly the limit of them may check a password, because each is counted before its check
+     * Then: exactly the limit of them may check a password, because each is counted before its check. The
+     *       rest are refused for arriving together, which is not reported as a lock until a wrong password
+     *       actually sets one
      */
     @Test
     public void test_attempts_are_counted_before_the_password_check() throws Exception {
@@ -588,6 +590,12 @@ public class LoginLockoutTest {
             final List<Boolean> refused = inParallel(20, ADDRESS,
                     () -> LoginLockout.getInstance().begin(user.getUserId(), ADDRESS).isRefused());
             assertEquals(LIMIT, refused.stream().filter(r -> !r).count());
+
+            final LoginLockout.Attempt overLimit = LoginLockout.getInstance().begin(user.getUserId(), ADDRESS);
+            assertTrue(overLimit.isRefused());
+            assertFalse(overLimit.isLockedOut());
+            LoginLockout.getInstance().failed(overLimit);
+            assertTrue(LoginLockout.getInstance().begin(user.getUserId(), ADDRESS).isLockedOut());
         } finally {
             cleanUp(user);
         }
