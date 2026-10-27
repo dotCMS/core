@@ -6,6 +6,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.rendering.velocity.WidgetRenderer;
 import com.dotcms.rendering.velocity.viewtools.content.util.ContentUtils;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.annotation.SwaggerCompliant;
@@ -1087,7 +1088,12 @@ public class ContentResource {
         m.putAll(ContentletUtil.getContentPrintableMap(user, contentlet, allCategoriesInfo, doRender));
         if (BaseContentType.WIDGET.equals(type.baseType()) && Boolean.toString(true)
                 .equalsIgnoreCase(render)) {
-            m.put("parsedCode", WidgetResource.parseWidget(request, response, contentlet));
+            final WidgetRenderer.Rendering rendering = WidgetRenderer.getInstance()
+                    .renderWithDetails(request, response, contentlet);
+            m.put("parsedCode", rendering.text());
+            if (rendering.fieldScriptingSkipped()) {
+                m.put(ContentHelper.PARSED_CODE_WARNING, WidgetRenderer.FIELD_SCRIPTING_OFF_WARNING);
+            }
         }
 
         if (BaseContentType.HTMLPAGE.equals(type.baseType())) {
