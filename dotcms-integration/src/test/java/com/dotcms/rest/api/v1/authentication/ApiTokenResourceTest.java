@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.datagen.CompanyDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityMapView;
@@ -61,10 +62,12 @@ public class ApiTokenResourceTest {
 
     /**
      * Deletes the users and tokens created by the tests that go through {@link #newUser()} and
-     * {@link #persistToken(User)}, tokens first so no token outlives its owner.
+     * {@link #persistToken(User)}, tokens first so no token outlives its owner. Deleting a user
+     * needs a replacement user that owns a user role, which the system user lacks, so the users'
+     * content is handed to the admin user.
      */
     @AfterClass
-    public static void cleanUp() {
+    public static void cleanUp() throws DotDataException {
 
         for (final ApiToken token : createdTokens) {
             try {
@@ -73,7 +76,14 @@ public class ApiTokenResourceTest {
                 Logger.warn(ApiTokenResourceTest.class, "Unable to delete token " + token.getId(), e);
             }
         }
-        createdUsers.forEach(UserDataGen::remove);
+        final User replacement = TestUserUtils.getAdminUser();
+        for (final User user : createdUsers) {
+            try {
+                APILocator.getUserAPI().delete(user, replacement, APILocator.systemUser(), false);
+            } catch (Exception e) {
+                Logger.warn(ApiTokenResourceTest.class, "Unable to delete user " + user.getUserId(), e);
+            }
+        }
     }
 
     /**
