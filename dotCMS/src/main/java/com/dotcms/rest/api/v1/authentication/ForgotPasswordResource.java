@@ -143,18 +143,21 @@ public class ForgotPasswordResource implements Serializable {
      * Returns the pool that runs the account-dependent part of a reset request. It is bounded: when
      * its queue is full the request is dropped (and a warning logged) instead of doing the work on
      * the request thread; the response is the same 200 either way.
-     * Size and queue are set with {@code FORGOT_PASSWORD_POOL_SIZE} (default 4) and
-     * {@code FORGOT_PASSWORD_QUEUE_SIZE} (default 100).
+     * Size and queue are set with {@code forgot-password.pool.size} (default 4) and
+     * {@code forgot-password.queue.size} (default 100); the environment variables are
+     * {@code DOT_FORGOT_PASSWORD_POOL_SIZE} and {@code DOT_FORGOT_PASSWORD_QUEUE_SIZE}.
      *
      * @return the pool used to process reset requests
      */
     private static Executor resetPool() {
 
+        final int poolSize = Config.getIntProperty("forgot-password.pool.size", 4);
+
         return DotConcurrentFactory.getInstance().getSubmitter(FORGOT_PASSWORD_POOL,
                 new DotConcurrentFactory.SubmitterConfigBuilder()
-                        .poolSize(Config.getIntProperty("FORGOT_PASSWORD_POOL_SIZE", 4))
-                        .maxPoolSize(Config.getIntProperty("FORGOT_PASSWORD_POOL_SIZE", 4))
-                        .queueCapacity(Config.getIntProperty("FORGOT_PASSWORD_QUEUE_SIZE", 100))
+                        .poolSize(poolSize)
+                        .maxPoolSize(poolSize)
+                        .queueCapacity(Config.getIntProperty("forgot-password.queue.size", 100))
                         .allowCoreThreadTimeOut(true)
                         .rejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy())
                         .build());
