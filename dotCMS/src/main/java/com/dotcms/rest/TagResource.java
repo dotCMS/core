@@ -339,7 +339,7 @@ public class TagResource {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public Response delete(@Context final HttpServletRequest request,
             @Context final HttpServletResponse response,
-            @PathParam("tagId") final String tagId) {
+            @PathParam("tagId") final String tagId) throws DotDataException {
 
         final InitDataObject initDataObject =
                 new WebResource.InitBuilder(webResource)
@@ -360,18 +360,13 @@ public class TagResource {
             Logger.error(TagResource.class, errorMessage);
             throw new DoesNotExistException(errorMessage);
         }
-        try {
-            tagAPI.deleteTag(tagByTagId);
-            return Response.ok(new ResponseEntityView(OK)).build();
-        } catch (Exception e) {
-            Logger.error(TagResource.class,
-                    String.format("Exception removing tag  with id `%s`", tagId), e);
-            final String errorMessage = Try
-                    .of(() -> LanguageUtil.get(user.getLocale(), "tag.error.delete", tagId))
-                    .getOrElse(String.format("Error occurred removing tag %s .",
-                            tagId)); //fallback message
-            throw new BadRequestException(e, errorMessage);
+        // Permission-checked delete: returns false when the user may not edit the tag's content
+        final boolean deleted = tagAPI.deleteTag(user, tagId);
+        if (!deleted) {
+            throw new ForbiddenException(String.format(
+                    "User '%s' lacks permission to delete tag '%s'", user.getUserId(), tagId));
         }
+        return Response.ok(new ResponseEntityView(OK)).build();
     }
 
     /**

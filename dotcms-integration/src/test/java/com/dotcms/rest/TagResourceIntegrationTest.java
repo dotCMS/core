@@ -233,4 +233,42 @@ public class TagResourceIntegrationTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Given: a tag attached to content that the user can't edit
+     * Expected: deleting the tag by id returns 403 and the tag is kept
+     */
+    @Test
+    public void test_delete_userCannotEditTaggedContent_shouldBeForbidden() throws Exception {
+        final TagAPI tagAPI = APILocator.getTagAPI();
+        final User systemUser = APILocator.systemUser();
+        final User limitedUser = new UserDataGen().roles(new RoleDataGen().nextPersisted()).nextPersisted();
+        final Contentlet contentlet = TestDataUtils.getGenericContentContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId());
+        final Tag tag = tagAPI.getTagAndCreate("delete-v1-" + UUIDGenerator.shorty(),
+                systemUser.getUserId(), Host.SYSTEM_HOST);
+
+        try {
+            tagAPI.addContentletTagInode(tag, contentlet.getInode(), "tags");
+
+            final WebResource webResource = mock(WebResource.class);
+            final InitDataObject dataObject = mock(InitDataObject.class);
+            when(dataObject.getUser()).thenReturn(limitedUser);
+            when(webResource.init(any(InitBuilder.class))).thenReturn(dataObject);
+            final TagResource tagResource = new TagResource(tagAPI, APILocator.getHostAPI(),
+                    APILocator.getFolderAPI(), webResource);
+
+            try {
+                tagResource.delete(mock(HttpServletRequest.class), new MockHttpResponse(),
+                        tag.getTagId());
+                Assert.fail("Deleting a tag on content the user can't edit should be forbidden");
+            } catch (final ForbiddenException e) {
+                // expected
+            }
+            Assert.assertNotNull("The tag should be kept", tagAPI.getTagByTagId(tag.getTagId()));
+        } finally {
+            tagAPI.deleteTag(tag.getTagId());
+            UserDataGen.remove(limitedUser);
+        }
+    }
+
 }
