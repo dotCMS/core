@@ -74,3 +74,4 @@ Release-25.07.10 LTS
 68. https://github.com/dotCMS/core/pull/38096 : fix(containers): restrict sortContentletsBy to the supported sort columns #38096
 69. https://github.com/dotCMS/core/pull/38126 : fix(legacy-ui): check user permissions in legacy Ajax and Struts handlers #38126
 70. https://github.com/dotCMS/core/pull/38112 : fix(rest): validate remote URL targets and redirects up front; align role membership reads #38112
+71. https://github.com/dotCMS/core/pull/38107 : fix(graphql): scope response cache entries to the caller and request context #38107
