@@ -75,6 +75,11 @@ public class EmbeddingsResource {
 
     /**
      * Endpoint to create embeddings.
+     * <p>
+     * Requires a back-end user with the CMS Administrator role, the same requirement as the other
+     * administrative methods on this resource ({@code DELETE /db}, {@code GET /indexCount}). The
+     * form may carry a {@code velocityTemplate} that is rendered server-side, so the endpoint is
+     * restricted to administrators.
      *
      * @param request the HttpServletRequest object.
      * @param response the HttpServletResponse object.
@@ -89,8 +94,13 @@ public class EmbeddingsResource {
                                 @Context final HttpServletResponse response,
                                 final EmbeddingsForm embeddingsForm) {
 
-        // force authentication
-        final User user = new WebResource.InitBuilder(request, response).requiredBackendUser(true).init().getUser();
+        final User user = new WebResource.InitBuilder(request, response)
+                .requiredBackendUser(true)
+                .requiredRoles(Role.CMS_ADMINISTRATOR_ROLE)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init()
+                .getUser();
         long startTime = System.currentTimeMillis();
 
         try {

@@ -9,6 +9,7 @@ import com.dotcms.contenttype.model.field.ConstantField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.FileField;
+import com.dotcms.contenttype.model.field.HostFolderField;
 import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TextField;
@@ -1160,6 +1161,39 @@ public class ContentletTransformerTest extends IntegrationTestBase {
         // than widening its visibility for a test.
         assertEquals("An unset declared field falls back to the sentinel, not to the Site name",
                 "N/A", map.get(Contentlet.HOST_NAME));
+    }
+
+    /**
+     * A Host/Folder selector named {@code hostName} has no stored field value. Both the editor's
+     * transformer and the legacy transformer must derive the actual Site name, not return N/A.
+     * Regression coverage for the overly broad collision guard introduced in PR #37589.
+     */
+    @Test
+    public void Test_Transform_HostFolder_Named_HostName_Reports_Parent_Site_Name() {
+        final ContentType customType = new ContentTypeDataGen()
+                .field(new FieldDataGen().name("Site").velocityVarName(Contentlet.HOST_NAME)
+                        .type(HostFolderField.class).next())
+                .field(new FieldDataGen().name("Title").velocityVarName("title")
+                        .type(TextField.class).next())
+                .nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(customType.id())
+                .setProperty("title", "Host/Folder hostname regression")
+                .host(site)
+                .nextPersisted();
+
+        assertFalse("The selector must not supply a stored hostName value",
+                contentlet.getMap().containsKey(Contentlet.HOST_NAME));
+
+        final Map<String, Object> editorMap = new DotTransformerBuilder()
+                .contentResourceOptions(false)
+                .content(contentlet).build().toMaps().get(0);
+        final Map<String, Object> legacyMap = new ContentletToMapTransformer(contentlet)
+                .toMaps().get(0);
+
+        assertEquals("Both transformers must derive the Site name for a Host/Folder selector",
+                List.of(site.getHostname(), site.getHostname()),
+                List.of(editorMap.get(Contentlet.HOST_NAME), legacyMap.get(Contentlet.HOST_NAME)));
+        assertEquals(site.getIdentifier(), editorMap.get(Contentlet.HOST_KEY));
     }
 
     /**

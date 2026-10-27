@@ -60,9 +60,14 @@ test_types:
   integration:
     condition_input: integration
     defaults:
+      cleanup_runner: false  # #38203
       needs_license: true
       needs_docker: false
       needs_node: false
+      # Images the Maven run starts (docker.filter in dotcms-integration/pom.xml), pulled with
+      # retries before Maven by maven-job's pre-pull-images. Names are docker.image.* keys in
+      # environments/environment.properties.
+      docker_images: "docker.image.postgres docker.image.search"
       # Base command for all integration tests
       base_maven_args: >-
         verify -Dit.test.forkcount=1 -pl :dotcms-integration
@@ -89,6 +94,8 @@ test_types:
       - name: "Integration Tests - OpenSearch Upgrade Suite"
         test_class: "OpenSearchUpgradeSuite"
         stage_name: "IT Tests OpenSearch Upgrade Suite"
+        # The opensearch-upgrade profile also starts the OpenSearch 3.x container.
+        docker_images: "docker.image.postgres docker.image.search docker.image.search.upgrade"
         # Override base_maven_args to activate the opensearch-upgrade Maven profile,
         # which starts the opensearch-upgrade Docker container and restricts Failsafe
         # to only run OpenSearchUpgradeSuite (see dotcms-integration/pom.xml:opensearch-upgrade)
@@ -100,9 +107,13 @@ test_types:
   postman:
     condition_input: postman
     defaults:
+      cleanup_runner: false  # #38203
       needs_license: true
       needs_docker: true
       needs_node: true
+      # No docker.filter here, so the plugin starts every image in the parent pom's imagesMap,
+      # plus the WireMock container this module adds (a Docker Hub image: retried, no fallback).
+      docker_images: "docker.image.postgres docker.image.search docker.image.search.upgrade docker.image.wiremock"
       # Base command for all Postman tests
       base_maven_args: >-
         verify -pl :dotcms-postman 
@@ -146,6 +157,7 @@ test_types:
       needs_license: true
       needs_docker: true
       needs_node: true
+      docker_images: "docker.image.postgres docker.image.search docker.image.search.upgrade"
       base_maven_args: >-
         verify -pl :dotcms-test-karate 
         -Dkarate.test.skip=false
@@ -160,6 +172,7 @@ test_types:
       needs_license: true
       needs_docker: true
       needs_node: true
+      docker_images: "docker.image.postgres docker.image.search docker.image.search.upgrade docker.image.wiremock"
       base_maven_args: "verify -De2e.test.skip=false"
     suites:
       - name: "E2E Tests - Nx Playwright 1 of 3"

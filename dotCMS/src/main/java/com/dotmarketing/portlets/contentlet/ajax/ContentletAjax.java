@@ -83,6 +83,7 @@ import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
 import com.google.common.base.CharMatcher;
 import com.google.common.collect.ImmutableList;
+import com.liferay.util.Xss;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.language.LanguageException;
@@ -1316,7 +1317,7 @@ public class ContentletAjax {
 
 				String spanClass = UtilHTML.getIconClass(contentlet);
 
-				String typeStringToShow = type.name();
+				String typeStringToShow = Xss.encodeForHTML(type.name());
 				searchResult.put("__type__", "<div class='typeCCol'><span class='" + spanClass +"'></span>&nbsp;" + typeStringToShow +"</div>");
 
 				String fieldValue = UtilMethods.dateToHTMLDate(con.getModDate()) + " " + UtilMethods.dateToHTMLTime(con.getModDate());

@@ -6,6 +6,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.dotpubsub.DotPubSubEvent;
 import com.dotcms.dotpubsub.NullDotPubSubProvider;
 import java.util.ArrayList;
 import java.util.List;
@@ -345,5 +346,53 @@ public class PubSubCacheTransportTest {
         public long getFailedPublishCount(final String topic) {
             return failures;
         }
+    }
+
+    /**
+     * Answers every cluster status request the way any server does, old versions included: the
+     * reply is built from the request, so it carries the request's payload (its request id among
+     * it) plus the responder's report. It is delivered straight to the topic, without running the
+     * real report.
+     */
+    private static class LoopbackResponderProvider extends NullDotPubSubProvider {
+        CacheTransportTopic topic;
+        final List<String> requestIds = new java.util.concurrent.CopyOnWriteArrayList<>();
+
+        @Override
+        public boolean publish(final DotPubSubEvent event) {
+            if (CacheTransportTopic.CacheEventType.CLUSTER_REQ.name().equals(event.getType())) {
+                requestIds.add(String.valueOf(event.getPayload().get(CacheTransportTopic.CLUSTER_REQUEST_ID)));
+                topic.notify(new DotPubSubEvent.Builder(event)
+                        .withType(CacheTransportTopic.CacheEventType.CLUSTER_RES.name())
+                        .addPayload("serverId", "responder-1")
+                        .build());
+            }
+            return true;
+        }
+    }
+
+    /**
+     * Given : the production queueing wrapper, which drops an identical message sent within 1.5 s,
+     *         and one other server that answers status requests.
+     * When  : two status checks are made 100 ms apart, as a quick second Refresh does.
+     * Then  : both requests are sent with different ids, and both get the server's reply
+     *         (issue #37877: the second one used to be dropped as a duplicate).
+     */
+    @Test
+    public void test_two_status_checks_in_quick_succession_are_both_answered() throws Exception {
+        final LoopbackResponderProvider loopback = new LoopbackResponderProvider();
+        final com.dotcms.dotpubsub.QueuingPubSubWrapper queue = new com.dotcms.dotpubsub.QueuingPubSubWrapper(loopback);
+        final CacheTransportTopic topic = new CacheTransportTopic("fakeServer", queue);
+        loopback.topic = topic;
+        final PubSubCacheTransport transport = new PubSubCacheTransport(queue, topic, () -> 1);
+
+        final java.util.Map<String, java.io.Serializable> first = transport.validateCacheInCluster(3000);
+        Thread.sleep(100);
+        final java.util.Map<String, java.io.Serializable> second = transport.validateCacheInCluster(3000);
+
+        assertEquals(java.util.Set.of("responder-1"), first.keySet());
+        assertEquals(java.util.Set.of("responder-1"), second.keySet());
+        assertEquals(2, loopback.requestIds.size());
+        assertTrue("each request needs its own id", !loopback.requestIds.get(0).equals(loopback.requestIds.get(1)));
     }
 }

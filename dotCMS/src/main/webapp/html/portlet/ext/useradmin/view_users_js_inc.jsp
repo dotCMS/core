@@ -305,12 +305,20 @@
 		    dijit.byId("showFrontEndUsers").attr('checked',true);
 		    dijit.byId("showAllUsers").attr('checked',false);
 		    dijit.byId("showBackEndUsers").attr('checked',false);
+		    dijit.byId("showCmsAdminUsers").attr('checked',false);
 		    showUsers="frontEnd";
 		}else if(myId === "showBackEndUsers"){
 		      dijit.byId("showBackEndUsers").attr('checked',true);
 	          dijit.byId("showAllUsers").attr('checked',false);
 	          dijit.byId("showFrontEndUsers").attr('checked',false);
+	          dijit.byId("showCmsAdminUsers").attr('checked',false);
 	          showUsers="backEnd";
+		}else if(myId === "showCmsAdminUsers"){
+		      dijit.byId("showCmsAdminUsers").attr('checked',true);
+	          dijit.byId("showAllUsers").attr('checked',false);
+	          dijit.byId("showFrontEndUsers").attr('checked',false);
+	          dijit.byId("showBackEndUsers").attr('checked',false);
+	          showUsers="cmsAdmin";
 		}
 
 		UserAjax.getUsersList(null, null, { start: 0, limit: 50, query: value, includeDefault: false, showUsers: showUsers }, dojo.hitch(this, getUsersListCallback));
@@ -321,6 +329,7 @@
 	    dijit.byId("showAllUsers").attr('checked',true);
         dijit.byId("showBackEndUsers").attr('checked',false);
         dijit.byId("showFrontEndUsers").attr('checked',false);
+        dijit.byId("showCmsAdminUsers").attr('checked',false);
 
 	    dojo.byId('loadingUsers').style.display = '';
 		dojo.byId('usersGrid').style.display = 'none';

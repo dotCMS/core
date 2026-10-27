@@ -42,6 +42,7 @@ public class UserPaginator implements PaginatorOrdered<Map<String, Object>> {
     public static final String PERMISSION_PARAM = "permission";
     public static final String ROLES_PARAM = "roles";
     public static final String ROLE_KEY_PARAM = "roleKey";
+    public static final String ROLE_ID_PARAM = "roleId";
     public static final String REMOVE_CURRENT_USER_PARAM = "removeCurrentUser";
     public static final String REQUEST_PASSWORD_PARAM = "requestPassword";
     /** Opt-in flag: when {@code true}, every item carries a {@link #ROLES_PARAM} list of its direct roles. */

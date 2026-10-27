@@ -185,8 +185,8 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
             contentlet.setProperty(element.getKey(), element.getValue());
         }
 
-        contentlet.setIndexPolicy(null != policy?policy:IndexPolicy.FORCE);
-        contentlet.setIndexPolicyDependencies(null != policy?policy:IndexPolicy.FORCE);
+        contentlet.setIndexPolicy(indexPolicy());
+        contentlet.setIndexPolicyDependencies(indexPolicy());
         if(skipValidation){
             contentlet.setBoolProperty(Contentlet.DONT_VALIDATE_ME, true);
         }
@@ -224,7 +224,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
      */
     @Override
     public Contentlet persist(Contentlet contentlet) {
-        final Contentlet checkin = checkin(contentlet, null != policy ? policy : IndexPolicy.FORCE);
+        final Contentlet checkin = checkin(contentlet, indexPolicy());
 
         if (modDate != null) {
             updateContentletVersionDate(checkin, modDate);
@@ -342,10 +342,29 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         }
     }
 
-    @WrapInTransaction
+    /**
+     * Publishes the given contentlet with {@link IndexPolicy#FORCE}, which refreshes the index
+     * before returning, so the live version is searchable as soon as this method returns.
+     *
+     * @param contentlet the contentlet to publish
+     * @return the same contentlet, now carrying {@link IndexPolicy#FORCE}
+     */
     public static Contentlet publish(Contentlet contentlet) {
+        return publish(contentlet, IndexPolicy.FORCE);
+    }
+
+    /**
+     * Publishes the given contentlet with the given index policy, and leaves that policy set on
+     * it.
+     *
+     * @param contentlet the contentlet to publish
+     * @param policy     the index policy to publish with
+     * @return the same contentlet
+     */
+    @WrapInTransaction
+    public static Contentlet publish(final Contentlet contentlet, final IndexPolicy policy) {
         try {
-            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            contentlet.setIndexPolicy(policy);
             contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
             contentlet.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
             contentletAPI.publish(contentlet, user, false);
@@ -357,13 +376,13 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     }
 
     /**
-     * Archives a given {@link Contentlet} instance
+     * Archives a given {@link Contentlet} instance with {@link IndexPolicy#FORCE}
      * @param contentlet to be archived
      */
     @WrapInTransaction
     public static void archive(Contentlet contentlet) {
         try{
-            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
             contentletAPI.archive(contentlet, APILocator.systemUser(), false);
         } catch (DotContentletStateException | DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
@@ -372,13 +391,13 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
 
 
     /**
-     * Deletes a given {@link Contentlet} instance
+     * Deletes a given {@link Contentlet} instance with {@link IndexPolicy#FORCE}
      * @param contentlet to be deleted
      */
     @WrapInTransaction
     public static void delete(Contentlet contentlet) {
         try{
-            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
             contentletAPI.delete(contentlet, APILocator.systemUser(), false);
         } catch (DotContentletStateException | DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
@@ -402,12 +421,17 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         destroy(contentlet, true);
     }
 
+    /**
+     * Destroys a given {@link Contentlet} instance with {@link IndexPolicy#FORCE}
+     * @param contentlet to be destroyed; ignored when null
+     * @param failSilently if true, a failure is logged instead of thrown
+     */
     @WrapInTransaction
     public static void destroy(final Contentlet contentlet, final Boolean failSilently) {
 
         if (null != contentlet) {
             try {
-                contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+                contentlet.setIndexPolicy(IndexPolicy.FORCE);
                 APILocator.getContentletAPI().destroy(contentlet, APILocator.systemUser(), false);
             } catch (Exception e) {
                 if (failSilently) {
@@ -449,10 +473,25 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
         return this;
     }
 
+    /**
+     * Creates, persists and publishes a new {@link Contentlet}, using this builder's index policy
+     * ({@link IndexPolicy#FORCE} unless {@link #setPolicy(IndexPolicy)} was called) for both
+     * writes.
+     *
+     * @return the published contentlet
+     */
     public Contentlet nextPersistedAndPublish() {
         final Contentlet contentlet = nextPersisted();
-        publish(contentlet);
+        publish(contentlet, indexPolicy());
         return contentlet;
+    }
+
+    /**
+     * Returns the index policy set with {@link #setPolicy(IndexPolicy)}, or
+     * {@link IndexPolicy#FORCE} if none was set.
+     */
+    protected IndexPolicy indexPolicy() {
+        return null != policy ? policy : IndexPolicy.FORCE;
     }
 
     /**

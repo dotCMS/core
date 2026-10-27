@@ -321,9 +321,25 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
 
 
+        /**
+         * Escapes a value so it is shown as plain text when added to the page with innerHTML.
+         * Null and undefined are returned unchanged so callers can keep their null checks.
+         */
+        function escapeHtml(value) {
+            if (value === null || value === undefined) {
+                return value;
+            }
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
         function titleCell (data,text, x) {
 
-                text = shortenString(text, 100);
+                text = escapeHtml(shortenString(text, 100));
 
                 var inode = data["inode"];
                 var checkId = "checkbox" + x;
@@ -2255,18 +2271,21 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
 
                             var cell = row.insertCell (row.cells.length);
                             cell.setAttribute("align", "center");
-                            cell.innerHTML = '<dot-badge style="white-space: nowrap" bordered="true">' + cellData.language + '</dot-badge>';
+                            cell.innerHTML = '<dot-badge style="white-space: nowrap" bordered="true">' + escapeHtml(cellData.language) + '</dot-badge>';
 
                             var cell = row.insertCell (row.cells.length);
                             cell.setAttribute("align", "center");
-                            cell.innerHTML = '<dot-contentlet-lock-icon locked="' + cellData.locked + '" />';
+                            cell.innerHTML = '<dot-contentlet-lock-icon />';
+                            // Set as a property, like dot-state-icon above: an attribute is not mapped to the prop on pages that load prototype.js
+                            cell.firstElementChild.locked = cellData["locked"] == "true";
 
                         } else {
 
                             let fieldVarName  = header["fieldVelocityVarName"];
                             let fieldVarTitle = cellData[fieldVarName + "_title_"];
                             fieldVarTitle     = fieldVarTitle || cellData[fieldVarName]
-                            var value         = fieldVarTitle;
+                            // The content type column comes from the server as markup; any other column is plain text
+                            var value         = fieldVarName === '__type__' ? fieldVarTitle : escapeHtml(fieldVarTitle);
 
                             if (value != null){
                                 cell.innerHTML = value;
@@ -2275,14 +2294,14 @@ final String calendarEventInode = null!=calendarEventSt ? calendarEventSt.inode(
                     }
 
                     var cell = row.insertCell (row.cells.length);
-                    cell.innerHTML = cellData["modUser"];
+                    cell.innerHTML = escapeHtml(cellData["modUser"]);
                     cell.style.whiteSpace="nowrap";
 
                     var cell = row.insertCell (row.cells.length);
                     cell.setAttribute("nowrap","true");
                     cell.style.textAlign="right";
                     cell.style.whiteSpace="nowrap";
-                    cell.innerHTML = cellData["modDate"];
+                    cell.innerHTML = escapeHtml(cellData["modDate"]);
 
                     var cell = row.insertCell (row.cells.length);
                     cell.innerHTML = '<span class=\"dijitIcon actionIcon content-search__action-item\" id=\"touchAction' + i + '\"></span>';
