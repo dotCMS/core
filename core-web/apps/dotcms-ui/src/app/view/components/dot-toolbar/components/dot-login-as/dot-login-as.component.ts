@@ -28,7 +28,7 @@ import { Select, SelectModule } from 'primeng/select';
 import { take } from 'rxjs/operators';
 
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
-import { LoginService, User } from '@dotcms/dotcms-js';
+import { HttpCode, LoginService, User } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { LOCATION_TOKEN } from '../../../../../providers';
@@ -125,6 +125,10 @@ export class DotLoginAsComponent implements OnInit, OnDestroy {
                         this.loading.set(false);
                         if (response.errorsMessages) {
                             this.errorMessage.set(response.errorsMessages);
+                        } else if (response.status === HttpCode.FORBIDDEN) {
+                            this.errorMessage.set(
+                                this.#dotMessageService.get('loginas.error.adminrequired')
+                            );
                         } else {
                             this.errorMessage.set(
                                 this.#dotMessageService.get('loginas.error.wrong-credentials')

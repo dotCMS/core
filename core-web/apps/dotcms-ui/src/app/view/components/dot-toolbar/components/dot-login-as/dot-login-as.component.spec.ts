@@ -53,7 +53,8 @@ describe('DotLoginAsComponent', () => {
         'login-as': 'login-as',
         'loginas.select.loginas.user': 'loginas.select.loginas.user',
         password: 'password',
-        'loginas.error.wrong-credentials': 'wrong password'
+        'loginas.error.wrong-credentials': 'wrong password',
+        'loginas.error.adminrequired': 'admin required'
     });
 
     const createComponent = createComponentFactory({
@@ -301,6 +302,27 @@ describe('DotLoginAsComponent', () => {
 
             // Assert - Verify the error message signal has the correct value
             expect(component.errorMessage()).toBe('wrong password');
+        }));
+
+        it('should show the admin-required message when the server answers 403', fakeAsync(() => {
+            vi.spyOn(spectator.inject(DotMessageService), 'get').mockImplementation(
+                (key: string) => key
+            );
+            const loginServiceInstance = spectator.inject(LoginService);
+            vi.spyOn(loginServiceInstance, 'loginAs').mockReturnValue(
+                observableThrowError({ status: 403 })
+            );
+
+            spectator.setInput('visible', true);
+            component.needPassword.set(true);
+            spectator.detectChanges();
+
+            component.form.get('loginAsUser').setValue(mockUser());
+            component.form.get('password').setValue('password');
+            component.doLoginAs();
+            tick();
+
+            expect(component.errorMessage()).toBe('loginas.error.adminrequired');
         }));
 
         it('should render error message in DOM when errorMessage signal has value', () => {

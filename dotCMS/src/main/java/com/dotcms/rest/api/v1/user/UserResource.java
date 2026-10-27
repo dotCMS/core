@@ -779,7 +779,7 @@ public class UserResource implements Serializable {
 
 		final String serverName = request.getServerName();
 		final User currentUser = initData.getUser();
-		final Host currentSite = Host.class.cast(request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST));
+		final Host currentSite = (Host) request.getSession().getAttribute(com.dotmarketing.util.WebKeys.CURRENT_HOST);
 		Response response;
 		try {
 			final Map<String, Object> sessionData = this.helper.doLoginAs(currentUser, loginAsUserId, loginAsUserPwd, serverName);
@@ -787,7 +787,14 @@ public class UserResource implements Serializable {
 					.CURRENT_HOST)), currentUser.getUserId(), loginAsUserId);
 			this.setImpersonatedUserSite(request, sessionData.get(WebKeys.USER_ID).toString());
 			response = Response.ok(new ResponseEntityView<>(Map.of("loginAs", true))).build();
-		} catch (final NoSuchUserException | DotSecurityException e) {
+		} catch (final DotSecurityException e) {
+			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
+							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
+					e.getMessage()));
+			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
+			// 403, not 401: the caller is authenticated but not allowed; a 401 makes the UI end the session
+			return ExceptionMapperUtil.createResponse(e, Response.Status.FORBIDDEN);
+		} catch (final NoSuchUserException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
 							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
 					e.getMessage()));
