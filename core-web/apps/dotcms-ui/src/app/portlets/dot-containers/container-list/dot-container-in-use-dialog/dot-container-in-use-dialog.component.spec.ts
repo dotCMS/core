@@ -116,7 +116,7 @@ describe('DotContainerInUseDialogComponent', () => {
     it('should close the dialog from the Close button', () => {
         open([container('a', [template('1')])]);
 
-        spectator.click(spectator.query(byTestId('in-use-close'))?.querySelector('button'));
+        spectator.click('[data-testid="in-use-close"] button');
 
         expect(ref.close).toHaveBeenCalled();
     });
