@@ -104,6 +104,50 @@ public class EditContentletActionRetrieveTest extends IntegrationTestBase {
 
     /**
      * Method to test: {@link EditContentletAction#_retrieveWebAsset}
+     * Given: an existing contentlet, opened by inode to be made editable, that the user cannot read
+     * Expected: a {@link DotSecurityException} with a generic message
+     */
+    @Test
+    public void test_makeEditable_notReadable_shouldBeRefused() throws Exception {
+        final Contentlet contentlet = onlyAdminCanRead(newContentlet());
+        final User user = newUserWithRole(new RoleDataGen().nextPersisted());
+        final ActionRequestImpl request = mockRequest(Map.of(
+                "inode", contentlet.getInode(),
+                "makeEditable", "true"));
+
+        assertRefused(request, user, contentlet);
+    }
+
+    /**
+     * Method to test: {@link EditContentletAction#_retrieveWebAsset}
+     * Given: an existing contentlet, opened by inode to be made editable, that the user can read
+     * and edit
+     * Expected: the contentlet is put in the request with its inode
+     */
+    @Test
+    public void test_makeEditable_readable_shouldOpen() throws Exception {
+        final Role role = new RoleDataGen().nextPersisted();
+        final Contentlet contentlet = newContentlet();
+        APILocator.getPermissionAPI().assignPermissions(List.of(
+                        new Permission(contentlet.getPermissionId(), APILocator.getRoleAPI().loadCMSAdminRole().getId(),
+                                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE, true),
+                        new Permission(contentlet.getPermissionId(), role.getId(),
+                                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE, true)),
+                contentlet, systemUser, false);
+        final User user = newUserWithRole(role);
+        final ActionRequestImpl request = mockRequest(Map.of(
+                "inode", contentlet.getInode(),
+                "makeEditable", "true"));
+
+        new EditContentletAction()._retrieveWebAsset(request, null, null, null, user);
+
+        final ArgumentCaptor<Object> edited = ArgumentCaptor.forClass(Object.class);
+        verify(request).setAttribute(eq(WebKeys.CONTENTLET_EDIT), edited.capture());
+        assertEquals(contentlet.getInode(), ((Contentlet) edited.getValue()).getInode());
+    }
+
+    /**
+     * Method to test: {@link EditContentletAction#_retrieveWebAsset}
      * Given: a new translation whose source contentlet the user can read
      * Expected: the new contentlet is put in the request with the source's identifier and the
      * requested language

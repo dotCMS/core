@@ -814,6 +814,8 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 			Boolean makeEditable = Boolean.valueOf(req.getParameter("makeEditable"));
 			Boolean populateaccept = Boolean.valueOf(req.getParameter("populateaccept"));
 			if(makeEditable && !populateaccept){
+			   // Read first, so a user who cannot read the contentlet gets the same message as below
+			   findForUser(inodeStr, user);
 			   contentlet = conAPI.checkout(inodeStr, user, false);
 			   contentlet.setInode(inodeStr);
 			}else{

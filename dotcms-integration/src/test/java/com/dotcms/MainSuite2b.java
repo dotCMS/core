@@ -591,8 +591,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.languagesmanager.ajax.LanguageAjaxIntegrationTest.class,
         com.dotmarketing.business.ajax.RoleAjaxLayoutsIntegrationTest.class,
         com.dotmarketing.portlets.languagesmanager.action.EditLanguageKeysActionTest.class,
-        com.dotmarketing.portlets.contentlet.action.EditContentletActionRetrieveTest.class,
         UserServiceFactoryTest.class,
+        com.dotmarketing.portlets.contentlet.action.EditContentletActionRetrieveTest.class,
 })
 
 public class MainSuite2b {
