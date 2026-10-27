@@ -1,13 +1,18 @@
 package com.dotcms.filters;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.EnvironmentVariablesService;
+import com.dotmarketing.util.Logger;
 import java.util.Collections;
 import java.util.Map;
 import javax.servlet.FilterChain;
@@ -17,18 +22,28 @@ import javax.servlet.http.HttpServletResponse;
 import org.junit.After;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+import org.mockito.MockedStatic;
 
 /**
  * Checks the {@code Strict-Transport-Security} header written by {@link DotHttpHeaderSecurityFilter}
- * for the default, a configured value, unusable values and an explicit {@code web.xml}
- * init-param.
+ * for the default, a configured value, unusable values (set as a property or as the
+ * {@code DOT_HSTS_MAX_AGE_SECONDS} environment variable) and an explicit {@code web.xml} init-param.
  */
 public class DotHttpHeaderSecurityFilterTest extends UnitTestBase {
 
     private static final String HSTS_HEADER = "Strict-Transport-Security";
 
+    private static final String HSTS_ENV_VAR = "DOT_HSTS_MAX_AGE_SECONDS";
+
+    /**
+     * Removes the environment variable and the property so each test starts from the shipped
+     * configuration. The environment variable's Config entry is cleared first, because while it
+     * exists {@link Config#setProperty} redirects the plain property name to it.
+     */
     @After
     public void tearDown() {
+        EnvironmentVariablesService.getInstance().getenv().remove(HSTS_ENV_VAR);
+        Config.setProperty(HSTS_ENV_VAR, null);
         Config.setProperty(DotHttpHeaderSecurityFilter.HSTS_MAX_AGE_SECONDS, null);
     }
 
@@ -104,6 +119,66 @@ public class DotHttpHeaderSecurityFilterTest extends UnitTestBase {
         Config.setProperty(DotHttpHeaderSecurityFilter.HSTS_MAX_AGE_SECONDS, 0);
 
         assertEquals("max-age=0", hstsHeaderFor(Collections.emptyMap()));
+    }
+
+    /**
+     * Method to test: {@link DotHttpHeaderSecurityFilter#init}
+     * Given scenario: DOT_HSTS_MAX_AGE_SECONDS holds a usable value
+     * Expected result: the header carries the environment variable's value
+     */
+    @Test
+    public void testInit_whenEnvVarSet_shouldSendEnvVarMaxAge() throws Exception {
+        setEnvVar("600");
+
+        assertEquals("max-age=600", hstsHeaderFor(Collections.emptyMap()));
+    }
+
+    /**
+     * Method to test: {@link DotHttpHeaderSecurityFilter#init}
+     * Given scenario: DOT_HSTS_MAX_AGE_SECONDS is not a number while the property holds 600
+     * Expected result: a warning is logged and the header carries the one year default, not the
+     * property's value
+     */
+    @Test
+    public void testInit_whenEnvVarNotANumber_shouldWarnAndFallBackToDefault() throws Exception {
+        Config.setProperty(DotHttpHeaderSecurityFilter.HSTS_MAX_AGE_SECONDS, 600);
+        setEnvVar("one-year");
+
+        assertWarnsAndSendsDefault();
+    }
+
+    /**
+     * Method to test: {@link DotHttpHeaderSecurityFilter#init}
+     * Given scenario: DOT_HSTS_MAX_AGE_SECONDS is a whole number too large for an int while the
+     * property holds 600
+     * Expected result: a warning is logged and the header carries the one year default
+     */
+    @Test
+    public void testInit_whenEnvVarTooLarge_shouldWarnAndFallBackToDefault() throws Exception {
+        Config.setProperty(DotHttpHeaderSecurityFilter.HSTS_MAX_AGE_SECONDS, 600);
+        setEnvVar("2147483648");
+
+        assertWarnsAndSendsDefault();
+    }
+
+    /**
+     * Sets DOT_HSTS_MAX_AGE_SECONDS the way {@code ConfigTest} does: through
+     * {@link EnvironmentVariablesService}, followed by a Config reload so the variable is read in.
+     */
+    private static void setEnvVar(final String value) {
+        EnvironmentVariablesService.getInstance().put(HSTS_ENV_VAR, value);
+        Config.initializeConfig();
+    }
+
+    /**
+     * Initializes the filter with no init-params and checks that it logged a warning and sent the
+     * one year default.
+     */
+    private void assertWarnsAndSendsDefault() throws Exception {
+        try (MockedStatic<Logger> logger = mockStatic(Logger.class)) {
+            assertEquals("max-age=31536000", hstsHeaderFor(Collections.emptyMap()));
+            logger.verify(() -> Logger.warn(any(DotHttpHeaderSecurityFilter.class), anyString()));
+        }
     }
 
     /**
