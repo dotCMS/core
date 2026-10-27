@@ -13,6 +13,7 @@ import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publisher.util.PushedAssetUtilTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
+import com.dotcms.rendering.js.JsModuleImportIntegrationTest;
 import com.dotcms.rendering.velocity.directive.DotParseTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rest.BundleResourceTest;
@@ -103,7 +104,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.categories.business.CategoryAPITest.class,
         com.dotmarketing.filters.FiltersTest.class,
         com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest.class,
-        com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class
+        com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class,
+        JsModuleImportIntegrationTest.class
 })
 public class MainSuite2a {
 

@@ -25,6 +25,7 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.FileUtil;
 import com.oracle.truffle.api.object.JsDynamicObjectUtils;
 import com.oracle.truffle.js.lang.JavaScriptLanguage;
@@ -130,7 +131,27 @@ public class JsEngine implements ScriptEngine {
         this.jsRequestViewToolMap.remove(jsViewTool.getName());
     }
 
+    /**
+     * Builds the context a script runs in, with this engine's file system and its host access setting.
+     *
+     * @return a new context, which the caller closes
+     */
     private Context buildContext () {
+
+        return buildContext(jsFileSystem, allowAllHostAccess.get());
+    }
+
+    /**
+     * Builds a JavaScript context that loads modules through the given file system. The script's standard output
+     * and error go to the debug log. Scripts reach every public member of host objects only when
+     * {@code allowAllHostAccess} is true; otherwise they reach only the members host objects export to scripts.
+     *
+     * @param fileSystem         the file system the context loads modules through
+     * @param allowAllHostAccess whether scripts reach every public member of host objects
+     * @return a new context, which the caller closes
+     */
+    @VisibleForTesting
+    static Context buildContext(final JsFileSystem fileSystem, final boolean allowAllHostAccess) {
 
         final Context.Builder builder =
                  Context.newBuilder(ENGINE_JS)
@@ -139,9 +160,8 @@ public class JsEngine implements ScriptEngine {
                 .option("js.esm-eval-returns-exports", "true")
                 .out(new ConsumerOutputStream(msg->Logger.debug(JsEngine.class, msg)))
                 .err(new ConsumerOutputStream(msg->Logger.debug(JsEngine.class, msg)))
-                .fileSystem(jsFileSystem);
+                .fileSystem(fileSystem);
 
-                final boolean allowAllHostAccess = this.allowAllHostAccess.get();
                 if (allowAllHostAccess) {
                     builder.allowHostAccess(HostAccess.ALL);
                 }
