@@ -45,6 +45,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowActionFailureException;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.ImportUtil;
 import com.dotmarketing.util.Logger;
@@ -204,9 +205,10 @@ public class ContentletPermissionReplacementIntegrationTest {
 
     /**
      * Method to test: {@link WorkflowAPI#fireContentWorkflow(Contentlet, ContentletDependencies)}
-     * Given Scenario: A user with READ and WRITE (no permission to edit permissions) fires Save with
-     * a permission list that adds a role
-     * ExpectedResult: The call is refused, the rows, versions and workflow step are unchanged
+     * Given Scenario: A user with READ and WRITE (no permission to edit permissions) fires Save, which
+     * runs {@code SaveContentAsDraftActionlet}, with a permission list that adds a role
+     * ExpectedResult: The actionlet fails with a {@link WorkflowActionFailureException} caused by a
+     * {@link DotSecurityException}; the rows, versions and workflow step are unchanged
      */
     @Test
     public void fireSaveWithChangedList_withoutEditPermissions_isRefusedAndRolledBack() throws Exception {
@@ -221,8 +223,9 @@ public class ContentletPermissionReplacementIntegrationTest {
     /**
      * Method to test: {@link WorkflowAPI#fireContentWorkflow(Contentlet, ContentletDependencies)}
      * Given Scenario: A user with READ, WRITE and PUBLISH (no permission to edit permissions) fires
-     * Publish with a permission list that adds a role
-     * ExpectedResult: The call is refused, the rows, versions and workflow step are unchanged
+     * Publish, which runs {@code SaveContentActionlet}, with a permission list that adds a role
+     * ExpectedResult: The actionlet fails with a {@link WorkflowActionFailureException} caused by a
+     * {@link DotSecurityException}; the rows, versions and workflow step are unchanged
      */
     @Test
     public void firePublishWithChangedList_withoutEditPermissions_isRefusedAndRolledBack() throws Exception {
@@ -232,6 +235,47 @@ public class ContentletPermissionReplacementIntegrationTest {
                 | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH);
 
         assertChangedListIsRefused(contentlet, WORKFLOW_PUBLISH_ACTION_ID, editor);
+    }
+
+    /**
+     * Method to test: {@link WorkflowAPI#fireContentWorkflow(Contentlet, ContentletDependencies)}
+     * Given Scenario: A user with READ and WRITE (no permission to edit permissions) fires Save with a
+     * permission list that leaves out a role the contentlet has a row for
+     * ExpectedResult: The actionlet fails with a {@link WorkflowActionFailureException} caused by a
+     * {@link DotSecurityException}; the rows, versions and workflow step are unchanged
+     */
+    @Test
+    public void fireSaveWithListMissingARole_withoutEditPermissions_isRefusedAndRolledBack() throws Exception {
+        final User editor = newBackEndUser();
+        final Contentlet contentlet = newContentlet(contentType, site);
+        grantIndividual(contentlet, userRole(editor),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE);
+        grantIndividual(contentlet, extraRole, PermissionAPI.PERMISSION_READ);
+        final Map<String, Integer> requested = new HashMap<>(individualRows(contentlet));
+        requested.remove(extraRole.getId());
+
+        assertListIsRefused(contentlet, WORKFLOW_SAVE_ACTION_ID, editor, requested);
+    }
+
+    /**
+     * Method to test: {@link WorkflowAPI#fireContentWorkflow(Contentlet, ContentletDependencies)}
+     * Given Scenario: A user with READ, WRITE and PUBLISH (no permission to edit permissions) fires
+     * Publish with a permission list that drops WRITE from the user's own row
+     * ExpectedResult: The actionlet fails with a {@link WorkflowActionFailureException} caused by a
+     * {@link DotSecurityException}; the rows, versions and workflow step are unchanged
+     */
+    @Test
+    public void firePublishWithListLoweringOwnRow_withoutEditPermissions_isRefusedAndRolledBack()
+            throws Exception {
+        final User editor = newBackEndUser();
+        final Role editorRole = userRole(editor);
+        final Contentlet contentlet = newContentlet(contentType, site);
+        grantIndividual(contentlet, editorRole, PermissionAPI.PERMISSION_READ
+                | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH);
+        final Map<String, Integer> requested = new HashMap<>(individualRows(contentlet));
+        requested.put(editorRole.getId(), PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_PUBLISH);
+
+        assertListIsRefused(contentlet, WORKFLOW_PUBLISH_ACTION_ID, editor, requested);
     }
 
     /**
@@ -637,17 +681,32 @@ public class ContentletPermissionReplacementIntegrationTest {
     private static void assertChangedListIsRefused(final Contentlet contentlet, final String actionId,
             final User user) throws DotDataException, DotSecurityException {
 
+        final Map<String, Integer> requested = new HashMap<>(individualRows(contentlet));
+        requested.merge(extraRole.getId(), PermissionAPI.PERMISSION_READ, (current, added) -> current | added);
+
+        assertListIsRefused(contentlet, actionId, user, requested);
+    }
+
+    /**
+     * Fires the action with the given permission list and asserts the save actionlet fails with a
+     * {@link WorkflowActionFailureException} caused by a {@link DotSecurityException}, and nothing
+     * about the contentlet changed.
+     */
+    private static void assertListIsRefused(final Contentlet contentlet, final String actionId,
+            final User user, final Map<String, Integer> requested)
+            throws DotDataException, DotSecurityException {
+
         final Map<String, Integer> rowsBefore = individualRows(contentlet);
         final ContentletState stateBefore = ContentletState.of(contentlet);
-        final Map<String, Integer> requested = new HashMap<>(rowsBefore);
-        requested.merge(extraRole.getId(), PermissionAPI.PERMISSION_READ, (current, added) -> current | added);
 
         try {
             fire(contentlet, actionId, user, toPermissions(requested));
             fail("A changed permission list requires permission to edit permissions");
         } catch (final Exception e) {
-            assertTrue("Expected a DotSecurityException in the cause chain but got: " + e,
-                    isCausedBySecurityException(e));
+            final WorkflowActionFailureException failure = findCause(e, WorkflowActionFailureException.class);
+            assertNotNull("Expected the save actionlet to fail but got: " + e, failure);
+            assertTrue("Expected a DotSecurityException behind the actionlet failure but got: " + failure,
+                    isCausedBySecurityException(failure.getCause()));
         }
 
         assertEquals(rowsBefore, individualRows(contentlet));
@@ -843,14 +902,22 @@ public class ContentletPermissionReplacementIntegrationTest {
      * Returns whether the throwable or any of its causes is a {@link DotSecurityException}.
      */
     private static boolean isCausedBySecurityException(final Throwable throwable) {
+        return null != findCause(throwable, DotSecurityException.class);
+    }
+
+    /**
+     * Returns the first throwable of the given type in the cause chain, starting with the throwable
+     * itself, or {@code null} when there is none.
+     */
+    private static <T extends Throwable> T findCause(final Throwable throwable, final Class<T> type) {
         Throwable current = throwable;
         while (null != current) {
-            if (current instanceof DotSecurityException) {
-                return true;
+            if (type.isInstance(current)) {
+                return type.cast(current);
             }
             current = current.getCause() == current ? null : current.getCause();
         }
-        return false;
+        return null;
     }
 
     /**
