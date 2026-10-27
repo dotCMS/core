@@ -119,7 +119,9 @@ import org.junit.runners.Suite.SuiteClasses;
         JsModuleImportIntegrationTest.class,
         com.dotcms.rendering.velocity.WidgetRendererTest.class,
         CMSUserToolTest.class,
-        UserJsViewToolTest.class
+        UserJsViewToolTest.class,
+        com.dotcms.security.multipart.MultiPartRequestSecurityWebInterceptorTest.class,
+        com.dotcms.rest.api.v1.temp.TempFileNamingTest.class
 })
 public class MainSuite2a {
 
