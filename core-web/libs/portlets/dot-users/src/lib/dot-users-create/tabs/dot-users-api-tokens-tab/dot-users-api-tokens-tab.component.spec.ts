@@ -164,6 +164,27 @@ describe('DotUsersApiTokensTabComponent', () => {
             expect(pill?.textContent?.trim()).toBe('Revoked');
         });
 
+        it('should render the empty state outside the table so it can fill the tab', () => {
+            const state = spectator.query(byTestId('users-api-tokens-state'));
+            const table = spectator.query(byTestId('users-api-tokens-table'));
+
+            expect(state).toBeTruthy();
+            expect(state?.className).toContain('flex-1');
+            expect(state?.className).toContain('items-center');
+            expect(state?.className).toContain('justify-center');
+            expect(table?.contains(state as Node)).toBe(false);
+            expect(state?.querySelector('[data-testid="users-api-tokens-empty"]')).toBeTruthy();
+        });
+
+        it('should not render the empty state when the user has tokens', () => {
+            (usersService.getApiTokens as Mock).mockReturnValueOnce(of([tokenFactory()]));
+            spectator.component['onShowRevokedChange'](true);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('users-api-tokens-state'))).toBeFalsy();
+            expect(spectator.query(byTestId('users-api-tokens-row-tok-1'))).toBeTruthy();
+        });
+
         it('should render the error state with Retry when the fetch fails', () => {
             const error = new Error('boom');
             (usersService.getApiTokens as Mock).mockReturnValueOnce(throwError(() => error));

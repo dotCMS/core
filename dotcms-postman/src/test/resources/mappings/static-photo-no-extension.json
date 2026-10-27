@@ -1,0 +1,18 @@
+{
+  "request": {
+    "method": "GET",
+    "urlPath": "/s/photo-1575936123452-b67c3203c357",
+    "queryParameters": {
+      "w": {
+        "equalTo": "1000"
+      }
+    }
+  },
+  "response": {
+    "status": 200,
+    "headers": {
+      "Content-Type": "image/jpeg"
+    },
+    "bodyFileName": "Bocas2.jpg"
+  }
+}

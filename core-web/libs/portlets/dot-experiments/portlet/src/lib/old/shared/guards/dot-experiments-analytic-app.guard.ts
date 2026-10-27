@@ -16,12 +16,12 @@ export const AnalyticsAppGuard = () => {
     return inject(DotExperimentsService)
         .healthCheck()
         .pipe(
-            tap((value) => {
-                return value === HealthStatusTypes.OK
+            tap((response) => {
+                return response.health === HealthStatusTypes.OK
                     ? true
                     : router.navigate(['/edit-page/experiments/analytic-app-misconfiguration'], {
                           queryParamsHandling: 'merge',
-                          state: { healthStatus: value }
+                          state: { healthStatus: response.health }
                       });
             })
         );

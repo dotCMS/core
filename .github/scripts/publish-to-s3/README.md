@@ -8,7 +8,7 @@ duplicating endpoint/credential wiring in each workflow.
 ## Usage
 
 ```bash
-# Publish one version of every com/dotcms module installed in ~/.m2/repository
+# Publish one version of every module under com/dotcms, including nested groups
 .github/scripts/publish-to-s3/publish.sh maven --version 26.09.14-01
 
 # Publish a single file to an explicit key
@@ -49,16 +49,20 @@ bucket defaults to `MAVEN_BUNNY_RW_USERNAME`.
 
 ## What `maven` does
 
-1. Walks `$MAVEN_REPO_DIR/com/dotcms/*/<version>` and uploads each subtree to
-   `s3://$BUCKET/$PREFIX/com/dotcms/<artifactId>/<version>/`. S3 has no real
-   folders; nested key prefixes are created implicitly, so the layout matches
-   the old Artifactory `libs-release` layout.
+1. Recursively finds `<version>` directories under `$MAVEN_REPO_DIR/com/dotcms`,
+   including nested groups such as `com.dotcms.core.plugins` and `com.dotcms.plugins`.
+   Uploads each subtree to `s3://$BUCKET/$PREFIX/<groupPath>/<artifactId>/<version>/`,
+   preserving the full repository-relative path. S3 has no real folders; nested
+   key prefixes are created implicitly, matching the old Artifactory layout.
+   `--modules` filters by artifactId at any group depth; if the same artifactId
+   exists in multiple groups, all matching paths are preserved.
 2. Uploads `.sha1`/`.md5` checksums for the primary artifacts (`.pom`, `.jar`,
    `.zip`, `.war`, `.aar`, `.module`).
-3. Regenerates `com/dotcms/<artifactId>/maven-metadata.xml` from the versions
-   already present in the bucket plus the one just uploaded. Artifactory used to
-   do this automatically and consumers (for example the dotCLI action) read it,
-   so a plain file copy is not enough.
+3. Regenerates `<groupPath>/<artifactId>/maven-metadata.xml` from the versions
+   already present in the bucket plus the one just uploaded, with the actual
+   groupId derived from the group path. Artifactory used to do this automatically
+   and consumers (for example the dotCLI action) read it, so a plain file copy is
+   not enough.
 
 Step 3 is best-effort: a metadata failure logs a warning but does not fail a
 publish whose artifacts are already in place.
@@ -70,6 +74,50 @@ and exits 0). dotCMS does not consume shared snapshots, and publishing one to
 `libs-release` would make the artifact-level `maven-metadata.xml` `<latest>` a
 snapshot, breaking the release lookup the CLI action performs. Pass
 `--allow-snapshots` to override.
+
+## Regression tests
+
+The tests execute the publisher with an offline AWS CLI stub; no credentials,
+network access, or live repository writes are needed. They cover nested group
+paths, metadata, checksums, module selection, and existing flat-group behavior.
+The PR workflow runs them whenever the publisher or its action changes.
+
+Known limitation: a failed directory scan can yield a partial candidate list
+without failing publication. This hardening is deferred from the nested-group
+hotfix; compare the dry-run output with the expected release-module inventory
+before any backfill.
+
+```bash
+python3 -m unittest discover -s .github/scripts/publish-to-s3/tests -v
+```
+
+## Backfilling missing releases
+
+Fixing the publisher does not restore artifacts omitted by earlier releases.
+Restore the original release's GitHub Actions `maven-repo` build artifact into
+an isolated local repository and copy its exact release-versioned files. Do not
+regenerate JARs, rename a previous release's JAR/POM to a newer version, or publish
+snapshots as releases. If the original build artifact is unavailable, stop and
+report the missing source instead of reconstructing it. Audit **all** nested
+dotCMS groups, not just the Tika API.
+
+For a targeted Tika API backfill, preview first:
+
+```bash
+.github/scripts/publish-to-s3/publish.sh maven \
+  --version 26.09.28-02 --repo-dir /path/to/restored-release-repository \
+  --modules com.dotcms.tika-api --dry-run
+```
+
+After reviewing the paths and release provenance, authorized operators can rerun
+without `--dry-run` to publish the artifacts, checksums, and metadata. Compare
+existing destination objects first: publication overwrites matching keys. Only
+the original release-build bytes are authorized for this recovery.
+Serialize backfills with normal releases of the same artifact to avoid metadata
+read/modify/write races. Verify JAR/POM/ZIP objects, metadata, and their sidecars
+through the public CDN, purge cached misses if necessary, and resolve the
+affected core version using an empty local Maven repository. Remove the temporary
+customer dependency override once matching versions resolve.
 
 ## Resulting URLs
 

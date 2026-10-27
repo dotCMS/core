@@ -74,6 +74,16 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+/**
+ * Struts dispatcher of the legacy JSP back-end: one action whose {@code cmd} parameter selects an
+ * operation over pages, files, templates, containers, links and menus.
+ *
+ * @deprecated The current UI drives these operations through the REST API and the Angular
+ * editors; no Angular code calls this action, and its only remaining callers are other legacy
+ * Struts actions. It is kept so existing URLs keep working and will be removed in a future
+ * version.
+ */
+@Deprecated
 public class DirectorAction extends DotPortletAction {
 
 	private ContentletAPI conAPI = APILocator.getContentletAPI();

@@ -15,6 +15,8 @@ import org.glassfish.jersey.server.ContainerRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Optional;
 
 /**
@@ -72,8 +74,6 @@ public enum AuthCredentialPushPublishUtil {
     public PushPublishAuthenticationToken processAuthHeader(final HttpServletRequest request) {
         final boolean useJWTToken = isJWTAvailable();
 
-        Logger.info(AuthCredentialPushPublishUtil.class, String.format("Is JWT in Push publish avaible?: %s", useJWTToken));
-
         try{
             if (useJWTToken) {
                 final PushPublishAuthenticationToken pushPublishAuthenticationToken = getFromJWTToken(request);
@@ -104,21 +104,17 @@ public enum AuthCredentialPushPublishUtil {
             final Optional<JWToken> jwTokenOptional =
                     JsonWebTokenAuthCredentialProcessorImpl.getInstance().processJWTAuthHeader(request);
 
-            Logger.info(AuthCredentialPushPublishUtil.class, String.format("Token from request?: %s", jwTokenOptional));
-
             if (jwTokenOptional.isEmpty()){
                 return PushPublishAuthenticationToken.INVALID_TOKEN;
             }
 
             final Optional<User> optionalUser = jwTokenOptional.get().getActiveUser();
-            Logger.info(AuthCredentialPushPublishUtil.class, String.format("User from token?: %s", optionalUser));
             if (optionalUser.isEmpty()){
                 return PushPublishAuthenticationToken.INVALID_TOKEN;
             }
 
             return new PushPublishAuthenticationToken(jwTokenOptional.get());
         } catch(IncorrectClaimException e){
-            Logger.info(AuthCredentialPushPublishUtil.class, String.format("IncorrectClaimException?: %s", e));
             final String claimName = e.getClaimName();
 
             return Claims.EXPIRATION.equals(claimName) ? PushPublishAuthenticationToken.EXPIRE_TOKEN :
@@ -132,19 +128,37 @@ public enum AuthCredentialPushPublishUtil {
         final PublishingEndPoint publishingEndPoint =
                 APILocator.getPublisherEndPointAPI().findEnabledSendingEndPointByAddress(remoteIP);
 
-        Logger.info(AuthCredentialPushPublishUtil.class, String.format("PublishingEndPoint: %s", publishingEndPoint != null ? publishingEndPoint.getServerName() : "null"));
-
         Optional<String> key = PushPublisher.retriveEndpointKeyDigest(publishingEndPoint);
-
-        Logger.info(AuthCredentialPushPublishUtil.class, String.format("PublishingEndPoint key: %s", key));
 
         if(key.isEmpty()) {
             return Optional.empty();
         }
 
         final String token = getTokenFromRequest(request);
-        Logger.info(AuthCredentialPushPublishUtil.class, String.format("Token from request: %s", token));
-        return token.equals( key.get() ) ? Optional.of(publishingEndPoint) : Optional.empty();
+        final boolean matches = keyMatches(token, key.get());
+        if (!matches) {
+            Logger.debug(AuthCredentialPushPublishUtil.class, () -> String.format(
+                    "Push publish key does not match the one set for endpoint: %s",
+                    publishingEndPoint.getServerName()));
+        }
+        return matches ? Optional.of(publishingEndPoint) : Optional.empty();
+    }
+
+    /**
+     * Checks whether the key sent by a remote server in a push publish request is the same as
+     * the key configured for its endpoint. Both values are compared as UTF-8 bytes with
+     * {@link MessageDigest#isEqual(byte[], byte[])}.
+     *
+     * @param requestKey  the key read from the request's {@code Authorization} header
+     * @param endpointKey the key configured for the endpoint
+     * @return {@code true} if both keys are set and identical, {@code false} otherwise
+     */
+    static boolean keyMatches(final String requestKey, final String endpointKey) {
+        if (requestKey == null || endpointKey == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(requestKey.getBytes(StandardCharsets.UTF_8),
+                endpointKey.getBytes(StandardCharsets.UTF_8));
     }
 
     private String getTokenFromRequest(final HttpServletRequest request) {

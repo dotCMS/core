@@ -2,7 +2,12 @@ import { type APIRequestContext } from '@playwright/test';
 
 import { type BaseApiHelpers, test as base } from './base.fixture';
 
-import { createFilteredFolder, deleteFolders } from '../requests/folders';
+import {
+    createFilteredFolder,
+    deleteFolders,
+    submitFolderDelete,
+    submitFolderDuplicate
+} from '../requests/folders';
 import { waitForFolderJobsToSettle } from '../requests/jobs';
 import { clearNotifications } from '../requests/notifications';
 
@@ -20,6 +25,10 @@ export interface ContentDriveApiHelpers extends BaseApiHelpers {
     clearNotifications: () => Promise<void>;
     /** Seeds a folder that only admits the given file-name globs, for the folder-filter refusal. */
     createFilteredFolder: (siteName: string, path: string, fileMasks: string[]) => Promise<void>;
+    /** Queues a bulk delete of the given folders without going through the page. */
+    submitFolderDelete: (siteName: string, paths: string[]) => Promise<void>;
+    /** Queues a bulk duplicate of the given folders without going through the page. */
+    submitFolderDuplicate: (siteName: string, paths: string[]) => Promise<void>;
 }
 
 /**
@@ -50,6 +59,10 @@ export const test = base.extend<{ apiHelpers: ContentDriveApiHelpers }>({
                 deleteFolders(request, siteName, paths),
             createFilteredFolder: (siteName: string, path: string, fileMasks: string[]) =>
                 createFilteredFolder(request, siteName, path, fileMasks),
+            submitFolderDelete: (siteName: string, paths: string[]) =>
+                submitFolderDelete(request, siteName, paths),
+            submitFolderDuplicate: (siteName: string, paths: string[]) =>
+                submitFolderDuplicate(request, siteName, paths),
             clearNotifications: () => clearNotifications(request),
             waitForFolderJobsToSettle: (siteName: string, folderPath: string) =>
                 waitForFolderJobsToSettle(request, siteName, folderPath)

@@ -202,4 +202,39 @@ public class SecureIntrospectorImplTest {
             Config.setProperty(SecureIntrospectorImpl.ALLOW_CLASSES_PROP, "");
         }
     }
+
+    /**
+     * Servlet-container internals, embedded interpreters and the alternate reflection, naming
+     * and process APIs must be denied, including implementations reached only through their
+     * type hierarchy.
+     */
+    @Test
+    public void container_interpreter_and_alternate_reflection_types_are_denied() throws Exception {
+        assertDenied(java.lang.invoke.MethodHandles.Lookup.class, "findStatic");
+        assertDenied(java.lang.invoke.MethodHandle.class, "invokeWithArguments");
+        assertDenied(ProcessHandle.current().getClass(), "info");
+        assertDenied(javax.naming.InitialContext.class, "lookup");
+        assertDeniedIfPresent("bsh.Interpreter", "eval");
+        assertDeniedIfPresent("org.apache.tomcat.SimpleInstanceManager", "newInstance");
+        assertDeniedIfPresent("org.apache.catalina.core.DefaultInstanceManager", "newInstance");
+    }
+
+    /**
+     * The runtime-type check must not catch ordinary template objects.
+     */
+    @Test
+    public void ordinary_types_are_not_runtime_restricted() {
+        assertAllowed(HashMap.class, "get");
+        assertAllowed(ArrayList.class, "size");
+    }
+
+    private void assertDeniedIfPresent(final String className, final String method) {
+        final Class<?> clazz;
+        try {
+            clazz = Class.forName(className, false, getClass().getClassLoader());
+        } catch (final ClassNotFoundException | LinkageError e) {
+            return; // not on this test classpath; the prefix check is covered by the JDK types above
+        }
+        assertDenied(clazz, method);
+    }
 }

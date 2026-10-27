@@ -1,4 +1,4 @@
-<%@page import="com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet"%>
+<%@ page import="com.liferay.util.Xss" %><%@page import="com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowActionClass"%>
 <%@page import="java.util.Set"%>
 <%@page import="com.dotmarketing.util.Logger"%>
@@ -85,8 +85,8 @@
         actionAdmin.actionlets = new Array();
         mainAdmin.resetCrumbTrail();
         mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Workflows")%>", "/html/portlet/ext/workflows/schemes/view_schemes.jsp");
-        mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Scheme")%> : <%=(scheme.isArchived()) ? "<strike>" :""%><%=scheme.getName()%><%=(scheme.isArchived()) ? "</strike>" :""%>", stepAdmin.baseJsp  + "?schemeId=<%=schemeId%>");
-        mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Action")%>", actionAdmin.baseJsp + "?stepId=<%=stepId%>" );
+        mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Scheme")%> : <%=(scheme.isArchived()) ? "<strike>" :""%><%=Xss.encodeForJavaScript(Xss.encodeForHTML(scheme.getName()))%><%=(scheme.isArchived()) ? "</strike>" :""%>", stepAdmin.baseJsp  + "?schemeId=<%=Xss.encodeForJavaScript(schemeId)%>");
+        mainAdmin.addCrumbtrail("<%=LanguageUtil.get(pageContext, "Action")%>", actionAdmin.baseJsp + "?stepId=<%=Xss.encodeForJavaScript(stepId)%>" );
         mainAdmin.refreshCrumbtrail();
 
         var permissionSelect = new dijit.form.FilteringSelect({
@@ -166,7 +166,7 @@
             boolean isOnlyBatch = ActionletUtil.isOnlyBatch(subaction.getClazz());
 			hasOnlyBatch |= isOnlyBatch;
         %>
-        actionClassAdmin.actionClasses.push({id:"<%=subaction.getId()%>",name:"<%=subaction.getName()%>", isOnlyBatch:<%=isOnlyBatch%>});
+        actionClassAdmin.actionClasses.push({id:"<%=subaction.getId()%>",name:"<%=Xss.encodeForJavaScript(subaction.getName())%>", isOnlyBatch:<%=isOnlyBatch%>});
         <%}
 		if (hasOnlyBatch) {
         %>
@@ -214,7 +214,7 @@
 
 			<main class="row" >
 				<div class="col-xs-5 view-actions__permissions">
-					<button dojoType="dijit.form.Button" class="view-actions__back-btn" onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=schemeId%>")'>
+					<button dojoType="dijit.form.Button" class="view-actions__back-btn" onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=Xss.encodeForJavaScript(schemeId)%>")'>
 						<i class="fa fa-level-up" aria-hidden="true"></i>
 					</button>
 					<dl class="vertical">
@@ -231,7 +231,7 @@
 							<input type="text" name="actionName" id="actionName" style="width: 80%;" 
 								   dojoType="dijit.form.ValidationTextBox" required="true"
 								   value="<%=UtilMethods.webifyString(action.getName())%>"
-								   maxlength="255" onkeypress="actionAdmin.doChange()" <%if(action.isNew()){ %>onchange="actionAdmin.saveAction('<%=schemeId %>');"<%} %>>
+								   maxlength="255" onkeypress="actionAdmin.doChange()" <%if(action.isNew()){ %>onchange="actionAdmin.saveAction('<%=Xss.encodeForJavaScript(schemeId)%>');"<%} %>>
 						</dd>
 					</dl>
 					
@@ -252,7 +252,7 @@
 
 									for(WorkflowStep s : steps){ %>
 										<option value="<%=s.getId() %>"
-										<%=(action != null && s.getId().equals(action.getNextStep())) ? "selected='true'" : "" %>><%=s.getName() %></option>
+										<%=(action != null && s.getId().equals(action.getNextStep())) ? "selected='true'" : "" %>><%=Xss.encodeForHTML(s.getName())%></option>
 								<%}%>
 								<% }%>
 							</select>
@@ -427,10 +427,10 @@
 					</div>
 					<div class="content-edit-actions">
 						<div>
-							<a id="saveButtonDiv" class="saveButtonHide" onClick="actionAdmin.saveAction('<%=schemeId %>');">
+							<a id="saveButtonDiv" class="saveButtonHide" onClick="actionAdmin.saveAction('<%=Xss.encodeForJavaScript(schemeId)%>');">
 								<%=LanguageUtil.get(pageContext, "Save")%>
 							</a>
-							<a onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=schemeId%>")'>
+							<a onClick='mainAdmin.show(stepAdmin.baseJsp + "?schemeId=<%=Xss.encodeForJavaScript(schemeId)%>")'>
 								<%=LanguageUtil.get(pageContext, "Cancel")%>
 							</a>
 						</div>

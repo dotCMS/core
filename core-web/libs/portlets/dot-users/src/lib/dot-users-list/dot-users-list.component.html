@@ -181,7 +181,7 @@
                 </th>
                 <th style="width: 24%">{{ 'users.table.header.roles' | dm }}</th>
                 <th style="width: 15%">{{ 'users.table.header.access' | dm }}</th>
-                <th pSortableColumn="lastLoginDate" style="width: 8%">
+                <th pSortableColumn="lastLoginDate" class="whitespace-nowrap" style="width: 12%">
                     {{ 'users.table.header.last-login' | dm }}
                     <p-sortIcon field="lastLoginDate" />
                 </th>
@@ -242,6 +242,13 @@
                     </td>
                     <td data-testid="users-cell-access">
                         <div class="flex flex-wrap gap-1">
+                            @if (user.admin) {
+                                <p-tag
+                                    [value]="'users.access.cms-admin' | dm"
+                                    severity="secondary"
+                                    styleClass="whitespace-nowrap"
+                                    data-testid="users-access-cms-admin-chip" />
+                            }
                             @if (user.backendUser) {
                                 <p-tag
                                     [value]="'users.access.backend' | dm"
@@ -258,9 +265,9 @@
                             }
                         </div>
                     </td>
-                    <td data-testid="users-cell-last-login">
+                    <td class="whitespace-nowrap" data-testid="users-cell-last-login">
                         @if (user.lastLoginDate) {
-                            {{ user.lastLoginDate | date: 'MM/dd/yyyy' }}
+                            {{ user.lastLoginDate | date: 'MM/dd/yyyy, h:mm a' }}
                         }
                     </td>
                     <td (click)="$event.stopPropagation()" data-testid="users-cell-actions">
