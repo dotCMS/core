@@ -446,7 +446,7 @@
                   "listen": "prerequest",
                   "script": {
                     "exec": [
-                      "bundleName = 'bundleName-' + new Date().getMilliseconds();",
+                      "bundleName = 'bundleName-' + Date.now();",
                       "pm.collectionVariables.set(\"bundleName\", bundleName);",
                       "",
                       "pm.test(\"Wait for previous bundle to publish sucessfully\", function () {",
@@ -745,7 +745,7 @@
                   "script": {
                     "exec": [
                       "",
-                      "environmentName = 'environment-' + new Date().getMilliseconds();",
+                      "environmentName = 'environment-' + Date.now();",
                       "pm.collectionVariables.set(\"environmentName\", environmentName);",
                       ""
                     ],
@@ -833,7 +833,7 @@
                   "listen": "prerequest",
                   "script": {
                     "exec": [
-                      "endpointName = 'endpoint-' + new Date().getMilliseconds();",
+                      "endpointName = 'endpoint-' + Date.now();",
                       "pm.collectionVariables.set(\"endpointName\", endpointName);",
                       ""
                     ],
@@ -1028,7 +1028,7 @@
                   "listen": "prerequest",
                   "script": {
                     "exec": [
-                      "bundleName = 'bundleName-' + new Date().getMilliseconds();",
+                      "bundleName = 'bundleName-' + Date.now();",
                       "pm.collectionVariables.set(\"bundleName\", bundleName);",
                       "",
                       "pm.test(\"Wait for previous bundle to publish sucessfully\", function () {",
@@ -1815,7 +1815,7 @@
                   "listen": "prerequest",
                   "script": {
                     "exec": [
-                      "bundleName = 'bundleName-' + new Date().getMilliseconds();",
+                      "bundleName = 'bundleName-' + Date.now();",
                       "pm.collectionVariables.set(\"bundleName\", bundleName);",
                       "",
                       "pm.test(\"Wait for previous bundle to publish sucessfully\", function () {",
