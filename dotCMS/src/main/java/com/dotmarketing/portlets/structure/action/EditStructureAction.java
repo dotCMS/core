@@ -39,6 +39,7 @@ import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.HostUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
 import com.dotmarketing.util.VelocityUtil;
@@ -57,6 +58,11 @@ import javax.servlet.http.HttpServletRequest;
 import org.apache.commons.beanutils.BeanUtils;
 
 public class EditStructureAction extends DotPortletAction {
+
+	/** Message shown when the user is not allowed to save the content type. */
+	private static final String SAVE_NOT_ALLOWED_MESSAGE = "message.insufficient.permissions.to.save";
+	/** Message shown when the user is not allowed to make the content type the default one. */
+	private static final String DEFAULT_NOT_ALLOWED_MESSAGE = "dont-have-permissions-msg";
 
 	/**
 	 * API objects 
@@ -213,6 +219,15 @@ public class EditStructureAction extends DotPortletAction {
 		return new StructureTransformer(type).asStructure();
 	}
 
+	/**
+	 * Saves the posted content type with the permissions of the logged-in user, then its workflow
+	 * schemes. When the user may not save the type, nothing is saved: the page shows the
+	 * insufficient-permissions message and the refusal is written to the security log.
+	 *
+	 * @param form the posted {@link StructureForm}
+	 * @param req  the portlet request, holding the content type loaded for it
+	 * @param res  the portlet response
+	 */
 	private void _saveStructure(ActionForm form, ActionRequest req, ActionResponse res) {
 		try {
 			StructureForm structureForm = (StructureForm) form;
@@ -225,6 +240,7 @@ public class EditStructureAction extends DotPortletAction {
 
 			User user = _getUser(req);
 			HttpServletRequest httpReq = ((ActionRequestImpl) req).getHttpServletRequest();
+			final String loadedInode = structure.getInode();
 
 
 			if (UtilMethods.isSet(structure.getVelocityVarName())) {
@@ -241,17 +257,23 @@ public class EditStructureAction extends DotPortletAction {
 			}
 
 
-			// If there is no default structure this would be it
-			Structure defaultStructure = new StructureTransformer(APILocator.getContentTypeAPI(user).findDefault()).asStructure();
-			if (!InodeUtils.isSet(defaultStructure.getInode())) {
-				structure.setDefaultStructure(true);
-			}
-			if (newStructure) {
-				structure.setFixed(false);
-				structure.setOwner(user.getUserId());
-			}
+			try {
+				// If there is no default structure this would be it
+				Structure defaultStructure = new StructureTransformer(APILocator.getContentTypeAPI(user).findDefault()).asStructure();
+				if (!InodeUtils.isSet(defaultStructure.getInode())) {
+					structure.setDefaultStructure(true);
+				}
+				if (newStructure) {
+					structure.setFixed(false);
+					structure.setOwner(user.getUserId());
+				}
 
-			StructureFactory.saveStructure(structure);
+				StructureFactory.saveStructure(structure, user);
+			} catch (final DotSecurityException e) {
+				refuse(req, user, SAVE_NOT_ALLOWED_MESSAGE, String.format("save the content type '%s'",
+						UtilMethods.isSet(loadedInode) ? loadedInode : "(new)"));
+				return;
+			}
 			
 			//ContentType type = APILocator.getContentTypeAPI2().save(new StructureTransformer(structure).from(), user);
 			//structureForm.setInode(type.inode());
@@ -321,6 +343,22 @@ public class EditStructureAction extends DotPortletAction {
 			String message = ex.getMessage();
 			SessionMessages.add(req, "error", message);
 		}
+	}
+
+	/**
+	 * Records that the user was not allowed to do something to a content type: the page shows the
+	 * given message and the refusal is written once to the security log.
+	 *
+	 * @param req     the portlet request whose page shows the message
+	 * @param user    the {@link User} who was refused
+	 * @param message the key of the message to show
+	 * @param action  what the user tried to do, for the security log
+	 */
+	private void refuse(final ActionRequest req, final User user, final String message,
+			final String action) {
+		SecurityLogger.logInfo(this.getClass(), String.format("User '%s' is not allowed to %s",
+				null == user ? "(unknown)" : user.getUserId(), action));
+		SessionMessages.add(req, "error", message);
 	}
 
 	@SuppressWarnings("deprecation")
@@ -395,13 +433,28 @@ public class EditStructureAction extends DotPortletAction {
 	
 	}
 
+	/**
+	 * Makes the loaded content type the default one, with the permissions of the logged-in user.
+	 * When the user may not, the page shows the insufficient-permissions message and the refusal is
+	 * written to the security log.
+	 *
+	 * @param form the posted form, not used
+	 * @param req  the portlet request, holding the content type loaded for it
+	 * @param res  the portlet response
+	 */
 	private void _defaultStructure(ActionForm form, ActionRequest req, ActionResponse res) {
 		try {
 
 			Structure structure = (Structure) req.getAttribute(WebKeys.Structure.STRUCTURE);
 
 			User user = _getUser(req);
-			APILocator.getContentTypeAPI(user).setAsDefault(new StructureTransformer(structure).from());
+			try {
+				APILocator.getContentTypeAPI(user).setAsDefault(new StructureTransformer(structure).from());
+			} catch (final DotSecurityException e) {
+				refuse(req, user, DEFAULT_NOT_ALLOWED_MESSAGE, String.format(
+						"make the content type '%s' the default one", structure.getInode()));
+				return;
+			}
 			String message = "message.structure.defaultstructure";
 			SessionMessages.add(req, "message", message);
 		} catch (Exception ex) {
