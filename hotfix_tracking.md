@@ -82,3 +82,4 @@ Release-25.07.10 LTS
 76. https://github.com/dotCMS/core/pull/38120 : fix(users): only a CMS Administrator can change a user's roles #38120
 77. https://github.com/dotCMS/core/pull/38178 : fix(js): load JavaScript modules through the content API #38178
 78. https://github.com/dotCMS/private-issues/issues/999 : Remove compromised emSign ECC Root CA - G3 from the shipped JDK truststore #999
+79. https://github.com/dotCMS/private-issues/issues/725 : dotSAML: shipped descriptor defaults signature validation to "None" + missing Audience/Conditions/SubjectConfirmation/replay checks #725
