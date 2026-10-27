@@ -651,8 +651,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   }
 
   /**
-   * Makes the given content type the default one. The user needs EDIT_PERMISSIONS on it, checked
-   * the same way as when the content type is saved.
+   * Makes the given content type the default one. The user needs EDIT_PERMISSIONS on it in the
+   * permissions stored for the content type, counting front-end roles as this API does.
    *
    * @param type the {@link ContentType} to make the default one
    * @return the content type, now the default one
@@ -662,8 +662,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   @WrapInTransaction
   @Override
   public ContentType setAsDefault(ContentType type) throws DotDataException, DotSecurityException {
-    if (!perms.doesUserHavePermission(type, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user,
-            respectFrontendRoles)) {
+    if (!perms.doesUserHavePermission((Permissionable) type, PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
+            user, respectFrontendRoles)) {
       throw new DotSecurityException("User is not allowed to make this content type the default one");
     }
     return contentTypeFactory.setAsDefault(type);

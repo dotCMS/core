@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.structure.action;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -16,6 +17,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
@@ -38,6 +40,7 @@ import com.dotmarketing.portlets.structure.struts.StructureForm;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletURLUtil;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.Validator;
 import com.liferay.portal.model.User;
@@ -52,6 +55,7 @@ import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import javax.servlet.jsp.PageContext;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -61,8 +65,9 @@ import org.mockito.MockedStatic;
 /**
  * Unit tests for saving a content type ({@code cmd=add}) and making it the default one
  * ({@code cmd=SET_DEFAULT}) through {@link EditStructureAction}: both run with the permissions of
- * the logged-in user, and what the user is not allowed to do changes nothing. The logged-in user
- * comes from a mocked portlet request and every collaborator is mocked.
+ * the logged-in user, and what the user is not allowed to do changes nothing. A requested type the
+ * user may not read, or that does not exist, gets the same fixed answer. The logged-in user comes
+ * from a mocked portlet request and every collaborator is mocked.
  */
 class EditStructureActionTest {
 
@@ -81,6 +86,10 @@ class EditStructureActionTest {
     private static final String DEFAULT_SET_MESSAGE = "message.structure.defaultstructure";
     /** The message shown when the user may not make the type the default one. */
     private static final String DEFAULT_NOT_ALLOWED_MESSAGE = "dont-have-permissions-msg";
+    /** The message shown when the requested type cannot be read by the user or does not exist. */
+    private static final String OPEN_NOT_ALLOWED_MESSAGE = "dont-have-permissions-msg";
+    /** The message shown when making the type the default one fails for another reason. */
+    private static final String DEFAULT_FAILED_MESSAGE = "an-unexpected-error-occurred";
     /** Text carried by the refusal or the data error, which must not reach the page. */
     private static final String EXCEPTION_TEXT = "exception-text";
 
@@ -325,6 +334,120 @@ class EditStructureActionTest {
         assertNotEquals(DEFAULT_SET_MESSAGE, SessionMessages.get(request, MESSAGE_KEY));
         assertTrue(securityLoggerCalls.isEmpty(),
                 "no security log entry expected, got " + securityLoggerCalls);
+    }
+
+    /**
+     * Method to test: {@link EditStructureAction#processAction} with {@code cmd=SET_DEFAULT}
+     * Given: making the loaded content type the default one fails with a data error
+     * Expected: the page shows a fixed error message instead of the exception text, no success
+     * message, and the failure is logged as an error
+     */
+    @Test
+    void setDefault_dataError_showsErrorMessage() throws Exception {
+        when(contentTypeAPI.setAsDefault(any(ContentType.class)))
+                .thenThrow(new DotDataException(EXCEPTION_TEXT));
+
+        final ActionRequestImpl request = setDefaultRequest();
+        new EditStructureAction().processAction(null, structureForm(), null, request,
+                mock(ActionResponse.class));
+
+        assertEquals(DEFAULT_FAILED_MESSAGE, SessionMessages.get(request, ERROR_KEY));
+        assertNotEquals(DEFAULT_SET_MESSAGE, SessionMessages.get(request, MESSAGE_KEY));
+        logger.verify(() -> Logger.error(any(Object.class), anyString(), any(Throwable.class)));
+    }
+
+    /**
+     * Method to test: {@link EditStructureAction#processAction} with {@code cmd=add}
+     * Given: the user may not read the requested content type
+     * Expected: nothing is saved, no error page with the exception, the fixed not-allowed message,
+     * one security log entry, and the user is sent back to the referer
+     */
+    @Test
+    void open_refused_showsFixedMessageAndLogsOnce() throws Exception {
+        when(contentTypeAPI.find(TYPE_INODE)).thenThrow(new DotSecurityException(EXCEPTION_TEXT));
+
+        final ActionRequestImpl request = saveRequest();
+        final ActionResponse response = mock(ActionResponse.class);
+        new EditStructureAction().processAction(null, structureForm(), null, request, response);
+
+        structureFactory.verify(() -> StructureFactory.saveStructure(any(Structure.class), eq(user)),
+                never());
+        assertNull(request.getAttribute(PageContext.EXCEPTION));
+        assertEquals(OPEN_NOT_ALLOWED_MESSAGE, SessionMessages.get(request, ERROR_KEY));
+        assertEquals(1, securityLoggerCalls.size(),
+                "one security log entry expected, got " + securityLoggerCalls);
+        verify(response).sendRedirect(REFERER);
+    }
+
+    /**
+     * Method to test: {@link EditStructureAction#processAction} with {@code cmd=add}
+     * Given: the posted inode matches no content type
+     * Expected: nothing is saved, the same answer as for a content type the user may not read,
+     * and nothing written to the security log
+     */
+    @Test
+    void open_unknownType_showsSameMessageAndSavesNothing() throws Exception {
+        when(contentTypeAPI.find(TYPE_INODE)).thenThrow(new NotFoundInDbException(EXCEPTION_TEXT));
+
+        final ActionRequestImpl request = saveRequest();
+        final ActionResponse response = mock(ActionResponse.class);
+        new EditStructureAction().processAction(null, structureForm(), null, request, response);
+
+        structureFactory.verify(() -> StructureFactory.saveStructure(any(Structure.class), eq(user)),
+                never());
+        assertNull(request.getAttribute(PageContext.EXCEPTION));
+        assertEquals(OPEN_NOT_ALLOWED_MESSAGE, SessionMessages.get(request, ERROR_KEY));
+        assertTrue(securityLoggerCalls.isEmpty(),
+                "no security log entry expected, got " + securityLoggerCalls);
+        verify(response).sendRedirect(REFERER);
+    }
+
+    /**
+     * Method to test: {@link EditStructureAction#processAction} with {@code cmd=add}
+     * Given: the user may not read the requested content type, and the request has no referer
+     * Expected: the user is sent to the content type list
+     */
+    @Test
+    void open_refusedWithoutReferer_returnsToContentTypeList() throws Exception {
+        assertRefusedOpenWithoutRefererReturnsTo(Structure.STRUCTURE_TYPE_CONTENT,
+                "/ext/structure/view_structure");
+    }
+
+    /**
+     * Method to test: {@link EditStructureAction#processAction} with {@code cmd=add}
+     * Given: the user may not read the requested form, and the request has no referer
+     * Expected: the user is sent to the forms list
+     */
+    @Test
+    void open_refusedFormWithoutReferer_returnsToFormList() throws Exception {
+        assertRefusedOpenWithoutRefererReturnsTo(Structure.STRUCTURE_TYPE_FORM,
+                "/ext/formhandler/view_form");
+    }
+
+    /**
+     * Posts a request without a referer for a content type of the given kind that the user may not
+     * read, and asserts the user is sent to the list URL built for the given Struts action.
+     */
+    private void assertRefusedOpenWithoutRefererReturnsTo(final int structureType,
+            final String listAction) throws Exception {
+        when(contentTypeAPI.find(TYPE_INODE)).thenThrow(new DotSecurityException(EXCEPTION_TEXT));
+        final ActionRequestImpl request = saveRequest();
+        when(request.getParameter("referer")).thenReturn(null);
+        final StructureForm form = structureForm();
+        form.setStructureType(structureType);
+        final ActionResponse response = mock(ActionResponse.class);
+
+        try (MockedStatic<PortletURLUtil> portletURLUtil = mockStatic(PortletURLUtil.class)) {
+            portletURLUtil.when(() -> PortletURLUtil.getActionURL(any(ActionRequest.class),
+                    anyString(), any(Map.class))).thenAnswer(invocation -> "list:"
+                    + ((String[]) invocation.<Map<String, String[]>>getArgument(2)
+                    .get("struts_action"))[0]);
+
+            new EditStructureAction().processAction(null, form, null, request, response);
+        }
+
+        verify(response).sendRedirect("list:" + listAction);
+        assertEquals(OPEN_NOT_ALLOWED_MESSAGE, SessionMessages.get(request, ERROR_KEY));
     }
 
     /** Makes the user save of any structure throw the given exception. */

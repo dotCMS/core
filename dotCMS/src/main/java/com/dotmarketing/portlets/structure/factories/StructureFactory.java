@@ -400,9 +400,9 @@ public class StructureFactory {
 	}
 
 	/**
-	 * Saves the structure with the permissions of the given user: updating a content type needs
-	 * EDIT_PERMISSIONS on it, and creating one, or moving it to another site or folder, needs
-	 * permission to add children and to edit content type permissions there. The saved inode is set
+	 * Saves the structure with the permissions of the given user: every save needs permission to add
+	 * children and to edit content type permissions on the site or folder the structure is saved on,
+	 * and updating an existing content type also needs EDIT_PERMISSIONS on it. The saved inode is set
 	 * on the structure.
 	 *
 	 * @param structure the {@link Structure} to create or update

@@ -15,6 +15,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 import org.junit.jupiter.api.Test;
@@ -70,8 +71,25 @@ class ContentTypeAPIImplSetAsDefaultTest {
     @Test
     void setAsDefault_editPermissionsOnlyThroughFrontEndRole_isRefused() throws Exception {
         givenUserHoldsUpTo(PermissionAPI.PERMISSION_EDIT_PERMISSIONS);
-        when(permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
-                user, false)).thenReturn(false);
+        when(permissionAPI.doesUserHavePermission((Permissionable) type,
+                PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user, false)).thenReturn(false);
+
+        assertThrows(DotSecurityException.class, () -> contentTypeAPI.setAsDefault(type));
+        verify(contentTypeFactory, never()).setAsDefault(any());
+    }
+
+    /**
+     * Method to test: {@link ContentTypeAPIImpl#setAsDefault(ContentType)}
+     * Given: a user whose stored permissions on the content type stop at READ, while the content
+     * type permission check answers yes
+     * Expected: a {@link DotSecurityException} and the default content type is not changed: only the
+     * permissions stored for the content type count
+     */
+    @Test
+    void setAsDefault_onlyStoredPermissionsCount() throws Exception {
+        givenUserHoldsUpTo(PermissionAPI.PERMISSION_READ);
+        when(permissionAPI.doesUserHavePermission(eq(type), anyInt(), eq(user), anyBoolean()))
+                .thenReturn(true);
 
         assertThrows(DotSecurityException.class, () -> contentTypeAPI.setAsDefault(type));
         verify(contentTypeFactory, never()).setAsDefault(any());
@@ -79,7 +97,8 @@ class ContentTypeAPIImplSetAsDefaultTest {
 
     /**
      * Grants the user every permission on the content type up to the given level, through every
-     * way the permission API can be asked.
+     * way the permission API can be asked: the content type checks and the checks on the stored
+     * permissions.
      */
     private void givenUserHoldsUpTo(final int highestPermission) throws Exception {
         doAnswer(invocation -> {
@@ -92,6 +111,11 @@ class ContentTypeAPIImplSetAsDefaultTest {
         when(permissionAPI.doesUserHavePermission(eq(type), anyInt(), eq(user)))
                 .thenAnswer(invocation -> invocation.<Integer>getArgument(1) <= highestPermission);
         when(permissionAPI.doesUserHavePermission(eq(type), anyInt(), eq(user), anyBoolean()))
+                .thenAnswer(invocation -> invocation.<Integer>getArgument(1) <= highestPermission);
+        when(permissionAPI.doesUserHavePermission(eq((Permissionable) type), anyInt(), eq(user)))
+                .thenAnswer(invocation -> invocation.<Integer>getArgument(1) <= highestPermission);
+        when(permissionAPI.doesUserHavePermission(eq((Permissionable) type), anyInt(), eq(user),
+                anyBoolean()))
                 .thenAnswer(invocation -> invocation.<Integer>getArgument(1) <= highestPermission);
     }
 }

@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.structure.action;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -45,6 +46,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
@@ -53,10 +55,13 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Integration tests for saving a content type through {@link EditStructureAction#processAction}
- * with {@code cmd=add}, with stored permission rows: an existing type is only saved, moved or given
- * other workflow schemes by a user with EDIT_PERMISSIONS on it, and a type is only created on, or
- * moved to, a site where the user can add children and edit content type permissions.
+ * Integration tests for {@link EditStructureAction#processAction}, with stored permission rows.
+ * Saving a content type ({@code cmd=add}) needs permission to add children and to edit content type
+ * permissions on the site it is saved on (the destination one when it is created or moved), and an
+ * existing type also needs EDIT_PERMISSIONS on it; that covers renaming, moving and changing its
+ * workflow schemes. Making a type the default one ({@code cmd=SET_DEFAULT}) needs EDIT_PERMISSIONS
+ * stored for it. A requested type the user may not read, or that does not exist, gets the same
+ * not-allowed answer.
  */
 public class EditStructureActionSaveTest {
 
@@ -71,6 +76,10 @@ public class EditStructureActionSaveTest {
     private static final String NOT_ALLOWED_MESSAGE = "message.insufficient.permissions.to.save";
     /** The message shown when the user may not make the type the default one. */
     private static final String DEFAULT_NOT_ALLOWED_MESSAGE = "dont-have-permissions-msg";
+    /** The message shown when the requested type cannot be read by the user or does not exist. */
+    private static final String OPEN_NOT_ALLOWED_MESSAGE = "dont-have-permissions-msg";
+    /** Request attribute the error page reads the exception from ({@code PageContext.EXCEPTION}). */
+    private static final String ERROR_PAGE_EXCEPTION = "javax.servlet.jsp.jspException";
     private static final String REFERER = "/c/portal/layout?p_l_id=content-types";
 
     private static final List<ContentType> createdTypes = new ArrayList<>();
@@ -87,6 +96,8 @@ public class EditStructureActionSaveTest {
     private static User writer;
     private static User reader;
     private static User typeEditorWithoutSites;
+    /** A back-end user with no permission on any test content type or site. */
+    private static User outsider;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -111,6 +122,7 @@ public class EditStructureActionSaveTest {
         writer = backendUser("edit-structure-writer");
         reader = backendUser("edit-structure-reader");
         typeEditorWithoutSites = backendUser("edit-structure-no-sites");
+        outsider = backendUser("edit-structure-outsider");
         for (final User user : new User[]{editor, writer, reader}) {
             roleAPI.addRoleToUser(siteRole, user);
         }
@@ -152,7 +164,7 @@ public class EditStructureActionSaveTest {
                 WorkflowDataGen.remove(customScheme, false);
             });
         }
-        for (final User user : new User[]{editor, writer, reader, typeEditorWithoutSites}) {
+        for (final User user : new User[]{editor, writer, reader, typeEditorWithoutSites, outsider}) {
             if (null != user) {
                 runCleanupStep(failures, () -> APILocator.getUserAPI()
                         .delete(user, TestUserUtils.getAdminUser(), systemUser, false));
@@ -268,8 +280,8 @@ public class EditStructureActionSaveTest {
 
     /**
      * Method to test: {@link EditStructureAction#processAction} with {@code cmd=add}
-     * Given: a user with EDIT_PERMISSIONS on a content type, who cannot add children on the other
-     * site, moves the type there
+     * Given: a user with EDIT_PERMISSIONS on a content type, who cannot add children on either
+     * site, moves the type to the other site
      * Expected: the stored type stays on its site, the not-allowed message and no success message
      */
     @Test
@@ -385,6 +397,77 @@ public class EditStructureActionSaveTest {
         }
     }
 
+    /**
+     * Method to test: {@link EditStructureAction#processAction} with {@code cmd=SET_DEFAULT}
+     * Given: a content type on the System Host, with no site field, whose only stored permission is
+     * for the CMS Owner role, and a back-end user with no permission on it asks to make it the
+     * default one
+     * Expected: the default content type does not change, the not-allowed message and no success
+     * message
+     */
+    @Test
+    public void setDefault_systemHostTypeWithoutUserPermissions_keepsDefault() throws Exception {
+        final ContentType type = systemHostTypeWithoutUserPermissions();
+        final ContentType originalDefault = APILocator.getContentTypeAPI(systemUser).findDefault();
+        try {
+            final ActionRequestImpl request = setDefaultRequest(outsider, type.id());
+            new EditStructureAction().processAction(mock(ActionMapping.class),
+                    postedForm(type.id(), type.name(), APILocator.systemHost()), null, request,
+                    mock(ActionResponse.class));
+
+            assertEquals(originalDefault.id(),
+                    APILocator.getContentTypeAPI(systemUser).findDefault().id());
+            assertEquals(DEFAULT_NOT_ALLOWED_MESSAGE, SessionMessages.get(request, ERROR_KEY));
+            assertNotEquals(DEFAULT_SET_MESSAGE, SessionMessages.get(request, MESSAGE_KEY));
+        } finally {
+            APILocator.getContentTypeAPI(systemUser).setAsDefault(originalDefault);
+        }
+    }
+
+    /**
+     * Method to test: {@link EditStructureAction#processAction} with no {@code cmd}
+     * Given: a user with no permission on a content type opens it
+     * Expected: no error page with the exception, the not-allowed message instead
+     */
+    @Test
+    public void open_withoutReadPermission_showsFixedMessage() throws Exception {
+        final ContentType type = newContentType(PermissionAPI.PERMISSION_READ);
+        assertFalse(permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, outsider));
+
+        final ActionRequestImpl request = saveRequest(outsider, type.id());
+        when(request.getParameter("cmd")).thenReturn(null);
+        new EditStructureAction().processAction(mock(ActionMapping.class),
+                postedForm(type.id(), type.name(), homeSite), null, request,
+                mock(ActionResponse.class));
+
+        assertNull(request.getAttribute(ERROR_PAGE_EXCEPTION));
+        assertEquals(OPEN_NOT_ALLOWED_MESSAGE, SessionMessages.get(request, ERROR_KEY));
+    }
+
+    /**
+     * Method to test: {@link EditStructureAction#processAction} with {@code cmd=add}
+     * Given: a user who can add content types on a site posts a content type for it with an inode
+     * that matches no content type
+     * Expected: no content type with that inode or name exists, and the same not-allowed message as
+     * for a content type the user may not read
+     */
+    @Test
+    public void save_unknownType_createsNothing() throws Exception {
+        final String inode = UUID.randomUUID().toString();
+        final String name = "EditStructureUnknown" + System.nanoTime();
+
+        final ActionRequestImpl request = saveRequest(editor, inode);
+        new EditStructureAction().processAction(mock(ActionMapping.class),
+                postedForm(inode, name, otherSite), null, request, mock(ActionResponse.class));
+
+        final List<ContentType> created = storedTypesNamed(name);
+        createdTypes.addAll(created);
+        assertEquals(0, created.size());
+        assertEquals(0, storedTypeCount(inode));
+        assertEquals(OPEN_NOT_ALLOWED_MESSAGE, SessionMessages.get(request, ERROR_KEY));
+        assertNotEquals(SAVED_MESSAGE, SessionMessages.get(request, MESSAGE_KEY));
+    }
+
     private static User backendUser(final String label) throws DotDataException {
         return new UserDataGen()
                 .emailAddress(label + System.nanoTime() + "@dotcms.com")
@@ -441,6 +524,33 @@ public class EditStructureActionSaveTest {
         assertTrue(permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_READ, reader));
         assertEquals((userPermission & PermissionAPI.PERMISSION_EDIT_PERMISSIONS) != 0,
                 permissionAPI.doesUserHavePermission(type, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, reader));
+        return type;
+    }
+
+    /**
+     * A new content type on the System Host, with no fields, whose only stored permission is for the
+     * CMS Owner role; the stored permissions give the outsider nothing.
+     */
+    private static ContentType systemHostTypeWithoutUserPermissions()
+            throws DotDataException, DotSecurityException {
+        final String suffix = String.valueOf(System.nanoTime());
+        final ContentType type = new ContentTypeDataGen()
+                .name("EditStructureSystemType" + suffix)
+                .velocityVarName("editStructureSystemType" + suffix)
+                .host(APILocator.systemHost())
+                .nextPersisted();
+        createdTypes.add(type);
+
+        permissionAPI.permissionIndividually(APILocator.systemHost(), type, systemUser);
+        permissionAPI.removePermissions(type);
+        savePermission(type, new Permission(type.getPermissionId(),
+                APILocator.getRoleAPI().loadCMSOwnerRole().getId(),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT
+                        | PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS,
+                true));
+
+        assertFalse(permissionAPI.doesUserHavePermission((Permissionable) type,
+                PermissionAPI.PERMISSION_EDIT_PERMISSIONS, outsider, false));
         return type;
     }
 
@@ -545,6 +655,14 @@ public class EditStructureActionSaveTest {
             types.add(APILocator.getContentTypeAPI(systemUser).find((String) row.get("inode")));
         }
         return types;
+    }
+
+    /** The number of content types stored with the given inode. */
+    private static int storedTypeCount(final String inode) throws DotDataException {
+        final DotConnect dotConnect = new DotConnect();
+        dotConnect.setSQL("SELECT inode FROM structure WHERE inode = ?");
+        dotConnect.addParam(inode);
+        return dotConnect.loadObjectResults().size();
     }
 
     /** The ids of the workflow schemes stored for the content type. */
