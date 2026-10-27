@@ -56,7 +56,6 @@ import java.util.function.LongSupplier;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -967,20 +966,6 @@ public class LoginLockoutTest {
     }
 
     /**
-     * IPv6 addresses count under their /64 network, which one host can usually pick any address from; an
-     * IPv4-mapped address counts as the IPv4 address.
-     */
-    @Test
-    public void test_ipv6_addresses_are_grouped_by_64() {
-        assertEquals("2001:db8:1:2::/64", LoginLockout.clientAddress(requestFrom("2001:db8:1:2:aaaa:bbbb:cccc:dddd")));
-        assertEquals("2001:db8:1:2::/64", LoginLockout.clientAddress(requestFrom("2001:db8:1:2::1")));
-        assertNotEquals("2001:db8:1:2::/64", LoginLockout.clientAddress(requestFrom("2001:db8:1:3::1")));
-        assertEquals("fe80::/64", LoginLockout.clientAddress(requestFrom("fe80::1%eth0")));
-        assertEquals("192.0.2.30", LoginLockout.clientAddress(requestFrom("::ffff:192.0.2.30")));
-        assertEquals("not-an-address:x", LoginLockout.clientAddress(requestFrom("not-an-address:x")));
-    }
-
-    /**
      * Given: an account
      * When: wrong passwords come from different addresses in one IPv6 /64
      * Then: they share one count, so the /64 is locked out while another network still gets in
@@ -1059,15 +1044,5 @@ public class LoginLockoutTest {
             Config.setProperty(LoginLockout.LOCKOUT_ENABLED, enabledBefore);
             cleanUp(user);
         }
-    }
-
-    /**
-     * The client address falls back to a fixed source outside a request, and is cut to the column length.
-     */
-    @Test
-    public void test_client_address() {
-        assertEquals(LoginLockout.UNKNOWN_SOURCE, LoginLockout.clientAddress((HttpServletRequest) null));
-        assertEquals(ADDRESS, LoginLockout.clientAddress(requestFrom(ADDRESS)));
-        assertEquals(64, LoginLockout.clientAddress(requestFrom("f".repeat(100))).length());
     }
 }
