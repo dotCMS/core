@@ -1,6 +1,6 @@
 import { patchState, signalState } from '@ngrx/signals';
 
-import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
@@ -87,9 +87,6 @@ export class DotUvePaletteComponent {
         tablist: { class: 'bg-gray-100' }
     };
 
-    /** Emits whenever the active tab in the palette changes. */
-    onTabChange = output<UVE_PALETTE_TABS>();
-
     protected readonly TABS_MAP = UVE_PALETTE_TABS;
     protected readonly DotUVEPaletteListTypes = DotUVEPaletteListTypes;
 
@@ -143,7 +140,6 @@ export class DotUvePaletteComponent {
         if (value !== undefined && value !== null) {
             const tab = value as UVE_PALETTE_TABS;
             patchState(this.#localState, { currentTab: tab });
-            this.onTabChange.emit(tab);
         }
     }
 
