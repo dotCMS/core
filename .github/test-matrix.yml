@@ -162,7 +162,8 @@ test_types:
     defaults:
       needs_license: true
       needs_docker: true
-      needs_node: true
+      # Karate runs on the JVM only; nothing in test-karate installs or runs Node.
+      needs_node: false
       docker_images: "docker.image.postgres docker.image.search docker.image.search.upgrade"
       needs_maven_deps: false
       base_maven_args: >-

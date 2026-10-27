@@ -1113,6 +1113,20 @@ else
   bad "exactly Postman, Karate and E2E skip the dependency cache and the maven-repo artifact" \
     "types with needs_maven_deps: false = '$OFF_TYPES' (want e2e,karate,postman); suite-level overrides = $SUITE_OVERRIDES (want 0)"
 fi
+# needs_node restores the Node binary (60 MB) and core-web's pnpm store (495 MB). Only the
+# suites that run Node get them: Postman (newman), E2E (Playwright) and the frontend unit
+# tests. Karate, the integration suites, JVM and CLI run none, and the war carries core-web.
+NODE_TYPES="$(yq '[.test_types | to_entries | .[] | select(.value.defaults.needs_node == true) | .key] | sort | join(",")' "$TEST_MATRIX")"
+NODE_OVERRIDES="$(yq '[.test_types[] | (.suites // [])[] | select(has("needs_node"))] | length' "$TEST_MATRIX")"
+if [[ "$(yq '.defaults.needs_node // false' "$TEST_MATRIX")" == "false" \
+   && "$NODE_TYPES" == "e2e,frontend,postman" && "$NODE_OVERRIDES" == "0" ]]; then
+  ok "exactly Postman, E2E and the frontend unit tests restore Node and the pnpm store"
+else
+  bad "exactly Postman, E2E and the frontend unit tests restore Node and the pnpm store" \
+    "types with needs_node: true = '$NODE_TYPES' (want e2e,frontend,postman); suite-level overrides = $NODE_OVERRIDES (want 0)"
+fi
+has "$TEST_PHASE" 'requires-node: \$\{\{ matrix\.needs_node == true \}\}' \
+  "test phase forwards needs_node to the Node and pnpm steps"
 
 # The Javadoc step runs Maven against ~/.m2/repository, which in reuse mode holds only
 # the release coordinates. It needs the dependency cache, restored AFTER publishing so
