@@ -2,7 +2,8 @@
 
 Repeated failed logins lock the failing source out of the account for a fixed time. The code is
 `com.dotcms.auth.LoginLockout`; state lives in the `login_lockout` table, so every node of a cluster sees
-the same counts and locks.
+the same counts and locks. Times are taken from the database clock, so nodes whose own clocks differ still
+agree on when a lock ends.
 
 ## How it works
 

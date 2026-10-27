@@ -247,6 +247,17 @@ public class LoginLockoutTest {
     }
 
     /**
+     * @return the database's current time, which the shared lockout instance measures locks against
+     */
+    private static long databaseNow() throws Exception {
+        try {
+            return LoginLockout.DatabaseClock.readDatabaseTime();
+        } finally {
+            DbConnectionFactory.closeSilently();
+        }
+    }
+
+    /**
      * Makes every lock on the account run out now, as if the lock length had passed.
      */
     private static void expireLocks(final User user) throws Exception {
@@ -396,14 +407,15 @@ public class LoginLockoutTest {
     /**
      * Given: an address that has been locked out once and whose lock has run out
      * When: it fails once, and then reaches the limit again
-     * Then: one failure does not relock it, and the second lock is the same fixed length as the first
+     * Then: one failure does not relock it, and the second lock is the same fixed length as the first,
+     *       both measured by the database clock
      */
     @Test
     public void test_lock_length_is_fixed_and_count_starts_over() throws Exception {
         final User user = newUser();
         final long expectedMillis = LoginLockout.getInstance().lockSeconds() * 1000L;
         try {
-            long before = System.currentTimeMillis();
+            long before = databaseNow();
             lockByFailedLogins(user);
             long length = lockedUntil(user, ADDRESS) - before;
             assertTrue("first lock " + length + "ms", length >= expectedMillis && length < expectedMillis + 60_000L);
@@ -413,7 +425,7 @@ public class LoginLockoutTest {
             assertFalse(lockedFrom(user, ADDRESS));
 
             failLogins(user, LIMIT - 1);
-            before = System.currentTimeMillis();
+            before = databaseNow();
             assertTrue(lockedFrom(user, ADDRESS));
             length = lockedUntil(user, ADDRESS) - before;
             assertTrue("second lock " + length + "ms", length <= expectedMillis && length > expectedMillis - 60_000L);

@@ -50,7 +50,8 @@ import java.util.function.LongSupplier;
  * a client that sends many requests at once just gets some refusals it can retry. Locks last a fixed
  * time and do not grow. While a lock applies every password check fails, including the correct
  * password, and nothing is counted. A successful login clears the count for its own address; a password
- * reset or a new password set by an administrator clears everything for the account.
+ * reset or a new password set by an administrator clears everything for the account. Times come from
+ * the database clock, so nodes whose own clocks differ still agree on when a lock ends.
  *
  * <p>The client address is {@link HttpServletRequest#getRemoteAddr()}. Behind a proxy it is the real
  * client only when Tomcat's {@code RemoteIpValve} trusts that proxy (the bundled {@code server.xml}
@@ -200,7 +201,48 @@ public final class LoginLockout {
         }
     }
 
-    private static final LoginLockout INSTANCE = new LoginLockout(System::currentTimeMillis);
+    /**
+     * Milliseconds since the epoch by the database's clock, so every node agrees on when a count started
+     * and when a lock ends even if their own clocks differ. The difference between the database clock and
+     * this node's is read at most once a minute; in between, this node's clock carries it forward. If the
+     * read fails, the last known difference is kept (none at first) and it is tried again a minute later.
+     */
+    static final class DatabaseClock implements LongSupplier {
+
+        private static final String NOW_SQL = "SELECT (EXTRACT(EPOCH FROM clock_timestamp()) * 1000)::bigint AS now";
+
+        private static final long SYNC_INTERVAL_MILLIS = 60_000L;
+
+        private volatile long offset;
+        private volatile long nextSync;
+
+        /**
+         * @return the current time by the database clock, in milliseconds since the epoch
+         */
+        @Override
+        public long getAsLong() {
+            final long local = System.currentTimeMillis();
+            if (local >= nextSync) {
+                nextSync = local + SYNC_INTERVAL_MILLIS;
+                try {
+                    offset = readDatabaseTime() - System.currentTimeMillis();
+                } catch (final DotDataException | RuntimeException e) {
+                    Logger.warn(LoginLockout.class, "Unable to read the database clock for login lockout: "
+                            + e.getMessage());
+                }
+            }
+            return local + offset;
+        }
+
+        /**
+         * @return the database's current time, in milliseconds since the epoch
+         */
+        static long readDatabaseTime() throws DotDataException {
+            return ((Number) new DotConnect().setSQL(NOW_SQL).loadObjectResults().get(0).get("now")).longValue();
+        }
+    }
+
+    private static final LoginLockout INSTANCE = new LoginLockout(new DatabaseClock());
 
     private final LongSupplier clock;
     private final AtomicLong lastMaintenance = new AtomicLong();
