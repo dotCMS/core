@@ -2,7 +2,6 @@ package com.dotcms.auth;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
-import com.dotcms.featureflag.FeatureFlagName;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -67,7 +66,7 @@ import java.util.function.LongSupplier;
  *
  * <p>Configuration:
  * <ul>
- *     <li>{@code FEATURE_FLAG_AUTH_LOGIN_LOCKOUT} (default {@code true})</li>
+ *     <li>{@code AUTH_LOCKOUT_ENABLED}: switches lockout on or off (default {@code true})</li>
  *     <li>{@code auth.max.failures.limit}: attempts per address (portal property, default 5)</li>
  *     <li>{@code AUTH_LOCKOUT_ACCOUNT_MAX_FAILURES}: failures per account from all addresses
  *     (default 0, which leaves the account-wide lock off)</li>
@@ -77,7 +76,11 @@ import java.util.function.LongSupplier;
  */
 public final class LoginLockout {
 
-    public static final String LOCKOUT_ENABLED = FeatureFlagName.FEATURE_FLAG_AUTH_LOGIN_LOCKOUT;
+    /**
+     * Switches lockout on or off; on when unset. A shipped default that can be overridden, read with
+     * {@link Config} like the other {@code AUTH_LOCKOUT_*} settings rather than declared as a feature flag.
+     */
+    public static final String LOCKOUT_ENABLED = "AUTH_LOCKOUT_ENABLED";
     public static final String LOCKOUT_DURATION_SECONDS = "AUTH_LOCKOUT_DURATION_SECONDS";
     public static final String LOCKOUT_WINDOW_SECONDS = "AUTH_LOCKOUT_WINDOW_SECONDS";
     public static final String LOCKOUT_ACCOUNT_MAX_FAILURES = "AUTH_LOCKOUT_ACCOUNT_MAX_FAILURES";

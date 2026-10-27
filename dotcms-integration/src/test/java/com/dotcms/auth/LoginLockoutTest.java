@@ -1021,7 +1021,7 @@ public class LoginLockoutTest {
     }
 
     /**
-     * Given: lockout switched off with {@code FEATURE_FLAG_AUTH_LOGIN_LOCKOUT=false}
+     * Given: lockout switched off with {@code AUTH_LOCKOUT_ENABLED=false}
      * When: more wrong passwords than the limit are tried, on the main login and over WebDAV
      * Then: nothing is recorded or locked and the correct password still works on every path
      */

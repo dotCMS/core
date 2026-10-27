@@ -158,13 +158,6 @@ public interface FeatureFlagName {
     String FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS = "FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS";
 
     /**
-     * Login lockout after repeated failed logins ({@link com.dotcms.auth.LoginLockout}): per account and
-     * client address, plus an account-wide limit. The tuning values ({@code AUTH_LOCKOUT_*}) are read
-     * separately.
-     */
-    String FEATURE_FLAG_AUTH_LOGIN_LOCKOUT = "FEATURE_FLAG_AUTH_LOGIN_LOCKOUT";
-
-    /**
      * Lets users with the Apps portlet change and read Apps configuration, upload app descriptors
      * and remove apps, as they could before Apps configuration became an administrator setting.
      * Off by default; kept for one release for installations that delegated Apps configuration to

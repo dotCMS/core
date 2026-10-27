@@ -41,7 +41,7 @@ they are neither counted nor blocked.
 
 | Key | Default | Meaning |
 |---|---|---|
-| `FEATURE_FLAG_AUTH_LOGIN_LOCKOUT` | `true` | Turns lockout on or off. Env var: `DOT_FEATURE_FLAG_AUTH_LOGIN_LOCKOUT`. |
+| `AUTH_LOCKOUT_ENABLED` | `true` | Turns lockout on or off. Env var: `DOT_AUTH_LOCKOUT_ENABLED`. |
 | `auth.max.failures.limit` | `5` | Attempts per address and account in a window (portal property). `0` also turns lockout off. |
 | `AUTH_LOCKOUT_ACCOUNT_MAX_FAILURES` | `0` (off) | Failures per account from all addresses in a window before the account is locked for everyone. Set above 0 to enable. |
 | `AUTH_LOCKOUT_WINDOW_SECONDS` | `3600` | How long attempts are counted together. |
@@ -73,4 +73,4 @@ accounts, or the address is an untrusted proxy.
    its source.
 5. **Every lock shows the same proxy or load-balancer address:** Tomcat isn't seeing real client
    addresses. Set `CMS_REMOTEIP_INTERNALPROXIES` (see above).
-6. **Turn lockout off:** set `DOT_FEATURE_FLAG_AUTH_LOGIN_LOCKOUT=false`.
+6. **Turn lockout off:** set `DOT_AUTH_LOCKOUT_ENABLED=false`.
