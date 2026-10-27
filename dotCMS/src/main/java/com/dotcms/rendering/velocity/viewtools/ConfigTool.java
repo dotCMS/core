@@ -1,8 +1,10 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
@@ -22,6 +24,10 @@ import com.dotmarketing.util.UtilMethods;
  * the normalized form {@link Config#envKey(String)} produces, so every spelling Config accepts for
  * a key is treated alike. A template that needs a value beyond these should get it from
  * {@code $dotsecrets}.
+ *
+ * <p>While existing templates are migrated, {@value #LEGACY_ACCESS_PROP} restores the earlier
+ * rule: every property is readable unless its name marks it as a credential or it is listed in
+ * {@value #RESTRICTED_KEYS_PROP}. The setting is meant to be temporary.
  */
 public class ConfigTool implements ViewTool {
 
@@ -37,6 +43,33 @@ public class ConfigTool implements ViewTool {
      * browser API key. The System Table works without a restart.
      */
     public static final String ALLOWED_KEYS_PROP = "velocity.configtool.allowed.keys";
+
+    /**
+     * dotCMS Config key (env: {@code DOT_VELOCITY_CONFIGTOOL_LEGACY_ACCESS}). Default {@code false}:
+     * templates read only {@value #TEMPLATE_KEY_PREFIX} properties, the bundled keys and
+     * {@value #ALLOWED_KEYS_PROP}. Set it to {@code true} to let templates read every other property
+     * too, except the ones whose name marks them as a credential and the ones listed in
+     * {@value #RESTRICTED_KEYS_PROP}, while templates are migrated. Deprecated: planned for removal.
+     */
+    public static final String LEGACY_ACCESS_PROP = "velocity.configtool.legacy.access";
+
+    /**
+     * dotCMS Config key (env: {@code DOT_VELOCITY_CONFIGTOOL_RESTRICTED_KEYS}): comma-separated
+     * additional keys templates may not read while {@value #LEGACY_ACCESS_PROP} is on. It never
+     * reduces the keys readable by default.
+     */
+    public static final String RESTRICTED_KEYS_PROP = "velocity.configtool.restricted.keys";
+
+    /** Fragments that mark a key as a credential wherever they appear in the normalized key. */
+    private static final List<String> CREDENTIAL_FRAGMENTS = List.of(
+            "PASSWORD", "PASSWD", "PASSPHRASE", "SECRET", "TOKEN", "CREDENTIAL", "APIKEY",
+            "ACCESSKEY", "PRIVATE");
+
+    /** Short words that mark a key as a credential when they form a whole segment of the key. */
+    private static final Set<String> CREDENTIAL_SEGMENTS = Set.of(
+            "PWD", "PASS", "KEY", "KEYS", "SALT", "AUTH", "JWT", "KEYSTORE", "TRUSTSTORE");
+
+    private static final AtomicBoolean legacyAccessAnnounced = new AtomicBoolean(false);
 
     /** Normalized form of the prefix, as {@link #normalize(String)} produces it. */
     private static final String NORMALIZED_PREFIX = normalize(TEMPLATE_KEY_PREFIX + "X")
@@ -174,9 +207,11 @@ public class ConfigTool implements ViewTool {
     }
 
     /**
-     * Tells whether templates may read the given property: its name starts with
-     * {@value #TEMPLATE_KEY_PREFIX}, it is one of the properties the bundled templates read, or it
-     * is listed in {@value #ALLOWED_KEYS_PROP}. Any spelling Config accepts for the name works.
+     * Tells whether templates may read the given property. By default that is when its name starts
+     * with {@value #TEMPLATE_KEY_PREFIX}, it is one of the properties the bundled templates read, or
+     * it is listed in {@value #ALLOWED_KEYS_PROP}. While {@value #LEGACY_ACCESS_PROP} is on, every
+     * other property is readable too unless its name marks it as a credential or it is listed in
+     * {@value #RESTRICTED_KEYS_PROP}. Any spelling Config accepts for the name works.
      *
      * @param name the property name as the template passed it
      * @return {@code true} if the property may be returned to the template
@@ -186,27 +221,73 @@ public class ConfigTool implements ViewTool {
             return false;
         }
         final String key = normalize(name);
+        if (isAllowedByDefault(key)) {
+            return true;
+        }
+        if (!legacyAccess()) {
+            return false;
+        }
+        return !listedIn(RESTRICTED_KEYS_PROP, key) && !looksLikeCredential(key);
+    }
+
+    /**
+     * @param key a normalized key
+     * @return {@code true} if the key is readable without {@value #LEGACY_ACCESS_PROP}
+     */
+    private static boolean isAllowedByDefault(final String key) {
         return key.startsWith(NORMALIZED_PREFIX)
                 || BUNDLED_TEMPLATE_KEYS.contains(key)
                 || listedIn(ALLOWED_KEYS_PROP, key);
     }
 
+    private static boolean legacyAccess() {
+        final boolean on = Config.getBooleanProperty(LEGACY_ACCESS_PROP, false);
+        if (on && legacyAccessAnnounced.compareAndSet(false, true)) {
+            Logger.warn(ConfigTool.class, String.format("'%s' is on: templates may read every "
+                    + "configuration property except credential-like and restricted ones. Name the "
+                    + "properties templates need %s* or list them in '%s', then turn it off.",
+                    LEGACY_ACCESS_PROP, TEMPLATE_KEY_PREFIX, ALLOWED_KEYS_PROP));
+        }
+        return on;
+    }
+
     /**
-     * Decides whether templates may read the given property and warns, once an hour per key,
-     * when they may not.
+     * Decides whether templates may read the given property and warns, once an hour per key: when
+     * the property is withheld, and when it is readable only because {@value #LEGACY_ACCESS_PROP}
+     * is on, so that the logs say what to do next.
      */
     private static boolean isReadable(final String name) {
-        if (isAllowedKey(name)) {
-            return true;
+        if (!isAllowedKey(name)) {
+            if (UtilMethods.isSet(name)) {
+                Logger.warnEvery(ConfigTool.class, "configtool-withheld-" + normalize(name),
+                        String.format("Config property '%s' is not readable from templates. Name it "
+                                + "%s*, list it in '%s', or set '%s=true' temporarily while templates "
+                                + "are migrated.", name, TEMPLATE_KEY_PREFIX, ALLOWED_KEYS_PROP,
+                                LEGACY_ACCESS_PROP),
+                        WITHHELD_KEY_WARNING_MILLIS);
+            }
+            return false;
         }
-        if (UtilMethods.isSet(name)) {
-            Logger.warnEvery(ConfigTool.class, "configtool-withheld-" + normalize(name),
-                    String.format("Config property '%s' is not readable from templates. "
-                            + "Name it %s* or list it in '%s' to allow it.", name,
-                            TEMPLATE_KEY_PREFIX, ALLOWED_KEYS_PROP),
+        final String key = normalize(name);
+        if (!isAllowedByDefault(key)) {
+            Logger.warnEvery(ConfigTool.class, "configtool-legacy-" + key,
+                    String.format("Config property '%s' is readable from templates only because '%s' "
+                            + "is true. Name it %s* or list it in '%s' before turning that off.",
+                            name, LEGACY_ACCESS_PROP, TEMPLATE_KEY_PREFIX, ALLOWED_KEYS_PROP),
                     WITHHELD_KEY_WARNING_MILLIS);
         }
-        return false;
+        return true;
+    }
+
+    /**
+     * @param key a normalized key
+     * @return {@code true} if the key's name marks it as a credential
+     */
+    private static boolean looksLikeCredential(final String key) {
+        if (CREDENTIAL_FRAGMENTS.stream().anyMatch(key::contains)) {
+            return true;
+        }
+        return Arrays.stream(key.split("[^A-Z0-9]+")).anyMatch(CREDENTIAL_SEGMENTS::contains);
     }
 
     /**

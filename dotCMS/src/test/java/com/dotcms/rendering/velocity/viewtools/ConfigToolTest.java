@@ -191,4 +191,119 @@ public class ConfigToolTest {
         assertTrue(ConfigTool.isAllowedKey("DEFAULT_TEMPLATE_NAME"));
         assertFalse(ConfigTool.isAllowedKey("configtool.test.site.title"));
     }
+
+    /**
+     * A key whose name looks like a credential can still be made readable by listing it, for
+     * example a publishable browser key.
+     */
+    @Test
+    public void allowed_keys_setting_can_list_a_credential_looking_key() {
+        setEnvStyleProperty("DOT_CONFIGTOOL_TEST_MAPS_API_KEY", "public-browser-key");
+        assertEquals("fallback", configTool.getStringProperty("configtool.test.maps.api.key", "fallback"));
+
+        setProperty(ConfigTool.ALLOWED_KEYS_PROP, "configtool.test.maps.api.key");
+
+        assertEquals("public-browser-key", configTool.getStringProperty("configtool.test.maps.api.key"));
+    }
+
+    /**
+     * The legacy access setting is off unless an operator turns it on; by default other keys stay
+     * withheld.
+     */
+    @Test
+    public void legacy_access_is_off_by_default() {
+        assertFalse(Config.getBooleanProperty(ConfigTool.LEGACY_ACCESS_PROP, false));
+        setEnvStyleProperty("DOT_CONFIGTOOL_TEST_SITE_NAME", "stored-value");
+        assertNull(configTool.getStringProperty("configtool.test.site.name"));
+    }
+
+    /**
+     * With legacy access on, ordinary keys become readable again under every spelling, so a site
+     * whose templates read their own keys can be unblocked while those keys are renamed.
+     */
+    @Test
+    public void legacy_access_makes_ordinary_keys_readable() {
+        setProperty(ConfigTool.LEGACY_ACCESS_PROP, "true");
+        setEnvStyleProperty("DOT_CONFIGTOOL_TEST_SITE_NAME", "stored-value");
+        setEnvStyleProperty("DOT_CONFIGTOOL_TEST_PAGE_SIZE", "25");
+
+        for (final String spelling : new String[]{"configtool.test.site.name", "CONFIGTOOL_TEST_SITE_NAME",
+                "configtool-test-site-name", "DOT_CONFIGTOOL_TEST_SITE_NAME"}) {
+            assertTrue(spelling, ConfigTool.isAllowedKey(spelling));
+            assertEquals(spelling, "stored-value", configTool.getStringProperty(spelling));
+        }
+        assertEquals(25, configTool.getIntProperty("configtool.test.page.size", 7));
+        assertTrue(ConfigTool.isAllowedKey("VELOCITY_PUBLIC_ANYTHING"));
+        assertTrue(ConfigTool.isAllowedKey("DEFAULT_TEMPLATE_NAME"));
+    }
+
+    /**
+     * With legacy access on, keys whose names mark them as credentials are still withheld, under
+     * every spelling, by every getter.
+     */
+    @Test
+    public void legacy_access_still_withholds_credential_looking_keys() {
+        setProperty(ConfigTool.LEGACY_ACCESS_PROP, "true");
+        final String[][] credentialKeys = {
+                {"DOT_CONFIGTOOL_TEST_SMTP_PASSWORD", "configtool.test.smtp.password"},
+                {"DOT_CONFIGTOOL_TEST_DB_PWD", "configtool.test.db.pwd"},
+                {"DOT_CONFIGTOOL_TEST_CLIENT_SECRET", "configtool.test.client.secret"},
+                {"DOT_CONFIGTOOL_TEST_ACCESS_TOKEN", "configtool.test.access.token"},
+                {"DOT_CONFIGTOOL_TEST_API_KEY", "configtool.test.api.key"},
+                {"DOT_CONFIGTOOL_TEST_APIKEY", "configtool.test.apikey"},
+                {"DOT_CONFIGTOOL_TEST_SECRETKEY", "configtool.test.secretkey"},
+                {"DOT_CONFIGTOOL_TEST_SERVICE_CREDENTIALS", "configtool.test.service.credentials"},
+                {"DOT_CONFIGTOOL_TEST_HASH_SALT", "configtool.test.hash.salt"},
+                {"DOT_CONFIGTOOL_TEST_PRIVATE_PEM", "configtool.test.private.pem"},
+                {"DOT_CONFIGTOOL_TEST_BASIC_AUTH_USER", "configtool.test.basic.auth.user"},
+        };
+        for (final String[] key : credentialKeys) {
+            setEnvStyleProperty(key[0], "stored-value");
+            assertEquals(key[1], "stored-value", Config.getStringProperty(key[1], null));
+            assertFalse(key[1], ConfigTool.isAllowedKey(key[1]));
+            assertFalse(key[0], ConfigTool.isAllowedKey(key[0]));
+            assertEquals(key[1], "fallback", configTool.getStringProperty(key[1], "fallback"));
+            assertArrayEquals(key[1], new String[0], configTool.getStringArrayProperty(key[1]));
+        }
+        setEnvStyleProperty("DOT_CONFIGTOOL_TEST_NUMERIC_PASSWORD", "1234");
+        assertEquals(7, configTool.getIntProperty("configtool.test.numeric.password", 7));
+        assertEquals(0L, configTool.getLongProperty("configtool.test.numeric.password"));
+        assertEquals(0f, configTool.getFloatProperty("configtool.test.numeric.password"), 0f);
+        setEnvStyleProperty("DOT_CONFIGTOOL_TEST_SECRET_ENABLED", "true");
+        assertFalse(configTool.getBooleanProperty("configtool.test.secret.enabled"));
+    }
+
+    /**
+     * With legacy access on, operators can still withhold extra keys whose names do not look like
+     * credentials by listing them in {@code velocity.configtool.restricted.keys}; the allowed list
+     * wins over the restricted one.
+     */
+    @Test
+    public void legacy_access_honours_restricted_and_allowed_lists() {
+        setProperty(ConfigTool.LEGACY_ACCESS_PROP, "true");
+        setEnvStyleProperty("DOT_CONFIGTOOL_TEST_INTERNAL_ENDPOINT", "http://internal.example");
+        assertEquals("http://internal.example",
+                configTool.getStringProperty("configtool.test.internal.endpoint"));
+
+        setProperty(ConfigTool.RESTRICTED_KEYS_PROP, "CONFIGTOOL_TEST_INTERNAL_ENDPOINT");
+        assertFalse(ConfigTool.isAllowedKey("configtool.test.internal.endpoint"));
+        assertEquals("fallback", configTool.getStringProperty("configtool.test.internal.endpoint", "fallback"));
+
+        setProperty(ConfigTool.ALLOWED_KEYS_PROP, "configtool.test.internal.endpoint");
+        assertEquals("http://internal.example",
+                configTool.getStringProperty("configtool.test.internal.endpoint"));
+    }
+
+    /**
+     * The restricted list has no effect while legacy access is off: nothing outside the allowed
+     * set is readable anyway, and the allowed set is not reduced by it.
+     */
+    @Test
+    public void restricted_keys_do_not_reduce_the_allowed_set() {
+        setEnvStyleProperty("DOT_VELOCITY_PUBLIC_TEST_SITE_TITLE", "My Site");
+        setProperty(ConfigTool.RESTRICTED_KEYS_PROP, "VELOCITY_PUBLIC_TEST_SITE_TITLE,DEFAULT_TEMPLATE_NAME");
+
+        assertEquals("My Site", configTool.getStringProperty("velocity.public.test.site.title"));
+        assertTrue(ConfigTool.isAllowedKey("DEFAULT_TEMPLATE_NAME"));
+    }
 }
