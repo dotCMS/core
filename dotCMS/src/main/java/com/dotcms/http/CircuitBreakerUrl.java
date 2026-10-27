@@ -20,10 +20,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Serializable;
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -43,25 +40,17 @@ import net.jodah.failsafe.FailsafeException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.mutable.MutableBoolean;
 import org.apache.http.Header;
-import org.apache.http.HttpHost;
-import org.apache.http.HttpRequest;
 import org.apache.http.HttpResponse;
-import org.apache.http.ProtocolException;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.client.utils.URIUtils;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.DefaultRedirectStrategy;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.protocol.HttpContext;
-import org.apache.http.protocol.HttpCoreContext;
 
 /**
  * Defaults to GET requests with 2000 timeout
@@ -343,7 +332,7 @@ public class CircuitBreakerUrl {
                                 .setSocketTimeout(Math.toIntExact(this.timeoutMs)).build();
                         try (final CloseableHttpClient httpclient = HttpClientBuilder.create()
                                 .setMaxConnTotal(circuitBreakerMaxConnTotal.get())
-                                .setRedirectStrategy(PrivateSubnetRedirectStrategy.INSTANCE)
+                                .setRedirectStrategy(new RemoteCallRedirectStrategy())
                                 .setDnsResolver(new RemoteCallDnsResolver())
                                 .setDefaultRequestConfig(config).build()) {
                             
@@ -439,7 +428,7 @@ public class CircuitBreakerUrl {
                                 .setSocketTimeout(Math.toIntExact(this.timeoutMs)).build();
                         try (final CloseableHttpClient httpclient = HttpClientBuilder.create()
                                 .setMaxConnTotal(circuitBreakerMaxConnTotal.get())
-                                .setRedirectStrategy(PrivateSubnetRedirectStrategy.INSTANCE)
+                                .setRedirectStrategy(new RemoteCallRedirectStrategy())
                                 .setDnsResolver(new RemoteCallDnsResolver())
                                 .setDefaultRequestConfig(config).build()) {
 
@@ -652,95 +641,4 @@ public class CircuitBreakerUrl {
 
     }
 
-    /**
-     * Redirect strategy that applies the private-subnet check to every redirect target, not only
-     * to the first URL. Without it, a public URL that redirects to loopback, a cluster address or
-     * a cloud metadata endpoint is followed when redirects are enabled.
-     */
-    @VisibleForTesting
-    static final class PrivateSubnetRedirectStrategy extends DefaultRedirectStrategy {
-
-        static final PrivateSubnetRedirectStrategy INSTANCE = new PrivateSubnetRedirectStrategy();
-
-        /**
-         * Headers that carry the caller's identity. They are not sent to a host other than the one
-         * the caller addressed.
-         */
-        private static final List<String> CREDENTIAL_HEADERS =
-                List.of("Authorization", "Cookie", "Proxy-Authorization");
-
-        /**
-         * Builds the redirect and sets its headers explicitly. HttpClient copies the original
-         * request's headers onto a redirect only when the redirect has none, and a plain GET redirect
-         * has none, so removing headers after the fact would be undone by that copy.
-         *
-         * <p>A redirect to another host or port keeps every header except the credential headers.
-         * If the request carried nothing but credentials, nothing is left to send, and the redirect
-         * is refused rather than letting HttpClient copy the credentials back.</p>
-         */
-        @Override
-        public HttpUriRequest getRedirect(final HttpRequest request, final HttpResponse response,
-                                          final HttpContext context) throws ProtocolException {
-            final HttpUriRequest redirect = super.getRedirect(request, response, context);
-            final Header[] headers = request.getAllHeaders();
-            final HttpHost previous = context == null ? null : HttpCoreContext.adapt(context).getTargetHost();
-            if (sameOrigin(previous, URIUtils.extractHost(redirect.getURI()))) {
-                redirect.setHeaders(headers);
-                return redirect;
-            }
-            final Header[] kept = Arrays.stream(headers)
-                    .filter(header -> CREDENTIAL_HEADERS.stream().noneMatch(header.getName()::equalsIgnoreCase))
-                    .toArray(Header[]::new);
-            if (kept.length == 0 && headers.length > 0) {
-                throw new ProtocolException("Redirect to " + redirect.getURI().getHost()
-                        + " is not followed: the request carries only credentials");
-            }
-            redirect.setHeaders(kept);
-            return redirect;
-        }
-
-        /**
-         * Whether two hosts are the same origin for header purposes: the host names match ignoring
-         * case, and the ports match once a missing port is replaced by the default for the scheme.
-         */
-        @VisibleForTesting
-        static boolean sameOrigin(final HttpHost previous, final HttpHost target) {
-            return previous != null && target != null
-                    && previous.getHostName().equalsIgnoreCase(target.getHostName())
-                    && defaultPort(previous) == defaultPort(target);
-        }
-
-        private static int defaultPort(final HttpHost host) {
-            if (host.getPort() != -1) {
-                return host.getPort();
-            }
-            return "https".equalsIgnoreCase(host.getSchemeName()) ? 443 : 80;
-        }
-
-        @Override
-        public URI getLocationURI(final HttpRequest request, final HttpResponse response,
-                                  final HttpContext context) throws ProtocolException {
-            final URI location = super.getLocationURI(request, response, context);
-            final HttpHost target = context == null ? null : HttpCoreContext.adapt(context).getTargetHost();
-            final String originScheme = target == null ? null : target.getSchemeName();
-            checkRedirectTarget(location, allowAccessToPrivateSubnets.get(), originScheme);
-            return location;
-        }
-
-        @VisibleForTesting
-        static void checkRedirectTarget(final URI location, final boolean allowPrivateSubnets,
-                                        final String originScheme) throws ProtocolException {
-            final String scheme = location.getScheme() == null ? "" : location.getScheme().toLowerCase();
-            if (!"http".equals(scheme) && !"https".equals(scheme)) {
-                throw new ProtocolException("Redirect to scheme '" + scheme + "' is not allowed");
-            }
-            if ("https".equalsIgnoreCase(originScheme) && "http".equals(scheme)) {
-                throw new ProtocolException("Redirect from https to http is not followed: " + location.getHost());
-            }
-            if (!allowPrivateSubnets && IPUtils.isIpPrivateSubnet(location.getHost())) {
-                throw new ProtocolException("Remote HttpRequests cannot be redirected to private subnets: "
-                        + location.getHost());
-            }
-        }
-    }
 }
