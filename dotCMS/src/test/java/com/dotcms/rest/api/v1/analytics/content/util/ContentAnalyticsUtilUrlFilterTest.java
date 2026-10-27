@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for {@link ContentAnalyticsUtil#applyUrlParamFilter(Map, Map)}, the step of the LTS event
- * ingest path that cleans the page URL fields of the events before they are sent (private issue #632).
+ * ingest path that cleans the page URL fields of the events before they are sent.
  * The filter rules themselves are covered by {@code UrlParamFilterTest}.
  */
 public class ContentAnalyticsUtilUrlFilterTest {
