@@ -11,6 +11,7 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Sets.SetView;
 import com.google.common.io.ByteStreams;
@@ -28,8 +29,9 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
+import java.io.InvalidClassException;
 import java.io.InputStreamReader;
+import java.io.ObjectInputFilter;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
@@ -37,6 +39,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Key;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -84,6 +89,32 @@ public class AppsUtil {
      * once per JVM per offending site (hostEnvSecret runs per request per param).
      */
     private static final Set<String> SYSTEM_HOST_COLLISION_LOGGED = ConcurrentHashMap.newKeySet();
+
+    private static final String NOT_A_VALID_EXPORT_FILE = "The file is not a valid Apps export. ";
+
+    /**
+     * The classes an Apps export file is written with: the export wrapper and its entries, plus the
+     * JDK types they hold. Files from earlier releases use plain JDK maps and lists, so those stay
+     * here even where the current export writes something else.
+     */
+    private static final Set<Class<?>> EXPORT_FILE_TYPES = Set.of(
+            AppsSecretsImportExport.class, AppSecrets.class, Secret.class, AbstractProperty.class,
+            Type.class, Enum.class, Boolean.class, char[].class, Object[].class, Map.Entry[].class,
+            HashMap.class, LinkedHashMap.class, LinkedList.class, ArrayList.class);
+
+    /**
+     * The forms immutable collections take when written: Guava's immutable maps, which hold each
+     * app's secrets, and the JDK's {@code List.of} / {@code Map.of} collections, which callers may
+     * build an export with. Each is turned back into its collection when read. These classes are
+     * not public, so they are named here.
+     */
+    private static final Set<String> IMMUTABLE_COLLECTION_WRITTEN_FORMS = Set.of(
+            "com.google.common.collect.ImmutableMap$SerializedForm",
+            "com.google.common.collect.ImmutableBiMap$SerializedForm",
+            "java.util.CollSer");
+
+    /** The package-private JDK classes behind {@code List.of}, {@code Map.of} and {@code Stream.toList}. */
+    private static final String JDK_IMMUTABLE_COLLECTIONS_PREFIX = "java.util.ImmutableCollections$";
 
     private AppsUtil() {
     }
@@ -365,16 +396,17 @@ public class AppsUtil {
     }
 
     /**
-     * Ths will return a list of AppSecrets arranged in a map whose key is the site-id
-     * Therefore we have a Secrets by site
-     * @param incomingFile
-     * @param key
-     * @return
-     * @throws DotDataException
-     * @throws IOException
-     * @throws EncryptorException
+     * Decrypts an Apps export file and returns the {@link AppSecrets} it holds, grouped by the id of
+     * the site they belong to. The decrypted contents are read in memory and never written to disk.
+     *
+     * @param incomingFile the encrypted export file
+     * @param key the key derived from the passphrase the file was exported with
+     * @return the exported {@link AppSecrets}, keyed by site id
+     * @throws DotDataException if the file names a class that does not exist locally
+     * @throws IOException if the file cannot be read
+     * @throws IllegalArgumentException if the file cannot be decrypted with the key, or is not a
+     *         valid export
      */
-
      public static Map<String, List<AppSecrets>> importSecrets(final Path incomingFile, final Key key)
             throws DotDataException, IOException {
 
@@ -385,32 +417,60 @@ public class AppsUtil {
         }catch (EncryptorException e){
             throw new IllegalArgumentException("An error occurred while decrypting file contents. ",e.getCause());
         }
-        final File importFile = File.createTempFile("secrets", "export");
-        try (OutputStream outputStream = Files.newOutputStream(importFile.toPath())) {
-            outputStream.write(decryptedBytes);
-        }
-        final AppsSecretsImportExport importExport;
         try {
-            importExport = readObject(importFile.toPath());
-            return importExport.getSecrets();
+            return readObject(decryptedBytes).getSecrets();
         } catch (ClassNotFoundException e) {
             throw new DotDataException(e);
         }
     }
 
     /**
-     * Reads the exported file stream
-     * and returns a wrapper that contains all entries.
-     * @param importFile
-     * @return
-     * @throws IOException
-     * @throws ClassNotFoundException
+     * Reads the decrypted contents of an export file and returns the wrapper holding all its
+     * entries. Only the types an export is made of are read (see {@link #checkExportFileType}); a
+     * file holding anything else, or whose top-level object is not an
+     * {@link AppsSecretsImportExport}, is refused as not being a valid export.
+     *
+     * @param decryptedBytes the decrypted contents of the export file
+     * @return the {@link AppsSecretsImportExport} the file holds
+     * @throws IOException if the contents cannot be read
+     * @throws ClassNotFoundException if the file names a class that does not exist locally
+     * @throws IllegalArgumentException if the file is not a valid export
      */
-    private static AppsSecretsImportExport readObject(final Path importFile)
+    private static AppsSecretsImportExport readObject(final byte[] decryptedBytes)
             throws IOException, ClassNotFoundException {
-        try(InputStream inputStream = Files.newInputStream(importFile)){
-            return (AppsSecretsImportExport) new VersionOverrideObjectInputStream(inputStream).readObject();
+        try (VersionOverrideObjectInputStream inputStream = new VersionOverrideObjectInputStream(
+                new ByteArrayInputStream(decryptedBytes))) {
+            inputStream.setObjectInputFilter(AppsUtil::checkExportFileType);
+            final Object object = inputStream.readObject();
+            if (object instanceof AppsSecretsImportExport) {
+                return (AppsSecretsImportExport) object;
+            }
+            throw new IllegalArgumentException(NOT_A_VALID_EXPORT_FILE);
+        } catch (InvalidClassException e) {
+            throw new IllegalArgumentException(NOT_A_VALID_EXPORT_FILE, e);
         }
+    }
+
+    /**
+     * Decides whether a class found in an export file may be read. Allowed are the Apps types an
+     * export is written with, the JDK types they are built from, and the immutable maps and lists
+     * (Guava's and the JDK's) an export may hold, including the forms they take when written.
+     * Everything else is rejected.
+     *
+     * @param filterInfo the class, array or limits being checked
+     * @return {@code ALLOWED} for a type an export is made of, {@code REJECTED} for any other
+     *         class, and {@code UNDECIDED} for checks that do not name a class
+     */
+    private static ObjectInputFilter.Status checkExportFileType(final ObjectInputFilter.FilterInfo filterInfo) {
+        final Class<?> type = filterInfo.serialClass();
+        if (null == type) {
+            return ObjectInputFilter.Status.UNDECIDED;
+        }
+        final boolean allowed = EXPORT_FILE_TYPES.contains(type)
+                || ImmutableMap.class.isAssignableFrom(type)
+                || IMMUTABLE_COLLECTION_WRITTEN_FORMS.contains(type.getName())
+                || type.getName().startsWith(JDK_IMMUTABLE_COLLECTIONS_PREFIX);
+        return allowed ? ObjectInputFilter.Status.ALLOWED : ObjectInputFilter.Status.REJECTED;
     }
 
     /**
