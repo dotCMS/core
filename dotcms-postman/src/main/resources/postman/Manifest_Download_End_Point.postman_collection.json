@@ -80,7 +80,7 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"bundleName = 'bundleName-' + new Date().getMilliseconds();",
+									"bundleName = 'bundleName-' + Date.now();",
 									"pm.collectionVariables.set(\"bundleName\", bundleName);",
 									""
 								],
@@ -308,7 +308,7 @@
 							"listen": "prerequest",
 							"script": {
 								"exec": [
-									"bundleName = 'bundleName-' + new Date().getMilliseconds();",
+									"bundleName = 'bundleName-' + Date.now();",
 									"pm.collectionVariables.set(\"bundleName\", bundleName);",
 									""
 								],

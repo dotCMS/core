@@ -55,7 +55,7 @@
                       "script": {
                         "exec": [
                           "",
-                          "environmentName = 'environment-' + new Date().getMilliseconds();",
+                          "environmentName = 'environment-' + Date.now();",
                           "pm.collectionVariables.set(\"environmentName\", environmentName);",
                           ""
                         ],
@@ -138,7 +138,7 @@
                       "listen": "prerequest",
                       "script": {
                         "exec": [
-                          "endpointName = 'endpoint-' + new Date().getMilliseconds();",
+                          "endpointName = 'endpoint-' + Date.now();",
                           "pm.collectionVariables.set(\"endpointName\", endpointName);",
                           ""
                         ],
@@ -237,7 +237,7 @@
                       "listen": "prerequest",
                       "script": {
                         "exec": [
-                          "receiverName = 'receiverName-' + new Date().getMilliseconds();",
+                          "receiverName = 'receiverName-' + Date.now();",
                           "pm.collectionVariables.set(\"receiverName\", receiverName);",
                           ""
                         ],
@@ -433,7 +433,7 @@
                     "header": [],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n    \"claims\": {\n        \"label\": \"testing\"\n    },\n    \"expirationSeconds\": 1,\n    \"network\": \"0.0.0.0/0\",\n    \"userId\": \"dotcms.org.1\"\n}",
+                      "raw": "{\n    \"claims\": {\n        \"label\": \"testing\"\n    },\n    \"expirationSeconds\": 3600,\n    \"network\": \"0.0.0.0/0\",\n    \"userId\": \"dotcms.org.1\"\n}",
                       "options": {
                         "raw": {
                           "language": "json"
@@ -493,7 +493,7 @@
                       "script": {
                         "exec": [
                           "",
-                          "environmentName = 'environment-' + new Date().getMilliseconds();",
+                          "environmentName = 'environment-' + Date.now();",
                           "pm.collectionVariables.set(\"environmentName\", environmentName);",
                           ""
                         ],
@@ -576,7 +576,7 @@
                       "listen": "prerequest",
                       "script": {
                         "exec": [
-                          "endpointName = 'endpoint-' + new Date().getMilliseconds();",
+                          "endpointName = 'endpoint-' + Date.now();",
                           "pm.collectionVariables.set(\"endpointName\", endpointName);",
                           ""
                         ],
@@ -814,7 +814,7 @@
                       "script": {
                         "exec": [
                           "",
-                          "environmentName = 'environment-' + new Date().getMilliseconds();",
+                          "environmentName = 'environment-' + Date.now();",
                           "pm.collectionVariables.set(\"environmentName\", environmentName);",
                           ""
                         ],
@@ -897,7 +897,7 @@
                       "listen": "prerequest",
                       "script": {
                         "exec": [
-                          "endpointName = 'endpoint-' + new Date().getMilliseconds();",
+                          "endpointName = 'endpoint-' + Date.now();",
                           "pm.collectionVariables.set(\"endpointName\", endpointName);",
                           ""
                         ],
@@ -1058,7 +1058,8 @@
                           "    pm.collectionVariables.set(\"token\", jsonData.entity.jwt);",
                           "",
                           "    // Keep token values out of Newman logs.",
-                          "    eval(pm.collectionVariables.get(\"wait\"))(2);",
+                          "    // The token lives 5 s, because issuing it can take over a second under load; wait 6 s (the argument is in ms) so the 401 check below sees it expired.",
+                          "    eval(pm.collectionVariables.get(\"wait\"))(6000);",
                           "});"
                         ],
                         "type": "text/javascript"
@@ -1080,7 +1081,7 @@
                     "header": [],
                     "body": {
                       "mode": "raw",
-                      "raw": "{\n    \"claims\": {\n        \"label\": \"testing\"\n    },\n    \"expirationSeconds\": 1,\n    \"network\": \"0.0.0.0/0\",\n    \"userId\": \"dotcms.org.1\"\n}",
+                      "raw": "{\n    \"claims\": {\n        \"label\": \"testing\"\n    },\n    \"expirationSeconds\": 5,\n    \"network\": \"0.0.0.0/0\",\n    \"userId\": \"dotcms.org.1\"\n}",
                       "options": {
                         "raw": {
                           "language": "json"
@@ -1103,7 +1104,7 @@
                       "script": {
                         "exec": [
                           "",
-                          "environmentName = 'environment-' + new Date().getMilliseconds();",
+                          "environmentName = 'environment-' + Date.now();",
                           "pm.collectionVariables.set(\"environmentName\", environmentName);",
                           ""
                         ],
@@ -1186,7 +1187,7 @@
                       "listen": "prerequest",
                       "script": {
                         "exec": [
-                          "endpointName = 'endpoint-' + new Date().getMilliseconds();",
+                          "endpointName = 'endpoint-' + Date.now();",
                           "pm.collectionVariables.set(\"endpointName\", endpointName);",
                           ""
                         ],
@@ -1341,7 +1342,7 @@
                       "script": {
                         "exec": [
                           "",
-                          "environmentName = 'environment-' + new Date().getMilliseconds();",
+                          "environmentName = 'environment-' + Date.now();",
                           "pm.collectionVariables.set(\"environmentName\", environmentName);",
                           ""
                         ],
@@ -1424,7 +1425,7 @@
                       "listen": "prerequest",
                       "script": {
                         "exec": [
-                          "endpointName = 'endpoint-' + new Date().getMilliseconds();",
+                          "endpointName = 'endpoint-' + Date.now();",
                           "pm.collectionVariables.set(\"endpointName\", endpointName);",
                           ""
                         ],

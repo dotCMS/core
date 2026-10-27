@@ -328,7 +328,8 @@
 									"    pm.expect(jsonData.entity.jwt).to.not.eq(undefined);",
 									"    pm.collectionVariables.set(\"token\", jsonData.entity.jwt);",
 									"",
-									"    wait(2000);",
+									"    // The token lives 5 s; wait 6 s so request_pp below sees it expired.",
+									"    wait(6000);",
 									"});"
 								],
 								"type": "text/javascript"
@@ -350,7 +351,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"claims\": {\n        \"label\": \"testing\"\n    },\n    \"expirationSeconds\": 1,\n    \"network\": \"0.0.0.0/0\",\n    \"userId\": \"dotcms.org.1\"\n}",
+							"raw": "{\n    \"claims\": {\n        \"label\": \"testing\"\n    },\n    \"expirationSeconds\": 5,\n    \"network\": \"0.0.0.0/0\",\n    \"userId\": \"dotcms.org.1\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
