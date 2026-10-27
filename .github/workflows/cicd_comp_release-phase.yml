@@ -91,6 +91,9 @@ on:
       CI_MACHINE_TOKEN:
         required: false
         description: 'CI machine token for GitHub API operations'
+      CI_MACHINE_PLUGIN_EXAMPLES_TOKEN:
+        required: false
+        description: 'Fine-grained PAT owned by dotcms-community (plugin-examples, Contents RW) for the plugins release dispatch'
 
 jobs:
   # Publish release artifacts to the S3 repository and upload Javadocs to S3
@@ -233,19 +236,23 @@ jobs:
           # The built-in coordinates below are always required; the repo variable
           # only ADDS to them, so it cannot weaken the guard. Space or comma
           # separated groupId:artifactId.
-          REQUIRED_COORDINATES: com.dotcms:dotcms-core com.dotcms:dotcms-core-web ${{ vars.RELEASE_REQUIRED_COORDINATES }}
+          REQUIRED_COORDINATES: com.dotcms:dotcms-core com.dotcms:dotcms-core-web com.dotcms.samlbundle:com.dotcms.samlbundle ${{ vars.RELEASE_REQUIRED_COORDINATES }}
         run: |
           set -uo pipefail
 
           repo="${MAVEN_REPO:-$HOME/.m2/repository}"
           version="${VERSION:?VERSION is required}"
-          # dotcms-core packages a jar and dotcms-core-web a war; a release
-          # shipping one without the other is partial.
-          coords="${REQUIRED_COORDINATES:-com.dotcms:dotcms-core com.dotcms:dotcms-core-web}"
+          # A release must include core, its webapp, and the matching SAML bundle.
+          coords="${REQUIRED_COORDINATES:-com.dotcms:dotcms-core com.dotcms:dotcms-core-web com.dotcms.samlbundle:com.dotcms.samlbundle}"
           coords="${coords//,/ }"
 
           rc=0
           for coord in $coords; do
+            # Old release tags have no in-reactor SAML and retain their standalone pin.
+            if [[ "$coord" == com.dotcms.samlbundle:com.dotcms.samlbundle &&
+                  ! -f independent-projects/core-plugins/saml-plugin/pom.xml ]]; then
+              continue
+            fi
             group="${coord%%:*}"
             artifact="${coord##*:}"
             if [[ "$coord" != *:* || -z "$group" || -z "$artifact" ]]; then
@@ -326,14 +333,15 @@ jobs:
       - name: Trigger Plugin Repository Update
         env:
           RELEASE_VERSION: ${{ inputs.release_version }}
-          CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+          # A fine-grained PAT has one resource owner, so the dotCMS-owned CI_MACHINE_TOKEN can't reach the dotcms-community org
+          CI_MACHINE_PLUGIN_EXAMPLES_TOKEN: ${{ secrets.CI_MACHINE_PLUGIN_EXAMPLES_TOKEN }}
         run: |
           # shellcheck disable=SC2153
           release_version="${RELEASE_VERSION}"
           response=$(curl -L \
             -X POST \
             -H "Accept: application/vnd.github+json" \
-            -H "Authorization: Bearer ${CI_MACHINE_TOKEN}" \
+            -H "Authorization: Bearer ${CI_MACHINE_PLUGIN_EXAMPLES_TOKEN}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
             https://api.github.com/repos/dotcms-community/plugin-examples/dispatches \
             -d "{\"event_type\": \"on-plugins-release\", \"client_payload\": {\"release_version\": \"${release_version}\"}}" \
@@ -341,7 +349,7 @@ jobs:
             -s)
           http_code=$(echo "$response" | tail -n1)
           if [ "${http_code}" != "204" ]; then
-            echo "Failed to dispatch workflow. HTTP code: $http_code"
+            echo "::warning title=Plugin dispatch failed::dotcms-community/plugin-examples dispatch returned HTTP ${http_code}"
             echo "Response: $response"
           fi
         if: inputs.update_plugins == true && inputs.java-version == ''

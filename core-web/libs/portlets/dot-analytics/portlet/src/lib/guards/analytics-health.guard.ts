@@ -23,7 +23,7 @@ export const analyticsHealthGuard: CanActivateFn = (route, _state) => {
 
     return analyticsService.healthCheck().pipe(
         map((healthStatus) => {
-            if (healthStatus === HealthStatusTypes.AVAILABLE) {
+            if (healthStatus === HealthStatusTypes.OK) {
                 return true;
             }
 

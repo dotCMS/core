@@ -152,6 +152,20 @@ public class TailLogResource {
         return new ResponseEntityListStringView(fileNames);
     }
 
+    /**
+     * Streams the tail of a log file under {@code TAIL_LOG_LOG_FOLDER} as server-sent events.
+     * <p>
+     * Access requires a back-end user with the CMS Administrator role and the Maintenance portlet,
+     * the same requirement as {@link #listLogFiles(HttpServletRequest, HttpServletResponse)}. The
+     * file name must be a plain name (optionally with sub folders) that stays inside the log folder
+     * and matches {@code TAIL_LOG_FILE_REGEX}.
+     *
+     * @param request   the current request
+     * @param fileName  name of the log file, relative to the log folder
+     * @param linesBack how many bytes from the end of the file to send first; 0 or less means the default
+     * @return the event output that receives the log lines and keep-alive events
+     * @throws IOException if the canonical path of the file cannot be resolved
+     */
     @GET
     @Path("/{fileName:.+}/_tail")
     @JSONP
@@ -163,9 +177,11 @@ public class TailLogResource {
         final InitDataObject initData =
                 new WebResource.InitBuilder(new WebResource())
                         .requiredBackendUser(true)
+                        .requireAdmin(true)
                         .requiredFrontendUser(false)
                         .requestAndResponse(request, new EmptyHttpResponse())
                         .rejectWhenNoUser(true)
+                        .requiredPortlet(Portlet.MAINTENANCE)
                         .init();
 
         if(fileName.trim().isEmpty()) {

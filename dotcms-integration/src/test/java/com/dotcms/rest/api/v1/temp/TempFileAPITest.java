@@ -16,9 +16,15 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.util.WebKeys;
+import com.sun.net.httpserver.HttpServer;
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.servlet.http.HttpServletRequest;
 import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
@@ -49,6 +55,32 @@ public class TempFileAPITest {
     public void testValidURL_urlReturn200_returnTrue() {
         final String url =  "https://raw.githubusercontent.com/dotCMS/core/main/dotCMS/src/main/webapp/html/images/skin/logo.gif";
         assertTrue(APILocator.getTempFileAPI().validUrl(url));
+    }
+
+    /**
+     * A loopback URL is reported invalid without the probe request ever being sent.
+     */
+    @Test
+    public void testValidURL_loopbackTarget_returnFalseWithoutContact() throws Exception {
+        final AtomicInteger hits = new AtomicInteger();
+        final HttpServer server = HttpServer.create(
+                new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
+        server.createContext("/", exchange -> {
+            hits.incrementAndGet();
+            final byte[] body = "internal".getBytes(StandardCharsets.UTF_8);
+            exchange.sendResponseHeaders(200, body.length);
+            try (OutputStream out = exchange.getResponseBody()) {
+                out.write(body);
+            }
+        });
+        server.start();
+        try {
+            final String url = "http://127.0.0.1:" + server.getAddress().getPort() + "/internal.txt";
+            assertFalse(APILocator.getTempFileAPI().validUrl(url));
+            assertEquals("the loopback server must never be contacted", 0, hits.get());
+        } finally {
+            server.stop(0);
+        }
     }
 
     @Test

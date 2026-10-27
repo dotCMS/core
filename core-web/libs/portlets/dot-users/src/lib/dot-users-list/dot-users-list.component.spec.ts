@@ -7,6 +7,7 @@ import {
 import { of } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
+import { formatDate } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
@@ -16,6 +17,10 @@ import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
+import {
+    DotUsersDialogMaximizeIconComponent,
+    DotUsersDialogMinimizeIconComponent
+} from './components/dot-users-dialog-fullscreen-icon/dot-users-dialog-fullscreen-icon.component';
 import { DotUsersListComponent } from './dot-users-list.component';
 import { DotUsersListStore } from './store/dot-users-list.store';
 
@@ -62,6 +67,7 @@ const MESSAGES = {
     'users.search.placeholder': 'Search users',
     'users.access.backend': 'Back-end',
     'users.access.frontend': 'Front-end',
+    'users.access.cms-admin': 'CMS Administrator',
     'users.table.header.user': 'User',
     'users.table.header.email': 'Email',
     'users.table.header.roles': 'Roles',
@@ -136,6 +142,7 @@ describe('DotUsersListComponent', () => {
                 selectedUsers: vi.fn().mockReturnValue([]),
                 filter: vi.fn().mockReturnValue(''),
                 roleFilter: vi.fn().mockReturnValue(''),
+                canFilterByRole: vi.fn().mockReturnValue(true),
                 page: vi.fn().mockReturnValue(1),
                 rows: vi.fn().mockReturnValue(20),
                 totalRecords: vi.fn().mockReturnValue(2),
@@ -251,6 +258,13 @@ describe('DotUsersListComponent', () => {
         expect(spectator.queryAll(byTestId('users-access-frontend-chip')).length).toBe(2);
     });
 
+    it('should render CMS Administrator chip only for CMS Administrators', () => {
+        const chips = spectator.queryAll(byTestId('users-access-cms-admin-chip'));
+
+        expect(chips.length).toBe(1);
+        expect(chips[0].textContent).toContain('CMS Administrator');
+    });
+
     it('should render a trailing more button on every visible row when enterprise', () => {
         const buttons = spectator.queryAll(byTestId('users-row-more-btn'));
 
@@ -264,6 +278,37 @@ describe('DotUsersListComponent', () => {
         // hover (and focus-within for keyboard). At rest it stays opacity-0.
         expect(btn?.className).toContain('opacity-0');
         expect(btn?.className).toContain('group-hover:opacity-100');
+    });
+
+    it('should show the date and time of the last login', () => {
+        const cell = spectator.query(byTestId('users-cell-last-login'));
+
+        // Expected value goes through the same formatter the template's
+        // `date` pipe uses, so the assertion holds in any CI timezone.
+        expect(cell?.textContent?.trim()).toBe(
+            formatDate(1717977600000, 'MM/dd/yyyy, h:mm a', 'en-US')
+        );
+        expect(cell?.className).toContain('whitespace-nowrap');
+    });
+
+    it('should open the user dialog maximizable and closable', () => {
+        const dialogService = spectator.inject(DialogService, true);
+        spectator.component.openCreateDialog();
+
+        expect(dialogService.open).toHaveBeenCalledWith(
+            expect.anything(),
+            expect.objectContaining({
+                width: 'min(95vw, 90rem)',
+                height: 'min(92vh, 60rem)',
+                maximizable: true,
+                templates: {
+                    maximizeicon: DotUsersDialogMaximizeIconComponent,
+                    minimizeicon: DotUsersDialogMinimizeIconComponent
+                },
+                closable: true,
+                closeOnEscape: true
+            })
+        );
     });
 
     it('should open the create dialog when openCreateDialog is called', () => {
@@ -464,6 +509,7 @@ describe('DotUsersListComponent — non-enterprise instance', () => {
                 selectedUsers: vi.fn().mockReturnValue([]),
                 filter: vi.fn().mockReturnValue(''),
                 roleFilter: vi.fn().mockReturnValue(''),
+                canFilterByRole: vi.fn().mockReturnValue(true),
                 page: vi.fn().mockReturnValue(1),
                 rows: vi.fn().mockReturnValue(20),
                 totalRecords: vi.fn().mockReturnValue(2),

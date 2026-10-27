@@ -1865,8 +1865,11 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
 
 	/**
 	 * Downloads the list of contentlets of the specified Content Type Inode as
-	 * a CSV file.
-	 * 
+	 * a CSV file. The file has one column per exportable field of the Content Type,
+	 * named after the field variable. Image and File fields are written as the dotCMS
+	 * path of the referenced file, which is also what the content import accepts; an
+	 * empty value, or a file that no longer exists, is written as an empty cell.
+	 *
 	 * @param response
 	 *            - The Struts wrapper for the HTTP Response object.
 	 * @param user
@@ -1987,10 +1990,14 @@ public class EditContentletAction extends DotPortletAction implements DotPortlet
                                 if (null != id && UtilMethods.isSet(id.getId())) {
                                     text = id.getPath();
                                 }
-							} else if (field instanceof ImageField) {
-								final Identifier id = APILocator.getIdentifierAPI().find((String) value);
-								if (null != id && UtilMethods.isSet(id.getId())) {
-									text = id.getPath();
+							} else if (field instanceof ImageField || field instanceof FileField) {
+								// Both field types store the identifier of a file asset; export its path
+								final String fileIdentifier = value.toString();
+								if (UtilMethods.isSet(fileIdentifier)) {
+									final Identifier id = APILocator.getIdentifierAPI().find(fileIdentifier);
+									if (null != id && UtilMethods.isSet(id.getId())) {
+										text = id.getPath();
+									}
 								}
 
 							} else if (field instanceof BinaryField){

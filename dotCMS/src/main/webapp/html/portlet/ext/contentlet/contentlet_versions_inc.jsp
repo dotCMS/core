@@ -5,6 +5,7 @@
 <%@page import="com.dotmarketing.beans.*" %>
 <%@page import="com.dotmarketing.util.*" %>
 <%@page import="com.dotmarketing.business.IdentifierFactory" %>
+<%@page import="com.liferay.util.Xss"%>
 <%@page import="com.liferay.portal.language.LanguageUtil"%>
 <%@page import="com.dotmarketing.factories.WebAssetFactory" %>
 <%@page import="com.dotmarketing.business.APILocator"%>
@@ -116,7 +117,7 @@
 		<% } %>
 		</td>
 		<td> <img src="/html/images/languages/<%= LanguageUtil.getLiteralLocale(langV.getLanguageCode(), langV.getCountryCode()) %>.gif"/>&nbsp;<%=langV.getLanguage()+"&nbsp;"+(UtilMethods.isSet(langV.getCountryCode()) ? ("(" + langV.getCountryCode() + ")&nbsp;") : StringPool.BLANK) %></td>
-		<td><a  href="javascript: editVersion ('<%= vinode %>');"><%= title %></a></td>
+		<td><a  href="javascript: editVersion ('<%= vinode %>');"><%= Xss.encodeForHTML(title) %></a></td>
 <%
 	String modUserName = "";
 	if(UtilMethods.isSet(modUser)){
@@ -125,7 +126,7 @@
 		}catch(Exception e){Logger.debug(this,"No User Found");}
 	}
 %>
-		 <td><%= modUserName %></td>
+		 <td><%= Xss.encodeForHTML(modUserName) %></td>
 		<!-- DOTCMS-3813  -->
 		<!-- }  -->
 

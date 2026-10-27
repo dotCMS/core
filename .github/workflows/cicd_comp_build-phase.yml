@@ -76,6 +76,13 @@ on:
         required: false
         type: boolean
         default: false
+      # Default true: release, nightly, LTS and sweep callers keep cleaning up.
+      # Only the PR, merge-queue and trunk callers pass false (#38203).
+      cleanup-runner:
+        description: 'Free runner disk space (cleanup-runner action) before the build'
+        required: false
+        type: boolean
+        default: true
     secrets:
       # Remote build cache (S3). Absent secrets simply disable the cache, so any
       # caller that does not pass these -- every release workflow -- builds from
@@ -113,11 +120,13 @@ jobs:
       artifact-suffix: ${{ steps.maven-build.outputs.artifact-suffix }}
     steps:
       # Checkout code based on whether a specific ref is provided
+      # Same depth rule as the ref checkout below (see its comment): full
+      # history only when the PR-only steps need it.
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: inputs.ref == ''
         with:
-          fetch-depth: 0
+          fetch-depth: ${{ inputs.run-pr-checks && '0' || '1' }}
       # The ref path builds a tag/branch snapshot; buildnumber-maven-plugin
       # (scmRevision) only reads HEAD, which works on a shallow clone, so we
       # avoid the full fetch (~2k+ branches, ~1.1 GB pack, ~19-20 min).
@@ -182,9 +191,8 @@ jobs:
           # which made the PR effective pom differ from trunk's for that module.
           maven-args: "clean install ${{ env.VALIDATE_PROFILE }} -Dprod=true -DskipTests=true"
           generate-artifacts: true
-          require-main: ${{ inputs.version == '1.0.0-SNAPSHOT' }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          cleanup-runner: true
+          cleanup-runner: ${{ inputs.cleanup-runner }}
           version: ${{ inputs.version }}
           generate-docker: ${{ inputs.generate-docker }}
           generate-test-image: ${{ inputs.generate-test-image }}
@@ -193,6 +201,49 @@ jobs:
           maven-compiler-release: ${{ inputs.maven-compiler-release }}
           artifact-suffix: ${{ inputs.artifact-suffix }}
           release-build: ${{ inputs.release-build }}
+
+      # Tripwire, deliberately in the BUILD job. The release phase validates
+      # before publishing Maven, but it runs after the deployment job has already
+      # pushed Docker images — so a build that produced the wrong coordinates
+      # would ship images and only then block the publish. Nothing is pushed from
+      # here, so this is where the check is cheap and total.
+      - name: Verify release coordinates were installed
+        if: inputs.release-build == true
+        shell: bash
+        env:
+          SUFFIX: ${{ steps.maven-build.outputs.artifact-suffix }}
+        run: |
+          set -uo pipefail
+
+          revision="$(awk -F= '/^-Drevision=/{print $2; exit}' .mvn/maven.config)"
+          if [[ -z "$revision" ]]; then
+            echo "::error::no -Drevision= in .mvn/maven.config; release coordinates cannot be trusted"
+            exit 1
+          fi
+
+          # The published version is <revision>-<suffix>; the suffix is the
+          # resolved one, so a Java variant is checked as <revision>-java-25.
+          version="$revision"
+          if [[ -n "$SUFFIX" ]]; then
+            version="${revision}-${SUFFIX}"
+          fi
+
+          dir="$HOME/.m2/repository/com/dotcms/dotcms-core/$version"
+          if [[ ! -f "$dir/dotcms-core-$version.pom" || ! -f "$dir/dotcms-core-$version.jar" ]]; then
+            echo "::error::$version was not installed into the Maven repository; refusing to deploy images for a release that cannot publish its artifacts"
+            ls -1 "$HOME/.m2/repository/com/dotcms/dotcms-core/" 2>/dev/null || true
+            exit 1
+          fi
+          # Historical tags keep their standalone SAML pin; only integrated source
+          # lineages produce a bundle matching the core release version.
+          if [[ -f independent-projects/core-plugins/saml-plugin/pom.xml ]]; then
+            dir="$HOME/.m2/repository/com/dotcms/samlbundle/com.dotcms.samlbundle/$version"
+            if [[ ! -f "$dir/com.dotcms.samlbundle-$version.pom" || ! -f "$dir/com.dotcms.samlbundle-$version.jar" ]]; then
+              echo "::error::SAML $version was not installed; refusing to deploy images with an incomplete release"
+              exit 1
+            fi
+          fi
+          echo "Release coordinates present: $version"
 
       # Record who produced each cache entry. Nothing in an S3 bucket says which
       # ref wrote a given hash, which is half of what makes a shared build cache

@@ -77,6 +77,14 @@ on:
         required: false
         type: string
         default: ''
+      # test-matrix.yml marks which test types MAY skip the cleanup; only callers
+      # that pass true here (PR, merge queue, trunk) actually do. Nightly, LTS and
+      # the sweep share the matrix and keep cleaning up (#38203).
+      skip-runner-cleanup:
+        description: 'Honor cleanup_runner: false from test-matrix.yml (skip the runner disk cleanup for those test types)'
+        required: false
+        type: boolean
+        default: false
     secrets:
       DOTCMS_LICENSE:
         required: true
@@ -113,6 +121,7 @@ jobs:
           # Passed via env (not interpolated into the script) to avoid script injection.
           OPENSEARCH_PHASE: ${{ inputs.opensearch_phase }}
         with:
+          # nosemgrep: yaml.github-actions.security.github-script-injection.github-script-injection -- only boolean workflow_call inputs are interpolated; the one string input is passed via env
           script: |
             const fs = require('fs');
             
@@ -129,7 +138,8 @@ jobs:
               'postman': ${{ inputs.postman }},
               'karate': ${{ inputs.karate }},
               'integration': ${{ inputs.integration }},
-              'e2e': ${{ inputs.e2e }}
+              'e2e': ${{ inputs.e2e }},
+              'skip-runner-cleanup': ${{ inputs.skip-runner-cleanup }}
             };
 
             // ES->OS migration phases to sweep. The input accepts a single phase ('2'),
@@ -190,6 +200,11 @@ jobs:
                 delete testEntry.test_class;
                 delete testEntry.collection;
 
+                // Only callers that opted in may skip the cleanup the matrix allows.
+                if (!inputs['skip-runner-cleanup']) {
+                  testEntry.cleanup_runner = true;
+                }
+
                 // ES->OS migration phase fan-out: run the integration battery under each
                 // requested phase. Only for integration suites, and never for the OpenSearch
                 // Upgrade Suite (it already drives OS via -Dopensearch.upgrade.test — activating
@@ -204,6 +219,9 @@ jobs:
                     matrix.push({
                       ...testEntry,
                       maven_args: `${testEntry.maven_args} -Dopensearch.phase=${p}`,
+                      // The phase profile also starts the OpenSearch 3.x container, so its
+                      // image is pre-pulled (with retries) like the others.
+                      docker_images: `${testEntry.docker_images} docker.image.search.upgrade`,
                       name: `${testEntry.name} [OS Phase ${p}]`,
                       stage_name: `${testEntry.stage_name} - os-phase-${p}`,
                     });
@@ -315,7 +333,7 @@ jobs:
       # than the one we ship.
       # Bounded so a wedged registry or mirror can't burn the job timeout (#37118).
       - name: Install native libvips (image engine parity tests)
-        if: matrix.test_type == 'jvm'
+        if: matrix.test_type == 'jvm' && matrix.name == 'JVM Unit Tests'
         timeout-minutes: 15
         env:
           # Passed through env rather than interpolated into the script body: `${{ }}` is
@@ -382,3 +400,4 @@ jobs:
           artifact-suffix: ${{ inputs.artifact-suffix }}
           docker-io-username: ${{ secrets.DOCKER_USERNAME }}
           docker-io-token: ${{ secrets.DOCKER_TOKEN }}
+          pre-pull-images: ${{ matrix.docker_images }}

@@ -81,6 +81,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.page.PageResourceTest.class,
         com.dotcms.rest.api.v1.page.PageRenderSourcesResourceTest.class,
         com.dotcms.rest.api.v1.temp.TempFileResourceTest.class,
+        com.dotcms.rest.api.v1.temp.TempFileAPITest.class,
         com.dotcms.rest.api.v1.content.ContentVersionResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.content.ContentResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.container.ContainerResourceIntegrationTest.class,
@@ -109,7 +110,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ContentletDestroyIndexRemovalTest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexPartialFailurePhaseTest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexProviderSkipTest.class,
-        com.dotcms.auth.LoginLockoutTest.class
+        com.dotcms.auth.LoginLockoutTest.class,
+        com.dotcms.graphql.GraphqlCacheWebInterceptorIntegrationTest.class
 })
 
 public class MainSuite1b {

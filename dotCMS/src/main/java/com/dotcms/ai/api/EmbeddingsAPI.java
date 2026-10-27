@@ -83,10 +83,13 @@ public interface EmbeddingsAPI {
      * object of a list of the actual contentlets and fragements that matched the result. The idea is to provide the
      * ability to show exactly which contentlets matched the semantic query and specifically, which fragments in that
      * content matched.
+     * <p>The response's {@code count} is the number of contentlets in it, and {@code total} the
+     * number of chunks. Pass chunks that came from {@link #getEmbeddingResults(EmbeddingsDTO)}, so
+     * they are already filtered by READ permission.</p>
      *
-     * @param searcher
-     * @param searchResults
-     * @return
+     * @param searcher      the search request
+     * @param searchResults the chunks to group, already filtered by READ permission
+     * @return the search response JSON
      */
     JSONObject reduceChunksToContent(EmbeddingsDTO searcher, List<EmbeddingsDTO> searchResults);
 
@@ -100,10 +103,26 @@ public interface EmbeddingsAPI {
     JSONObject searchForContent(EmbeddingsDTO searcher);
 
     /**
-     * returns a list of matching content+embeddings from the dot_embeddings table based on the searcher dto
+     * Returns the chunks from the dot_embeddings table that match the searcher and that the
+     * searcher's user can READ. Every AI search, related-content and completions call gets its
+     * chunks here, so every implementation must honour this contract:
+     * <ul>
+     *     <li>Only chunks whose source contentlet the user can READ are returned (front-end roles
+     *     respected, so anonymous and front-end users see live content only). A {@code null} user
+     *     is checked as the Anonymous user; pass the system user for unrestricted results.</li>
+     *     <li>{@code offset} and {@code limit} count readable chunks, taken from at most
+     *     {@code max(limit, cap)} matching chunks per call, where the cap is
+     *     {@code embeddingsSearchCandidateCap} (default 1000) for logged-in callers and at most
+     *     200 for anonymous ones. A page comes back short when the readable matches rank below
+     *     that many restricted ones, or when {@code offset} goes past them.</li>
+     *     <li>For callers other than CMS admins and the system user, chunks with no contentlet
+     *     behind them (deleted content, cache rows) are never returned.</li>
+     *     <li>A failure loading contentlets or checking permissions is thrown, not turned into an
+     *     empty result.</li>
+     * </ul>
      *
-     * @param searcher
-     * @return
+     * @param searcher the search request, including the user
+     * @return the readable chunks, in distance order
      */
     List<EmbeddingsDTO> getEmbeddingResults(EmbeddingsDTO searcher);
 

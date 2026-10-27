@@ -30,6 +30,7 @@ Descriptions say **when to load** the doc, not what it contains.
 | [REST_API_PATTERNS.md](backend/REST_API_PATTERNS.md) | Adding or changing a JAX-RS resource — annotations, `WebResource.InitBuilder`, `@Schema` rules |
 | [MAVEN_BUILD_SYSTEM.md](backend/MAVEN_BUILD_SYSTEM.md) | Adding a dependency or touching build configuration |
 | [CONFIGURATION_PATTERNS.md](backend/CONFIGURATION_PATTERNS.md) | Reading configuration — `Config.getProperty()` and the resolution order |
+| [APPS_CONFIGURATION.md](backend/APPS_CONFIGURATION.md) | Deciding who may change or read Apps configuration, or using its legacy delegation feature flag |
 | [DATABASE_PATTERNS.md](backend/DATABASE_PATTERNS.md) | Writing SQL, using `DotConnect`, or reasoning about transactions |
 | [SECURITY_BACKEND.md](backend/SECURITY_BACKEND.md) | Input validation, auth, SQL/XSS prevention, secure logging on the backend specifically |
 | [LOGIN_LOCKOUT.md](backend/LOGIN_LOCKOUT.md) | Working on login lockout, configuring it, or unlocking a locked-out user (support runbook) |

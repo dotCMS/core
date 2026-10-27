@@ -5,6 +5,7 @@ import {
     mockProvider,
     Spectator
 } from '@openng/spectator/vitest';
+import { of } from 'rxjs';
 import { Mock, MockInstance, vi } from 'vitest';
 
 import { provideLocationMocks } from '@angular/common/testing';
@@ -14,7 +15,11 @@ import { ActivatedRoute, convertToParamMap, Params, provideRouter, Router } from
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 
-import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotExperimentsService,
+    DotMessageDisplayService,
+    DotMessageService
+} from '@dotcms/data-access';
 import {
     ComponentStatus,
     DotExperiment,
@@ -72,6 +77,8 @@ const LIST_TITLE_COPY = 'Experiments List';
 const NEW_EXPERIMENT_COPY = 'New Experiment';
 const CONFIGURE_TITLE_COPY = 'Configure Experiment';
 
+const LIMITED_MODE_INFO_COPY = 'Limited mode active.';
+
 const messageServiceMock = new MockDotMessageService({
     'experiments.list.error.title': ERROR_COPY.title,
     'experiments.error.fetching.data': ERROR_COPY.subtitle,
@@ -86,7 +93,8 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.notification.abort': 'Experiment {0} aborted',
     'experiment.container.list.title': LIST_TITLE_COPY,
     'experiment.container.configuration.title': CONFIGURE_TITLE_COPY,
-    'experiments.configure.header.new-experiment': NEW_EXPERIMENT_COPY
+    'experiments.configure.header.new-experiment': NEW_EXPERIMENT_COPY,
+    'experiments.limited-mode.configure.info': LIMITED_MODE_INFO_COPY
 });
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
@@ -173,6 +181,7 @@ class SchedulingStubComponent {
     readonly gated = input<boolean>();
     readonly field = input<unknown>();
     readonly bounds = input<unknown>();
+    readonly limitedMode = input<boolean>();
 }
 
 @Component({ selector: 'dot-experiments-configure-footer', template: '' })
@@ -252,7 +261,8 @@ describe('DotExperimentsConfigureComponent', () => {
         experimentId,
         configProps,
         section,
-        pageFilter
+        pageFilter,
+        tier = 'full'
     }: {
         experimentId?: string;
         configProps?: Record<string, string>;
@@ -260,6 +270,8 @@ describe('DotExperimentsConfigureComponent', () => {
         section?: string;
         /** The page narrowing the screen was opened with, when it came from a filtered list. */
         pageFilter?: Params;
+        /** Simulates the health endpoint's `tier` field. Defaults to `'full'`. */
+        tier?: 'full' | 'limited';
     }) =>
         createComponentFactory({
             component: DotExperimentsConfigureComponent,
@@ -269,7 +281,10 @@ describe('DotExperimentsConfigureComponent', () => {
                 { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
                 // Real: these tests assert where the screen goes, and this is what decides.
                 DotExperimentsRouter,
-                ConfirmationService
+                ConfirmationService,
+                mockProvider(DotExperimentsService, {
+                    healthCheck: vi.fn().mockReturnValue(of({ health: 'OK', tier }))
+                })
             ],
             providers: [
                 provideRouter([{ path: 'experiments', children: [] }]),
@@ -1472,7 +1487,10 @@ describe('DotExperimentsConfigureComponent', () => {
                 { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
                 // Real: these tests assert where the screen goes, and this is what decides.
                 DotExperimentsRouter,
-                ConfirmationService
+                ConfirmationService,
+                mockProvider(DotExperimentsService, {
+                    healthCheck: vi.fn().mockReturnValue(of({ health: 'OK', tier: 'full' }))
+                })
             ],
             providers: [
                 provideRouter([{ path: 'experiments', children: [] }]),
@@ -1666,6 +1684,72 @@ describe('DotExperimentsConfigureComponent', () => {
 
             expect(panelStore?.showConfigure).toHaveBeenCalledWith('exp-created');
             expect(navigate).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * Coverage for the three limited-mode additions: the info banner, the scheduling
+     * card's [limitedMode] input, and clearSchedulingInLimitedModeEffect.
+     *
+     * Both providers in the other describes return tier:'full', so these paths never
+     * ran — reverting them all would leave the suite green. This describe is the
+     * regression guard.
+     */
+    describe('in limited mode (tier: limited)', () => {
+        const createComponent = createComponentOn({
+            experimentId: EXPERIMENT.id,
+            configProps: CONFIGURED_DURATIONS,
+            tier: 'limited'
+        });
+
+        beforeEach(() => {
+            spectator = createComponent();
+            dispatch = vi.spyOn(spectator.inject(Dispatcher), 'dispatch');
+            storeMock.isNew.set(false);
+        });
+
+        it('should render the limited-mode info banner', () => {
+            spectator.detectChanges();
+
+            expect(
+                spectator.query(byTestId('experiments-configure-limited-mode-banner'))
+            ).not.toBeNull();
+        });
+
+        it('should pass limitedMode=true to the scheduling card', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(SchedulingStubComponent)?.limitedMode()).toBe(true);
+        });
+
+        it('should null scheduling dates on a DRAFT experiment', () => {
+            // The effect must clear any dates the user typed (or that arrived via the form
+            // hydration) so the autosave PATCH never persists a startDate that would make
+            // ExperimentsAPIImpl.emptyScheduling() return false, routing _start to SCHEDULED.
+            storeMock.$isLocked.set(false);
+            loadExperiment({
+                ...EXPERIMENT,
+                scheduling: { startDate: 1893456000000, endDate: 1893542400000 }
+            });
+
+            expect(modelOf()().scheduling).toEqual({ startDate: null, endDate: null });
+        });
+
+        it('should NOT null scheduling dates on a non-DRAFT experiment', () => {
+            // RUNNING experiments already have real dates from startLimitedScheduling().
+            // Blanking them would hide the run window and trigger a false "unsaved changes"
+            // prompt because $hasUnsavedChanges is not gated by the lock.
+            storeMock.$isLocked.set(true);
+            loadExperiment({
+                ...EXPERIMENT,
+                status: DotExperimentStatus.RUNNING,
+                scheduling: { startDate: 1893456000000, endDate: 1893542400000 }
+            });
+
+            expect(modelOf()().scheduling).toEqual({
+                startDate: new Date(1893456000000),
+                endDate: new Date(1893542400000)
+            });
         });
     });
 });

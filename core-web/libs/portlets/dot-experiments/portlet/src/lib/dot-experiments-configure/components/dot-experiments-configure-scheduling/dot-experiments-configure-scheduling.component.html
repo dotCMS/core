@@ -16,6 +16,14 @@
     </ng-template>
 
     <section class="flex flex-col gap-5">
+        @if ($limitedMode()) {
+            <p-message
+                severity="info"
+                styleClass="w-full"
+                data-testid="experiments-configure-scheduling-limited-mode">
+                <span>{{ 'experiments.list.limited-mode.action.disabled' | dm }}</span>
+            </p-message>
+        }
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div class="field">
                 <label for="experiments-start-date">
@@ -101,3 +109,9 @@
      itself — PrimeNG appends the mask into it, and blocks the whole document when it has no
      target, which is why this sits next to the panel rather than around it. -->
 <p-blockUI [target]="panel" [blocked]="$gated()" data-testid="configure-gate-scheduling" />
+
+<!-- Limited-mode gate: scheduling is not allowed — only immediate-start experiments. -->
+<p-blockUI
+    [target]="panel"
+    [blocked]="$limitedMode()"
+    data-testid="configure-limited-mode-scheduling" />
