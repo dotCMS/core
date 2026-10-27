@@ -53,6 +53,6 @@ Feature: Content Management API Tests
     And match response contains expectedError
 
     Examples:
-      | scenario       | useAuth | credentials              | expectedError                                          |
-      | No Credentials | false   | null                     | CONTENT_APIS_ALLOW_ANONYMOUS permission denied           |
-      | Basic Disabled | true    | 'admin@dotcms.com:admin1' | Username and credential authentication is disabled      |
+      | scenario           | useAuth | credentials               | expectedError                              |
+      | No Credentials     | false   | null                      | CONTENT_APIS_ALLOW_ANONYMOUS permission denied |
+      | Password as Basic | true    | 'admin@dotcms.com:admin1' | Invalid API token credentials               |
