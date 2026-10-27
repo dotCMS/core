@@ -84,3 +84,4 @@ Release-25.07.10 LTS
 78. https://github.com/dotCMS/private-issues/issues/999 : Remove compromised emSign ECC Root CA - G3 from the shipped JDK truststore #999
 79. https://github.com/dotCMS/private-issues/issues/725 : dotSAML: shipped descriptor defaults signature validation to "None" + missing Audience/Conditions/SubjectConfirmation/replay checks #725
 80. https://github.com/dotCMS/private-issues/issues/879 : SAML login callback: session-stored referrer is written unencoded into an HTML redirect page, giving XSS in the victim's new session and an open redirect #879
+81. https://github.com/dotCMS/private-issues/issues/632 : [Analytics/CH][P0] Page URL + doc_search query string stored verbatim — carries tokens/PII #632
