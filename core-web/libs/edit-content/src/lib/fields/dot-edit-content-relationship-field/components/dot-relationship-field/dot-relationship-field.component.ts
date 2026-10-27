@@ -44,6 +44,7 @@ import { RelationshipFieldStore } from './../../store/relationship-field.store';
 import { AddRelationshipsComponent } from './../add-relationships/add-relationships.component';
 
 import { loadDotEditContentSidePanel } from '../../../../components/dot-edit-content-side-panel/load-dot-edit-content-side-panel';
+import { EDIT_CONTENT_DIALOG_CONFIG } from '../../../../models/dot-edit-content-dialog.constant';
 import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
 import { LanguagePipe } from '../../../../pipes/language.pipe';
 import { EDIT_CONTENT_HOST } from '../../../../services/host/edit-content-host.model';
@@ -584,19 +585,7 @@ export class DotRelationshipFieldComponent
             await import('../../../../components/dot-create-content-dialog/dot-create-content-dialog.component');
 
         this.#dialogRef = this.#dialogService.open(DotEditContentDialogComponent, {
-            appendTo: 'body',
-            baseZIndex: 10000,
-            closable: true,
-            closeOnEscape: true,
-            draggable: false,
-            keepInViewport: true,
-            modal: true,
-            resizable: true,
-            position: 'center',
-            width: '95%',
-            height: '95%',
-            maskStyleClass: 'p-dialog-mask-dynamic p-dialog-create-content',
-            style: { 'max-width': '1400px', 'max-height': '900px' },
+            ...EDIT_CONTENT_DIALOG_CONFIG,
             data: dialogData,
             header: dialogData.title
         });

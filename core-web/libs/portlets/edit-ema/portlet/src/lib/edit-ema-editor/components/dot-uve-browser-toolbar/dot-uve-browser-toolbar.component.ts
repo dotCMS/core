@@ -13,6 +13,8 @@ import { UVE_MODE } from '@dotcms/types';
 import { DotMessagePipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 
+import { PageURL } from './types';
+
 import { UVEStore } from '../../../store/dot-uve.store';
 import { createFullURL } from '../../../utils';
 import { DotUveDeviceControlsComponent } from '../dot-uve-device-controls/dot-uve-device-controls.component';
@@ -50,7 +52,7 @@ export class DotUveBrowserToolbarComponent {
 
     protected readonly UVE_MODE = UVE_MODE;
 
-    protected readonly $pageURLS = computed<{ label: string; value: string }[]>(() => {
+    protected readonly $pageURLS = computed<PageURL[]>(() => {
         const params = this.store.pageParams();
 
         // With no page loaded there is no page URL to list.
@@ -64,7 +66,7 @@ export class DotUveBrowserToolbarComponent {
 
         const currentSiteHostname = this.#globalStore.siteDetails()?.hostname;
 
-        const urls: { label: string; value: string }[] = [
+        const urls: PageURL[] = [
             {
                 label: 'uve.toolbar.page.live.url',
                 value: new URL(path, host).toString()

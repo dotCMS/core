@@ -1,17 +1,10 @@
+import { signalMethod } from '@ngrx/signals';
 import { Events } from '@ngrx/signals/events';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, Observable, forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import {
-    ChangeDetectorRef,
-    Component,
-    effect,
-    inject,
-    signal,
-    untracked,
-    viewChild
-} from '@angular/core';
+import { ChangeDetectorRef, Component, computed, inject, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -36,6 +29,7 @@ import {
 import {
     DotEditContentDialogComponent,
     DotSourceEditorRequest,
+    EDIT_CONTENT_DIALOG_CONFIG,
     EditContentDialogData,
     loadDotEditContentSidePanel,
     loadDotSourceEditorSidePanel,
@@ -67,7 +61,9 @@ import {
     VTLFile
 } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { ReloadEditorContent } from '../../../store/features/editor/models';
 import { WithPageApiMethods } from '../../../store/features/page-api/withPageApi';
+import { TranslateProps } from '../../../store/models';
 import { createReorderMenuURL, getLanguageChangePageParams } from '../../../utils';
 
 /**
@@ -199,6 +195,39 @@ export class DotUveContentEditorComponent {
         pipe(tap((field: DotCMSInlineEditingPayload) => this.$blockSidebar()?.open(field)))
     );
 
+    /**
+     * The legacy dialog keeps the container position a create or add opened it for, and sends it
+     * back with every event. Once the page content reloads, what was saved is in, so the position
+     * is forgotten: a second save in the same create form then only reloads, instead of inserting
+     * again.
+     */
+    readonly #handlePageContentReload = signalMethod<ReloadEditorContent>(() => {
+        this.$legacyDialog()?.resetActionPayload();
+    });
+
+    /**
+     * The page's language and load status, as a new object each time either changes, so the
+     * language check below runs on every change of either.
+     */
+    readonly #pageLanguage = computed(() => ({
+        ...this.uveStore.pageTranslateProps(),
+        status: this.uveStore.uveStatus()
+    }));
+
+    /**
+     * A page can load in a language it has no version in; the user is then offered to create it.
+     * Only a page that finished loading counts: while one loads, the language may still be the
+     * previous page's. The confirm dialog reads PrimeNG-internal signals, which `signalMethod`
+     * leaves untracked: tracking them would ask again every time it opens or closes.
+     */
+    readonly #handlePageLanguage = signalMethod<TranslateProps & { status: UVE_STATUS }>(
+        ({ page, currentLanguage, status }) => {
+            if (status === UVE_STATUS.LOADED && currentLanguage && !currentLanguage.translated) {
+                this.#askToTranslate(currentLanguage, page);
+            }
+        }
+    );
+
     constructor() {
         // The Edit Content side panel, open while `$editContentPanel` is set. Post-save work runs
         // through the request's `onContentSaved` callback; closing clears the request. Loaded on
@@ -222,27 +251,8 @@ export class DotUveContentEditorComponent {
             closed: () => this.$sourceEditorPanel.set(null)
         });
 
-        // The legacy dialog keeps the container position a create or add opened it for, and sends
-        // it back with every event. Once the page content reloads, what was saved is in, so the
-        // position is forgotten: a second save in the same create form then only reloads, instead
-        // of inserting again.
-        effect(() => {
-            this.uveStore.$reloadEditorContent();
-            untracked(() => this.$legacyDialog()?.resetActionPayload());
-        });
-
-        // A page can load in a language it has no version in; the user is then offered to create
-        // it. Only a page that finished loading counts: while one loads, the language may still be
-        // the previous page's. `untracked`: the confirm dialog reads PrimeNG-internal signals,
-        // and tracking them would ask again every time it opens or closes.
-        effect(() => {
-            const { page, currentLanguage } = this.uveStore.pageTranslateProps();
-            const status = this.uveStore.uveStatus();
-
-            if (status === UVE_STATUS.LOADED && currentLanguage && !currentLanguage.translated) {
-                untracked(() => this.#askToTranslate(currentLanguage, page));
-            }
-        });
+        this.#handlePageContentReload(this.uveStore.$reloadEditorContent);
+        this.#handlePageLanguage(this.#pageLanguage);
 
         this.#handleEditContentRequest(
             this.#events
@@ -865,19 +875,7 @@ export class DotUveContentEditorComponent {
         }
 
         this.#dialogService.open(DotEditContentDialogComponent, {
-            appendTo: 'body',
-            baseZIndex: 10000,
-            closable: true,
-            closeOnEscape: true,
-            draggable: false,
-            keepInViewport: true,
-            modal: true,
-            resizable: true,
-            position: 'center',
-            width: '95%',
-            height: '95%',
-            maskStyleClass: 'p-dialog-mask-dynamic p-dialog-create-content',
-            style: { 'max-width': '1400px', 'max-height': '900px' },
+            ...EDIT_CONTENT_DIALOG_CONFIG,
             contentStyle: { padding: '0' },
             data,
             header

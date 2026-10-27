@@ -1,3 +1,4 @@
+import { signalMethod } from '@ngrx/signals';
 import { injectDispatch } from '@ngrx/signals/events';
 import { Observable, fromEvent, of } from 'rxjs';
 
@@ -10,8 +11,7 @@ import {
     ViewChild,
     computed,
     effect,
-    inject,
-    untracked
+    inject
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -50,9 +50,11 @@ import {
     InsertPayloadFromDelete,
     PageContainer,
     PositionPayload,
-    PostMessage
+    PostMessage,
+    SelectedContentlet
 } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { ReloadEditorContent } from '../../../store/features/editor/models';
 import { WithPageApiMethods } from '../../../store/features/page-api/withPageApi';
 import { IframeAccessMode, PageType } from '../../../store/models';
 import {
@@ -205,16 +207,15 @@ export class DotUveCanvasComponent implements AfterViewInit, OnDestroy {
         return this.iframeComponent?.contentWindow || null;
     }
 
-    readonly $handleReloadContentEffect = effect(() => {
-        /**
-         * We should not depend on this `$reloadEditorContent` computed to `resetEditorProperties` or `resetDialog`
-         * This depends on the `code` with each the page renders code. This reset should be done in `widthLoad` signal feature but we can't do it yet
-         */
-        const { pageType } = this.uveStore.$reloadEditorContent();
-        const isClientReady = untracked(() => this.uveStore.isClientReady());
-        const isGraphQLSourced = untracked(() => this.uveStore.pageAsset()?.source === 'graphql');
+    /**
+     * We should not depend on this `$reloadEditorContent` computed to `resetEditorProperties` or `resetDialog`
+     * This depends on the `code` with each the page renders code. This reset should be done in `widthLoad` signal feature but we can't do it yet
+     */
+    readonly #handleReloadContent = signalMethod<ReloadEditorContent>(({ pageType }) => {
+        const isClientReady = this.uveStore.isClientReady();
+        const isGraphQLSourced = this.uveStore.pageAsset()?.source === 'graphql';
 
-        untracked(() => this.uveStore.resetEditorProperties());
+        this.uveStore.resetEditorProperties();
 
         if (pageType === PageType.TRADITIONAL || !isClientReady) {
             return;
@@ -236,10 +237,10 @@ export class DotUveCanvasComponent implements AfterViewInit, OnDestroy {
         // uncapped reload → CLIENT_READY → reload loop, driving the client's iframe into
         // continuous full navigations (regression found in #37097's post-merge QA).
         if (pageType === PageType.HEADLESS && !isGraphQLSourced) {
-            const alreadyRequested = untracked(() => this.uveStore.pageReloadPending());
+            const alreadyRequested = this.uveStore.pageReloadPending();
 
             if (!alreadyRequested) {
-                untracked(() => this.uveStore.setPageReloadPending(true));
+                this.uveStore.setPageReloadPending(true);
                 this.#sendMessageToIframe(
                     {
                         name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
@@ -263,15 +264,13 @@ export class DotUveCanvasComponent implements AfterViewInit, OnDestroy {
      * (page click) and the toolbar wouldn't reappear.
      */
     #lastSelectedAreaWasSet = false;
-    readonly $notifySelectionClearedEffect = effect(() => {
-        const hasSelection = !!this.uveStore.editorSelected();
+    readonly #notifySelectionCleared = signalMethod<SelectedContentlet | null>((selected) => {
+        const hasSelection = !!selected;
 
-        untracked(() => {
-            if (this.#lastSelectedAreaWasSet && !hasSelection) {
-                this.#iframeMessenger.selectionCleared();
-            }
-            this.#lastSelectedAreaWasSet = hasSelection;
-        });
+        if (this.#lastSelectedAreaWasSet && !hasSelection) {
+            this.#iframeMessenger.selectionCleared();
+        }
+        this.#lastSelectedAreaWasSet = hasSelection;
     });
 
     readonly $handleIsDraggingEffect = effect(() => {
@@ -301,6 +300,11 @@ export class DotUveCanvasComponent implements AfterViewInit, OnDestroy {
     // the trigger) used to race the bounds round-trip and caused the
     // selected overlay to flash at stale coordinates before snapping to
     // the new ones.
+
+    constructor() {
+        this.#handleReloadContent(this.uveStore.$reloadEditorContent);
+        this.#notifySelectionCleared(this.uveStore.editorSelected);
+    }
 
     ngAfterViewInit(): void {
         if (!this.iframe) {

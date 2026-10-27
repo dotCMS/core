@@ -1,12 +1,6 @@
-import {
-    AfterViewInit,
-    DestroyRef,
-    Directive,
-    ElementRef,
-    effect,
-    inject,
-    untracked
-} from '@angular/core';
+import { signalMethod } from '@ngrx/signals';
+
+import { AfterViewInit, DestroyRef, Directive, ElementRef, inject } from '@angular/core';
 
 import { EDITOR_STATE } from '../../../shared/enums';
 import { UVEStore } from '../../../store/dot-uve.store';
@@ -25,24 +19,25 @@ export class DotUveCanvasSizingDirective implements AfterViewInit {
     readonly #element = inject<ElementRef<HTMLElement>>(ElementRef);
     readonly #destroyRef = inject(DestroyRef);
 
-    protected readonly $responsiveModeSyncEffect = effect(() => {
-        const isResponsive = this.#uveStore.$viewIsResponsiveMode();
+    readonly #responsiveModeSync = signalMethod<boolean>((isResponsive) => {
         if (!isResponsive) {
             return;
         }
 
-        untracked(() => {
-            if (this.#uveStore.editorState() === EDITOR_STATE.RESIZING) {
-                return;
-            }
-            const width = this.#uveStore.viewCanvasAvailableWidth();
-            const height = this.#uveStore.viewCanvasAvailableHeight();
-            if (width <= 0 || height <= 0) {
-                return;
-            }
-            this.#uveStore.viewSetIframeSize({ width, height });
-        });
+        if (this.#uveStore.editorState() === EDITOR_STATE.RESIZING) {
+            return;
+        }
+        const width = this.#uveStore.viewCanvasAvailableWidth();
+        const height = this.#uveStore.viewCanvasAvailableHeight();
+        if (width <= 0 || height <= 0) {
+            return;
+        }
+        this.#uveStore.viewSetIframeSize({ width, height });
     });
+
+    constructor() {
+        this.#responsiveModeSync(this.#uveStore.$viewIsResponsiveMode);
+    }
 
     ngAfterViewInit(): void {
         const el = this.#element.nativeElement;

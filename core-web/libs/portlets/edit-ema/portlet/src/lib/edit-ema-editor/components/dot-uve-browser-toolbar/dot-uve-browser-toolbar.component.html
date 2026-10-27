@@ -114,18 +114,18 @@
         </div>
     </ng-template>
     <ng-template #end>
+        @let editPanelToggleLabel =
+            (store.editorEditPanelOpen()
+                ? 'uve.edit-panel.toggle.close'
+                : 'uve.edit-panel.toggle.open'
+            ) | dm;
         <div class="flex items-center gap-1">
             @if (store.viewMode() === UVE_MODE.EDIT) {
                 <p-button
                     (click)="toggleEditPanel()"
                     [text]="true"
                     [rounded]="true"
-                    [ariaLabel]="
-                        (store.editorEditPanelOpen()
-                            ? 'uve.edit-panel.toggle.close'
-                            : 'uve.edit-panel.toggle.open'
-                        ) | dm
-                    "
+                    [ariaLabel]="editPanelToggleLabel"
                     size="small"
                     data-testid="right-sidebar-toggle">
                     <!-- `dock_to_left` for a RIGHT panel, rendered as-is: the glyph already points
