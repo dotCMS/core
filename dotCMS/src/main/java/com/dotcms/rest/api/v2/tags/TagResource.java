@@ -36,6 +36,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
+import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
@@ -360,7 +361,10 @@ public class TagResource {
             throw new DoesNotExistException(errorMessage);
         }
 
-        tagAPI.deleteTag(tag);
+        if (!tagAPI.deleteTag(user, tagId)) {
+            throw new ForbiddenException(String.format(
+                    "User '%s' lacks permission to delete tag '%s'", user.getUserId(), tagId));
+        }
         return new ResponseEntityBooleanView(true);
     }
 
@@ -469,6 +473,10 @@ public class TagResource {
         final InitDataObject initDataObject = getInitDataObject(request, response);
         final User user = initDataObject.getUser();
         Logger.debug(TagResource.class, String.format("User '%s' is deleting Tags by inode '%s'",user.getUserId(), inode));
+        if (!tagAPI.canDeleteTagInodesByInode(user, inode)) {
+            throw new ForbiddenException(String.format(
+                    "User '%s' lacks permission to remove the tags of inode '%s'", user.getUserId(), inode));
+        }
         final List<TagInode> tagInodes = Try.of(() -> tagAPI.getTagInodesByInode(inode))
                 .getOrElse(List.of());
         if (tagInodes.isEmpty()) {
@@ -476,7 +484,10 @@ public class TagResource {
             throw new NotFoundException(String.format(NO_TAGS_WERE_FOUND_BY_THE_INODE_S, inode));
         }
 
-        tagAPI.deleteTagInodesByInode(inode);
+        if (!tagAPI.deleteTagInodesByInode(user, inode)) {
+            throw new ForbiddenException(String.format(
+                    "User '%s' lacks permission to remove the tags of inode '%s'", user.getUserId(), inode));
+        }
         Logger.debug(TagResource.class, String.format("Tags with inode '%s' were removed successfully",inode));
 
         return new ResponseEntityBooleanView(true);
