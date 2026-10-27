@@ -147,7 +147,7 @@ import static com.dotmarketing.portlets.contentlet.util.ContentletUtil.isNewFiel
  */
 public class EditContentletAction extends DotPortletAction implements DotPortletActionInterface {
 
-	private static final String CANNOT_READ_MESSAGE = "User '%s' cannot read the selected content";
+	private static final String CANNOT_READ_MESSAGE = "User '%s' does not have READ permissions on the selected content";
 
 	private Contentlet contentletToEdit;
 	
