@@ -6,6 +6,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -468,11 +469,13 @@ public class UserFactoryImpl implements UserFactory {
     /**
      * Writes only the {@code skinid} column, which holds the user's login token id. A login JWT is
      * accepted only while its id ({@code jti}) equals this value, so a value no earlier token
-     * carries rejects every login JWT issued before the call. This is the only update that changes
-     * the column after the user is created: {@link #save(User)} leaves it alone, so saving a
-     * {@link User} loaded before this call cannot put the old value back. The cache entry is
-     * evicted after the update, under the same normalized id, so a read racing the update cannot
-     * leave the old value cached.
+     * carries rejects every login JWT issued before the call. {@link #save(User)} leaves the
+     * column alone, so saving a {@link User} loaded before this call cannot put the old value back.
+     * <p>
+     * The user is evicted from the cache twice, under the same normalized id: right away, and again
+     * once the surrounding transaction commits. Until the commit, other connections still read the
+     * old value and a request on any node can cache it again; the second eviction drops that entry.
+     * With no transaction open, the second eviction runs immediately.
      *
      * @throws DotDataException if {@code userId} is blank or the update fails
      */
@@ -488,6 +491,7 @@ public class UserFactoryImpl implements UserFactory {
                 .addParam(id)
                 .loadResult();
         userCache.remove(id);
+        HibernateUtil.addSyncCommitListener(() -> userCache.remove(id));
     }
 
     private User createUser(final User user) throws DotDataException {

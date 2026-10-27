@@ -2,6 +2,7 @@ package com.dotcms.cms.login;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -15,8 +16,12 @@ import com.dotcms.rest.api.v1.user.UserForm;
 import com.dotcms.rest.api.v1.user.UserResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.UserCache;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
+import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.CookieKeys;
 import com.liferay.portal.util.WebKeys;
@@ -136,6 +141,48 @@ public class LoginTokenInvalidationTest {
         assertNotEquals(user.getRememberMeToken(),
                 userAPI.loadUserById(user.getUserId()).getRememberMeToken());
         assertFalse("a stale save must not bring back the token issued before logout", resolves(token));
+    }
+
+    /**
+     * Saving a {@link User} object loaded before a logout through the legacy Liferay persistence
+     * does not write the replaced login token id back.
+     */
+    @Test
+    public void test_staleUserSavedThroughLegacyPathAfterLogout_doesNotRestoreOldToken() throws Exception {
+        final User user = newUser();
+        final String token = loginToken(user);
+        final User loadedBeforeLogout = userAPI.loadUserById(user.getUserId());
+
+        userAPI.invalidateLoginTokens(user.getUserId());
+        loadedBeforeLogout.setFirstName("Edited");
+        UserLocalManagerUtil.updateUser(loadedBeforeLogout);
+
+        assertNotEquals(user.getRememberMeToken(),
+                userAPI.loadUserById(user.getUserId()).getRememberMeToken());
+        assertFalse("a stale legacy save must not bring back the token issued before logout",
+                resolves(token));
+    }
+
+    /**
+     * When the login token id changes inside a transaction, a copy of the user cached before the
+     * commit, as another request reading the still-committed old value would leave behind, is
+     * evicted once the transaction commits, so the earlier token is rejected afterwards.
+     */
+    @Test
+    public void test_invalidateLoginTokensInTransaction_evictsUserCachedBeforeCommit() throws Exception {
+        final User user = newUser();
+        final String token = loginToken(user);
+        final User loadedBefore = userAPI.loadUserById(user.getUserId());
+        final UserCache userCache = CacheLocator.getUserCache();
+
+        LocalTransaction.wrap(() -> {
+            userAPI.invalidateLoginTokens(user.getUserId());
+            userCache.add(user.getUserId(), loadedBefore);
+        });
+
+        assertNull("the cache must hold no entry for the user after the commit",
+                userCache.get(user.getUserId()));
+        assertFalse("token issued before the change must be rejected after the commit", resolves(token));
     }
 
     /**

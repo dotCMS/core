@@ -30,7 +30,8 @@ public interface UserFactory {
      * storing a value no earlier token carries, such as a fresh random UUID, rejects every login JWT
      * issued before the call, while JWTs issued afterwards carry the new value and work. API tokens
      * do not use this value and are not affected. {@link #save(User)} does not write this column
-     * for an existing user, so this is the only way to change it after the user is created.
+     * for an existing user, so a {@link User} loaded before this call cannot put the old value
+     * back.
      *
      * @param userId          the id of the user to update; trimmed and lower-cased like stored ids
      * @param rememberMeToken the new login token id

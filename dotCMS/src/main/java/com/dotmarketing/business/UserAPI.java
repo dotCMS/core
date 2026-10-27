@@ -419,10 +419,12 @@ public interface UserAPI {
 	 * they work as usual. API tokens are checked against their own records, not this value, so they
 	 * are not affected.
 	 * <p>
-	 * This is the one way to change the login token id: it is used on logout, on a password change,
-	 * when revoking a user's login tokens, and to set the first value on login. Only that column is
-	 * written, so concurrent changes to other user fields are kept, and a general user save does not
-	 * write it, so saving a {@link User} loaded earlier cannot bring an old value back.
+	 * The user APIs change the login token id only through this method: on logout, on a password
+	 * change, when revoking a user's login tokens, and to set the first value on login. (The legacy
+	 * Liferay persistence also gives the user a fresh random value when it saves certain changes.)
+	 * Only that column is written, so concurrent changes to other user fields are kept, and no save
+	 * writes the value held by a {@link User} object, so saving one loaded earlier cannot bring an
+	 * old value back.
 	 *
 	 * @param userId the id of the user whose login tokens are invalidated
 	 * @return the new login token id, so a caller holding a {@link User} can keep it current
