@@ -3,6 +3,8 @@ package com.dotcms.rest.api.v1.content;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -10,8 +12,10 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
@@ -36,17 +40,23 @@ import org.junit.jupiter.api.Test;
 class ContentRelationshipsHelperTest {
 
     private static final long DEFAULT_LANGUAGE_ID = 1L;
+    private static final long OTHER_LANGUAGE_ID = 2L;
 
     private ContentletAPI contentletAPI;
     private PermissionAPI permissionAPI;
     private User user;
+    private User publicUser;
     private ContentRelationshipsHelper helper;
 
     @BeforeEach
     void setUp() {
         contentletAPI = mock(ContentletAPI.class);
         permissionAPI = mock(PermissionAPI.class);
+        // Unless a test says otherwise, the caller has back-end access
         user = mock(User.class);
+        when(user.isBackendUser()).thenReturn(true);
+        publicUser = mock(User.class);
+        when(publicUser.isBackendUser()).thenReturn(false);
 
         final LanguageAPI languageAPI = mock(LanguageAPI.class);
         final Language defaultLanguage = mock(Language.class);
@@ -186,6 +196,108 @@ class ContentRelationshipsHelperTest {
     }
 
     @Test
+    void contentsAsJson_returnsThePublishedVersionOfRelatedContentToCallersWithoutBackEndAccess()
+            throws Exception {
+        // Given a caller without back-end access and a related record, in a language other than
+        //   the default one, with a published version
+        final Contentlet parent = content("parent-id");
+        final Contentlet current = content("record-a-id");
+        when(current.getLanguageId()).thenReturn(OTHER_LANGUAGE_ID);
+        final Contentlet published = publishedVersion("record-a-id");
+        givenRelationships(parent, relationship("rel-one"), List.of(current));
+        when(contentletAPI.findContentletByIdentifier("record-a-id", true, OTHER_LANGUAGE_ID,
+                publicUser, true)).thenReturn(published);
+
+        // When the contents are serialized for that caller
+        final String json = helper.contentsAsJson(List.of(parent), publicUser);
+
+        // Then the relationship holds the published version of the record
+        final JSONArray related = new JSONArray(json).getJSONObject(0).getJSONArray("rel-one");
+        assertEquals(1, related.length());
+        assertEquals("published title of record-a-id",
+                related.getJSONObject(0).getString("title"));
+    }
+
+    @Test
+    void contentsAsJson_returnsThePublishedVersionOfRelatedContentWhenTheUserIsUnknown()
+            throws Exception {
+        // Given no user and a related record with a published version
+        final Contentlet parent = content("parent-id");
+        final Contentlet published = publishedVersion("record-a-id");
+        givenRelationships(parent, relationship("rel-one"), List.of(content("record-a-id")));
+        when(contentletAPI.findContentletByIdentifier("record-a-id", true, DEFAULT_LANGUAGE_ID,
+                null, true)).thenReturn(published);
+
+        // When the contents are serialized without a user
+        final String json = helper.contentsAsJson(List.of(parent), null);
+
+        // Then the relationship holds the published version of the record
+        final JSONArray related = new JSONArray(json).getJSONObject(0).getJSONArray("rel-one");
+        assertEquals(1, related.length());
+        assertEquals("published title of record-a-id",
+                related.getJSONObject(0).getString("title"));
+    }
+
+    @Test
+    void contentsAsJson_leavesOutRelatedContentWithoutPublishedVersionForCallersWithoutBackEndAccess()
+            throws Exception {
+        // Given a caller without back-end access and a related record that was never published
+        final Contentlet parent = content("parent-id");
+        givenRelationships(parent, relationship("rel-one"), List.of(content("record-a-id")));
+        when(contentletAPI.findContentletByIdentifier("record-a-id", true, DEFAULT_LANGUAGE_ID,
+                publicUser, true)).thenReturn(null);
+
+        // When the contents are serialized for that caller
+        final String json = helper.contentsAsJson(List.of(parent), publicUser);
+
+        // Then the relationship is empty
+        assertEquals(List.of(), identifiers(json, "rel-one"));
+    }
+
+    @Test
+    void contentsAsJson_leavesOutRelatedContentTheCallerCannotReadWhileKeepingTheRest()
+            throws Exception {
+        // Given a caller without back-end access and two related records,
+        //   one the caller cannot read and one with a published version the caller can read
+        final Contentlet parent = content("parent-id");
+        final Contentlet publishedB = publishedVersion("record-b-id");
+        givenRelationships(parent, relationship("rel-one"),
+                List.of(content("record-a-id"), content("record-b-id")));
+        when(contentletAPI.findContentletByIdentifier("record-a-id", true, DEFAULT_LANGUAGE_ID,
+                publicUser, true)).thenThrow(new DotSecurityException("not allowed"));
+        when(contentletAPI.findContentletByIdentifier("record-b-id", true, DEFAULT_LANGUAGE_ID,
+                publicUser, true)).thenReturn(publishedB);
+
+        // When the contents are serialized for that caller
+        final String json = helper.contentsAsJson(List.of(parent), publicUser);
+
+        // Then only the readable record is returned, in its published version
+        assertEquals(List.of("record-b-id"), identifiers(json, "rel-one"));
+        assertFalse(json.contains("record-a-id"),
+                "A record the caller cannot read must not be in the output");
+    }
+
+    @Test
+    void contentsAsJson_reportsADataErrorWhenRelatedContentCannotBeLoaded() throws Exception {
+        // Given a caller without back-end access and a related record whose published version
+        //   cannot be loaded
+        final Contentlet parent = content("parent-id");
+        givenRelationships(parent, relationship("rel-one"), List.of(content("record-a-id")));
+        final DotContentletStateException loadError = new DotContentletStateException(
+                "Can't find contentlet: record-a-id lang:1 live:true");
+        when(contentletAPI.findContentletByIdentifier("record-a-id", true, DEFAULT_LANGUAGE_ID,
+                publicUser, true)).thenThrow(loadError);
+
+        // When the contents are serialized for that caller
+        final DotDataException thrown = assertThrows(DotDataException.class,
+                () -> helper.contentsAsJson(List.of(parent), publicUser));
+
+        // Then a data error with a fixed message is reported, keeping the original cause
+        assertEquals("Related content could not be loaded", thrown.getMessage());
+        assertSame(loadError, thrown.getCause());
+    }
+
+    @Test
     void getRelatedContent_returnsEmptyListWhenTheIdentifierIsNotFound() throws Exception {
         // Given an "id" parameter whose lookup finds no content
         when(contentletAPI.findContentletByIdentifier("missing-id", true, DEFAULT_LANGUAGE_ID,
@@ -251,6 +363,19 @@ class ContentRelationshipsHelperTest {
         fields.put("title", "title of " + identifier);
         when(contentlet.getMap()).thenReturn(fields);
         when(contentlet.getIdentifier()).thenReturn(identifier);
+        when(contentlet.getLanguageId()).thenReturn(DEFAULT_LANGUAGE_ID);
+        return contentlet;
+    }
+
+    /**
+     * Creates the published version of a content: same identifier, its own title.
+     */
+    private static Contentlet publishedVersion(final String identifier) {
+        final Contentlet contentlet = content(identifier);
+        final Map<String, Object> fields = new HashMap<>();
+        fields.put("identifier", identifier);
+        fields.put("title", "published title of " + identifier);
+        when(contentlet.getMap()).thenReturn(fields);
         return contentlet;
     }
 

@@ -27,7 +27,9 @@ import com.dotmarketing.util.json.JSONArray;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -54,11 +56,13 @@ public class ContentRelationshipsResourceIntegrationTest {
     private static Role readerRole;
     private static User backendUser;
     private static User backendReader;
+    private static User frontendUser;
 
     private static Contentlet parent;
     private static Contentlet notReadable;
     private static Contentlet published;
     private static Contentlet publishedWithNewerVersion;
+    private static Contentlet newerVersionOfPublished;
     private static Contentlet neverPublished;
 
     @BeforeClass
@@ -79,6 +83,8 @@ public class ContentRelationshipsResourceIntegrationTest {
                 .roles(TestUserUtils.getBackendRole()).nextPersisted();
         backendReader = new UserDataGen().password(PASSWORD)
                 .roles(TestUserUtils.getBackendRole(), readerRole).nextPersisted();
+        frontendUser = new UserDataGen().password(PASSWORD)
+                .roles(TestUserUtils.getFrontendRole()).nextPersisted();
 
         parent = new ContentletDataGen(parentType).nextPersistedAndPublish();
         grantRead(parent, anonymousRole);
@@ -92,7 +98,8 @@ public class ContentRelationshipsResourceIntegrationTest {
         publishedWithNewerVersion = new ContentletDataGen(childType).nextPersistedAndPublish();
         grantRead(publishedWithNewerVersion, anonymousRole);
         grantRead(publishedWithNewerVersion, readerRole);
-        ContentletDataGen.checkin(ContentletDataGen.checkout(publishedWithNewerVersion));
+        newerVersionOfPublished = ContentletDataGen.checkin(
+                ContentletDataGen.checkout(publishedWithNewerVersion));
 
         neverPublished = new ContentletDataGen(childType).nextPersisted();
         grantRead(neverPublished, anonymousRole);
@@ -127,7 +134,7 @@ public class ContentRelationshipsResourceIntegrationTest {
         if (childType != null) {
             ContentTypeDataGen.remove(childType, true);
         }
-        for (final User user : new User[]{backendUser, backendReader}) {
+        for (final User user : new User[]{backendUser, backendReader, frontendUser}) {
             if (user != null) {
                 UserDataGen.remove(user, true);
             }
@@ -195,15 +202,43 @@ public class ContentRelationshipsResourceIntegrationTest {
      * Given scenario: a related item anonymous visitors can read, published and then saved again
      * without publishing, so its current version is not the published one.
      * <p>
-     * Expected result: an anonymous request does not get its current version.
+     * Expected result: an anonymous request gets the published version of that item, not the
+     * newer one.
      */
     @Test
-    public void getContent_leavesOutUnpublishedVersionsOfRelatedContentForAnonymous()
+    public void getContent_returnsThePublishedVersionOfRelatedContentWithANewerVersionToAnonymous()
             throws Exception {
         final String body = getRelatedContent(anonymousRequest(), parent.getIdentifier());
 
-        assertFalse("A version that is not published must not be returned to anonymous visitors",
-                relatedIdentifiers(body).contains(publishedWithNewerVersion.getIdentifier()));
+        assertEquals("Anonymous visitors must get the published version of the related item",
+                publishedWithNewerVersion.getInode(),
+                relatedInodes(body).get(publishedWithNewerVersion.getIdentifier()));
+        assertFalse("The newer, unpublished version must not be returned to anonymous visitors",
+                body.contains(newerVersionOfPublished.getInode()));
+    }
+
+    /**
+     * Method to test: {@link ContentRelationshipsResource#getContent}
+     * <p>
+     * Given scenario: a logged-in front-end user, without back-end access.
+     * <p>
+     * Expected result: the user gets the published versions of the related items it can read,
+     * and neither the item limited to a role nor content that was never published.
+     */
+    @Test
+    public void getContent_returnsPublishedVersionsToLoggedInFrontEndUsers() throws Exception {
+        final String body = getRelatedContent(requestFor(frontendUser), parent.getIdentifier());
+        final Map<String, String> related = relatedInodes(body);
+
+        assertEquals("A front-end user must get the published version of the related item",
+                publishedWithNewerVersion.getInode(),
+                related.get(publishedWithNewerVersion.getIdentifier()));
+        assertTrue("A published related item the user can read must be returned",
+                related.containsKey(published.getIdentifier()));
+        assertFalse("A related item limited to a role must not be returned",
+                body.contains(notReadable.getIdentifier()));
+        assertFalse("Content that was never published must not be returned",
+                related.containsKey(neverPublished.getIdentifier()));
     }
 
     /**
@@ -263,13 +298,14 @@ public class ContentRelationshipsResourceIntegrationTest {
     @Test
     public void getContent_includesUnpublishedRelatedContentForBackendUsersWhoCanReadIt()
             throws Exception {
-        final List<String> related = relatedIdentifiers(
+        final Map<String, String> related = relatedInodes(
                 getRelatedContent(requestFor(backendReader), parent.getIdentifier()));
 
-        assertTrue("A related item with a newer version must be returned to a back-end reader",
-                related.contains(publishedWithNewerVersion.getIdentifier()));
+        assertEquals("A back-end reader must get the newer version of the related item",
+                newerVersionOfPublished.getInode(),
+                related.get(publishedWithNewerVersion.getIdentifier()));
         assertTrue("A never published related item must be returned to a back-end reader",
-                related.contains(neverPublished.getIdentifier()));
+                related.containsKey(neverPublished.getIdentifier()));
     }
 
     /**
@@ -322,6 +358,23 @@ public class ContentRelationshipsResourceIntegrationTest {
             identifiers.add(related.getJSONObject(i).getString("identifier"));
         }
         return identifiers;
+    }
+
+    /**
+     * Reads, for the first content returned, the inode of each item listed under the test
+     * relationship, by identifier.
+     */
+    private static Map<String, String> relatedInodes(final String body) {
+        final JSONArray contents = new JSONArray(body);
+        assertEquals("Exactly the requested content must be returned", 1, contents.length());
+        final Map<String, String> inodes = new HashMap<>();
+        final JSONArray related = contents.getJSONObject(0)
+                .getJSONArray(relationship.getRelationTypeValue());
+        for (int i = 0; i < related.length(); i++) {
+            inodes.put(related.getJSONObject(i).getString("identifier"),
+                    related.getJSONObject(i).getString("inode"));
+        }
+        return inodes;
     }
 
     /**

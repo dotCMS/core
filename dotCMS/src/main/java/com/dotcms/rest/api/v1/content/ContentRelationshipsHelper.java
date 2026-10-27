@@ -7,6 +7,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.DotContentletStateException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
@@ -164,8 +165,9 @@ public class ContentRelationshipsHelper implements Serializable {
 
     /**
      * Converts the specified list of {@link Contentlet} objects to JSON format, including, for
-     * each relationship of a content, the related contents the user can read. A relationship
-     * whose related contents the user cannot read is kept with an empty list.
+     * each relationship of a content, the related contents the user can read: their current
+     * version for a user with back-end access, their published version for any other user. A
+     * relationship whose related contents the user cannot read is kept with an empty list.
      *
      * @param contentlets The list of {@link Contentlet} objects.
      * @param user        The {@link User} the contents are converted for.
@@ -198,14 +200,16 @@ public class ContentRelationshipsHelper implements Serializable {
     }
 
     /**
-     * Returns the related contents the user can read. When the permission check fails with a
+     * Returns the related contents the user can read, in the version the user may see. A user
+     * with back-end access gets their current version; any other user, anonymous visitors
+     * included, gets their published version (see
+     * {@link #publishedVersionsTheUserCanRead(List, User)}).
+     * <p>
+     * For a user with back-end access, related contents are checked one by one with
+     * {@link PermissionAPI#filterCollection(List, int, boolean, User)} rather than the batch
+     * overload, because that check also applies category permissions. When it fails with a
      * {@link DotSecurityException}, none of them is returned; an error reading the data source is
      * thrown to the caller.
-     * <p>
-     * Related contents are checked one by one with
-     * {@link PermissionAPI#filterCollection(List, int, boolean, User)} rather than the batch
-     * overload, because that check also leaves out versions that are not live for users without
-     * back-end access, and applies category permissions.
      *
      * @param records The related {@link Contentlet} objects of one relationship.
      * @param user    The {@link User} the contents are returned for.
@@ -214,6 +218,9 @@ public class ContentRelationshipsHelper implements Serializable {
      */
     private List<Contentlet> readableRecords(final List<Contentlet> records, final User user)
             throws DotDataException {
+        if (user == null || !user.isBackendUser()) {
+            return publishedVersionsTheUserCanRead(records, user);
+        }
         try {
             return this.permissionAPI.filterCollection(records, PermissionAPI.PERMISSION_READ,
                     RESPECT_FE_ROLES, user);
@@ -224,6 +231,39 @@ public class ContentRelationshipsHelper implements Serializable {
             Logger.debug(ContentRelationshipsHelper.class, message, e);
             return List.of();
         }
+    }
+
+    /**
+     * Returns the published version, in its own language, of each related content the user can
+     * read, so a content whose newer version is not published yet is still listed with its
+     * published content. A content without a published version, or one the user cannot read, is
+     * left out.
+     *
+     * @param records The related {@link Contentlet} objects of one relationship.
+     * @param user    The {@link User} the contents are returned for.
+     * @return The published versions of the related contents the user can read.
+     * @throws DotDataException An error occurred when accessing the data source, or a related
+     *                          content could not be loaded.
+     */
+    private List<Contentlet> publishedVersionsTheUserCanRead(final List<Contentlet> records,
+            final User user) throws DotDataException {
+        final List<Contentlet> published = new ArrayList<>(records.size());
+        for (final Contentlet related : records) {
+            try {
+                final Contentlet publishedVersion = this.contentletAPI.findContentletByIdentifier(
+                        related.getIdentifier(), true, related.getLanguageId(), user,
+                        RESPECT_FE_ROLES);
+                if (publishedVersion != null) {
+                    published.add(publishedVersion);
+                }
+            } catch (final DotSecurityException e) {
+                Logger.debug(ContentRelationshipsHelper.class,
+                        "Related content the user cannot read is left out", e);
+            } catch (final DotContentletStateException e) {
+                throw new DotDataException("Related content could not be loaded", e);
+            }
+        }
+        return published;
     }
 
     /**
