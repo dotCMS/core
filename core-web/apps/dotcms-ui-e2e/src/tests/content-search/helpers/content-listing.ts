@@ -56,9 +56,17 @@ export class ContentListingHelper {
 
     /**
      * Navigates to the content portlet and waits for the Dojo iframe to be ready.
+     *
+     * Without a filter the listing opens on whatever content type the server session last
+     * remembered: `GET /api/v1/contenttype/id/{id}` stores it, and every test shares the admin
+     * session through `storageState`. Pass the variable of a type the test owns to pin it.
      */
-    async goto() {
-        await this.page.goto(Portlet.Content);
+    async goto(contentTypeVariable?: string) {
+        await this.page.goto(
+            contentTypeVariable
+                ? `${Portlet.Content}?filter=${contentTypeVariable}`
+                : Portlet.Content
+        );
         await this.waitForReady();
     }
 
