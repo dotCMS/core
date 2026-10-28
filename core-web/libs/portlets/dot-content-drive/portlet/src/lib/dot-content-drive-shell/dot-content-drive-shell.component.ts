@@ -57,7 +57,12 @@ import {
     isActionableBrowseItem,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
-import { loadDotEditContentSidePanel, loadDotSourceEditorSidePanel } from '@dotcms/edit-content';
+import {
+    DotEditContentPanelBinding,
+    DotPageEditorRequest,
+    injectEditContentPanel,
+    loadDotSourceEditorSidePanel
+} from '@dotcms/edit-content';
 import {
     DotContentDriveUploadFiles,
     DotFolderTreeNodeData,
@@ -94,7 +99,6 @@ import { DotContentDriveScopeBarComponent } from '../components/dot-content-driv
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
 import { DotFolderListViewContextMenuComponent } from '../components/dot-folder-list-context-menu/dot-folder-list-context-menu.component';
-import { DotLegacyEditorSidePanelComponent } from '../components/dot-legacy-editor-side-panel/dot-legacy-editor-side-panel.component';
 import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
     ACTION_CENTER_DIALOG_CLASS,
@@ -111,7 +115,6 @@ import {
     ROOT_PATH,
     SYSTEM_HOST
 } from '../shared/constants';
-import { DotLegacyEditorPageRequest, DotLegacyEditorSaved } from '../shared/legacy-editor.models';
 import {
     DotContentDriveActionExecutionResult,
     DotContentDriveContentTypeSelectorPayload,
@@ -348,48 +351,23 @@ export class DotContentDriveShellComponent implements OnDestroy {
         });
     });
 
-    /** Edit Content side panel request, driven by the navigation service. */
+    /** The Edit Content side panel's request, for either editor, driven by the navigation service. */
     protected readonly $editPanelRequest = this.#navigationService.$editPanelRequest;
 
     /**
-     * Legacy-editor side panel request, driven by the navigation service. Remove with the legacy
-     * editor.
+     * What the panel binds: the request, except while the navigation service reopens the panel
+     * ("switch to the old editor"), when it is `null` for one tick so the open panel closes first.
      */
-    protected readonly $legacyPanelRequest = this.#navigationService.$legacyPanelRequest;
+    readonly #panelRequest = computed(() =>
+        this.#navigationService.$reopeningPanel() ? null : this.$editPanelRequest()
+    );
 
     /**
-     * The new editor's side panel, open while the navigation service names content to edit or
-     * create in it. Loaded on its first open, so the editor and its Block Editor dependency chain
-     * stay out of this portlet's chunk.
+     * The Edit Content side panel, open while the navigation service names content to edit or
+     * create (#38303). The opener picks the editor from the content type, so one binding serves
+     * both editors, and loads each editor on its first open.
      */
-    readonly #editPanel = injectSidePanel(this.$editPanelRequest, {
-        component: loadDotEditContentSidePanel,
-        heading: (request) => request.title ?? '',
-        inputs: (request) => ({ data: request }),
-        outputs: {
-            saved: (contentlet: DotCMSContentlet) => this.onEditPanelSaved(contentlet),
-            languageChanged: (languageId: number) => this.onEditPanelLanguage(languageId)
-        },
-        closed: () => this.onEditPanelClosed()
-    });
-
-    /**
-     * The legacy (JSP) editor's side panel, for content types that have not opted into the new
-     * editor (#37759). Remove with the legacy editor.
-     */
-    readonly #legacyPanel = injectSidePanel(this.$legacyPanelRequest, {
-        component: () => DotLegacyEditorSidePanelComponent,
-        heading: (request) => request.title,
-        inputs: (request) => ({ request }),
-        outputs: {
-            saved: (saved: DotLegacyEditorSaved) => this.onLegacyPanelSaved(saved),
-            pageEditorRequested: (page: DotLegacyEditorPageRequest) =>
-                this.onLegacyPanelPageEditor(page),
-            versionRestored: () => this.onLegacyPanelRestored(),
-            languageChanged: (languageId: number) => this.onLegacyPanelLanguage(languageId)
-        },
-        closed: () => this.onLegacyPanelClosed()
-    });
+    readonly #editPanel = injectEditContentPanel(this.#panelRequest, this.#editPanelBinding());
 
     /** The file open in the Edit Code panel, from the store. */
     protected readonly $sourceEditorRequest = this.#store.sourceEditor;
@@ -409,10 +387,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
     /** Whether any side panel is open. */
     readonly #anyPanelOpen = computed(
-        () =>
-            !!this.$editPanelRequest() ||
-            !!this.$legacyPanelRequest() ||
-            !!this.$sourceEditorRequest()
+        () => !!this.$editPanelRequest() || !!this.$sourceEditorRequest()
     );
 
     /**
@@ -429,15 +404,40 @@ export class DotContentDriveShellComponent implements OnDestroy {
     #lastWrittenPath: string | undefined = undefined;
 
     /**
-     * The open side panel, whichever editor it hosts, so browser Back can route its close through
-     * that panel's unsaved-changes guard.
+     * The open side panel, Edit Content (either editor) or Edit Code, so browser Back can route its
+     * close through that panel's unsaved-changes guard.
      *
      * @returns The open panel, or `undefined` when none is open.
      */
     #activePanel(): DotSidePanelHandle | undefined {
-        return [this.#legacyPanel, this.#editPanel, this.#sourceEditorPanel].find((panel) =>
-            panel.isOpen()
-        );
+        return [this.#editPanel, this.#sourceEditorPanel].find((panel) => panel.isOpen());
+    }
+
+    /**
+     * The Edit Content panel's handlers, for either editor. A save and a close both refresh the list
+     * quietly: a move or a language switch inside the legacy editor sends no event of its own, so
+     * the close catches it (#38303, FR-017). A restored version arrives as a save, and a delete is
+     * followed by the close that refreshes.
+     *
+     * `editor` is a getter, read each time the panel opens, so "switch to the old editor" can reopen
+     * the content in the legacy editor. Remove the getter with the legacy editor.
+     *
+     * @returns The binding.
+     */
+    #editPanelBinding(): DotEditContentPanelBinding {
+        const forceLegacyEditor = this.#navigationService.$forceLegacyEditor;
+
+        return {
+            saved: (contentlet) => this.onEditPanelSaved(contentlet),
+            languageChanged: (languageId) => this.onEditPanelLanguage(languageId),
+            pageEditorRequested: (page) => this.onEditPanelPageEditor(page),
+            // Nothing of its own: the close that follows a delete refreshes the list.
+            deleted: () => undefined,
+            closed: () => this.onEditPanelClosed(),
+            get editor() {
+                return forceLegacyEditor() ? 'legacy' : undefined;
+            }
+        };
     }
 
     readonly $items = this.#store.items;
@@ -2093,19 +2093,26 @@ export class DotContentDriveShellComponent implements OnDestroy {
         this.$activeDialog.set(undefined);
     }
 
-    /** Closes the Edit Content side panel. */
+    /**
+     * The Edit Content panel closed itself, for any reason: clear the request, then refresh the list
+     * quietly. A close after a delete looks exactly like a cancel, and a move or a language switch
+     * in the legacy editor sends no event at all, so one extra list request is cheaper than missing
+     * a change (#37759, FR-014, FR-015; #38303, FR-017).
+     */
     protected onEditPanelClosed() {
         this.#navigationService.closeEditPanel();
+        this.#store.reloadContentDrive({ quiet: true });
     }
 
     /**
-     * A save in the new-editor side panel can create or change an item, so refresh the list. The
-     * first save of a create also switches the URL to the saved content (#37759, FR-025).
+     * A save in the Edit Content panel, from either editor, including a workflow action and a
+     * restored version: refresh the list quietly and keep the panel open. The first save of a
+     * create also switches the URL to the saved content (#37759, FR-013, FR-025).
      *
      * @param contentlet The saved content.
      */
     protected onEditPanelSaved(contentlet: DotCMSContentlet) {
-        this.#store.reloadContentDrive();
+        this.#store.reloadContentDrive({ quiet: true });
         this.#navigationService.panelSaved({
             identifier: contentlet.identifier,
             languageId: contentlet.languageId
@@ -2113,29 +2120,8 @@ export class DotContentDriveShellComponent implements OnDestroy {
     }
 
     /**
-     * A save in the legacy panel, including a workflow action: refresh the list quietly and keep
-     * the panel open (#37759, FR-013). Remove with the legacy editor.
-     */
-    protected onLegacyPanelSaved({ identifier, languageId }: DotLegacyEditorSaved) {
-        this.#store.reloadContentDrive({ quiet: true });
-        // The first save of a create switches the URL to the saved content (FR-025).
-        this.#navigationService.panelSaved({ identifier, languageId });
-    }
-
-    /**
-     * The author switched language inside the legacy editor: the URL follows (#37759, FR-020).
-     * Remove with the legacy editor.
-     *
-     * @param languageId The language the editor now shows.
-     */
-    protected onLegacyPanelLanguage(languageId: number) {
-        this.#navigationService.panelLanguageChanged(languageId);
-    }
-
-    /**
-     * The author switched language inside the new-editor panel, which reloads in place. The URL
-     * follows, as for the legacy panel, so a refresh or a switch to the old editor (a page reload)
-     * reopens that language (#37759, FR-020, FR-028).
+     * The author switched language inside the Edit Content panel. The URL follows, so a refresh or
+     * a switch to the old editor reopens that language (#37759, FR-020, FR-028).
      *
      * @param languageId The language the editor now shows.
      */
@@ -2144,32 +2130,13 @@ export class DotContentDriveShellComponent implements OnDestroy {
     }
 
     /**
-     * The legacy panel closed, for any reason. Refresh the list quietly every time: a close after a
-     * delete looks exactly like a cancel, and a move or a language switch sends no event at all, so
-     * one extra list request is cheaper than missing a change (#37759, FR-014, FR-015).
-     * Remove with the legacy editor.
-     */
-    protected onLegacyPanelClosed() {
-        this.#navigationService.closeEditPanel();
-        this.#store.reloadContentDrive({ quiet: true });
-    }
-
-    /**
-     * Bring Back restored an older version in the legacy panel. The editor reloads with it and
-     * sends no save, so refresh the list quietly here (#37759, US6). Remove with the legacy editor.
-     */
-    protected onLegacyPanelRestored() {
-        this.#store.reloadContentDrive({ quiet: true });
-    }
-
-    /**
-     * The first save of a new page in the legacy panel: close it, refresh the list, and open the
-     * page in the page editor in the language the editor named, as Content Search does (#37759,
-     * FR-008). Remove with the legacy editor.
+     * The first save of a new page in the legacy editor: close the panel, refresh the list, and
+     * open the page in the page editor in the language the editor named, as Content Search does
+     * (#37759, FR-008).
      *
      * @param request The page to open and its language.
      */
-    protected onLegacyPanelPageEditor({ url, languageId }: DotLegacyEditorPageRequest) {
+    protected onEditPanelPageEditor({ url, languageId }: DotPageEditorRequest) {
         this.#navigationService.closeEditPanel();
         this.#store.reloadContentDrive({ quiet: true });
         this.#dotRouterService.goToEditPage({ url, language_id: languageId });

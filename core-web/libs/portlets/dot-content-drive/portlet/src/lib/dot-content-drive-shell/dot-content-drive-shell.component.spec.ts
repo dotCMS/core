@@ -119,6 +119,10 @@ const editPanelRequestSignal: WritableSignal<DotEditContentRequest | null> = sig
 // Backs the mock's `$panelLocation`: what the URL must say about the open panel. The shell's URL
 // sync and its Back guard read this, not the request (#37759).
 const panelLocationSignal: WritableSignal<DotContentDrivePanelLocation | null> = signal(null);
+// Back the mock's `$forceLegacyEditor` and `$reopeningPanel`: "switch to the old editor" forces the
+// legacy editor and holds the panel closed for one tick so it reopens (#38303).
+const forceLegacyEditorSignal = signal(false);
+const reopeningPanelSignal = signal(false);
 /**
  * The Edit Permissions dialog the shell opens through `DialogService` (#37759, FR-030). `onClose`
  * is a subject so a test can close it the way PrimeNG does.
@@ -305,10 +309,8 @@ describe('DotContentDriveShellComponent', () => {
                 panelSaved: vi.fn(),
                 panelLanguageChanged: vi.fn(),
                 $editPanelRequest: editPanelRequestSignal,
-                // Inert: the one request above serves both editors (#38303). Kept only so the
-                // shell from before the move, which still reads it, can run while these tests are
-                // Red; drop it with that code.
-                $legacyPanelRequest: signal(null),
+                $forceLegacyEditor: forceLegacyEditorSignal,
+                $reopeningPanel: reopeningPanelSignal,
                 $panelLocation: panelLocationSignal
             }),
             LoggerService,
@@ -376,6 +378,8 @@ describe('DotContentDriveShellComponent', () => {
         showInListFieldsSignal = signal<DotCMSContentTypeField[]>([]);
         editPanelRequestSignal.set(null);
         panelLocationSignal.set(null);
+        forceLegacyEditorSignal.set(false);
+        reopeningPanelSignal.set(false);
         sourceEditorSignal.set(null);
         permissionsDialogClose$ = new Subject<unknown>();
         dialogServiceOpen.mockClear();
@@ -5335,6 +5339,31 @@ describe('DotContentDriveShellComponent', () => {
             // Counted, not `not.toHaveBeenCalled()`: a failure would print the call's config, whose
             // injector is too large to format.
             expect(sidePanels.open.mock.calls.length, 'panels opened by the shell itself').toBe(0);
+        });
+
+        /**
+         * "Switch to the old editor": the navigation service forces the legacy editor, replaces the
+         * request and holds the panel closed for one tick. The shell closes the open panel, without
+         * reporting a close, and reopens it in the legacy editor once the hold ends (#38303).
+         */
+        it('reopens the panel in the legacy editor when the navigation service switches to it', () => {
+            const first = openOn(EDIT_REQUEST);
+
+            forceLegacyEditorSignal.set(true);
+            setPanelRequest({ ...EDIT_REQUEST });
+            reopeningPanelSignal.set(true);
+            spectator.detectChanges();
+
+            expect(first.ref.isClosed).toBe(true);
+            expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
+
+            reopeningPanelSignal.set(false);
+            spectator.detectChanges();
+
+            expect(opener.open).toHaveBeenCalledTimes(2);
+            expect(first.options.editor).toBeUndefined();
+            expect(openedContent().options.editor).toBe('legacy');
+            expect(requestOf(openedContent())).toEqual(EDIT_REQUEST);
         });
 
         it('closes the panel when the request is cleared, without reporting a close', () => {
