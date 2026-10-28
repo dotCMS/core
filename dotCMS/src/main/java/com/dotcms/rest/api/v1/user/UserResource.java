@@ -134,6 +134,9 @@ import static com.dotmarketing.business.UserHelper.validateMaximumLength;
 @Tag(name = "Users")
 public class UserResource implements Serializable {
 
+	/** Message key sent in the {@code error-key} header, and used for the body, when Login As is denied for the caller's role. */
+	private static final String LOGIN_AS_ADMIN_REQUIRED_KEY = "loginas.error.adminrequired";
+
 	public static final String USER_ID = "userID";
 	public static final String USER_MSG = "User ";
 	public static final String USER_WITH_USER_ID_MSG = "User with userId '";
@@ -732,6 +735,17 @@ public class UserResource implements Serializable {
         throw new ForbiddenException(message);
     }
 
+	/**
+	 * Lets a user with the Login As role impersonate another user. Impersonating an administrator also requires the
+	 * caller to be an administrator and to re-enter their own password. When the caller is not allowed, the answer is
+	 * a 403 whose {@code error-key} header carries {@link #LOGIN_AS_ADMIN_REQUIRED_KEY}; the session is left untouched.
+	 *
+	 * @param request       the {@link HttpServletRequest}
+	 * @param httpResponse  the {@link HttpServletResponse}
+	 * @param loginAsForm   the ID of the user to impersonate and, for administrators, the caller's own password
+	 * @return the Login As result
+	 * @throws Exception if the request cannot be authenticated or an unexpected error happens
+	 */
 	@Operation(
 	    operationId = "loginAsUser",
 	    summary = "Login as user",
@@ -796,8 +810,11 @@ public class UserResource implements Serializable {
 					e.getMessage()));
 			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
 			// 403, not 401: the caller is authenticated but not allowed; a 401 makes the UI end the session.
-			// The key travels in the error-key header so the UI can tell this denial from other 403s
-			return ExceptionMapperUtil.createResponse(e, "loginas.error.adminrequired", Response.Status.FORBIDDEN);
+			// The key travels in the error-key header so the UI can tell this denial from other 403s.
+			// The body is built from the same key, so it is localized and does not repeat the user ids
+			// that are kept in the log
+			return ExceptionMapperUtil.createResponse(new DotSecurityException(LOGIN_AS_ADMIN_REQUIRED_KEY),
+					LOGIN_AS_ADMIN_REQUIRED_KEY, Response.Status.FORBIDDEN);
 		} catch (final NoSuchUserException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
 							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),

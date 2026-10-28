@@ -269,6 +269,9 @@ public class UserResourceIntegrationTest {
         assertNotNull(result);
         assertEquals(Status.FORBIDDEN.getStatusCode(), result.getStatus());
         assertEquals("loginas.error.adminrequired", result.getHeaderString("error-key"));
+        final String body = String.valueOf(((Map<?, ?>) result.getEntity()).get("message"));
+        assertFalse(body.contains(adminUser.getUserId()));
+        assertFalse(body.contains(nonAdmin.getUserId()));
         // the request authentication stores the caller in the session; a denied Login As must leave it there
         assertEquals(nonAdmin.getUserId(), nonAdminRequest.getSession().getAttribute(WebKeys.USER_ID));
         assertNull(nonAdminRequest.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
