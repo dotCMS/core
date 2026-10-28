@@ -434,7 +434,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
             // Nothing of its own: the close that follows a delete refreshes the list.
             deleted: () => undefined,
             closed: () => this.onEditPanelClosed(),
-            get editor() {
+            get editor(): 'legacy' | undefined {
                 return forceLegacyEditor() ? 'legacy' : undefined;
             }
         };
