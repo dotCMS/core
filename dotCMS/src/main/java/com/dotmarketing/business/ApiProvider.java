@@ -46,6 +46,14 @@ public class ApiProvider {
 
     public CategoryAPI categoryAPI() { return APILocator.getCategoryAPI(); }
 
+    /**
+     * Returns the {@link RoleAPI}, so classes built on this provider can resolve roles and check
+     * membership through a mockable seam instead of the static locator.
+     *
+     * @return the {@link RoleAPI} registered in {@link APILocator}
+     */
+    public RoleAPI roleAPI() { return APILocator.getRoleAPI(); }
+
     /*******  Web API Accessors ******/
     public UserWebAPI userWebAPI() {
         return WebAPILocator.getUserWebAPI();
