@@ -89,9 +89,11 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           # Only merge-queue builds are complete enough to reuse. A pull request build
-          # leaves the CLI and test modules out of maven-repo, and its head_sha is the
-          # PR head commit, which main can receive verbatim (an admin push that bypasses
-          # the queue). Trunk's CLI native build and dotcms-cli deploy would then fail.
+          # leaves the CLI and test modules out of maven-repo and uploads no
+          # docker-build-context (cicd_1-pr.yml sets upload-docker-context: false), and its
+          # head_sha is the PR head commit, which main can receive verbatim (an admin push
+          # that bypasses the queue). Trunk's CLI native build, dotcms-cli deploy and
+          # deploy-docker would then fail.
           workflow: cicd_2-merge-queue.yml
           workflow_search: false
           commit: ${{ github.sha }}
