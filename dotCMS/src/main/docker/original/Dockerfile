@@ -97,6 +97,20 @@ RUN set -eu; \
         echo "emSign ECC Root CA - G3 is still in the JDK truststore" >&2; exit 1; \
     fi
 
+# 2026-10-28: CVE-2026-91403. Removing G3 above only cuts the emSign path: the same eight
+# eMudhra intermediates are also cross-signed by Sectigo's AAA Certificate Services, which
+# some JDK vendors' cacerts trust (the 21.0.8-ms LTS image does). Block the intermediates
+# themselves the way upstream JDK-8395142 does, by appending their fingerprints to the JDK's
+# blocked.certs, so AAA stays usable for legitimate Sectigo chains. blocked.certs is read as
+# a Properties file, so duplicate lines are harmless once the vendor ships the fix (drop this
+# block then); the file starts with a blank line in case the JDK's copy lacks a final newline.
+# The check fails the build unless the JDK reports all 16 certificates as blocked.
+COPY emudhra/ /tmp/emudhra/
+RUN cat /tmp/emudhra/blocked.certs >> /java/lib/security/blocked.certs && \
+    /java/bin/java --add-exports java.base/sun.security.util=ALL-UNNAMED \
+        /tmp/emudhra/VerifyEmudhraBlocked.java /tmp/emudhra/blocked.pem && \
+    rm -rf /tmp/emudhra
+
 USER $USER_UID:$USER_GID
 ENV JAVA_HOME="/java"
 ENV PATH=$PATH:/java/bin
