@@ -9,6 +9,7 @@ import static org.mockito.Mockito.when;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
@@ -103,7 +104,10 @@ public class RoleAjaxSecurityTest extends IntegrationTestBase {
                 APILocator.getRoleAPI().delete(targetRole);
             }
             if (backendUser != null) {
-                APILocator.getUserAPI().delete(backendUser, APILocator.systemUser(), false);
+                // The three-argument delete hands the user's content to the system user, which has
+                // no user role in a fresh database, so name an admin as the replacement instead.
+                APILocator.getUserAPI().delete(backendUser, TestUserUtils.getAdminUser(),
+                        APILocator.systemUser(), false);
             }
         } finally {
             // Put back the DWR context attached before this class ran, so later tests in the suite
@@ -201,7 +205,8 @@ public class RoleAjaxSecurityTest extends IntegrationTestBase {
                     deleted == null || !UtilMethods.isSet(deleted.getId()));
         } finally {
             setUpDwrContext(backendUser);
-            APILocator.getUserAPI().delete(admin, APILocator.systemUser(), false);
+            APILocator.getUserAPI().delete(admin, TestUserUtils.getAdminUser(),
+                    APILocator.systemUser(), false);
         }
     }
 
