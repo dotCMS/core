@@ -184,8 +184,8 @@ jobs:
       - name: Write prompt
         run: |
           mkdir -p /tmp/autodoc
-          cat > /tmp/autodoc/burlap.txt << 'PROMPTEOF'
-          The context block above contains a closed issue (usually an Epic) with its
+          cat > /tmp/autodoc/instructions.md << 'PROMPTEOF'
+          The evaluation context contains a closed issue (usually an Epic) with its
           sub-issues and related PRs already assembled. Your task is to assess whether this
           Epic's delivery requires new or updated documentation in the dotCMS docs. A
           sub-issue labeled `Doc : Needs Doc`, `Changelog: Needs Doc` or
@@ -194,7 +194,7 @@ jobs:
           resulting documentation belongs in the public dotCMS docs (internal developer
           docs, ADRs, and repo guides do not).
 
-          If a `## Vault Context` section is present in this block, use it to inform the
+          If a `## Vault Context` section is present in the context, use it to inform the
           grouping and audience sections of the report — target personas, product pillar,
           GTM status, and strategic framing. If no Vault Context is present, infer from
           the Epic and PR content.
@@ -313,7 +313,6 @@ jobs:
             ISSUE_NUMBER  closed issue number
             REPO          owner/name of the triggering repo
             AIOS_DIR      path to a dotcms-aios checkout (optional)
-            PROMPT_FILE   path to the burlap prompt text
             OUT_FILE      where to write the assembled context
             INJECT_TEST   'true' appends a prompt-injection fixture (dry runs only)
           GH_TOKEN must be able to read the triggering repo and any repo whose PRs
@@ -515,15 +514,13 @@ jobs:
           else:
               print(f'warning: no vault file for {repo}#{issue_num}', file=sys.stderr)
 
-          prompt = Path(os.environ['PROMPT_FILE']).read_text().strip()
-          lines += ['', '---', '', '## Prompt: burlap', '', prompt, '']
-
+          # The prompt is not appended: it reaches the executor as a separate file
+          # (instructions.md) and becomes Claude's prompt, while this file is data.
           Path(os.environ['OUT_FILE']).write_text('\n'.join(lines) + '\n')
           print(f'context: {len(subs)} sub-issues, {len(prs)} PRs, '
                 f'vault={"yes" if vault else "no"}', file=sys.stderr)
           PYEOF
           AIOS_DIR=dotcms-aios \
-          PROMPT_FILE=/tmp/autodoc/burlap.txt \
           OUT_FILE=/tmp/autodoc/eval_context.md \
           INJECT_TEST=${{ needs.preflight.outputs.inject_test }} \
             python3 -I /tmp/autodoc/ctx.py
@@ -537,7 +534,9 @@ jobs:
       # The context can contain private material (dotcms-aios vault files, PR
       # bodies from private repos) and artifacts on a public repo are
       # downloadable by any signed-in GitHub user, so only ciphertext leaves
-      # this job. The executor decrypts with the same key.
+      # this job. The executor decrypts with the same key. The instructions are
+      # a separate file: the executor sends them as the prompt and frames the
+      # context as data, so the two never share a channel.
       - name: Encrypt eval context
         env:
           AUTODOC_CONTEXT_KEY: ${{ secrets.AUTODOC_CONTEXT_KEY }}
@@ -546,15 +545,19 @@ jobs:
             echo "::error::Secret AUTODOC_CONTEXT_KEY is not set."
             exit 1
           fi
-          openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt \
-            -in /tmp/autodoc/eval_context.md -out /tmp/autodoc/eval_context.md.enc \
-            -pass env:AUTODOC_CONTEXT_KEY
+          for F in instructions.md eval_context.md; do
+            openssl enc -aes-256-cbc -pbkdf2 -iter 200000 -salt \
+              -in "/tmp/autodoc/$F" -out "/tmp/autodoc/$F.enc" \
+              -pass env:AUTODOC_CONTEXT_KEY
+          done
 
       - name: Upload eval context
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: autodoc-context
-          path: /tmp/autodoc/eval_context.md.enc
+          path: |
+            /tmp/autodoc/instructions.md.enc
+            /tmp/autodoc/eval_context.md.enc
           if-no-files-found: error
           retention-days: 7
 
@@ -564,7 +567,7 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    uses: dotCMS/ai-workflows/.github/workflows/autodoc-executor.yml@v3.6.0-rc2  # TODO: repin to v3.6.0 before merge
+    uses: dotCMS/ai-workflows/.github/workflows/autodoc-executor.yml@v3.6.0  # needs the instructions.md artifact layout; merge only after v3.6.0 is tagged
     secrets:
       AUTODOC_DOTCMS_API_TOKEN_AISEARCH: ${{ secrets.AUTODOC_DOTCMS_API_TOKEN_AISEARCH }}
       AUTODOC_CONTEXT_KEY: ${{ secrets.AUTODOC_CONTEXT_KEY }}
