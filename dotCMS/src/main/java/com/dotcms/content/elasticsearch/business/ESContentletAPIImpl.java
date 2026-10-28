@@ -1704,13 +1704,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
             }
         }
 
-        // If admin, return query unchanged
+        // Normalize the query for every caller, administrators included, so that it keeps the
+        // same meaning whatever the caller's roles are: the clauses below are appended as text
+        // and an unbalanced escape at the end of the query would otherwise consume the separator
+        // that precedes them.
+        final StringBuffer buffy = new StringBuffer(luceneQuery);
+        balanceTrailingEscape(buffy);
+
+        // An administrator reads everything, so no clause is appended
         if (isAdmin) {
-            return luceneQuery;
+            return buffy.toString();
         }
 
         // Apply permissions
-        final StringBuffer buffy = new StringBuffer(luceneQuery);
         addPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
         addCategoryPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
 
@@ -10727,6 +10733,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return findContentRelationships(contentlet);
     }
 
+    /**
+     * Counts the documents in the index that match the given query and that the caller is allowed
+     * to read. The permission clauses are appended as text, so the query is normalized first for
+     * every caller, administrators included, and the count is taken from the index rather than
+     * from the database.
+     *
+     * @param luceneQuery the query written by the caller
+     * @param user the {@link User} the count is run for, or {@code null} for an anonymous caller
+     * @param respectFrontendRoles whether the anonymous and logged-in-site roles grant read as well
+     * @return how many documents match the query and are readable by the caller
+     * @throws DotDataException if the count cannot be read from the index
+     * @throws DotSecurityException if no user is given and front-end roles are not respected
+     */
     @Override
     public long indexCount(String luceneQuery, User user, boolean respectFrontendRoles)
             throws DotDataException, DotSecurityException {
@@ -10744,7 +10763,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
                 isAdmin = true;
             }
         }
-        StringBuffer buffy = new StringBuffer(luceneQuery);
+        final StringBuffer buffy = new StringBuffer(luceneQuery);
+        balanceTrailingEscape(buffy);
 
         // Permissions in the query
         if (!isAdmin) {
