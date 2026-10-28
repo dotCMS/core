@@ -133,6 +133,7 @@ import org.junit.runners.Suite.SuiteClasses;
         GenericBundleActivatorIntegrationTest.class,
         com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest.class,
         com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class,
+        com.dotmarketing.portlets.contentlet.transform.ContentMapWidgetFieldRenderTest.class,
         ApiTokenResourceTest.class,
         AuthCredentialPushPublishUtilTest.class,
         com.dotcms.publishing.remote.RemoteReceiverRelationshipsFilterTest.class,
