@@ -774,6 +774,7 @@ runs:
         path: |
           **/target/jacoco-report/*.exec
           **/target/*-reports/*.xml
+          dotcms-integration/target/gc-it-*.log*
 
     # Trial instrumentation for #38203: when cleanup-runner is off, record how
     # full the disk ends up so the job log shows the headroom. Informational only.
