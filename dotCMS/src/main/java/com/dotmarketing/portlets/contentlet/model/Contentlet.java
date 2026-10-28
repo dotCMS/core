@@ -310,7 +310,8 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @param contentlet
 	 */
 	public Contentlet(final Contentlet contentlet) {
-		this(contentlet.getMap());
+		this(com.dotcms.storage.AssetStorageFeature.isEnabled()
+                ? new HashMap<>(contentlet.map) : contentlet.getMap());
 		this.setIndexPolicy(contentlet.getIndexPolicy());
 
 	}
@@ -1208,45 +1209,102 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
 	/**
+	 * Returns the file held by a binary field, looking it up in the asset storage when the value is
+	 * missing or the file is no longer on disk. With S3 asset storage enabled, a file carried forward
+	 * from another version (its revision key or path names a different inode) is restored from that
+	 * inode.
 	 *
-	 * @param velocityVarName
-	 * @return
-	 * @throws IOException
+	 * @param velocityVarName the binary field's variable name
+	 * @return the binary file, or null when the field has none
+	 * @throws IOException if the lookup fails, or, with S3 asset storage enabled, if a file carried
+	 *                     forward from another version cannot be restored
 	 */
 	public java.io.File getBinary(String velocityVarName)throws IOException {
-		final Object rawValue = map.get(velocityVarName);
-		File f = (rawValue instanceof File) ? (File) rawValue : null;
-		if((f==null || !f.exists()) ){
-			f=null;
-			map.remove(velocityVarName);
+        // Preserve main's filesystem/NFS behavior while S3 assets are disabled.
+        if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+        final Object rawValue = map.get(velocityVarName);
+        File f = (rawValue instanceof File) ? (File) rawValue : null;
+        if((f==null || !f.exists()) ){
+            f=null;
+            map.remove(velocityVarName);
             if ( map.get( INODE_KEY ) != null && InodeUtils.isSet( (String) map.get( INODE_KEY ) ) ) {
                 String inode = (String) map.get(INODE_KEY);
-	        	try{
-	        		java.io.File binaryFileFolder = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
-	                    + java.io.File.separator
-	                    + inode.charAt(0)
-	                    + java.io.File.separator
-	                    + inode.charAt(1)
-	                    + java.io.File.separator
-	                    + inode
-	                    + java.io.File.separator
-	                    + velocityVarName);
-	                    if(binaryFileFolder.exists()){
-	                    	java.io.File[] files = binaryFileFolder.listFiles(new BinaryFileFilter());
-		                    if(null != files && files.length > 0){
-		                    	f = files[0];
-		                    	map.put(velocityVarName, f);
-		                    }
-		                } 
-	            }catch(Exception e){
-	                Logger.error(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+inode+"  velocityVaribleName : "+velocityVarName );
-	                throw new IOException("File System error.");
-	            }
-			}
+                try{
+                    java.io.File binaryFileFolder = new java.io.File(APILocator.getFileAssetAPI().getRealAssetsRootPath()
+                        + java.io.File.separator
+                        + inode.charAt(0)
+                        + java.io.File.separator
+                        + inode.charAt(1)
+                        + java.io.File.separator
+                        + inode
+                        + java.io.File.separator
+                        + velocityVarName);
+                        if(binaryFileFolder.exists()){
+                            java.io.File[] files = binaryFileFolder.listFiles(new BinaryFileFilter());
+                            if(null != files && files.length > 0){
+                                f = files[0];
+                                map.put(velocityVarName, f);
+                            }
+                        }
+                }catch(Exception e){
+                    Logger.error(this,"Error occured while retrieving binary file name : getBinaryFileName(). ContentletInode : "+inode+"  velocityVaribleName : "+velocityVarName );
+                    throw new IOException("File System error.");
+                }
+            }
+        }
+
+        return f;
+
+
+        }
+
+		final Object rawValue = map.get(velocityVarName);
+		File f = (rawValue instanceof File) ? (File) rawValue : null;
+		if (f != null && f.exists()) {
+			return f;
 		}
 
+		f = null;
+		if (map.get(INODE_KEY) != null && InodeUtils.isSet((String) map.get(INODE_KEY))) {
+			String inode = (String) map.get(INODE_KEY);
+			com.dotcms.storage.binary.BinaryAssetReference.Owner carriedFrom = null;
+			try {
+                final File snapshot = rawValue instanceof File ? (File) rawValue : null;
+                final String revisionKey = snapshot == null
+                        ? null : com.dotcms.storage.binary.BinaryAssetReference.keyOf(snapshot);
+                // Check-in assigns the new inode before it reads the binary, so a file carried forward
+                // from the previous version is restored from the owner its revision key or path names.
+                final com.dotcms.storage.binary.BinaryAssetReference.Owner owner = snapshot == null ? null
+                        : revisionKey != null ? com.dotcms.storage.binary.BinaryAssetReference.ownerOf(revisionKey)
+                        : com.dotcms.storage.binary.BinaryAssetReference.legacyOwnerOf(snapshot);
+                carriedFrom = owner != null && !owner.inode().equals(inode) ? owner : null;
+                final com.dotcms.storage.binary.BinaryAssetStorageAPI binaries = APILocator.getBinaryAssetStorageAPI();
+                if (revisionKey != null) {
+                    f = owner == null ? binaries.getRevisionFile(inode, velocityVarName, revisionKey)
+                            : binaries.getRevisionFile(owner.inode(), owner.field(), revisionKey);
+                } else if (carriedFrom != null) {
+                    f = binaries.getBinaryFile(carriedFrom.inode(), carriedFrom.field(), snapshot.getName());
+                } else {
+                    f = binaries.getBinaryFile(inode, velocityVarName);
+                }
+                if (snapshot != null) {
+                    f = com.dotcms.storage.binary.BinaryAssetReference.preserveMetadata(f, snapshot);
+                }
+				if (f != null) {
+					map.put(velocityVarName, f);
+				}
+			} catch (Exception e) {
+				Logger.error(this, "Error retrieving binary file: inode=" + inode
+						+ " field=" + velocityVarName);
+				throw new IOException("File System error.");
+			}
+			if (f == null && carriedFrom != null) {
+				// Check-in reads null as "the user removed the file", which would drop the binary silently.
+				throw new IOException("Binary carried forward from inode " + carriedFrom.inode()
+						+ " could not be restored: field=" + velocityVarName);
+			}
+		}
 		return f;
-
 	}
 
 	/**
@@ -1256,6 +1314,13 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 	 * @throws IOException
 	 */
 	public InputStream getBinaryStream(String velocityVarName) throws IOException{
+        if (com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+            try (var lease = APILocator.getBinaryAssetStorageAPI().acquireCacheLease()) {
+                final File binary = getBinary(velocityVarName);
+                if (binary == null) throw new java.io.FileNotFoundException("Missing binary field " + velocityVarName);
+                return Files.newInputStream(binary.toPath());
+            }
+        }
 		InputStream fis = Files.newInputStream(getBinary(velocityVarName).toPath());
 		return fis;
 	}

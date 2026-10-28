@@ -6,6 +6,8 @@ import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.ImageField;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.storage.FileMetadataAPI;
+import com.dotcms.storage.AssetStorageFeature;
+import com.dotcms.storage.binary.BinaryAssetReference;
 import com.dotcms.storage.FileStorageAPI;
 import com.dotcms.storage.GenerateMetadataConfig;
 import com.dotcms.storage.StorageKey;
@@ -84,7 +86,7 @@ public class MetadataDelegate implements HydrationDelegate {
                     final Optional<Contentlet> fileAsContentOptional = findLinkedBinary(contentlet, (ImageField) field);
                     if (fileAsContentOptional.isPresent()) {
                         final Contentlet fileAsset = fileAsContentOptional.get();
-                        final String path = Try.of(()-> fileMetadataAPI.getFileName(contentlet, FileAssetAPI.BINARY_FIELD)).getOrElse("unk");
+                        final String path = Try.of(()-> fileMetadataAPI.getFileName(AssetStorageFeature.isEnabled() ? fileAsset : contentlet, FileAssetAPI.BINARY_FIELD)).getOrElse("unk");
                         final File file = (File) fileAsset.get(FileAssetAPI.BINARY_FIELD);
                         metadataMap = getMetadataMap(file, path);
                     }
@@ -121,7 +123,9 @@ public class MetadataDelegate implements HydrationDelegate {
 
             final String[] parts = path.split(Pattern.quote(File.separator));
             final int fileIndex = parts.length - 1;
-            final int folderIndex = fileIndex - 1;
+            final int revisionDepth = AssetStorageFeature.isEnabled() && parts.length >= 7
+                    && ".revisions".equals(parts[fileIndex - 2]) ? 2 : 0;
+            final int folderIndex = fileIndex - 1 - revisionDepth;
             final int inodeIndex = folderIndex - 1;
             final int char2Index = inodeIndex - 1;
             final int char1Index = char2Index - 1;
@@ -131,6 +135,15 @@ public class MetadataDelegate implements HydrationDelegate {
             final String inode = parts[inodeIndex];
             final String char2 = parts[char2Index];
             final String char1 = parts[char1Index];
+
+            if (AssetStorageFeature.isEnabled() && inode.startsWith(char1 + char2)
+                    && char1.length() == 1 && char2.length() == 1) {
+                // Missing local files are valid references; the storage reader restores them lazily.
+                return revisionDepth == 0
+                        ? new BinaryAssetReference.StoredBinary(null, null, file).localFile(inode, folder)
+                        : BinaryAssetReference.localFile(inode, folder, String.join("/",
+                                java.util.Arrays.copyOfRange(parts, char1Index, parts.length)));
+            }
 
             final String assetsRootPath = ConfigUtils.getAbsoluteAssetsRootPath();
             //Rebuild the path and prepend the new local assets real-path
@@ -164,8 +177,10 @@ public class MetadataDelegate implements HydrationDelegate {
         final StorageType storageType = StoragePersistenceProvider.getStorageType();
         final FileStorageAPI fileStorageAPI = APILocator.getFileStorageAPI();
         final Predicate<String> filterBasicMetadataKey = metadataKey -> true;
-        final File normalized = normalize(file);
-         return fileStorageAPI.generateMetaData(normalized,
+        final boolean s3 = AssetStorageFeature.isEnabled();
+        // Preserve eager filesystem normalization when S3 mode is disabled.
+        final File normalized = s3 ? null : normalize(file);
+        return fileStorageAPI.generateMetaData(() -> s3 ? normalize(file) : normalized,
                 new GenerateMetadataConfig.Builder()
                         //if there's metadata already generated this should find it for us (all that if we have an inode)
                         //otherwise it'll give us the basic md. Nothing gets stored/saved here.
@@ -175,6 +190,8 @@ public class MetadataDelegate implements HydrationDelegate {
                         .store(false)
                         .cache(false)
                         .metaDataKeyFilter(filterBasicMetadataKey)
+                        .getIfOnlyHasCustomMetadata(metadata -> s3 && metadata.keySet().containsAll(fieldNames)
+                                ? Map.of() : metadata)
                         .build());
     }
 

@@ -1103,7 +1103,7 @@ public class FileMetadataAPITest {
         // ║  Generating Test data  ║
         // ╚════════════════════════╝
         final Contentlet fileAssetContent = getFileAssetContent(true, 1, TestFile.PDF); // fileAsset
-        CacheLocator.getMetadataCache().addMetadataMap(fileAssetContent.getInode() + ":" + FileAssetAPI.BINARY_FIELD, new HashMap<>());
+        CacheLocator.getMetadataCache().addMetadataMap(fileMetadataAPI.getMetadataCacheKey(fileAssetContent, FileAssetAPI.BINARY_FIELD), new HashMap<>());
         final Object metadataMap = fileAssetContent.get(FileAssetAPI.META_DATA_FIELD);
 
         // ╔════════════════════════╗
@@ -1145,7 +1145,7 @@ public class FileMetadataAPITest {
         assertTrue(binary.exists());
         assertTrue(binary.delete());
         CacheLocator.getMetadataCache()
-                .removeMetadata(fileAssetContent.getInode() + ":" + FILE_ASSET);
+                .removeMetadata(fileMetadataAPI.getMetadataCacheKey(fileAssetContent, FILE_ASSET));
 
         // ╔════════════════════════╗
         // ║  Executing Assertions  ║
@@ -1160,6 +1160,7 @@ public class FileMetadataAPITest {
                 reRead.getMap().get(BasicMetadataFields.SHA256_META_KEY.key()));
         assertNotNull("full metadata must also be served from storage",
                 secondPass.getFullMetadataMap().get(FILE_ASSET));
+        assertFalse("Reading existing metadata must not restore or reopen the binary", binary.exists());
     }
 
 }

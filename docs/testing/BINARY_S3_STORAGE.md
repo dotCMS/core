@@ -55,14 +55,26 @@ table may not be seen at first read, and a runtime change is ignored until resta
 overrides through `Config.setProperty` do re-read it, which is how tests switch modes. Tests
 that mock `Config` statically must call `AssetStorageFeature.reset()` themselves.
 
-Turning the flag on is a one-way operational decision. With a namespace set (see below), the
-objects written with the flag on live under `asset-namespaces/<namespace>/`, which a release
-without this feature does not read. The flag-off path of this release ignores the namespace
-too, so turning the flag off again hides those objects in the same way. Binaries are stored in
-a layout that an older release cannot read either: a JSON reference at the owner key and the
-bytes under `asset-blobs/sha256/...`. Once assets are written that way,
-do not roll back below the release that ships this feature without first migrating those
-assets back to the previous layout.
+With the flag off, the S3 cleanup job queues (`binaryAssetCleanup`, `binaryFieldCleanup`) are not
+registered.
+
+### Enabling the flag is not rollback-safe
+
+Enabling the flag is a one-way step for any content written while it is on. Check-in stores the
+active binary only under a `.revisions/<uuid>/` key recorded in `contentlet_as_json`
+(`storageKey`/`metadataStorageKey`); no legacy flat file is written, and the local copy may later
+be evicted to S3. Neither a release without this code nor this release with the flag turned back
+off reads those revision keys (the reader falls back to the legacy field folder), so affected
+binaries resolve as stale or missing. Leaving the flag off, the default, changes nothing. Keeping
+a legacy-path copy for rollback is not implemented; treat enabling the flag as requiring a
+forward-only recovery plan.
+
+The S3 layout is one-way as well. With a namespace set (see below), objects written with the
+flag on live under `asset-namespaces/<namespace>/`, and binaries are stored as a JSON reference
+at the owner key with the bytes under `asset-blobs/sha256/...`. A release without this feature
+reads neither, and the flag-off path of this release ignores the namespace too. Do not roll back
+below the release that ships this feature without first migrating those assets back to the
+previous layout.
 
 ## Storage layer behavior with the flag on
 
@@ -88,9 +100,6 @@ The storage chain (`ChainableStoragePersistenceAPI`) and its providers change as
   per lookup. Only listings that need every key (`listObjectPaths`, `listObjectSnapshots`,
   `deleteGroup` and static push) follow every page.
 
-`SharedExtractedMetadata` caches byte-derived Tika extraction at
-`extracted-metadata/<source-sha256>/<configuration-hash>.json`. Nothing calls it yet; metadata
-generation starts using it in a later slice.
 
 ## Binary asset API
 
@@ -120,6 +129,137 @@ field or file name that is blank, contains `/` or `\`, or is `.` or `..`, so a b
 leave its `{inode}/{field}` directory. This applies with the flag on or off.
 
 With the flag off, the API uses the existing filesystem/NFS paths and makes no remote calls.
+
+## Content binaries and immutable revisions
+
+With the flag on, new CMS binary writes use
+`binary-assets/{a}/{b}/{inode}/{field}/.revisions/{revision-id}/{filename}`. The Binary field JSON
+keeps its original `value` filename and adds `storageKey` (and `metadataStorageKey` for its
+metadata). The revision key is recorded only there, so for a content type with a Binary field,
+check-in writes `contentlet_as_json` even when `SAVE_CONTENTLET_AS_JSON=false`; without it the
+new revision could not be found. The field reference changes in the content transaction, so an uncommitted replacement
+does not overwrite the prior object, and a rollback keeps the previous revision. Legacy binary
+JSON and storage keys remain readable. Reconstructed files keep the stored revision path without
+I/O. Old revisions are kept until whole-inode cleanup. A check-in that rolls back deletes the
+revision and revision metadata it uploaded, through a rollback listener; the key carries a fresh
+UUID, so no other version can reference it. If that delete fails it is logged and the object is
+left behind. Metadata written under a different key during the rolled-back check-in, and
+revisions abandoned by a rollback to a savepoint, are not reclaimed.
+
+Each new version gets its own revision of every binary field, including fields the edit did not
+change, so a check-in that creates a version uploads every binary again (one S3 PUT per field)
+and the bucket holds one copy per version until old versions are deleted and cleanup reclaims
+them. Size the bucket and request budget for that: a content type with large binaries that is
+edited often costs a full copy of each binary per version. Saving without a new version
+(`checkinWithoutVersioning`) reuses the current revision when the file is unchanged.
+
+Custom metadata is copied to replacements, and metadata files and cache entries identify the exact
+binary revision. Binary HTTP responses (`BinaryExporterServlet`) hold a cache lease while they
+resolve, export and open the file, and release it before streaming, so a slow client does not
+defer eviction. `FileAsset.getInputStream` and `Contentlet.getBinaryStream` also hold it only until
+the stream is open, because a lease must be released on the thread that took it and a caller may
+read or close the stream elsewhere. On a local disk an open file survives eviction, so this is
+safe. Eviction on an NFS asset directory, where deleting an open file can break the read,
+has not been validated.
+
+## Metadata from evicted originals
+
+With the flag on, `FileStorageAPI` restores the exact binary only when metadata generation needs
+its bytes, and holds a cache lease through basic inspection, hashing and Tika parsing. Restore
+failures propagate, and so do shared-extraction storage failures, instead of producing a
+successful partial metadata result.
+
+Byte-derived Tika extraction is shared through `SharedExtractedMetadata`, cached at
+`extracted-metadata/<source-sha256>/<configuration-hash>.json`. The configuration hash covers the
+parser bundle version, the binary metadata schema version and the extracted-text limit. Filenames,
+local paths, fallback titles and modification times are added per use afterwards, and custom
+attributes and focal points stay in their content-owned snapshots. Unknown parser versions and
+flag-off mode extract directly. Empty or failed extractions are not published. Shared extraction
+records are not reclaimed yet.
+
+JSON metadata hydration reads the linked image's owner key, not the parent content's binary key.
+Complete stored metadata avoids normalizing or downloading the original. Missing metadata can be
+regenerated from a cold legacy or revision path.
+
+## Durable deletion
+
+Whole-inode deletion, deletion of one language of multilingual content, and old-version
+maintenance record one `binaryAssetCleanup` job per deleted inode in the same database transaction
+as the content deletion. Main leaves the files of a deleted language on disk (#9146); with the
+flag on, that path now records cleanup jobs and, when `BACKUP_DELETED_CONTENTLETS_TO_DISK` is on,
+recovery archives like the other deletion paths.
+
+The job carries the exact binary and metadata paths stored for the inode when it was recorded, so
+recording it lists the inode's objects inside the deletion transaction, and a storage listing
+failure aborts the deletion. Old-version maintenance (`DropOldContentletRunner`) lists a batch's
+objects just before it opens its deletion transaction instead, because those versions are no
+longer edited, so the S3 calls do not run while the batch's rows are locked. The worker deletes the recorded metadata before the recorded source
+objects, so a failure leaves the sources available for a retry. It never deletes by prefix: an
+inode can be re-created after the deletion (push publishing keeps the sender's inodes), and the
+revisions it uploads survive. Objects uploaded under the deleted inode by a transaction that
+overlapped the deletion are therefore not reclaimed. The inode's completed renditions and legacy
+image cache are removed whole, since they regenerate on demand.
+
+If a content version with that inode exists again when the job runs, the worker locks that row
+and deletes only the recorded revision files (`.revisions/<uuid>/` binaries and the metadata in
+those folders) whose folder the row does not reference through any `storageKey` or
+`metadataStorageKey`. It keeps recorded older-layout binaries and metadata, renditions and the
+legacy image cache, logs what it kept, and completes. If the row's JSON is empty or cannot be
+read, it keeps every recorded file. S3 failures use the job queue's retry policy; after retries are
+exhausted the job stays failed and can be retried through the job management API. Direct
+submissions through the public job endpoint are rejected. With the flag off, workers do not touch
+storage and pending jobs are not silently completed.
+
+The job removes local cache copies only on the node that runs it. Another node that had cached a
+deleted revision keeps that copy: cache eviction deletes a local file only after it verifies a
+durable copy in S3, and the job has just deleted it. Those copies are unreachable, since nothing
+references them, but they count toward that node's `BINARY_CACHE_MAX_SIZE_MB` until someone removes
+them. Reclaiming them is not implemented yet.
+
+## Binary field trash
+
+With the flag on, deleting a binary field records a `binaryFieldCleanup` request in the same
+transaction as the field deletion. Requests cover historical and working versions up to the
+deletion time; values from a later field with the same name are kept.
+
+Cleanup runs as a queued job, never inside the caller's request. It handles one content row per
+transaction: it locks that row, rechecks that it was not edited after the field was removed,
+uploads and verifies a recovery ZIP, clears the old field reference, records the exact cleanup
+inventory, and advances the job's saved cursor, all in the row's own commit. Only that row is locked
+while its archive uploads, and a retry resumes after the last committed row. A row whose field
+points at a file that was already gone (a binary missing from the storage listing, or metadata
+that exists neither locally nor in S3) is still cleared: the file is listed in the ZIP's
+`missing.json` and logged as a warning, and it stays out of the recorded cleanup inventory. A
+storage error, a listed file that disappears before it is archived, or an archive S3 does not
+confirm still fails the row, and the job retries it. A separate step checks that
+the archived files are no longer referenced and that the ZIP is still available before deleting
+metadata, originals and renditions. It never deletes a whole field prefix, so uploads made after
+the inventory was captured survive a retry. Direct submissions through the public job endpoint are
+rejected; only field deletion and `ContentletAPI.cleanField` create this work. With the flag off, scheduling and local
+trash behave as before.
+
+## Deleted-content recovery archives
+
+When both the flag and the existing `BACKUP_DELETED_CONTENTLETS_TO_DISK` option are on, deletion
+writes a verified S3 recovery ZIP before removing content. Archives live in the
+`deleted-content-backups` group at `<identifier>/<inode>/<uuid>.zip`. Full destruction and
+all-version deletion archive each version, deleting one language archives each version in that
+language, and single-version deletion archives only that version. A failed backup aborts the
+deletion: an S3 error, a read or write error, or an upload S3 does not confirm. A file that was
+already gone before the deletion does not: a binary with no local copy and no S3 copy, or metadata
+the row points to that no longer exists, is left out of the ZIP, listed in a `missing.json` entry
+(`kind`, `field`, and the `path` it would have had) and logged as a warning. Binary cleanup never
+deletes recovery archives. Field trash ZIPs use the same group and
+layout.
+
+Each ZIP contains `contentlet.json` (the row's complete typed field data), `contentlet.xml`, and
+`assets/` entries under the original binary and metadata paths, including binary fields whose
+definitions were removed. Operators can download the ZIPs from S3 for manual recovery; internal
+callers can use `ContentletBackupStorage.list(identifier)` and `open(key)`. There is no automatic
+database restore, and archives are kept until removed or expired by the bucket's lifecycle policy.
+
+With the flag on, the `deleteAllVersionsandBackup` interceptor, previously a no-op, calls its
+implementation and the all-version deletion hooks. With the flag off it stays a no-op.
 
 ## Local cache eviction
 
@@ -233,8 +373,10 @@ an S3-compatible custom endpoint needs a key and secret.
 ## Running the checks
 
 The S3 checks use the real filesystem provider, chain and AWS adapter against a disposable
-MinIO bucket. `BinaryS3StorageTest` is skipped unless `s3.test.endpoint` is set; the other
-tests always run. The credentials below are disposable local test values.
+MinIO bucket, and the transaction checks use a disposable PostgreSQL database; each test creates
+and removes its own schema. `BinaryS3StorageTest` is skipped unless `s3.test.endpoint` is set, and
+the PostgreSQL cases are skipped unless `s3.test.jdbc` is set. The credentials below are disposable
+local test values.
 
 MinIO no longer publishes community images, so `minio/minio:latest` can no longer be pulled.
 The command uses Chainguard's free MinIO image instead. Its free tier publishes only the
@@ -251,12 +393,56 @@ docker run -d --rm --name binary-s3-test \
   cgr.dev/chainguard/minio@sha256:dc455cdd4db6e390b1b26514f15ff37681a777bf8dab41aac445a0259f751e56 \
   server /data
 
+docker run -d --rm --name binary-cleanup-postgres-test \
+  -p 127.0.0.1:19003:5432 \
+  -e POSTGRES_USER=binary-storage-test \
+  -e POSTGRES_PASSWORD=binary-storage-test \
+  -e POSTGRES_DB=binary_storage_test postgres:16-alpine
+
 ./mvnw test -pl :dotcms-core -Dmaven.build.cache.enabled=false \
-  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest \
-  -Ds3.test.endpoint=http://127.0.0.1:19002
+  -Dtest=AssetStorageFeatureTest,AssetStorageFeatureLatchTest,S3StorageConfigurationTest,NoWebIdentityCredentialsProviderChainTest,BinaryS3StorageTest,BinaryAssetReferenceTest,BinaryCacheEvictionJobTest,BinaryFileSystemStorageTest,BinaryAssetStorageAPIImplTest,MetadataLocalCacheTest,BinaryAssetCleanupTransactionTest,BinaryAssetCleanupProcessorTest,ContentletBackupStorageGateTest,ContentletBackupStorageMissingSourceTest,ContentletBackupStorageFieldArchiveTest,BinaryFieldCleanupProcessorTest,AssetJobEventSerializationTest \
+  -Ds3.test.endpoint=http://127.0.0.1:19002 \
+  -Ds3.test.jdbc=jdbc:postgresql://127.0.0.1:19003/binary_storage_test
+
+docker stop binary-s3-test binary-cleanup-postgres-test
+```
+
+The CMS integration checks are registered in `Junit5Suite1` and run against the full integration
+stack. Their flag-on cases are skipped unless `s3.cms.enabled=true` is set, and that property must
+match `DOT_FEATURE_FLAG_S3_ASSET_STORAGE`. They need a MinIO bucket of their own, so start the
+same disposable MinIO as above (or keep it running) and create the bucket first. The metadata
+chain must include S3 (`DOT_STORAGE_FILE_METADATA_DEFAULT_CHAIN=FILE_SYSTEM,S3`); without it the
+backup cases fail with "Metadata backfill requires a durable provider in the configured metadata
+chain".
+
+```sh
+docker run -d --rm --name binary-s3-test \
+  -p 127.0.0.1:19002:9000 \
+  -e MINIO_ROOT_USER=binary-storage-test \
+  -e MINIO_ROOT_PASSWORD=binary-storage-test \
+  cgr.dev/chainguard/minio@sha256:dc455cdd4db6e390b1b26514f15ff37681a777bf8dab41aac445a0259f751e56 \
+  server /data
+
+curl --aws-sigv4 "aws:amz:us-east-1:s3" --user binary-storage-test:binary-storage-test \
+  -X PUT http://127.0.0.1:19002/binary-storage-it
+
+./mvnw install -pl :dotcms-core --am -DskipTests -Ddocker.skip
+./mvnw verify -pl :dotcms-integration -Dmaven.build.cache.enabled=false -Dcoreit.test.skip=false \
+  -Dit.test=BinaryAssetStorageIntegrationTest,ContentletBackupStorageTest,SharedAssetStorageIntegrationTest \
+  -Ds3.cms.enabled=true \
+  -DDOT_FEATURE_FLAG_S3_ASSET_STORAGE=true \
+  -DDOT_STORAGE_FILE_METADATA_DEFAULT_CHAIN=FILE_SYSTEM,S3 \
+  -DDOT_STORAGE_FILE_METADATA_S3_ENDPOINT=http://127.0.0.1:19002 \
+  -DDOT_STORAGE_FILE_METADATA_S3_BUCKET_NAME=binary-storage-it \
+  -DDOT_STORAGE_FILE_METADATA_S3_BUCKET_REGION=us-east-1 \
+  -DDOT_STORAGE_FILE_METADATA_S3_ACCESS_KEY=binary-storage-test \
+  -DDOT_STORAGE_FILE_METADATA_S3_SECRET_ACCESS_KEY=binary-storage-test
 
 docker stop binary-s3-test
 ```
+
+A green build is not proof that these checks ran: confirm `Tests run:` and `Skipped:` in
+`dotcms-integration/target/failsafe-reports/*.txt`.
 
 CI does not yet provide the MinIO service, so `BinaryS3StorageTest` does not run there.
 Wiring MinIO into the CI build is planned before the feature is enabled for customers.

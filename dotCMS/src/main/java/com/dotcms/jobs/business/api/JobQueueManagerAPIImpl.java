@@ -169,7 +169,9 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
         this.realTimeJobMonitor = realTimeJobMonitor;
 
         // Register discovered processors by CDI
-        discovery.discoverJobProcessors().forEach(this::registerProcessor);
+        discovery.discoverJobProcessors().stream()
+                .filter(processor -> com.dotcms.storage.AssetStorageFeature.allowsJobQueue(queueNameOf(processor)))
+                .forEach(this::registerProcessor);
 
         APILocator.getLocalSystemEventsAPI().subscribe(
                 JobCancelRequestEvent.class,
@@ -255,10 +257,19 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @Override
     public void registerProcessor(final Class<? extends JobProcessor> processor) {
+        registerProcessor(queueNameOf(processor), processor);
+    }
 
-        Queue queue = AnnotationUtils.getBeanAnnotation(processor, Queue.class);
-        String queueName = Objects.nonNull(queue) ? queue.value() : processor.getName();
-        registerProcessor(queueName, processor);
+    /**
+     * Returns the queue a processor class registers for: the value of its {@link Queue} annotation,
+     * or the class name when it has none.
+     *
+     * @param processor the job processor class
+     * @return the queue name used to register the processor
+     */
+    private static String queueNameOf(final Class<? extends JobProcessor> processor) {
+        final Queue queue = AnnotationUtils.getBeanAnnotation(processor, Queue.class);
+        return Objects.nonNull(queue) ? queue.value() : processor.getName();
     }
 
     @Override

@@ -3673,7 +3673,7 @@ public class ContentletAPITest extends ContentletBaseTest {
 
         //Validations
         assertNotNull(versions);
-        assertEquals(versions.size(), 1);
+        assertEquals(com.dotcms.storage.AssetStorageFeature.isEnabled() ? 0 : 1, versions.size());
         APILocator.getStructureAPI().delete(testStructure, user);
     }
 

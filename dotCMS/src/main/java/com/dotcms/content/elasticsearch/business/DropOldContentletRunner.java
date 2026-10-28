@@ -16,7 +16,9 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 
@@ -160,6 +162,17 @@ public class DropOldContentletRunner implements Runnable {
                         break;
                     }
                     Logger.info(this, " --- DELETING " + inodeList.size() + " old contentlets");
+                    final boolean recordCleanup = com.dotcms.storage.AssetStorageFeature.isEnabled()
+                            && CLEAN_DEAD_INODE_FROM_FS;
+                    // Old versions are no longer edited, so their stored files are listed before the
+                    // deletion transaction opens and the storage calls do not hold its locks.
+                    final Map<String, com.dotcms.storage.binary.BinaryAssetCleanupProcessor.StoredPaths> stored =
+                            new HashMap<>();
+                    if (recordCleanup) {
+                        for (final String inode : inodeList) {
+                            stored.put(inode, com.dotcms.storage.binary.BinaryAssetCleanupProcessor.storedPaths(inode));
+                        }
+                    }
                     conn.setAutoCommit(false);
                     String inodes = String.join("','", inodeList);
 
@@ -173,10 +186,17 @@ public class DropOldContentletRunner implements Runnable {
                     dc.setSQL(String.format(DELETE_TAG_INODES, inodes));
                     dc.loadResult(conn);
 
+                    if (recordCleanup) {
+                        for (final String inode : inodeList) {
+                            com.dotcms.storage.binary.BinaryAssetCleanupProcessor.enqueue(inode, stored.get(inode));
+                        }
+                    }
                     conn.commit();
                     conn.setAutoCommit(true);
 
-                    deleteFromAssetsDir(inodeList);
+                    if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
+                        deleteFromAssetsDir(inodeList);
+                    }
 
                     inodeList.clear();
                     if (isInterrupted()) {

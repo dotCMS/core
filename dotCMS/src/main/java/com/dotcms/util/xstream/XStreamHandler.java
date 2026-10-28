@@ -20,6 +20,14 @@ public class XStreamHandler {
             protected MapperWrapper wrapMapper(final MapperWrapper next) {
                 return new MapperWrapper(next) {
                     @Override
+                    public String serializedClass(final Class type) {
+                        // Metadata identity travels in the bundle metadata, not in a Java File subtype.
+                        return super.serializedClass(com.dotcms.storage.AssetStorageFeature.isEnabled()
+                                && com.dotcms.storage.binary.BinaryAssetReference.isMetadataFile(type)
+                                ? java.io.File.class : type);
+                    }
+
+                    @Override
                     public boolean shouldSerializeMember(final Class definedIn,
                             final String fieldName) {
                         if (definedIn == Object.class) {
@@ -33,6 +41,14 @@ public class XStreamHandler {
                 };
             }
         };
+
+        xstream.registerConverter(new com.thoughtworks.xstream.converters.extended.FileConverter() {
+            @Override
+            public boolean canConvert(final Class type) {
+                return com.dotcms.storage.AssetStorageFeature.isEnabled()
+                        && com.dotcms.storage.binary.BinaryAssetReference.isMetadataFile(type);
+            }
+        });
 
         //Allow only the classes that are in the trusted list
         xstream.allowTypesByWildcard(TrustedListMatcher.patterns);
