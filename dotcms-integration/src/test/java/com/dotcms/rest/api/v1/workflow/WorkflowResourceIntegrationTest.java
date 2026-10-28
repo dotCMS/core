@@ -855,15 +855,25 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         workflowResource.deleteScheme(request4, asyncResponse, savedScheme.getId());
     }
 
+    /**
+     * Method to test: {@link WorkflowResource#getBulkActions}
+     * Given scenario: A file asset (System Workflow) and a Document-like contentlet (Document
+     * Management) exist and the bulk actions are requested using a query that matches them.
+     * Expected result: Both the System Workflow and the Document Management schemes are returned
+     * and every action listed belongs to the respective scheme. If a scheme is missing, the failure
+     * message reports the state of the index to help diagnose it.
+     */
     @Test
     public void Test_Get_Bulk_Actions_For_Query() throws Exception {
 
         //We need to make sure at least one content for each Workflow exists in the database.
 
         //System Workflow.
-        TestDataUtils.getFileAssetContent(true, languageAPI.getDefaultLanguage().getId());
+        final Contentlet fileAsset = TestDataUtils.getFileAssetContent(true,
+                languageAPI.getDefaultLanguage().getId());
         //Document Workflow.
-        TestDataUtils.getDocumentLikeContent(true, languageAPI.getDefaultLanguage().getId(), null);
+        final Contentlet documentLike = TestDataUtils.getDocumentLikeContent(true,
+                languageAPI.getDefaultLanguage().getId(), null);
 
         final String luceneQuery = String.format(
                 "-contentType:Host -baseType:3 +(conhost:%s conhost:SYSTEM_HOST) +languageId:1 +deleted:false +working:true",
@@ -886,8 +896,12 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
                 .filter(bulkWorkflowSchemeView -> SYSTEM_WORKFLOW
                         .equals(bulkWorkflowSchemeView.getScheme().getName())).findFirst();
 
-        assertTrue(documentManagementOptional.isPresent());
-        assertTrue(systemWorkflowOptional.isPresent());
+        if (documentManagementOptional.isEmpty()) {
+            fail(describeMissingScheme(DM_WORKFLOW, schemes, fileAsset, documentLike));
+        }
+        if (systemWorkflowOptional.isEmpty()) {
+            fail(describeMissingScheme(SYSTEM_WORKFLOW, schemes, fileAsset, documentLike));
+        }
 
         final BulkWorkflowSchemeView documentManagementScheme = documentManagementOptional.get();
         final List<WorkflowAction> documentActions = getAllWorkflowActions(
@@ -913,6 +927,59 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         });
     }
 
+
+    /**
+     * Builds the failure message for {@link #Test_Get_Bulk_Actions_For_Query()} when a workflow
+     * scheme the test expects is missing from the bulk-actions response. It reports the scheme
+     * names that were returned, the indexed {@code wfstep} values of each contentlet the test
+     * created together with the schemes their content type resolves to now, the entry step and
+     * current steps of the missing scheme and the reindex queue size, so a failure in CI shows
+     * the state of the index without having to reproduce it. It is only called once the
+     * assertion has already failed.
+     *
+     * @param missingSchemeName name of the scheme that was not returned
+     * @param schemes           the schemes returned by the bulk-actions call
+     * @param contentlets       the contentlets the test created for the query
+     * @return the failure message
+     */
+    private static String describeMissingScheme(final String missingSchemeName,
+            final List<BulkWorkflowSchemeView> schemes, final Contentlet... contentlets) {
+
+        final StringBuilder message = new StringBuilder(
+                "Workflow scheme '" + missingSchemeName + "' missing from the bulk actions. ");
+        message.append("Returned schemes: ").append(schemes.stream()
+                .map(view -> view.getScheme().getName()).collect(Collectors.toList()));
+        try {
+            final WorkflowScheme missingScheme = workflowAPI.findSchemeByName(missingSchemeName);
+            message.append("; entry step of '").append(missingSchemeName).append("': ")
+                    .append(null == missingScheme ? "scheme not found" : missingScheme.entryStep());
+            if (null != missingScheme) {
+                message.append("; current step ids of '").append(missingSchemeName).append("': ")
+                        .append(workflowAPI.findSteps(missingScheme).stream()
+                                .map(WorkflowStep::getId).collect(Collectors.toList()));
+            }
+            for (final Contentlet contentlet : contentlets) {
+                final String stepsQuery = "{\"query\":{\"query_string\":{\"query\":\"+inode:"
+                        + contentlet.getInode() + "\"}},\"aggs\":{\"tag\":{\"terms\":"
+                        + "{\"field\":\"wfstep\",\"size\":10}}},\"size\":0}";
+                final List<String> indexedSteps = new ArrayList<>();
+                contentletAPI.searchRaw(stepsQuery, false, systemUser, false).aggregations()
+                        .values().forEach(buckets -> buckets
+                                .forEach(bucket -> indexedSteps.add(bucket.key())));
+                message.append("; ").append(contentlet.getContentType().variable()).append(" inode=")
+                        .append(contentlet.getInode()).append(" indexed wfstep=")
+                        .append(indexedSteps).append(" schemes resolved now=")
+                        .append(workflowAPI.findSchemesForContentType(contentlet.getContentType())
+                                .stream().map(WorkflowScheme::getName)
+                                .collect(Collectors.toList()));
+            }
+            message.append("; reindex queue size: ")
+                    .append(APILocator.getReindexQueueAPI().recordsInQueue());
+        } catch (Exception e) {
+            message.append("; could not collect the index state: ").append(e);
+        }
+        return message.toString();
+    }
 
     @Test
     public void Test_Get_Bulk_Actions_For_Contentlet_Ids() throws Exception {
