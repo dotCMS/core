@@ -33,6 +33,14 @@ paths:
   # SC2024 ("sudo doesn't affect redirects") likewise comes from this file as it
   # stands on main, and is a genuine if minor nit — the redirect is not run as
   # root. Both arrived with main, not with this PR.
+  # SC2129 (group the redirects into one { ...; } >> file) in the pre-existing
+  # Change Detection Summary step: dozens of single-line appends to
+  # $GITHUB_STEP_SUMMARY, so the fix is a restructure of that script, not a lint
+  # fix. The file's SC2086 and SC2006 findings were fixed rather than ignored.
+  .github/workflows/cicd_comp_initialize-phase.yml:
+    ignore:
+      - 'shellcheck reported issue in this script: SC2129'
+
   .github/workflows/cicd_comp_test-phase.yml:
     ignore:
       - 'property "(docker_username|docker_token)" is not defined'
