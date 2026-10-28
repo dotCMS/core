@@ -375,6 +375,57 @@ runs:
         install: false
         cache: true
 
+    # Nx task cache for the build job, so core-web only rebuilds the Nx projects whose inputs
+    # changed. Nx cannot use a restored .nx/cache (see nx-cache-server.mjs for why), so the
+    # entries travel as files that a local server hands to Nx through its remote cache protocol.
+    # Only the build job takes part: it is the one that runs the full Nx build, and release
+    # builds stay out so a published build never takes outputs from the cache.
+    #
+    # Only builds of main save (the nightly, and trunk runs that build), and restore-keys gives
+    # every other run the newest of those: pull requests and the merge queue can read main's
+    # caches, while nothing else can read the ones they would save. The key only decides when
+    # main stores a new entry (about 37 MB): when core-web has changed since the last one. Which
+    # artifacts Nx may reuse is decided by Nx's own task hashes, not by this key.
+    - id: restore-cache-nx
+      name: Restore Nx Cache
+      if: ${{ inputs.requires-node == 'true' && inputs.generate-artifacts == 'true' && inputs.release-build != 'true' }}
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/nx-cache
+        key: ${{ runner.os }}-nx-v1-${{ hashFiles('core-web/**') }}
+        restore-keys: |
+          ${{ runner.os }}-nx-v1-
+
+    # The restored entries are moved aside and the server links each one into the fresh
+    # directory when Nx asks for it, so the directory saved later holds this run's entries only
+    # and the cache does not grow from run to run. If the server does not come up, the URL is
+    # not exported and the build runs without the cache. If it stops during the build, Nx fails
+    # the build with "Failed to send request ... 127.0.0.1:47321" (Show Nx Cache Server Log
+    # below prints why); it never builds a war from partial output.
+    - id: start-nx-cache
+      name: Start Nx Cache Server
+      if: ${{ steps.restore-cache-nx.outcome == 'success' }}
+      shell: bash
+      env:
+        NX_CACHE_DIR: ${{ runner.temp }}/nx-cache
+        NX_CACHE_PORT: '47321'
+      run: |
+        if [[ -d "$NX_CACHE_DIR" ]]; then
+          mv "$NX_CACHE_DIR" "$NX_CACHE_DIR-restored"
+          echo "Restored $(ls "$NX_CACHE_DIR-restored" | wc -l) Nx cache entries"
+        fi
+        nohup node "$GITHUB_ACTION_PATH/nx-cache-server.mjs" "$NX_CACHE_PORT" "$NX_CACHE_DIR" "$NX_CACHE_DIR-restored" \
+          > "$RUNNER_TEMP/nx-cache-server.log" 2>&1 &
+        for _ in $(seq 1 50); do
+          if curl -s -o /dev/null "http://127.0.0.1:$NX_CACHE_PORT/v1/cache/0"; then
+            echo "NX_SELF_HOSTED_REMOTE_CACHE_SERVER=http://127.0.0.1:$NX_CACHE_PORT" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          sleep 0.2
+        done
+        echo "::warning::Nx cache server did not start; building core-web without the Nx cache"
+        cat "$RUNNER_TEMP/nx-cache-server.log"
+
 
     - id: cache-sonar
       name: Cache SonarQube Packages
@@ -799,6 +850,20 @@ runs:
       with:
         path: installs
         key: ${{ steps.restore-cache-node.outputs.cache-primary-key }}
+
+    # See Restore Nx Cache. Builds of main only, after a successful build with the server up.
+    - id: save-cache-nx
+      name: Save Nx Cache
+      if: ${{ env.NX_SELF_HOSTED_REMOTE_CACHE_SERVER != '' && github.ref == 'refs/heads/main' && steps.restore-cache-nx.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/nx-cache
+        key: ${{ steps.restore-cache-nx.outputs.cache-primary-key }}
+
+    - name: Show Nx Cache Server Log
+      if: ${{ failure() && env.NX_SELF_HOSTED_REMOTE_CACHE_SERVER != '' }}
+      shell: bash
+      run: cat "$RUNNER_TEMP/nx-cache-server.log"
 
     - id: save-cache-sonar
       name: Save SonarQube Cache

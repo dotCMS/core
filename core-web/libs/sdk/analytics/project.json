@@ -3,7 +3,7 @@
     "$schema": "../../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/sdk/analytics/src",
     "projectType": "library",
-    "tags": ["type:lib", "scope:sdk", "feature:analytics"],
+    "tags": ["type:lib", "scope:sdk", "feature:analytics", "skip:build"],
     "targets": {
         "build:standalone": {
             "dependsOn": ["^build"],

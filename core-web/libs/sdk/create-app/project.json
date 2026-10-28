@@ -11,7 +11,7 @@
             "manifestRootsToUpdate": ["dist/{projectRoot}"]
         }
     },
-    "tags": [],
+    "tags": ["skip:build"],
     "targets": {
         "build": {
             "executor": "@nx/esbuild:esbuild",
