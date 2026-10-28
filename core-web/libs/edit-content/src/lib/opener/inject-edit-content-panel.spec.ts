@@ -6,7 +6,7 @@ import { Component, isSignal, signal } from '@angular/core';
 import { DotSidePanelRef } from '@dotcms/ui';
 
 import { DotEditContentOpenerService } from './dot-edit-content-opener.service';
-import { injectEditContentPanel } from './inject-edit-content-panel';
+import { DotEditContentPanelBinding, injectEditContentPanel } from './inject-edit-content-panel';
 
 import { DotEditContentRequest } from '../models/dot-edit-content-request.model';
 
@@ -126,5 +126,56 @@ describe('injectEditContentPanel', () => {
         spectator.component.panel.requestClose();
 
         expect(requestClose).toHaveBeenCalled();
+    });
+});
+
+/** An opener whose binding decides the editor per open, as Content Drive's "switch" does. */
+@Component({ selector: 'dot-test-forced-opener', template: '' })
+class TestForcedOpenerComponent {
+    readonly request = signal<DotEditContentRequest | null>(null);
+    readonly forceLegacy = signal(false);
+    readonly panel = injectEditContentPanel(this.request, this.#binding());
+
+    /** A binding whose `editor` is a getter, read when the panel opens. */
+    #binding(): DotEditContentPanelBinding {
+        const forceLegacy = this.forceLegacy;
+
+        return {
+            get editor() {
+                return forceLegacy() ? 'legacy' : undefined;
+            }
+        };
+    }
+}
+
+describe('injectEditContentPanel, forcing the legacy editor', () => {
+    let spectator: Spectator<TestForcedOpenerComponent>;
+    let open: Mock;
+
+    const createComponent = createComponentFactory({
+        component: TestForcedOpenerComponent,
+        providers: [mockProvider(DotEditContentOpenerService, { open: vi.fn() })]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent();
+        open = spectator.inject(DotEditContentOpenerService).open as Mock;
+        open.mockReset();
+        open.mockImplementation(() => new DotSidePanelRef(() => undefined));
+    });
+
+    it('forwards the editor the binding names, read each time the panel opens', () => {
+        spectator.component.request.set(EDIT_REQUEST);
+        spectator.detectChanges();
+        spectator.component.request.set(null);
+        spectator.detectChanges();
+
+        spectator.component.forceLegacy.set(true);
+        spectator.component.request.set({ ...EDIT_REQUEST, inode: 'other' });
+        spectator.detectChanges();
+
+        expect(open).toHaveBeenCalledTimes(2);
+        expect(open.mock.calls[0][1].editor).toBeUndefined();
+        expect(open.mock.calls[1][1].editor).toBe('legacy');
     });
 });

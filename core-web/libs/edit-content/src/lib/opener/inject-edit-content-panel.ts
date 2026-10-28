@@ -24,6 +24,13 @@ export interface DotEditContentPanelBinding extends DotEditContentPanelHandlers 
      * cleared or the opener was destroyed.
      */
     closed?: () => void;
+
+    /**
+     * Shows the legacy editor whatever the content type says; see `DotEditContentOpenOptions`.
+     * Read each time the panel opens, so a getter can decide per open. Remove with the legacy
+     * editor.
+     */
+    editor?: 'legacy';
 }
 
 /** The panel {@link injectEditContentPanel} keeps open, as the surface sees it. */
@@ -77,10 +84,12 @@ export function injectEditContentPanel(
     });
 
     const open = (): void => {
-        const { closed, ...handlers } = binding;
+        // Read here, on every open, so a getter on the binding can change the editor between opens.
+        const { closed, editor, ...handlers } = binding;
 
         const ref = opener.open(current, {
             ...handlers,
+            editor,
             injector,
             closed: () => {
                 // Only a panel this surface still shows reports its close. Nothing is showing yet
