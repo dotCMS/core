@@ -4,7 +4,7 @@ import {
     mockProvider,
     SpyObject
 } from '@openng/spectator/vitest';
-import { of, Subject, throwError } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { Mock, Mocked, describe, expect, it, vi } from 'vitest';
 
 import { Location } from '@angular/common';
@@ -19,12 +19,7 @@ import {
     DotHttpErrorManagerService,
     DotRouterService
 } from '@dotcms/data-access';
-import {
-    DotCMSBaseTypesContentTypes,
-    DotCMSContentlet,
-    DotCMSContentType,
-    FeaturedFlags
-} from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
 import { EDIT_CONTENT_NAVIGATION_OVERRIDE } from '@dotcms/edit-content';
 import { createFakeContentlet, createFakeContentType } from '@dotcms/utils-testing';
 
@@ -37,16 +32,16 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { SYSTEM_HOST } from '../constants';
 
 /**
- * Builds a mock store exposing what the nav service reads: the active language filter and the
- * environment default, used to pick a version's language. It carries no flags: Content Drive no
- * longer reads the side-panel flag (#37759, FR-006).
- */
-/**
  * The environment default language. Held apart from the store mock because the store types it as
  * a `Signal`, which a test cannot call `mockReturnValue` on.
  */
 const defaultLanguageId = vi.fn<() => number | undefined>();
 
+/**
+ * Builds a mock store exposing what the nav service reads: the active language filter and the
+ * environment default, used to pick a version's language, and the folder being browsed. It carries
+ * no flags: Content Drive reads no side-panel flag.
+ */
 const mockStore = () =>
     mockProvider(DotContentDriveStore, {
         getFilterValue: vi.fn().mockReturnValue(undefined),
@@ -61,11 +56,39 @@ const mockStore = () =>
 /** What `/api/v1/portlet/_actionurl/<type>` answers: the legacy create screen for a type. */
 const CREATE_URL = '/c/portal/layout?p_p_id=content&_content_cmd=new&selectedStructure=news';
 
+/** A content type that opted into the new editor. */
+const NEW_EDITOR_TYPE = createFakeContentType({
+    id: 'blog',
+    variable: 'blog',
+    name: 'Blog',
+    metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
+});
+
+/** A content type on the legacy editor. */
+const LEGACY_TYPE = createFakeContentType({
+    id: 'news',
+    variable: 'news',
+    name: 'News',
+    metadata: {}
+});
+
+/**
+ * Answers a content type lookup the way the server would: `news` is on the legacy editor, every
+ * other type opted into the new one.
+ *
+ * Content Drive no longer chooses the editor (#38303): it hands one request to the opener, which
+ * looks the type up. The lookup is answered here only so code that still asks reaches the request
+ * it builds; the tests below assert that it is never asked.
+ */
+const answerTypeLookup = (variable: string) =>
+    of(variable === LEGACY_TYPE.variable ? LEGACY_TYPE : NEW_EDITOR_TYPE);
+
 describe('DotContentDriveNavigationService', () => {
     let spectator: SpectatorService<DotContentDriveNavigationService>;
     let service: DotContentDriveNavigationService;
     let router: Mocked<Router>;
     let contentTypeService: Mocked<DotContentTypeService>;
+    let actionUrlService: Mocked<DotActionUrlService>;
     let dotRouterService: Mocked<DotRouterService>;
     let location: SpyObject<Location>;
     let httpErrorManager: SpyObject<DotHttpErrorManagerService>;
@@ -106,6 +129,7 @@ describe('DotContentDriveNavigationService', () => {
         service = spectator.service;
         router = spectator.inject(Router);
         contentTypeService = spectator.inject(DotContentTypeService);
+        actionUrlService = spectator.inject(DotActionUrlService);
         dotRouterService = spectator.inject(DotRouterService);
         location = spectator.inject(Location);
         httpErrorManager = spectator.inject(DotHttpErrorManagerService);
@@ -118,9 +142,8 @@ describe('DotContentDriveNavigationService', () => {
         // Same for the folder being browsed: every test starts at the site root.
         store.path.mockReturnValue('');
         store.selectedNode.mockReturnValue(undefined);
-        (spectator.inject(DotActionUrlService).getCreateContentletUrl as Mock).mockReturnValue(
-            of(CREATE_URL)
-        );
+        contentTypeService.getContentType.mockImplementation(answerTypeLookup);
+        (actionUrlService.getCreateContentletUrl as Mock).mockReturnValue(of(CREATE_URL));
     });
 
     afterEach(() => {
@@ -135,28 +158,23 @@ describe('DotContentDriveNavigationService', () => {
                 contentType: 'htmlpageasset',
                 inode: 'page-inode',
                 identifier: 'page-identifier',
+                languageId: 1,
                 title: 'A Page',
                 url: '/a-page'
             });
-            contentTypeService.getContentType.mockReturnValue(
-                of(
-                    createFakeContentType({
-                        id: 'htmlpageasset',
-                        metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
-                    })
-                )
-            );
 
             service.editPageProperties(page);
 
-            expect(contentTypeService.getContentType).toHaveBeenCalledWith('htmlpageasset');
-            expect(service.$editPanelRequest()).toEqual(
-                expect.objectContaining({
-                    mode: 'edit',
-                    contentletInode: 'page-inode',
-                    identifier: 'page-identifier'
-                })
-            );
+            expect(service.$editPanelRequest()).toEqual({
+                mode: 'edit',
+                inode: 'page-inode',
+                identifier: 'page-identifier',
+                contentType: 'htmlpageasset',
+                languageId: 1,
+                title: 'A Page',
+                portletId: 'content-drive'
+            });
+            expect(contentTypeService.getContentType).not.toHaveBeenCalled();
             expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
         });
     });
@@ -192,310 +210,165 @@ describe('DotContentDriveNavigationService', () => {
             });
         });
 
-        it('should open the new editor side panel when feature flag is enabled', () => {
-            const mockContentlet = createFakeContentlet({
-                contentType: 'blog',
-                inode: 'test-inode-123',
-                identifier: 'test-identifier-123',
-                title: 'My Blog Post'
-            });
-
-            const mockContentType = createFakeContentType({
-                id: 'blog',
-                name: 'Blog',
-                metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
-            });
-
-            contentTypeService.getContentType.mockReturnValue(of(mockContentType));
-
-            service.editContent(mockContentlet);
-
-            expect(contentTypeService.getContentType).toHaveBeenCalledWith('blog');
-            expect(service.$editPanelRequest()).toEqual({
-                mode: 'edit',
-                contentletInode: 'test-inode-123',
-                identifier: 'test-identifier-123',
-                // Recorded so the shareable URL can name the exact version, not just the content.
-                languageId: 1,
-                title: 'My Blog Post'
-            });
-            expect(router.navigate).not.toHaveBeenCalled();
-        });
-
         /**
-         * A type that has not opted into the new editor opens the legacy editor in its own Content
-         * Drive panel (#37759, FR-001). It never leaves for the Content Search route, so a user without
-         * Content Search in their menu can still edit it (FR-004).
+         * One request names the content and never the editor: the opener picks the editor from the
+         * content type (#38303, FR-001, FR-003). So content of either type produces the same shape,
+         * and Content Drive never leaves for another route.
          */
         it.each([
-            ['turned off', { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false }],
-            ['missing', {}],
-            ['absent', undefined]
-        ])('opens the legacy panel when the new-editor setting is %s', (_label, metadata) => {
-            // A Content Drive URL with folder params, which the old hand-off carried as CD_ params.
-            location.path.mockReturnValue('/content-drive?folderId=123&path=/images');
-            contentTypeService.getContentType.mockReturnValue(
-                of(createFakeContentType({ id: 'news', name: 'News', metadata }))
-            );
-
+            ['a type that opted into the new editor', NEW_EDITOR_TYPE.variable],
+            ['a type on the legacy editor', LEGACY_TYPE.variable]
+        ])('should open one edit request for content of %s', (_label, contentType) => {
             service.editContent(
                 createFakeContentlet({
-                    contentType: 'news',
-                    inode: 'test-inode-456',
-                    identifier: 'news-id',
+                    contentType,
+                    inode: 'inode-1',
+                    identifier: 'id-1',
                     languageId: 2,
                     title: 'Breaking'
                 })
             );
 
-            expect(contentTypeService.getContentType).toHaveBeenCalledWith('news');
-            expect(service.$legacyPanelRequest()).toEqual({
+            expect(service.$editPanelRequest()).toEqual({
                 mode: 'edit',
-                inode: 'test-inode-456',
-                identifier: 'news-id',
+                inode: 'inode-1',
+                identifier: 'id-1',
+                contentType,
                 languageId: 2,
                 title: 'Breaking',
                 portletId: 'content-drive'
             });
-            expect(service.$editPanelRequest()).toBeNull();
             expect(service.$panelLocation()).toEqual({
                 kind: 'edit',
-                editContent: 'news-id',
+                editContent: 'id-1',
                 editContentLang: 2
             });
             expect(router.navigate).not.toHaveBeenCalled();
         });
 
-        it('should surface the error and not navigate when getContentType fails', () => {
-            const error = new HttpErrorResponse({ status: 500 });
-            const mockContentlet = createFakeContentlet({
-                contentType: 'blog',
-                inode: 'test-inode-123'
-            });
+        it('should leave the editor choice to the opener, without looking the type up', () => {
+            service.editContent(
+                createFakeContentlet({ contentType: LEGACY_TYPE.variable, inode: 'inode-1' })
+            );
 
-            contentTypeService.getContentType.mockReturnValue(throwError(() => error));
-
-            service.editContent(mockContentlet);
-
-            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
-            expect(router.navigate).not.toHaveBeenCalled();
+            expect(contentTypeService.getContentType).not.toHaveBeenCalled();
         });
     });
 
     describe('createContent', () => {
-        it('should open the new editor side panel when feature flag is enabled, at the site root', () => {
-            const mockContentType = createFakeContentType({
-                id: 'blog',
-                name: 'Blog',
-                metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
+        /** Browsing a folder below the site root, so a create names it both ways. */
+        const browseFolder = () => {
+            store.path.mockReturnValue('/foo/');
+            store.selectedNode.mockReturnValue({
+                data: {
+                    type: 'folder',
+                    id: 'folder-1',
+                    inode: 'inode-1',
+                    path: '/foo/',
+                    hostname: 'demo.dotcms.com'
+                }
             });
-
-            contentTypeService.getContentType.mockReturnValue(of(mockContentType));
-
-            service.createContent('blog');
-
-            expect(contentTypeService.getContentType).toHaveBeenCalledWith('blog');
-            expect(service.$editPanelRequest()).toEqual({
-                mode: 'new',
-                contentTypeId: 'blog',
-                folderPath: 'demo.dotcms.com',
-                title: 'Blog'
-            });
-            expect(router.navigate).not.toHaveBeenCalled();
-        });
-
-        it('should create in the folder being browsed, as folderPath for the new editor side panel', () => {
-            const mockContentType = createFakeContentType({
-                id: 'blog',
-                name: 'Blog',
-                metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
-            });
-
-            contentTypeService.getContentType.mockReturnValue(of(mockContentType));
-            store.path.mockReturnValue('/about-us/');
-
-            service.createContent('blog');
-
-            expect(service.$editPanelRequest()).toEqual({
-                mode: 'new',
-                contentTypeId: 'blog',
-                folderPath: 'demo.dotcms.com/about-us/',
-                title: 'Blog'
-            });
-            expect(router.navigate).not.toHaveBeenCalled();
-        });
-
-        // The author may browse elsewhere while the type is looked up. The content still goes where
-        // they were when they asked.
-        it('should create in the folder browsed when asked, not the one browsed when the type arrives', () => {
-            const contentType$ = new Subject<DotCMSContentType>();
-            contentTypeService.getContentType.mockReturnValue(contentType$);
-            store.path.mockReturnValue('/about-us/');
-
-            service.createContent('blog');
-            store.path.mockReturnValue('/news/');
-            contentType$.next(
-                createFakeContentType({
-                    id: 'blog',
-                    name: 'Blog',
-                    metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
-                })
-            );
-
-            expect(service.$editPanelRequest()?.folderPath).toBe('demo.dotcms.com/about-us/');
-        });
+        };
 
         /**
-         * A type that has not opted into the new editor opens the legacy create form in its own
-         * Content Drive panel (#37759, FR-002), in the folder being browsed, never the Content Search
-         * route and never with the old CD_ params.
+         * One create request for either editor, in the folder being browsed: the folder path the
+         * new editor pre-fills and the folder inode the legacy create screen pre-selects (#38303).
+         * No title: the service no longer looks the type up, and the opener heads a create with the
+         * type's name.
          */
         it.each([
-            ['turned off', { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false }],
-            ['missing', {}]
+            ['a type that opted into the new editor', NEW_EDITOR_TYPE.variable],
+            ['a type on the legacy editor', LEGACY_TYPE.variable]
         ])(
-            'opens the legacy create panel when the new-editor setting is %s',
-            (_label, metadata) => {
+            'should open one create request for %s, in the folder being browsed',
+            (_label, contentType) => {
                 location.path.mockReturnValue('/content-drive?path=/foo&filters=bar');
                 defaultLanguageId.mockReturnValue(1);
-                contentTypeService.getContentType.mockReturnValue(
-                    of(
-                        createFakeContentType({
-                            id: 'news',
-                            variable: 'news',
-                            name: 'News',
-                            metadata
-                        })
-                    )
-                );
+                browseFolder();
 
-                store.path.mockReturnValue('/foo/');
-                store.selectedNode.mockReturnValue({
-                    data: {
-                        type: 'folder',
-                        id: 'folder-1',
-                        inode: 'inode-1',
-                        path: '/foo/',
-                        hostname: 'demo.dotcms.com'
-                    }
-                });
+                service.createContent(contentType);
 
-                service.createContent('news');
-
-                // The create screen is resolved before the panel opens (#37759, T112).
-                expect(
-                    spectator.inject(DotActionUrlService).getCreateContentletUrl
-                ).toHaveBeenCalledWith('news', 1);
-                expect(service.$legacyPanelRequest()).toEqual({
+                expect(service.$editPanelRequest()).toEqual({
                     mode: 'new',
-                    contentTypeVariable: 'news',
+                    contentType,
+                    folderPath: 'demo.dotcms.com/foo/',
                     folderInode: 'inode-1',
                     languageId: 1,
-                    title: 'News',
-                    portletId: 'content-drive',
-                    createUrl: CREATE_URL
+                    portletId: 'content-drive'
                 });
-                expect(service.$editPanelRequest()).toBeNull();
-                expect(service.$panelLocation()).toEqual({ kind: 'create', createContent: 'news' });
+                expect(service.$panelLocation()).toEqual({
+                    kind: 'create',
+                    createContent: contentType
+                });
                 expect(router.navigate).not.toHaveBeenCalled();
             }
         );
 
+        it('should create at the site root with the site path and no folder inode', () => {
+            service.createContent(NEW_EDITOR_TYPE.variable);
+
+            expect(service.$editPanelRequest()).toEqual({
+                mode: 'new',
+                contentType: NEW_EDITOR_TYPE.variable,
+                folderPath: 'demo.dotcms.com',
+                portletId: 'content-drive'
+            });
+        });
+
         /**
-         * A create screen the server won't name shows the standard error and opens nothing: no
-         * panel, no `createContent` in the URL, no history entry (#37759, T112; spec edge case
-         * "Legacy create form cannot be resolved").
+         * The opener resolves the editor and, for a legacy create, the create screen, so a refused
+         * create shows the standard error and opens no editor there (#38303). The service asks the
+         * server for neither.
          */
-        it('opens nothing when the legacy create screen cannot be resolved', () => {
-            const error = new HttpErrorResponse({ status: 403 });
-            defaultLanguageId.mockReturnValue(1);
-            contentTypeService.getContentType.mockReturnValue(
-                of(
-                    createFakeContentType({
-                        id: 'news',
-                        variable: 'news',
-                        name: 'News',
-                        metadata: {}
-                    })
-                )
-            );
-            (spectator.inject(DotActionUrlService).getCreateContentletUrl as Mock).mockReturnValue(
-                throwError(() => error)
-            );
+        it('should leave the editor choice and the create screen to the opener', () => {
+            service.createContent(LEGACY_TYPE.variable);
 
-            service.createContent('news');
-
-            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
-            expect(service.$legacyPanelRequest()).toBeNull();
-            expect(service.$panelLocation()).toBeNull();
+            expect(contentTypeService.getContentType).not.toHaveBeenCalled();
+            expect(actionUrlService.getCreateContentletUrl).not.toHaveBeenCalled();
         });
 
         /**
          * Every create starts in the language the list is filtered by, so the new content shows in
-         * the list once saved; with no language filter, in Content Drive's default (FR-003).
+         * the list once saved; with no language filter, in Content Drive's default (FR-003). The
+         * same for either editor, since the request does not name one.
          */
         describe('starting language', () => {
-            const typeWith = (newEditor: boolean) =>
-                createFakeContentType({
-                    id: 'blog',
-                    variable: 'blog',
-                    name: 'Blog',
-                    metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: newEditor }
-                });
-
             it.each([
-                ['the legacy editor', false],
-                ['the new editor', true]
-            ])('starts in the first filtered language in %s', (_label, newEditor) => {
+                ['a new-editor type', NEW_EDITOR_TYPE.variable],
+                ['a legacy-editor type', LEGACY_TYPE.variable]
+            ])('should start in the first filtered language for %s', (_label, contentType) => {
                 store.getFilterValue.mockReturnValue(['3', '4']);
                 defaultLanguageId.mockReturnValue(1);
-                contentTypeService.getContentType.mockReturnValue(of(typeWith(newEditor)));
 
-                service.createContent('blog');
+                service.createContent(contentType);
 
-                const request = service.$legacyPanelRequest() ?? service.$editPanelRequest();
-                expect(request?.languageId).toBe(3);
+                expect(service.$editPanelRequest()?.languageId).toBe(3);
             });
 
             it.each([
-                ['the legacy editor', false],
-                ['the new editor', true]
+                ['a new-editor type', NEW_EDITOR_TYPE.variable],
+                ['a legacy-editor type', LEGACY_TYPE.variable]
             ])(
-                'starts in the default language when nothing is filtered, in %s',
-                (_label, newEditor) => {
+                'should start in the default language when nothing is filtered, for %s',
+                (_label, contentType) => {
                     store.getFilterValue.mockReturnValue(undefined);
                     defaultLanguageId.mockReturnValue(2);
-                    contentTypeService.getContentType.mockReturnValue(of(typeWith(newEditor)));
 
-                    service.createContent('blog');
+                    service.createContent(contentType);
 
-                    const request = service.$legacyPanelRequest() ?? service.$editPanelRequest();
-                    expect(request?.languageId).toBe(2);
+                    expect(service.$editPanelRequest()?.languageId).toBe(2);
                 }
             );
 
-            it('ignores the language of the current URL, which names the open edit, not the list', () => {
+            it('should ignore the language of the current URL, which names the open edit, not the list', () => {
                 location.path.mockReturnValue('/content-drive?editContent=id-1&editContentLang=5');
                 store.getFilterValue.mockReturnValue(undefined);
                 defaultLanguageId.mockReturnValue(2);
-                contentTypeService.getContentType.mockReturnValue(of(typeWith(false)));
 
-                service.createContent('blog');
+                service.createContent(LEGACY_TYPE.variable);
 
-                expect(service.$legacyPanelRequest()?.languageId).toBe(2);
+                expect(service.$editPanelRequest()?.languageId).toBe(2);
             });
-        });
-
-        it('should surface the error and not navigate when getContentType fails', () => {
-            const error = new HttpErrorResponse({ status: 500 });
-
-            location.path.mockReturnValue('/content-drive?path=/foo');
-            contentTypeService.getContentType.mockReturnValue(throwError(() => error));
-
-            service.createContent('blog');
-
-            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
-            expect(router.navigate).not.toHaveBeenCalled();
         });
     });
 
@@ -596,27 +469,21 @@ describe('DotContentDriveNavigationService', () => {
     });
 
     /**
-     * One source signal says what was asked to open; the shell reads two derived views of it (one per
-     * panel) plus `$panelLocation`, which says what the URL must show. Keeping the location separate is
-     * what lets it follow the panel later (first save, language switch) without remounting it (#37759).
+     * One signal says what was asked to open, whichever editor will show it, plus `$panelLocation`,
+     * which says what the URL must show. Keeping the location separate is what lets it follow the
+     * panel later (first save, language switch) without remounting it (#37759, #38303).
      */
     describe('panel request and URL location', () => {
-        const NEW_EDITOR_TYPE = createFakeContentType({
-            id: 'blog',
-            variable: 'blog',
-            name: 'Blog',
-            metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
-        });
-
         it('starts with nothing open and no location', () => {
             expect(service.$editPanelRequest()).toBeNull();
-            expect(service.$legacyPanelRequest()).toBeNull();
             expect(service.$panelLocation()).toBeNull();
         });
 
-        it('exposes a new-editor edit through $editPanelRequest only, and names it in the location', () => {
-            contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_TYPE));
+        it('exposes every request through one signal, with no second one for the legacy editor', () => {
+            expect(service).not.toHaveProperty('$legacyPanelRequest');
+        });
 
+        it('exposes an edit through $editPanelRequest and names it in the location', () => {
             service.editContent(
                 createFakeContentlet({
                     contentType: 'blog',
@@ -627,9 +494,8 @@ describe('DotContentDriveNavigationService', () => {
             );
 
             expect(service.$editPanelRequest()).toEqual(
-                expect.objectContaining({ mode: 'edit', contentletInode: 'inode-1' })
+                expect.objectContaining({ mode: 'edit', inode: 'inode-1' })
             );
-            expect(service.$legacyPanelRequest()).toBeNull();
             expect(service.$panelLocation()).toEqual({
                 kind: 'edit',
                 editContent: 'id-1',
@@ -638,8 +504,6 @@ describe('DotContentDriveNavigationService', () => {
         });
 
         it('names a create by its content type variable in the location', () => {
-            contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_TYPE));
-
             service.createContent('blog');
 
             expect(service.$panelLocation()).toEqual({ kind: 'create', createContent: 'blog' });
@@ -660,8 +524,6 @@ describe('DotContentDriveNavigationService', () => {
                 })
             );
 
-            contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_TYPE));
-
             service.openEditByIdentifier('id-1', 3);
 
             expect(service.$panelLocation()).toEqual({
@@ -678,12 +540,10 @@ describe('DotContentDriveNavigationService', () => {
          */
         describe('following the open panel', () => {
             const openCreate = () => {
-                contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_TYPE));
                 service.createContent('blog');
             };
 
             const openEdit = () => {
-                contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_TYPE));
                 service.editContent(
                     createFakeContentlet({
                         contentType: 'blog',
@@ -785,6 +645,10 @@ describe('DotContentDriveNavigationService', () => {
          * a load error (#37759, FR-028, FR-029). It answers only for the panel it opened, named by
          * what that editor was opened with, so a nested editor (a related content opened from a
          * relationship field) declines and navigates as on main.
+         *
+         * Switching reopens the content as a fresh request, the same shape as any other: the request
+         * never names an editor, so the opener resolves the type again and finds the legacy editor
+         * it was just set back to (#38303).
          */
         describe('as the editor navigation override', () => {
             const BLOG_POST = createFakeContentlet({
@@ -796,7 +660,6 @@ describe('DotContentDriveNavigationService', () => {
             });
 
             const openEdit = () => {
-                contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_TYPE));
                 service.editContent(BLOG_POST);
                 contentTypeService.getContentType.mockClear();
             };
@@ -805,8 +668,9 @@ describe('DotContentDriveNavigationService', () => {
                 expect(spectator.inject(EDIT_CONTENT_NAVIGATION_OVERRIDE)).toBe(service);
             });
 
-            it('reopens its edit, in the same language, in the legacy panel', () => {
+            it('reopens its edit, in the same language, as a fresh request', () => {
                 openEdit();
+                const before = service.$editPanelRequest();
                 const locationBefore = service.$panelLocation();
 
                 const handled = service.switchToLegacyEditor(
@@ -816,23 +680,25 @@ describe('DotContentDriveNavigationService', () => {
                 );
 
                 expect(handled).toBe(true);
-                expect(service.$legacyPanelRequest()).toEqual({
+                expect(service.$editPanelRequest()).toEqual({
                     mode: 'edit',
                     inode: 'inode-1',
                     identifier: 'id-1',
+                    contentType: 'blog',
                     languageId: 2,
                     title: 'My Blog Post',
                     portletId: 'content-drive'
                 });
-                expect(service.$editPanelRequest()).toBeNull();
-                // The type was just switched, so it is not looked up again.
+                // A new request, so the panel reopens rather than keeping the new editor.
+                expect(service.$editPanelRequest()).not.toBe(before);
+                // The type was just switched; the service does not look it up.
                 expect(contentTypeService.getContentType).not.toHaveBeenCalled();
                 // Same content, same language: the URL already says so.
                 expect(service.$panelLocation()).toEqual(locationBefore);
             });
 
             // Inside the panel, related content opens in place, so the panel opened for one content
-            // can show another. The URL names what the legacy panel reopens (#37759, FR-020, T131).
+            // can show another. The URL names what reopens (#37759, FR-020, T131).
             it('names the switched content when the panel moved to related content', () => {
                 openEdit();
 
@@ -848,8 +714,13 @@ describe('DotContentDriveNavigationService', () => {
                 );
 
                 expect(handled).toBe(true);
-                expect(service.$legacyPanelRequest()).toEqual(
-                    expect.objectContaining({ mode: 'edit', inode: 'inode-9', identifier: 'id-9' })
+                expect(service.$editPanelRequest()).toEqual(
+                    expect.objectContaining({
+                        mode: 'edit',
+                        inode: 'inode-9',
+                        identifier: 'id-9',
+                        contentType: 'news'
+                    })
                 );
                 expect(service.$panelLocation()).toEqual({
                     kind: 'edit',
@@ -858,10 +729,10 @@ describe('DotContentDriveNavigationService', () => {
                 });
             });
 
-            it('reopens its create as a legacy create, in the same folder and language', () => {
-                contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_TYPE));
+            it('reopens its create as a fresh create of the same type, in the same language', () => {
                 defaultLanguageId.mockReturnValue(2);
                 service.createContent('blog');
+                const before = service.$editPanelRequest();
 
                 const handled = service.switchToLegacyEditor(
                     { contentTypeId: 'blog' },
@@ -870,15 +741,17 @@ describe('DotContentDriveNavigationService', () => {
                 );
 
                 expect(handled).toBe(true);
-                expect(service.$legacyPanelRequest()).toEqual(
+                expect(service.$editPanelRequest()).toEqual(
                     expect.objectContaining({
                         mode: 'new',
-                        contentTypeVariable: 'blog',
+                        contentType: 'blog',
                         languageId: 2,
-                        createUrl: CREATE_URL
+                        portletId: 'content-drive'
                     })
                 );
-                expect(service.$editPanelRequest()).toBeNull();
+                expect(service.$editPanelRequest()).not.toBe(before);
+                // The opener resolves the legacy create screen, not the service.
+                expect(actionUrlService.getCreateContentletUrl).not.toHaveBeenCalled();
                 expect(service.$panelLocation()).toEqual({ kind: 'create', createContent: 'blog' });
             });
 
@@ -894,10 +767,9 @@ describe('DotContentDriveNavigationService', () => {
 
                 expect(handled).toBe(false);
                 expect(service.$editPanelRequest()).toBe(request);
-                expect(service.$legacyPanelRequest()).toBeNull();
             });
 
-            it('declines a switch when no new-editor panel is open', () => {
+            it('declines a switch when no panel is open', () => {
                 expect(service.switchToLegacyEditor({ inode: 'inode-1' }, BLOG_POST, 'blog')).toBe(
                     false
                 );
@@ -922,37 +794,23 @@ describe('DotContentDriveNavigationService', () => {
             });
         });
 
-        it('clears both the request and the location on close', () => {
-            contentTypeService.getContentType.mockReturnValue(of(NEW_EDITOR_TYPE));
+        it('clears the request and the location on close', () => {
             service.createContent('blog');
 
             service.closeEditPanel();
 
             expect(service.$editPanelRequest()).toBeNull();
-            expect(service.$legacyPanelRequest()).toBeNull();
             expect(service.$panelLocation()).toBeNull();
         });
     });
 
     describe('openEditByIdentifier', () => {
-        const typeWith = (newEditor: boolean) =>
-            createFakeContentType({
-                id: 'banner',
-                variable: 'Banner',
-                name: 'Banner',
-                metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: newEditor }
-            });
-
-        // The link names content, not an editor: the content type picks it (#37759, FR-021). The
-        // tests that follow are about resolving the version, so they default to a new-editor type.
-        beforeEach(() => {
-            contentTypeService.getContentType.mockReturnValue(of(typeWith(true)));
-        });
-
-        it('should resolve the identifier to its working inode and open the edit panel', () => {
+        it('should resolve the identifier to its working inode and open one edit request', () => {
             const resolved = createFakeContentlet({
+                contentType: 'blog',
                 inode: 'working-inode-1',
                 identifier: 'shared-identifier',
+                languageId: 1,
                 title: 'Shared Content'
             });
             contentSearch.get.mockReturnValue(of({ jsonObjectView: { contentlets: [resolved] } }));
@@ -964,11 +822,14 @@ describe('DotContentDriveNavigationService', () => {
             );
             expect(service.$editPanelRequest()).toEqual({
                 mode: 'edit',
-                contentletInode: 'working-inode-1',
+                inode: 'working-inode-1',
                 identifier: 'shared-identifier',
+                contentType: 'blog',
                 languageId: 1,
-                title: 'Shared Content'
+                title: 'Shared Content',
+                portletId: 'content-drive'
             });
+            expect(router.navigate).not.toHaveBeenCalled();
         });
 
         /** Answers each `contentSearch.get` call in order, so a fallback lookup can be simulated. */
@@ -991,7 +852,7 @@ describe('DotContentDriveNavigationService', () => {
                 limit: 1
             });
             expect(service.$editPanelRequest()).toEqual(
-                expect.objectContaining({ contentletInode: 'es-inode', languageId: 2 })
+                expect.objectContaining({ inode: 'es-inode', languageId: 2 })
             );
         });
 
@@ -1047,7 +908,7 @@ describe('DotContentDriveNavigationService', () => {
                 limit: 1
             });
             expect(service.$editPanelRequest()).toEqual(
-                expect.objectContaining({ contentletInode: 'en-inode' })
+                expect.objectContaining({ inode: 'en-inode' })
             );
         });
 
@@ -1084,68 +945,58 @@ describe('DotContentDriveNavigationService', () => {
         });
 
         /**
-         * Every screen outside Content Drive reaches legacy-editor content through this link (Part
-         * 1's redirect of `c/content/<inode>`), so it must open the editor the content type chose,
-         * never the new editor it opted out of (#37759, FR-021, SC-007).
+         * Every screen outside Content Drive reaches content through this link, so it opens the same
+         * request whatever editor the content's type uses: the opener picks the editor, and never
+         * shows the new editor for a type that opted out of it (#37759, FR-021; #38303).
          */
-        describe('picking the editor', () => {
-            const BANNER = createFakeContentlet({
-                contentType: 'Banner',
-                inode: 'banner-inode',
-                identifier: 'banner-id',
-                languageId: 2,
-                title: 'Spring sale'
-            });
-
-            beforeEach(() => {
-                contentSearch.get.mockReturnValue(
-                    of({ jsonObjectView: { contentlets: [BANNER] } })
-                );
-            });
-
-            it("looks up the resolved content's type", () => {
-                service.openEditByIdentifier('banner-id', 2);
-
-                expect(contentTypeService.getContentType).toHaveBeenCalledWith('Banner');
-            });
-
-            it('opens legacy-editor content in the legacy panel, never the new editor', () => {
-                contentTypeService.getContentType.mockReturnValue(of(typeWith(false)));
-
-                service.openEditByIdentifier('banner-id', 2);
-
-                expect(service.$legacyPanelRequest()).toEqual({
-                    mode: 'edit',
+        describe('leaving the editor to the opener', () => {
+            /** The resolved content, of the given type. */
+            const banner = (contentType: string) =>
+                createFakeContentlet({
+                    contentType,
                     inode: 'banner-inode',
                     identifier: 'banner-id',
                     languageId: 2,
-                    title: 'Spring sale',
-                    portletId: 'content-drive'
+                    title: 'Spring sale'
                 });
-                expect(service.$editPanelRequest()).toBeNull();
-                expect(service.$panelLocation()).toEqual({
-                    kind: 'edit',
-                    editContent: 'banner-id',
-                    editContentLang: 2
-                });
-            });
 
-            it('opens new-editor content in the new-editor panel, as before', () => {
-                service.openEditByIdentifier('banner-id', 2);
+            it.each([
+                ['a type that opted into the new editor', NEW_EDITOR_TYPE.variable],
+                ['a type on the legacy editor', LEGACY_TYPE.variable]
+            ])(
+                'should open the same edit request for content of %s, without looking its type up',
+                (_label, contentType) => {
+                    contentSearch.get.mockReturnValue(
+                        of({ jsonObjectView: { contentlets: [banner(contentType)] } })
+                    );
 
-                expect(service.$editPanelRequest()).toEqual(
-                    expect.objectContaining({ mode: 'edit', contentletInode: 'banner-inode' })
-                );
-                expect(service.$legacyPanelRequest()).toBeNull();
-            });
+                    service.openEditByIdentifier('banner-id', 2);
 
-            it('keeps the language fallback for legacy-editor content', () => {
-                contentTypeService.getContentType.mockReturnValue(of(typeWith(false)));
+                    expect(service.$editPanelRequest()).toEqual({
+                        mode: 'edit',
+                        inode: 'banner-inode',
+                        identifier: 'banner-id',
+                        contentType,
+                        languageId: 2,
+                        title: 'Spring sale',
+                        portletId: 'content-drive'
+                    });
+                    expect(service.$panelLocation()).toEqual({
+                        kind: 'edit',
+                        editContent: 'banner-id',
+                        editContentLang: 2
+                    });
+                    expect(contentTypeService.getContentType).not.toHaveBeenCalled();
+                    expect(router.navigate).not.toHaveBeenCalled();
+                }
+            );
+
+            it('should keep the language fallback for content of any type', () => {
                 answerWith(
                     [],
                     [
                         createFakeContentlet({
-                            contentType: 'Banner',
+                            contentType: LEGACY_TYPE.variable,
                             inode: 'en-inode',
                             languageId: 1
                         })
@@ -1154,119 +1005,18 @@ describe('DotContentDriveNavigationService', () => {
 
                 service.openEditByIdentifier('banner-id', 2);
 
-                expect(service.$legacyPanelRequest()).toEqual(
+                expect(service.$editPanelRequest()).toEqual(
                     expect.objectContaining({ inode: 'en-inode', languageId: 1 })
                 );
             });
-
-            it('shows the standard error and opens nothing when the type lookup fails', () => {
-                const error = new HttpErrorResponse({ status: 404 });
-                contentTypeService.getContentType.mockReturnValue(throwError(() => error));
-
-                service.openEditByIdentifier('banner-id', 2);
-
-                expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
-                expect(service.$legacyPanelRequest()).toBeNull();
-                expect(service.$editPanelRequest()).toBeNull();
-                expect(service.$panelLocation()).toBeNull();
-            });
         });
-    });
-});
-
-/**
- * Content Drive no longer reads the side-panel flag (#37759, FR-006): both editors always open in a
- * panel, and the content type's editor setting alone decides which one. Run against a store with the
- * flag off and against one that carries no flags at all, so neither a stale flag nor its absence can
- * change the routing.
- */
-describe.each([
-    [
-        'the side-panel flag off',
-        { flags: signal({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false }) }
-    ],
-    ['no flags at all', {}]
-])('DotContentDriveNavigationService with %s', (_label, storeOverrides) => {
-    let spectator: SpectatorService<DotContentDriveNavigationService>;
-    let service: DotContentDriveNavigationService;
-    let router: Mocked<Router>;
-    let contentTypeService: Mocked<DotContentTypeService>;
-
-    const typeWith = (newEditor: boolean) =>
-        createFakeContentType({
-            id: 'blog',
-            variable: 'blog',
-            name: 'Blog',
-            metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: newEditor }
-        });
-
-    const createService = createServiceFactory({
-        service: DotContentDriveNavigationService,
-        providers: [
-            mockProvider(Router, { navigate: vi.fn() }),
-            mockProvider(DotContentTypeService, { getContentType: vi.fn() }),
-            mockProvider(DotRouterService, { goToEditPage: vi.fn() }),
-            mockProvider(Location, { path: vi.fn() }),
-            mockProvider(DotHttpErrorManagerService, {
-                handle: vi.fn().mockReturnValue(of({}))
-            }),
-            mockProvider(DotActionUrlService, {
-                getCreateContentletUrl: vi.fn().mockReturnValue(of(CREATE_URL))
-            }),
-            mockProvider(DotContentSearchService, { get: vi.fn() }),
-            mockProvider(DotContentDriveStore, {
-                getFilterValue: vi.fn().mockReturnValue(undefined),
-                defaultLanguageId: vi.fn().mockReturnValue(undefined),
-                ...storeOverrides
-            })
-        ]
-    });
-
-    beforeEach(() => {
-        spectator = createService();
-        service = spectator.service;
-        router = spectator.inject(Router);
-        contentTypeService = spectator.inject(DotContentTypeService);
-    });
-
-    it('opens new-editor content in the new-editor panel, never the full-screen editor', () => {
-        contentTypeService.getContentType.mockReturnValue(of(typeWith(true)));
-
-        service.editContent(createFakeContentlet({ contentType: 'blog', inode: 'inode-x' }));
-
-        expect(service.$editPanelRequest()).toEqual(
-            expect.objectContaining({ mode: 'edit', contentletInode: 'inode-x' })
-        );
-        expect(router.navigate).not.toHaveBeenCalled();
-    });
-
-    it('opens legacy-editor content in the legacy panel', () => {
-        contentTypeService.getContentType.mockReturnValue(of(typeWith(false)));
-
-        service.editContent(createFakeContentlet({ contentType: 'blog', inode: 'inode-x' }));
-
-        expect(service.$legacyPanelRequest()).toEqual(
-            expect.objectContaining({ mode: 'edit', inode: 'inode-x' })
-        );
-        expect(router.navigate).not.toHaveBeenCalled();
-    });
-
-    it('opens a deep-linked new-editor content in the panel, never the full-screen editor', () => {
-        contentTypeService.getContentType.mockReturnValue(of(typeWith(true)));
-        const contentSearch = spectator.inject(DotContentSearchService);
-        (contentSearch.get as Mock).mockReturnValue(
-            of({ jsonObjectView: { contentlets: [createFakeContentlet({ inode: 'inode-y' })] } })
-        );
-
-        service.openEditByIdentifier('shared-identifier');
-
-        expect(router.navigate).not.toHaveBeenCalled();
     });
 });
 
 /**
  * Where a create from Content Drive puts the new content: the folder being browsed. Shared by the
- * create action and by `createContent` links, so both land in the same place (#37759, FR-003).
+ * create action and by `createContent` links, so both land in the same place (#37759, FR-003). The
+ * one request names the folder both ways, for whichever editor the opener picks (#38303).
  */
 describe('DotContentDriveNavigationService, where a create lands', () => {
     let spectator: SpectatorService<DotContentDriveNavigationService>;
@@ -1304,37 +1054,20 @@ describe('DotContentDriveNavigationService, where a create lands', () => {
         currentSite.mockReturnValue({ hostname: 'demo.dotcms.com', identifier: 'site-1' });
         path.mockReturnValue('/about-us/');
         selectedNode.mockReturnValue({ data: { type: 'folder', inode: 'inode-1' } });
+        // See `answerTypeLookup`: answered, never expected to be asked.
+        getContentType.mockImplementation(answerTypeLookup);
         spectator = createService();
     });
 
-    /**
-     * Where a create from here puts the new content, read back from the panel each editor opens:
-     * the new editor takes the host path, the legacy one the folder inode.
-     */
+    /** Where a create from here puts the new content, read back from the one request it opens. */
     const createdIn = () => {
-        const service = spectator.service;
+        spectator.service.createContent('blog');
+        const request = spectator.service.$editPanelRequest();
 
-        getContentType.mockReturnValue(
-            of(
-                createFakeContentType({
-                    variable: 'blog',
-                    metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
-                })
-            )
-        );
-        service.createContent('blog');
-        const folderPath = service.$editPanelRequest()?.folderPath;
-
-        getContentType.mockReturnValue(
-            of(createFakeContentType({ variable: 'news', metadata: {} }))
-        );
-        service.createContent('news');
-        const folderInode = service.$legacyPanelRequest()?.folderInode;
-
-        return { folderPath, folderInode };
+        return { folderPath: request?.folderPath, folderInode: request?.folderInode };
     };
 
-    it('names the browsed folder: its host path for the new editor, its inode for the legacy one', () => {
+    it('names the browsed folder by its host path and by its inode', () => {
         expect(createdIn()).toEqual({
             folderPath: 'demo.dotcms.com/about-us/',
             folderInode: 'inode-1'
