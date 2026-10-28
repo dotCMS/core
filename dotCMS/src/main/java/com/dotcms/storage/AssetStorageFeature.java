@@ -18,9 +18,12 @@ import java.util.Set;
 public final class AssetStorageFeature {
     public static final String FLAG = FeatureFlagName.FEATURE_FLAG_S3_ASSET_STORAGE;
 
-    /** Job processors that belong to the S3 lifecycle and must not register while it is disabled. */
-    private static final Set<Class<?>> JOB_PROCESSORS = Set.of(BinaryAssetCleanupProcessor.class,
-            BinaryFieldCleanupProcessor.class);
+    /**
+     * Job queues that belong to the S3 lifecycle and must not register while it is disabled. The
+     * queue names are compile-time constants, so reading the flag does not load the job processors.
+     */
+    private static final Set<String> JOB_QUEUES = Set.of(BinaryAssetCleanupProcessor.QUEUE,
+            BinaryFieldCleanupProcessor.QUEUE);
 
     private static volatile Boolean enabled;
 
@@ -58,14 +61,14 @@ public final class AssetStorageFeature {
     }
 
     /**
-     * Tells the job queue whether a discovered processor may register. S3 lifecycle processors are
-     * skipped while the feature is disabled, so their queues do not exist, as on a build without them.
+     * Tells the job queue whether a discovered processor may register for a queue. S3 lifecycle queues
+     * are skipped while the feature is disabled, so they do not exist, as on a build without them.
      *
-     * @param processor the discovered job processor class
-     * @return {@code false} only for an S3 lifecycle processor while the feature is disabled
+     * @param queueName the queue the discovered processor would register for
+     * @return {@code false} only for an S3 lifecycle queue while the feature is disabled
      */
-    public static boolean allowsJobProcessor(final Class<?> processor) {
-        return isEnabled() || !JOB_PROCESSORS.contains(processor);
+    public static boolean allowsJobQueue(final String queueName) {
+        return isEnabled() || !JOB_QUEUES.contains(queueName);
     }
 
     /**

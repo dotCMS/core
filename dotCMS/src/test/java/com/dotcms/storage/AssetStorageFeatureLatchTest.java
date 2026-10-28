@@ -14,8 +14,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 class AssetStorageFeatureLatchTest {
-    private static final List<Class<?>> S3_PROCESSORS = List.of(BinaryAssetCleanupProcessor.class,
-            BinaryFieldCleanupProcessor.class);
+    private static final List<String> S3_QUEUES = List.of(BinaryAssetCleanupProcessor.QUEUE,
+            BinaryFieldCleanupProcessor.QUEUE);
 
     private String previous;
 
@@ -54,11 +54,11 @@ class AssetStorageFeatureLatchTest {
     @Test
     void s3JobProcessorsRegisterOnlyWhenEnabled() {
         Config.setProperty(AssetStorageFeature.FLAG, false);
-        S3_PROCESSORS.forEach(p -> assertFalse(AssetStorageFeature.allowsJobProcessor(p), p.getName()));
-        assertTrue(AssetStorageFeature.allowsJobProcessor(String.class), "Other processors are unaffected");
+        S3_QUEUES.forEach(q -> assertFalse(AssetStorageFeature.allowsJobQueue(q), q));
+        assertTrue(AssetStorageFeature.allowsJobQueue("importContentlets"), "Other queues are unaffected");
 
         Config.setProperty(AssetStorageFeature.FLAG, true);
-        S3_PROCESSORS.forEach(p -> assertTrue(AssetStorageFeature.allowsJobProcessor(p), p.getName()));
+        S3_QUEUES.forEach(q -> assertTrue(AssetStorageFeature.allowsJobQueue(q), q));
     }
 
     @Test
