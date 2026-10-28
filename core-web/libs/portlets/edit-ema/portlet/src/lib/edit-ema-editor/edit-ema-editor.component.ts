@@ -64,6 +64,7 @@ import {
     DotPageEditorRequest,
     DotSourceEditorRequest,
     injectEditContentPanel,
+    loadDotLegacyEditorSidePanel,
     loadDotLegacyScreenSidePanel,
     loadDotSourceEditorSidePanel,
     toSourceEditorRequest
@@ -133,7 +134,6 @@ import {
     createFullURL,
     createTranslatePageUrl,
     deleteContentletFromContainer,
-    getTargetUrl,
     insertContentletInContainer,
     isAssetPath,
     isNavigableHref,
@@ -339,7 +339,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     /**
      * The legacy (JSP) screen open in the generic legacy-screen side panel, or `null` while it is
-     * closed (#38303): the content selector, the translate screen or the menu reorder screen. Bound
+     * closed (#38303): the content selector or the menu reorder screen. Bound
      * with `injectSidePanel` in the constructor; its events arrive through {@link #onLegacyEvent}.
      */
     protected readonly $legacyScreenRequest = signal<DotLegacyScreenRequest | null>(null);
@@ -1269,8 +1269,8 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     /**
      * Reacts to what a legacy screen opened in the side panel reports: a selection or a "create
-     * new" from the content selector, a save or language switch from the translate screen, and the
-     * menu reorder screen's outcome. Any other event is ignored.
+     * new" from the content selector, and the menu reorder screen's outcome. Any other event is
+     * ignored.
      *
      * @param detail The `ng-event` detail the screen dispatched.
      */
@@ -1296,12 +1296,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 break;
             }
 
-            case NG_CUSTOM_EVENTS.SAVE_PAGE:
-            case NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED:
-                this.#followTranslation(detail);
-                break;
-
-            case 'close':
             case NG_CUSTOM_EVENTS.CANCEL_SAVING_MENU_ORDER:
                 this.#closeLegacyScreen();
                 break;
@@ -1375,37 +1369,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
         this.#pageApi.editorSave(pageContainers);
         this.#closeLegacyScreen();
-    }
-
-    /**
-     * Follows a translation saved in the translate screen: loads the page at the URL and in the
-     * language the screen names (`htmlPageReferer`), or only the language when the URL is the same.
-     * Without a referer, reloads the page.
-     *
-     * @param detail The translate screen's `save-page` or `language-is-changed` event.
-     */
-    #followTranslation(detail: DotLegacyScreenEvent): void {
-        const payload = typeof detail.payload === 'object' ? detail.payload : undefined;
-        const htmlPageReferer = payload?.['htmlPageReferer'];
-
-        if (typeof htmlPageReferer !== 'string' || !htmlPageReferer) {
-            this.#pageApi.pageReload();
-
-            return;
-        }
-
-        const url = new URL(htmlPageReferer, this.window.location.origin); // Add base for relative URLs
-        const targetUrl = getTargetUrl(url.pathname, this.uveStore.pageAsset()?.urlContentMap);
-        const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language') ?? undefined;
-
-        if (shouldNavigate(targetUrl, this.uveStore.pageParams()?.url ?? '')) {
-            // Navigate to the new URL if it's different from the current one
-            this.#pageApi.pageLoad({ url: targetUrl, language_id });
-
-            return;
-        }
-
-        this.#pageApi.pageLoad({ language_id });
     }
 
     /**
@@ -2065,21 +2028,72 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Opens the legacy screen that creates the page's translation into another language, in the
-     * side panel (#38303).
+     * Opens the page's translation into another language in the legacy editor panel (#38303). The
+     * translate screen is the legacy editor's create form pre-filled from the page, so it gets the
+     * workflow wizard, compare and the unsaved-changes prompt that panel handles. It opens directly
+     * rather than through the opener, which would ask the server for the type's create screen: here
+     * the create screen is the translate URL.
+     *
+     * A save loads the translation and keeps the panel open; the editor's redirect after a first
+     * save closes it and loads that page. Closing reloads the page only once something was saved.
      *
      * @param event The page and the language to translate it into.
      */
     translatePage({ page, newLanguage }: { page: DotCMSPage; newLanguage: number }) {
-        this.#openLegacyScreen(
-            createTranslatePageUrl(
-                page,
-                newLanguage,
-                this.uveStore.pageVariantId(),
-                this.uveStore.pageAsset()?.site?.identifier
-            ),
-            page.title
+        const variantId = this.uveStore.pageVariantId();
+        const siteId = this.uveStore.pageAsset()?.site?.identifier;
+        const request = withPageContext(
+            { mode: 'new', contentType: page.contentType, languageId: newLanguage, title: page.title },
+            { variantId, siteId }
         );
+        let saved = false;
+
+        const ref = this.#sidePanels.open(loadDotLegacyEditorSidePanel(), {
+            heading: page.title,
+            inputs: {
+                request: signal(request).asReadonly(),
+                createUrl: signal(
+                    createTranslatePageUrl(page, newLanguage, variantId, siteId)
+                ).asReadonly()
+            },
+            outputs: {
+                saved: (contentlet: DotCMSContentlet) => {
+                    saved = true;
+                    this.#loadTranslation(contentlet);
+                },
+                pageEditorRequested: ({ url, languageId }: DotPageEditorRequest) => {
+                    // The page is loaded right here, so the close must not reload it again.
+                    saved = false;
+                    ref.close();
+                    this.#pageApi.pageLoad({ url, language_id: String(languageId) });
+                }
+            },
+            injector: this.#injector
+        });
+
+        // A delete is always followed by the panel closing, and only a saved translation can be
+        // deleted, so this one reload covers it too.
+        ref.closed.subscribe(() => {
+            if (saved) {
+                this.#pageApi.pageReload();
+            }
+        });
+    }
+
+    /**
+     * Loads the translation the legacy editor saved: the saved page version, at its URL (which may
+     * differ in the new language) and in its language.
+     *
+     * @param contentlet The saved page version.
+     */
+    #loadTranslation(contentlet: DotCMSContentlet): void {
+        this.#pageApi.pageLoad({
+            language_id: String(contentlet.languageId),
+            url:
+                contentlet.url ||
+                contentlet['URL_MAP_FOR_CONTENT'] ||
+                this.uveStore.pageParams()?.url
+        });
     }
 
     /**
