@@ -837,10 +837,10 @@ var createRow = function (tableId, rowInnerHtml, className, id) {
 };
 
 /**
-* Returns a value as HTML-escaped text, so it shows as typed inside a table cell
+* Returns a value as text for a table cell, so it shows as typed
 * @param value
  */
-function escapeCellText(value) {
+function cellText(value) {
     var holder = document.createElement("div");
     holder.textContent = (value === null || value === undefined) ? "" : String(value);
     return holder.innerHTML;
@@ -919,11 +919,11 @@ function loadUsers() {
 
                 for(var i=0;i<sessionList.length;i++) {
 					var session=sessionList[i];
-					var html ="<td>"+escapeCellText(session.sessionTime)+"</td> ";
-					html+="<td>"+escapeCellText(session.address)+"</td> ";
-					html+="<td>"+escapeCellText(session.userId)+"</td> ";
-					html+="<td>"+escapeCellText(session.userEmail)+"</td> ";
-					html+="<td>"+escapeCellText(session.userFullName)+"</td> ";
+					var html ="<td>"+cellText(session.sessionTime)+"</td> ";
+					html+="<td>"+cellText(session.address)+"</td> ";
+					html+="<td>"+cellText(session.userId)+"</td> ";
+					html+="<td>"+cellText(session.userEmail)+"</td> ";
+					html+="<td>"+cellText(session.userFullName)+"</td> ";
 					html+="<td> ";
 					if( !session.isCurrent ){
 						html+=" <img style='display:none;' id='killSessionProgress-"+session.token+"' src='/html/images/icons/round-progress-bar.gif'/> ";
