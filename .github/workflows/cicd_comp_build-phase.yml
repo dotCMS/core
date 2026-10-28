@@ -120,35 +120,45 @@ jobs:
       artifact-suffix: ${{ steps.maven-build.outputs.artifact-suffix }}
     steps:
       # Checkout code based on whether a specific ref is provided
-      # Same depth rule as the ref checkout below (see its comment): full
-      # history only when the PR-only steps need it.
+      # Same depth rule as the ref checkout below (see its comment): depth 2
+      # only when the PR-only steps need it.
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: inputs.ref == ''
         with:
-          fetch-depth: ${{ inputs.run-pr-checks && '0' || '1' }}
+          fetch-depth: ${{ inputs.run-pr-checks && '2' || '1' }}
       # The ref path builds a tag/branch snapshot; buildnumber-maven-plugin
       # (scmRevision) only reads HEAD, which works on a shallow clone, so we
-      # avoid the full fetch (~2k+ branches, ~1.1 GB pack, ~19-20 min).
-      # Depth is driven by run-pr-checks (NOT ref): the PR-only steps below
-      # (`.mvn/maven.config` guard, clean-tree check) need real history
-      # (git diff origin/main...HEAD), so when they run we fetch full history.
-      # No current caller sets both ref and run-pr-checks, but this keeps that
-      # future combination correct. String literals are used deliberately:
-      # `inputs.run-pr-checks && 0 || 1` is wrong because 0 is falsy in GH
-      # expressions, collapsing the true branch to 1.
+      # avoid the full fetch (~2k+ branches, ~1.1 GB pack, 364 s on a PR run).
+      # Depth is driven by run-pr-checks (NOT ref). The only PR-only step that
+      # reads history is the `.mvn/maven.config` guard below, and it needs just
+      # the pull request's own diff: pull_request checks out the merge commit
+      # (refs/pull/N/merge), whose first parent is the base tip, so depth 2 is
+      # enough for HEAD^1..HEAD. The clean-tree check only needs the working
+      # tree. This build runs without -Pvalidate, so the Nx `origin/main` base
+      # in core-web/pom.xml is never evaluated here.
+      # String literals are used deliberately: `inputs.run-pr-checks && 2 || 1`
+      # would also work, but keeping the quoted form avoids the 0-is-falsy trap
+      # in GH expressions if the depth is ever changed.
       - name: Checkout code with ref ${{ inputs.ref }}
         if: inputs.ref != ''
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref }}
-          fetch-depth: ${{ inputs.run-pr-checks && '0' || '1' }}
+          fetch-depth: ${{ inputs.run-pr-checks && '2' || '1' }}
 
-      # Check if .mvn/maven.config is modified in PR (only for PR checks)
+      # Check if .mvn/maven.config is modified in PR (only for PR checks).
+      # HEAD is the PR's merge commit, so HEAD^1..HEAD is exactly what the PR
+      # changes. Fail closed if HEAD is not a merge commit: HEAD^1 would then
+      # be the previous commit and the guard would silently narrow to it.
       - name: Check if .mvn/maven.config is in the PR commit
         if: inputs.run-pr-checks
         run: |
-          if git diff --name-only origin/main...HEAD | grep -q '^\.mvn/maven.config$'; then
+          if ! git rev-parse --verify --quiet HEAD^2 >/dev/null; then
+            echo "Error: expected a pull request merge commit as HEAD, cannot determine the PR diff."
+            exit 1
+          fi
+          if git diff --name-only HEAD^1 HEAD | grep -q '^\.mvn/maven.config$'; then
             echo "Error: .mvn/maven.config should not be modified in PR commits. This should only be set on release branches."
             exit 1
           else
