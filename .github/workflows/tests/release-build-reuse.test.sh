@@ -805,6 +805,19 @@ block_has "$INIT_PHASE" data-download 'workflow: cicd_2-merge-queue\.yml' \
   "trunk and nightly reuse only merge-queue builds, never a slimmed PR build"
 block_has "$INIT_PHASE" data-download 'workflow_search: false' \
   "the previous-build search does not fall back to every workflow"
+block_has "$INIT_PHASE" data-download-trunk 'workflow: cicd_3-trunk\.yml' \
+  "a commit that bypassed the queue can reuse trunk's own complete build"
+block_has "$INIT_PHASE" data-download-trunk 'workflow_search: false' \
+  "the trunk fallback does not search every workflow"
+block_has_if "$INIT_PHASE" data-download-trunk "data-download.outputs.found_artifact != 'true'" \
+  "the trunk fallback runs only when no merge-queue build was found"
+for wf in cicd_1-pr cicd_4-nightly; do
+  if grep -Eq "workflow: ${wf}\.yml" "$INIT_PHASE"; then
+    bad "previous-build reuse never searches ${wf}.yml" "found 'workflow: ${wf}.yml' in $(rel "$INIT_PHASE")"
+  else
+    ok "previous-build reuse never searches ${wf}.yml"
+  fi
+done
 
 # ================================================= 12. SAML ships with core ==
 # Issue #38104. SAML used to be released separately, so a core release could

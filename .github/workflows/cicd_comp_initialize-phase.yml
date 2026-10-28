@@ -103,14 +103,36 @@ jobs:
           name: maven-repo
           path: .
           if_no_artifact_found: warn
+      # Fallback for a commit that reached main without the queue (an admin push): the
+      # trunk run that built it checked out github.sha, so its maven-repo is complete and
+      # matches. Not the nightly: it builds the midnight commit (build-ref), not its own
+      # head_sha, so its artifacts may belong to an older commit. Never the PR workflow.
+      - name: Download Trunk Build Artifact
+        id: data-download-trunk
+        uses: dawidd6/action-download-artifact@d63b86af1b34672e53c440b1b83979861906bad7 # v24
+        if: ${{ inputs.reuse-previous-build == true && steps.data-download.outputs.found_artifact != 'true' }}
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          workflow: cicd_3-trunk.yml
+          workflow_search: false
+          commit: ${{ github.sha }}
+          workflow_conclusion: success
+          search_artifacts: true
+          dry_run: true
+          name: maven-repo
+          path: .
+          if_no_artifact_found: warn
       - name: Set Outputs
         id: check
         run: |
-          build_artifact_exists=${{ steps.data-download.outputs.found_artifact }}
-          if [[ ${build_artifact_exists} == "true" ]]; then
+          if [[ "${{ steps.data-download.outputs.found_artifact }}" == "true" ]]; then
               run_id=`echo '${{ steps.data-download.outputs.artifacts }}' | jq -r '.[0].workflow_run.id'`
               found_artifacts=true
               echo "Merge Group Artifact Run id: $run_id"
+          elif [[ "${{ steps.data-download-trunk.outputs.found_artifact }}" == "true" ]]; then
+              run_id=`echo '${{ steps.data-download-trunk.outputs.artifacts }}' | jq -r '.[0].workflow_run.id'`
+              found_artifacts=true
+              echo "Trunk Artifact Run id: $run_id"
           else
              echo "No Merge Group artifact found"
              run_id="${{ github.run_id }}"
