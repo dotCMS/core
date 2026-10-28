@@ -16,6 +16,7 @@ import static org.mockito.Mockito.when;
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.AppDescriptorDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
@@ -37,8 +38,10 @@ import com.dotcms.util.LicenseValiditySupplier;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -1555,6 +1558,100 @@ public class AppsResourceTest extends IntegrationTestBase {
         final HttpServletResponse response = mock(HttpServletResponse.class);
         final Response appDetailResponse = appsResourceNonLicense.getAppDetail(request, response, "anyKey", "any-site-id");
         Assert.assertEquals(HttpStatus.SC_FORBIDDEN, appDetailResponse.getStatus());
+    }
+
+    /**
+     * Given scenario: an app has secrets on a site. A non-administrator who holds the Apps portlet
+     * (and can read the site) tries to save, delete one secret, delete all secrets, remove the app
+     * and upload a new descriptor through the REST resource; then an administrator deletes the
+     * secrets and removes the app.
+     * Expected Result: every non-administrator change gets 403 and leaves the stored configuration
+     * and descriptors unchanged; the administrator changes return 200.
+     */
+    @Test
+    public void Test_Non_Administrator_Cannot_Change_App_Configuration() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        final AppDescriptorDataGen dataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false, true)
+                .withName("admin-only-writes")
+                .withDescription("demo")
+                .withExtraParameters(false);
+        final String appKey = dataGen.getKey();
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        when(request.getRequestURI()).thenReturn("/baseURL");
+
+        final File file = dataGen.nextPersistedDescriptor();
+        try (InputStream inputStream = Files.newInputStream(file.toPath())) {
+            Assert.assertEquals(HttpStatus.SC_OK, appsResource.createApp(request, response,
+                    createFormDataMultiPart(dataGen.getFileName(), inputStream)).getStatus());
+        }
+        createSecret(request, response, appKey, host,
+                ImmutableMap.of("p1", newInputParam("v1".toCharArray(), false)));
+
+        // A non-administrator who holds the Apps portlet and can find the site.
+        final User portletUser = mock(User.class);
+        when(portletUser.getUserId()).thenReturn("apps-portlet-user");
+        when(portletUser.isBackendUser()).thenReturn(true);
+        when(portletUser.isAdmin()).thenReturn(false);
+        final WebResource portletWebResource = mock(WebResource.class);
+        final InitDataObject portletInitData = mock(InitDataObject.class);
+        when(portletInitData.getUser()).thenReturn(portletUser);
+        when(portletWebResource.init(any(WebResource.InitBuilder.class))).thenReturn(portletInitData);
+        final LayoutAPI layoutAPI = mock(LayoutAPI.class);
+        when(layoutAPI.doesUserHaveAccessToPortlet(AppsAPI.APPS_PORTLET_ID, portletUser))
+                .thenReturn(true);
+        final HostAPI hostAPI = mock(HostAPI.class);
+        when(hostAPI.find(host.getIdentifier(), portletUser, false)).thenReturn(host);
+        final AppsAPI portletAppsAPI = new AppsAPIImpl(layoutAPI, hostAPI,
+                SecretsStore.INSTANCE.get(), CacheLocator.getAppsCache(),
+                APILocator.getLocalSystemEventsAPI(), new AppDescriptorHelper(),
+                new LicenseValiditySupplier() {});
+        final AppsResource portletResource = new AppsResource(portletWebResource,
+                new AppsHelper(portletAppsAPI, hostAPI, APILocator.getPermissionAPI(),
+                        APILocator.getSecurityLogger()));
+
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, portletResource.createAppSecrets(request,
+                response, appKey, host.getIdentifier(), new SecretForm(ImmutableMap.of(
+                        "p1", newInputParam("changed".toCharArray(), false)))).getStatus());
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, portletResource.deleteIndividualAppSecret(
+                request, response, new DeleteSecretForm(appKey, host.getIdentifier(),
+                        ImmutableSet.of("p1"))).getStatus());
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, portletResource.deleteAllAppSecrets(
+                request, response, appKey, host.getIdentifier()).getStatus());
+        Assert.assertEquals(HttpStatus.SC_FORBIDDEN, portletResource.deleteApp(
+                request, response, appKey, true).getStatus());
+
+        final AppDescriptorDataGen uploadDataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false, true)
+                .withName("admin-only-upload")
+                .withDescription("demo")
+                .withExtraParameters(false);
+        final File uploadFile = uploadDataGen.nextPersistedDescriptor();
+        try (InputStream inputStream = Files.newInputStream(uploadFile.toPath())) {
+            Assert.assertEquals(HttpStatus.SC_FORBIDDEN, portletResource.createApp(request,
+                    response, createFormDataMultiPart(uploadDataGen.getFileName(), inputStream))
+                    .getStatus());
+        }
+        assertTrue(APILocator.getAppsAPI()
+                .getAppDescriptor(uploadDataGen.getKey(), APILocator.systemUser()).isEmpty());
+
+        final AppSecrets stored = APILocator.getAppsAPI()
+                .getSecrets(appKey, host, APILocator.systemUser()).orElseThrow();
+        Assert.assertEquals("v1", stored.getSecrets().get("p1").getString());
+        assertTrue(APILocator.getAppsAPI()
+                .getAppDescriptor(appKey, APILocator.systemUser()).isPresent());
+
+        createSecret(request, response, appKey, host,
+                ImmutableMap.of("p1", newInputParam("v2".toCharArray(), false)));
+        Assert.assertEquals(HttpStatus.SC_OK, appsResource.deleteAllAppSecrets(
+                request, response, appKey, host.getIdentifier()).getStatus());
+        assertTrue(APILocator.getAppsAPI()
+                .getSecrets(appKey, host, APILocator.systemUser()).isEmpty());
+        Assert.assertEquals(HttpStatus.SC_OK,
+                appsResource.deleteApp(request, response, appKey, true).getStatus());
+        assertTrue(APILocator.getAppsAPI()
+                .getAppDescriptor(appKey, APILocator.systemUser()).isEmpty());
     }
 
     private void createSecret(final HttpServletRequest request, final HttpServletResponse response,

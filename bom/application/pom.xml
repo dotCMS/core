@@ -14,7 +14,7 @@
     <properties>
         <maven.deploy.skip>false</maven.deploy.skip>
         <flatten.mode>bom</flatten.mode>
-        <aws-java-sdk.version>1.12.488</aws-java-sdk.version>
+        <aws-java-sdk.version>1.12.797</aws-java-sdk.version>
         <twelvemonkeys.version>3.10.1</twelvemonkeys.version>
         <swagger.version>2.2.34</swagger.version>
         <bytebuddy.version>1.14.15</bytebuddy.version>
@@ -22,9 +22,11 @@
         <bouncy-castle.version>1.85</bouncy-castle.version>
         <awaitility.version>4.0.0</awaitility.version>
         <shedlock.version>4.33.0</shedlock.version>
-        <jackson.version>2.17.2</jackson.version>
+        <jackson.version>2.18.11</jackson.version>
         <jersey.version>2.28</jersey.version>
         <graalvm.version>22.3.3</graalvm.version>
+        <grpc.version>1.75.0</grpc.version>
+        <netty.version>4.1.138.Final</netty.version>
     </properties>
     <dependencyManagement>
 
@@ -68,13 +70,26 @@
                 <scope>import</scope>
             </dependency>
 
+            <!-- grpc: imported first so every io.grpc artifact resolves to one version.
+                 Stay on 1.75.x: 1.76+ expects guava 33.4+, and guava is pinned to 32.0.1-jre below. -->
+            <dependency>
+                <groupId>io.grpc</groupId>
+                <artifactId>grpc-bom</artifactId>
+                <version>${grpc.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
-            <!-- Asynchronous NIO client server framework for the jvm -->
-            <!-- <dependency>
-
-                 <groupId>io.netty</groupId>
-                 <artifactId>netty-all</artifactId>
-             </dependency>-->
+            <!-- Netty: import the 4.1.x BOM so every Netty module resolves to a single version.
+                 Left to transitive resolution the trees disagree (lettuce-core brings 4.1.63), and
+                 mixed Netty modules on one classpath fail at runtime with NoSuchMethodError. -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>${netty.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
 
             <!--
@@ -627,7 +642,7 @@
             <dependency>
                 <groupId>commons-fileupload</groupId>
                 <artifactId>commons-fileupload</artifactId>
-                <version>1.5</version>
+                <version>1.6.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-io</groupId>
@@ -757,7 +772,7 @@
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>42.7.2</version>
+                <version>42.7.13</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.checkerframework</groupId>
@@ -780,12 +795,6 @@
             </dependency>
 
 
-            <dependency>
-                <groupId>com.impossibl.pgjdbc-ng</groupId>
-                <artifactId>pgjdbc-ng</artifactId>
-                <version>0.8.9</version>
-            </dependency>
-
             <!--
              *****************************
                Cluster Support
@@ -794,7 +803,7 @@
            <dependency>
                 <groupId>dnsjava</groupId>
                 <artifactId>dnsjava</artifactId>
-                <version>3.5.3</version>
+                <version>3.6.5</version>
             </dependency>
 
             <dependency>
@@ -914,7 +923,7 @@
             <dependency>
                 <groupId>com.thoughtworks.xstream</groupId>
                 <artifactId>xstream</artifactId>
-                <version>1.4.20</version>
+                <version>1.4.21</version>
                 <exclusions>
                     <exclusion>
                         <groupId>xpp3</groupId>

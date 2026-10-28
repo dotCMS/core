@@ -4849,8 +4849,10 @@ paths:
       - Containers
   /v1/content/_canlock/{inodeOrIdentifier}:
     get:
-      description: Checks if the contentlet specified by its inode or identifier can
-        be locked by the current user.
+      description: "Checks if the contentlet specified by its inode or identifier\
+        \ can be locked by the current user, and whether it is locked. When locked,\
+        \ the response includes lockedOn; lockedBy (user id) and lockedByName (full\
+        \ name) are included for back-end users only."
       operationId: canLockContent_1
       parameters:
       - in: path

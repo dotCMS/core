@@ -37,6 +37,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.util.ArrayList;
@@ -226,9 +227,9 @@ public class TempFileAPI {
       if (user == null || tempFilesByUrlAdminOnly && !user.isAdmin()) {
         throw new DotRuntimeException("Only Admin Users can import files by URL via the Temp API.");
       }
-      // If url requested is on a private subnet, block by default
-      if(IPUtils.isIpPrivateSubnet(url.getHost()) && !Optional.ofNullable(allowAccessToPrivateSubnets.get()).orElse(false)) {
-        throw new DotRuntimeException(String.format("Failed to download file by URL: %s as it is in a private subnet", url));
+      if (!isAllowedRemoteUrl(url)) {
+        throw new DotRuntimeException(String.format(
+                "Failed to download file by URL: the host %s is not an allowed target", url.getHost()));
       }
       final String fileName = resolveFileName(incomingFileName, url);
       final DotTempFile dotTempFile = createEmptyTempFile(fileName, request);
@@ -253,17 +254,51 @@ public class TempFileAPI {
   }
 
   /**
-   * This method receives a URL and checks if starts with http or https,
-   * and also makes a request to the URL and if returns 200 the URL is valid,
-   * if returns any other response will be false
-   * @param url
+   * Tells whether the server may fetch a URL a caller supplied. The URL must use http or https
+   * and must not point at a loopback, link-local, private or otherwise internal address, unless
+   * {@code ALLOW_ACCESS_TO_PRIVATE_SUBNETS} opens those ranges. The host name is resolved for
+   * the check, so {@code localhost} and names that resolve to internal addresses are refused as
+   * well. No request is made to the URL.
+   *
+   * @param url the URL the caller asked the server to fetch
+   * @return {@code true} when the server may contact the URL
+   */
+  public boolean isAllowedRemoteUrl(final URL url) {
+
+    if (null == url) {
+      return false;
+    }
+    final String protocol = url.getProtocol();
+    if (!"http".equalsIgnoreCase(protocol) && !"https".equalsIgnoreCase(protocol)) {
+      Logger.error(this, "URL does not starts with http or https");
+      return false;
+    }
+    if (IPUtils.isIpPrivateSubnet(url.getHost()) && !allowAccessToPrivateSubnets.get()) {
+      SecurityLogger.logInfo(this.getClass(), "Refused to fetch a URL whose host '" + url.getHost()
+              + "' resolves to a private or internal address");
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * This method receives a URL and checks that it starts with http or https and that the server
+   * may contact it (see {@link #isAllowedRemoteUrl(URL)}). Only then it makes a request to the
+   * URL: the URL is valid when that request returns 200, and invalid on any other response.
+   *
+   * @param url the URL to validate
    * @return boolean if the url is valid or not
    */
   public boolean validUrl(final String url) {
 
-    if(!(url.toLowerCase().startsWith("http://") ||
-            url.toLowerCase().startsWith("https://"))){
-      Logger.error(this, "URL does not starts with http or https");
+    final URL parsedUrl;
+    try {
+      parsedUrl = new URL(url);
+    } catch (MalformedURLException e) {
+      Logger.error(this, "Invalid URL: " + e.getMessage());
+      return false;
+    }
+    if (!isAllowedRemoteUrl(parsedUrl)) {
       return false;
     }
     try {

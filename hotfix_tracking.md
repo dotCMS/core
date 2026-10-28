@@ -54,3 +54,33 @@ Release-25.07.10 LTS
 48. https://github.com/dotCMS/core/issues/34435 : [DEFECT] Portlet cache throws an error when using the Redis cache provider #34435
 49. https://github.com/dotCMS/core/issues/37252 : Backport private-issues/issues/668 into 25.07 #37252
 50. https://github.com/dotCMS/core/issues/37603 : Binary field stuck on infinite loading spinner when creating new content (legacy Dojo/JSP editor) #37603
+51. https://github.com/dotCMS/core/issues/35996 : security(deps): upgrade bundled DOMPurify in TinyMCE / Monaco / Swagger UI assets (CVE-2025-26791 follow-up) #35996
+52. https://github.com/dotCMS/core/issues/37956 : Backport the AWS SDK v1 upgrade (#37904) into 25.07 LTS #37956
+53. https://github.com/dotCMS/core/pull/37474 : fix(network): handle IPv6 addresses in IPUtils checks #37474
+54. https://github.com/dotCMS/core/pull/37549 : fix(velocity): harden SecureIntrospector restricted-class coverage #37549
+55. https://github.com/dotCMS/core/pull/37947 : fix(webdav): confine temp storage writes to the temp directory #37947
+56. https://github.com/dotCMS/core/pull/38101 : fix(rest): require admin and Maintenance portlet to tail log files #38101
+57. https://github.com/dotCMS/core/issues/37592 : Remove pgjdbc-ng and PostgresPubSubImpl (superseded by JDBCPubSubImpl) #37592
+58. https://github.com/dotCMS/core/pull/37626 : chore(deps): bump six libraries with published security fixes #37626
+59. https://github.com/dotCMS/core/pull/38023 : fix(publishing): validate bundle receipt and restrict endpoint management #38023
+60. https://github.com/dotCMS/core/pull/38095 : chore(push-publish): remove leftover debug logging #38095
+61. https://github.com/dotCMS/core/pull/38099 : fix(achecker): validate request values and harden the embedded database access #38099
+62. https://github.com/dotCMS/core/pull/38097 : fix(workflow): record the requesting user on bulk task actions #38097
+63. https://github.com/dotCMS/core/pull/38114 : fix(workflows): encode scheme, step and action names in legacy admin JSPs #38114
+64. https://github.com/dotCMS/core/pull/38106 : chore(push-publish): compare endpoint keys with MessageDigest.isEqual #38106
+65. https://github.com/dotCMS/core/pull/38113 : fix(folders): require EDIT on the source folder when moving it #38113
+66. https://github.com/dotCMS/core/pull/38077 : fix(permissions): require EDIT_PERMISSIONS before PermissionAjax changes an asset's permissions #38077
+67. https://github.com/dotCMS/core/pull/38121 : fix(publishing): check permissions before deleting push history #38121
+68. https://github.com/dotCMS/core/pull/38096 : fix(containers): restrict sortContentletsBy to the supported sort columns #38096
+69. https://github.com/dotCMS/core/pull/38126 : fix(legacy-ui): check user permissions in legacy Ajax and Struts handlers #38126
+70. https://github.com/dotCMS/core/pull/38112 : fix(rest): validate remote URL targets and redirects up front; align role membership reads #38112
+71. https://github.com/dotCMS/core/pull/38107 : fix(graphql): scope response cache entries to the caller and request context #38107
+72. https://github.com/dotCMS/core/pull/38128 : fix(rest): return lock owner name to back-end users and normalize forgot-password response #38128
+73. https://github.com/dotCMS/core/pull/38149 : fix(publishing): require access rules for uploaded bundles and plugin jars in received bundles #38149
+74. https://github.com/dotCMS/core/pull/38127 : fix(tags): check the user's permissions when deleting tags #38127
+75. https://github.com/dotCMS/core/pull/38098 : feat(apps): manage Apps configuration as an administrator setting #38098
+76. https://github.com/dotCMS/core/pull/38120 : fix(users): only a CMS Administrator can change a user's roles #38120
+77. https://github.com/dotCMS/core/pull/38178 : fix(js): load JavaScript modules through the content API #38178
+78. https://github.com/dotCMS/core/pull/38176 : fix(docker): update the JDK truststore in the image #38176 #999
+79. https://github.com/dotCMS/core/pull/38083 : chore(saml): bump com.dotcms.samlbundle to 26.10.17 #38083 #725
+80. https://github.com/dotCMS/core/pull/36591 : fix(saml): return front-end users to the requested page after login (validate the post-login destination) #36591 #879

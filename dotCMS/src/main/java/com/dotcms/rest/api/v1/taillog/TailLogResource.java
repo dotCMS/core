@@ -13,6 +13,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.ThreadUtils;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.Portlet;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.apache.commons.io.input.TailerListenerAdapter;
 import org.glassfish.jersey.media.sse.EventOutput;
@@ -47,6 +48,19 @@ public class TailLogResource {
     //This is in secodns
     public static final int KEEP_ALIVE_EVENT_INTERVAL = Config.getIntProperty("KEEP_ALIVE_EVENT_INTERVAL",20);
 
+    /**
+     * Streams the tail of a log file under {@code TAIL_LOG_LOG_FOLDER} as server-sent events.
+     * <p>
+     * Access requires a back-end user with the CMS Administrator role and the Maintenance portlet.
+     * The file name must be a plain name (optionally with sub folders) that stays inside the log
+     * folder and matches {@code TAIL_LOG_FILE_REGEX}.
+     *
+     * @param request   the current request
+     * @param fileName  name of the log file, relative to the log folder
+     * @param linesBack how many bytes from the end of the file to send first; 0 or less means the default
+     * @return the event output that receives the log lines and keep-alive events
+     * @throws IOException if the canonical path of the file cannot be resolved
+     */
     @GET
     @Path("/{fileName}/_tail")
     @JSONP
@@ -58,9 +72,11 @@ public class TailLogResource {
         final InitDataObject initData =
                 new WebResource.InitBuilder(new WebResource())
                         .requiredBackendUser(true)
+                        .requireAdmin(true)
                         .requiredFrontendUser(false)
                         .requestAndResponse(request, new EmptyHttpResponse())
                         .rejectWhenNoUser(true)
+                        .requiredPortlet(Portlet.MAINTENANCE)
                         .init();
 
         if(fileName.trim().isEmpty()) {

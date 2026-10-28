@@ -4,7 +4,6 @@ import com.dotcms.ai.workflow.OpenAIAutoTagActionletTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
-import com.dotcms.dotpubsub.PostgresPubSubImplTest;
 import com.dotcms.ema.EMAWebInterceptorTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
 import com.dotcms.junit.MainBaseSuite;
@@ -14,6 +13,7 @@ import com.dotcms.publisher.business.PublishAuditAPITest;
 import com.dotcms.publisher.util.PushedAssetUtilTest;
 import com.dotcms.publishing.PublisherFilterImplTest;
 import com.dotcms.publishing.PushPublishFiltersInitializerTest;
+import com.dotcms.rendering.js.JsModuleImportIntegrationTest;
 import com.dotcms.rendering.velocity.directive.DotParseTest;
 import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rest.BundleResourceTest;
@@ -102,7 +102,10 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.links.factories.LinkFactoryTest.class,
         com.dotmarketing.factories.MultiTreeAPITest.class,
         com.dotmarketing.portlets.categories.business.CategoryAPITest.class,
-        com.dotmarketing.filters.FiltersTest.class
+        com.dotmarketing.filters.FiltersTest.class,
+        com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest.class,
+        com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class,
+        JsModuleImportIntegrationTest.class
 })
 public class MainSuite2a {
 

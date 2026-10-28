@@ -4,11 +4,14 @@ import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.Layout;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
@@ -20,6 +23,9 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.RoleNameException;
 import com.dotmarketing.portlets.user.ajax.UserAjax;
+import com.dotmarketing.portlets.workflows.business.WorkFlowFactory;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
+import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
 import com.dotmarketing.util.DateUtil;
@@ -320,7 +326,9 @@ public class RoleResource implements Serializable {
 	}
 
 	/**
-	 * Load the user and roles by role id.
+	 * Load the user and roles by role id. The caller must be able to read role membership (an
+	 * administrator, or Roles plus Users portlets) or hold a workflow action that assigns work
+	 * to the role, which is what the workflow assignee picker relies on.
 	 * @param request   {@link HttpServletRequest}
 	 * @param response  {@link HttpServletResponse}
 	 * @param roleId    {@link String} role
@@ -340,9 +348,19 @@ public class RoleResource implements Serializable {
 											  @DefaultValue("false") @QueryParam("roleHierarchyForAssign") final boolean roleHierarchyForAssign,
 											  @QueryParam  ("name") final String roleNameToFilter) throws DotDataException, DotSecurityException {
 
-		new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
+		final User modUser = new WebResource.InitBuilder(this.webResource).requiredBackendUser(true)
 				.requiredFrontendUser(false).requestAndResponse(request, response)
-				.rejectWhenNoUser(true).init();
+				.rejectWhenNoUser(true).init().getUser();
+
+		if (!this.canReadRoleMembership(modUser) && !this.canAssignToRole(modUser, roleId)) {
+
+			SecurityLogger.logInfo(this.getClass(), "unauthorized attempt to read the hierarchy and users of role "
+					+ roleId + " by user " + modUser.getUserId() + " from " + request.getRemoteHost());
+			final String forbiddenMessage = "The User: " + modUser.getUserId()
+					+ " does not have permissions to read the users of a role";
+			Logger.error(this, forbiddenMessage);
+			throw new ForbiddenException(forbiddenMessage);
+		}
 
 		final Role role = this.roleAPI.loadRoleById(roleId);
 
@@ -376,6 +394,49 @@ public class RoleResource implements Serializable {
 
 		return Response.ok(new ResponseEntityView<List<Role>>(
 				null != roleNameToFilter? this.filterRoleList(roleNameToFilter, roleList):roleList)).build();
+	}
+
+	/**
+	 * Whether a user may see which users hold a role and which roles a user holds; the rule
+	 * lives in {@link RoleHelper#canReadRoleMembership(User)} and is shared with the legacy
+	 * DWR listing.
+	 *
+	 * @param user the user making the request
+	 * @return {@code true} when the user may read role membership
+	 * @throws DotDataException if the user's portlet access cannot be resolved
+	 */
+	private boolean canReadRoleMembership(final User user) throws DotDataException {
+
+		return this.roleHelper.canReadRoleMembership(user);
+	}
+
+	/**
+	 * Whether the user may use a workflow action that assigns work to the given role. Such a
+	 * user has to pick an assignee among the role's members, so those members are visible to
+	 * them even without the membership privilege. The actions of each scheme come from the
+	 * workflow cache and are matched on their assignee role first, so the permission check
+	 * runs only for the few actions that assign to this role.
+	 *
+	 * @param user   the user making the request
+	 * @param roleId the role whose members are requested
+	 * @return {@code true} when the user may use a workflow action that assigns to the role
+	 * @throws DotDataException if the workflow schemes or actions cannot be loaded
+	 */
+	private boolean canAssignToRole(final User user, final String roleId) throws DotDataException {
+
+		final WorkFlowFactory workflowFactory = FactoryLocator.getWorkFlowFactory();
+		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+		for (final WorkflowScheme scheme : APILocator.getWorkflowAPI().findSchemes(false)) {
+
+			for (final WorkflowAction action : workflowFactory.findActions(scheme)) {
+
+				if (roleId.equals(action.getNextAssign())
+						&& permissionAPI.doesUserHavePermission(action, PermissionAPI.PERMISSION_USE, user)) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	private final List<Role> filterRoleList(final String roleNameToFilter, final List<Role> roleList) {

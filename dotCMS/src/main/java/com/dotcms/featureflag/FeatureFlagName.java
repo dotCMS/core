@@ -100,4 +100,15 @@ public interface FeatureFlagName {
      * {@code ConfigurationResource} can reference it as a constant like the others.
      */
     String IMAGE_API_USE_LIBVIPS = "IMAGE_API_USE_LIBVIPS";
+
+    /**
+     * Lets users with the Apps portlet change and read Apps configuration, upload app descriptors
+     * and remove apps, as they could before Apps configuration became an administrator setting.
+     * Off by default; kept for one release for installations that delegated Apps configuration to
+     * non-administrator roles.
+     *
+     * @see com.dotcms.security.apps.AppsAPIImpl
+     */
+    String FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION =
+            "FEATURE_FLAG_APPS_ALLOW_PORTLET_CONFIGURATION";
 }

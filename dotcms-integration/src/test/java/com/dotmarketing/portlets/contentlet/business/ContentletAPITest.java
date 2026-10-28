@@ -50,6 +50,7 @@ import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.MultiTreeDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.PersonaDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -2475,6 +2476,56 @@ public class ContentletAPITest extends ContentletBaseTest {
                 break;
             }
         }
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#findPageContentlets(String, String, String, boolean, long, User, boolean)}
+     * Given: a container whose stored "sort contentlets by" value is not a supported sort column
+     * (for example data saved before the value was validated)
+     * Should: return the contentlets of the page container ordered by their multi-tree position,
+     * without using the stored value
+     */
+    @Test
+    public void findPageContentletsWithUnsupportedStoredSortFallsBackToTreeOrder()
+            throws DotDataException, DotSecurityException {
+        final Host site = new SiteDataGen().nextPersisted();
+        final com.dotcms.contenttype.model.field.Field titleField = new FieldDataGen().name("title")
+                .velocityVarName("title").type(TextField.class).listed(true).next();
+        final ContentType contentType = new ContentTypeDataGen().host(site).field(titleField).nextPersisted();
+        final Container container = new ContainerDataGen().site(site)
+                .withContentType(contentType, "$!{title}").nextPersisted();
+        final Template template = new TemplateDataGen().site(site).withContainer(container.getIdentifier())
+                .nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(site, template).nextPersisted();
+
+        // Placed in the reverse order of their titles, so a sort by title would swap them
+        final Contentlet first = new ContentletDataGen(contentType.id()).host(site)
+                .setProperty("title", "a-first-by-title").nextPersisted();
+        final Contentlet second = new ContentletDataGen(contentType.id()).host(site)
+                .setProperty("title", "b-second-by-title").nextPersisted();
+        new MultiTreeDataGen().setPage(page).setContainer(container).setContentlet(second).setTreeOrder(0)
+                .nextPersisted();
+        new MultiTreeDataGen().setPage(page).setContainer(container).setContentlet(first).setTreeOrder(1)
+                .nextPersisted();
+
+        // Write the table directly to simulate a value stored before it was validated on save. A qualified
+        // column is not supported, and if it were applied as-is it would put "first" before "second"
+        final String storedSort = "contentlet.title asc";
+        new DotConnect().setSQL("update dot_containers set sort_contentlets_by = ? where inode = ?")
+                .addParam(storedSort).addParam(container.getInode()).loadResult();
+        CacheLocator.getContainerCache().remove(container);
+        final Container stored = APILocator.getContainerAPI()
+                .find(container.getInode(), APILocator.systemUser(), false);
+        assertEquals(storedSort, stored.getSortContentletsBy());
+
+        // Same call the page reorder action makes with the stored value
+        final List<Contentlet> pageContentlets = contentletAPI.findPageContentlets(
+                page.getIdentifier(), container.getIdentifier(), stored.getSortContentletsBy(), true, -1,
+                APILocator.systemUser(), false);
+
+        assertEquals(2, pageContentlets.size());
+        assertEquals(second.getIdentifier(), pageContentlets.get(0).getIdentifier());
+        assertEquals(first.getIdentifier(), pageContentlets.get(1).getIdentifier());
     }
 
     /**

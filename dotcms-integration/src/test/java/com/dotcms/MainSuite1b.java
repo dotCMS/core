@@ -43,6 +43,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.contenttype.model.field.layout.FieldLayoutTest.class,
         com.dotcms.workflow.helper.TestSystemActionMappingsHandlerMerger.class,
         com.dotcms.concurrent.lock.DotKeyLockManagerTest.class,
+        com.dotcms.rendering.velocity.SecureIntrospectorRenderTest.class,
         com.dotcms.rendering.velocity.VelocityMacroCacheTest.class,
         com.dotcms.rendering.velocity.VelocityUtilTest.class,
         com.dotcms.rendering.velocity.viewtools.navigation.NavToolTest.class,
@@ -69,6 +70,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.page.NavResourceTest.class,
         com.dotcms.rest.api.v1.page.PageResourceTest.class,
         com.dotcms.rest.api.v1.temp.TempFileResourceTest.class,
+        com.dotcms.rest.api.v1.temp.TempFileAPITest.class,
         com.dotcms.rest.api.v1.content.ContentVersionResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.container.ContainerResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.theme.ThemeResourceIntegrationTest.class,
@@ -89,7 +91,8 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplTest.class,
         com.dotcms.content.elasticsearch.business.ES6UpgradeTest.class,
         com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
-        com.dotcms.graphql.datafetcher.page.ContentMapDataFetcherTest.class
+        com.dotcms.graphql.datafetcher.page.ContentMapDataFetcherTest.class,
+        com.dotcms.graphql.GraphqlCacheWebInterceptorIntegrationTest.class
 })
 
 public class MainSuite1b {

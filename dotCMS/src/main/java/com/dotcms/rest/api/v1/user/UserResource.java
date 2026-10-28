@@ -82,6 +82,7 @@ import javax.ws.rs.core.Response;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -680,8 +681,8 @@ public class UserResource implements Serializable {
 	/**
 	 * Creates an user.
 	 * If userId is sent will be use, if not will be created "userId-" + UUIDUtil.uuid().
-	 * By default, users will be inactive unless the active = true is sent and user has permissions( is Admin or access
-	 * to Users and Roles portlets).
+	 * Only a CMS Administrator can create users.
+	 * By default, users will be inactive unless the active = true is sent.
 	 * FirstName, LastName, Email and Password are required.
 	 *
 	 *
@@ -712,22 +713,17 @@ public class UserResource implements Serializable {
 				.rejectWhenNoUser(true)
 				.init().getUser();
 
-		final boolean isRoleAdministrator = modUser.isAdmin() ||
-				(
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-				);
-
-		if (isRoleAdministrator) {
-			final User userToUpdated = this.createNewUser(
-					modUser, createUserForm);
-
-			final Role role = APILocator.getRoleAPI().getUserRole(userToUpdated);
-			return Response.ok(new ResponseEntityView(Map.of(USER_ID, userToUpdated.getUserId(), "roleId", role.getId(),
-					"user", userToUpdated.toMap()))).build(); // 200
+		// creating users requires a CMS Administrator; checked before anything is written
+		if (!modUser.isAdmin()) {
+			throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to create users");
 		}
 
-		throw new ForbiddenException(USER_MSG + modUser.getUserId() + " does not have permissions to create users");
+		final User userToUpdated = this.createNewUser(
+				modUser, createUserForm);
+
+		final Role role = APILocator.getRoleAPI().getUserRole(userToUpdated);
+		return Response.ok(new ResponseEntityView(Map.of(USER_ID, userToUpdated.getUserId(), "roleId", role.getId(),
+				"user", userToUpdated.toMap()))).build(); // 200
 	} // create.
 
 	@WrapInTransaction
@@ -1039,6 +1035,38 @@ public class UserResource implements Serializable {
     } // deactivate.
 
 
+	/**
+	 * The roles an update would add to a user: the ones sent in the {@code roles} payload, by key,
+	 * that the user does not hold yet. Unknown keys are ignored, as when the roles are granted, and
+	 * nothing is returned when the payload sends no roles, so saving a user without changing its
+	 * roles is never refused.
+	 *
+	 * @param updateUserForm The payload.
+	 * @param userToSave     The user being updated.
+	 *
+	 * @return The roles the payload would add to the user.
+	 *
+	 * @throws DotDataException An error occurred when reading roles.
+	 */
+	private List<Role> rolesToAdd(final UserForm updateUserForm, final User userToSave)
+			throws DotDataException {
+
+		final List<Role> rolesToAdd = new ArrayList<>();
+		if (!UtilMethods.isSet(updateUserForm.getRoles())) {
+			return rolesToAdd;
+		}
+
+		for (final String roleKey : updateUserForm.getRoles()) {
+
+			final Role role = this.roleAPI.loadRoleByKey(roleKey);
+			if (null != role && !this.roleAPI.doesUserHaveRole(userToSave, role)) {
+				rolesToAdd.add(role);
+			}
+		}
+
+		return rolesToAdd;
+	}
+
 	@WrapInTransaction
 	private User updateUser(final User modUser, final HttpServletRequest request,
 							final UserForm updateUserForm) throws DotDataException, DotSecurityException,
@@ -1108,6 +1136,11 @@ public class UserResource implements Serializable {
 		if (APILocator.getPermissionAPI().doesUserHavePermission
 				(APILocator.getUserProxyAPI().getUserProxy(userToSave, modUser, false),
 						PermissionAPI.PERMISSION_EDIT, modUser, false)) {
+
+			// the role change is validated before anything is written: only a CMS Administrator
+			// can add roles, so a refused request changes nothing
+			this.roleAPI.checkUserRolesChange(modUser, userToSave,
+					this.rolesToAdd(updateUserForm, userToSave), List.of());
 
 			this.userAPI.save(userToSave, modUser, validatePassword,
 					!WebAPILocator.getUserWebAPI().isLoggedToBackend(request));

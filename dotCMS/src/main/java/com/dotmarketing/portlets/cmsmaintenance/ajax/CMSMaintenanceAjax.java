@@ -3,12 +3,11 @@ package com.dotmarketing.portlets.cmsmaintenance.ajax;
 
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.util.ESReindexationProcessStatus;
-import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.ajax.DwrUtil;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.fixtask.FixTasksExecutor;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
@@ -19,9 +18,10 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PortletID;
+import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
-import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.Company;
@@ -36,13 +36,15 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import javax.servlet.http.HttpServletRequest;
 import org.quartz.JobExecutionContext;
 
 /**
  * This class provides access to maintenance routines that dotCMS users can run
  * in order to keep their environments as optimized and clean as possible.
- * 
+ * <p>Every public method can only be run by a CMS administrator for whom the layout API grants
+ * the Maintenance portlet, the same requirement as the maintenance REST endpoints. The layout API
+ * grants every portlet to a CMS administrator who is a back-end user.</p>
+ *
  * @author root
  * @version 1.0
  * @since Mar 22, 2012
@@ -50,37 +52,61 @@ import org.quartz.JobExecutionContext;
  */
 public class CMSMaintenanceAjax {
 
-    public Map getReindexationProgress() throws DotDataException {
-    	validateUser();
+    /**
+     * Returns the progress of the full reindex that is currently running.
+     *
+     * @return the reindex status values shown on the Maintenance portlet
+     * @throws DotSecurityException if the logged-in user is not a CMS administrator with access
+     *                              to the Maintenance portlet
+     */
+    public Map getReindexationProgress()
+            throws DotDataException, DotSecurityException, PortalException, SystemException {
+    	requireAdminWithMaintenancePortlet();
         return ESReindexationProcessStatus.getProcessIndexationMap();
     }
 
 
 
-    public boolean deleteIndex(String indexName){
-    	validateUser();
+    /**
+     * Deletes a search index.
+     *
+     * @param indexName the name of the index to delete
+     * @return {@code true} if the index was deleted
+     * @throws DotSecurityException if the logged-in user is not a CMS administrator with access
+     *                              to the Maintenance portlet
+     */
+    public boolean deleteIndex(String indexName)
+            throws DotDataException, DotSecurityException, PortalException, SystemException {
+    	requireAdminWithMaintenancePortlet();
     	return  APILocator.getContentletIndexAPI().delete(indexName);
     }
 
 
-    public boolean validateUser() {
-    	HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
-        User user = null;
-        try {
-        	user = com.liferay.portal.util.PortalUtil.getUser(req);
-        	if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)){
-        		throw new DotSecurityException("User does not have access to the CMS Maintance Portlet");
-        	}
-        	return true;
-        } catch (Exception e) {
-            Logger.error(this, e.getMessage());
-            throw new DotRuntimeException (e.getMessage());
-        }
+    /**
+     * Checks that the logged-in user can run maintenance routines: a CMS administrator who also
+     * has access to the Maintenance portlet.
+     *
+     * @return {@code true} when the user is allowed; any other user gets an exception instead
+     * @throws DotSecurityException if nobody is logged in, or the logged-in user is not a CMS
+     *                              administrator with access to the Maintenance portlet
+     */
+    public boolean validateUser()
+            throws DotDataException, DotSecurityException, PortalException, SystemException {
+        requireAdminWithMaintenancePortlet();
+        return true;
     }
 
 
-    public Map stopReindexation() throws DotDataException {
-    	validateUser();
+    /**
+     * Stops the full reindex that is currently running.
+     *
+     * @return the reindex status values after stopping it
+     * @throws DotSecurityException if the logged-in user is not a CMS administrator with access
+     *                              to the Maintenance portlet
+     */
+    public Map stopReindexation()
+            throws DotDataException, DotSecurityException, PortalException, SystemException {
+    	requireAdminWithMaintenancePortlet();
     	APILocator.getContentletIndexAPI().stopFullReindexation();
         return ESReindexationProcessStatus.getProcessIndexationMap();
     }
@@ -98,15 +124,28 @@ public class CMSMaintenanceAjax {
 	 *             The process to switch to the new failed.
 	 * @throws InterruptedException
 	 *             The established pauses to switch to the new index failed.
+	 * @throws DotSecurityException
+	 *             The logged-in user is not a CMS administrator with access to the
+	 *             Maintenance portlet.
 	 */
-	public Map stopReindexationAndSwitchover() throws DotDataException, SQLException, InterruptedException {
-		validateUser();
+	public Map stopReindexationAndSwitchover() throws DotDataException, SQLException, InterruptedException,
+			DotSecurityException, PortalException, SystemException {
+		requireAdminWithMaintenancePortlet();
 		APILocator.getContentletIndexAPI().stopFullReindexationAndSwitchover();
 		return ESReindexationProcessStatus.getProcessIndexationMap();
 	}
 
-    public String cleanReindexStructure(String inode) throws DotDataException, DotSecurityException {
-    	validateUser();
+    /**
+     * Removes the content of one content type from the search index and indexes it again.
+     *
+     * @param inode the inode of the content type to reindex
+     * @return the confirmation message shown on the Maintenance portlet
+     * @throws DotSecurityException if the logged-in user is not a CMS administrator with access
+     *                              to the Maintenance portlet
+     */
+    public String cleanReindexStructure(String inode)
+            throws DotDataException, DotSecurityException, PortalException, SystemException {
+    	requireAdminWithMaintenancePortlet();
     	Structure structure = CacheLocator.getContentTypeCache().getStructureByInode(inode);
     	APILocator.getContentletIndexAPI().removeContentFromIndexByStructureInode(inode);
     	APILocator.getContentletAPI().refresh(structure);
@@ -119,15 +158,30 @@ public class CMSMaintenanceAjax {
 		}
     }
 
-    public void optimizeIndices() {
-    	validateUser();
+    /**
+     * Optimizes every dotCMS search index.
+     *
+     * @throws DotSecurityException if the logged-in user is not a CMS administrator with access
+     *                              to the Maintenance portlet
+     */
+    public void optimizeIndices()
+            throws DotDataException, DotSecurityException, PortalException, SystemException {
+    	requireAdminWithMaintenancePortlet();
         ContentletIndexAPI api=APILocator.getContentletIndexAPI();
         List<String> indices=api.listDotCMSIndices();
         api.optimize(indices);
     }
-    
-    public Map<String, Integer>  flushIndiciesCache() throws InterruptedException, ExecutionException {
-      validateUser();
+
+    /**
+     * Flushes the caches of every dotCMS search index.
+     *
+     * @return the flush result per index
+     * @throws DotSecurityException if the logged-in user is not a CMS administrator with access
+     *                              to the Maintenance portlet
+     */
+    public Map<String, Integer>  flushIndiciesCache() throws InterruptedException, ExecutionException,
+            DotDataException, DotSecurityException, PortalException, SystemException {
+      requireAdminWithMaintenancePortlet();
       ContentletIndexAPI api=APILocator.getContentletIndexAPI();
       List<String> indices=api.listDotCMSIndices();
       return APILocator.getESIndexAPI().flushCaches(indices);
@@ -142,9 +196,16 @@ public class CMSMaintenanceAjax {
 
     private  FixTasksExecutor fixtask=FixTasksExecutor.getInstance();
 
+    /**
+     * Runs the fix tasks that repair asset inconsistencies.
+     *
+     * @return the results of the fix tasks, or {@code null} when there are none
+     * @throws DotSecurityException if the logged-in user is not a CMS administrator with access
+     *                              to the Maintenance portlet
+     */
     public List <Map> fixAssetsInconsistencies() throws Exception
     {
-    	validateUser();
+    	requireAdminWithMaintenancePortlet();
         JobExecutionContext arg0=null;
         fixtask.execute(arg0);
 		List result=fixtask.getTasksresults();
@@ -156,7 +217,15 @@ public class CMSMaintenanceAjax {
 
     }
 
+    /**
+     * Returns the results gathered so far by the fix tasks that repair asset inconsistencies.
+     *
+     * @return the results of the fix tasks, or {@code null} when there are none
+     * @throws DotSecurityException if the logged-in user is not a CMS administrator with access
+     *                              to the Maintenance portlet
+     */
     public List <Map> getFixAssetsProgress() throws Exception{
+    	requireAdminWithMaintenancePortlet();
     	List result=fixtask.getTasksresults();
 		 if(result.size()==0){
 			 result=null;}
@@ -164,12 +233,14 @@ public class CMSMaintenanceAjax {
     }
 
 	/**
-	 * Takes a list of comma-separated Identifiers and deletes them.
-	 * 
+	 * Takes a list of comma-separated Identifiers and deletes them. The content is
+	 * always deleted as the logged-in user.
+	 *
 	 * @param List
 	 *            - The list of Identifiers as Strings.
 	 * @param userId
-	 *            - The ID of the user performing this action.
+	 *            - Not used. The Maintenance portlet still sends it, so it stays in the
+	 *            signature; the deletion runs as the logged-in user.
 	 * @return A String array of information that provides the user with the
 	 *         results of performing this action.
 	 * @throws PortalException
@@ -179,17 +250,16 @@ public class CMSMaintenanceAjax {
 	 * @throws DotDataException
 	 *             An error occurred when accessing the contentlets to delete.
 	 * @throws DotSecurityException
-	 *             The user does not have permissions to perform this action.
+	 *             The logged-in user is not a CMS administrator with access to the
+	 *             Maintenance portlet, or cannot delete the content.
 	 */
 	public String deleteContentletsFromIdList(String List, String userId) throws PortalException, SystemException, DotDataException,DotSecurityException {
+		final User user = requireAdminWithMaintenancePortlet();
 		List<String> conditionletWithErrors = new ArrayList<>();
-		validateUser();
 		ContentletAPI conAPI = APILocator.getContentletAPI();
 		String[] inodes = List.split(",");
 		Integer contdeleted = 0;
 
-
-		User user = UserLocalManagerUtil.getUserById(userId);
 		for (int i = 0; i < inodes.length; i++) {
 			inodes[i] = inodes[i].trim();
 		}
@@ -241,7 +311,17 @@ public class CMSMaintenanceAjax {
 		return result;
 	}
 
+	/**
+	 * Deletes the whole push publishing history.
+	 *
+	 * @return {@code "success"}, or a message describing why the history could not be deleted
+	 * @throws DotSecurityException if the logged-in user is not a CMS administrator with access
+	 *                              to the Maintenance portlet
+	 */
 	public String deletePushedAssets() throws PortalException, SystemException, DotDataException,DotSecurityException {
+
+		// Runs before the try below so a rejected user gets an exception, not a failure message
+		requireAdminWithMaintenancePortlet();
 
 		String result = "success";
 
@@ -257,12 +337,32 @@ public class CMSMaintenanceAjax {
 		return result;
 	}
 
-    public int removeOldVersions(String date) throws ParseException, SQLException, DotDataException {
+    /**
+     * Deletes the versions of every asset that are older than the given date.
+     *
+     * @param date the cut-off date, in {@code MM/dd/yyyy} format
+     * @return the number of versions deleted
+     * @throws DotSecurityException if the logged-in user is not a CMS administrator with access
+     *                              to the Maintenance portlet
+     */
+    public int removeOldVersions(String date) throws ParseException, SQLException, DotDataException,
+            DotSecurityException, PortalException, SystemException {
+        	requireAdminWithMaintenancePortlet();
         	Date assetsOlderThan = new SimpleDateFormat("MM/dd/yyyy").parse(date);
         	return CMSMaintenanceFactory.deleteOldAssetVersions(assetsOlderThan);
     }
 
-    public Map cleanAssets () throws DotDataException {
+    /**
+     * Starts the background process that deletes asset files no longer referenced by any content.
+     *
+     * @return the initial status of the process
+     * @throws DotSecurityException if the logged-in user is not a CMS administrator with access
+     *                              to the Maintenance portlet
+     */
+    public Map cleanAssets ()
+            throws DotDataException, DotSecurityException, PortalException, SystemException {
+
+        requireAdminWithMaintenancePortlet();
 
         //Create the thread to clean the assets
         CleanAssetsThread cleanAssetsThread = CleanAssetsThread.getInstance( true , true);
@@ -277,8 +377,13 @@ public class CMSMaintenanceAjax {
      * Method to check the status of the clean assets process
      *
      * @return map with the current status information
+     * @throws DotSecurityException if the logged-in user is not a CMS administrator with access
+     *                              to the Maintenance portlet
      */
-    public Map getCleanAssetsStatus () {
+    public Map getCleanAssetsStatus ()
+            throws DotDataException, DotSecurityException, PortalException, SystemException {
+
+        requireAdminWithMaintenancePortlet();
 
         //Getting the running clean assets thread
         CleanAssetsThread cleanAssetsThread = CleanAssetsThread.getInstance(false, false);
@@ -286,6 +391,40 @@ public class CMSMaintenanceAjax {
 
         //Return its current running status
         return processStatus.buildStatusMap();
+    }
+
+    /**
+     * Returns the logged-in user after checking that they can run maintenance routines: a CMS
+     * administrator for whom the layout API grants the Maintenance portlet, the same two checks
+     * the maintenance REST endpoints make. The layout API grants every portlet to a CMS
+     * administrator who is a back-end user, so the portlet check only rejects an administrator who
+     * is not one. Each rejected request is written once to the security log, with the user id
+     * only.
+     *
+     * @return the logged-in {@link User}
+     * @throws DotSecurityException if nobody is logged in, the logged-in user is not a CMS
+     *                              administrator, or the layout API does not grant them the
+     *                              Maintenance portlet
+     * @throws DotDataException     if the user's portlets cannot be loaded
+     * @throws PortalException      if the logged-in user cannot be resolved
+     * @throws SystemException      if the logged-in user cannot be resolved
+     */
+    private User requireAdminWithMaintenancePortlet()
+            throws DotDataException, DotSecurityException, PortalException, SystemException {
+        final User user = DwrUtil.getLoggedInUser();
+        if (!user.isAdmin()) {
+            SecurityLogger.logInfo(CMSMaintenanceAjax.class, String.format(
+                    "User [%s] is not a CMS administrator, which maintenance routines require",
+                    user.getUserId()));
+            throw new DotSecurityException("Maintenance routines require a CMS administrator");
+        }
+        if (!APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.MAINTENANCE.toString(), user)) {
+            SecurityLogger.logInfo(CMSMaintenanceAjax.class, String.format(
+                    "User [%s] does not have the Maintenance portlet, which maintenance routines require",
+                    user.getUserId()));
+            throw new DotSecurityException("Maintenance routines require the Maintenance portlet");
+        }
+        return user;
     }
 
 }

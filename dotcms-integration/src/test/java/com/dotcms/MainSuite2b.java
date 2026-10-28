@@ -45,7 +45,6 @@ import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBa
 import com.dotcms.contenttype.test.DotAssetAPITest;
 import com.dotcms.csspreproc.CSSCacheTest;
 import com.dotcms.csspreproc.CSSPreProcessServletTest;
-import com.dotcms.dotpubsub.PostgresPubSubImplTest;
 import com.dotcms.dotpubsub.RedisPubSubImplTest;
 import com.dotcms.ema.EMAWebInterceptorTest;
 import com.dotcms.enterprise.cluster.ClusterFactoryTest;
@@ -78,6 +77,8 @@ import com.dotcms.mock.request.CachedParameterDecoratorTest;
 import com.dotcms.publisher.bundle.business.BundleAPITest;
 import com.dotcms.publisher.bundle.business.BundleFactoryTest;
 import com.dotcms.publisher.business.PublishAuditAPITest;
+import com.dotcms.publisher.endpoint.ajax.PublishingEndpointAjaxActionTest;
+import com.dotcms.publisher.environment.ajax.EnvironmentAjaxActionTest;
 import com.dotcms.publisher.receiver.BundlePublisherTest;
 import com.dotcms.publisher.util.DependencyManagerTest;
 import com.dotcms.publisher.util.PushedAssetUtilTest;
@@ -97,6 +98,7 @@ import com.dotcms.rendering.velocity.viewtools.MessageToolTest;
 import com.dotcms.rendering.velocity.viewtools.XmlToolTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockMapTest;
 import com.dotcms.rendering.velocity.viewtools.content.StoryBlockTest;
+import com.dotcms.rest.BundlePublisherResourceTest;
 import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.api.v1.announcements.AnnouncementsHelperIntegrationTest;
 import com.dotcms.rest.api.v1.announcements.RemoteAnnouncementsLoaderIntegrationTest;
@@ -157,6 +159,7 @@ import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionletIntegrationTest;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbortTest;
+import com.dotmarketing.portlets.workflows.ajax.WfTaskAjaxTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
@@ -199,6 +202,7 @@ import org.junit.runners.Suite.SuiteClasses;
         DotStatefulJobTest.class,
         IntegrityDataGenerationJobTest.class,
         BundleAPITest.class,
+        WfTaskAjaxTest.class,
         Task05390MakeRoomForLongerJobDetailTest.class,
         Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class,
         JSONToolTest.class,
@@ -402,11 +406,17 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.business.LayoutAPITest.class,
         com.dotmarketing.business.PermissionAPIIntegrationTest.class,
         com.dotmarketing.business.PermissionAPITest.class,
+        com.dotmarketing.business.ajax.PermissionAjaxIntegrationTest.class,
+        com.dotmarketing.business.ajax.RoleAjaxIntegrationTest.class,
+        com.dotcms.rest.api.v1.system.role.RoleResourceMembershipIntegrationTest.class,
+        com.dotmarketing.portlets.user.ajax.UserAjaxIntegrationTest.class,
+        com.dotcms.rest.api.v1.user.UserResourceRoleChangeIntegrationTest.class,
         com.dotmarketing.servlets.BinaryExporterServletTest.class,
         com.dotmarketing.servlets.ShortyServletAndTitleImageTest.class,
         com.dotmarketing.servlets.ajax.AjaxDirectorServletIntegrationTest.class,
         FocalPointAPITest.class,
         com.dotmarketing.tag.business.TagAPITest.class,
+        com.dotmarketing.tag.ajax.TagAjaxTest.class,
         OSGIUtilTest.class,
         CleanUpFieldReferencesJobTest.class,
         CachedParameterDecoratorTest.class,
@@ -475,19 +485,28 @@ import org.junit.runners.Suite.SuiteClasses;
         Task05305AddPushPublishFilterColumnTest.class,
         CMSMaintenanceFactoryTest.class,
         Task05350AddDotSaltClusterColumnTest.class,
-        PostgresPubSubImplTest.class,
         DotParseTest.class,
         TestWorkflowAction.class,
         SamlConfigurationServiceTest.class,
         ClusterFactoryTest.class,
         ESMappingUtilHelperTest.class,
         BundleResourceTest.class,
+        BundlePublisherResourceTest.class,
+        PublishingEndpointAjaxActionTest.class,
+        EnvironmentAjaxActionTest.class,
         IdentityProviderConfigurationFactoryTest.class,
         EMAWebInterceptorTest.class,
         GoogleTranslationServiceIntegrationTest.class,
         Task240131UpdateLanguageVariableContentTypeTest.class,
         PushedAssetUtilTest.class,
-        OpenAIAutoTagActionletTest.class
+        OpenAIAutoTagActionletTest.class,
+        com.dotmarketing.portlets.cmsmaintenance.ajax.CMSMaintenanceAjaxIntegrationTest.class,
+        com.dotmarketing.portlets.structure.ajax.StructureAjaxIntegrationTest.class,
+        com.dotmarketing.portlets.structure.action.EditFieldActionReorderTest.class,
+        com.dotmarketing.portlets.contentlet.ajax.ImportContentletAjaxIntegrationTest.class,
+        com.dotmarketing.portlets.languagesmanager.ajax.LanguageAjaxIntegrationTest.class,
+        com.dotmarketing.business.ajax.RoleAjaxLayoutsIntegrationTest.class,
+        com.dotmarketing.portlets.languagesmanager.action.EditLanguageKeysActionTest.class
 })
 
 public class MainSuite2b {

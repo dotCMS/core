@@ -252,9 +252,19 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 		return host.getModDate();
 	}
 
-	public CollectionResource createCollection(String newName) throws DotRuntimeException {
+	/**
+	 * Creates a folder named {@code newName} at the root of this site. A temp-style name goes to
+	 * temp storage and must be a single plain path segment.
+	 *
+	 * @param newName the folder name received from the WebDAV client
+	 * @return the created folder
+	 * @throws DotRuntimeException if the folder cannot be created
+	 * @throws BadRequestException (HTTP 400) when a temp-style name is not a single plain path segment
+	 */
+	public CollectionResource createCollection(String newName) throws DotRuntimeException, BadRequestException {
 	    User user=(User)HttpManager.request().getAuthorization().getTag();
 		if(dotDavHelper.isTempResource(newName)){
+			DotWebdavHelper.requirePlainSegment(this, newName);
 			File f = dotDavHelper.createTempFolder(File.separator + host.getHostname() + File.separator + newName);
 			TempFolderResourceImpl tr = new TempFolderResourceImpl(f.getPath(),f ,isAutoPub);
 			return tr;
@@ -275,9 +285,23 @@ public class HostResourceImpl extends BasicFolderResourceImpl implements Resourc
 		}
 	}
 	
+	/**
+	 * Creates a folder named {@code name} and locks it. The lock interface only allows
+	 * {@link NotAuthorizedException}, so an invalid temp-style name is reported as a runtime error.
+	 *
+	 * @param name     the folder name received from the WebDAV client
+	 * @param timeout  the requested lock timeout
+	 * @param lockInfo the requested lock details
+	 * @return the lock token of the created folder
+	 * @throws NotAuthorizedException if the lock is not authorized
+	 */
 	public LockToken createAndLock(String name, LockTimeout timeout, LockInfo lockInfo)
 			throws NotAuthorizedException {
-		createCollection(name);
+		try {
+			createCollection(name);
+		} catch (BadRequestException e) {
+			throw new DotRuntimeException(e.getReason(), e);
+		}
 		return lock(timeout, lockInfo).getLockToken();
 	}
 
