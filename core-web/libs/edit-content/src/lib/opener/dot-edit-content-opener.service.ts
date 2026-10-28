@@ -18,6 +18,7 @@ import { map, switchMap, takeUntil } from 'rxjs/operators';
 import {
     DotActionUrlService,
     DotContentEditor,
+    DotContentEditorChoice,
     DotContentletEditUrlService,
     DotContentletService,
     DotHttpErrorManagerService
@@ -38,6 +39,14 @@ export interface DotEditContentOpenOptions extends DotEditContentPanelHandlers {
      * toasts, route-level providers) and closes when it is destroyed. Required.
      */
     injector: Injector;
+
+    /**
+     * Shows the legacy editor whatever the content type says, without asking which editor it uses.
+     * Only for "switch to the old editor", which reopens content whose type was just set back to
+     * the legacy editor while the type's old choice is still remembered. Every other caller leaves
+     * the choice to the content type. Remove with the legacy editor.
+     */
+    editor?: 'legacy';
 }
 
 /** What the server said about a request before any editor shows. */
@@ -75,7 +84,8 @@ export class DotEditContentOpenerService {
      * request opens nothing.
      *
      * Pass a signal to keep the heading and the panel's request following it while the panel stays
-     * open; the editor itself is chosen once, from the request as it is now.
+     * open; the editor itself is chosen once, from the request as it is now. `options.editor` skips
+     * that choice and shows the legacy editor.
      *
      * @param request What to open, or a signal of it.
      * @param options The opener's injector and the events it handles.
@@ -115,7 +125,7 @@ export class DotEditContentOpenerService {
 
         ref.closed.subscribe(() => options.closed?.());
 
-        this.#resolve(initial)
+        this.#resolve(initial, options.editor)
             .pipe(takeUntil(ref.closed))
             .subscribe({
                 next: ({ editor, contentType, contentlet, createUrl }) => {
@@ -160,12 +170,17 @@ export class DotEditContentOpenerService {
 
     /**
      * Asks the server what the request needs before an editor shows: the contentlet, when an edit
-     * names no content type; which editor the type uses; and the create screen for a legacy create.
+     * names no content type; which editor the type uses, unless the caller forced the legacy one;
+     * and the create screen for a legacy create.
      *
      * @param request A request that passed {@link isOpenable}.
+     * @param forced The editor the caller forced, if any.
      * @returns The answers, once; errors when a fetch or the create screen is refused.
      */
-    #resolve(request: DotEditContentRequest): Observable<DotResolvedRequest> {
+    #resolve(
+        request: DotEditContentRequest,
+        forced: 'legacy' | undefined
+    ): Observable<DotResolvedRequest> {
         const contentlet$: Observable<DotCMSContentlet | null> = request.contentType
             ? of(null)
             : this.#contentlets.getContentletByInode(request.inode as string);
@@ -173,8 +188,12 @@ export class DotEditContentOpenerService {
         return contentlet$.pipe(
             switchMap((contentlet) => {
                 const variable = (request.contentType ?? contentlet?.contentType) as string;
+                const choice$: Observable<DotContentEditorChoice> =
+                    forced === 'legacy'
+                        ? of({ editor: 'legacy', contentType: null })
+                        : this.#editUrl.resolveEditor(variable);
 
-                return this.#editUrl.resolveEditor(variable).pipe(
+                return choice$.pipe(
                     switchMap(({ editor, contentType }) => {
                         const createUrl$: Observable<string | null> =
                             editor === 'legacy' && request.mode === 'new'
