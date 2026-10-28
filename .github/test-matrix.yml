@@ -12,6 +12,11 @@ defaults:
   requires_checkout: true
   generates_test_results: true
   cleanup_runner: true
+  # Restore the third-party Maven dependency cache and download the maven-repo artifact (the
+  # dotCMS modules the build installed): any suite that compiles or runs a dotCMS module
+  # needs both. Postman, Karate and E2E only drive Docker and resolve a few plugins (Karate
+  # also karate-junit5), so they set this to false and use a small plugin cache instead.
+  needs_maven_deps: true
 
 test_types:
   # === SIMPLE TESTS (single suite) ===
@@ -114,6 +119,7 @@ test_types:
       # No docker.filter here, so the plugin starts every image in the parent pom's imagesMap,
       # plus the WireMock container this module adds (a Docker Hub image: retried, no fallback).
       docker_images: "docker.image.postgres docker.image.search docker.image.search.upgrade docker.image.wiremock"
+      needs_maven_deps: false
       # Base command for all Postman tests
       base_maven_args: >-
         verify -pl :dotcms-postman
@@ -170,8 +176,10 @@ test_types:
     defaults:
       needs_license: true
       needs_docker: true
-      needs_node: true
+      # Karate runs on the JVM only; nothing in test-karate installs or runs Node.
+      needs_node: false
       docker_images: "docker.image.postgres docker.image.search docker.image.search.upgrade"
+      needs_maven_deps: false
       base_maven_args: >-
         verify -pl :dotcms-test-karate 
         -Dkarate.test.skip=false
@@ -187,6 +195,7 @@ test_types:
       needs_docker: true
       needs_node: true
       docker_images: "docker.image.postgres docker.image.search docker.image.search.upgrade docker.image.wiremock"
+      needs_maven_deps: false
       base_maven_args: "verify -De2e.test.skip=false"
     suites:
       - name: "E2E Tests - Nx Playwright 1 of 3"
