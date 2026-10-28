@@ -3,11 +3,9 @@
 export enum NG_CUSTOM_EVENTS {
     CONTENT_SEARCH_SELECT = 'select-contentlet',
     CREATE_CONTENTLET = 'create-contentlet-from-edit-page',
-    SAVE_PAGE = 'save-page',
     SAVE_MENU_ORDER = 'save-menu-order',
     ERROR_SAVING_MENU_ORDER = 'error-saving-menu-order',
-    CANCEL_SAVING_MENU_ORDER = 'cancel-save-menu-order',
-    LANGUAGE_IS_CHANGED = 'language-is-changed'
+    CANCEL_SAVING_MENU_ORDER = 'cancel-save-menu-order'
 }
 
 // Status of the whole UVE
