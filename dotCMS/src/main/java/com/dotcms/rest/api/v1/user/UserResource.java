@@ -790,7 +790,15 @@ public class UserResource implements Serializable {
 					.CURRENT_HOST)), currentUser.getUserId(), loginAsUserId);
 			this.setImpersonatedUserSite(request, sessionData.get(WebKeys.USER_ID).toString());
 			response = Response.ok(new ResponseEntityView<>(Map.of("loginAs", true))).build();
-		} catch (final NoSuchUserException | DotSecurityException e) {
+		} catch (final DotSecurityException e) {
+			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
+							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
+					e.getMessage()));
+			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
+			// 403, not 401: the caller is authenticated but not allowed; a 401 makes the UI end the session.
+			// The key travels in the error-key header so the UI can tell this denial from other 403s
+			return ExceptionMapperUtil.createResponse(e, "loginas.error.adminrequired", Response.Status.FORBIDDEN);
+		} catch (final NoSuchUserException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
 							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
 					e.getMessage()));
@@ -1156,7 +1164,7 @@ public class UserResource implements Serializable {
 		final List<Role> rolesToGrant = new ArrayList<>();
 		for (final String roleEntry : roleEntries) {
 
-			final Role role = this.resolveRole(roleEntry);
+			final Role role = this.roleAPI.loadRoleByKeyOrId(roleEntry);
 			if (null == role) {
 				Logger.debug(this, ()-> "Role '" + roleEntry + "' (key or id) does NOT exist in dotCMS. Ignoring it...");
 				continue;
@@ -1581,17 +1589,6 @@ public class UserResource implements Serializable {
 	}
 
     /**
-     * Resolves a {@code roles} payload entry to a {@link Role}: by key first (legacy precedence),
-     * then by ID. Returns {@code null} when neither matches. Roles created in the Roles portlet may
-     * have no key, so the ID form is the only way to reference them (#37209).
-     */
-    private Role resolveRole(final String keyOrId) throws DotDataException {
-
-        final Role byKey = this.roleAPI.loadRoleByKey(keyOrId);
-        return null != byKey ? byKey : this.roleAPI.loadRoleById(keyOrId);
-    }
-
-    /**
      * The roles an update would add to and remove from a user.
      *
      * @param toAdd    User-assignable roles the user does not hold yet. Decides whether the update
@@ -1643,7 +1640,7 @@ public class UserResource implements Serializable {
         final List<Role> desiredRoles = new ArrayList<>();
         for (final String roleEntry : roleEntries) {
 
-            final Role role = this.resolveRole(roleEntry);
+            final Role role = this.roleAPI.loadRoleByKeyOrId(roleEntry);
             if (null != role) {
                 desiredRoles.add(role);
             } else {
