@@ -362,21 +362,43 @@ public final class BinaryAssetReference {
 
     /** Pure path conversion: JSON serialization must not stat NFS or download an object. */
     public static String keyOf(final File file) {
+        final Path relative = assetRelative(file);
+        if (relative == null || relative.getNameCount() != 7 || !relative.getName(4).toString().equals(".revisions")) {
+            return null;
+        }
+        final String key = relative.toString().replace(File.separatorChar, '/');
+        localFile(relative.getName(2).toString(), relative.getName(3).toString(), key);
+        return key;
+    }
+
+    /**
+     * Reads the owner out of an older-layout binary path, {@code i/n/<inode>/<field>/<fileName>} under
+     * the asset root. This only parses the path; it does not touch the disk or S3.
+     *
+     * @param file a binary file that may be stored in the older layout
+     * @return the owner named by the path, or null when the file is not in that layout
+     */
+    public static Owner legacyOwnerOf(final File file) {
+        final Path relative = assetRelative(file);
+        if (relative == null || relative.getNameCount() != 5) {
+            return null;
+        }
+        final String inode = relative.getName(2).toString();
+        final String field = relative.getName(3).toString();
+        return isValidOwner(inode, field) && isValidName(relative.getName(4).toString())
+                && relative.getName(0).toString().equals(inode.substring(0, 1))
+                && relative.getName(1).toString().equals(inode.substring(1, 2))
+                ? new Owner(inode, field) : null;
+    }
+
+    /** The file's path relative to the asset root, or null when it is outside the root or no root is set. */
+    private static Path assetRelative(final File file) {
         final String assetRoot = ConfigUtils.getAssetPath();
         if (assetRoot == null || assetRoot.isBlank()) {
             return null;
         }
         final Path root = Path.of(assetRoot).toAbsolutePath().normalize();
         final Path path = file.toPath().toAbsolutePath().normalize();
-        if (!path.startsWith(root)) {
-            return null;
-        }
-        final Path relative = root.relativize(path);
-        if (relative.getNameCount() != 7 || !relative.getName(4).toString().equals(".revisions")) {
-            return null;
-        }
-        final String key = relative.toString().replace(File.separatorChar, '/');
-        localFile(relative.getName(2).toString(), relative.getName(3).toString(), key);
-        return key;
+        return path.startsWith(root) ? root.relativize(path) : null;
     }
 }

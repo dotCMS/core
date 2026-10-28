@@ -167,6 +167,21 @@ class BinaryAssetReferenceTest {
         assertNull(BinaryAssetReference.ownerOf(key + "/extra"));
     }
 
+    @Test void ownerIsReadFromTheOlderLayoutUnderTheAssetRoot() {
+        try (var paths = mockStatic(ConfigUtils.class)) {
+            paths.when(ConfigUtils::getAssetPath).thenReturn(root.toString());
+            assertEquals(new BinaryAssetReference.Owner("abc123", "HeroImage"), BinaryAssetReference.legacyOwnerOf(
+                    new File(root.toFile(), "a/b/abc123/HeroImage/Friday.PNG")));
+            assertNull(BinaryAssetReference.legacyOwnerOf(new File(root.toFile(), "x/b/abc123/HeroImage/Friday.PNG")),
+                    "The shard folders must match the inode");
+            assertNull(BinaryAssetReference.legacyOwnerOf(new File(root.toFile(),
+                    "a/b/abc123/HeroImage/.revisions/" + UUID.randomUUID() + "/Friday.PNG")));
+            assertNull(BinaryAssetReference.legacyOwnerOf(new File(root.toFile(), "a/b/abc123/Friday.PNG")));
+            assertNull(BinaryAssetReference.legacyOwnerOf(new File("/elsewhere/a/b/abc123/HeroImage/Friday.PNG")),
+                    "Files outside the asset root have no owner");
+        }
+    }
+
     @Test void metadataIdentityFollowsTheSnapshotWithoutFilesystemAccess() {
         String previous = Config.getStringProperty(AssetStorageFeature.FLAG, null);
         try (var paths = mockStatic(ConfigUtils.class)) {

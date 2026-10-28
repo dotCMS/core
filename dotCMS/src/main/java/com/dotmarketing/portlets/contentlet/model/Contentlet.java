@@ -1209,10 +1209,15 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
     }
 
 	/**
+	 * Returns the file held by a binary field, looking it up in the asset storage when the value is
+	 * missing or the file is no longer on disk. With S3 asset storage enabled, a file carried forward
+	 * from another version (its revision key or path names a different inode) is restored from that
+	 * inode.
 	 *
-	 * @param velocityVarName
-	 * @return
-	 * @throws IOException
+	 * @param velocityVarName the binary field's variable name
+	 * @return the binary file, or null when the field has none
+	 * @throws IOException if the lookup fails, or, with S3 asset storage enabled, if a file carried
+	 *                     forward from another version cannot be restored
 	 */
 	public java.io.File getBinary(String velocityVarName)throws IOException {
         // Preserve main's filesystem/NFS behavior while S3 assets are disabled.
@@ -1262,20 +1267,28 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 		f = null;
 		if (map.get(INODE_KEY) != null && InodeUtils.isSet((String) map.get(INODE_KEY))) {
 			String inode = (String) map.get(INODE_KEY);
+			com.dotcms.storage.binary.BinaryAssetReference.Owner carriedFrom = null;
 			try {
-                final String revisionKey = rawValue instanceof File
-                        ? com.dotcms.storage.binary.BinaryAssetReference.keyOf((File) rawValue) : null;
-                // Check-in assigns the new inode before it reads the binary, so a revision carried
-                // forward from the previous version is restored from the owner its key names.
-                final com.dotcms.storage.binary.BinaryAssetReference.Owner owner = revisionKey == null
-                        ? null : com.dotcms.storage.binary.BinaryAssetReference.ownerOf(revisionKey);
-                f = revisionKey == null
-                        ? APILocator.getBinaryAssetStorageAPI().getBinaryFile(inode, velocityVarName)
-                        : owner == null
-                        ? APILocator.getBinaryAssetStorageAPI().getRevisionFile(inode, velocityVarName, revisionKey)
-                        : APILocator.getBinaryAssetStorageAPI().getRevisionFile(owner.inode(), owner.field(), revisionKey);
-                if (rawValue instanceof File) {
-                    f = com.dotcms.storage.binary.BinaryAssetReference.preserveMetadata(f, (File) rawValue);
+                final File snapshot = rawValue instanceof File ? (File) rawValue : null;
+                final String revisionKey = snapshot == null
+                        ? null : com.dotcms.storage.binary.BinaryAssetReference.keyOf(snapshot);
+                // Check-in assigns the new inode before it reads the binary, so a file carried forward
+                // from the previous version is restored from the owner its revision key or path names.
+                final com.dotcms.storage.binary.BinaryAssetReference.Owner owner = snapshot == null ? null
+                        : revisionKey != null ? com.dotcms.storage.binary.BinaryAssetReference.ownerOf(revisionKey)
+                        : com.dotcms.storage.binary.BinaryAssetReference.legacyOwnerOf(snapshot);
+                carriedFrom = owner != null && !owner.inode().equals(inode) ? owner : null;
+                final com.dotcms.storage.binary.BinaryAssetStorageAPI binaries = APILocator.getBinaryAssetStorageAPI();
+                if (revisionKey != null) {
+                    f = owner == null ? binaries.getRevisionFile(inode, velocityVarName, revisionKey)
+                            : binaries.getRevisionFile(owner.inode(), owner.field(), revisionKey);
+                } else if (carriedFrom != null) {
+                    f = binaries.getBinaryFile(carriedFrom.inode(), carriedFrom.field(), snapshot.getName());
+                } else {
+                    f = binaries.getBinaryFile(inode, velocityVarName);
+                }
+                if (snapshot != null) {
+                    f = com.dotcms.storage.binary.BinaryAssetReference.preserveMetadata(f, snapshot);
                 }
 				if (f != null) {
 					map.put(velocityVarName, f);
@@ -1284,6 +1297,11 @@ public class Contentlet implements Serializable, Permissionable, Categorizable, 
 				Logger.error(this, "Error retrieving binary file: inode=" + inode
 						+ " field=" + velocityVarName);
 				throw new IOException("File System error.");
+			}
+			if (f == null && carriedFrom != null) {
+				// Check-in reads null as "the user removed the file", which would drop the binary silently.
+				throw new IOException("Binary carried forward from inode " + carriedFrom.inode()
+						+ " could not be restored: field=" + velocityVarName);
 			}
 		}
 		return f;
