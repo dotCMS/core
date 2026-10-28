@@ -16,7 +16,13 @@ import {
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageApiParams } from '../services/dot-page-api/dot-page-api.service';
-import { COMMON_ERRORS, DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
+import {
+    COMMON_ERRORS,
+    CONTENTLET_SELECTOR_URL,
+    DEFAULT_PERSONA,
+    LAYOUT_URL,
+    PERSONA_KEY
+} from '../shared/consts';
 import { CONTAINER_INSERT_ERROR } from '../shared/enums';
 import {
     ActionPayload,
@@ -997,6 +1003,75 @@ export const createReorderMenuURL = ({
 
     return urlObject.toString();
 };
+
+/**
+ * Builds the URL of the legacy content selector a container's "+" opens in the side panel: the
+ * contents (or widgets) a container accepts, in a language, for an experiment variant (#38303).
+ *
+ * @param containerId The container the selection goes in.
+ * @param acceptTypes The content types the container accepts, `WIDGET` for widgets, `*` for any.
+ * @param languageId The language to list content in.
+ * @param variantName The experiment variant the page is on.
+ * @returns The selector's same-origin URL.
+ */
+export function createAddContentletUrl(
+    containerId: string,
+    acceptTypes: string,
+    languageId: string,
+    variantName: string
+): string {
+    const queryParams = new URLSearchParams({
+        ng: 'true',
+        container_id: containerId,
+        add: acceptTypes,
+        language_id: languageId,
+        variantName
+    });
+
+    return `${CONTENTLET_SELECTOR_URL}?${queryParams.toString()}`;
+}
+
+/**
+ * Builds the URL of the legacy screen that creates a page's translation into another language,
+ * opened in the side panel when the page editor switches to a language the page lacks (#38303).
+ *
+ * @param page The page to translate; its working inode when it is a working version.
+ * @param newLanguage The language to translate into.
+ * @param variantName The experiment variant the page is on.
+ * @param siteId The page's site, sent as `host_id` when there is one.
+ * @returns The translate screen's same-origin URL.
+ */
+export function createTranslatePageUrl(
+    page: DotCMSPage,
+    newLanguage: number | string,
+    variantName: string,
+    siteId: string | undefined
+): string {
+    const { working, workingInode, inode } = page;
+    const pageInode = working ? workingInode : inode;
+    const queryParams = new URLSearchParams({
+        p_p_id: 'content',
+        p_p_action: '1',
+        p_p_state: 'maximized',
+        angularCurrentPortlet: 'edit-page',
+        _content_sibbling: pageInode,
+        _content_cmd: 'edit',
+        p_p_mode: 'view',
+        _content_sibblingStructure: pageInode,
+        _content_struts_action: '/ext/contentlet/edit_contentlet',
+        inode: '',
+        lang: newLanguage.toString(),
+        populateaccept: 'true',
+        reuseLastLang: 'true',
+        variantName
+    });
+
+    if (siteId) {
+        queryParams.set('host_id', siteId);
+    }
+
+    return `${LAYOUT_URL}?${queryParams.toString()}`;
+}
 
 /**
  * Check if the clientHost is in the whitelist provided by the app
