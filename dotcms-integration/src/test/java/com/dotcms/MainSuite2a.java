@@ -25,7 +25,6 @@ import com.dotcms.rest.api.v1.maintenance.MaintenanceResourceIntegrationTest;
 import com.dotmarketing.business.UserDeletionCacheInvalidationTest;
 import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
-import com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPIImplTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -105,6 +104,7 @@ import org.junit.runners.Suite.SuiteClasses;
         InterceptorHandlerTest.class,
         com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcherTest.class,
         com.dotcms.rest.AuditPublishingResourceTest.class,
+        com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPIImplTest.class,
         MaintenanceResourceIntegrationTest.class,
         FolderHandlerTest.class,
         ContentAnalyticsPersistenceModeIT.class,
@@ -122,8 +122,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rendering.velocity.WidgetRendererTest.class,
         CMSUserToolTest.class,
         UserJsViewToolTest.class,
-        com.dotcms.rest.BundleResourceDeleteResponseTest.class,
-        HostVariableAPIImplTest.class
+        com.dotcms.rest.BundleResourceDeleteResponseTest.class
 })
 public class MainSuite2a {
 
