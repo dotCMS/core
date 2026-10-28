@@ -7,6 +7,27 @@ export * from './lib/models/dot-edit-content-dialog.interface';
 export * from './lib/services/dot-edit-content.service';
 // The Edit Content side panel's content, loaded on demand: open it with DotSidePanelService.
 export { loadDotEditContentSidePanel } from './lib/components/dot-edit-content-side-panel/load-dot-edit-content-side-panel';
+
+// Open any content in the side panel, in whichever editor its type uses (#38303): one request,
+// one opener, the same five events from either editor.
+export * from './lib/models/dot-edit-content-request.model';
+export * from './lib/models/dot-edit-content-panel-events.model';
+export * from './lib/models/dot-open-content-event.model';
+export { DotEditContentOpenerService } from './lib/opener/dot-edit-content-opener.service';
+export type { DotEditContentOpenOptions } from './lib/opener/dot-edit-content-opener.service';
+export { injectEditContentPanel } from './lib/opener/inject-edit-content-panel';
+export type {
+    DotEditContentPanelBinding,
+    DotEditContentPanelHandle
+} from './lib/opener/inject-edit-content-panel';
+// The legacy editor and any other legacy admin screen as side panel content, loaded on demand.
+// Remove with the legacy editor.
+export { loadDotLegacyEditorSidePanel } from './lib/components/dot-legacy-editor-side-panel/load-dot-legacy-editor-side-panel';
+export { loadDotLegacyScreenSidePanel } from './lib/components/dot-legacy-screen-side-panel/load-dot-legacy-screen-side-panel';
+export type {
+    DotLegacyScreenEvent,
+    DotLegacyScreenRequest
+} from './lib/models/dot-legacy-screen.model';
 // Edit Code: a file's source in Monaco, in a side panel, loaded on demand. Opened from Content
 // Drive's row menu and from the page editor's VTL menu, both deciding with `toSourceEditorRequest`.
 export { loadDotSourceEditorSidePanel } from './lib/components/dot-source-editor-side-panel/load-dot-source-editor-side-panel';

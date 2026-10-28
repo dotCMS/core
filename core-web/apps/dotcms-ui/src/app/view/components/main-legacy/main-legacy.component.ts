@@ -7,6 +7,9 @@ import {
 } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
+import { MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
+
 import { DotContentCompareDialogComponent } from '@dotcms/portlets/dot-ema/ui';
 import { DotSidePanelOutletComponent } from '@dotcms/ui';
 
@@ -27,6 +30,9 @@ import { DotToolbarComponent } from '../dot-toolbar/dot-toolbar.component';
     selector: 'dot-main-component',
     templateUrl: './main-legacy.component.html',
     changeDetection: ChangeDetectionStrategy.Eager,
+    // Side panels opened from the admin root (the legacy portlets' events, the deep links) resolve
+    // PrimeNG's MessageService from here and toast in the <p-toast> beside the outlet (#38303).
+    providers: [MessageService],
     imports: [
         RouterOutlet,
         DotCreateContentletComponent,
@@ -39,7 +45,8 @@ import { DotToolbarComponent } from '../dot-toolbar/dot-toolbar.component';
         DotWizardComponent,
         DotGenerateSecurePasswordComponent,
         DotContentCompareDialogComponent,
-        DotSidePanelOutletComponent
+        DotSidePanelOutletComponent,
+        ToastModule
     ]
 })
 export class MainComponentLegacyComponent implements OnInit {
