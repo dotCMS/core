@@ -2043,8 +2043,13 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         const variantId = this.uveStore.pageVariantId();
         const siteId = this.uveStore.pageAsset()?.site?.identifier;
         const request = withPageContext(
-            { mode: 'new', contentType: page.contentType, languageId: newLanguage, title: page.title },
-            { variantId, siteId }
+            {
+                mode: 'new',
+                contentType: page.contentType,
+                languageId: newLanguage,
+                title: page.title
+            },
+            { variantId, siteId, languageId: newLanguage }
         );
         let saved = false;
 
