@@ -81,6 +81,6 @@ Release-25.07.10 LTS
 75. https://github.com/dotCMS/core/pull/38098 : feat(apps): manage Apps configuration as an administrator setting #38098
 76. https://github.com/dotCMS/core/pull/38120 : fix(users): only a CMS Administrator can change a user's roles #38120
 77. https://github.com/dotCMS/core/pull/38178 : fix(js): load JavaScript modules through the content API #38178
-78. https://github.com/dotCMS/core/pull/38176 : fix(docker): update the JDK truststore in the image #38176
-79. https://github.com/dotCMS/core/pull/38083 : chore(saml): bump com.dotcms.samlbundle to 26.10.17 #38083
-80. https://github.com/dotCMS/core/pull/36591 : fix(saml): return front-end users to the requested page after login (validate the post-login destination) #36591
+78. https://github.com/dotCMS/core/pull/38176 : fix(docker): update the JDK truststore in the image #38176 #999
+79. https://github.com/dotCMS/core/pull/38083 : chore(saml): bump com.dotcms.samlbundle to 26.10.17 #38083 #725
+80. https://github.com/dotCMS/core/pull/36591 : fix(saml): return front-end users to the requested page after login (validate the post-login destination) #36591 #879
