@@ -584,6 +584,8 @@
                               the Initial Artifact Build no longer waits on them. They are still
                               compiled here, in Frontend Unit Tests, which runs on every change under
                               core-web, so a PR that breaks one of them still fails before merge.
+                              Always with the production configuration, as the artifact build used
+                              to build them (that job passes no -Dprod).
                             -->
                             <execution>
                                 <id>build-unshipped</id>
@@ -592,7 +594,7 @@
                                 </goals>
                                 <phase>compile</phase>
                                 <configuration>
-                                    <commandlineArgs>exec nx run-many -t build --projects=tag:skip:build ${nx.build.options}</commandlineArgs>
+                                    <commandlineArgs>exec nx run-many -t build --projects=tag:skip:build --prod</commandlineArgs>
                                 </configuration>
                             </execution>
                         </executions>
