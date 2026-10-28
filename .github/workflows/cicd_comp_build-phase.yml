@@ -189,7 +189,12 @@ jobs:
           stage-name: "Initial Artifact Build"
           # No -Dgithub.event.name: its only effect was activating core-web's is_pr profile,
           # which made the PR effective pom differ from trunk's for that module.
-          maven-args: "clean install ${{ env.VALIDATE_PROFILE }} -Dprod=true -DskipTests=true"
+          #
+          # Pull requests skip the test-only modules and the CLI: each test job rebuilds its
+          # own module with -pl, and nothing in a PR run reads them from maven-repo. The merge
+          # queue still builds everything, because trunk reuses its maven-repo for the CLI
+          # native build and the dotcms-cli deploy. About 1.5 min with a warm ~/.m2, 3.5 min cold.
+          maven-args: "clean install ${{ env.VALIDATE_PROFILE }} -Dprod=true -DskipTests=true ${{ github.event_name == 'pull_request' && '-pl !:dotcms-integration,!:dotcms-postman,!:dotcms-reports,!:dotcms-ui-e2e,!:dotcms-test-karate,!:dotcms-api-data-model,!:dotcms-cli' || '' }}"
           generate-artifacts: true
           github-token: ${{ secrets.GITHUB_TOKEN }}
           cleanup-runner: ${{ inputs.cleanup-runner }}
