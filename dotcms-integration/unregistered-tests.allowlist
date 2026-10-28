@@ -1,8 +1,8 @@
 # Integration test classes that are in no CI suite, one fully qualified name per line.
 # Used by `scripts/it-suites.py check` (PR CI). Seeded 2026-10-28 with every class that was
 # unregistered at that point, so the guard only catches NEW ones. These are not known-intentional:
-# most are probably tests that silently never run. Remove a line when you register the class with
-# `just add-it-test`; add a line (with a reason after #) only for helpers or classes run elsewhere.
+# most are probably tests that silently never run. `just add-it-test` removes the class's line when
+# you register it; add a line (with a reason after #) only for helpers or classes run elsewhere.
 com.dotcms.ai.api.BulkEmbeddingsRunnerTest
 com.dotcms.analytics.AnalyticsAPIImplTest
 com.dotcms.analytics.attributes.CustomAttributeCacheImplTest

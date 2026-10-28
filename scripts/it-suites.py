@@ -9,7 +9,9 @@ CI runs integration tests only through the aggregator suites listed in .github/t
 
 `add` inserts the new entry next to the entry with the nearest simple class name above it. (The
 lists are unsorted, so "first larger name from the top" would send most new classes to the same
-gap.) It never appends at the end unless the name sorts last and never re-sorts. Every entry keeps
+gap.) It never appends at the end unless the name sorts last and never re-sorts. Entries in a
+comment-headed group (two or more comment lines, then entries up to the next blank line, such as
+the "run FIRST on purpose" blocks) are ordered on purpose and are never used as an insertion point. Every entry keeps
 a trailing comma and the new entry is fully qualified with no import, so two PRs adding different
 tests rarely touch the same lines and the merge queue stops bumping them.
 """
@@ -23,12 +25,14 @@ ROOT = Path(__file__).resolve().parents[1]
 TEST_SRC = Path("dotcms-integration/src/test/java")
 MATRIX = Path(".github/test-matrix.yml")
 ALLOWLIST = Path("dotcms-integration/unregistered-tests.allowlist")
+GENERIC_SUITES = ("MainSuite", "Junit5Suite")
 
 BLOCK_START = re.compile(r"@(?:Suite\.)?(SuiteClasses|SelectClasses)\s*\(\s*\{")
 ENTRY = re.compile(r"^(\s*)([\w.]+)\.class(,?)(\s*//.*)?$")
 IMPORT = re.compile(r"^import\s+([\w.]+)\s*;")
 TEST_METHOD = re.compile(r"@(?:Test|ParameterizedTest|TestFactory|RepeatedTest)\b")
 JUNIT4 = re.compile(r"^import\s+org\.junit\.(?:Test|runner\.[\w*]+);", re.M)
+JUNIT4_WILDCARD = re.compile(r"^import\s+org\.junit\.\*;", re.M)
 JUNIT5 = re.compile(r"^import\s+org\.junit\.jupiter\.api\.(?:Test|TestFactory|RepeatedTest|\*);"
                     r"|^import\s+org\.junit\.jupiter\.params\.(?:ParameterizedTest|\*);", re.M)
 
@@ -69,6 +73,9 @@ class Suite:
             raise SystemExit(f"{path}:{self.start + 1}: expected nothing after the opening '{{'")
         # (line index, name as written, resolved fully qualified name)
         self.entries = []
+        # line indexes of entries in a comment-headed ordered group; `add` never inserts next to these
+        self.grouped = set()
+        comments, in_group = 0, False
         for i in range(self.start + 1, len(self.lines)):
             line = self.lines[i]
             code = line.split("//")[0].strip()
@@ -78,12 +85,22 @@ class Suite:
                 break
             if "})" in code:
                 raise SystemExit(f"{path}:{i + 1}: entry on the same line as '}})': {line.strip()}")
-            if not code or code.startswith(("/*", "*")):
+            if not code:
+                if not line.strip():
+                    comments, in_group = 0, False  # a blank line ends a group
+                elif line.strip().startswith("//"):
+                    comments += 1
+                continue
+            if code.startswith(("/*", "*")):
                 continue
             m = ENTRY.match(line)
             if not m:
                 raise SystemExit(f"{path}:{i + 1}: unrecognised suite entry "
                                  f"(one 'Name.class,' per line): {line.strip()}")
+            in_group = in_group or comments >= 2
+            if in_group:
+                self.grouped.add(i)
+            comments = 0
             self.entries.append((i, m.group(2), self.resolve(m.group(2))))
         else:
             raise SystemExit(f"{path}: suite list is never closed with '}})'")
@@ -104,7 +121,9 @@ class Suite:
         the (unsorted) import block, a second hotspot where concurrent PRs conflict.
         """
         simple = fqn.rsplit(".", 1)[1]
-        at = insertion_line([(i, w.rsplit(".", 1)[-1]) for i, w, _ in self.entries], simple)
+        free = [(i, w.rsplit(".", 1)[-1]) for i, w, _ in self.entries if i not in self.grouped]
+        # a list made only of ordered groups gets the new entry after its last entry
+        at = insertion_line(free or [(self.entries[-1][0], "")], simple)
         prev = ENTRY.match(self.lines[at - 1])
         if prev and not prev.group(3):  # only the old last entry can lack its comma
             self.lines[at - 1] = f"{prev.group(1)}{prev.group(2)}.class,{prev.group(4) or ''}"
@@ -136,10 +155,12 @@ def class_info(root, name):
                                         + "\n  ".join(str(m.relative_to(src)) for m in matches)))
     text = matches[0].read_text()
     pkg = re.search(r"^package\s+([\w.]+);", text, re.M).group(1)
-    junit4, junit5 = bool(JUNIT4.search(text)), bool(JUNIT5.search(text))
+    junit5 = bool(JUNIT5.search(text))
+    # `import org.junit.*;` is JUnit 4 unless a Jupiter test annotation says otherwise
+    junit4 = bool(JUNIT4.search(text)) or (bool(JUNIT4_WILDCARD.search(text)) and not junit5)
     if junit4 == junit5:
         raise SystemExit(f"{name}: cannot tell JUnit 4 from JUnit 5 ("
-                         + ("imports of both" if junit4 else "no org.junit.Test, org.junit.runner or "
+                         + ("imports of both" if junit4 else "no org.junit.Test, org.junit.runner, org.junit.* or "
                             "org.junit.jupiter test-annotation import") + "); fix the imports first")
     return f"{pkg}.{matches[0].stem}", junit5
 
@@ -153,12 +174,28 @@ def add(root, name, suite_name):
     target = next((s for s in all_suites if s.name == suite_name), None)
     if not target:
         raise SystemExit(f"unknown suite '{suite_name}'; CI suites: " + ", ".join(s.name for s in all_suites))
+    if not target.name.startswith(GENERIC_SUITES):
+        print(f"warning: {target.name} is not a general-purpose suite ({'/'.join(GENERIC_SUITES)}); "
+              f"it may be purpose-built, check that it is the right home for {fqn}", file=sys.stderr)
     if junit5 != target.junit5:
         raise SystemExit(f"{fqn} is a JUnit {5 if junit5 else 4} test but {target.name} is a "
                          f"JUnit {5 if target.junit5 else 4} suite; it would silently never run there")
     target.add(fqn)
     target.write()
     print(f"registered {fqn} in {target.name}")
+    if remove_from_allowlist(root, fqn):
+        print(f"removed {fqn} from {ALLOWLIST}")
+
+
+def remove_from_allowlist(root, fqn):
+    """Drop fqn's line from the allow-list; True if there was one."""
+    path = root / ALLOWLIST
+    lines = path.read_text().split("\n")
+    kept = [l for l in lines if l.split("#")[0].strip() != fqn]
+    if len(kept) == len(lines):
+        return False
+    path.write_text("\n".join(kept))
+    return True
 
 
 def allowlist(root):
@@ -172,6 +209,8 @@ def unregistered(root):
     missing = []
     for path in sorted((root / TEST_SRC).rglob("*.java")):
         text = path.read_text()
+        # A file with a suite block is skipped as a suite. A test class that also declares a nested
+        # suite would be skipped too; that is rare, and the nested suite's own entries still count.
         # top-level abstract bases only: a nested abstract class must not hide the real test
         abstract = re.search(rf"^(?:\w+\s+)*abstract\s+(?:\w+\s+)*class\s+{path.stem}\b", text, re.M)
         if abstract or not TEST_METHOD.search(text) or BLOCK_START.search(text):
@@ -202,9 +241,12 @@ def check(root):
     for reason in stale:
         print(f"remove from {ALLOWLIST}: {reason}")
     if missing:
-        print(f"\n{len(missing)} integration test class(es) would never run in CI. Register each with\n"
-              f"  just add-it-test <TestClass> <Suite>\n"
-              f"or, if it is a helper or is run elsewhere, list it in {ALLOWLIST} with a reason.")
+        print(f"\n{len(missing)} integration test class(es) would never run in CI. Register each, picking the "
+              f"suite per docs/testing/INTEGRATION_TESTS.md ('Registering Tests in a MainSuite'):")
+        for fqn in missing:
+            print(f"  just add-it-test {fqn} <Suite>")
+        print(f"or, if it is a helper or is run elsewhere, add a line to {ALLOWLIST}:\n"
+              f"  <fully.qualified.ClassName>  # reason")
     if missing or stale:
         return 1
     print("every integration test class is registered or allow-listed")
@@ -225,7 +267,9 @@ def main(argv):
     if not args.suite:
         print("Pick a suite: add coverage to the shortest-running compatible one "
               "(docs/testing/INTEGRATION_TESTS.md, 'Registering Tests in a MainSuite').\n"
-              "CI suites: " + ", ".join(s.name for s in suites(args.root)), file=sys.stderr)
+              "CI suites: " + ", ".join(s.name for s in suites(args.root) if s.name.startswith(GENERIC_SUITES))
+              + "\n(purpose-built suites such as OpenSearchUpgradeSuite are not general homes for new tests)",
+              file=sys.stderr)
         return 2
     add(args.root, args.test_class, args.suite)
     return 0

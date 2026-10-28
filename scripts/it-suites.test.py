@@ -4,6 +4,7 @@
 import importlib.util
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 spec = importlib.util.spec_from_file_location("it_suites", Path(__file__).with_name("it-suites.py"))
@@ -174,6 +175,41 @@ class ItSuitesTests(unittest.TestCase):
         (self.root / it.ALLOWLIST).write_text("com.other.BTest # now registered\ncom.fresh.Gone\ncom.fresh.CTest\n")
         self.assertEqual(it.stale_allowlist(self.root),
                          ["com.other.BTest is now registered in a suite", "com.fresh.Gone no longer exists"])
+
+    def test_insertion_never_lands_inside_a_comment_headed_group(self):
+        self.suite4.write_text(JUNIT4_SUITE.replace(
+            "        BTest.class,\n",
+            "        BTest.class,\n\n        // Data-scanning tests run FIRST on purpose.\n"
+            "        // Keep new full-scan tests in this block.\n        com.other.GTest.class,\n"
+            "        com.other.HTest.class,\n\n"))
+        self.put("com/fresh/CcTest.java", test_class("com.fresh", "CcTest"))
+        self.put("com/fresh/GaTest.java", test_class("com.fresh", "GaTest"))
+        it.add(self.root, "CcTest", "Suite4")  # nearest above is DTest, outside the group
+        it.add(self.root, "GaTest", "Suite4")  # nearest above is GTest/HTest, inside the group: not used
+        self.assertEqual([e.rsplit(".", 1)[-1] for e in self.entries()],
+                         ["BTest", "GTest", "HTest", "CcTest", "DTest", "FTest", "GaTest"])
+        lines = self.suite4.read_text().split("\n")
+        head = next(i for i, l in enumerate(lines) if "FIRST" in l)
+        self.assertIn("GTest", lines[head + 2])
+        self.assertIn("HTest", lines[head + 3])
+
+    def test_add_to_an_allowlisted_class_removes_its_allowlist_line(self):
+        (self.root / it.ALLOWLIST).write_text("# header\ncom.fresh.BTest # helper\ncom.fresh.CTest  # later\n")
+        it.add(self.root, "CTest", "Suite4")
+        self.assertEqual((self.root / it.ALLOWLIST).read_text(), "# header\ncom.fresh.BTest # helper\n")
+
+    def test_junit4_wildcard_import_is_junit4_unless_jupiter_annotation_present(self):
+        self.put("com/fresh/WildTest.java", test_class("com.fresh", "WildTest", imports="import org.junit.*;"))
+        self.put("com/fresh/WildJupiterTest.java", test_class(
+            "com.fresh", "WildJupiterTest", imports="import org.junit.*;\nimport org.junit.jupiter.api.Test;"))
+        self.assertEqual(it.class_info(self.root, "WildTest"), ("com.fresh.WildTest", False))
+        self.assertEqual(it.class_info(self.root, "WildJupiterTest"), ("com.fresh.WildJupiterTest", True))
+
+    def test_non_generic_suite_target_warns_but_registers(self):
+        with tempfile.TemporaryFile("w+") as err, mock.patch("sys.stderr", err):
+            it.add(self.root, "CTest", "Suite4")
+            err.seek(0)
+            self.assertIn("not a general-purpose suite", err.read())
 
 
 if __name__ == "__main__":
