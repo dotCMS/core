@@ -167,6 +167,12 @@ public class HTMLPageDataGen extends ContentletDataGen {
         return this;
     }
 
+    /**
+     * Builds a new, unsaved {@link HTMLPageAsset} from this builder's settings, carrying this
+     * builder's index policy ({@link IndexPolicy#FORCE} unless set otherwise).
+     *
+     * @return the unsaved page
+     */
     @Override
     public HTMLPageAsset next() {
         HTMLPageAsset htmlPageAsset = new HTMLPageAsset();
@@ -189,7 +195,7 @@ public class HTMLPageDataGen extends ContentletDataGen {
         htmlPageAsset.setModUser(modUser);
         htmlPageAsset.setInode(inode);
         htmlPageAsset.setIdentifier(identifier);
-        htmlPageAsset.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        htmlPageAsset.setIndexPolicy(indexPolicy());
         htmlPageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         htmlPageAsset.setProperty("hostFolder", folder.getIdentifier());
         htmlPageAsset.setVariantId(variantId);
@@ -201,6 +207,13 @@ public class HTMLPageDataGen extends ContentletDataGen {
         return htmlPageAsset;
     }
 
+    /**
+     * Builds, validates and saves a new {@link HTMLPageAsset}. The save and the returned page
+     * both use this builder's index policy, so later writes on the returned page do not wait for
+     * a scheduled index refresh unless the test asked for that.
+     *
+     * @return the saved page
+     */
     @Override
     public HTMLPageAsset nextPersisted() {
         HTMLPageAsset pageAsset = next();
@@ -217,14 +230,14 @@ public class HTMLPageDataGen extends ContentletDataGen {
             throw new DotRuntimeException(msg);
         }
 
-        pageAsset.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        pageAsset.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        pageAsset.setIndexPolicy(indexPolicy());
+        pageAsset.setIndexPolicyDependencies(indexPolicy());
         pageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
         Contentlet contentlet = persist(pageAsset);
         HTMLPageAsset htmlPageAsset = pageAssetAPI.fromContentlet(contentlet);
 
-        htmlPageAsset.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        htmlPageAsset.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        htmlPageAsset.setIndexPolicy(indexPolicy());
+        htmlPageAsset.setIndexPolicyDependencies(indexPolicy());
         htmlPageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 
         return htmlPageAsset;
