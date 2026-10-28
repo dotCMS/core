@@ -104,6 +104,7 @@ public class SecretToolTest {
         final User contextUser = givenContextUserWithScriptingRole();
 
         assertThrows(SecurityException.class, () -> secretTool.canUserEvaluate());
+        verify(roleAPI).doesUserHaveRole(same(anonymousUser), any(Role.class));
         verify(roleAPI, never()).doesUserHaveRole(same(contextUser), any(Role.class));
     }
 
@@ -125,6 +126,7 @@ public class SecretToolTest {
         when(roleAPI.doesUserHaveRole(same(requestUser), any(Role.class))).thenReturn(false);
 
         assertThrows(SecurityException.class, () -> secretTool.canUserEvaluate());
+        verify(roleAPI).doesUserHaveRole(same(requestUser), any(Role.class));
         verify(roleAPI, never()).doesUserHaveRole(same(contextUser), any(Role.class));
     }
 
@@ -139,6 +141,7 @@ public class SecretToolTest {
 
         assertThrows(SecurityException.class, () -> secretRead.read(secretTool),
                 method + " must check the Scripting Developer role of the request user");
+        verify(roleAPI).doesUserHaveRole(same(anonymousUser), any(Role.class));
         verify(roleAPI, never()).doesUserHaveRole(same(contextUser), any(Role.class));
     }
 
