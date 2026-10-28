@@ -1,11 +1,3 @@
-// Stub the side panel's content so the dynamic `import()` the component performs never pulls in the
-// real editor (and its module cycle). Placed before the imports so Vitest hoists it. The panel
-// itself is opened through a fake DotSidePanelService below.
-vi.mock(
-    '../../../../components/dot-edit-content-side-panel/dot-edit-content-side-panel.component',
-    () => ({ DotEditContentSidePanelComponent: class MockDotEditContentSidePanelComponent {} })
-);
-
 import {
     byTestId,
     createComponentFactory,
@@ -17,13 +9,13 @@ import { Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { AbstractControl, FormControl, FormGroup, NgControl } from '@angular/forms';
+import { AbstractControl, NgControl } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotSidePanelConfig, DotSidePanelService } from '@dotcms/ui';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotSidePanelService } from '@dotcms/ui';
 import {
     createFakeContentlet,
     createFakeLanguage,
@@ -32,7 +24,7 @@ import {
 
 import { DotRelationshipFieldComponent } from './dot-relationship-field.component';
 
-import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
+import { DotOpenContentEvent } from '../../../../models/dot-open-content-event.model';
 import { EDIT_CONTENT_HOST } from '../../../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../../../store/edit-content.store';
 import { TableColumn } from '../../models/relationship.models';
@@ -95,10 +87,10 @@ const buildItem = (overrides: Partial<DotCMSContentlet> = {}): DotCMSContentlet 
 let ngControlStub: { control: AbstractControl | null };
 
 /**
- * Stands in for the {@link EDIT_CONTENT_HOST} the surrounding chrome provides. `inPlaceNavigation`
- * is what tells the two chromes apart — `false` for the full-screen route, `true` for the overlay
- * behind the side panel — and it decides whether related content opens in a panel or navigates,
- * so tests set it before mounting. Defaults to full-screen.
+ * Stands in for the {@link EDIT_CONTENT_HOST} the surrounding chrome provides. The field asks it
+ * to open content (`openContent`, #38303) and never decides how itself; `inPlaceNavigation` tells
+ * the two chromes apart — `false` for the full-screen route, `true` for a side panel — so tests
+ * can show the field asks the same way in both. Defaults to full-screen.
  */
 let hostStub: {
     inPlaceNavigation: boolean;
@@ -109,23 +101,14 @@ let hostStub: {
     goToRestoredVersion: Mock;
     goToRelatedContent: Mock;
     goToCrumb: Mock;
+    openContent: Mock;
 };
+
+/** Whether anything resolved `DotSidePanelService` while the field was mounted. */
+let sidePanelServiceInjected: boolean;
 
 describe('DotRelationshipFieldComponent', () => {
     let spectator: Spectator<DotRelationshipFieldComponent>;
-
-    // `showCreateNewContentDialog()` reaches the centered dialog through a dynamic
-    // `import()`, and under Vitest that import is where the dialog component and its whole
-    // Angular graph get transformed — inside the 5s budget of whichever test calls it first.
-    // the previous compile-time transform resolved it for free. On an idle machine the
-    // transform fits; with `nx run-many` running three projects at once it does not, and the
-    // suite failed with "Test timed out in 5000ms" plus a second, collateral failure in the
-    // next test (the timed-out call's `dialogService.open` landed during it, so the mock had
-    // been called twice). Warming the module here moves the transform outside every test's
-    // clock rather than widening the clock to hide it.
-    beforeAll(async () => {
-        await import('../../../../components/dot-create-content-dialog/dot-create-content-dialog.component');
-    });
 
     beforeEach(() => {
         ngControlStub = { control: null };
@@ -137,7 +120,8 @@ describe('DotRelationshipFieldComponent', () => {
             leaveDeletedContent: vi.fn(),
             goToRestoredVersion: vi.fn(),
             goToRelatedContent: vi.fn(),
-            goToCrumb: vi.fn()
+            goToCrumb: vi.fn(),
+            openContent: vi.fn()
         };
     });
 
@@ -170,8 +154,6 @@ describe('DotRelationshipFieldComponent', () => {
             contentType: vi.fn().mockReturnValue({ id: 'ct-1' }),
             formattedRelationship: vi.fn().mockReturnValue('id-1'),
             lastChangeSource: vi.fn().mockReturnValue('load'),
-            // `withFlags` slice — side panel off by default (empty map ⇒ create-new uses the dialog).
-            flags: vi.fn().mockReturnValue({}),
             initialize: vi.fn(),
             setData: vi.fn(),
             refreshItem: vi.fn(),
@@ -185,15 +167,15 @@ describe('DotRelationshipFieldComponent', () => {
 
     let storeMock: ReturnType<typeof createStoreMock>;
 
-    /** The side panels this field opened, as the fake service records them. */
+    /** The side panels this field opened, as the fake service records them. It should open none. */
     let sidePanels: { open: Mock };
 
-    /** What the last panel was opened with. */
-    const openedConfig = (): DotSidePanelConfig => sidePanels.open.mock.calls.at(-1)?.[1];
+    /** What the field last asked its host to open. */
+    const openContentEvent = (): DotOpenContentEvent => {
+        expect(hostStub.openContent, 'the field asks its host to open content').toHaveBeenCalled();
 
-    /** The content the last panel was opened on. */
-    const openedData = (): EditContentDialogData =>
-        openedConfig().inputs?.['data'] as EditContentDialogData;
+        return hostStub.openContent.mock.calls.at(-1)?.[0] as DotOpenContentEvent;
+    };
 
     const createComponent = createComponentFactory({
         component: DotRelationshipFieldComponent,
@@ -223,13 +205,22 @@ describe('DotRelationshipFieldComponent', () => {
                 open: vi.fn().mockReturnValue({ onClose: EMPTY })
             }),
             { provide: EDIT_CONTENT_HOST, useFactory: () => hostStub },
-            // Read per creation, so each test starts with no panels opened.
-            { provide: DotSidePanelService, useFactory: () => sidePanels }
+            // Read per creation, so each test starts with no panels opened. Records whether the
+            // field asked for it at all: a field never opens panels itself (#38303).
+            {
+                provide: DotSidePanelService,
+                useFactory: () => {
+                    sidePanelServiceInjected = true;
+
+                    return sidePanels;
+                }
+            }
         ]
     });
 
     const setup = (storeOverrides: Record<string, unknown> = {}) => {
         sidePanels = { open: vi.fn(() => ({ close: vi.fn() })) };
+        sidePanelServiceInjected = false;
         storeMock = createStoreMock(storeOverrides);
         spectator = createComponent({
             providers: [{ provide: RelationshipFieldStore, useValue: storeMock }],
@@ -320,94 +311,129 @@ describe('DotRelationshipFieldComponent', () => {
 
             expect(createSpy).toHaveBeenCalledTimes(1);
         });
+    });
 
-        it('opens the create-new content in the centered dialog when the side panel flag is off', async () => {
-            const dialogService = spectator.inject(DialogService);
-            (dialogService.open as Mock).mockClear();
+    // A field never opens panels itself: the host does (#38303, R8).
+    it('never asks for the side-panel service', () => {
+        setup();
 
+        expect(sidePanelServiceInjected).toBe(false);
+    });
+
+    /**
+     * "New content" asks the editor's host to create the related type (#38303, R8). The host opens
+     * the panel; the field only places what it saves. A panel reports every save, not only the
+     * last one, so the reply is an upsert (FR-030): the first save adds the row, later saves of the
+     * same content refresh it.
+     */
+    describe('create new (asks the host to create related content)', () => {
+        const RELATED_TYPE = { id: 'ct-1', variable: 'RelatedType', name: 'Related Type' };
+
+        /** The related list, as the store holds it: `setData` and `refreshItem` change it. */
+        let rows: DotCMSContentlet[];
+
+        beforeEach(() => {
+            rows = [buildItem()];
+            setup({
+                contentType: vi.fn().mockReturnValue(RELATED_TYPE),
+                data: vi.fn(() => rows),
+                setData: vi.fn((items: DotCMSContentlet[]) => (rows = items)),
+                refreshItem: vi.fn(
+                    (saved: DotCMSContentlet) =>
+                        (rows = rows.map((row) =>
+                            row.identifier === saved.identifier ? saved : row
+                        ))
+                )
+            });
+        });
+
+        /** Starts a create and returns the save handler the field gave its host. */
+        const createRelated = async (): Promise<(contentlet: DotCMSContentlet) => void> => {
+            await spectator.component.showCreateNewContentDialog();
+            const { onSaved } = openContentEvent();
+
+            expect(onSaved, 'the field hands the host a save handler').toEqual(
+                expect.any(Function)
+            );
+
+            return onSaved as (contentlet: DotCMSContentlet) => void;
+        };
+
+        it('asks the host to create the related type, joined to this relationship', async () => {
             await spectator.component.showCreateNewContentDialog();
 
-            expect(dialogService.open).toHaveBeenCalledTimes(1);
-            const [, config] = (dialogService.open as Mock).mock.calls[0];
-            expect(config.data).toEqual(
-                expect.objectContaining({ mode: 'new', contentTypeId: 'ct-1' })
+            expect(hostStub.openContent).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    request: {
+                        mode: 'new',
+                        contentType: 'RelatedType',
+                        title: 'contenttypes.content.create.contenttype',
+                        relationship: {
+                            parentContentletId: 'inode-1',
+                            relationshipName: 'relationshipField',
+                            isParent: true
+                        }
+                    },
+                    source: 'relationship',
+                    onSaved: expect.any(Function)
+                })
             );
         });
 
-        it('opens the create-new content in the side panel when the flag is on', async () => {
+        it('opens no dialog and no panel itself', async () => {
             const dialogService = spectator.inject(DialogService);
             (dialogService.open as Mock).mockClear();
-            storeMock.flags.mockReturnValue({
-                [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
-            });
 
             await spectator.component.showCreateNewContentDialog();
-            spectator.detectChanges();
 
-            // Flag on → the side panel is created imperatively, NOT the centered dialog.
             expect(dialogService.open).not.toHaveBeenCalled();
-            expect(sidePanels.open).toHaveBeenCalledTimes(1);
+            expect(sidePanels.open.mock.calls.length).toBe(0);
         });
 
-        it('falls back to the centered dialog when the flag slice has not resolved', async () => {
-            const dialogService = spectator.inject(DialogService);
-            (dialogService.open as Mock).mockClear();
-            // Empty slice = withFlags degraded on a failed config read, or a click before it
-            // resolved. Either way the create-new action must not be a silent no-op: fall back to
-            // the centered dialog (previous behavior).
-            storeMock.flags.mockReturnValue({});
-
-            await spectator.component.showCreateNewContentDialog();
-
-            expect(dialogService.open).toHaveBeenCalledTimes(1);
-            const [, config] = (dialogService.open as Mock).mock.calls[0];
-            expect(config.data).toEqual(
-                expect.objectContaining({ mode: 'new', contentTypeId: 'ct-1' })
-            );
-        });
-
-        it('resolves the language of the created content so the Locales column renders at once', async () => {
-            storeMock.flags.mockReturnValue({
-                [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
-            });
-            storeMock.data.mockReturnValue([]);
-
-            await spectator.component.showCreateNewContentDialog();
-            spectator.detectChanges();
+        it('adds the created content on its first save, with its language resolved', async () => {
+            const onSaved = await createRelated();
 
             // What a workflow action actually returns: `languageId`, no `language` object. Passed
             // through as-is the new row's Locales cell stays blank until the parent is saved.
-            const created = buildItem({
-                inode: 'created-inode',
-                identifier: 'created-id',
-                title: 'Just created',
-                language: undefined,
-                languageId: 1
-            });
-            openedData().onContentSaved?.(created);
-
-            expect(storeMock.setData).toHaveBeenCalledWith([
-                expect.objectContaining({
+            onSaved(
+                buildItem({
+                    inode: 'created-inode',
                     identifier: 'created-id',
-                    language: ENGLISH_LANGUAGE
+                    title: 'Just created',
+                    language: undefined,
+                    languageId: 1
                 })
+            );
+
+            expect(storeMock.setData).toHaveBeenCalledTimes(1);
+            expect(storeMock.setData).toHaveBeenCalledWith([
+                expect.objectContaining({ identifier: 'id-1' }),
+                expect.objectContaining({ identifier: 'created-id', language: ENGLISH_LANGUAGE })
             ]);
+            expect(storeMock.refreshItem).not.toHaveBeenCalled();
         });
 
-        it('opens the panel headed with the new content, in its own injection context', async () => {
-            storeMock.flags.mockReturnValue({
-                [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
-            });
+        it('refreshes that row on a later save, so the list keeps one item of it', async () => {
+            const onSaved = await createRelated();
 
-            await spectator.component.showCreateNewContentDialog();
+            onSaved(buildItem({ inode: 'created-1', identifier: 'created-id', title: 'Draft' }));
+            onSaved(buildItem({ inode: 'created-2', identifier: 'created-id', title: 'Renamed' }));
 
-            expect(openedData()).toEqual(
-                expect.objectContaining({ mode: 'new', contentTypeId: 'ct-1' })
+            expect(storeMock.setData).toHaveBeenCalledTimes(1);
+            expect(storeMock.refreshItem).toHaveBeenCalledWith(
+                expect.objectContaining({ identifier: 'created-id', title: 'Renamed' })
             );
-            expect(openedConfig().heading).toBe(openedData().title ?? '');
-            // The field's injector: the panel closes with the field, as it did when the field
-            // created it in its own view.
-            expect(openedConfig().injector).toBeTruthy();
+            expect(rows.filter((row) => row.identifier === 'created-id')).toEqual([
+                expect.objectContaining({ title: 'Renamed' })
+            ]);
+        });
+    });
+
+    describe('create new for a related type on the legacy editor', () => {
+        beforeEach(() => setup({ isNewEditorEnabled: vi.fn().mockReturnValue(false) }));
+
+        it('stays disabled', () => {
+            expect(spectator.component.$menuItems()[1].disabled).toBe(true);
         });
     });
 
@@ -520,90 +546,12 @@ describe('DotRelationshipFieldComponent', () => {
         });
     });
 
-    describe('openRelated (navigate to related content)', () => {
-        const CURRENT = { inode: 'current-inode', title: 'Current content' };
-        let host: { goToRelatedContent: Mock; goToCrumb: Mock };
-        let editStore: { contentlet: Mock; translationSourceInode: Mock };
-
-        beforeEach(() => {
-            setup();
-            host = spectator.inject(EDIT_CONTENT_HOST) as never;
-            editStore = spectator.inject(DotEditContentStore) as never;
-            editStore.contentlet.mockReturnValue(CURRENT);
-            editStore.translationSourceInode.mockReturnValue(null);
-            // The mock's vi.fn is created once in the factory config and shared
-            // across tests, so reset call counts here.
-            host.goToRelatedContent.mockClear();
-            host.goToCrumb.mockClear();
-        });
-
-        it('delegates to the host, seeding the current content as origin', () => {
-            spectator.component.openRelated(
-                buildItem({ inode: 'related-inode', title: 'Related content' })
-            );
-
-            expect(host.goToRelatedContent).toHaveBeenCalledWith(
-                { inode: 'current-inode', title: 'Current content' },
-                { inode: 'related-inode', title: 'Related content' }
-            );
-        });
-
-        it('uses the translation source inode as origin when the current content has no inode', () => {
-            // Locale switch to an untranslated locale: the new translation has no
-            // inode, so the version we came from seeds the trail origin.
-            editStore.contentlet.mockReturnValue({ inode: undefined, title: 'New translation' });
-            editStore.translationSourceInode.mockReturnValue('source-inode');
-
-            spectator.component.openRelated(
-                buildItem({ inode: 'related-inode', title: 'Related content' })
-            );
-
-            // The origin is the SOURCE version (source-inode), not the current
-            // translation, so its crumb is not relabeled with the translation's title —
-            // the origin title is left empty and the source's cached title stands.
-            expect(host.goToRelatedContent).toHaveBeenCalledWith(
-                { inode: 'source-inode', title: '' },
-                { inode: 'related-inode', title: 'Related content' }
-            );
-            expect(host.goToCrumb).not.toHaveBeenCalled();
-        });
-
-        it('starts a fresh trail when there is no inode and no translation source', () => {
-            editStore.contentlet.mockReturnValue({ inode: undefined, title: 'New translation' });
-            editStore.translationSourceInode.mockReturnValue(null);
-
-            spectator.component.openRelated(buildItem({ inode: 'related-inode' }));
-
-            expect(host.goToCrumb).toHaveBeenCalledWith('related-inode', ['related-inode']);
-            expect(host.goToRelatedContent).not.toHaveBeenCalled();
-        });
-
-        it('is a no-op when the field is disabled (not navigable)', () => {
-            spectator.component.setDisabledState(true);
-            spectator.detectChanges();
-
-            spectator.component.openRelated(buildItem({ inode: 'related-inode' }));
-
-            expect(host.goToRelatedContent).not.toHaveBeenCalled();
-            expect(host.goToCrumb).not.toHaveBeenCalled();
-        });
-
-        it('is a no-op when navigating to the content already open (self-navigation)', () => {
-            spectator.component.openRelated(buildItem({ inode: CURRENT.inode }));
-
-            expect(host.goToRelatedContent).not.toHaveBeenCalled();
-            expect(host.goToCrumb).not.toHaveBeenCalled();
-        });
-
-        it('is a no-op when the item has no inode', () => {
-            spectator.component.openRelated(buildItem({ inode: undefined }));
-
-            expect(host.goToRelatedContent).not.toHaveBeenCalled();
-            expect(host.goToCrumb).not.toHaveBeenCalled();
-        });
-    });
-
-    describe('openRelated (side panel vs navigation)', () => {
+    /**
+     * A related item's title asks the editor's host to open it (#38303, R8). The host decides how:
+     * a panel over the full-screen editor, or an in-place reload with a breadcrumb inside a panel.
+     * The field asks the same way in both chromes, and neither opens panels nor navigates itself.
+     */
+    describe('openRelated (asks the host to open the related content)', () => {
         const CURRENT = { inode: 'current-inode', title: 'Current content' };
         const RELATED = buildItem({
             inode: 'related-inode',
@@ -611,163 +559,89 @@ describe('DotRelationshipFieldComponent', () => {
             title: 'Related content'
         });
 
-        let host: { goToRelatedContent: Mock; goToCrumb: Mock };
-
         /**
-         * Mounts the field as it is presented in one of the two editor chromes. `inPlaceNavigation`
-         * is the seam that tells them apart in production: `false` for the full-screen route
-         * (RouterEditContentHost), `true` for the overlay that backs the side panel
-         * (OverlayEditContentHost).
+         * Mounts the field as it is presented in one of the two editor chromes: `false` for the
+         * full-screen route, `true` for a side panel.
          */
-        const setupIn = ({
-            inPlaceNavigation,
-            sidePanelEnabled = true
-        }: {
-            inPlaceNavigation: boolean;
-            sidePanelEnabled?: boolean;
-        }) => {
+        const setupIn = (inPlaceNavigation: boolean) => {
             hostStub.inPlaceNavigation = inPlaceNavigation;
-
-            setup({
-                flags: vi
-                    .fn()
-                    .mockReturnValue(
-                        sidePanelEnabled
-                            ? { [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true }
-                            : {}
-                    ),
-                data: vi.fn().mockReturnValue([RELATED]),
-                paginatedData: vi.fn().mockReturnValue([RELATED])
-            });
-
-            host = spectator.inject(EDIT_CONTENT_HOST) as never;
+            setup({ data: vi.fn().mockReturnValue([RELATED]) });
             (spectator.inject(DotEditContentStore).contentlet as Mock).mockReturnValue(CURRENT);
-            host.goToRelatedContent.mockClear();
-            host.goToCrumb.mockClear();
         };
 
-        describe('from the full-screen editor', () => {
-            it('opens the related content in a side panel instead of navigating', async () => {
-                setupIn({ inPlaceNavigation: false });
+        describe.each([
+            ['the full-screen editor', false],
+            ['a side panel', true]
+        ])('from %s', (_chrome, inPlaceNavigation) => {
+            beforeEach(() => setupIn(inPlaceNavigation));
 
+            it('asks the host to open the clicked item for editing, as a relationship', async () => {
                 await spectator.component.openRelated(RELATED);
-                spectator.detectChanges();
 
-                // The whole point: no navigation is requested, so the editor is never unmounted
-                // and whatever is unsaved in it — including a relation to content just created
-                // from this field — survives. No unsaved-changes prompt needed.
-                expect(host.goToRelatedContent).not.toHaveBeenCalled();
-                expect(host.goToCrumb).not.toHaveBeenCalled();
-                expect(sidePanels.open).toHaveBeenCalledTimes(1);
-            });
-
-            it('opens the panel on the clicked content, in edit mode', async () => {
-                setupIn({ inPlaceNavigation: false });
-
-                await spectator.component.openRelated(RELATED);
-                spectator.detectChanges();
-
-                expect(openedData()).toEqual(
+                expect(hostStub.openContent).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        mode: 'edit',
-                        contentletInode: 'related-inode',
-                        title: 'Related content'
+                        request: {
+                            mode: 'edit',
+                            inode: 'related-inode',
+                            title: 'Related content'
+                        },
+                        source: 'relationship',
+                        onSaved: expect.any(Function)
                     })
                 );
             });
 
-            it('opens the panel regardless of whether the form has unsaved changes', async () => {
-                // The rule is the chrome, not the form state: a pristine editor takes the panel
-                // too. Keying this on `dirty` would make the same click behave differently
-                // depending on whether anything happened to be touched first.
-                const control = new FormControl('related-id');
-                new FormGroup({ [FIELD_MOCK.variable]: control });
-                ngControlStub = { control };
-
-                setupIn({ inPlaceNavigation: false });
-
+            it('neither navigates nor opens a panel itself', async () => {
                 await spectator.component.openRelated(RELATED);
-                spectator.detectChanges();
 
-                expect(control.dirty).toBe(false);
-                expect(host.goToRelatedContent).not.toHaveBeenCalled();
-                expect(sidePanels.open).toHaveBeenCalledTimes(1);
-            });
-
-            it('navigates instead when the side panel flag is off', async () => {
-                setupIn({ inPlaceNavigation: false, sidePanelEnabled: false });
-
-                await spectator.component.openRelated(RELATED);
-                spectator.detectChanges();
-
-                // No panel to open without the flag, so the previous behavior must stand rather
-                // than the click becoming a silent no-op.
-                expect(host.goToRelatedContent).toHaveBeenCalledTimes(1);
-                expect(sidePanels.open).not.toHaveBeenCalled();
+                expect(hostStub.goToRelatedContent).not.toHaveBeenCalled();
+                expect(hostStub.goToCrumb).not.toHaveBeenCalled();
+                expect(sidePanels.open.mock.calls.length).toBe(0);
             });
         });
 
-        describe('from inside a side panel', () => {
-            it('navigates with a trail instead of opening another panel', async () => {
-                setupIn({ inPlaceNavigation: true });
+        /** The host calls the field back on every save of the content it opened. */
+        describe('a save of the related item', () => {
+            beforeEach(() => setupIn(false));
 
+            /** Opens the related item and hands its save back, as the host would. */
+            const saveRelated = async (saved: DotCMSContentlet): Promise<void> => {
                 await spectator.component.openRelated(RELATED);
-                spectator.detectChanges();
+                const { onSaved } = openContentEvent();
 
-                // This chrome navigates in place and keeps its own crumb trail, so related
-                // content is reached through the breadcrumb — not a second panel on top.
-                expect(host.goToRelatedContent).toHaveBeenCalledWith(
-                    { inode: 'current-inode', title: 'Current content' },
-                    { inode: 'related-inode', title: 'Related content' }
+                expect(onSaved, 'the field hands the host a save handler').toEqual(
+                    expect.any(Function)
                 );
-                expect(sidePanels.open).not.toHaveBeenCalled();
-            });
-        });
+                onSaved?.(saved);
+            };
 
-        describe('the panel it opens', () => {
-            beforeEach(() => setupIn({ inPlaceNavigation: false }));
-
-            it('replaces a panel the field already has open', async () => {
-                await spectator.component.openRelated(RELATED);
-                const [first] = sidePanels.open.mock.results.map((result) => result.value);
-
-                await spectator.component.openRelated({ ...RELATED, inode: 'other-inode' });
-
-                expect(first.close).toHaveBeenCalled();
-                expect(sidePanels.open).toHaveBeenCalledTimes(2);
-            });
-
-            it('refreshes the edited row by identifier when it reports a save', async () => {
-                await spectator.component.openRelated(RELATED);
-                spectator.detectChanges();
-
+            it('refreshes the edited row by identifier', async () => {
                 const saved = buildItem({
                     inode: 'new-inode-after-save',
                     identifier: 'related-id',
                     title: 'Related content (edited)'
                 });
-                openedData().onContentSaved?.(saved);
 
-                // Handed to the store's in-place replace — which keeps the current page and does
-                // not dirty the form — rather than setData, which resets pagination to page 1.
+                await saveRelated(saved);
+
+                // Handed to the store's in-place replace, which marks it a load so it never
+                // dirties the form, rather than setData, which is a user change.
                 expect(storeMock.refreshItem).toHaveBeenCalledWith(saved);
                 expect(storeMock.setData).not.toHaveBeenCalled();
             });
 
             it('resolves the language of the refreshed row so the Locales column still renders', async () => {
-                await spectator.component.openRelated(RELATED);
-                spectator.detectChanges();
-
                 // A workflow action returns `languageId` but no `language` object, so passing it
                 // straight through would blank the Locales column until the parent is saved.
-                const saved = buildItem({
-                    inode: 'new-inode-after-save',
-                    identifier: 'related-id',
-                    title: 'Related content (edited)',
-                    language: undefined,
-                    languageId: 2
-                });
-                openedData().onContentSaved?.(saved);
+                await saveRelated(
+                    buildItem({
+                        inode: 'new-inode-after-save',
+                        identifier: 'related-id',
+                        title: 'Related content (edited)',
+                        language: undefined,
+                        languageId: 2
+                    })
+                );
 
                 expect(storeMock.refreshItem).toHaveBeenCalledWith(
                     expect.objectContaining({
@@ -778,15 +652,13 @@ describe('DotRelationshipFieldComponent', () => {
             });
 
             it('leaves an already-resolved language untouched', async () => {
-                await spectator.component.openRelated(RELATED);
-                spectator.detectChanges();
-
-                const saved = buildItem({
-                    identifier: 'related-id',
-                    language: ENGLISH_LANGUAGE,
-                    languageId: 1
-                });
-                openedData().onContentSaved?.(saved);
+                await saveRelated(
+                    buildItem({
+                        identifier: 'related-id',
+                        language: ENGLISH_LANGUAGE,
+                        languageId: 1
+                    })
+                );
 
                 expect(storeMock.refreshItem).toHaveBeenCalledWith(
                     expect.objectContaining({ language: ENGLISH_LANGUAGE })
@@ -794,15 +666,13 @@ describe('DotRelationshipFieldComponent', () => {
             });
 
             it('leaves the row as-is when the language id matches no known locale', async () => {
-                await spectator.component.openRelated(RELATED);
-                spectator.detectChanges();
-
-                const saved = buildItem({
-                    identifier: 'related-id',
-                    language: undefined,
-                    languageId: 999
-                });
-                openedData().onContentSaved?.(saved);
+                await saveRelated(
+                    buildItem({
+                        identifier: 'related-id',
+                        language: undefined,
+                        languageId: 999
+                    })
+                );
 
                 // Blank column beats a wrong locale.
                 expect(storeMock.refreshItem).toHaveBeenCalledWith(
@@ -811,17 +681,39 @@ describe('DotRelationshipFieldComponent', () => {
             });
 
             it('forwards the save to the store, which ignores an unrelated identifier', async () => {
-                await spectator.component.openRelated(RELATED);
-                spectator.detectChanges();
-
                 // Whether the row exists is the store's call (covered in its own spec); the
                 // component's job is only to resolve the language and hand it over.
-                openedData().onContentSaved?.(buildItem({ identifier: 'someone-else' }));
+                await saveRelated(buildItem({ identifier: 'someone-else' }));
 
                 expect(storeMock.refreshItem).toHaveBeenCalledWith(
                     expect.objectContaining({ identifier: 'someone-else' })
                 );
                 expect(storeMock.setData).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('when there is nothing to open', () => {
+            beforeEach(() => setupIn(false));
+
+            it('asks nothing when the field is disabled (not navigable)', async () => {
+                spectator.component.setDisabledState(true);
+                spectator.detectChanges();
+
+                await spectator.component.openRelated(buildItem({ inode: 'related-inode' }));
+
+                expect(hostStub.openContent).not.toHaveBeenCalled();
+            });
+
+            it('asks nothing for the content already open', async () => {
+                await spectator.component.openRelated(buildItem({ inode: CURRENT.inode }));
+
+                expect(hostStub.openContent).not.toHaveBeenCalled();
+            });
+
+            it('asks nothing when the item has no inode', async () => {
+                await spectator.component.openRelated(buildItem({ inode: undefined }));
+
+                expect(hostStub.openContent).not.toHaveBeenCalled();
             });
         });
     });
