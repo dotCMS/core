@@ -24,7 +24,6 @@ import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LanguageDataGen;
-import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
@@ -664,18 +663,17 @@ public class ContentletAjaxTest {
 
 	/**
 	 * <b>Method to Test:</b> {@link ContentletAjax#saveContent(List, boolean, boolean, boolean)}<p>
-	 * <b>When:</b> a limited user saves new content and the binary field value is the inode of an
-	 * existing File Asset<p>
-	 * <b>Should:</b> save the content without taking the binary from that File Asset
+	 * <b>When:</b> new content is saved and the binary field value is a content inode instead of a
+	 * temp file id<p>
+	 * <b>Should:</b> save the content with an empty binary field, as the REST API does
 	 */
 	@Test
-	public void test_saveContent_binaryValueNamingAnExistingFileAsset_isNotUsedAsTheBinary()
+	public void test_saveContent_binaryValueThatIsNotATempFile_leavesBinaryEmpty()
 			throws Exception {
 
 		final User user = new UserDataGen().nextPersisted();
 		final ContentType contentType = createEditableTypeWithBinaryField(user);
-		final Host site = new SiteDataGen().nextPersisted();
-		final Folder folder = new FolderDataGen().site(site).nextPersisted();
+		final Folder folder = new FolderDataGen().nextPersisted();
 		final Contentlet fileAsset = new FileAssetDataGen(folder, "file asset body " + System.currentTimeMillis())
 				.nextPersisted();
 
@@ -686,9 +684,10 @@ public class ContentletAjaxTest {
 			final Contentlet saved = contentletAPI.find((String) callbackData.get("contentletInode"),
 					systemUser, false);
 			assertNotNull("The content should be saved: " + callbackData, saved);
-			assertNull("The binary must not be taken from another File Asset",
+			assertNull("Only temp file ids or uploaded file names set the binary",
 					saved.getBinary("doc"));
 		} finally {
+			setUpContext();
 			ContentTypeDataGen.remove(contentType);
 			FolderDataGen.remove(folder);
 			UserDataGen.remove(user, true);
@@ -697,8 +696,8 @@ public class ContentletAjaxTest {
 
 	/**
 	 * <b>Method to Test:</b> {@link ContentletAjax#saveContent(List, boolean, boolean, boolean)}<p>
-	 * <b>When:</b> a limited user saves new content and the binary field value is the id of a temp
-	 * file the user uploaded<p>
+	 * <b>When:</b> new content is saved and the binary field value is the id of a temp file the
+	 * user uploaded<p>
 	 * <b>Should:</b> store the uploaded file as the binary of the new content
 	 */
 	@Test
@@ -723,6 +722,7 @@ public class ContentletAjaxTest {
 			assertNotNull("The uploaded file should be stored as the binary", binary);
 			assertEquals(body, new String(Files.readAllBytes(binary.toPath()), StandardCharsets.UTF_8));
 		} finally {
+			setUpContext();
 			ContentTypeDataGen.remove(contentType);
 			UserDataGen.remove(user, true);
 		}
@@ -784,11 +784,12 @@ public class ContentletAjaxTest {
 			}
 		}
 
+		final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
 		HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
 		try {
 			return new ContentletAjax().saveContent(formData, false, true, false);
 		} finally {
-			HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+			HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
 		}
 	}
 
