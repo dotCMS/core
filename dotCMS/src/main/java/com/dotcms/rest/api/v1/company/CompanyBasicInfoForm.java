@@ -6,7 +6,10 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.dotmarketing.util.UtilMethods;
 import io.swagger.v3.oas.annotations.media.Schema;
 
+import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.validation.constraints.NotNull;
 import com.dotcms.rest.exception.BadRequestException;
 
@@ -29,6 +32,25 @@ public class CompanyBasicInfoForm extends Validated {
      */
     private static final Pattern HEX_COLOR_PATTERN =
             Pattern.compile("^#([0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$");
+
+    /**
+     * Number of the last login background bundled under {@code /html/images/backgrounds/}.
+     */
+    static final int LAST_BACKGROUND_PRESET = 11;
+
+    /**
+     * The bundled login backgrounds, as written in messages and API docs.
+     */
+    static final String BACKGROUND_PRESETS_TEXT = "/html/images/backgrounds/bg-1.jpg to bg-"
+            + LAST_BACKGROUND_PRESET + ".jpg";
+
+    /**
+     * The bundled login backgrounds. Matched exactly.
+     */
+    private static final Set<String> BACKGROUND_PRESETS = IntStream
+            .rangeClosed(1, LAST_BACKGROUND_PRESET)
+            .mapToObj(n -> "/html/images/backgrounds/bg-" + n + ".jpg")
+            .collect(Collectors.toUnmodifiableSet());
 
     @JsonProperty("portalURL")
     @Schema(description = "Portal URL for the dotCMS instance", example = "http://localhost:8080",
@@ -68,8 +90,10 @@ public class CompanyBasicInfoForm extends Validated {
     private final String backgroundColor;
 
     @JsonProperty("backgroundImage")
-    @Schema(description = "Background image path (dotAsset path starting with /dA). Cleared if omitted.",
-            example = "/dA/abc123/background.png")
+    @Schema(description = "Login background: a dotAsset path starting with /dA/, one of the "
+            + "bundled backgrounds " + BACKGROUND_PRESETS_TEXT + ", or the value already "
+            + "stored. Cleared if omitted.",
+            example = "/html/images/backgrounds/bg-11.jpg")
     private final String backgroundImage;
 
     @JsonProperty("loginScreenLogo")
@@ -167,12 +191,9 @@ public class CompanyBasicInfoForm extends Validated {
             validateHexColor("backgroundColor", backgroundColor);
         }
 
-        // Image/logo paths must be dotAsset references (matches the read-side
-        // filter in CompanyConfigHelper.toView that drops non-/dA values)
-        if (UtilMethods.isSet(backgroundImage) && !backgroundImage.startsWith("/dA")) {
-            throw new BadRequestException(
-                    "backgroundImage must be a dotAsset path starting with /dA");
-        }
+        // Logo paths must be dotAsset references (matches the read-side filter in
+        // CompanyConfigHelper.toView). backgroundImage follows isAcceptedBackgroundImage, applied
+        // in CompanyConfigHelper.saveBasicInfo because it also accepts the stored value.
         if (UtilMethods.isSet(loginScreenLogo) && !loginScreenLogo.startsWith("/dA")) {
             throw new BadRequestException(
                     "loginScreenLogo must be a dotAsset path starting with /dA");
@@ -181,6 +202,19 @@ public class CompanyBasicInfoForm extends Validated {
             throw new BadRequestException(
                     "navBarLogo must be a dotAsset path starting with /dA");
         }
+    }
+
+    /**
+     * Whether a login background may be saved without comparing it to the stored value: empty,
+     * a dotAsset path ({@code /dA/...} without {@code ..}), or one of the bundled backgrounds.
+     *
+     * @param backgroundImage the value sent by the client
+     * @return {@code true} if the value is accepted on its own
+     */
+    static boolean isAcceptedBackgroundImage(final String backgroundImage) {
+        return !UtilMethods.isSet(backgroundImage)
+                || (backgroundImage.startsWith("/dA/") && !backgroundImage.contains(".."))
+                || BACKGROUND_PRESETS.contains(backgroundImage);
     }
 
     private static void validateMaxLength(final String field, final String value) {

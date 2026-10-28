@@ -14,7 +14,6 @@ export const WORKFLOW_ACTION_ID = {
     DESTROY: 'DESTROY',
     COPY: 'COPY',
     MOVE: 'MOVE',
-    RENAME: 'RENAME',
     DOWNLOAD: 'DOWNLOAD',
     LOCK: 'LOCK',
     UNLOCK: 'UNLOCK'
@@ -87,18 +86,8 @@ const GOT_TO_EDIT_PAGE_ACTION: ContentDriveWorkflowAction = {
  * each one applies to — something a flat toolbar button cannot express. Keeping them in both places
  * meant the same action appeared twice, reached by two different code paths.
  *
- * The toolbar keeps the actions the dialog does not cover: the two Edit entries, Rename and Download.
+ * The toolbar keeps the actions the dialog does not cover: the two Edit entries and Download.
  */
-
-const RENAME_ACTION: ContentDriveWorkflowAction = {
-    name: 'content.drive.worflow.action.rename',
-    id: WORKFLOW_ACTION_ID.RENAME,
-    showWhen: {
-        isSingleSelection: true,
-        noneArchived: true,
-        noneFolder: true
-    }
-};
 
 const DOWNLOAD_ACTION: ContentDriveWorkflowAction = {
     name: 'download',
@@ -114,13 +103,12 @@ const DOWNLOAD_ACTION: ContentDriveWorkflowAction = {
  * Actions shown as flat buttons in the toolbar when a selection is active.
  *
  * The publication-lifecycle and removal actions are intentionally absent — the Workflow Center
- * dialog owns those now. See the note above `RENAME_ACTION`.
+ * dialog owns those now. See the note above `DOWNLOAD_ACTION`.
  */
 export const DEFAULT_WORKFLOW_ACTIONS = [
     // Edit actions (most frequent)
     GOT_TO_EDIT_CONTENTLET_ACTION,
     GOT_TO_EDIT_PAGE_ACTION,
-    RENAME_ACTION,
     // Asset operations
     DOWNLOAD_ACTION
 ];

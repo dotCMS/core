@@ -2,9 +2,7 @@
 
 How keyboard shortcuts are arbitrated in the admin UI, what ships today, and how to add one.
 
-Introduced with [#32591](https://github.com/dotCMS/core/issues/32591). Before it there was no shortcut
-infrastructure at all: the only mechanism was a per-component `(document:keydown.x)` host binding,
-which cannot arbitrate between two surfaces that want the same key.
+Introduced with [#32591](https://github.com/dotCMS/core/issues/32591). Before it there was no shortcut infrastructure at all: the only mechanism was a per-component `(document:keydown.x)` host binding, which cannot arbitrate between two surfaces that want the same key.
 
 ## What ships today
 
@@ -14,110 +12,79 @@ which cannot arbitrate between two surfaces that want the same key.
 | `Mod + K` | Focus the search field (alias for `/`) | as above |
 | `Mod + B` | Show or hide the sidebar (the folder tree and the entries around it) | `dot-content-drive-shell` |
 | `Escape` | Clear the selection | `dot-content-drive-shell` |
-| `Escape` | Close the content side panel (wins while open) | `dot-edit-content-side-panel` |
+| `Escape` | Close the frontmost side panel (wins while open) | `dot-side-panel`, the drawer every side panel opens in |
+| `Mod + S` | Save the file open in Edit Code | `dot-source-editor-side-panel` |
 | `↑` `↓` | Move focus between rows | the shared listing |
 | `Shift + ↑` `Shift + ↓` | Extend the selection | the shared listing |
 | `Shift + click` | Extend the selection to the clicked row | the shared listing |
+| `←` `→` | Move focus one card, wrapping onto the row before or after | Content Drive grid view |
+| `↑` `↓` | Move focus one row of cards (to the last card of a shorter last row) | Content Drive grid view |
+| `Home` `End` | Move focus to the first or last card of the page | Content Drive grid view |
+| `Shift` + any of the above | Extend the selection from the anchor card | Content Drive grid view |
+| `Enter` `Space` | Select or unselect the focused card | Content Drive grid view |
+| `Shift + F10`, `ContextMenu` | Open the focused card's actions menu | Content Drive grid view |
+| `Shift + click` (checkbox) | Extend the selection to the clicked card | Content Drive grid view |
 
-`Mod` is the platform's primary modifier: Command on macOS, Control on Windows and Linux. One
-registration covers both.
+The grid view (#37930) is one tab stop, like the table. Its arrows are handled on the grid itself
+(`dot-content-drive-grid-view`), not through the registry: they only mean something while focus is
+on a card. Up and Down measure the rendered rows, so they follow the layout after a resize or the
+folder tree toggling. Busy cards are skipped by every move and left out of every range. A plain
+click on a card opens it; the checkbox is the mouse way to select. `Escape`, `/`, `Mod + K` and
+`Mod + B` are the shell's and the search box's claims, so they work the same in both views.
+
+`Mod` is the platform's primary modifier: Command on macOS, Control on Windows and Linux. One registration covers both.
 
 ### Why these keys
 
-`Mod + F` is the obvious "search" key and is deliberately **not** claimed: it would take away the
-browser's find-in-page, which people rely on and which is an accessibility affordance in its own
-right. `/` is the web convention for focusing a search box and collides with nothing.
+`Mod + F` is the obvious "search" key and is deliberately **not** claimed: it would take away the browser's find-in-page, which people rely on and which is an accessibility affordance in its own right. `/` is the web convention for focusing a search box and collides with nothing.
 
-`Mod + K` is kept as an alias rather than the primary because it conventionally opens a *command
-palette*. If this application ever wants one, that key is still free.
+`Mod + K` is kept as an alias rather than the primary because it conventionally opens a *command palette*. If this application ever wants one, that key is still free.
 
-`Escape` clears the selection and stops there. An earlier revision also cleared every active filter
-once nothing was selected; that put a destructive, hard-to-undo action behind the most-reached-for
-key on the keyboard. Clearing filters stays on the visible **Clear all** control.
+`Escape` clears the selection and stops there. An earlier revision also cleared every active filter once nothing was selected; that put a destructive, hard-to-undo action behind the most-reached-for key on the keyboard. Clearing filters stays on the visible **Clear all** control.
+
+`Mod + S` is claimed only while Edit Code is open, and always consumed there, so the browser's "Save page" dialog never opens over the editor, even when there is nothing to save. It works with focus inside the code editor, because it carries a modifier and the typing rule below does not apply to it. `Escape` typed inside that editor is different: Monaco handles it and marks it handled, so it never reaches the registry and the panel stays open, as in any IDE (see [The rules](#the-rules)).
 
 ### Bare printable keys and typing
 
-`/` is a single character, so the registry ignores it while focus is in something that takes text —
-a text-accepting `input`, a `textarea`, a `select`, or anything inside a `contenteditable`. Without
-that rule, typing a slash into the very search box the shortcut focuses would re-fire the shortcut
-instead of entering a character.
+`/` is a single character, so the registry ignores it while focus is in something that takes text — a text-accepting `input`, a `textarea`, a `select`, or anything inside a `contenteditable`. Without that rule, typing a slash into the very search box the shortcut focuses would re-fire the shortcut instead of entering a character.
 
-**"An `input`" is not enough**, and getting this wrong is a real bug rather than a nicety. A
-checkbox, radio, button, file or range input accepts no characters, so a printable key pressed on
-one is a shortcut. The listing is where it bites: every row carries a checkbox and they are the
-primary way to select, so "tick a few rows, then press the search key" is an ordinary sequence that
-did nothing at all while every `INPUT` counted as typing. `NON_TEXT_INPUT_TYPES` in the service is
-the list. A `select` is deliberately absent from it: browsers use a printable key for type-ahead
-inside one, so that really is typing.
+**"An `input`" is not enough**, and getting this wrong is a real bug rather than a nicety. A checkbox, radio, button, file or range input accepts no characters, so a printable key pressed on one is a shortcut. The listing is where it bites: every row carries a checkbox and they are the primary way to select, so "tick a few rows, then press the search key" is an ordinary sequence that did nothing at all while every `INPUT` counted as typing. `NON_TEXT_INPUT_TYPES` in the service is the list. A `select` is deliberately absent from it: browsers use a printable key for type-ahead inside one, so that really is typing.
 
-The rule is narrow on purpose: it applies only to a one-character `key` pressed with no modifier. So
-`Escape` and the arrows still reach their claimants while typing, and `Mod + K` still works from
-inside the search box it focuses — otherwise pressing it twice would be a dead key.
+The rule is narrow on purpose: it applies only to a one-character `key` pressed with no modifier. So `Escape` and the arrows still reach their claimants while typing, and `Mod + K` still works from inside the search box it focuses — otherwise pressing it twice would be a dead key.
 
-This is the answer to the "editable targets" gap noted in review. A combination that carries a
-modifier needs no such policy.
+This is the answer to the "editable targets" gap noted in review. A combination that carries a modifier needs no such policy.
 
 ### Keyboard layouts
 
-**Check a single-character shortcut against a non-US layout before choosing it.** `/` is its own key
-on US QWERTY, but `Shift+7` on German QWERTZ and Spanish, and `Shift+:` on French AZERTY. The browser
-reports the character that was produced *and* the modifier that produced it, so `/` arrives as
-`shift+/` for a large part of the user base.
+**Check a single-character shortcut against a non-US layout before choosing it.** `/` is its own key on US QWERTY, but `Shift+7` on German QWERTZ and Spanish, and `Shift+:` on French AZERTY. The browser reports the character that was produced *and* the modifier that produced it, so `/` arrives as `shift+/` for a large part of the user base.
 
-That is not theoretical: this is exactly how `/` shipped, dead for every one of those layouts, chosen
-on the reasoning that it "collides with nothing" — which only held on the layout it was tested on.
+That is not theoretical: this is exactly how `/` shipped, dead for every one of those layouts, chosen on the reasoning that it "collides with nothing" — which only held on the layout it was tested on.
 
-The registry now compensates. A single-character key matches on the character alone as well as on
-the exact combination, so a `/` claim is reached however the layout produced the character. The exact
-combination is tried first, so `shift+/` remains expressible if anything ever wants to distinguish
-it. Command and Control are never dropped, because they are never layout mechanics: `Mod + /` stays a
-different shortcut.
+The registry now compensates. A single-character key matches on the character alone as well as on the exact combination, so a `/` claim is reached however the layout produced the character. The exact combination is tried first, so `shift+/` remains expressible if anything ever wants to distinguish it. Command and Control are never dropped, because they are never layout mechanics: `Mod + /` stays a different shortcut.
 
 Two things this does **not** solve, and which a new shortcut still has to be checked against:
 
-- **AltGr.** On Windows it reports as Ctrl+Alt, indistinguishable from a real Ctrl+Alt press, so a
-  character typed that way keeps its modifiers and will not match a bare claim. Several punctuation
-  characters need AltGr on Nordic and Eastern European layouts. Avoid them for shortcuts.
-- **Characters that do not exist on a layout at all.** No amount of matching helps if the user cannot
-  type the character. Prefer letters and digits, which are present everywhere, for anything a user
-  must be able to reach.
+- **AltGr.** On Windows it reports as Ctrl+Alt, indistinguishable from a real Ctrl+Alt press, so a character typed that way keeps its modifiers and will not match a bare claim. Several punctuation characters need AltGr on Nordic and Eastern European layouts. Avoid them for shortcuts.
+- **Characters that do not exist on a layout at all.** No amount of matching helps if the user cannot type the character. Prefer letters and digits, which are present everywhere, for anything a user must be able to reach.
 
-When adding a single-character shortcut, cover it the way `dot-keyboard-shortcut.service.spec.ts`
-does — dispatch the character with the modifier a non-US layout would use — and, for a
-user-facing key, add a browser-level case with CDP as
-`content-drive-keyboard.spec.ts` does. Playwright's `keyboard.press` maps through a US layout and
-cannot express this on its own.
+When adding a single-character shortcut, cover it the way `dot-keyboard-shortcut.service.spec.ts` does — dispatch the character with the modifier a non-US layout would use — and, for a user-facing key, add a browser-level case with CDP as `content-drive-keyboard.spec.ts` does. Playwright's `keyboard.press` maps through a US layout and cannot express this on its own.
 
 ### Standing down while an overlay is above
 
-**Every Content Drive claim declines when something is stacked over the listing** — `Escape` and
-`Mod + B` in `dot-content-drive-shell`, and both search keys in
-`dot-content-drive-search-input`. Each asks `hasOverlayAbove()` and returns `false`.
+**Every Content Drive claim declines when something is stacked over the listing** — `Escape` and `Mod + B` in `dot-content-drive-shell`, and both search keys in `dot-content-drive-search-input`. Each asks `hasOverlayAbove()` and returns `false`.
 
 Two reasons, and the second is the one that is easy to miss:
 
-1. A dialog covers the listing, so acting on it changes something the user cannot see. They find the
-   selection gone, the tree rearranged, or focus sitting in a search box behind the modal when they
-   close it.
-2. PrimeNG's own `closeOnEscape` binds a **separate** document listener that never consults
-   `defaultPrevented`, so it cannot be arbitrated with. See
-   [A surface with its own document listener cannot be arbitrated](#a-surface-with-its-own-document-listener-cannot-be-arbitrated).
+1. A dialog covers the listing, so acting on it changes something the user cannot see. They find the selection gone, the tree rearranged, or focus sitting in a search box behind the modal when they close it.
+2. PrimeNG's own `closeOnEscape` binds a **separate** document listener that never consults `defaultPrevented`, so it cannot be arbitrated with. See [A surface with its own document listener cannot be arbitrated](#a-surface-with-its-own-document-listener-cannot-be-arbitrated).
 
-The search keys were the last to get this and the gap was caught in review rather than by a test.
-`Mod + K` was the worse half: it carries a modifier, so the typing rule above never short-circuits
-it and it fired from anywhere inside an open dialog, not only from a non-editable target.
+The search keys were the last to get this and the gap was caught in review rather than by a test. `Mod + K` was the worse half: it carries a modifier, so the typing rule above never short-circuits it and it fired from anywhere inside an open dialog, not only from a non-editable target.
 
-**The AssetPicker's toolbar deliberately does not do this**, and that is not an oversight. It *is*
-the top overlay, so asking the base-layer question would be true for its whole lifetime and the
-picker would decline its own shortcut permanently. Its unconditional claim is correct, and
-per-combination last-in-wins is what makes it safe: the picker takes both search keys for exactly as
-long as it is open, then hands them back.
+**The AssetPicker's toolbar deliberately does not do this**, and that is not an oversight. It *is* the top overlay, so asking the base-layer question would be true for its whole lifetime and the picker would decline its own shortcut permanently. Its unconditional claim is correct, and per-combination last-in-wins is what makes it safe: the picker takes both search keys for exactly as long as it is open, then hands them back.
 
-So before copying the guard into a new surface, decide which kind you are — see
-[How to ask "is an overlay above me?"](#how-to-ask-is-an-overlay-above-me).
+So before copying the guard into a new surface, decide which kind you are — see [How to ask "is an overlay above me?"](#how-to-ask-is-an-overlay-above-me).
 
-The labels shown to authors come from each registration's `label`, which is required. A shortcut
-therefore cannot ship undocumented: `activeShortcuts()` is the live list.
+The labels shown to authors come from each registration's `label`, which is required. A shortcut therefore cannot ship undocumented: `activeShortcuts()` is the live list.
 
 ## Adding a shortcut
 
@@ -138,76 +105,47 @@ constructor() {
 }
 ```
 
-Pass everything the surface wants in **one** call: a batch returns a single withdrawal, so there is
-one thing to remember rather than one per shortcut.
+Pass everything the surface wants in **one** call: a batch returns a single withdrawal, so there is one thing to remember rather than one per shortcut.
 
-Add the `label` key to `Language.properties`. It is what the author-facing documentation is generated
-from, and **labels must be unique within a single `register()` call** — a duplicate throws, because
-two shortcuts sharing a label collapse into one indistinguishable documentation entry and there is no
-rule to resolve them.
+Add the `label` key to `Language.properties`. It is what the author-facing documentation is generated from, and **labels must be unique within a single `register()` call** — a duplicate throws, because two shortcuts sharing a label collapse into one indistinguishable documentation entry and there is no rule to resolve them.
 
-Note the asymmetry: claiming the same **combination** twice is legal and resolved by the claim stack
-(most recent wins). Claiming the same **label** twice is not, because nothing resolves it.
+Note the asymmetry: claiming the same **combination** twice is legal and resolved by the claim stack (most recent wins). Claiming the same **label** twice is not, because nothing resolves it.
 
 ## The rules
 
-**Per-combination, last-in-wins.** Each combination keeps its own stack of claims and the newest
-receives the key. Withdrawing it restores the one beneath. This is what lets a dialog opening over a
-portlet take the search shortcut and hand it back when it closes.
+**Per-combination, last-in-wins.** Each combination keeps its own stack of claims and the newest receives the key. Withdrawing it restores the one beneath. This is what lets a dialog opening over a portlet take the search shortcut and hand it back when it closes.
 
-Deliberately *not* "the topmost surface wins outright". A dialog that claims one combination must not
-swallow another it never claimed.
+Deliberately *not* "the topmost surface wins outright". A dialog that claims one combination must not swallow another it never claimed.
 
-**One listener, bubble phase.** There is exactly one document listener for the whole application,
-attached lazily on the first claim. It runs in the **bubble** phase and ignores any event already
-marked handled.
+**One listener, bubble phase.** There is exactly one document listener for the whole application, attached lazily on the first claim. It runs in the **bubble** phase and ignores any event already marked handled.
 
-That last part is what makes the registry compose with components that handle keys themselves. A rich
-text editor handling `Mod + B` for bold is closer to the event target, runs first, and marks the event
-handled, so the key never reaches arbitration. The registry needs no knowledge of rich text.
+That last part is what makes the registry compose with components that handle keys themselves. A rich text editor handling `Mod + B` for bold is closer to the event target, runs first, and marks the event handled, so the key never reaches arbitration. The registry needs no knowledge of rich text.
 
-> Do not switch this to the capture phase. It is tempting for a "global" system, but it would see
-> events before nested handlers, `defaultPrevented` would always be false, and the registry would
-> start stealing keys from editors. Nothing would fail loudly.
+> Do not switch this to the capture phase. It is tempting for a "global" system, but it would see events before nested handlers, `defaultPrevented` would always be false, and the registry would start stealing keys from editors. Nothing would fail loudly.
 
-**Prevention is scoped.** The browser default is suppressed only for a combination something actually
-claims, so the registry can never eat a browser or assistive-technology key it does not own.
+**Prevention is scoped.** The browser default is suppressed only for a combination something actually claims, so the registry can never eat a browser or assistive-technology key it does not own.
 
-**Declining.** A handler returning `false` passes the key to the next claimant and then to the
-browser. This is for runtime decisions only. The nesting case above is already handled by the bubble
-phase and needs no cooperation.
+**Declining.** A handler returning `false` passes the key to the next claimant and then to the browser. This is for runtime decisions only. The nesting case above is already handled by the bubble phase and needs no cooperation.
 
 ## A surface with its own document listener cannot be arbitrated
 
-`preventDefault` does not stop other listeners on the same node. Two document-level listeners for the
-same key both fire, and the registry has no say. Order between them is **registration order**, not
-focus and not DOM depth, so the registry usually wins simply because it attaches on its first claim.
+`preventDefault` does not stop other listeners on the same node. Two document-level listeners for the same key both fire, and the registry has no say. Order between them is **registration order**, not focus and not DOM depth, so the registry usually wins simply because it attaches on its first claim.
 
 Two ways this bites, and they need different answers.
 
 ### 1. Our own components
 
-The content side panel used to bind `(document:keydown.escape)` directly, so once Content Drive
-claimed Escape both would have run: the panel would close *and* the listing behind it would clear its
-selection.
+The content side panel used to bind `(document:keydown.escape)` directly, so once Content Drive claimed Escape both would have run: the panel would close *and* the listing behind it would clear its selection.
 
-**Fix: move it to the registry.** Handling a key on the component's *own element* is fine and needs no
-change, because bubbling already resolves it. Only document-level bindings need migrating.
+**Fix: move it to the registry.** Handling a key on the component's *own element* is fine and needs no change, because bubbling already resolves it. Only document-level bindings need migrating.
 
 ### 2. PrimeNG overlays, which we cannot migrate
 
-Every `<p-dialog closeOnEscape="true">` binds its **own** document keydown listener when it opens
-(`primeng/fesm2022/primeng-dialog.mjs`, `bindDocumentEscapeListener`). It compares z-indexes and
-**never consults `defaultPrevented`**, so it closes regardless of what the registry did. It is
-third-party code, so it cannot be brought into the registry.
+Every `<p-dialog closeOnEscape="true">` binds its **own** document keydown listener when it opens (`primeng/fesm2022/primeng-dialog.mjs`, `bindDocumentEscapeListener`). It compares z-indexes and **never consults `defaultPrevented`**, so it closes regardless of what the registry did. It is third-party code, so it cannot be brought into the registry.
 
-**Fix: a surface underneath must decline while an overlay is above it**, or Escape will both dismiss
-the dialog and act on the listing behind it.
+**Fix: a surface underneath must decline while an overlay is above it**, or Escape will both dismiss the dialog and act on the listing behind it.
 
-This is not only about Escape. Content Drive's `Mod + B` declines for the same reason: a dialog covers
-the tree, so toggling it rearranges a layout the user cannot see and they meet it changed once the
-dialog closes — and declining leaves the combination to whatever is on top, which may want it (a rich
-text surface inside a dialog reads `Mod + B` as bold).
+This is not only about Escape. Content Drive's `Mod + B` declines for the same reason: a dialog covers the tree, so toggling it rearranges a layout the user cannot see and they meet it changed once the dialog closes — and declining leaves the combination to whatever is on top, which may want it (a rich text surface inside a dialog reads `Mod + B` as bold).
 
 ### How to ask "is an overlay above me?"
 
@@ -222,83 +160,42 @@ Use the shared helper, `hasOverlayAbove()` from `@dotcms/ui`:
 }
 ```
 
-Every PrimeNG overlay registers itself in the shared `ZIndexUtils` stack when it opens, so comparing
-the top of that stack against your own element's z-index answers the question without matching on
-overlay class names, which differ per component and change across versions. It covers dialogs,
-confirm popups, select panels and anything added later, rather than a list of visibility flags
-somebody has to remember to extend.
+Every PrimeNG overlay registers itself in the shared `ZIndexUtils` stack when it opens, so comparing the top of that stack against your own element's z-index answers the question without matching on overlay class names, which differ per component and change across versions. It covers dialogs, confirm popups, select panels and anything added later, rather than a list of visibility flags somebody has to remember to extend.
 
-**Toasts and tooltips do not count.** They join the same stack, under the same key a dialog uses,
-but they block nothing, so a shortcut keeps working while one is showing. A status toast can stay up
-for a whole upload, and it is restored on every page the same user opens, so treating it as a modal
-left the shortcuts dead for minutes at a time (#37884). When the stack says something is above, the
-helper finds the stacked elements (inline z-index of at least 1000, PrimeNG's lowest overlay base).
-It lets the shortcut through only when a `.p-toast` or `.p-tooltip` holds the top of the stack and
-everything else stacked is one too. If no passive layer holds the top, it keeps the stack's answer,
-so a mocked or leaked stack entry behaves exactly as before, even with a stray toast in the DOM.
+**Toasts and tooltips do not count.** They join the same stack, under the same key a dialog uses, but they block nothing, so a shortcut keeps working while one is showing. A status toast can stay up for a whole upload, and it is restored on every page the same user opens, so treating it as a modal left the shortcuts dead for minutes at a time (#37884). When the stack says something is above, the helper finds the stacked elements (inline z-index of at least 1000, PrimeNG's lowest overlay base). It lets the shortcut through only when a `.p-toast` or `.p-tooltip` holds the top of the stack and everything else stacked is one too. If no passive layer holds the top, it keeps the stack's answer, so a mocked or leaked stack entry behaves exactly as before, even with a stray toast in the DOM.
 
-Pass **your own overlay element** if you are one (the content side panel does). Omit the argument
-from a base-layer surface such as a portlet shell: it has no element in the stack, `ZIndexUtils.get(undefined)`
-is `0`, and the question becomes "is any overlay open at all" — which is the right question there.
+Pass **your own overlay element** if you are one (`dot-side-panel` does, with its drawer). Omit the argument from a base-layer surface such as a portlet shell: it has no element in the stack, `ZIndexUtils.get(undefined)` is `0`, and the question becomes "is any overlay open at all" — which is the right question there.
 
-> ⚠️ **In tests, mock `ZIndexUtils.getCurrent`.** The stack is a module-level singleton, and an
-> overlay torn down without closing leaves its entry behind. That does not happen in the application,
-> where overlays revert on close, but it does across tests in one file: the Content Drive shell suite
-> reads **1102** with nothing visible once an earlier test has opened a dialog. Pin it in a
-> `beforeEach` so every test states its own overlay state.
+> ⚠️ **In tests, mock `ZIndexUtils.getCurrent`.** The stack is a module-level singleton, and an overlay torn down without closing leaves its entry behind. That does not happen in the application, where overlays revert on close, but it does across tests in one file: the Content Drive shell suite reads **1102** with nothing visible once an earlier test has opened a dialog. Pin it in a `beforeEach` so every test states its own overlay state.
 
 ## Selection semantics in the shared listing
 
-The listing follows the desktop file-manager model, not the ARIA APG listbox model. The difference
-matters and was a deliberate choice.
+The listing follows the desktop file-manager model, not the ARIA APG listbox model. The difference matters and was a deliberate choice.
 
-- **Anchor-and-extend.** A range is always `anchor … focus` inclusive. `Shift + Arrow` moves focus and
-  leaves the anchor put; a plain arrow or click moves both.
-- **The anchor is always selected.** A range can shrink to one row but never to none. The anchor is
-  the pivot the range turns through.
-- **Ranges are additive.** Rows selected before the gesture began survive it. The range recomputes
-  each step as `base ∪ range` rather than accumulating, which is what lets it shrink without
-  stranding rows it passed over.
+- **Anchor-and-extend.** A range is always `anchor … focus` inclusive. `Shift + Arrow` moves focus and leaves the anchor put; a plain arrow or click moves both.
+- **The anchor is always selected.** A range can shrink to one row but never to none. The anchor is the pivot the range turns through.
+- **Ranges are additive.** Rows selected before the gesture began survive it. The range recomputes each step as `base ∪ range` rather than accumulating, which is what lets it shrink without stranding rows it passed over.
 - **Page-bounded.** A range never spans pages, and no keyboard action paginates.
 
-APG's listbox model instead toggles each row you land on, which can leave holes in the middle of what
-looked like a contiguous drag. File managers avoid that, and this is a file manager.
+APG's listbox model instead toggles each row you land on, which can leave holes in the middle of what looked like a contiguous drag. File managers avoid that, and this is a file manager.
 
 ### Known gap: the listing's ARIA is partial
 
-Rows carry `aria-selected`, but the container keeps PrimeNG's `role="table"`. `aria-selected` is only
-fully meaningful on a row inside `role="grid"`, so some assistive technology ignores it. That is a
-recorded decision, not an oversight: `role="grid"` brings the grid keyboard contract with it, a screen
-reader enters focus mode on a grid row, and Left/Right — which read cell by cell in browse mode today
-— would then do nothing, because cell-level navigation is not implemented. Half a grid reads worse
-than a table.
+Rows carry `aria-selected`, but the container keeps PrimeNG's `role="table"`. `aria-selected` is only fully meaningful on a row inside `role="grid"`, so some assistive technology ignores it. That is a recorded decision, not an oversight: `role="grid"` brings the grid keyboard contract with it, a screen reader enters focus mode on a grid row, and Left/Right — which read cell by cell in browse mode today — would then do nothing, because cell-level navigation is not implemented. Half a grid reads worse than a table.
 
-So: `aria-selected` stays (ignored by some, misleading to none, better than silence),
-`aria-multiselectable` is deliberately absent (`role="table"` does not support it, so it would be
-decoration), and the full wiring — cell navigation, `aria-rowcount`/`aria-colindex`, verification
-against a real screen reader — is tracked in
-[#37439](https://github.com/dotCMS/core/issues/37439). Do not add half of it.
+So: `aria-selected` stays (ignored by some, misleading to none, better than silence), `aria-multiselectable` is deliberately absent (`role="table"` does not support it, so it would be decoration), and the full wiring — cell navigation, `aria-rowcount`/`aria-colindex`, verification against a real screen reader — is tracked in [#37439](https://github.com/dotCMS/core/issues/37439). Do not add half of it.
 
 ## Testing shortcuts: synthesise the whole sequence
 
-Three bugs shipped past a green suite during this feature because synthetic events were unlike real
-ones. If you test keyboard or pointer behaviour, reproduce the browser's full event sequence:
+Three bugs shipped past a green suite during this feature because synthetic events were unlike real ones. If you test keyboard or pointer behaviour, reproduce the browser's full event sequence:
 
-- **Send the modifier's own keydown.** Holding Shift fires a `keydown` for `Shift` *before* the arrow.
-  Omitting it hid a bug where shrinking a range could not deselect anything.
-- **Set `cancelable: true`.** A constructed `MouseEvent` defaults to `false`, which silently makes
-  `preventDefault()` a no-op. A checkbox then toggles on top of your range.
-- **Send `mousedown` before `click`.** Components read modifiers from the mousedown, because it is the
-  last thing before focus moves.
+- **Send the modifier's own keydown.** Holding Shift fires a `keydown` for `Shift` *before* the arrow. Omitting it hid a bug where shrinking a range could not deselect anything.
+- **Set `cancelable: true`.** A constructed `MouseEvent` defaults to `false`, which silently makes `preventDefault()` a no-op. A checkbox then toggles on top of your range.
+- **Send `mousedown` before `click`.** Components read modifiers from the mousedown, because it is the last thing before focus moves.
 
-Also note that the table's own row handlers run *before* a template binding on the same row. Anything
-that must observe a key before focus moves has to be in the capture phase.
+Also note that the table's own row handlers run *before* a template binding on the same row. Anything that must observe a key before focus moves has to be in the capture phase.
 
-Every one of those three was found by hand in a browser, not by the suite, which is why the shortcuts
-also have a Playwright suite driving real key and pointer events:
-`core-web/apps/dotcms-ui-e2e/src/tests/content-drive/content-drive-keyboard.spec.ts`. If you change
-keyboard behaviour in the listing, add the case there as well as in Jest — a unit test can only prove
-the handler does what you told it to, not that the browser calls it.
+Every one of those three was found by hand in a browser, not by the suite, which is why the shortcuts also have a Playwright suite driving real key and pointer events: `core-web/apps/dotcms-ui-e2e/src/tests/content-drive/content-drive-keyboard.spec.ts`. If you change keyboard behaviour in the listing, add the case there as well as in Jest — a unit test can only prove the handler does what you told it to, not that the browser calls it.
 
 ## Related
 

@@ -28,6 +28,7 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.tag.model.TagInode;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
@@ -1459,6 +1460,134 @@ public class TagAPITest extends IntegrationTestBase {
 	/**
 	 * Helper method to create a test contentlet for permission tests
 	 */
+	/**
+	 * Method to test: {@link TagAPI#deleteTagInodesByInode(User, String)}
+	 * Given scenario: A user without EDIT permission on the contentlet removes the contentlet's tags
+	 * Expected result: Returns false and the tags stay on the contentlet
+	 */
+	@Test
+	public void deleteTagInodesByInode_WithoutPermission_ShouldReturnFalse() throws Exception {
+		final Role limitedRole = new RoleDataGen().nextPersisted();
+		final User limitedUser = new UserDataGen().roles(limitedRole).nextPersisted();
+		Contentlet contentAsset = null;
+		Tag tag = null;
+
+		try {
+			contentAsset = createTestContentlet();
+			final String tagName = "inodedenied" + System.currentTimeMillis();
+			tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
+			tagAPI.addContentletTagInode(tagName, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
+
+			assertFalse("The user should not be able to remove the contentlet tags",
+					tagAPI.canDeleteTagInodesByInode(limitedUser, contentAsset.getInode()));
+			assertFalse("Delete should return false when the user can't edit the contentlet",
+					tagAPI.deleteTagInodesByInode(limitedUser, contentAsset.getInode()));
+			assertFalse("The contentlet should keep its tags",
+					tagAPI.getTagInodesByInode(contentAsset.getInode()).isEmpty());
+		} finally {
+			if (tag != null) {
+				try { tagAPI.deleteTag(tag.getTagId()); } catch (Exception e) { /* ignore */ }
+			}
+			if (contentAsset != null) {
+				try { conAPI.destroy(contentAsset, systemUser, false); } catch (Exception e) { /* ignore */ }
+			}
+			try { UserDataGen.remove(limitedUser); } catch (Exception e) { /* ignore */ }
+		}
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#deleteTagInodesByInode(User, String)}
+	 * Given scenario: A user with EDIT permission on the contentlet removes the contentlet's tags
+	 * Expected result: Returns true and the contentlet has no tags left
+	 */
+	@Test
+	public void deleteTagInodesByInode_WithPermission_ShouldDelete() throws Exception {
+		final Role limitedRole = new RoleDataGen().nextPersisted();
+		final User limitedUser = new UserDataGen().roles(limitedRole).nextPersisted();
+		Contentlet contentAsset = null;
+		Tag tag = null;
+
+		try {
+			contentAsset = createTestContentlet();
+			final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+			final Permission permission = new Permission();
+			permission.setPermission(PermissionAPI.PERMISSION_EDIT);
+			permission.setRoleId(limitedRole.getId());
+			permission.setInode(contentAsset.getPermissionId());
+			permissionAPI.save(permission, contentAsset, systemUser, false);
+
+			final String tagName = "inodeallowed" + System.currentTimeMillis();
+			tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
+			tagAPI.addContentletTagInode(tagName, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
+
+			assertTrue("Delete should succeed when the user can edit the contentlet",
+					tagAPI.deleteTagInodesByInode(limitedUser, contentAsset.getInode()));
+			assertTrue("The contentlet should have no tags left",
+					tagAPI.getTagInodesByInode(contentAsset.getInode()).isEmpty());
+		} finally {
+			if (tag != null) {
+				try { tagAPI.deleteTag(tag.getTagId()); } catch (Exception e) { /* ignore */ }
+			}
+			if (contentAsset != null) {
+				try { conAPI.destroy(contentAsset, systemUser, false); } catch (Exception e) { /* ignore */ }
+			}
+			try { UserDataGen.remove(limitedUser); } catch (Exception e) { /* ignore */ }
+		}
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#deleteTagInodesByInode(User, String)}
+	 * Given scenario: An admin user removes the tags of a contentlet
+	 * Expected result: Returns true and the contentlet has no tags left
+	 */
+	@Test
+	public void deleteTagInodesByInode_AdminUser_ShouldDelete() throws Exception {
+		final Contentlet contentAsset = createTestContentlet();
+		Tag tag = null;
+
+		try {
+			final String tagName = "inodeadmin" + System.currentTimeMillis();
+			tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
+			tagAPI.addContentletTagInode(tagName, contentAsset.getInode(), defaultHostId, WIKI_TAG_VARNAME);
+
+			assertTrue(tagAPI.deleteTagInodesByInode(testUser, contentAsset.getInode()));
+			assertTrue(tagAPI.getTagInodesByInode(contentAsset.getInode()).isEmpty());
+		} finally {
+			if (tag != null) {
+				try { tagAPI.deleteTag(tag.getTagId()); } catch (Exception e) { /* ignore */ }
+			}
+			conAPI.destroy(contentAsset, systemUser, false);
+		}
+	}
+
+	/**
+	 * Method to test: {@link TagAPI#deleteTagInodesByInode(User, String)}
+	 * Given scenario: A non-admin user removes the tags of an inode that isn't a contentlet
+	 * Expected result: Returns false and the tags are kept
+	 */
+	@Test
+	public void deleteTagInodesByInode_NotAContentlet_ShouldReturnFalse() throws Exception {
+		final Role limitedRole = new RoleDataGen().nextPersisted();
+		final User limitedUser = new UserDataGen().roles(limitedRole).nextPersisted();
+		final String inode = UUIDGenerator.generateUuid();
+		Tag tag = null;
+
+		try {
+			final String tagName = "inodenotcontent" + System.currentTimeMillis();
+			tag = tagAPI.getTagAndCreate(tagName, testUser.getUserId(), defaultHostId);
+			tagAPI.addContentletTagInode(tagName, inode, defaultHostId, WIKI_TAG_VARNAME);
+
+			assertFalse(tagAPI.deleteTagInodesByInode(limitedUser, inode));
+			assertFalse(tagAPI.getTagInodesByInode(inode).isEmpty());
+		} finally {
+			try { tagAPI.deleteTagInodesByInode(inode); } catch (Exception e) { /* ignore */ }
+			if (tag != null) {
+				try { tagAPI.deleteTag(tag.getTagId()); } catch (Exception e) { /* ignore */ }
+			}
+			try { UserDataGen.remove(limitedUser); } catch (Exception e) { /* ignore */ }
+		}
+	}
+
 	private Contentlet createTestContentlet() throws Exception {
 		final Contentlet contentAsset = new Contentlet();
 		final ContentType contentType = TestDataUtils.getWikiLikeContentType();

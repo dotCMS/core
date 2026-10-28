@@ -1,6 +1,11 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/vitest';
 
-import { DotCMSAPIResponse, DotTag } from '@dotcms/dotcms-models';
+import {
+    DotCMSAPIResponse,
+    DotTag,
+    DotTagsCreateResult,
+    DotTagsImportResult
+} from '@dotcms/dotcms-models';
 
 import { DotTagsService } from './dot-tags.service';
 
@@ -221,8 +226,8 @@ describe('DotTagsService', () => {
 
     it('should create a single tag', () => {
         const mockTag = createFakeTag({ label: 'new-tag' });
-        const mockResponse: DotCMSAPIResponse<DotTag[]> = {
-            entity: [mockTag],
+        const mockResponse: DotCMSAPIResponse<DotTagsCreateResult> = {
+            entity: { created: [mockTag], duplicates: [] },
             errors: [],
             messages: [],
             permissions: [],
@@ -238,11 +243,11 @@ describe('DotTagsService', () => {
         req.flush(mockResponse);
     });
 
-    it('should create multiple tags with siteId', () => {
+    it('should create multiple tags with siteId and return created and duplicates', () => {
         const mockTag1 = createFakeTag({ label: 'tag1', siteId: '123' });
         const mockTag2 = createFakeTag({ label: 'tag2', siteId: '456' });
-        const mockResponse: DotCMSAPIResponse<DotTag[]> = {
-            entity: [mockTag1, mockTag2],
+        const mockResponse: DotCMSAPIResponse<DotTagsCreateResult> = {
+            entity: { created: [mockTag1], duplicates: [mockTag2] },
             errors: [],
             messages: [],
             permissions: [],
@@ -304,13 +309,14 @@ describe('DotTagsService', () => {
 
     it('should import tags from a CSV file', () => {
         const mockFile = new File(['content'], 'test.csv', { type: 'text/csv' });
-        const mockResponse: DotCMSAPIResponse<{
-            totalRows: number;
-            successCount: number;
-            failureCount: number;
-            success: boolean;
-        }> = {
-            entity: { totalRows: 10, successCount: 8, failureCount: 2, success: true },
+        const mockResponse: DotCMSAPIResponse<DotTagsImportResult> = {
+            entity: {
+                totalRows: 10,
+                successCount: 6,
+                duplicateCount: 2,
+                failureCount: 2,
+                success: true
+            },
             errors: [],
             messages: [],
             permissions: [],

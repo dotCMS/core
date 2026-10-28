@@ -61,10 +61,6 @@ inputs:
     description: 'Cache the SonarQube files'
     required: false
     default: 'false'
-  require-main:
-    description: 'Require the main tag to run this action'
-    required: true
-    default: 'false'
   dotcms-license:
     description: 'The license key for dotCMS'
     required: false
@@ -73,6 +69,17 @@ inputs:
     description: 'Download artifacts from a previous job'
     required: false
     default: ''
+  needs-maven-repo:
+    description: |
+      Whether the job needs the dotCMS build in ~/.m2: restores the shared third-party
+      dependency cache and, with artifacts-from, downloads the maven-repo artifact on
+      top of it. The artifact carries only what the build installed, so a job that
+      compiles or runs the dotCMS modules needs both. A job whose modules use none of
+      them (Postman and E2E declare no dependencies, Karate only karate-junit5) turns
+      this off and gets a small Maven plugin cache instead, which holds just the
+      plugins those modules run.
+    required: false
+    default: 'true'
   github-token:
     description: 'GitHub token for authentication'
     required: true
@@ -131,9 +138,8 @@ inputs:
         the maven-repo artifact no longer contains.
 
       Fails if .mvn/maven.config has no -Drevision=: the CI-friendly version
-      would collapse to the parent default (1.0.0), which is not a *-SNAPSHOT,
-      so it would escape delete-built-artifacts-from-cache and be written into
-      the shared Maven cache as a bogus release coordinate.
+      would collapse to the parent default (1.0.0) and the build would install
+      and upload release-looking 1.0.0 coordinates.
     required: false
     default: 'false'
   artifact-suffix:
@@ -145,6 +151,16 @@ inputs:
     default: ''
   docker-io-token:
     description: 'Docker Hub token for authenticated pulls (avoids rate limiting)'
+    required: false
+    default: ''
+  pre-pull-images:
+    description: >-
+      Space-separated docker.image.* property names from environments/environment.properties
+      (e.g. "docker.image.postgres docker.image.search") for the test images the Maven run
+      starts. They are pulled, with retries and fallbacks (Docker Hub, then Amazon's public
+      gallery for OpenSearch) for mirror.gcr.io images, before Maven runs, because
+      docker-maven-plugin makes a single pull attempt.
+      Empty skips the step.
     required: false
     default: ''
 outputs:
@@ -161,7 +177,6 @@ runs:
       uses: ./.github/actions/core-cicd/prepare-runner
       with:
         cleanup-runner: ${{ inputs.cleanup-runner }}
-        require-main: ${{ inputs.require-main }}
         java-version: ${{ inputs.java-version }}
         require-graalvm: ${{ inputs.native || inputs.require-graalvm }}
         graalvm-version: ${{ inputs.graalvm-version }}
@@ -243,15 +258,45 @@ runs:
         # Changes only when the Maven version does, so this key is ~always a hit.
         key: ${{ runner.os }}-maven-wrapper-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
 
+    # Third-party dependencies only: the build job removes everything it installed
+    # before saving (see Delete Built Artifacts From Cache), and consumers get the
+    # built artifacts from the maven-repo artifact instead. Test jobs that need the
+    # dotCMS build restore it too; the build job saves it before they start, and a
+    # miss falls back to an older entry plus whatever Maven downloads.
+    #
+    # The v2 in the key retires the entries written before that cleanup existed.
+    # They carried a second copy of every dotCMS module under old release versions
+    # (about 1 GB), and the restore-keys fallback copies such an entry forward to
+    # every new pom hash, so it would never have aged out on its own.
     - id: restore-cache-maven
       name: Restore Maven Repository Cache
-      if: ${{ inputs.artifacts-from == '' }}
+      if: ${{ inputs.needs-maven-repo == 'true' }}
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.m2/repository
-        key: ${{ runner.os }}-mavencore-${{ hashFiles('**/pom.xml') }}
+        key: ${{ runner.os }}-mavencore-v2-${{ hashFiles('**/pom.xml') }}
         restore-keys: |
-          ${{ runner.os }}-mavencore-
+          ${{ runner.os }}-mavencore-v2-
+
+    # Postman, Karate and E2E run no dotCMS module, so they skip the cache above and the
+    # maven-repo artifact, and Maven fetches the plugins they run (about 170-220 MB, thousands
+    # of small files) from Maven Central. Maven 3.9.2's resolver (1.9.10) retries only I/O
+    # errors, three times (aether.connector.http.retryHandler.count), and never an HTTP 429 or
+    # 503, so 15 jobs resolving the same files at once are one rate limit away from failing.
+    # This small cache takes Central out of the path: whichever of those jobs finds no entry
+    # saves the repository after its Maven run (Save Maven Plugin Cache), and the rest restore
+    # it. The key covers the poms that decide which plugins run. It is only a head start:
+    # a stale entry just means Maven downloads the difference, so a pom outside the list
+    # cannot make a job wrong, only slower.
+    - id: restore-cache-maven-plugins
+      name: Restore Maven Plugin Cache
+      if: ${{ inputs.needs-maven-repo != 'true' }}
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.m2/repository
+        key: ${{ runner.os }}-mavenplugins-v1-${{ hashFiles('pom.xml', 'parent/pom.xml', 'nodejs-parent/pom.xml', 'dotcms-postman/pom.xml', 'core-web/apps/dotcms-ui-e2e/pom.xml', 'test-karate/pom.xml') }}
+        restore-keys: |
+          ${{ runner.os }}-mavenplugins-v1-
 
     - id: restore-cache-node
       name: Restore Node Binary Cache
@@ -308,7 +353,9 @@ runs:
     # pnpm/setup downloads pnpm's own standalone binary — no Node and no npm
     # involved — and with `cache: true` restores and saves the pnpm store itself,
     # keyed on core-web/pnpm-lock.yaml. That replaces the `pnpm store path` probe
-    # and the paired restore/save cache steps this action used to carry.
+    # and the paired restore/save cache steps this action used to carry. It is run
+    # through the setup-pnpm wrapper, which retries the registry download (a one-off
+    # reset or timeout there used to fail the whole job).
     #
     # No `version` input: the action reads it from core-web/package.json
     # (devEngines.packageManager, falling back to packageManager), which the sync
@@ -318,7 +365,7 @@ runs:
     # with the flags the poms decide.
     - name: Set up pnpm
       if: ${{ inputs.requires-node == 'true' }}
-      uses: pnpm/setup@703c52620218391530e48b9e8870d5c0082e1b9b # v2.1.0
+      uses: ./.github/actions/core-cicd/setup-pnpm
       with:
         working-directory: core-web
         install: false
@@ -334,9 +381,13 @@ runs:
         key: ${{ runner.os }}-sonar
         restore-keys: ${{ runner.os }}-sonar
 
+    # Lands on top of the dependency cache restored above: the built artifacts only.
+    # Suites that need no dotCMS module (needs-maven-repo off) do not download it: their
+    # modules build from an empty repository (checked for Postman, Karate and E2E), and
+    # their Docker image comes from the docker-image artifact below.
     - id: restore-artifact-maven-repo
       name: Restore Maven Build Repo
-      if: ${{ inputs.artifacts-from != '' }}
+      if: ${{ inputs.artifacts-from != '' && inputs.needs-maven-repo == 'true' }}
       uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
       with:
         digest-mismatch: error
@@ -376,6 +427,97 @@ runs:
         username: ${{ inputs.docker-io-username }}
         password: ${{ inputs.docker-io-token }}
 
+    # docker-maven-plugin pulls each image once, so a single 429 or "unknown blob" from
+    # mirror.gcr.io (a shared Google mirror: anonymous, with a project-wide request quota that
+    # no Docker Hub login raises) fails the whole Maven build before any test runs. Pull the
+    # images here instead, where a failure can be retried, and fall back to the same image on
+    # Docker Hub, which the login above authenticates, and for OpenSearch on Amazon's public
+    # gallery. The plugin's default pull policy (IfNotPresent) then finds them locally. Never
+    # fails the job: if every attempt fails the plugin makes its own pull and reports the
+    # error as before.
+    - name: Pre-pull test images
+      if: ${{ inputs.pre-pull-images != '' }}
+      shell: bash
+      env:
+        IMAGE_KEYS: ${{ inputs.pre-pull-images }}
+      run: |
+        set -uo pipefail
+        PROPS=environments/environment.properties
+        MIRROR='mirror.gcr.io/'
+        ECR='public.ecr.aws/'
+        ATTEMPTS=3  # per source; the pause between tries grows 10s, 20s, so at most 30s of waiting
+        PULL_TIMEOUT=300  # seconds per pull, so one stalled download cannot hold the job
+
+        # A blob download that stalls without erroring would block `wait` until the job
+        # timeout, and a composite step cannot take timeout-minutes. GNU timeout exits 124
+        # when it kills the pull, which counts as a failed attempt like any other, so the
+        # retries and the fallbacks still run. Without `timeout` pull unbounded.
+        bounded() {
+          if command -v timeout > /dev/null; then timeout "$PULL_TIMEOUT" "$@"; else "$@"; fi
+        }
+
+        pull_with_retry() { # <ref>
+          local n rc
+          for n in $(seq 1 "$ATTEMPTS"); do
+            rc=0
+            bounded docker pull --quiet "$1" > /dev/null || rc=$?
+            [ "$rc" -eq 0 ] && return 0
+            [ "$rc" -eq 124 ] && echo "pull of $1 timed out after ${PULL_TIMEOUT}s"
+            if [ "$n" -lt "$ATTEMPTS" ]; then
+              echo "pull of $1 failed (attempt $n of $ATTEMPTS), retrying in $((n * 10))s"
+              sleep $((n * 10))
+            fi
+          done
+          return 1
+        }
+
+        # Sources for one image, in order: the reference as configured, then, for a mirror.gcr.io
+        # reference, the same image on Docker Hub and, for OpenSearch, on Amazon's public gallery.
+        # All of them serve the identical manifest digest for these tags (checked with a manifest
+        # request per registry). The gallery carries only the OpenSearch images; pgvector and
+        # WireMock return 404 there, so they have no third source.
+        pull_image() { # <ref>
+          local ref="$1" hub src
+          local sources=("$ref")
+          if [[ "$ref" == "$MIRROR"* ]]; then
+            hub="${ref#"$MIRROR"}"
+            sources+=("$hub")
+            [[ "$hub" == opensearchproject/* ]] && sources+=("$ECR$hub")
+          fi
+          if docker image inspect "$ref" > /dev/null 2>&1; then
+            echo "$ref is already present"
+            return 0
+          fi
+          for src in "${sources[@]}"; do
+            if pull_with_retry "$src"; then
+              if [ "$src" = "$ref" ]; then
+                echo "pulled $ref"
+              else
+                # Tag it with the name the Maven build asks for so the plugin finds it locally.
+                docker tag "$src" "$ref" || continue
+                echo "pulled $src, tagged as $ref"
+              fi
+              return 0
+            fi
+            echo "::warning::could not pull $src"
+          done
+          echo "::warning::could not pre-pull $ref, docker-maven-plugin will try to pull it"
+          return 1
+        }
+
+        pids=()
+        for key in $IMAGE_KEYS; do
+          ref=$(awk -F= -v k="$key" '$1 == k { sub(/^[^=]*=/, ""); print }' "$PROPS" | tail -n 1)
+          if [ -z "$ref" ]; then
+            echo "::warning::$key is not set in $PROPS, nothing to pre-pull"
+            continue
+          fi
+          pull_image "$ref" &
+          pids+=($!)
+        done
+        for pid in "${pids[@]}"; do wait "$pid" || true; done
+        exit 0
+
     - id: run-maven-build
       name: Run Maven Build
       shell: ${{ runner.os == 'Windows' && 'pwsh' || 'bash' }}
@@ -396,9 +538,8 @@ runs:
         # Verified: a CLI -Dchangelist overrides the -Dchangelist= in that file.
         if [[ "${{ inputs.release-build }}" == "true" ]]; then
           # Guardrail: without -Drevision the version collapses to the parent
-          # default (1.0.0). That is not a *-SNAPSHOT, so it would survive
-          # delete-built-artifacts-from-cache below and be saved into the shared
-          # Maven cache as a release-looking coordinate. release-prepare writes
+          # default (1.0.0), and the build would install and upload release-looking
+          # 1.0.0 coordinates in place of the release. release-prepare writes
           # -Drevision= onto the release branch; require it.
           #
           # Require a non-empty value: a bare '-Drevision=' sets the CI-friendly
@@ -441,13 +582,48 @@ runs:
           ./mvnw $FINAL_ARGS --file pom.xml
         fi
 
+    # The artifact carries only what this build installed, not the whole repository:
+    # the third-party dependencies travel through the Maven cache, which is far
+    # smaller to move than the full repository (the 2.7 GB artifact took 37-765 s to
+    # download in each of ~25 test jobs).
+    #
+    # "Installed" is decided per version directory, from the _remote.repositories
+    # file Maven writes beside the files: an installed artifact is recorded with an
+    # empty repository id ("x.jar>="), a downloaded one names the repository it came
+    # from ("x.jar>dotcms-libs="). That covers builds whose version is not a
+    # -SNAPSHOT (release and LTS builds), which a *-SNAPSHOT match would miss, and it
+    # leaves downloaded com.dotcms releases alone: the SAML plugin compiles against
+    # a pinned, downloaded com.dotcms:dotcms-core:26.03.27-01, which must stay in the
+    # cache even though a build of the current version sits in the same artifactId
+    # directory.
+    - id: stage-built-artifacts
+      name: Stage Built Artifacts
+      if: ${{ inputs.generate-artifacts == 'true' }}
+      shell: bash
+      run: |
+        STAGE="${RUNNER_TEMP}/built-artifacts"
+        LIST="${RUNNER_TEMP}/built-artifacts.list"
+        mkdir -p "${STAGE}"
+        cd ~/.m2/repository
+        # The list is NUL-separated so a path with a space cannot split. grep exits 1 when
+        # nothing matches: the empty-list check below reports that, so only a real grep
+        # error (2) fails here.
+        { grep -rl --null --include=_remote.repositories '>=$' . || [ $? -eq 1 ]; } \
+          | while IFS= read -r -d '' f; do printf '%s\0' "${f%/*}"; done > "${LIST}"
+        if [ ! -s "${LIST}" ]; then
+          echo "::error::The build installed nothing into ~/.m2/repository, so there is nothing to publish"
+          exit 1
+        fi
+        tar --null -cf - -T "${LIST}" | tar -xf - -C "${STAGE}"
+        du -sh "${STAGE}"
+
     - id: persist-maven-repo
       name: Persist Maven Repo
       if: ${{ inputs.generate-artifacts == 'true' }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: maven-repo${{ steps.artifact-suffix.outputs.suffix }}
-        path: ~/.m2/repository
+        path: ${{ runner.temp }}/built-artifacts
 
     - id: persist-docker-build-context
       name: Persist Docker Build Context
@@ -519,19 +695,47 @@ runs:
           **/target/test-classes/**/*.class
           LICENSE
 
+    # Release builds neither clean nor save the cache. Removing the release
+    # coordinates would break the caller's check that they were installed, and a
+    # cache entry written from a release build is how release coordinates got into
+    # the shared cache in the first place.
     - id: delete-built-artifacts-from-cache
       name: Delete Built Artifacts From Cache
-      if: ${{ inputs.generate-artifacts == 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' }}
+      if: ${{ inputs.generate-artifacts == 'true' && inputs.release-build != 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' }}
       shell: bash
-      run: find ~/.m2 -name \*-SNAPSHOT -type d -exec rm -rf {} +
+      run: |
+        # Whatever this build installed, under any version (see Stage Built Artifacts for
+        # how that is told from a download), then the artifactId-level metadata files that
+        # listed those versions. Downloaded versions, including pinned com.dotcms releases,
+        # stay.
+        #
+        # The list is written out before anything is deleted, so grep never walks a
+        # directory that is being removed under it, and a failed delete fails the step.
+        LIST="${RUNNER_TEMP}/installed-versions.list"
+        cd ~/.m2/repository
+        { grep -rl --null --include=_remote.repositories '>=$' . || [ $? -eq 1 ]; } \
+          | while IFS= read -r -d '' f; do printf '%s\0' "${f%/*}"; done > "${LIST}"
+        xargs -0 -r rm -rf < "${LIST}"
+        find . -name maven-metadata-local.xml -delete
+        find ~/.m2 -name \*-SNAPSHOT -type d -exec rm -rf {} +
 
     - id: save-cache-maven
       name: Save Maven Repository Cache
-      if: ${{ inputs.generate-artifacts == 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' }}
+      if: ${{ inputs.generate-artifacts == 'true' && inputs.release-build != 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' }}
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.m2/repository
         key: ${{ steps.restore-cache-maven.outputs.cache-primary-key }}
+
+    # Jobs that start together on a miss all reach this step; the first reserves the key and
+    # the rest log a warning and carry on, so a lost race does not fail a job.
+    - id: save-cache-maven-plugins
+      name: Save Maven Plugin Cache
+      if: ${{ inputs.needs-maven-repo != 'true' && steps.restore-cache-maven-plugins.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.m2/repository
+        key: ${{ steps.restore-cache-maven-plugins.outputs.cache-primary-key }}
 
     - id: save-cache-node
       name: Save Node Binary Cache
@@ -570,3 +774,13 @@ runs:
         path: |
           **/target/jacoco-report/*.exec
           **/target/*-reports/*.xml
+
+    # Trial instrumentation for #38203: when cleanup-runner is off, record how
+    # full the disk ends up so the job log shows the headroom. Informational only.
+    - name: Report Disk Usage
+      if: always() && inputs.cleanup-runner != 'true'
+      shell: bash
+      run: |
+        echo '# Final disk usage (cleanup-runner disabled)'
+        df -h / || true
+        docker system df || true

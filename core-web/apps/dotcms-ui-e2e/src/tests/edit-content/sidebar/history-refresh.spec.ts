@@ -158,7 +158,8 @@ test.describe('Sidebar History/Comments refresh after save (#36617)', () => {
          *
          * `FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL` defaults to `true`
          * (dotmarketing-config.properties), so "New Content" opens the slide-in side panel,
-         * not the centered dialog — hence `edit-content-side-panel`, not `edit-content-dialog`.
+         * not the centered dialog — hence `side-panel` (the drawer every side panel opens in),
+         * not `edit-content-dialog`. Only this one panel is open here.
          */
         async function openDialogWithSavedContent(
             page: Page,
@@ -224,7 +225,7 @@ test.describe('Sidebar History/Comments refresh after save (#36617)', () => {
             await page.getByTestId('relationship-add-button').click();
             await page.getByRole('menuitem', { name: 'New Content' }).click();
 
-            const dialog = page.getByTestId('edit-content-side-panel');
+            const dialog = page.getByTestId('side-panel');
             await dialog.waitFor({ state: 'visible', timeout: 15000 });
 
             // Save once inside the dialog so there is a version to compare against.

@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.job;
 
 import static com.dotcms.jobs.business.util.JobUtil.roundedProgress;
 
+import com.dotcms.jobs.business.api.JobQueueEntryPoints;
 import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.api.events.JobWatcher;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
@@ -10,6 +11,7 @@ import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
+import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DoesNotExistException;
@@ -43,6 +45,33 @@ public class JobQueueHelper {
     @Inject
     public JobQueueHelper(JobQueueManagerAPI jobQueueManagerAPI) {
         this.jobQueueManagerAPI = jobQueueManagerAPI;
+    }
+
+    /**
+     * Refuses a queue whose entry point is a dedicated endpoint. That endpoint validates the request
+     * and checks the caller's rights before creating the job, so the generic job endpoint must not
+     * create jobs on the same queue (#37883). Call it before anything is staged or created.
+     *
+     * @param queueName The name of the queue the generic endpoint was asked to create a job on
+     * @throws ForbiddenException the queue is entered through a dedicated endpoint; the message
+     *                            names that endpoint when it is known
+     */
+    void assertGenericEntry(final String queueName) {
+        final Class<?> processor = jobQueueManagerAPI.getQueueNames().get(queueName);
+        final JobQueueEntryPoints.EntryPoint entry =
+                JobQueueEntryPoints.getInstance().resolve(queueName, processor);
+        if (entry.generic()) {
+            return;
+        }
+        Logger.warn(this, String.format(
+                "Generic job endpoint refused queue [%s], which has a dedicated entry point",
+                queueName));
+        if (entry.route().isPresent()) {
+            throw new ForbiddenException("Queue '%s' only accepts jobs through %s", queueName,
+                    entry.route().get());
+        }
+        throw new ForbiddenException(
+                "Queue '%s' does not accept jobs through the generic job endpoint", queueName);
     }
 
     /**

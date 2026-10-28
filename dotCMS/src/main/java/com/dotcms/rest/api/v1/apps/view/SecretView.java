@@ -188,11 +188,23 @@ public class SecretView {
             }
         }
 
+        /**
+         * Builds the JSON for a saved secret that is also described in the app's YAML. Values
+         * come from the secret, but a {@link Type#JSON} type comes from the descriptor, so
+         * secrets saved before the param became JSON still render with the JSON editor.
+         *
+         * @param secret          the saved secret
+         * @param paramDescriptor the param as described in the app's YAML
+         * @param map             the JSON map that will be updated
+         */
         private void mergeSecretAndParam(final Secret secret,
                 final ParamDescriptor paramDescriptor,
                 final Map<String, Object> map) {
             buildParam(paramDescriptor, map);
             buildCommonJson(secret, map); //call this at the end so the values from secret override
+            if (Type.JSON.equals(paramDescriptor.getType())) {
+                map.put("type", Type.JSON);
+            }
         }
     }
 

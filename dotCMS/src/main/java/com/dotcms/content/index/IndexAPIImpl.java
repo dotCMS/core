@@ -7,6 +7,7 @@ import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.content.index.domain.ClusterIndexHealth;
 import com.dotcms.content.index.domain.ClusterStats;
+import com.dotcms.content.index.domain.SearchClusterHealth;
 import com.dotcms.content.index.domain.CreateIndexStatus;
 import com.dotcms.content.index.domain.IndexStats;
 import com.dotcms.content.index.opensearch.OSIndexAPIImpl;
@@ -271,6 +272,16 @@ public class IndexAPIImpl implements IndexAPI {
     @Override
     public ClusterStats getClusterStats() {
         return router.read(IndexAPI::getClusterStats);
+    }
+
+    /**
+     * Routed like every other read: Elasticsearch in phases 0 and 1, OpenSearch in phases 2 and 3,
+     * with the phase 2 fallback to Elasticsearch when OpenSearch fails. The engine that answered is
+     * stamped on the result by the implementation itself.
+     */
+    @Override
+    public SearchClusterHealth getClusterHealthSummary() {
+        return router.read("clusterHealthSummary", IndexAPI::getClusterHealthSummary);
     }
 
     // -------------------------------------------------------------------------

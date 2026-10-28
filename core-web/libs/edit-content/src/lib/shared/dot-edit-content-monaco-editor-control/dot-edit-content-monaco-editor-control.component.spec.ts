@@ -127,10 +127,14 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
         expect(component.$monacoOptions()).toEqual(expectedOptions);
     });
 
-    it('should register Velocity language when Monaco is loaded', () => {
-        const registerSpy = vi.spyOn(component, 'registerVelocityLanguage');
+    it('should register the shared Velocity grammar under the id this field uses', () => {
+        const registerSpy = vi.spyOn(monacoMock.languages, 'register');
+
         spectator.detectChanges();
-        expect(registerSpy).toHaveBeenCalled();
+
+        expect(registerSpy).toHaveBeenCalledWith(
+            expect.objectContaining({ id: AvailableLanguageMonaco.Velocity })
+        );
     });
 
     /**

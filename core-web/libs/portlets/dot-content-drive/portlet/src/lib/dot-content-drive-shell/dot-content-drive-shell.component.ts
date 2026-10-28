@@ -24,7 +24,6 @@ import { DialogModule } from 'primeng/dialog';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
 import { Popover, PopoverModule } from 'primeng/popover';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 import { catchError, filter, take } from 'rxjs/operators';
 
@@ -58,7 +57,7 @@ import {
     isActionableBrowseItem,
     DotCMSContentlet
 } from '@dotcms/dotcms-models';
-import { DotEditContentSidePanelComponent, DotSidePanelNavController } from '@dotcms/edit-content';
+import { loadDotEditContentSidePanel, loadDotSourceEditorSidePanel } from '@dotcms/edit-content';
 import {
     DotContentDriveUploadFiles,
     DotFolderTreeNodeData,
@@ -81,12 +80,16 @@ import {
     DotUploadDropzoneComponent,
     DotUploadTypeSelectorComponent,
     STATUS_TOAST_KEY,
-    DotJspIframeDialogComponent
+    DotJspIframeDialogComponent,
+    DotSidePanelHandle,
+    DotSidePanelService,
+    injectSidePanel
 } from '@dotcms/ui';
 
 import { DotContentDriveActionCenterComponent } from '../components/dialogs/dot-content-drive-action-center/dot-content-drive-action-center.component';
 import { DotContentDriveDialogContentTypeSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-content-type-selector/dot-content-drive-dialog-content-type-selector.component';
 import { DotContentDriveDialogFolderComponent } from '../components/dialogs/dot-content-drive-dialog-folder/dot-content-drive-dialog-folder.component';
+import { DotContentDriveGridCardComponent } from '../components/dot-content-drive-grid-card/dot-content-drive-grid-card.component';
 import { DotContentDriveScopeBarComponent } from '../components/dot-content-drive-scope-bar/dot-content-drive-scope-bar.component';
 import { DotContentDriveSidebarComponent } from '../components/dot-content-drive-sidebar/dot-content-drive-sidebar.component';
 import { DotContentDriveToolbarComponent } from '../components/dot-content-drive-toolbar/dot-content-drive-toolbar.component';
@@ -95,7 +98,9 @@ import { DotLegacyEditorSidePanelComponent } from '../components/dot-legacy-edit
 import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
     ACTION_CENTER_DIALOG_CLASS,
+    CONTENT_DRIVE_EDIT_CODE_PARAM,
     CONTENT_DRIVE_URL_PARAM,
+    CONTENT_DRIVE_VIEW_PARAM,
     DIALOG_TYPE,
     SORT_ORDER,
     SUCCESS_MESSAGE_LIFE,
@@ -119,7 +124,8 @@ import {
     DotContentDriveUploadSelection,
     DotContentDriveUploadSelectorPayload,
     OUTCOME_KIND,
-    DotContentDriveFolderPermissionsPayload
+    DotContentDriveFolderPermissionsPayload,
+    DOT_CONTENT_DRIVE_VIEW_TYPE
 } from '../shared/models';
 import {
     DotContentDriveNavigationService,
@@ -166,6 +172,7 @@ type DotFolderUserAccess = { canEdit: boolean; canEditPermissions: boolean };
     selector: 'dot-content-drive-shell',
     imports: [
         DotFolderListViewComponent,
+        DotContentDriveGridCardComponent,
         DotContentDriveToolbarComponent,
         DotFolderListViewContextMenuComponent,
         DotAddToBundleComponent,
@@ -181,10 +188,6 @@ type DotFolderUserAccess = { canEdit: boolean; canEditPermissions: boolean };
         DotUploadDropzoneComponent,
         DotStatusToastComponent,
         DotToastComponent,
-        DotEditContentSidePanelComponent,
-        // Remove with the legacy editor.
-        DotLegacyEditorSidePanelComponent,
-        ProgressSpinnerModule,
         DotContentDriveActionCenterComponent,
         DotContentDriveScopeBarComponent,
         ButtonModule
@@ -252,7 +255,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
     readonly #messageService = inject(MessageService);
     readonly #fileService = inject(DotUploadFileService);
     readonly #dotWorkflowActionsFireService = inject(DotWorkflowActionsFireService);
-    readonly #sidePanelNav = inject(DotSidePanelNavController);
+    readonly #sidePanels = inject(DotSidePanelService);
     readonly #dotRouterService = inject(DotRouterService);
     readonly #dialogService = inject(DialogService);
     readonly #folderService = inject(DotFolderService);
@@ -345,22 +348,75 @@ export class DotContentDriveShellComponent implements OnDestroy {
         });
     });
 
-    /** Edit Content side panel request, driven by the navigation service; read by the template. */
+    /** Edit Content side panel request, driven by the navigation service. */
     protected readonly $editPanelRequest = this.#navigationService.$editPanelRequest;
 
     /**
-     * Legacy-editor side panel request, driven by the navigation service; read by the template.
-     * Remove with the legacy editor.
+     * Legacy-editor side panel request, driven by the navigation service. Remove with the legacy
+     * editor.
      */
     protected readonly $legacyPanelRequest = this.#navigationService.$legacyPanelRequest;
 
-    /** Whether either side panel is open. */
+    /**
+     * The new editor's side panel, open while the navigation service names content to edit or
+     * create in it. Loaded on its first open, so the editor and its Block Editor dependency chain
+     * stay out of this portlet's chunk.
+     */
+    readonly #editPanel = injectSidePanel(this.$editPanelRequest, {
+        component: loadDotEditContentSidePanel,
+        heading: (request) => request.title ?? '',
+        inputs: (request) => ({ data: request }),
+        outputs: {
+            saved: (contentlet: DotCMSContentlet) => this.onEditPanelSaved(contentlet),
+            languageChanged: (languageId: number) => this.onEditPanelLanguage(languageId)
+        },
+        closed: () => this.onEditPanelClosed()
+    });
+
+    /**
+     * The legacy (JSP) editor's side panel, for content types that have not opted into the new
+     * editor (#37759). Remove with the legacy editor.
+     */
+    readonly #legacyPanel = injectSidePanel(this.$legacyPanelRequest, {
+        component: () => DotLegacyEditorSidePanelComponent,
+        heading: (request) => request.title,
+        inputs: (request) => ({ request }),
+        outputs: {
+            saved: (saved: DotLegacyEditorSaved) => this.onLegacyPanelSaved(saved),
+            pageEditorRequested: (page: DotLegacyEditorPageRequest) =>
+                this.onLegacyPanelPageEditor(page),
+            versionRestored: () => this.onLegacyPanelRestored(),
+            languageChanged: (languageId: number) => this.onLegacyPanelLanguage(languageId)
+        },
+        closed: () => this.onLegacyPanelClosed()
+    });
+
+    /** The file open in the Edit Code panel, from the store. */
+    protected readonly $sourceEditorRequest = this.#store.sourceEditor;
+
+    /**
+     * The Edit Code panel: a file's source in Monaco, open while the store names a file. Loaded on
+     * its first open, so Monaco stays out of this portlet's chunk. Kept so browser Back can route
+     * its close through the panel's unsaved-changes prompt.
+     */
+    readonly #sourceEditorPanel = injectSidePanel(this.$sourceEditorRequest, {
+        component: loadDotSourceEditorSidePanel,
+        heading: (request) => request.title,
+        inputs: (request) => ({ request }),
+        outputs: { saved: () => this.onSourceEditorSaved() },
+        closed: () => this.onSourceEditorClosed()
+    });
+
+    /** Whether any side panel is open. */
     readonly #anyPanelOpen = computed(
-        () => !!this.$editPanelRequest() || !!this.$legacyPanelRequest()
+        () =>
+            !!this.$editPanelRequest() ||
+            !!this.$legacyPanelRequest() ||
+            !!this.$sourceEditorRequest()
     );
 
     /**
-     * Whether the last `editContent` URL write reflected an open panel. Lets the effect push when
+     * Whether the last URL write named an open side panel. Lets the effect push when
      * opening (so Back can pop the panel) but replace when closing — a push on close would leave a
      * phantom entry whose Back puts the just-removed param back with no panel rendered.
      */
@@ -373,30 +429,16 @@ export class DotContentDriveShellComponent implements OnDestroy {
     #lastWrittenPath: string | undefined = undefined;
 
     /**
-     * The rendered side panel, so browser Back can route its close through the panel's guard.
-     * Queried by template ref var (`#sidePanelRef`), not the class token: passing the class itself
-     * would be a runtime reference to it outside the `@defer` block below, which disqualifies it
-     * from Angular's automatic deferred-import bundling (the `<T>` here is a type-only generic,
-     * erased at compile time — it leaves no runtime reference).
-     */
-    protected readonly $sidePanel = viewChild<DotEditContentSidePanelComponent>('sidePanelRef');
-
-    /**
      * The open side panel, whichever editor it hosts, so browser Back can route its close through
      * that panel's unsaved-changes guard.
      *
-     * @returns The rendered panel, or `undefined` when none is rendered yet.
+     * @returns The open panel, or `undefined` when none is open.
      */
-    #activePanel(): Pick<DotEditContentSidePanelComponent, 'requestClose'> | undefined {
-        return this.$legacyPanel() ?? this.$sidePanel();
+    #activePanel(): DotSidePanelHandle | undefined {
+        return [this.#legacyPanel, this.#editPanel, this.#sourceEditorPanel].find((panel) =>
+            panel.isOpen()
+        );
     }
-
-    /**
-     * The rendered legacy-editor panel, so browser Back can route its close through it.
-     * Remove with the legacy editor.
-     */
-    protected readonly $legacyPanel =
-        viewChild<DotLegacyEditorSidePanelComponent>('legacyPanelRef');
 
     readonly $items = this.#store.items;
 
@@ -469,7 +511,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
         const panelOpen = this.#anyPanelOpen();
 
         untracked(() => {
-            this.#store.setTreeForceCollapsed(panelOpen && this.#sidePanelNav.shouldCollapse());
+            this.#store.setTreeForceCollapsed(panelOpen && this.#sidePanels.collapsesNavigation());
         });
     });
 
@@ -670,9 +712,9 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
         // Browser Back/Forward: the open panel's params are written via `Location.go` (no router
         // navigation), so nothing else reacts to popstate. When Back removes or changes the param
-        // that names the open panel (edit OR create), route the close through the panel's
-        // unsaved-changes guard — a direct `closeEditPanel()` would tear the editor down and discard
-        // unsaved edits silently.
+        // that names the open panel (an edit, a create, or Edit Code's file), route the close
+        // through the panel's unsaved-changes guard — a direct `closeEditPanel()` would tear the
+        // editor down and discard unsaved edits silently.
         const locationSubscription = this.#location.subscribe((event) => {
             const params = new URLSearchParams(event.url?.split('?')[1] ?? '');
 
@@ -687,18 +729,23 @@ export class DotContentDriveShellComponent implements OnDestroy {
                 return;
             }
 
+            const sourceEditor = this.#store.sourceEditor();
             const location = this.#navigationService.$panelLocation();
-            if (!location) {
+            const panelParam = sourceEditor
+                ? { key: CONTENT_DRIVE_EDIT_CODE_PARAM, value: sourceEditor.inode }
+                : location && panelParamOf(location);
+
+            if (!panelParam) {
                 return;
             }
 
-            const { key, value } = panelParamOf(location);
+            const { key, value } = panelParam;
 
             if (params.get(key) !== value) {
                 // Restore the param so the URL matches the still-open panel while the guard decides.
                 // `replaceState` (not `go`) avoids piling up history entries. Discard → the panel
-                // emits `closed` → onEditPanelClosed → closeEditPanel clears the param; Keep editing
-                // → the panel stays open and the URL is already back in sync.
+                // closes → onEditPanelClosed → closeEditPanel clears the param; Keep editing → the
+                // panel stays open and the URL is already back in sync.
                 const restoredUrl = this.#router
                     .createUrlTree([], {
                         queryParams: { [key]: value },
@@ -717,6 +764,25 @@ export class DotContentDriveShellComponent implements OnDestroy {
     });
 
     readonly $loading = computed(() => this.#store.status() === DotContentDriveStatus.LOADING);
+
+    /** Whether the grid of cards is showing instead of the table (#37930). */
+    protected readonly $isGridView = computed(
+        () => this.#store.viewType() === DOT_CONTENT_DRIVE_VIEW_TYPE.CARD
+    );
+
+    /**
+     * Results per page, as the store holds them. The listing rebuilds its table when the layout
+     * switches back to it, and the rebuilt table must page by what the user picked.
+     */
+    protected readonly $rows = computed(() => this.#store.pagination().limit);
+
+    /** The sort the store holds, for the same reason: a rebuilt table shows it. */
+    protected readonly $sort = computed(() => this.#store.sort());
+
+    /** The sort direction in the table's terms: `1` ascending, `-1` descending. */
+    protected readonly $sortOrder = computed(() =>
+        this.$sort().order === DotContentDriveSortOrder.ASC ? 1 : -1
+    );
 
     /**
      * Whether the last search failed to run, as opposed to running and matching nothing.
@@ -1559,6 +1625,10 @@ export class DotContentDriveShellComponent implements OnDestroy {
         const queryParams: Record<string, string | null> = {};
 
         queryParams['isTreeExpanded'] = isTreeExpanded.toString();
+        // Always written, so a copied link opens in the view it was copied from, whatever the
+        // person opening it remembered (#37930, US4 #2). A view switch replaces the entry; only
+        // panel opens and folder moves push one, below.
+        queryParams[CONTENT_DRIVE_VIEW_PARAM.VIEW_TYPE] = this.#store.viewType();
 
         if (path && path.length) {
             queryParams['path'] = path;
@@ -1586,7 +1656,12 @@ export class DotContentDriveShellComponent implements OnDestroy {
             isEdit && panelLocation.editContentLang ? String(panelLocation.editContentLang) : null;
         queryParams[CONTENT_DRIVE_URL_PARAM.CREATE_CONTENT] =
             panelLocation?.kind === 'create' ? panelLocation.createContent : null;
-        const panelOpen = panelLocation !== null;
+        // Edit Code names its file the same way, so Back pops the panel through its prompt
+        // instead of leaving Content Drive. Only for Back: a URL carrying it opens nothing, and
+        // this write removes it.
+        const sourceEditor = this.#store.sourceEditor();
+        queryParams[CONTENT_DRIVE_EDIT_CODE_PARAM] = sourceEditor?.inode ?? null;
+        const panelOpen = panelLocation !== null || sourceEditor !== null;
 
         // The open folder dialog, the same way (#37759, FR-030).
         const folderParam = folderDialogParamOf(this.#store.dialog());
@@ -1622,8 +1697,17 @@ export class DotContentDriveShellComponent implements OnDestroy {
             const isOpeningPanel =
                 (panelOpen && !this.#editPanelUrlWasSet) ||
                 (folderDialogOpen && !this.#folderDialogUrlWasSet);
+            //
+            // A folder the URL already names is not navigation: Back put it there. The write that
+            // follows only corrects `viewType`, which Back leaves as the user last picked it
+            // (#37930); pushing it would cut off Forward.
+            const urlPath = new URLSearchParams(this.#location.path(true).split('?')[1] ?? '').get(
+                'path'
+            );
             const isFolderNavigation =
-                this.#lastWrittenPath !== undefined && path !== this.#lastWrittenPath;
+                this.#lastWrittenPath !== undefined &&
+                path !== this.#lastWrittenPath &&
+                (path || null) !== urlPath;
 
             if (isOpeningPanel || isFolderNavigation) {
                 this.#location.go(newUrl);
@@ -2089,6 +2173,19 @@ export class DotContentDriveShellComponent implements OnDestroy {
         this.#navigationService.closeEditPanel();
         this.#store.reloadContentDrive({ quiet: true });
         this.#dotRouterService.goToEditPage({ url, language_id: languageId });
+    }
+
+    /**
+     * A save in the Edit Code panel changed the file's version and modification date: refresh the
+     * list quietly. The panel closes itself right after.
+     */
+    protected onSourceEditorSaved() {
+        this.#store.reloadContentDrive({ quiet: true });
+    }
+
+    /** The Edit Code panel closed itself: clear its request. */
+    protected onSourceEditorClosed() {
+        this.#store.closeSourceEditor();
     }
 
     /**

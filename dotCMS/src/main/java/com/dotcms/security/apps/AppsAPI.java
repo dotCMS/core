@@ -22,6 +22,11 @@ import java.util.Set;
 
 /**
  * Entry Point to manage secrets and third party App integrations
+ * <p>
+ * Secrets are administrator-managed configuration. {@code getSecrets}, {@code saveSecret},
+ * {@code saveSecrets}, {@code deleteSecret} and {@code deleteSecrets} require a CMS administrator
+ * or the system user and throw {@link DotSecurityException} otherwise. Listing app keys and
+ * descriptors also accepts users with the Apps portlet.
  */
 public interface AppsAPI {
 

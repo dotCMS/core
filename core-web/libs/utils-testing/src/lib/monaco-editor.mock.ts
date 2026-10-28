@@ -96,6 +96,8 @@ export const monacoMock = {
         }
     },
     languages: {
+        // No languages registered yet, so `ensureDotVelocityLanguageRegistered` registers.
+        getLanguages: () => [],
         register: () => {},
         registerCompletionItemProvider: () => {},
         registerDefinitionProvider: () => {},

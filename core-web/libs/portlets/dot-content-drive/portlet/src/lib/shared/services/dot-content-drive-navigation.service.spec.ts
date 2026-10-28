@@ -128,6 +128,39 @@ describe('DotContentDriveNavigationService', () => {
         location.path.mockReset();
     });
 
+    describe('editPageProperties', () => {
+        it("should open the page's content form in the side panel, not the page editor", () => {
+            const page = createFakeContentlet({
+                baseType: DotCMSBaseTypesContentTypes.HTMLPAGE,
+                contentType: 'htmlpageasset',
+                inode: 'page-inode',
+                identifier: 'page-identifier',
+                title: 'A Page',
+                url: '/a-page'
+            });
+            contentTypeService.getContentType.mockReturnValue(
+                of(
+                    createFakeContentType({
+                        id: 'htmlpageasset',
+                        metadata: { [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true }
+                    })
+                )
+            );
+
+            service.editPageProperties(page);
+
+            expect(contentTypeService.getContentType).toHaveBeenCalledWith('htmlpageasset');
+            expect(service.$editPanelRequest()).toEqual(
+                expect.objectContaining({
+                    mode: 'edit',
+                    contentletInode: 'page-inode',
+                    identifier: 'page-identifier'
+                })
+            );
+            expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
+        });
+    });
+
     describe('editContent', () => {
         it('should navigate to page editor when baseType is htmlpageasset', () => {
             const mockContentlet = createFakeContentlet({

@@ -4081,6 +4081,55 @@
 							"response": []
 						},
 						{
+							"name": "Configure Analytics App (setup)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Analytics app configured successfully\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "POST",
+								"header": [
+									{
+										"key": "Content-Type",
+										"value": "application/json"
+									}
+								],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"siteAuth\":{\"value\":\"ci-test-site-auth\"},\"bearerToken\":{\"value\":\"ci-test-bearer-token\"},\"persistenceMode\":{\"value\":\"readwrite\"}}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/apps/dotContentAnalytics-config/SYSTEM_HOST",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"apps",
+										"dotContentAnalytics-config",
+										"SYSTEM_HOST"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Start experiment",
 							"event": [
 								{
@@ -4254,6 +4303,41 @@
 								}
 							},
 							"response": []
+						},
+						{
+							"name": "Cleanup Analytics App (teardown)",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"pm.test(\"Analytics app config removed\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {}
+									}
+								}
+							],
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{serverURL}}/api/v1/apps/dotContentAnalytics-config/SYSTEM_HOST",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"apps",
+										"dotContentAnalytics-config",
+										"SYSTEM_HOST"
+									]
+								}
+							},
+							"response": []
 						}
 					]
 				},
@@ -4284,7 +4368,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\n    \"siteName\":\"page.detail.host.com.{{$timestamp}}\",\n    \"variables\":[]\n}\n",
+									"raw": "{\n    \"siteName\":\"page.detail.host.com.no-experiment.{{$timestamp}}\",\n    \"variables\":[]\n}\n",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -4627,64 +4711,64 @@
 							"response": []
 						},
 						{
-              "name": "Save Content Type Schema",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "exec": [
-                      "const contentTypeInfo = pm.collectionVariables.get(\"contentTypeInfo\");",
-                      "const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
-                      "",
-                      "const entity = pm.response.json().entity;",
-                      "",
-                      "pm.test(\"Status code is 200\", function () {",
-                      "    pm.response.to.have.status(200);",
-                      "});",
-                      "",
-                      "pm.test(\"Should have the correct content type schema\", function () {",
-                      "    const schemaStr = JSON.parse(contentTypeInfo).metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
-                      "    const schema = JSON.parse(schemaStr);",
-                      "    console.log(\"hello\", schema)",
-                      "",
-                      "    pm.expect(schema.contentType).to.eql(contentTypeName);",
-                      "});"
-                    ],
-                    "type": "text/javascript",
-                    "packages": {},
-                    "requests": {}
-                  }
-                }
-              ],
-              "request": {
-                "method": "PUT",
-                "header": [],
-                "body": {
-                  "mode": "raw",
-                  "raw": "{{contentTypeInfo}}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                },
-                "url": {
-                  "raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
-                  "host": [
-                    "{{serverURL}}"
-                  ],
-                  "path": [
-                    "api",
-                    "v1",
-                    "contenttype",
-                    "id",
-                    "{{contentTypeId}}"
-                  ]
-                }
-              },
-              "response": []
-            },
-            {
+							"name": "Save Content Type Schema",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const contentTypeInfo = pm.collectionVariables.get(\"contentTypeInfo\");",
+											"const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
+											"",
+											"const entity = pm.response.json().entity;",
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"pm.test(\"Should have the correct content type schema\", function () {",
+											"    const schemaStr = JSON.parse(contentTypeInfo).metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
+											"    const schema = JSON.parse(schemaStr);",
+											"    console.log(\"hello\", schema)",
+											"",
+											"    pm.expect(schema.contentType).to.eql(contentTypeName);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"request": {
+								"method": "PUT",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{{contentTypeInfo}}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/contenttype/id/{{contentTypeId}}",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"contenttype",
+										"id",
+										"{{contentTypeId}}"
+									]
+								}
+							},
+							"response": []
+						},
+						{
 							"name": "Create Test Contentlet",
 							"event": [
 								{
@@ -4932,83 +5016,83 @@
 							"response": []
 						},
 						{
-              "name": "GQL Page Contains Schemas",
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "exec": [
-                      "const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
-                      "const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
-                      "const contentTypeInfo = pm.collectionVariables.get(\"contentTypeInfo\");",
-                      "",
-                      "pm.test(\"Status code is 200\", function () {",
-                      "    pm.response.to.have.status(200);",
-                      "});",
-                      "",
-                      "const response = pm.response.json();",
-                      "",
-                      "pm.test(\"GraphQL response has no errors\", function () {",
-                      "    pm.expect(response.errors).to.be.undefined;",
-                      "});",
-                      "",
-                      "pm.test(\"Page data exists\", function () {",
-                      "    pm.expect(response.data).to.exist;",
-                      "    pm.expect(response.data.page).to.exist;",
-                      "});",
-                      "",
-                      "pm.test(\"Validate page has the SCHEMA of the Content Type 1 \", function () {",
-                      "    const schemas = response.data.page.styleEditorSchemas;",
-                      "    pm.expect(schemas).to.exist;",
-                      "",
-                      "    // Finding the SCHEMA",
-                      "    const contentType1Schema = schemas.find(item => item.contentType === contentTypeName);",
-                      "    pm.expect(contentType1Schema).to.exist;",
-                      "    pm.expect(contentType1Schema).to.have.property(\"sections\");",
-                      "});",
-                      "",
-                      "pm.test(\"Should have the correct content type schema\", function () {",
-                      "    const schemaStr = JSON.parse(contentTypeInfo).metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
-                      "    const schema = JSON.parse(schemaStr);",
-                      "",
-                      "    pm.expect(schema.contentType).to.eql(contentTypeName);",
-                      "});"
-                    ],
-                    "type": "text/javascript",
-                    "packages": {},
-                    "requests": {}
-                  }
-                }
-              ],
-              "protocolProfileBehavior": {
-                "disabledSystemHeaders": {
-                  "user-agent": true
-                }
-              },
-              "request": {
-                "method": "POST",
-                "header": [],
-                "body": {
-                  "mode": "graphql",
-                  "graphql": {
-                    "query": "query getPageData($url: String!, $mode: String) {\n  page(url: $url, pageMode: $mode) {\n    styleEditorSchemas\n  }\n}\n",
-                    "variables": "{\n  \"url\": \"{{pageUrl}}\",\n  \"mode\": \"EDIT_MODE\"\n}"
-                  }
-                },
-                "url": {
-                  "raw": "{{serverURL}}/api/v1/graphql",
-                  "host": [
-                    "{{serverURL}}"
-                  ],
-                  "path": [
-                    "api",
-                    "v1",
-                    "graphql"
-                  ]
-                }
-              },
-              "response": []
-            },
+							"name": "GQL Page Contains Schemas",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"const contentlet1 = pm.collectionVariables.get(\"Contentlet_1\");",
+											"const contentTypeName = pm.collectionVariables.get(\"contentTypeName\");",
+											"const contentTypeInfo = pm.collectionVariables.get(\"contentTypeInfo\");",
+											"",
+											"pm.test(\"Status code is 200\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});",
+											"",
+											"const response = pm.response.json();",
+											"",
+											"pm.test(\"GraphQL response has no errors\", function () {",
+											"    pm.expect(response.errors).to.be.undefined;",
+											"});",
+											"",
+											"pm.test(\"Page data exists\", function () {",
+											"    pm.expect(response.data).to.exist;",
+											"    pm.expect(response.data.page).to.exist;",
+											"});",
+											"",
+											"pm.test(\"Validate page has the SCHEMA of the Content Type 1 \", function () {",
+											"    const schemas = response.data.page.styleEditorSchemas;",
+											"    pm.expect(schemas).to.exist;",
+											"",
+											"    // Finding the SCHEMA",
+											"    const contentType1Schema = schemas.find(item => item.contentType === contentTypeName);",
+											"    pm.expect(contentType1Schema).to.exist;",
+											"    pm.expect(contentType1Schema).to.have.property(\"sections\");",
+											"});",
+											"",
+											"pm.test(\"Should have the correct content type schema\", function () {",
+											"    const schemaStr = JSON.parse(contentTypeInfo).metadata[\"DOT_STYLE_EDITOR_SCHEMA\"];",
+											"    const schema = JSON.parse(schemaStr);",
+											"",
+											"    pm.expect(schema.contentType).to.eql(contentTypeName);",
+											"});"
+										],
+										"type": "text/javascript",
+										"packages": {},
+										"requests": {}
+									}
+								}
+							],
+							"protocolProfileBehavior": {
+								"disabledSystemHeaders": {
+									"user-agent": true
+								}
+							},
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "graphql",
+									"graphql": {
+										"query": "query getPageData($url: String!, $mode: String) {\n  page(url: $url, pageMode: $mode) {\n    styleEditorSchemas\n  }\n}\n",
+										"variables": "{\n  \"url\": \"{{pageUrl}}\",\n  \"mode\": \"EDIT_MODE\"\n}"
+									}
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/graphql",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"graphql"
+									]
+								}
+							},
+							"response": []
+						},
 						{
 							"name": "GivenRequestByURI_ContainerContentletsFieldContainsStyleProperties",
 							"event": [

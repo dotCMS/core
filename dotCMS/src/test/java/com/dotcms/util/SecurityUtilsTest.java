@@ -2,6 +2,7 @@ package com.dotcms.util;
 
 import java.net.URL;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -180,6 +181,226 @@ public class SecurityUtilsTest {
 
     verify(response).sendError(HttpServletResponse.SC_UNAUTHORIZED);
     verify(session).setAttribute(WebKeys.REDIRECT_AFTER_LOGIN, "/protected/file.pdf");
+  }
+
+  /**
+   * Method to test: {@link SecurityUtils#sendPermissionDenied(User, String, HttpServletRequest, HttpServletResponse)}
+   * Given Scenario: A signed-out visitor requests a protected page with a query string; the 401 is raised
+   * inside the forward to the rendering servlet, where the original query string is a forward attribute
+   * (issue #36591).
+   * Expected Result: The query string is saved under its own session key, next to the path in
+   * REDIRECT_AFTER_LOGIN (which stays the path only), so a SAML login can return the visitor to the full URL.
+   */
+  @Test
+  public void test_sendPermissionDenied_anonymous_savesForwardQueryString() throws Exception {
+
+    final HttpSession session = mock(HttpSession.class);
+    final HttpServletRequest request = anonymousRequest(session);
+    when(request.getAttribute(RequestDispatcher.FORWARD_QUERY_STRING)).thenReturn("id=42");
+
+    SecurityUtils.sendPermissionDenied(anonymousUser(), "/members/report", request, mock401Response());
+
+    verify(session).setAttribute(WebKeys.REDIRECT_AFTER_LOGIN, "/members/report");
+    verify(session).setAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_STRING, "id=42");
+  }
+
+  /**
+   * Method to test: {@link SecurityUtils#sendPermissionDenied(User, String, HttpServletRequest, HttpServletResponse)}
+   * Given Scenario: No forward attribute, but the request itself carries a query string.
+   * Expected Result: The request's query string is saved.
+   */
+  @Test
+  public void test_sendPermissionDenied_anonymous_savesRequestQueryString() throws Exception {
+
+    final HttpSession session = mock(HttpSession.class);
+    final HttpServletRequest request = anonymousRequest(session);
+    when(request.getQueryString()).thenReturn("id=7");
+
+    SecurityUtils.sendPermissionDenied(anonymousUser(), "/members/report", request, mock401Response());
+
+    verify(session).setAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_STRING, "id=7");
+  }
+
+  /**
+   * Method to test: {@link SecurityUtils#sendPermissionDenied(User, String, HttpServletRequest, HttpServletResponse)}
+   * Given Scenario: A signed-out visitor requests a protected page without a query string.
+   * Expected Result: Any query string saved for an earlier page is removed, so it cannot be reattached later.
+   */
+  @Test
+  public void test_sendPermissionDenied_anonymous_withoutQuery_removesSavedQueryString() throws Exception {
+
+    final HttpSession session = mock(HttpSession.class);
+    final HttpServletRequest request = anonymousRequest(session);
+
+    SecurityUtils.sendPermissionDenied(anonymousUser(), "/members/report", request, mock401Response());
+
+    verify(session).removeAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_STRING);
+    verify(session, never()).setAttribute(Mockito.eq(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_STRING), Mockito.any());
+  }
+
+  /**
+   * Method to test: {@link SecurityUtils#sendPermissionDenied(User, String, HttpServletRequest, HttpServletResponse)}
+   * Given Scenario: A signed-in user lacks permission (403).
+   * Expected Result: The saved query string is cleared together with REDIRECT_AFTER_LOGIN.
+   */
+  @Test
+  public void test_sendPermissionDenied_authenticated_clearsSavedQueryString() throws Exception {
+
+    final User authenticated = mock(User.class);
+    when(authenticated.isAnonymousUser()).thenReturn(false);
+    final HttpSession session = mock(HttpSession.class);
+    final HttpServletRequest request = mock(HttpServletRequest.class);
+    when(request.getSession(false)).thenReturn(session);
+    final HttpServletResponse response = mock(HttpServletResponse.class);
+    when(response.isCommitted()).thenReturn(false);
+
+    SecurityUtils.sendPermissionDenied(authenticated, "/members/report", request, response);
+
+    verify(session).removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+    verify(session).removeAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_STRING);
+  }
+
+  /**
+   * Method to test: {@link SecurityUtils#rememberLoginQueryString(HttpServletRequest)}
+   * Given Scenario: The request was forwarded to a rendering servlet with the original query string.
+   * Expected Result: The query string is saved under REDIRECT_AFTER_LOGIN_QUERY_STRING.
+   */
+  @Test
+  public void test_rememberLoginQueryString_savesForwardQueryString() {
+
+    final HttpSession session = mock(HttpSession.class);
+    final HttpServletRequest request = anonymousRequest(session);
+    when(request.getAttribute(RequestDispatcher.FORWARD_QUERY_STRING)).thenReturn("id=42");
+
+    SecurityUtils.rememberLoginQueryString(request);
+
+    verify(session).setAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_STRING, "id=42");
+  }
+
+  /**
+   * Method to test: {@link SecurityUtils#rememberLoginQueryString(HttpServletRequest)}
+   * Given Scenario: No forward attribute; the request carries its own query string.
+   * Expected Result: The request's query string is saved.
+   */
+  @Test
+  public void test_rememberLoginQueryString_savesRequestQueryString() {
+
+    final HttpSession session = mock(HttpSession.class);
+    final HttpServletRequest request = anonymousRequest(session);
+    when(request.getQueryString()).thenReturn("id=7");
+
+    SecurityUtils.rememberLoginQueryString(request);
+
+    verify(session).setAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_STRING, "id=7");
+  }
+
+  /**
+   * Method to test: {@link SecurityUtils#rememberLoginQueryString(HttpServletRequest)}
+   * Given Scenario: No query string at all.
+   * Expected Result: Any previously saved query string is removed.
+   */
+  @Test
+  public void test_rememberLoginQueryString_withoutQuery_removesKey() {
+
+    final HttpSession session = mock(HttpSession.class);
+    final HttpServletRequest request = anonymousRequest(session);
+
+    SecurityUtils.rememberLoginQueryString(request);
+
+    verify(session).removeAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_STRING);
+    verify(session, never()).setAttribute(Mockito.eq(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_STRING), Mockito.any());
+  }
+
+  /**
+   * Method to test: {@link SecurityUtils#rememberLoginQueryString(HttpServletRequest)}
+   * Given Scenario: A forwarded page request /members/report?id=42.
+   * Expected Result: The original path is saved next to the query string, so an SSO login can match it against
+   * the referrer even when the error page's REDIRECT_AFTER_LOGIN does not persist (Redis sessions).
+   */
+  @Test
+  public void test_rememberLoginQueryString_savesOriginalPathWithQuery() {
+
+    final HttpSession session = mock(HttpSession.class);
+    final HttpServletRequest request = anonymousRequest(session);
+    when(request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI)).thenReturn("/members/report");
+    when(request.getAttribute(RequestDispatcher.FORWARD_QUERY_STRING)).thenReturn("id=42");
+
+    SecurityUtils.rememberLoginQueryString(request);
+
+    verify(session).setAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_STRING, "id=42");
+    verify(session).setAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_PATH, "/members/report");
+  }
+
+  /**
+   * Method to test: {@link SecurityUtils#rememberLoginQueryString(HttpServletRequest)}
+   * Given Scenario: No forward attributes; the request itself is /members/report?id=7.
+   * Expected Result: The request's own path is saved.
+   */
+  @Test
+  public void test_rememberLoginQueryString_savesRequestPath() {
+
+    final HttpSession session = mock(HttpSession.class);
+    final HttpServletRequest request = anonymousRequest(session);
+    when(request.getRequestURI()).thenReturn("/members/report");
+    when(request.getQueryString()).thenReturn("id=7");
+
+    SecurityUtils.rememberLoginQueryString(request);
+
+    verify(session).setAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_PATH, "/members/report");
+  }
+
+  /**
+   * Method to test: {@link SecurityUtils#rememberLoginQueryString(HttpServletRequest)}
+   * Given Scenario: No query string.
+   * Expected Result: The saved path is removed together with the query string.
+   */
+  @Test
+  public void test_rememberLoginQueryString_withoutQuery_removesPath() {
+
+    final HttpSession session = mock(HttpSession.class);
+    final HttpServletRequest request = anonymousRequest(session);
+    when(request.getRequestURI()).thenReturn("/members/report");
+
+    SecurityUtils.rememberLoginQueryString(request);
+
+    verify(session).removeAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_PATH);
+  }
+
+  /**
+   * Method to test: {@link SecurityUtils#sendPermissionDenied(User, String, HttpServletRequest, HttpServletResponse)}
+   * Given Scenario: A signed-in user lacks permission (403).
+   * Expected Result: The saved path is cleared too.
+   */
+  @Test
+  public void test_sendPermissionDenied_authenticated_clearsSavedPath() throws Exception {
+
+    final User authenticated = mock(User.class);
+    when(authenticated.isAnonymousUser()).thenReturn(false);
+    final HttpSession session = mock(HttpSession.class);
+    final HttpServletRequest request = mock(HttpServletRequest.class);
+    when(request.getSession(false)).thenReturn(session);
+
+    SecurityUtils.sendPermissionDenied(authenticated, "/members/report", request, mock401Response());
+
+    verify(session).removeAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_PATH);
+  }
+
+  private static User anonymousUser() {
+    final User anonymous = mock(User.class);
+    when(anonymous.isAnonymousUser()).thenReturn(true);
+    return anonymous;
+  }
+
+  private static HttpServletRequest anonymousRequest(final HttpSession session) {
+    final HttpServletRequest request = mock(HttpServletRequest.class);
+    when(request.getSession()).thenReturn(session);
+    return request;
+  }
+
+  private static HttpServletResponse mock401Response() {
+    final HttpServletResponse response = mock(HttpServletResponse.class);
+    when(response.isCommitted()).thenReturn(false);
+    return response;
   }
 
   /**

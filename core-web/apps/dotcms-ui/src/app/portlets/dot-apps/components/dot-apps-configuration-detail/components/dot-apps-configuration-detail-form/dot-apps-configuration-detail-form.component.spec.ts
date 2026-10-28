@@ -18,6 +18,7 @@ import { DotFieldRequiredDirective } from '@dotcms/ui';
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
 
 import { DotAppsConfigurationDetailGeneratedStringFieldComponent } from '../dot-apps-configuration-detail-generated-string-field/dot-apps-configuration-detail-generated-string-field.component';
+import { DotAppsConfigurationDetailJsonFieldComponent } from '../dot-apps-configuration-detail-json-field/dot-apps-configuration-detail-json-field.component';
 
 const headingSecret = {
     dynamic: false,
@@ -166,8 +167,75 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             MockComponent(DotAppsConfigurationDetailGeneratedStringFieldComponent),
             MockComponent(MarkdownComponent)
         ],
+        overrideComponents: [
+            [
+                DotAppsConfigurationDetailFormComponent,
+                {
+                    remove: { imports: [DotAppsConfigurationDetailJsonFieldComponent] },
+                    add: { imports: [MockComponent(DotAppsConfigurationDetailJsonFieldComponent)] }
+                }
+            ]
+        ],
         providers: [FormGroupDirective],
         declarations: []
+    });
+
+    describe('Form layout', () => {
+        it('should not center the form by default', () => {
+            spectator = createComponent({ props: { formFields: secrets } as never });
+            spectator.detectChanges();
+
+            expect(spectator.query('form')).not.toHaveClass('mx-auto');
+            expect(spectator.query('form')).toHaveClass('max-w-content');
+        });
+
+        it('should center the form for apps in the centered list', () => {
+            spectator = createComponent({
+                props: { formFields: secrets, appKey: 'dotema-config-v2' } as never
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query('form')).toHaveClass('mx-auto');
+        });
+    });
+
+    describe('With a JSON field', () => {
+        const jsonSecret = {
+            dynamic: false,
+            name: 'configuration',
+            hidden: false,
+            hint: 'UVE configuration',
+            label: 'Configuration',
+            required: true,
+            type: 'JSON',
+            value: '{"config":[]}',
+            hasEnvVar: false,
+            envShow: true,
+            hasEnvVarValue: false
+        };
+
+        beforeEach(() => {
+            spectator = createComponent({
+                props: {
+                    formFields: [jsonSecret]
+                } as never
+            });
+            spectator.detectChanges();
+        });
+
+        it('should render the JSON editor field with its label and hint', () => {
+            const row = spectator.query(byTestId('configuration'));
+
+            expect(row?.querySelector('dot-apps-configuration-detail-json-field')).toBeTruthy();
+            expect(row?.querySelector('label')?.textContent?.trim()).toBe(jsonSecret.label);
+            expect(row?.querySelector('.p-field-hint')?.textContent).toBe(jsonSecret.hint);
+        });
+
+        it('should load the saved JSON into the form control', () => {
+            expect(spectator.component.myFormGroup.get('configuration')?.value).toBe(
+                jsonSecret.value
+            );
+        });
     });
 
     describe('Without warnings', () => {

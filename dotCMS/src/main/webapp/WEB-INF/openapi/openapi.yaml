@@ -724,10 +724,12 @@ paths:
     put:
       deprecated: true
       description: "Checks whether the current user can lock a contentlet identified\
-        \ by inode or identifier. Returns lock capability information including current\
-        \ lock status and lock owner details. Parameters are passed as semicolon-delimited\
-        \ path segments (e.g., id:abc123/language:1). This endpoint is deprecated\
-        \ - use the v1 ContentResource canLockContent endpoint instead."
+        \ by inode or identifier. Returns whether it can be locked and whether it\
+        \ is locked; when locked, the lock date, and for back-end users also the lock\
+        \ owner's user id (lockedBy) and full name (lockedByName). Parameters are\
+        \ passed as semicolon-delimited path segments (e.g., id:abc123/language:1).\
+        \ This endpoint is deprecated - use the v1 ContentResource canLockContent\
+        \ endpoint instead."
       operationId: canLockContentLegacy
       parameters:
       - description: "Semicolon-delimited parameters (e.g., inode:abc123/language:1/live:true)"
@@ -3503,9 +3505,11 @@ paths:
   /v1/analytics/content/event:
     post:
       description: "Validates the site_auth field in the JSON body via SiteAuthValidator,\
-        \ resolves the active site, injects site_id into context, and asynchronously\
-        \ forwards the body to {DOT_ANALYTICS_BASE_URL}/v1/event/ingest. The dotCMS-side\
-        \ path is a fixed match; the upstream sub-path is not caller-controllable."
+        \ resolves the active site, adds site_id to context, cleans each event's page\
+        \ and link URL fields (allowlisted query parameters only, no user info or\
+        \ session ids; events with a malformed data or page object are dropped), and\
+        \ asynchronously forwards the body to {DOT_ANALYTICS_BASE_URL}/v1/event/ingest.\
+        \ The dotCMS-side path is a fixed match; the upstream sub-path is not caller-controllable."
       operationId: proxyAnalyticsEventRequest
       requestBody:
         content:
@@ -3560,6 +3564,32 @@ paths:
         "500":
           description: Internal Server Error
       summary: Generate Site Auth
+      tags:
+      - Content Analytics
+  /v1/analytics/health:
+    get:
+      description: Returns a dotCMS-evaluated analytics health state. Always returns
+        200 — never returns 503 unlike the catch-all proxy. Reflects the App configuration
+        and backend connectivity for the site resolved from the request.
+      operationId: analyticsHealth
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "ResponseEntityView containing {\"health\": \"OK\"|\"\
+                  NOT_CONFIGURED\"|\"CONFIGURATION_ERROR\"}"
+          description: Health state evaluated successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized — backend user required
+        "403":
+          content:
+            application/json: {}
+          description: User lacks READ on the resolved site
+      summary: Evaluate analytics health for the current site
       tags:
       - Content Analytics
   /v1/analytics/{path}:
@@ -5582,6 +5612,37 @@ paths:
       summary: Reset user password
       tags:
       - Authentication
+  /v1/cluster/nodes:
+    get:
+      description: "Lists the servers with a recent heartbeat, in database order,\
+        \ and asks every server for a status report with one cluster request. Each\
+        \ server has a status computed on the backend: UP when it answered and its\
+        \ heartbeat is fresh, LAGGING when only one of the two holds, DOWN when neither\
+        \ does or when it answered with a failed assets check (the legacy red). Servers\
+        \ that don't answer within the wait window are listed with responded=false\
+        \ and null sections. Requires a back-end user with the configuration or network-beta\
+        \ portlet, or a CMS Administrator. There is no license check."
+      operationId: getClusterNodes
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityClusterNodesView"
+          description: Servers listed
+        "401":
+          content:
+            application/json: {}
+          description: "No authenticated back-end user, or the caller holds neither\
+            \ the configuration nor the network-beta portlet and is not a CMS Administrator"
+        "500":
+          content:
+            application/json: {}
+          description: The cluster's servers could not be read from the database
+      summary: "List the cluster's servers with their status and cache, search and\
+        \ assets details"
+      tags:
+      - Cluster Management
   /v1/configuration:
     get:
       operationId: list_6
@@ -5623,29 +5684,39 @@ paths:
           description: Security key regenerated successfully
         "401":
           content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
       summary: Regenerate company security key
       tags:
       - System Configuration
   /v1/configuration/_validateCompanyEmail:
     post:
+      description: Queues a test e-mail from the given sender to the logged-in user.
+        The result is delivered later as a system message.
       operationId: validateEmail
       requestBody:
         content:
-          '*/*':
+          application/json:
             schema:
               $ref: "#/components/schemas/CompanyEmailForm"
+        description: Sender address to send the test e-mail from
+        required: true
       responses:
-        default:
+        "200":
           content:
-            application/javascript: {}
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Test e-mail queued
+        "400":
+          content:
             application/json: {}
-          description: default response
+          description: "Missing body, or the sender is not a valid e-mail address"
+        "401":
+          content:
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
+      summary: Send a test e-mail from the company address
       tags:
       - System Configuration
   /v1/configuration/authentication:
@@ -5673,12 +5744,8 @@ paths:
           description: Bad request - invalid auth type
         "401":
           content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
       summary: Save company authentication type
       tags:
       - System Configuration
@@ -5696,12 +5763,8 @@ paths:
           description: Company configuration retrieved successfully
         "401":
           content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
       summary: Get company configuration
       tags:
       - System Configuration
@@ -5729,12 +5792,8 @@ paths:
           description: Bad request - invalid parameters
         "401":
           content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
       summary: Save company basic info and branding
       tags:
       - System Configuration
@@ -5775,6 +5834,53 @@ paths:
       summary: Retrieve whitelisted configuration values
       tags:
       - System Configuration
+  /v1/configuration/dotcmsLogo:
+    get:
+      description: "Returns the /dA/ path of the stock dotCMS login logo. The path\
+        \ can be saved as loginScreenLogo through PUT /api/v1/configuration/branding.\
+        \ Read-only: no content and no company setting is created or changed. Returns\
+        \ 404 when this instance doesn't have the stock logo, or it isn't published,\
+        \ readable by anonymous users, or the stock dotCMS image."
+      operationId: getDotcmsLogo
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Path of the stock dotCMS login logo
+        "401":
+          content:
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
+        "404":
+          content:
+            application/json: {}
+          description: The dotCMS logo is not available on this instance
+      summary: Get the stock dotCMS login logo
+      tags:
+      - System Configuration
+  /v1/configuration/license:
+    get:
+      description: "Returns the title, licensor, change date, change license and full\
+        \ text of the license shipped with the running build. When the license file\
+        \ can't be read, returns a short pointer to the published license and null\
+        \ header values."
+      operationId: getLicense
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityLicenseInfoView"
+          description: License retrieved successfully
+        "401":
+          content:
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a backend user"
+      summary: Get the dotCMS license
+      tags:
+      - System Configuration
   /v1/configuration/locale:
     put:
       description: Updates the locale (language and timezone) for the current company.
@@ -5800,12 +5906,8 @@ paths:
           description: Invalid locale parameters (e.g. invalid timezone)
         "401":
           content:
-            application/json: {}
-          description: Unauthorized - authentication required
-        "403":
-          content:
-            application/json: {}
-          description: Forbidden - CMS Administrator role required
+            text/plain: {}
+          description: "Unauthorized - not authenticated, or not a CMS Administrator"
       summary: Save company locale info
       tags:
       - System Configuration
@@ -6593,8 +6695,10 @@ paths:
       - Content
   /v1/content/_canlock/{inodeOrIdentifier}:
     get:
-      description: Checks if the contentlet specified by its inode or identifier can
-        be locked by the current user.
+      description: "Checks if the contentlet specified by its inode or identifier\
+        \ can be locked by the current user, and whether it is locked. When locked,\
+        \ the response includes lockedOn; lockedBy (user id) and lockedByName (full\
+        \ name) are included for back-end users only."
       operationId: canLockContent
       parameters:
       - description: Contentlet inode or identifier
@@ -10891,10 +10995,10 @@ paths:
           content:
             application/javascript:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringHealth"
+                $ref: "#/components/schemas/ResponseEntityViewExperimentsHealthView"
             application/json:
               schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringHealth"
+                $ref: "#/components/schemas/ResponseEntityViewExperimentsHealthView"
           description: default response
       tags:
       - Experiment
@@ -10925,15 +11029,16 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Experiment cancelled successfully
+        "403":
+          content:
+            application/json: {}
+          description: Feature disabled (FEATURE_DISABLED) — flag=false
       tags:
       - Experiment
   /v1/experiments/{experimentId}:
@@ -10992,15 +11097,16 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityExperimentView"
-          description: default response
+          description: Experiment archived successfully
+        "403":
+          content:
+            application/json: {}
+          description: Feature disabled (FEATURE_DISABLED) — flag=false
       tags:
       - Experiment
   /v1/experiments/{experimentId}/_end:
@@ -11013,15 +11119,12 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Experiment ended successfully
       tags:
       - Experiment
   /v1/experiments/{experimentId}/_start:
@@ -11034,15 +11137,27 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntitySingleExperimentView"
-          description: default response
+          description: Experiment started successfully
+        "400":
+          content:
+            application/json: {}
+          description: Duration exceeds the 10-day limited-mode cap
+        "403":
+          content:
+            application/json: {}
+          description: "Limited-mode gate rejected the start. errorCode FEATURE_DISABLED:\
+            \ flag=false and the free experiment slot is already occupied. errorCode\
+            \ SCHEDULED_START_NOT_ALLOWED: flag=false and the experiment has a future\
+            \ startDate."
+        "503":
+          content:
+            application/json: {}
+          description: Analytics App not configured for this site (ANALYTICS_NOT_CONFIGURED)
       tags:
       - Experiment
   /v1/experiments/{experimentId}/goals/primary:
@@ -11242,15 +11357,16 @@ paths:
         schema:
           type: string
       responses:
-        default:
+        "200":
           content:
-            application/javascript:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityExperimentResults"
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityExperimentResults"
-          description: default response
+          description: Experiment results retrieved
+        "503":
+          content:
+            application/json: {}
+          description: Analytics App not configured for this site
       tags:
       - Experiment
   /v1/fieldTypes:
@@ -11608,8 +11724,8 @@ paths:
       - Folders
   /v1/forgotpassword:
     post:
-      description: Sends a password reset email to the specified user. Returns the
-        email address where the reset link was sent.
+      description: Sends a password reset email to the account matching the submitted
+        user ID or email address. Returns the submitted value.
       operationId: forgotPassword
       requestBody:
         content:
@@ -11624,12 +11740,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityForgotPasswordView"
-          description: Password reset email sent successfully
+          description: Request accepted. The entity is the submitted user ID or email
+            address
         "400":
           content:
             application/json: {}
-          description: Bad request - invalid email address or user not found (if configured
-            to show)
+          description: "Bad request - with login by email address, the submitted value\
+            \ is not a valid email address; or user not found (if configured to show)"
         "500":
           content:
             application/json: {}
@@ -12265,7 +12382,8 @@ paths:
           description: "Unauthorized: Invalid or missing user authentication."
         "403":
           description: "Forbidden: User lacks permission to enqueue jobs in the specified\
-            \ queue."
+            \ queue, or the queue has a dedicated endpoint (the message names it)\
+            \ and does not accept jobs through this one."
         "404":
           description: "Not Found: Queue with the specified name does not exist."
         "500":
@@ -12377,7 +12495,8 @@ paths:
           description: "Unauthorized: Invalid or missing user authentication."
         "403":
           description: "Forbidden: User lacks permission to enqueue jobs in the specified\
-            \ queue."
+            \ queue, or the queue has a dedicated endpoint (the message names it)\
+            \ and does not accept jobs through this one."
         "404":
           description: "Not Found: Queue with the specified name does not exist."
         "500":
@@ -16634,8 +16753,10 @@ paths:
       - Roles
   /v1/roles/{roleid}/rolehierarchyanduserroles:
     get:
-      description: Load the user and roles by role id with optional hierarchy and
-        filtering
+      description: "Load the user and roles by role id with optional hierarchy and\
+        \ filtering. The caller must be an administrator, have access to both the\
+        \ Roles and the Users portlets, or hold a workflow action that assigns to\
+        \ the role."
       operationId: loadUsersAndRolesByRoleId
       parameters:
       - description: Role ID
@@ -16673,7 +16794,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - backend user required
+          description: Forbidden - membership privilege or an assigning workflow action
+            required
         "404":
           content:
             application/json: {}
@@ -16742,7 +16864,8 @@ paths:
     get:
       description: "Returns the paginated list of users directly granted the given\
         \ role, using the standard user serialization (email address included). Grants\
-        \ inherited through the role hierarchy are not included."
+        \ inherited through the role hierarchy are not included. The caller must be\
+        \ an administrator or have access to both the Roles and the Users portlets."
       operationId: loadUsersByRoleId
       parameters:
       - description: Id of the role to list users for
@@ -16800,7 +16923,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - roles portlet access required
+          description: "Forbidden - administrator, or Roles and Users portlet access,\
+            \ required"
         "404":
           content:
             application/json: {}
@@ -19431,8 +19555,8 @@ paths:
       - Usage
   /v1/users:
     post:
-      description: "Creates a new user. Requires admin privileges or access to Users\
-        \ and Roles portlets. FirstName, LastName, Email and Password are required"
+      description: "Creates a new user. Requires a CMS Administrator. FirstName, LastName,\
+        \ Email and Password are required"
       operationId: createUser
       requestBody:
         content:
@@ -19459,7 +19583,7 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions to create users
+          description: Forbidden - only a CMS Administrator can create users
         "409":
           content:
             application/json: {}
@@ -19513,7 +19637,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseSiteVariablesEntityView"
           description: "If the user is not an admin or access to the role + user layouts\
-            \ or does have permission, it will return a 403."
+            \ or does have permission, it will return a 403. Changing the user's roles\
+            \ also requires a CMS Administrator; otherwise nothing is changed and\
+            \ a 403 is returned."
         "404":
           content:
             application/json:
@@ -19660,13 +19786,21 @@ paths:
   /v1/users/filter:
     get:
       description: "Returns a list of dotCMS users based on specified search criteria\
-        \ with pagination support. Each item is the user's data map. When `includeRoles=true`\
-        \ is passed, each item additionally carries a `roles` array listing the user's\
-        \ directly assigned roles as `{id, name, roleKey}` objects (`roleKey` may\
-        \ be null for roles created without a key); roles held through the role hierarchy\
-        \ and the user's personal role are not included. Requesting roles requires\
-        \ being a CMS Administrator or having access to both the Roles and Users portlets\
-        \ (403 otherwise). Without the flag the payload is unchanged."
+        \ with pagination support. Each item is the user's data map. CMS Administrators\
+        \ and users with access to the Users portlet receive the complete map; any\
+        \ other back-end user receives only the directory fields of each user (`userId`,\
+        \ `id`, `firstName`, `lastName`, `fullName`, `name`, `emailAddress`, `emailaddress`,\
+        \ `gravitar`, `type`). When `includeRoles=true` is passed, each item additionally\
+        \ carries a `roles` array listing the user's directly assigned roles as `{id,\
+        \ name, roleKey}` objects (`roleKey` may be null for roles created without\
+        \ a key); roles held through the role hierarchy and the user's personal role\
+        \ are not included. Requesting roles requires being a CMS Administrator or\
+        \ having access to both the Roles and Users portlets (403 otherwise). Without\
+        \ the flag the payload is unchanged. Results can be restricted to users directly\
+        \ holding any of the given roles through `roleKey` and/or `roleId`; filtering\
+        \ by role requires that same privilege. The `admin` flag on each item is only\
+        \ returned to callers with that same privilege; for anyone else it is left\
+        \ out."
       operationId: filterUsers
       parameters:
       - description: "Filter users by user ID, first name, last name, email address,\
@@ -19725,9 +19859,21 @@ paths:
           type: integer
           format: int32
       - description: "Role key(s) to restrict results to users holding any of them;\
-          \ repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER"
+          \ repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER (exact\
+          \ match). Requires CMS Administrator or Roles+Users portlet access (403\
+          \ otherwise)"
         in: query
         name: roleKey
+        schema:
+          type: array
+          items:
+            type: string
+      - description: "Role ID(s) to restrict results to users directly holding any\
+          \ of them, combined with roleKey; repeatable and/or comma-separated. Also\
+          \ matches roles created without a key. Requires CMS Administrator or Roles+Users\
+          \ portlet access (403 otherwise)"
+        in: query
+        name: roleId
         schema:
           type: array
           items:
@@ -19751,8 +19897,8 @@ paths:
         "400":
           content:
             application/json: {}
-          description: Bad request - a provided roleKey does not match any existing
-            Role
+          description: Bad request - a provided roleKey or roleId does not match any
+            existing Role
         "401":
           content:
             application/json: {}
@@ -19761,7 +19907,8 @@ paths:
           content:
             application/json: {}
           description: "Forbidden - insufficient permissions, or includeRoles=true\
-            \ requested without CMS Administrator / Roles+Users portlet access"
+            \ / a role filter requested without CMS Administrator / Roles+Users portlet\
+            \ access"
       summary: Filter users
       tags:
       - Users
@@ -26083,6 +26230,23 @@ components:
           example: false
       required:
       - assetPath
+    AssetsSectionView:
+      type: object
+      description: Shared assets folder as a server sees it
+      nullable: true
+      properties:
+        canRead:
+          type: boolean
+          description: Whether the server can read the folder
+          nullable: true
+        canWrite:
+          type: boolean
+          description: Whether the server can write to the folder
+          nullable: true
+        path:
+          type: string
+          description: Assets folder path
+          nullable: true
     AssignCommentBean:
       type: object
       description: Assignee and comment to attach to the workflow task created when
@@ -26499,6 +26663,50 @@ components:
       - columns
       - providerName
       - stats
+    CacheSectionView:
+      type: object
+      description: Cache transport details of a server; a null value means unknown
+        or not applicable
+      nullable: true
+      properties:
+        address:
+          type: string
+          description: "Transport address; null for transports without one, such as\
+            \ PubSub"
+          nullable: true
+        clusterName:
+          type: string
+          description: Cache cluster name
+          nullable: true
+        numberOfNodes:
+          type: integer
+          format: int32
+          description: Number of servers the transport sees
+          nullable: true
+        open:
+          type: boolean
+          description: Whether the transport is open
+          nullable: true
+        port:
+          type: integer
+          format: int32
+          description: "Transport port; null for transports without one, such as PubSub"
+          nullable: true
+        receivedBytes:
+          type: integer
+          format: int64
+          description: Bytes received
+          nullable: true
+        sentBytes:
+          type: integer
+          format: int64
+          description: Bytes sent
+          nullable: true
+        transport:
+          type: string
+          description: Cache transport
+          example: PubSub
+          nullable: true
     CacheStatsView:
       type: object
       properties:
@@ -26931,6 +27139,77 @@ components:
           format: int32
         message:
           $ref: "#/components/schemas/MessageView"
+    ClusterNodeView:
+      type: object
+      description: One server of the cluster
+      properties:
+        assets:
+          $ref: "#/components/schemas/AssetsSectionView"
+        cache:
+          $ref: "#/components/schemas/CacheSectionView"
+        clusterName:
+          type: string
+          description: Cluster id the server belongs to (cluster_server.cluster_id)
+          nullable: true
+        displayServerId:
+          type: string
+          description: Short id shown in the server list
+        ipAddress:
+          type: string
+          description: IP address
+          nullable: true
+        lastContactSeconds:
+          type: integer
+          format: int64
+          description: "Seconds since the server's last heartbeat; never null, never\
+            \ negative"
+        name:
+          type: string
+          description: "Friendly name, shown as the host name"
+          nullable: true
+        responded:
+          type: boolean
+          description: True when the server answered this call's status request within
+            the wait window
+        search:
+          $ref: "#/components/schemas/SearchSectionView"
+        serverId:
+          type: string
+          description: Full server id
+        status:
+          type: string
+          description: "UP: answered with a fresh heartbeat. LAGGING: only one of\
+            \ the two. DOWN: neither, or answered with a failed assets check"
+          enum:
+          - UP
+          - LAGGING
+          - DOWN
+        version:
+          type: string
+          description: dotCMS version the server runs
+          nullable: true
+      required:
+      - displayServerId
+      - lastContactSeconds
+      - responded
+      - serverId
+      - status
+    ClusterNodesView:
+      type: object
+      description: The servers of the cluster with their status
+      properties:
+        currentServerId:
+          type: string
+          description: Id of the server that handled the request
+        nodes:
+          type: array
+          description: "Every server with a recent heartbeat, ordered by startup time,\
+            \ then server id"
+          items:
+            $ref: "#/components/schemas/ClusterNodeView"
+      required:
+      - currentServerId
+      - nodes
     ColumnField:
       type: object
       allOf:
@@ -27020,9 +27299,10 @@ components:
           example: "#3C1361"
         backgroundImage:
           type: string
-          description: Background image path (dotAsset path starting with /dA). Cleared
-            if omitted.
-          example: /dA/abc123/background.png
+          description: "Login background: a dotAsset path starting with /dA/, one\
+            \ of the bundled backgrounds /html/images/backgrounds/bg-1.jpg to bg-11.jpg,\
+            \ or the value already stored. Cleared if omitted."
+          example: /html/images/backgrounds/bg-11.jpg
         emailAddress:
           type: string
           description: Company email address used as the system sender. Accepts plain
@@ -27077,8 +27357,10 @@ components:
           example: "#3C1361"
         backgroundImage:
           type: string
-          description: Background image path (dotAsset path starting with /dA)
-          example: /dA/abc123/background.png
+          description: "Stored login background: a /dA path, a bundled background\
+            \ /html/images/backgrounds/bg-1.jpg to bg-11.jpg, or a legacy URL; null\
+            \ when none is set"
+          example: /html/images/backgrounds/bg-11.jpg
         companyId:
           type: string
           description: Company identifier
@@ -29284,6 +29566,33 @@ components:
           format: float
         trafficProportion:
           $ref: "#/components/schemas/TrafficProportion"
+    ExperimentsHealthView:
+      type: object
+      properties:
+        freeExperimentUsed:
+          type: boolean
+          description: Whether the single free experiment slot is already occupied.
+            Present only when tier="limited"; null when tier="full".
+        health:
+          type: string
+          description: Current health state of the experiments / analytics configuration
+          enum:
+          - OK
+          - NOT_CONFIGURED
+          - CONFIGURATION_ERROR
+        tier:
+          type: string
+          description: "License tier: \"full\" when experiments are fully enabled,\
+            \ \"limited\" when restricted to one free experiment"
+          enum:
+          - full
+          - limited
+        warning:
+          type: string
+          description: Warning code present when the Analytics App is not configured
+            for the site. Absent when configured.
+          enum:
+          - analytics_disabled
     ExportSecretForm:
       type: object
       properties:
@@ -32234,6 +32543,31 @@ components:
           type: array
           items:
             type: string
+    LicenseInfoView:
+      type: object
+      properties:
+        changeDate:
+          type: string
+          description: When the license changes to the Change License
+          example: "Four years from August 01, 2025"
+        changeLicense:
+          type: string
+          description: License that applies after the Change Date
+          example: GNU General Public License (GPL) v3
+        licensor:
+          type: string
+          description: Licensor named in the license
+          example: dotCMS LLC
+        text:
+          type: string
+          description: Full license text
+        title:
+          type: string
+          description: License name and version
+          example: dotCMS Business Source License 1.1
+      required:
+      - text
+      - title
     LineDividerField:
       type: object
       allOf:
@@ -34411,6 +34745,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityClusterNodesView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/ClusterNodesView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityCompanyConfigView:
       type: object
       properties:
@@ -35442,6 +35799,29 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Layout"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityLicenseInfoView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/LicenseInfoView"
         errors:
           type: array
           items:
@@ -37365,6 +37745,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityViewExperimentsHealthView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/ExperimentsHealthView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityViewJob:
       type: object
       properties:
@@ -37537,35 +37940,6 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/MulitreeView"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityViewMapStringHealth:
-      type: object
-      properties:
-        entity:
-          type: object
-          additionalProperties:
-            type: string
-            enum:
-            - OK
-            - NOT_CONFIGURED
-            - CONFIGURATION_ERROR
         errors:
           type: array
           items:
@@ -39070,6 +39444,77 @@ components:
           type: string
           description: Optional user id to run the search as (permissions are applied
             for this user). Defaults to the authenticated caller when omitted.
+    SearchSectionView:
+      type: object
+      description: Search engine health as a server reports it; every value is null
+        when its search check failed
+      nullable: true
+      properties:
+        activePrimaryShards:
+          type: integer
+          format: int32
+          nullable: true
+        activeShards:
+          type: integer
+          format: int32
+          nullable: true
+        activeShardsPercent:
+          type: number
+          format: double
+          description: "Percentage of active shards, 0 to 100"
+          nullable: true
+        clusterName:
+          type: string
+          description: Search cluster name
+          nullable: true
+        delayedUnassignedShards:
+          type: integer
+          format: int32
+          nullable: true
+        engine:
+          type: string
+          description: Engine that answered; null when unknown
+          enum:
+          - ELASTICSEARCH
+          - OPENSEARCH
+          nullable: true
+        initializingShards:
+          type: integer
+          format: int32
+          nullable: true
+        numberOfDataNodes:
+          type: integer
+          format: int32
+          nullable: true
+        numberOfInFlightFetch:
+          type: integer
+          format: int32
+          nullable: true
+        numberOfNodes:
+          type: integer
+          format: int32
+          nullable: true
+        numberOfPendingTasks:
+          type: integer
+          format: int32
+          nullable: true
+        relocatingShards:
+          type: integer
+          format: int32
+          nullable: true
+        taskMaxWaitingInQueueMillis:
+          type: integer
+          format: int64
+          description: "How long the oldest pending task has waited, in milliseconds"
+          nullable: true
+        timedOut:
+          type: boolean
+          description: Whether the health request timed out
+          nullable: true
+        unassignedShards:
+          type: integer
+          format: int32
+          nullable: true
     SearchSiteByNameForm:
       type: object
       properties:
@@ -39089,6 +39534,16 @@ components:
         resultsSize:
           type: integer
           format: int64
+        warnings:
+          type: array
+          description: "Notes about how the contentlets were rendered, such as widget\
+            \ field values returned as text because widget field scripting is off.\
+            \ Empty when there is nothing to report."
+          items:
+            type: string
+            description: "Notes about how the contentlets were rendered, such as widget\
+              \ field values returned as text because widget field scripting is off.\
+              \ Empty when there is nothing to report."
     SecretForm:
       type: object
     SectionForm:

@@ -7,7 +7,7 @@ export type QAStatus =
   | 'passed' // every same-repo linked issue is Passed or Not Needed
   | 'failed' // at least one same-repo linked issue is Failed
   | 'missing' // linked issues exist but none of them carry a recognized QA label
-  | 'unlinked' // no closing-issue references at all (body keywords or Development panel)
+  | 'unlinked' // no issue link the PR gate would accept (closing or non-closing)
   | 'external' // only cross-repo closing references — QA cannot be verified from here
   | 'excluded'; // bot / version-bump / release machinery — outside QA scope
 
@@ -16,7 +16,9 @@ export type ExclusionReason =
   | 'bot-author'
   | 'dependency-bump'
   | 'version-bump'
-  | 'release-machinery';
+  | 'release-machinery'
+  | 'spec-only'
+  | 'docs-only';
 
 /** Label resolution for a single linked issue. */
 export interface LinkedIssueInfo {
@@ -45,10 +47,20 @@ export interface PRDetails {
   author: string;
   authorType: string;
   labels: string[];
-  /** Same-repo closing-issue references (from body keywords + Development panel). */
+  /**
+   * Same-repo linked issues: closing references (body keywords + Development
+   * panel), or else the one non-closing link the PR gate accepted (see links.ts).
+   */
   linkedIssues: number[];
   /** Cross-repo closing-issue references. */
   externalRefs: ExternalRef[];
+  /**
+   * Paths changed by the PR. `undefined` means the list is unknown — the API
+   * call failed, or the PR has more files than one page returns. Never exclude
+   * a PR on an unknown list: a missing list must degrade to today's behaviour,
+   * not silently hide a code change from QA.
+   */
+  changedFiles?: string[];
 }
 
 /** A single PR with its computed QA result. */

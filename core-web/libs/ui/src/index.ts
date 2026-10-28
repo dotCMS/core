@@ -69,6 +69,11 @@ export * from './lib/components/dot-search-input/dot-search-input.component';
 export * from './lib/services/dot-keyboard-shortcut/dot-keyboard-shortcut.service';
 export * from './lib/services/dot-keyboard-shortcut/models';
 export * from './lib/services/dot-keyboard-shortcut/overlay';
+// Side panels: open one with DotSidePanelService or injectSidePanel; it renders in the outlet at
+// the root of the app.
+export * from './lib/components/dot-side-panel/dot-side-panel-outlet.component';
+export * from './lib/services/dot-side-panel/dot-side-panel.service';
+export * from './lib/services/dot-side-panel/inject-side-panel';
 export * from './lib/components/dot-search-input/constants';
 export * from './lib/components/dot-severity-icon/dot-severity-icon.component';
 export * from './lib/components/dot-sidebar-accordion';
@@ -153,6 +158,7 @@ export * from './lib/dialog/fullscreen-dialog';
 // Monaco editor presets
 export * from './lib/monaco/editor-options';
 export * from './lib/monaco/run-shortcut';
+export * from './lib/monaco/velocity-language';
 
 // Theme
 export * from './lib/theme';

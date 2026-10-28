@@ -9,13 +9,17 @@ import com.dotcms.publisher.business.PublishAuditStatus;
 import com.dotcms.publisher.business.PublishAuditStatus.Status;
 import com.dotcms.publisher.business.PublisherQueueJob;
 import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtil;
+import com.dotcms.publisher.receiver.BundleOrigin;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpStatus;
 import com.dotcms.util.EnterpriseFeature;
+import com.dotcms.util.PathContainmentUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.InvalidLicenseException;
 import com.dotmarketing.util.ConfigUtils;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 
 import javax.servlet.http.HttpServletRequest;
@@ -44,6 +48,8 @@ public class BundlePublisherResource {
 
 	public static String MY_TEMP = "";
 
+	public static final String BUNDLE_EXTENSION = ".tar.gz";
+
 	/**
 	 * Receives a Bundle from another sending dotCMS instance with the intention of publishing it.
 	 * <p>When a Bundle file is received on this endpoint, it's necessary to check whether the
@@ -60,8 +66,9 @@ public class BundlePublisherResource {
 	 * @param request   The current instance of the {@link HttpServletRequest}.
 	 * @param response  The current instance of the {@link HttpServletResponse}.
 	 *
-	 * @return Returns a {@link Response} object with a 200 status code if success or a 500 error
-	 * code if anything fails on the Publish process
+	 * @return Returns a {@link Response} object with a 200 status code if success, a 400 status
+	 * code if the bundle is missing or its file name is not a plain {@code .tar.gz} file name, or a
+	 * 500 error code if anything fails on the Publish process
 	 *
 	 * @see PushPublisherJob
 	 */
@@ -102,7 +109,14 @@ public class BundlePublisherResource {
 		if (failResponse.isPresent()) {
 			return failResponse.get();
 		}
-		final Bundle bundle = this.publishBundle(forcePush, filterKey, request, remoteIP);
+		final String fileNameSent = getFileNameFromRequest(request);
+		if (UtilMethods.isSet(fileNameSent) && !isValidBundleFileName(fileNameSent)) {
+			SecurityLogger.logWarn(BundlePublisherResource.class,
+					() -> "Rejected a bundle file name that is not a plain file name, remote: " + remoteIP);
+			return responseResource.responseError(HttpStatus.SC_BAD_REQUEST);
+		}
+		final String fileName = UtilMethods.isSet(fileNameSent) ? fileNameSent : generatedBundleFileName();
+		final Bundle bundle = this.publishBundle(forcePush, filterKey, fileName, request, remoteIP);
 		return Response.ok(bundle).build();
 	}
 
@@ -114,6 +128,8 @@ public class BundlePublisherResource {
 	 *                  will be {@code true}.
 	 * @param filterKey The ID of the Push Publishing Filter that was selected to generate the
 	 *                  Bundle.
+	 * @param fileName  The name of the bundle file, already checked by
+	 *                  {@link #isValidBundleFileName(String)} or generated here.
 	 * @param request   The current instance of the {@link HttpServletRequest}.
 	 * @param remoteIP  The IP address of the sending server.
 	 *
@@ -124,14 +140,12 @@ public class BundlePublisherResource {
 	@WrapInTransaction
 	private Bundle publishBundle(final boolean forcePush,
 								 final String filterKey,
+								 final String fileName,
 								 final HttpServletRequest request,
 								 final String remoteIP) throws Exception {
 
 		Logger.debug(BundlePublisherResource.class, "Publishing bundle from " + remoteIP);
 		Logger.debug(BundlePublisherResource.class, "Force Push: " + forcePush);
-
-		final String fileNameSent = getFileNameFromRequest(request);
-		final String fileName = UtilMethods.isSet(fileNameSent) ? fileNameSent : generatedBundleFileName();
 
 		Logger.debug(BundlePublisherResource.class, "Bundle file name: " + fileName);
 
@@ -140,7 +154,10 @@ public class BundlePublisherResource {
 		try (InputStream bundleStream = request.getInputStream()) {
 
 			final String bundlePath         = ConfigUtils.getBundlePath()+ File.separator + MY_TEMP;
-			final String bundleFolder       = fileName.substring(0, fileName.indexOf(".tar.gz"));
+			final String bundleFolder       = PathContainmentUtil
+					.plainSegmentBeforeSuffix(fileName, BUNDLE_EXTENSION)
+					.orElseThrow(() -> new DotRuntimeException(
+							"Bundle file name is not a valid plain file name: " + fileName));
 			final PublishAuditStatus status = PublishAuditAPI.getInstance().updateAuditTable(
 					remoteIP, remoteIP, bundleFolder, true);
 
@@ -167,7 +184,8 @@ public class BundlePublisherResource {
 
 			if(!status.getStatus().equals(Status.PUBLISHING_BUNDLE)) {
 				Logger.debug(BundlePublisherResource.class, "Triggering Push Publisher Job for bundle: " + fileName);
-				PushPublisherJob.triggerPushPublisherJob(fileName, status);
+				// a registered sender is trusted to ship plugins
+				PushPublisherJob.triggerPushPublisherJob(fileName, status, BundleOrigin.REGISTERED_SENDER, null);
 			}
 
 			return bundle;
@@ -180,6 +198,24 @@ public class BundlePublisherResource {
 			Logger.error(PublisherQueueJob.class,e.getMessage(),e);
 			throw e;
 		}
+	}
+
+	/**
+	 * Checks that the file name sent with a bundle can be used as it is: a single plain file name
+	 * that ends in {@code .tar.gz}, has something before that extension which is itself a plain
+	 * segment (so it can be used on its own as the bundle identifier), and resolves to a file
+	 * located directly inside the bundles directory.
+	 *
+	 * @param fileName The file name received in the request.
+	 *
+	 * @return {@code true} if the file name is acceptable, {@code false} otherwise.
+	 */
+	private boolean isValidBundleFileName(final String fileName) {
+		if (PathContainmentUtil.plainSegmentBeforeSuffix(fileName, BUNDLE_EXTENSION).isEmpty()) {
+			return false;
+		}
+		final File bundlesDir = new File(ConfigUtils.getBundlePath());
+		return PathContainmentUtil.isContainedIn(bundlesDir, new File(bundlesDir, fileName));
 	}
 
 	private String getFileNameFromRequest(HttpServletRequest request) {

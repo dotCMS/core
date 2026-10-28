@@ -309,42 +309,42 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
     }
 
     /**
-     * Return the HTML/JS Code needed to support Experiments into the Browser, this code is
-     * generated according the follows rules:
+     * Returns the HTML/JS snippet needed to support Experiments in the browser, generated according
+     * to the following rules (applied only in LIVE page mode):
      *
-     * - If the {@link ConfigExperimentUtil#isExperimentEnabled()} is disabled then a
-     * {@link Optional#empty()} is returned.
-     * - If the {@link ConfigExperimentUtil#isExperimentAutoJsInjection()} is disabled then a
-     * {@link Optional#empty()} is returned.
-     * - If both {@link ConfigExperimentUtil#isExperimentEnabled()} and {@link ConfigExperimentUtil#isExperimentAutoJsInjection()}
-     * are TRUE but we don't have any {@link com.dotcms.experiments.model.Experiment} RUNNING then
-     * the generated code is just to remove the localStorage object if it exists.
-     * - If both {@link ConfigExperimentUtil#isExperimentEnabled()} and {@link ConfigExperimentUtil#isExperimentAutoJsInjection()}
-     * are TRUE and also it is at least one  {@link com.dotcms.experiments.model.Experiment} RUNNING then
-     * the generated code do the Follow:
-     *      - Hit the Endpoint to know if the USer should go into the Experiment.
-     *      - Create the localStorage Object to keep all the Experiment's data needed.
-     *      - Redirect to a Page's Variant version if it is needed according to the Variant into what the user was assigned.
-     *      - Clean the localStorage when a Experiment is sttoped but still exists at least one more RUNNING.
+     * <ul>
+     *   <li>If at least one {@link com.dotcms.experiments.model.Experiment} is RUNNING on the
+     *       current host — regardless of whether {@code FEATURE_FLAG_EXPERIMENTS} is on or off —
+     *       the full tracking JS is returned so that visitors can be assigned to a variant.</li>
+     *   <li>If no experiment is running, a cleanup snippet is returned to remove stale
+     *       localStorage artifacts left by a previously-ended experiment. This applies in both
+     *       full and limited mode, because this method is only called when auto-injection is
+     *       enabled or explicitly via the viewtool — both contexts require the cleanup.</li>
+     *   <li>Outside LIVE mode {@link Optional#empty()} is always returned.</li>
+     * </ul>
      *
-     * @param host
-     * @param request
-     * @return
+     * @param host    the site being rendered
+     * @param request the current HTTP request (used to resolve the host and page mode)
+     * @return the JS/HTML snippet, or {@link Optional#empty()} when injection is not needed
      */
     @Override
     public Optional<String> getCode(final Host host, final HttpServletRequest request) {
         final PageMode pageMode = PageMode.get(request);
 
-        if (ConfigExperimentUtil.INSTANCE.isExperimentEnabled() && pageMode == PageMode.LIVE) {
-
+        if (pageMode == PageMode.LIVE) {
             try {
                 final Host currentHost = getCurrentHost(request).orElseThrow();
 
-                final String code = APILocator.getExperimentsAPI().isAnyExperimentRunning(currentHost) ?
-                        getJSCode(host, request) : getNotExperimentRunningJSCode();
-                return Optional.of(code);
+                if (APILocator.getExperimentsAPI().isAnyExperimentRunning(currentHost)) {
+                    // Experiment actively running (full or limited mode) — inject tracking JS.
+                    return Optional.of(getJSCode(host, request));
+                }
+                // No experiment running — inject cleanup JS to remove stale localStorage artifacts
+                // left by a previously-ended experiment. getCode() is only reached when auto-
+                // injection is on or the viewtool explicitly called it, so cleanup always applies.
+                return Optional.of(getNotExperimentRunningJSCode());
             } catch (DotDataException e) {
-                Logger.error(ExperimentWebAPIImpl.class, "It is not possible to generate the Experiment JS COde:" + e.getMessage());
+                Logger.error(ExperimentWebAPIImpl.class, "It is not possible to generate the Experiment JS Code:" + e.getMessage());
             }
         }
 

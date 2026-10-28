@@ -1,10 +1,13 @@
 package com.dotcms.content.index;
 
+import com.dotmarketing.util.UtilMethods;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.Date;
+import java.util.TimeZone;
 
 /**
  * The {@code yyyyMMddHHmmss} suffix carried by every content index name
@@ -69,5 +72,22 @@ public final class IndexTimestamp {
      */
     public static Duration elapsedSince(final String indexName) {
         return Duration.between(createdAt(indexName), Instant.now());
+    }
+
+    /**
+     * Formats an index's creation time for the index maintenance screens, for example
+     * "Wed, August 26 2026 8:21 PM". The date and the time are both rendered in the given zone, so
+     * an index created in the evening shows the same calendar day as its local creation time
+     * (issue #37253).
+     *
+     * @param indexName a physical or logical index name, with or without cluster prefix or tag
+     * @param timeZone  the zone to display in, normally {@code APILocator.systemTimeZone()}
+     * @return the creation date and time as displayed in the Created column
+     * @throws DateTimeParseException if the name does not end in a {@code yyyyMMddHHmmss} suffix
+     */
+    public static String formatCreatedForDisplay(final String indexName, final TimeZone timeZone) {
+        final Date created = Date.from(createdAt(indexName));
+        return UtilMethods.dateToPrettyHTMLDate(created, timeZone) + " "
+                + UtilMethods.dateToHTMLTime(created, timeZone);
     }
 }

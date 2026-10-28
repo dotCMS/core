@@ -29,7 +29,7 @@ jobs:
       ) &&
       github.actor != 'dependabot[bot]' &&
       contains(fromJSON('["OWNER", "MEMBER", "COLLABORATOR"]'), github.event.comment.author_association)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     permissions:
       contents: write
       pull-requests: write

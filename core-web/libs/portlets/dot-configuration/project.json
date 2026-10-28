@@ -1,0 +1,13 @@
+{
+    "name": "portlets-dot-configuration-portlet",
+    "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/portlets/dot-configuration/src",
+    "prefix": "dot",
+    "projectType": "library",
+    "tags": ["type:feature", "scope:dotcms-ui", "portlet:configuration-beta"],
+    "targets": {
+        "lint": {
+            "executor": "@nx/eslint:lint"
+        }
+    }
+}

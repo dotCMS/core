@@ -23,6 +23,7 @@ import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
+import org.owasp.encoder.Encode;
 
 import java.util.HashSet;
 import java.util.List;
@@ -141,7 +142,7 @@ public class TemplateHelper {
             try {
                 final String customLayoutTemplateLabel = LanguageUtil.get("editpage.properties.template.custom.label");
                 builder.fullTitle(customLayoutTemplateLabel);
-                builder.htmlTitle(customLayoutTemplateLabel);
+                builder.htmlTitle(encodeForHtml(customLayoutTemplateLabel));
             } catch (LanguageException e) {
                 Logger.error(this.getClass(),
                         "Exception on toTemplateView exception message: " + e.getMessage(), e);
@@ -151,13 +152,37 @@ public class TemplateHelper {
             builder.hostId(parentHost.getIdentifier());
 
             builder.fullTitle(template.getTitle() + " (" + parentHost.getHostname() + ")" );
-            builder.htmlTitle("<div>" + template.getTitle()  + "</div><small>" + parentHost.getHostname() + "</div></small>" );
+            builder.htmlTitle(toHtmlLabel(template.getTitle(), parentHost.getHostname()));
         } else {
             builder.fullTitle(template.getTitle());
-            builder.htmlTitle(template.getTitle());
+            builder.htmlTitle(encodeForHtml(template.getTitle()));
         }
 
         return builder.build();
+    }
+
+    /**
+     * Builds the HTML label the template picker renders for a template: the title on one line and
+     * the site name on a second, smaller line. Both values are plain text, so they are HTML-encoded
+     * before being placed inside the markup; a null value renders as an empty line.
+     *
+     * @param title    the template title
+     * @param hostName the name of the template's site
+     * @return an HTML fragment ready to render as-is
+     */
+    private static String toHtmlLabel(final String title, final String hostName) {
+        return "<div>" + encodeForHtml(title) + "</div><small>" + encodeForHtml(hostName)
+                + "</small>";
+    }
+
+    /**
+     * Encodes a plain-text value for use as HTML text content.
+     *
+     * @param value the plain-text value, possibly null
+     * @return the encoded value, or an empty string when the value is null
+     */
+    private static String encodeForHtml(final String value) {
+        return null == value ? "" : Encode.forHtml(value);
     }
 
     public TemplateLayout toTemplateLayout(final TemplateLayoutView templateLayoutView) {

@@ -1,16 +1,13 @@
 # Contract: legacy editor events the panel consumes
 
-The legacy content editor (JSP, `dotCMS/src/main/webapp/html/portlet/ext/contentlet/`) dispatches
-`ng-event` CustomEvents on its own `document`. This work **does not change the JSP**. It reads the
-events below and ignores every other one (FR-008). Source lines are from the investigation on
-2026-10-01.
+The legacy content editor (JSP, `dotCMS/src/main/webapp/html/portlet/ext/contentlet/`) dispatches `ng-event` CustomEvents on its own `document`. This work **does not change the JSP**. It reads the events below and ignores every other one (FR-008). Source lines are from the investigation on 2026-10-01.
 
 | `detail.name` | Payload | Sent when | Source | Panel reaction |
 |---|---|---|---|---|
 | `save-page` | `detail.payload`: the save callback map. Read: `contentletIdentifier`, `contentletInode`, `allLangContentlets: { inode, identifier, languageId }[]` | a save succeeded (plain save, or a workflow action, including through the wizard) | `edit_contentlet_js_inc.jsp:667-725`; map from `ContentletAjax.java:2015-2033, 2766-2790` | clear dirty; emit `saved` |
 | `close` with `detail.data.redirectUrl` | `{ redirectUrl: string, languageId: string }` | first save of a new HTML page whose create form carries a referer | `edit_contentlet_js_inc.jsp:685-699` | emit `pageEditorRequested` |
-| `close` (no data) | none | the editor's own close; content deleted/destroyed (non-page) | `edit_contentlet_js_inc.jsp:704-707` and the editor's close action | emit `closed` |
-| `deleted-page` | `detail.payload`: the save callback map | an HTML page was deleted | `edit_contentlet_js_inc.jsp:709-714` | emit `closed` |
+| `close` (no data) | none | the editor's own close; content deleted/destroyed (non-page) | `edit_contentlet_js_inc.jsp:704-707` and the editor's close action | close the panel |
+| `deleted-page` | `detail.payload`: the save callback map | an HTML page was deleted | `edit_contentlet_js_inc.jsp:709-714` | close the panel |
 | `edit-contentlet-data-updated` | `detail.payload: boolean` (dirty) | a field changed | `edit_contentlet_js_inc.jsp:526-533`, `field/edit_field_js.jsp:326` | set dirty |
 | `workflow-wizard` | `detail.data: { workflow, callback, inode, selectedInodes? }` | a workflow action needs input (comments, assignment, push publish inputs) | `/html/js/dotcms/dijit/RemotePublisherDialog.js:259-277` | `DotWorkflowEventHandlerService.open(detail.data)` |
 | `push-publish` | `detail.data: { assetIdentifier, dateFilter, isBundle, removeOnly, restricted, cats, title, customCode? }` | a push publish action | `RemotePublisherDialog.js:251-256`, `/html/js/dotcms/dojo/push/PushHandler.js:684-692` | `DotPushPublishDialogService.open(detail.data)` |
@@ -26,8 +23,7 @@ events below and ignores every other one (FR-008). Source lines are from the inv
 
 ## Calls into the iframe window
 
-The panel calls these globals on its iframe's `contentWindow` when `DotIframeService.ran()` names
-them (the panel only calls a name that is a function on its own window):
+The panel calls these globals on its iframe's `contentWindow` when `DotIframeService.ran()` names them (the panel only calls a name that is a function on its own window):
 
 | Function | Called by | Effect |
 |---|---|---|
@@ -36,6 +32,4 @@ them (the panel only calls a name that is a function on its own window):
 
 ## Explicitly ignored
 
-`edit-contentlet-loaded`, `edit-page` (no screen sends it; page-editor links are plain links,
-FR-011), `update-workflow-action`, `language-is-changed`, `edit-contentlet`, `create-contentlet`, and
-any other name.
+`edit-contentlet-loaded`, `edit-page` (no screen sends it; page-editor links are plain links, FR-011), `update-workflow-action`, `language-is-changed`, `edit-contentlet`, `create-contentlet`, and any other name.

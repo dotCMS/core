@@ -1,5 +1,11 @@
 @if (myFormGroup) {
-    <form [formGroup]="myFormGroup" class="form" #form="ngForm" #formContainer novalidate>
+    <form
+        [formGroup]="myFormGroup"
+        class="form max-w-content"
+        [class.mx-auto]="$shouldCenterForm()"
+        #form="ngForm"
+        #formContainer
+        novalidate>
         <ng-template #warningIcon let-field="field">
             @if (field.warnings && field.warnings.length) {
                 <dot-icon
@@ -26,7 +32,7 @@
                 <div
                     class="dot-apps-configuration-detail__info-box"
                     [attr.data-testid]="field.name">
-                    <markdown>{{ field.hint }}</markdown>
+                    <markdown dotAppsCodeBlocks>{{ field.hint }}</markdown>
                 </div>
             } @else {
                 <div [attr.data-testid]="field.name" class="field">
@@ -46,7 +52,7 @@
                                     *ngTemplateOutlet="warningIcon; context: { field: field }" />
                             </div>
                             <span class="form__group-hint">
-                                <markdown>{{ field.hint }}</markdown>
+                                <markdown dotAppsCodeBlocks>{{ field.hint }}</markdown>
                             </span>
                         }
                         @case ('STRING') {
@@ -62,8 +68,32 @@
                                 pTextarea
                                 [autoResize]="true"></textarea>
                             <span class="p-field-hint">
-                                <markdown>{{ field.hint }}</markdown>
+                                <markdown dotAppsCodeBlocks>{{ field.hint }}</markdown>
                             </span>
+                        }
+                        @case ('JSON') {
+                            <ng-container
+                                *ngTemplateOutlet="labelField; context: { field: field }" />
+                            <ng-container
+                                *ngTemplateOutlet="warningIcon; context: { field: field }" />
+                            @if ($isUveApp()) {
+                                <!-- The UVE field shows the hint itself, only on its JSON tab. -->
+                                <dot-apps-uve-config-field
+                                    data-testid="uve-config-field"
+                                    [fieldId]="field.name"
+                                    [label]="field.label"
+                                    [hint]="field.hint"
+                                    [formControlName]="field.name" />
+                            } @else {
+                                <dot-apps-configuration-detail-json-field
+                                    data-testid="json-field"
+                                    [fieldId]="field.name"
+                                    [label]="field.label"
+                                    [formControlName]="field.name" />
+                                <span class="p-field-hint">
+                                    <markdown dotAppsCodeBlocks>{{ field.hint }}</markdown>
+                                </span>
+                            }
                         }
                         @case ('GENERATED_STRING') {
                             <ng-container
@@ -86,7 +116,7 @@
                             <ng-container
                                 *ngTemplateOutlet="warningIcon; context: { field: field }" />
                             <span class="p-field-hint">
-                                <markdown>{{ field.hint }}</markdown>
+                                <markdown dotAppsCodeBlocks>{{ field.hint }}</markdown>
                             </span>
                         }
                         @case ('SELECT') {
@@ -100,7 +130,7 @@
                                 [class.required]="field.required"
                                 [options]="field.options" />
                             <span class="p-field-hint">
-                                <markdown>{{ field.hint }}</markdown>
+                                <markdown dotAppsCodeBlocks>{{ field.hint }}</markdown>
                             </span>
                         }
                     }

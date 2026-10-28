@@ -4,6 +4,13 @@ on:
   merge_group:
     types: [ checks_requested ]
     branches: [ main, master ]
+# GitHub deletes a merge group's branch when the queue re-forms it but does not cancel its run.
+# The squash message embeds the PR number and is identical across re-formations of the same PR,
+# so keying on it cancels the orphan while runs for other PRs, which build in parallel, are untouched.
+# toJSON keeps a multi-line message (a PR body folded into the squash) on a single escaped line.
+concurrency:
+  group: mq-${{ toJSON(github.event.merge_group.head_commit.message) }}
+  cancel-in-progress: true
 jobs:
   initialize:
     name: Initialize
@@ -17,6 +24,8 @@ jobs:
     needs: [ initialize ]
     if: needs.initialize.outputs.found_artifacts == 'false'
     uses: ./.github/workflows/cicd_comp_build-phase.yml
+    with:
+      cleanup-runner: false
     secrets:
       # Read-write: the merge queue is a trusted ref and is the primary cache
       # populator — its builds are PR-shaped, so what it writes is what the next
@@ -34,6 +43,7 @@ jobs:
     if: always() && !failure() && !cancelled()
     uses: ./.github/workflows/cicd_comp_test-phase.yml
     with:
+      skip-runner-cleanup: true
       jvm_unit_test: ${{ fromJSON(needs.initialize.outputs.filters).jvm_unit_test == 'true' }}
       integration: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
       postman: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}

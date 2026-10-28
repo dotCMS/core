@@ -245,8 +245,8 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
             spectator.detectChanges();
 
             const action: ContentDriveWorkflowAction = {
-                name: 'Rename',
-                id: WORKFLOW_ACTION_ID.RENAME,
+                name: 'Download',
+                id: WORKFLOW_ACTION_ID.DOWNLOAD,
                 showWhen: {
                     noneArchived: true,
                     noneLive: true
@@ -271,8 +271,8 @@ describe('DotContentDriveWorkflowActionsComponent', () => {
             spectator.detectChanges();
 
             const action: ContentDriveWorkflowAction = {
-                name: 'Rename',
-                id: WORKFLOW_ACTION_ID.RENAME,
+                name: 'Download',
+                id: WORKFLOW_ACTION_ID.DOWNLOAD,
                 showWhen: {
                     noneArchived: true,
                     noneLive: true

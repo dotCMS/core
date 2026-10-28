@@ -117,6 +117,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Stream;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -1375,6 +1376,186 @@ public class PublisherAPIImplTest {
         manifestItemsMapTest.add(manifestItem, ManifestReason.INCLUDE_BY_USER.getMessage());
 
         assertManifestFile(manifestFile, manifestItemsMapTest);
+    }
+
+    /**
+     * Method to test: {@link PublisherAPIImpl#copyNewlyShippedFilters(File)} <p>
+     * Given Scenario: An "upgraded" environment already has a filters directory holding every
+     * shipped PP Filter except one (simulating a filter added in a later dotCMS release), with no
+     * {@code .shipped-filters} marker yet, and one of the pre-existing filters has been
+     * customer-edited. <p>
+     * Expected Result: The missing shipped filter is copied in, the customer-edited filter is left
+     * byte-for-byte untouched, and the marker file records every shipped filename afterward —
+     * addresses the PR #37909 review finding that a filter shipped in a later release never
+     * reached an environment whose filters directory predates it.
+     */
+    @Test
+    public void test_copyNewlyShippedFilters_copies_new_shipped_filter_into_upgraded_directory() throws IOException {
+        final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
+        final Path tempDir = Files.createTempDirectory("pp-filters-upgrade-test");
+        final String systemFiltersPathString = Config.CONTEXT.getRealPath(
+                File.separator + "WEB-INF" + File.separator + "publishing-filters" + File.separator);
+
+        final List<Path> shippedFilters;
+        try (final Stream<Path> list = Files.list(Paths.get(systemFiltersPathString))) {
+            shippedFilters = list.collect(Collectors.toList());
+        }
+        Assert.assertTrue("Expected at least 2 shipped filters to exercise this test",
+                shippedFilters.size() > 1);
+
+        final String missingFilterName = shippedFilters.get(0).getFileName().toString();
+        final Path preExistingFilter = shippedFilters.get(1);
+        final String preExistingFilterName = preExistingFilter.getFileName().toString();
+        final String preExistingContent = "# customer-edited, must never be overwritten\n";
+
+        // Simulate the upgraded environment: every shipped filter already present except one, no
+        // marker file -- as if this directory predates the new filter being added.
+        for (final Path shipped : shippedFilters) {
+            final String name = shipped.getFileName().toString();
+            if (name.equals(missingFilterName)) {
+                continue;
+            }
+            if (name.equals(preExistingFilterName)) {
+                Files.write(tempDir.resolve(name), preExistingContent.getBytes());
+            } else {
+                Files.copy(shipped, tempDir.resolve(name));
+            }
+        }
+
+        publisherAPI.copyNewlyShippedFilters(tempDir.toFile());
+
+        Assert.assertTrue("The filter missing from the upgraded directory should now be copied in",
+                tempDir.resolve(missingFilterName).toFile().exists());
+        Assert.assertEquals("A filter that already existed must not be overwritten",
+                preExistingContent, new String(Files.readAllBytes(tempDir.resolve(preExistingFilterName))));
+
+        final List<String> marker = Files.readAllLines(tempDir.resolve(".shipped-filters"));
+        Assert.assertTrue("The marker must record the newly-copied filter", marker.contains(missingFilterName));
+        Assert.assertTrue("The marker must record the pre-existing filter too", marker.contains(preExistingFilterName));
+    }
+
+    /**
+     * Method to test: {@link PublisherAPIImpl#copyNewlyShippedFilters(File)} <p>
+     * Given Scenario: A fresh directory is first synced (bootstrapping the marker with every
+     * currently-shipped filter), then a user deliberately deletes one shipped filter, then the
+     * sync runs again (simulating a restart). <p>
+     * Expected Result: The deliberately-deleted filter is NOT recreated on the second run, since
+     * its name is already recorded in the marker from the first run.
+     */
+    @Test
+    public void test_copyNewlyShippedFilters_does_not_recreate_a_deliberately_deleted_filter() throws IOException {
+        final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
+        final Path tempDir = Files.createTempDirectory("pp-filters-deletion-test");
+
+        // First run: fresh directory, bootstraps the marker and copies every shipped filter in.
+        publisherAPI.copyNewlyShippedFilters(tempDir.toFile());
+
+        final String systemFiltersPathString = Config.CONTEXT.getRealPath(
+                File.separator + "WEB-INF" + File.separator + "publishing-filters" + File.separator);
+        final String deletedFilterName;
+        try (final Stream<Path> list = Files.list(Paths.get(systemFiltersPathString))) {
+            deletedFilterName = list.findFirst()
+                    .orElseThrow(() -> new IllegalStateException("No shipped PP filters found"))
+                    .getFileName().toString();
+        }
+
+        Assert.assertTrue("Precondition: the filter must exist after the first sync",
+                tempDir.resolve(deletedFilterName).toFile().exists());
+        Assert.assertTrue("Simulating the user deliberately deleting a shipped filter",
+                tempDir.resolve(deletedFilterName).toFile().delete());
+
+        // Second run (e.g. a restart) must respect the deliberate deletion.
+        publisherAPI.copyNewlyShippedFilters(tempDir.toFile());
+
+        Assert.assertFalse("A deliberately-deleted shipped filter must not be recreated",
+                tempDir.resolve(deletedFilterName).toFile().exists());
+    }
+
+    /**
+     * Method to test: {@link PublisherAPIImpl#copyNewlyShippedFilters(File)} <p>
+     * Given Scenario: {@code basePath} does not exist as a directory on the first sync, so every
+     * {@code Files.copy} call fails with a {@link java.nio.file.NoSuchFileException} (a copy
+     * failure that is deterministic and independent of OS file permissions or the user the test
+     * runs as, unlike a read-only-directory simulation). The directory is then created and the
+     * sync runs a second time (simulating the next startup). <p>
+     * Expected Result: No filter is recorded in the marker after the failed first attempt, so the
+     * second run retries and successfully copies every shipped filter in -- addresses the PR
+     * #37909 review finding that a transient copy failure used to permanently strand a filter by
+     * marking it "shipped" even though it was never actually written to disk.
+     */
+    @Test
+    public void test_copyNewlyShippedFilters_retries_after_a_failed_copy() throws IOException {
+        final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
+        final Path parentDir = Files.createTempDirectory("pp-filters-retry-test");
+        final Path tempDir = parentDir.resolve("filters-dir-not-created-yet");
+
+        final String systemFiltersPathString = Config.CONTEXT.getRealPath(
+                File.separator + "WEB-INF" + File.separator + "publishing-filters" + File.separator);
+        final String filterName;
+        try (final Stream<Path> list = Files.list(Paths.get(systemFiltersPathString))) {
+            filterName = list.findFirst()
+                    .orElseThrow(() -> new IllegalStateException("No shipped PP filters found"))
+                    .getFileName().toString();
+        }
+
+        // First run: tempDir's parent-in-chain does not exist, so every Files.copy call fails.
+        // The failure must be caught internally rather than thrown out of the method.
+        publisherAPI.copyNewlyShippedFilters(tempDir.toFile());
+
+        Assert.assertFalse("The directory must still not exist since nothing could be written into it",
+                tempDir.resolve(filterName).toFile().exists());
+
+        // Second run (e.g. the next startup): create the directory so the copy can now succeed.
+        Files.createDirectories(tempDir);
+        publisherAPI.copyNewlyShippedFilters(tempDir.toFile());
+
+        Assert.assertTrue("The filter must be copied in once the directory actually exists",
+                tempDir.resolve(filterName).toFile().exists());
+        final List<String> marker = Files.readAllLines(tempDir.resolve(".shipped-filters"));
+        Assert.assertTrue("The marker must record the filter only after it was actually copied",
+                marker.contains(filterName));
+    }
+
+    /**
+     * Method to test: {@link PublisherAPIImpl#copyNewlyShippedFilters(File)} <p>
+     * Given Scenario: A directory is first synced normally (bootstrapping the marker), a shipped
+     * filter is then deliberately deleted, and the {@code .shipped-filters} marker is then
+     * corrupted by replacing it with a directory -- guaranteeing {@code Files.readAllLines} throws
+     * an {@link java.io.IOException}, regardless of OS permissions or the user the test runs as. <p>
+     * Expected Result: The sync fails closed and copies nothing on that run, so the deliberately
+     * deleted filter is NOT resurrected -- addresses the PR #37909 review finding that an
+     * unreadable (vs. simply absent) marker was being silently treated as empty, which would have
+     * re-copied every missing filter including ones a user had deleted on purpose.
+     */
+    @Test
+    public void test_copyNewlyShippedFilters_fails_closed_when_marker_is_unreadable() throws IOException {
+        final PublisherAPIImpl publisherAPI = new PublisherAPIImpl();
+        final Path tempDir = Files.createTempDirectory("pp-filters-corrupt-marker-test");
+
+        // First run: fresh directory, bootstraps the marker and copies every shipped filter in.
+        publisherAPI.copyNewlyShippedFilters(tempDir.toFile());
+
+        final String systemFiltersPathString = Config.CONTEXT.getRealPath(
+                File.separator + "WEB-INF" + File.separator + "publishing-filters" + File.separator);
+        final String deletedFilterName;
+        try (final Stream<Path> list = Files.list(Paths.get(systemFiltersPathString))) {
+            deletedFilterName = list.findFirst()
+                    .orElseThrow(() -> new IllegalStateException("No shipped PP filters found"))
+                    .getFileName().toString();
+        }
+        Assert.assertTrue("Simulating the user deliberately deleting a shipped filter",
+                tempDir.resolve(deletedFilterName).toFile().delete());
+
+        final Path markerPath = tempDir.resolve(".shipped-filters");
+        Files.delete(markerPath);
+        Files.createDirectory(markerPath);
+
+        // Second run (e.g. a restart) must fail closed rather than treat the unreadable marker as
+        // empty, which would otherwise silently resurrect the deliberate deletion.
+        publisherAPI.copyNewlyShippedFilters(tempDir.toFile());
+
+        Assert.assertFalse("A deliberately-deleted shipped filter must not be resurrected by a corrupt marker",
+                tempDir.resolve(deletedFilterName).toFile().exists());
     }
 
     /**

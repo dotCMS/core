@@ -13,7 +13,7 @@ import { computed, effect, inject, untracked } from '@angular/core';
 import { catchError, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService, DotTagsService } from '@dotcms/data-access';
-import { DotTag } from '@dotcms/dotcms-models';
+import { DotTag, DotTagsCreateResult } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { getDownloadLink } from '@dotcms/utils';
 
@@ -121,8 +121,11 @@ export const DotTagsListStore = signalStore(
             }
         }
 
-        // Observable<unknown> because we don't use the response — we just reload the list on success.
-        function handleTagAction(source$: Observable<unknown>, onSuccess: () => void) {
+        /**
+         * Runs a mutating request with the shared loading and error handling, then hands
+         * the response to `onSuccess`.
+         */
+        function handleTagAction<T>(source$: Observable<T>, onSuccess: (response: T) => void) {
             patchState(store, { status: 'loading' });
             source$
                 .pipe(
@@ -134,7 +137,7 @@ export const DotTagsListStore = signalStore(
                         return EMPTY;
                     })
                 )
-                .subscribe(() => onSuccess());
+                .subscribe((response) => onSuccess(response));
         }
 
         return {
@@ -160,10 +163,20 @@ export const DotTagsListStore = signalStore(
                 patchState(store, { selectedTags: tags });
             },
 
-            createTag(form: { name: string; siteId?: string }) {
+            /**
+             * Creates a tag and reloads the list. `onCreated` receives the backend result so
+             * the caller can tell the user whether the tag was new or already existed.
+             */
+            createTag(
+                form: { name: string; siteId?: string },
+                onCreated?: (result: DotTagsCreateResult) => void
+            ) {
                 handleTagAction(
                     tagsService.createTag([{ name: form.name, siteId: form.siteId || undefined }]),
-                    () => loadTags()
+                    (response) => {
+                        onCreated?.(response.entity);
+                        loadTags();
+                    }
                 );
             },
 

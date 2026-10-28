@@ -6,6 +6,7 @@ import com.dotcms.saml.IdentityProviderConfiguration;
 import com.dotcms.saml.IdentityProviderConfigurationFactory;
 import com.dotcms.saml.SamlConfigurationService;
 import com.dotcms.security.apps.AppsAPI;
+import com.dotcms.util.SecurityUtils;
 import com.dotcms.util.security.Encryptor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.UserAPI;
@@ -105,6 +106,35 @@ public class SamlWebInterceptorLoopGuardTest {
         // so it can't resurface as an unwanted redirect on the next login — including for /api/* URLs
         // where the error page returns before its 403 branch would otherwise clear it.
         verify(session).removeAttribute(WebKeys.REDIRECT_AFTER_LOGIN);
+        // ...and the query string saved for it (issue #36591), so neither can resurface on the next login
+        verify(session).removeAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_STRING);
+        verify(session).removeAttribute(SecurityUtils.REDIRECT_AFTER_LOGIN_QUERY_PATH);
+    }
+
+    /**
+     * Method to test: {@link SamlWebInterceptor#intercept(HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: after the IdP round-trip the user is sent back to a front-end page they cannot read
+     * (issue #36591, AC-006): auto-login resolved the SAML user but the request is still not logged in.
+     * Expected Result: a single 403 and {@code Result.SKIP_NO_CHAIN}; no new IdP login is started, so no
+     * RelayState is computed.
+     */
+    @Test
+    public void test_front_end_destination_breaks_loop_without_new_idp_login() throws IOException {
+
+        final HttpServletRequest request   = mock(HttpServletRequest.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final HttpSession session          = mock(HttpSession.class);
+        when(response.isCommitted()).thenReturn(false);
+
+        final SamlWebInterceptor interceptor = this.interceptorReachingGuard(request, response, session, true);
+        when(request.getRequestURI()).thenReturn("/members/report");
+
+        final Result result = interceptor.intercept(request, response);
+
+        assertEquals(Result.SKIP_NO_CHAIN, result);
+        verify(response).sendError(HttpServletResponse.SC_FORBIDDEN);
+        verify(interceptor.samlWebUtils, never()).getRelayStateWithDefault(any(), any(), any(), any(), any());
+        verify(interceptor.samlWebUtils, never()).getRelayState(any(), any(), any(), any());
     }
 
     /**

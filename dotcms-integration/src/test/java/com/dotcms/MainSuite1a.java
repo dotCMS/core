@@ -131,6 +131,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.structure.factories.FieldFactoryTest.class,
         com.dotmarketing.portlets.structure.model.ContentletRelationshipsTest.class,
         com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformerTest.class,
+        com.dotcms.enterprise.ClusterUtilIntegrationTest.class,
 })
 
 public class MainSuite1a {

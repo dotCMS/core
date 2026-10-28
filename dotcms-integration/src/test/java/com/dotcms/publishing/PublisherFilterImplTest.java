@@ -141,6 +141,31 @@ public class PublisherFilterImplTest {
 
     }
 
+    /**
+     * Method to test: {@link PublisherFilter#isRelationshipsSecondLevel()}
+     * Given Scenario: A PublisherFilterImpl built with the new 4-arg constructor, with
+     * relationshipsSecondLevel explicitly set to true
+     * ExpectedResult: isRelationshipsSecondLevel() returns true
+     */
+    @Test
+    public void Test_isRelationshipsSecondLevel_true_via_four_arg_constructor() {
+        final PublisherFilterImpl publisherFilter = new PublisherFilterImpl("key.yml", true, true, true);
 
+        Assert.assertTrue(publisherFilter.isRelationshipsSecondLevel());
+    }
+
+    /**
+     * Method to test: {@link PublisherFilter#isRelationshipsSecondLevel()}
+     * Given Scenario: A PublisherFilterImpl built with the existing 2-arg constructor (predates
+     * this flag)
+     * ExpectedResult: isRelationshipsSecondLevel() defaults to false, so every pre-existing call
+     * site keeps today's behavior unchanged
+     */
+    @Test
+    public void Test_isRelationshipsSecondLevel_defaults_to_false_via_two_arg_constructor() {
+        final PublisherFilterImpl publisherFilter = new PublisherFilterImpl(true, true);
+
+        Assert.assertFalse(publisherFilter.isRelationshipsSecondLevel());
+    }
 
 }

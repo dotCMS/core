@@ -264,7 +264,8 @@ public class EmbeddingsFactory {
             params.add(dto.threshold);
         }
 
-        sql.append(" order by distance limit ? offset ? ");
+        // id breaks distance ties so the same request always gets the same order
+        sql.append(" order by distance, id limit ? offset ? ");
         params.add(dto.limit);
         params.add(dto.offset);
         params.add(0, new PGvector(ArrayUtils.toPrimitive(dto.embeddings)));

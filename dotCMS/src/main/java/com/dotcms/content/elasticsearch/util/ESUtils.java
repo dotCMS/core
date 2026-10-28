@@ -20,8 +20,15 @@ public class ESUtils {
 					"^", "[", "]", "\"", "{", "}",
 					"~",
 					"*", "?", "|", "&",
-					" "
+					"=", " "
 			).collect(Collectors.collectingAndThen(toSet(), Collections::unmodifiableSet));
+
+	/**
+	 * Characters that the Elasticsearch {@code query_string} parser reads as range operators
+	 * ({@code field:<value}, {@code field:>=value}). Unlike the other reserved characters they cannot
+	 * be backslash-escaped, so they are removed from the value instead.
+	 */
+	static final Set<Character> TO_REMOVE_COLLECTION = Set.of('<', '>');
 
 	public static String escape(final String text) {
 
@@ -42,17 +49,28 @@ public class ESUtils {
 	}
 
 	/**
-	 * Returns a String where those characters that QueryParser expects to be escaped are escaped by
-	 * a preceding <code>\</code> excluding the "/", we found some cases where we don't want to
-	 * scape it.
-	 * This method is a copy of the {@link QueryParser#escape(String)} where we remove the
-	 * scape for slashes "/" and we included the scape for white spaces " "
+	 * Makes a value safe to place after {@code field:} in a {@code query_string} query. Every reserved
+	 * character is escaped with a preceding <code>\</code>, except:
+	 * <ul>
+	 *     <li>{@code /}, which is left as-is because URL map values may contain path segments;</li>
+	 *     <li>{@code <} and {@code >}, which are removed. Elasticsearch treats them as range operators
+	 *     and does not allow them to be escaped, so leaving them in turns an exact-match filter
+	 *     into a range that matches unrelated content.</li>
+	 * </ul>
+	 * White space is escaped as well, so the value stays a single term. Based on
+	 * {@link QueryParser#escape(String)}, which also omits {@code <} and {@code >}.
+	 *
+	 * @param toEscape the raw value, typically a segment captured from a URL map pattern
+	 * @return the escaped value; empty if it contained nothing but {@code <} and {@code >}
 	 */
 	public static String escapeExcludingSlashIncludingSpace(final String toEscape) {
 
 		final StringBuilder escapedString = new StringBuilder();
 		for (int i = 0; i < toEscape.length(); i++) {
 			final char c = toEscape.charAt(i);
+			if (TO_REMOVE_COLLECTION.contains(c)) {
+				continue;
+			}
 			// These characters are part of the query syntax and must be escaped
 			if (TO_ESCAPE_COLLECTION.contains(String.valueOf(c))) {
 				escapedString.append('\\');

@@ -20,21 +20,38 @@
             </span>
         }
 
+        <!-- Every icon here is a Material Symbol: the glyph is the element's text, so it is
+             `aria-hidden` and each icon-only button is named through `[ariaLabel]` instead.
+             `leading-none` keeps the icon from taking `text-lg`'s taller line height. -->
         <p-button
             (click)="setPositionFlag('before'); menuHover.toggle($event)"
             class="add-button-top"
             [style.top.px]="hoverTopClipOffset()"
             [style.transform]="hoverTopClipOffset() ? 'translate(-50%, 0)' : null"
-            data-testId="hover-add-top-button"
-            icon="pi pi-plus" />
+            [ariaLabel]="'uve.contentlet.tools.add' | dm"
+            data-testId="hover-add-top-button">
+            <ng-template #icon>
+                <span class="material-symbols-outlined text-lg! leading-none" aria-hidden="true">
+                    add
+                </span>
+            </ng-template>
+        </p-button>
         @if (!hoverIsEmpty) {
             <p-button
                 (click)="setPositionFlag('after'); menuHover.toggle($event)"
                 class="add-button-bottom"
                 [style.bottom.px]="hoverBottomClipOffset()"
                 [style.transform]="hoverBottomClipOffset() ? 'translate(-50%, 0)' : null"
-                data-testId="hover-add-bottom-button"
-                icon="pi pi-plus" />
+                [ariaLabel]="'uve.contentlet.tools.add' | dm"
+                data-testId="hover-add-bottom-button">
+                <ng-template #icon>
+                    <span
+                        class="material-symbols-outlined text-lg! leading-none"
+                        aria-hidden="true">
+                        add
+                    </span>
+                </ng-template>
+            </p-button>
         }
 
         @if (!hoverIsEmpty) {
@@ -51,9 +68,17 @@
                     draggable="true"
                     data-testId="hover-drag-button"
                     [pTooltip]="'uve.tooltip.move' | dm"
+                    [ariaLabel]="'uve.tooltip.move' | dm"
                     tooltipPosition="bottom"
-                    [text]="true"
-                    icon="pi pi-arrows-alt" />
+                    [text]="true">
+                    <ng-template #icon>
+                        <span
+                            class="material-symbols-outlined text-lg! leading-none"
+                            aria-hidden="true">
+                            open_with
+                        </span>
+                    </ng-template>
+                </p-button>
             </div>
 
             <!-- Full actions row: rendered when the contentlet is wide
@@ -63,14 +88,74 @@
                 [style.top.px]="hoverTopClipOffset()"
                 [style.transform]="hoverTopClipOffset() ? 'translate(0, 0)' : null"
                 data-testId="hover-actions">
+                <!-- Order: Edit (quick edit), Styles, Full Editor, Code, then Remove. The
+                     collapsed menu below (`actionsMenuItems`) follows the same order and icons. -->
+                <p-button
+                    (click)="promoteHoverToSelected(); openQuickEdit.emit()"
+                    [disabled]="!canEditContentlet()"
+                    data-testId="hover-quick-edit-button"
+                    [pTooltip]="quickEditButtonTooltip() | dm"
+                    [ariaLabel]="'uve.tooltip.edit.quick' | dm"
+                    tooltipPosition="bottom"
+                    [text]="true">
+                    <ng-template #icon>
+                        <span
+                            class="material-symbols-outlined text-lg! leading-none"
+                            aria-hidden="true">
+                            edit
+                        </span>
+                    </ng-template>
+                </p-button>
+                @if (showStyleEditorOption()) {
+                    <p-button
+                        (click)="promoteHoverToSelected(); selectContent.emit(hoverContext)"
+                        [disabled]="!canEditContentlet()"
+                        data-testId="hover-palette-button"
+                        [pTooltip]="styleButtonTooltip() | dm"
+                        [ariaLabel]="'uve.tooltip.edit.style' | dm"
+                        tooltipPosition="bottom"
+                        [text]="true">
+                        <ng-template #icon>
+                            <span
+                                class="material-symbols-outlined text-lg! leading-none"
+                                aria-hidden="true">
+                                palette
+                            </span>
+                        </ng-template>
+                    </p-button>
+                }
+                <p-button
+                    (click)="openFullEditor.emit(hoverContext)"
+                    [disabled]="!canEditContentlet()"
+                    data-testId="hover-edit-button"
+                    [pTooltip]="editButtonTooltip() | dm"
+                    [ariaLabel]="'uve.tooltip.edit.full' | dm"
+                    tooltipPosition="bottom"
+                    [text]="true">
+                    <ng-template #icon>
+                        <span
+                            class="material-symbols-outlined text-lg! leading-none"
+                            aria-hidden="true">
+                            edit_note
+                        </span>
+                    </ng-template>
+                </p-button>
                 @if (hasVtlFiles()) {
                     <p-button
                         (click)="menuHoverVTL.toggle($event)"
                         data-testId="hover-edit-vtl-button"
                         [pTooltip]="'uve.tooltip.edit.vtl' | dm"
+                        [ariaLabel]="'uve.tooltip.edit.vtl' | dm"
                         tooltipPosition="bottom"
-                        [text]="true"
-                        icon="pi pi-code" />
+                        [text]="true">
+                        <ng-template #icon>
+                            <span
+                                class="material-symbols-outlined text-lg! leading-none"
+                                aria-hidden="true">
+                                code
+                            </span>
+                        </ng-template>
+                    </p-button>
                     <p-menu
                         [model]="vtlMenuItems()"
                         [popup]="true"
@@ -79,40 +164,22 @@
                         data-testId="hover-menu-vtl" />
                 }
                 <p-button
-                    (click)="promoteHoverToSelected(); openQuickEdit.emit()"
-                    [disabled]="!canEditContentlet()"
-                    data-testId="hover-quick-edit-button"
-                    [pTooltip]="quickEditButtonTooltip() | dm"
-                    tooltipPosition="bottom"
-                    [text]="true"
-                    icon="pi pi-bolt" />
-                @if (showStyleEditorOption()) {
-                    <p-button
-                        (click)="promoteHoverToSelected(); selectContent.emit(hoverContext)"
-                        [disabled]="!canEditContentlet()"
-                        data-testId="hover-palette-button"
-                        [pTooltip]="styleButtonTooltip() | dm"
-                        tooltipPosition="bottom"
-                        [text]="true"
-                        icon="pi pi-palette" />
-                }
-                <p-button
-                    (click)="openFullEditor.emit(hoverContext)"
-                    [disabled]="!canEditContentlet()"
-                    data-testId="hover-edit-button"
-                    [pTooltip]="editButtonTooltip() | dm"
-                    tooltipPosition="bottom"
-                    [text]="true"
-                    icon="pi pi-pencil" />
-                <p-button
                     (click)="deleteContent.emit(hoverContext)"
                     [disabled]="!allowContentDelete()"
                     [pTooltip]="deleteButtonTooltip() ?? '' | dm"
+                    [ariaLabel]="'uve.tooltip.remove' | dm"
                     tooltipPosition="bottom"
                     [escape]="false"
                     data-testId="hover-delete-button"
-                    [text]="true"
-                    icon="pi pi-times" />
+                    [text]="true">
+                    <ng-template #icon>
+                        <span
+                            class="material-symbols-outlined text-lg! leading-none"
+                            aria-hidden="true">
+                            close
+                        </span>
+                    </ng-template>
+                </p-button>
             </div>
 
             <!-- Collapsed actions: a single ellipsis button that opens
@@ -126,14 +193,48 @@
                 <p-button
                     (click)="menuHoverActions.toggle($event)"
                     data-testId="hover-actions-collapsed-button"
-                    [text]="true"
-                    icon="pi pi-ellipsis-v" />
+                    [ariaLabel]="'uve.contentlet.tools.more' | dm"
+                    [text]="true">
+                    <ng-template #icon>
+                        <span
+                            class="material-symbols-outlined text-lg! leading-none"
+                            aria-hidden="true">
+                            more_vert
+                        </span>
+                    </ng-template>
+                </p-button>
                 <p-tieredMenu
                     [model]="actionsMenuItems()"
                     [popup]="true"
                     #menuHoverActions
                     appendTo="body"
-                    data-testId="hover-menu-actions" />
+                    data-testId="hover-menu-actions">
+                    <!-- PrimeNG draws an item icon from a class, and a Material Symbol needs its
+                         name as text, so every row is drawn here with PrimeNG's own classes. An
+                         entry's `symbol` is its Material Symbol; the VTL files under Code have
+                         none. -->
+                    <ng-template #item let-item let-hasSubmenu="hasSubmenu">
+                        <a class="p-tieredmenu-item-link" tabindex="-1">
+                            @if (item.symbol) {
+                                <span
+                                    class="p-tieredmenu-item-icon material-symbols-outlined text-lg! leading-none"
+                                    aria-hidden="true">
+                                    {{ item.symbol }}
+                                </span>
+                            }
+                            <span class="p-tieredmenu-item-label">{{ item.label }}</span>
+                            @if (hasSubmenu) {
+                                <!-- `text-sm!`, not `text-lg!`: PrimeNG's submenu-icon class fixes
+                                     this box at the theme's 0.875rem, and a larger glyph overflows it. -->
+                                <span
+                                    class="p-tieredmenu-submenu-icon material-symbols-outlined text-sm! leading-none"
+                                    aria-hidden="true">
+                                    chevron_right
+                                </span>
+                            }
+                        </a>
+                    </ng-template>
+                </p-tieredMenu>
             </div>
         }
         <p-menu

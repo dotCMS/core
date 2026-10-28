@@ -173,11 +173,12 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setURLMapper(htmlPageUrl.getPageUrlMapper())
                 .setLive(htmlPageUrl.hasLive())
                 .setVanityUrl(context.getVanityUrl());
-        if (ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
-            APILocator.getExperimentsAPI()
-                    .getRunningExperimentPerPage(htmlPageUrl.getHTMLPage().getIdentifier())
-                    .ifPresent(htmlPageAssetRenderedBuilder::setRunningExperiment);
-        }
+        // No isExperimentEnabled() guard — limited-mode experiments must also be surfaced
+        // to visitors. getRunningExperimentPerPage() naturally returns empty when no experiment
+        // is running for this page, so the short-circuit is preserved.
+        APILocator.getExperimentsAPI()
+                .getRunningExperimentPerPage(htmlPageUrl.getHTMLPage().getIdentifier())
+                .ifPresent(htmlPageAssetRenderedBuilder::setRunningExperiment);
 
         return htmlPageAssetRenderedBuilder.build(false, context.getPageMode());
     }
@@ -236,11 +237,12 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setLive(htmlPageUrl.hasLive())
                 .setParseJSON(context.isParseJSON())
                 .setVanityUrl(context.getVanityUrl());
-        if (ConfigExperimentUtil.INSTANCE.isExperimentEnabled()) {
-            APILocator.getExperimentsAPI()
-                    .getRunningExperimentPerPage(htmlPageUrl.getHTMLPage().getIdentifier())
-                    .ifPresent(htmlPageAssetRenderedBuilder::setRunningExperiment);
-        }
+        // No isExperimentEnabled() guard — limited-mode experiments must also be surfaced
+        // to visitors. getRunningExperimentPerPage() naturally returns empty when no experiment
+        // is running for this page, so the short-circuit is preserved.
+        APILocator.getExperimentsAPI()
+                .getRunningExperimentPerPage(htmlPageUrl.getHTMLPage().getIdentifier())
+                .ifPresent(htmlPageAssetRenderedBuilder::setRunningExperiment);
 
         return htmlPageAssetRenderedBuilder.build(true, mode);
     }

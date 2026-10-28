@@ -27,6 +27,10 @@
     ]
   },
   {
+    "name": "Experiment_Gate",
+    "collections": ["Experiment_Gate.postman_collection"]
+  },
+  {
     "name": "graphql",
     "collections": ["GraphQLTests"]
   },
