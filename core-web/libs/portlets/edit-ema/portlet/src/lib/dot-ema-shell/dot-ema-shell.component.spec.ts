@@ -106,7 +106,6 @@ import {
 import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-bar/edit-ema-navigation-bar.component';
 import { DotEmaShellComponent } from './dot-ema-shell.component';
 
-import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
@@ -340,10 +339,6 @@ describe('DotEmaShellComponent', () => {
             { provide: DotEditContentOpenerService, useFactory: () => opener }
         ],
         declarations: [
-            // Stubs the page-editor dialog the shell still mounts until the Green half of #38303
-            // removes the mount; rendered for real it pulls in its whole dependency chain. Remove
-            // with that mount.
-            MockComponent(DotEmaDialogComponent),
             MockComponent(DotPageToolsSeoComponent),
             MockComponent(DotPageScannerReportComponent)
         ],
