@@ -223,6 +223,11 @@ test-karate collections='KarateCITests#defaults':
 test-integration:
     ./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false
 
+# Registers an integration test in a CI suite at its name-derived position (never append by hand)
+# Usage: just add-it-test <TestClass> <Suite>   e.g. `just add-it-test FooIntegrationTest MainSuite2a`
+add-it-test test_class suite='':
+    python3 scripts/it-suites.py add {{ test_class }} {{ suite }}
+
 # Runs only the open-search integration tests
 test-integration-open-search:
    ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dopensearch.upgrade.test=true
