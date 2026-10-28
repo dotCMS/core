@@ -116,6 +116,7 @@ import org.junit.runners.Suite.SuiteClasses;
         GenericBundleActivatorIntegrationTest.class,
         com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest.class,
         com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class,
+        com.dotmarketing.portlets.contentlet.transform.ContentMapWidgetFieldRenderTest.class,
         ApiTokenResourceTest.class,
         AuthCredentialPushPublishUtilTest.class,
         com.dotcms.publishing.remote.RemoteReceiverRelationshipsFilterTest.class,
@@ -129,8 +130,7 @@ import org.junit.runners.Suite.SuiteClasses;
         CMSUserToolTest.class,
         UserJsViewToolTest.class,
         com.dotcms.rest.BundleResourceDeleteResponseTest.class,
-        ContentRelationshipsResourceIntegrationTest.class,
-        com.dotmarketing.portlets.contentlet.transform.ContentMapWidgetFieldRenderTest.class
+        ContentRelationshipsResourceIntegrationTest.class
 })
 public class MainSuite2a {
 
