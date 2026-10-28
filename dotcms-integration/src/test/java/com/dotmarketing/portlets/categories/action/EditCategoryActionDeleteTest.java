@@ -89,15 +89,19 @@ public class EditCategoryActionDeleteTest {
 
     /**
      * Removes the contentlets, the content types, the categories (children first), the test users
-     * (handing whatever they own to the admin user) and the owner role. Every step runs even when
-     * an earlier one fails; the first failure is rethrown at the end with the others attached.
+     * (handing whatever they own to the admin user) and the owner role. Objects that are already
+     * gone are skipped. Every step runs even when an earlier one fails; the first failure is
+     * rethrown at the end with the others attached.
      */
     @AfterClass
     public static void cleanUp() throws Exception {
         final List<Exception> failures = new ArrayList<>();
         for (final Contentlet contentlet : createdContentlets) {
-            runCleanupStep(failures, () -> APILocator.getContentletAPI()
-                    .destroy(contentlet, systemUser, false));
+            runCleanupStep(failures, () -> {
+                if (null != APILocator.getContentletAPI().find(contentlet.getInode(), systemUser, false)) {
+                    APILocator.getContentletAPI().destroy(contentlet, systemUser, false);
+                }
+            });
         }
         runCleanupStep(failures, () -> createdTypes.forEach(ContentTypeDataGen::remove));
         final List<Category> categories = new ArrayList<>(createdCategories);
@@ -107,8 +111,12 @@ public class EditCategoryActionDeleteTest {
         }
         for (final User user : new User[]{readOnlyUser, editor}) {
             if (null != user) {
-                runCleanupStep(failures, () -> APILocator.getUserAPI()
-                        .delete(user, TestUserUtils.getAdminUser(), systemUser, false));
+                runCleanupStep(failures, () -> {
+                    if (APILocator.getUserAPI().userExistsWithEmail(user.getEmailAddress())) {
+                        APILocator.getUserAPI()
+                                .delete(user, TestUserUtils.getAdminUser(), systemUser, false);
+                    }
+                });
             }
         }
         if (null != ownerRole) {
