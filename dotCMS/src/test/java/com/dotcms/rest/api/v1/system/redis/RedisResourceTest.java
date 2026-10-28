@@ -17,6 +17,7 @@ import com.dotcms.rest.exception.SecurityException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -51,14 +52,15 @@ class RedisResourceTest {
     @SuppressWarnings("unchecked")
     void setUp() throws Exception {
         final RoleAPI roleAPI = mock(RoleAPI.class);
-        when(roleAPI.doesUserHaveRole(any(User.class), anyString())).thenReturn(true);
+        when(roleAPI.loadRoleByKeyOrId(anyString())).thenReturn(mock(Role.class));
+        when(roleAPI.doesUserHaveRole(any(User.class), any(Role.class))).thenReturn(true);
         apiLocator = mockStatic(APILocator.class);
-        apiLocator.when(APILocator::getRoleAPI).thenReturn(roleAPI);
 
         final LayoutAPI layoutAPI = mock(LayoutAPI.class);
         when(layoutAPI.doesUserHaveAccessToPortlet(anyString(), any(User.class))).thenReturn(true);
         final ApiProvider apiProvider = mock(ApiProvider.class);
         when(apiProvider.layoutAPI()).thenReturn(layoutAPI);
+        when(apiProvider.roleAPI()).thenReturn(roleAPI);
         final WebResource webResource =
                 new WebResource(apiProvider, mock(JsonWebTokenAuthCredentialProcessor.class));
 

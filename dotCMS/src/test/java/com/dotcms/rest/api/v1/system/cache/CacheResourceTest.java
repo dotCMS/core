@@ -26,6 +26,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.liferay.portal.model.User;
@@ -64,9 +65,9 @@ class CacheResourceTest {
     @BeforeEach
     void setUp() throws Exception {
         final RoleAPI roleAPI = mock(RoleAPI.class);
-        when(roleAPI.doesUserHaveRole(any(User.class), anyString())).thenReturn(true);
+        when(roleAPI.loadRoleByKeyOrId(anyString())).thenReturn(mock(Role.class));
+        when(roleAPI.doesUserHaveRole(any(User.class), any(Role.class))).thenReturn(true);
         apiLocator = mockStatic(APILocator.class);
-        apiLocator.when(APILocator::getRoleAPI).thenReturn(roleAPI);
         // The route bodies read the cache and cluster infrastructure, which a unit test does not have
         maintenanceUtil = mockStatic(MaintenanceUtil.class);
         cacheLocator = mockStatic(CacheLocator.class);
@@ -79,6 +80,7 @@ class CacheResourceTest {
         when(layoutAPI.doesUserHaveAccessToPortlet(anyString(), any(User.class))).thenReturn(true);
         final ApiProvider apiProvider = mock(ApiProvider.class);
         when(apiProvider.layoutAPI()).thenReturn(layoutAPI);
+        when(apiProvider.roleAPI()).thenReturn(roleAPI);
         final WebResource webResource =
                 new WebResource(apiProvider, mock(JsonWebTokenAuthCredentialProcessor.class));
 
