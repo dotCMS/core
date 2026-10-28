@@ -68,6 +68,7 @@ UserAPI userAPI = APILocator.getUserAPI();   // Service access pattern
 - **Java version**: see `.sdkmanrc` for the runtime version. Core modules compile to whatever `dotcms.core.compiler.release` is set to in `parent/pom.xml` (override e.g. `-Ddotcms.core.compiler.release=11` for older bytecode); `tools/dotcms-cli` targets whatever `maven.compiler.release` is set to in its own `pom.xml`, historically lower for portability.
 - **Security**: No hardcoded secrets, validate all input, never log sensitive data
 - **REST @Schema**: Must match actual return type — see [REST API Guide](dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md)
+- **Integration test placement**: compatibility first — JUnit 5 goes to `Junit5Suite1`, a test needing a live OpenSearch cluster to `OpenSearchUpgradeSuite`; neither competes on runtime. Every other **new test class** goes in the `MainSuite*` that `just suite-timings` currently names as fastest, with that output pasted into the PR. **The suite name is a result of the measurement, never an input** — never take it from an example, a nearby class, this document or memory. A **new method on an existing class stays with its class**. No timing data: report it and ask, do not pick a default. See [Integration Tests → Registering Tests in a MainSuite](docs/testing/INTEGRATION_TESTS.md#registering-tests-in-a-mainsuite-ci-gate).
 - **Integration test registration**: A new integration test class not added to a `MainSuite*`/`Junit5Suite*` `@SuiteClasses` list compiles fine but is **silently never run in CI** (green build, zero coverage) — it only runs locally via `-Dit.test=`. See [Integration Tests → Registering Tests in a MainSuite](docs/testing/INTEGRATION_TESTS.md#registering-tests-in-a-mainsuite-ci-gate).
 - **Integration tests can silently run zero tests**: the Maven build cache may short-circuit failsafe (`Skipping plugin execution (cached): failsafe:integration-test`) — BUILD SUCCESS, `<completed>0</completed>`, exit 0. Pass `-Dmaven.build.cache.enabled=false`, prefer class-level over `-Dit.test=Class#method` selection, and confirm `Tests run: N` in `target/failsafe-reports/*.txt` rather than trusting the exit code. See [Integration Tests → The build cache can skip the tests entirely](docs/testing/INTEGRATION_TESTS.md#the-build-cache-can-skip-the-tests-entirely).
 - **Frontend**: See [core-web/CLAUDE.md](core-web/CLAUDE.md) for Angular/TypeScript standards
@@ -109,6 +110,54 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 - **Frontend**: Angular (see `core-web/package.json`'s `@angular/core`), Nx, PrimeNG, Tailwind CSS, Jest/Spectator — [core-web/CLAUDE.md](core-web/CLAUDE.md)
 - **Infrastructure**: Docker, PostgreSQL, Elasticsearch, GitHub Actions
 
+## Required Reading Before You Edit
+
+The Critical Rules above are one-line summaries. The full directives live in the guides below, so
+before the **first edit** in any of these areas, read the linked guide and say in your reply which
+directive you are applying. The index under "Documentation (Load On-Demand)" is reference; this
+table is a gate.
+
+| When the change touches… | Read first |
+|---|---|
+| Any new or moved integration-test coverage (`dotcms-integration/src/test/**`) | [Integration Tests](docs/testing/INTEGRATION_TESTS.md) — compatibility gate first, then the suite `just suite-timings` names (never a remembered one); a new method stays with its class; append registrations at the **end** of `@SuiteClasses`, `@AfterClass` cleanup of test data, `-Dmaven.build.cache.enabled=false` when running |
+| A unit test in `dotCMS/src/test/**` | [Backend Unit Tests](docs/testing/BACKEND_UNIT_TESTS.md) |
+| A feature flag (`FeatureFlagName`, `Config.get*Property`, `dotmarketing-config.properties`) | [Configuration Patterns → Feature Flags](docs/backend/CONFIGURATION_PATTERNS.md#feature-flags) — constant in `FeatureFlagName`, `FEATURE_FLAG_` prefix, default stated in the Javadoc |
+| A JAX-RS resource, `@Schema`, `@Operation` or `openapi.yaml` | [REST API Patterns](docs/backend/REST_API_PATTERNS.md) and [REST API Guide](dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md) — regenerate and commit `openapi.yaml` |
+| `DotConnect`, `@WrapInTransaction`, `@CloseDBIfOpened`, SQL strings | [Database Patterns](docs/backend/DATABASE_PATTERNS.md) |
+| Input handling, auth checks, logging of user data, secrets | [Security Patterns](docs/backend/SECURITY_BACKEND.md) |
+| `ESContentFactoryImpl`, `IndexAPI`, anything under `content/elasticsearch` or `opensearch` | [Search API Migration](docs/backend/SEARCH_API_MIGRATION.md) and [OpenSearch Migration](docs/backend/OPENSEARCH_MIGRATION.md) |
+| A `pom.xml` dependency or version | [Maven Build System](docs/backend/MAVEN_BUILD_SYSTEM.md) |
+| Anything under `core-web/` | [core-web/CLAUDE.md](core-web/CLAUDE.md) and [docs/frontend/README.md](docs/frontend/README.md) |
+| A commit message, branch name or PR description | [Git Workflows](docs/core/GIT_WORKFLOWS.md) |
+| Any Java under `dotCMS/src/main/java` | [Java Standards](docs/backend/JAVA_STANDARDS.md) — immutables, exceptions, utilities, Javadoc on every method you touch |
+| A DB schema change, an index mapping change, or a REST/GraphQL contract change | [Rollback-Unsafe Change Categories](docs/core/ROLLBACK_UNSAFE_CATEGORIES.md) |
+| An executor, thread pool, `synchronized` block or anything that blocks on I/O | [When to Use Virtual Threads](docs/backend/VIRTUAL_THREADS.md) |
+| `loadFields`, `toMap`, or how a field lands in the index document | [Index Field Emission](docs/backend/INDEX_FIELD_EMISSION.md) |
+| A system-event producer or consumer (`SystemEventsAPI`, `EventSubscriber`) | [System Events](docs/backend/SYSTEM_EVENTS.md) — at-least-once delivery, idempotent consumers |
+| A new metric or anything under `com.dotcms.telemetry` | [Telemetry Implementation](docs/backend/TELEMETRY_IMPLEMENTATION.md) |
+| Anything under `tools/dotcms-cli/` | [CLI Overview](docs/cli/CLI_OVERVIEW.md) — compiles to a lower `maven.compiler.release` than core |
+| A Playwright test under `core-web/apps/dotcms-ui-e2e/` | [E2E Tests](docs/testing/E2E_TESTS.md) |
+| `.github/workflows/**` | [CI/CD Pipeline](docs/core/CICD_PIPELINE.md) |
+| A `Dockerfile` or anything under `docker/` | [Docker Build Process](docs/infrastructure/DOCKER_BUILD_PROCESS.md) |
+| Creating or triaging a GitHub issue | [GitHub Issue Management](docs/core/GITHUB_ISSUE_MANAGEMENT.md) |
+| A new module, package or cross-module feature | [Architecture Overview](docs/core/ARCHITECTURE_OVERVIEW.md) |
+| Input handling, auth checks, logging of user data, secrets (principles) | [Security Principles](docs/core/SECURITY_PRINCIPLES.md) — the backend patterns are in the Security Patterns row above |
+| `/api/inference/v1/**`, anything under `com.dotcms.ai` | [Inference API](docs/backend/INFERENCE_API.md) |
+| Health endpoints, `com.dotcms.health`, log levels | [Health Monitoring](docs/backend/HEALTH_MONITORING.md) |
+| GraphQL types for image or file fields, `com.dotcms.graphql` | [GraphQL Asset Fields Migration](docs/backend/GRAPHQL_ASSET_FIELDS_MIGRATION.md) |
+| Reflection, class scanning or annotation lookups | [Jandex Metadata Scanning](docs/backend/JANDEX_METADATA_SCANNING.md) — prefer Jandex over reflection |
+| `OS_*` / `ES_*` properties, the search client configuration | [OpenSearch Client Configuration](docs/backend/OPENSEARCH_CLIENT_CONFIGURATION.md) |
+| QA of the ES → OpenSearch migration phases | [Migration Test Plan](docs/backend/OPENSEARCH_MIGRATION_TEST_PLAN.md) and [Migration Tester Guide](docs/backend/OPENSEARCH_MIGRATION_TESTER_GUIDE.md) |
+| Angular syntax, signals, change detection, forms, icons | [Angular Standards](docs/frontend/ANGULAR_STANDARDS.md) |
+| A new Angular component or its file layout | [Component Architecture](docs/frontend/COMPONENT_ARCHITECTURE.md) |
+| An NgRx Signal Store, `rxMethod`, `patchState` | [State Management](docs/frontend/STATE_MANAGEMENT.md) |
+| Tailwind, PrimeNG theme, SCSS, form markup | [Styling Standards](docs/frontend/STYLING_STANDARDS.md) |
+| TypeScript types, `as const`, private fields | [TypeScript Standards](docs/frontend/TYPESCRIPT_STANDARDS.md) |
+| Writing a Jest/Spectator test | [Testing Frontend](docs/frontend/TESTING_FRONTEND.md) |
+| Reviewing a frontend test | [Testing Review Rules](docs/frontend/TESTING_REVIEW_RULES.md) |
+| The GlobalStore breadcrumb trail | [Breadcrumbs](docs/frontend/BREADCRUMBS.md) |
+| `tools/dotcms-cli` build: profiles, native image, dev mode | [CLI Build System](docs/cli/CLI_BUILD_SYSTEM.md) |
+
 ## Documentation (Load On-Demand)
 
 ### Core Architecture & Workflows
@@ -126,6 +175,7 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 - [Inference API](docs/backend/INFERENCE_API.md) — OpenAI-compatible `/api/inference/v1` family: chat completions, streaming, models, embeddings, images; bearer-only auth, per-site resolution, limits
 - [Maven Build System](docs/backend/MAVEN_BUILD_SYSTEM.md) — Dependency management
 - [Configuration Patterns](docs/backend/CONFIGURATION_PATTERNS.md) — Config.getProperty() usage
+- [Apps Configuration](docs/backend/APPS_CONFIGURATION.md) — Who can change and read Apps configuration; legacy delegation switch
 - [Database Patterns](docs/backend/DATABASE_PATTERNS.md) — DotConnect, transactions
 - [Health Monitoring](docs/backend/HEALTH_MONITORING.md) — Health endpoints, log levels
 - [Security Patterns](docs/backend/SECURITY_BACKEND.md) — Input validation, auth, SQL/XSS prevention, secure logging

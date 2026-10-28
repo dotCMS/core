@@ -1,4 +1,4 @@
-<%@page
+<%@ page import="com.liferay.util.Xss" %><%@page
 		import="com.dotmarketing.portlets.workflows.business.WorkflowAPI"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowStep"%>
 <%@page
@@ -68,22 +68,22 @@
 
 					<%List<WorkflowStep> steps = wapi.findSteps(scheme);%>
 					<%if(!scheme.isArchived()){ %>
-					<span class="workflowIcon"></span> <%=scheme.getName()%>
+					<span class="workflowIcon"></span> <%=Xss.encodeForHTML(scheme.getName())%>
 					<%}else{ %>
-					<strike><%=scheme.getName()%></strike>
+					<strike><%=Xss.encodeForHTML(scheme.getName())%></strike>
 					<%} %>
 
 
 
 					<div style="font-weight:normal;font-size:12px;">
-						<%=UtilMethods.webifyString(scheme.getDescription())%>
+						<%=UtilMethods.webifyString(Xss.encodeForHTML(scheme.getDescription()))%>
 					</div>
 
 				</div>
 				<ol class="wfStepsList">
 					<%if(steps!= null && steps.size() > 0){ %>
 					<%for(WorkflowStep step : steps){ %>
-					<li><%=step.getName() %></li>
+					<li><%=Xss.encodeForHTML(step.getName())%></li>
 					<%} %>
 					<%}else{ %>
 					<li><%=LanguageUtil.get(pageContext, "No-steps-have-been-created")%></li>

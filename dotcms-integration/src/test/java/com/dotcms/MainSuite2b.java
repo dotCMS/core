@@ -4,6 +4,7 @@ import com.dotcms.ai.app.ConfigServiceTest;
 import com.dotcms.ai.client.AIProxyClientTest;
 import com.dotcms.ai.listener.EmbeddingContentListenerTest;
 import com.dotcms.ai.rest.AiRetrievalPermissionTest;
+import com.dotcms.ai.rest.EmbeddingsResourceAuthTest;
 import com.dotcms.ai.viewtool.AIViewToolTest;
 import com.dotcms.ai.viewtool.CompletionsToolTest;
 import com.dotcms.ai.viewtool.EmbeddingsToolTest;
@@ -117,10 +118,10 @@ import com.dotcms.rest.api.v1.menu.MenuResourceTest;
 import com.dotcms.rest.api.v1.publishing.BundleManagementResourceIntegrationTest;
 import com.dotcms.rest.api.v1.publishing.PublishingResourceIntegrationTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
-import com.dotcms.rest.api.v1.system.ConfigurationHelperTest;
 import com.dotcms.rest.api.v1.system.permission.PermissionResourceIntegrationTest;
 import com.dotcms.rest.api.v1.taillog.TailLogResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
+import com.dotcms.api.system.user.UserServiceFactoryTest;
 import com.dotcms.rest.api.v2.asset.WebAssetResourceV2IntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
 import com.dotcms.saml.SamlConfigurationServiceTest;
@@ -146,7 +147,6 @@ import com.dotmarketing.common.db.DBTimeZoneCheckTest;
 import com.dotmarketing.filters.AutoLoginFilterTest;
 import com.dotmarketing.filters.CMSUrlUtilIntegrationTest;
 import com.dotmarketing.image.focalpoint.FocalPointAPITest;
-import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
 import com.dotmarketing.portlets.browser.BrowserUtilTest;
 import com.dotmarketing.portlets.browser.ajax.BrowserAjaxTest;
 import com.dotmarketing.portlets.categories.business.CategoryFactoryTest;
@@ -167,6 +167,7 @@ import com.dotmarketing.portlets.workflows.actionlet.MoveContentActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.PushNowActionletTest;
 import com.dotmarketing.portlets.workflows.actionlet.SaveContentAsDraftActionletIntegrationTest;
 import com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletAbortTest;
+import com.dotmarketing.portlets.workflows.ajax.WfTaskAjaxTest;
 import com.dotmarketing.portlets.workflows.model.TestWorkflowAction;
 import com.dotmarketing.quartz.DotStatefulJobTest;
 import com.dotmarketing.quartz.job.CleanUpFieldReferencesJobTest;
@@ -290,6 +291,7 @@ import org.junit.runners.Suite.SuiteClasses;
         DotStatefulJobTest.class,
         IntegrityDataGenerationJobTest.class,
         BundleAPITest.class,
+        WfTaskAjaxTest.class,
         Task05390MakeRoomForLongerJobDetailTest.class,
         Task05395RemoveEndpointIdForeignKeyInIntegrityResolverTablesIntegrationTest.class,
         JSONToolTest.class,
@@ -303,7 +305,6 @@ import org.junit.runners.Suite.SuiteClasses;
         Task201102UpdateColumnSitelicTableTest.class,
         DependencyManagerTest.class,
         com.dotcms.rest.api.v1.versionable.VersionableResourceTest.class,
-        GenericBundleActivatorIntegrationTest.class,
         SAMLHelperTest.class,
         PermissionHelperTest.class,
         ResetPasswordTokenUtilTest.class,
@@ -341,7 +342,6 @@ import org.junit.runners.Suite.SuiteClasses;
         CategoryFactoryTest.class,
         Task210805DropUserProxyTableTest.class,
         Task210816DeInodeRelationshipTest.class,
-        ConfigurationHelperTest.class,
         CSVManifestReaderTest.class,
         Task210901UpdateDateTimezonesTest.class,
         DotObjectCodecTest.class,
@@ -493,12 +493,15 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.business.PermissionAPIIntegrationTest.class,
         com.dotmarketing.business.PermissionAPITest.class,
         com.dotmarketing.business.ajax.PermissionAjaxIntegrationTest.class,
+        com.dotmarketing.business.ajax.RoleAjaxIntegrationTest.class,
+        com.dotmarketing.portlets.user.ajax.UserAjaxIntegrationTest.class,
         com.dotmarketing.servlets.BinaryExporterServletTest.class,
         com.dotmarketing.servlets.ShortyServletAndTitleImageTest.class,
         com.dotmarketing.servlets.InitRunnerTest.class,
         com.dotmarketing.servlets.ajax.AjaxDirectorServletIntegrationTest.class,
         FocalPointAPITest.class,
         com.dotmarketing.tag.business.TagAPITest.class,
+        com.dotmarketing.tag.ajax.TagAjaxTest.class,
         OSGIUtilTest.class,
         EncryptPlainPasswordsJobTest.class,
         CachedParameterDecoratorTest.class,
@@ -581,6 +584,15 @@ import org.junit.runners.Suite.SuiteClasses;
         RoleResourceUsersIntegrationTest.class,
         com.dotmarketing.common.reindex.ReindexDeleteJournalTest.class,
         AiRetrievalPermissionTest.class,
+        EmbeddingsResourceAuthTest.class,
+        com.dotmarketing.portlets.cmsmaintenance.ajax.CMSMaintenanceAjaxIntegrationTest.class,
+        com.dotmarketing.portlets.structure.ajax.StructureAjaxIntegrationTest.class,
+        com.dotmarketing.portlets.structure.action.EditFieldActionReorderTest.class,
+        com.dotmarketing.portlets.contentlet.ajax.ImportContentletAjaxIntegrationTest.class,
+        com.dotmarketing.portlets.languagesmanager.ajax.LanguageAjaxIntegrationTest.class,
+        com.dotmarketing.business.ajax.RoleAjaxLayoutsIntegrationTest.class,
+        com.dotmarketing.portlets.languagesmanager.action.EditLanguageKeysActionTest.class,
+        UserServiceFactoryTest.class,
 })
 
 public class MainSuite2b {

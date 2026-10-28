@@ -236,19 +236,23 @@ jobs:
           # The built-in coordinates below are always required; the repo variable
           # only ADDS to them, so it cannot weaken the guard. Space or comma
           # separated groupId:artifactId.
-          REQUIRED_COORDINATES: com.dotcms:dotcms-core com.dotcms:dotcms-core-web ${{ vars.RELEASE_REQUIRED_COORDINATES }}
+          REQUIRED_COORDINATES: com.dotcms:dotcms-core com.dotcms:dotcms-core-web com.dotcms.samlbundle:com.dotcms.samlbundle ${{ vars.RELEASE_REQUIRED_COORDINATES }}
         run: |
           set -uo pipefail
 
           repo="${MAVEN_REPO:-$HOME/.m2/repository}"
           version="${VERSION:?VERSION is required}"
-          # dotcms-core packages a jar and dotcms-core-web a war; a release
-          # shipping one without the other is partial.
-          coords="${REQUIRED_COORDINATES:-com.dotcms:dotcms-core com.dotcms:dotcms-core-web}"
+          # A release must include core, its webapp, and the matching SAML bundle.
+          coords="${REQUIRED_COORDINATES:-com.dotcms:dotcms-core com.dotcms:dotcms-core-web com.dotcms.samlbundle:com.dotcms.samlbundle}"
           coords="${coords//,/ }"
 
           rc=0
           for coord in $coords; do
+            # Old release tags have no in-reactor SAML and retain their standalone pin.
+            if [[ "$coord" == com.dotcms.samlbundle:com.dotcms.samlbundle &&
+                  ! -f independent-projects/core-plugins/saml-plugin/pom.xml ]]; then
+              continue
+            fi
             group="${coord%%:*}"
             artifact="${coord##*:}"
             if [[ "$coord" != *:* || -z "$group" || -z "$artifact" ]]; then
@@ -299,6 +303,23 @@ jobs:
           echo "::group::Publish Release Artifacts to S3"
           ./.github/scripts/publish-to-s3/publish.sh maven --version "$VERSION"
           echo "::endgroup::"
+
+      # In reuse mode ~/.m2/repository holds only the release coordinates the build
+      # installed (the maven-repo artifact no longer carries third-party jars), so the
+      # Javadoc run below would download all of dotcms-core's dependencies (~700 MB)
+      # from Maven Central. Restore them from the shared dependency cache instead. This is
+      # deliberately AFTER the validate and publish steps: those read the repository as the
+      # publication source, which must hold nothing but the artifact. The cache holds no
+      # installed builds (the build job removes them before saving), so it cannot overwrite
+      # a release coordinate; on a miss, Maven downloads as before.
+      - name: Restore Maven Dependency Cache for Javadocs
+        if: inputs.upload_javadocs == true && inputs.java-version == '' && inputs.reuse-build-artifacts == true
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-mavencore-v2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-mavencore-v2-
 
       - name: Generate and Upload Javadocs
         run: |

@@ -81,6 +81,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static com.dotmarketing.business.ajax.DwrUtil.getLoggedInUser;
+import static com.dotmarketing.business.ajax.DwrUtil.validateRoleMembershipPermissions;
 import static com.dotmarketing.business.ajax.DwrUtil.validateRolesPortletPermissions;
 import static com.dotmarketing.util.PortletID.LANGUAGES;
 
@@ -207,8 +208,18 @@ public class RoleAjax {
 
 	}
 
-	//Retrieves a list of roles mapped to the given list of roles
-	public Map<String, List<Map<String, Object>>> getUsersByRole(String[] roleIds) throws NoSuchUserException, DotDataException, DotSecurityException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
+	/**
+	 * Lists the users directly granted each of the given roles, keyed by role id. The caller
+	 * must be able to read role membership: an administrator, or a user with both the Roles
+	 * and the Users portlets.
+	 *
+	 * @param roleIds the roles whose users are listed
+	 * @return the users of each role, keyed by role id
+	 * @throws DotSecurityException when the caller may not read role membership
+	 */
+	public Map<String, List<Map<String, Object>>> getUsersByRole(String[] roleIds) throws NoSuchUserException, DotDataException, DotSecurityException, IllegalAccessException, InvocationTargetException, NoSuchMethodException, PortalException, SystemException {
+
+		validateRoleMembershipPermissions(getLoggedInUser());
 
 		final RoleAPI roleAPI = APILocator.getRoleAPI();
 
@@ -552,7 +563,16 @@ public class RoleAjax {
 
 	}
 
-	public List<Map<String, Object>> getAllLayouts() throws DotDataException, LanguageException, DotRuntimeException, PortalException, SystemException {
+	/**
+	 * Returns every layout with the titles of its portlets, for the layouts grid of the Roles
+	 * portlet. Only users with access to the Roles portlet can list them.
+	 *
+	 * @return one map per layout, including a {@code portletTitles} entry
+	 * @throws DotSecurityException if the logged-in user has no access to the Roles portlet
+	 */
+	public List<Map<String, Object>> getAllLayouts() throws DotDataException, LanguageException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
+
+		validateRolesPortletPermissions(getLoggedInUser());
 
 		List<Map<String, Object>> list = new ArrayList<>();
 
@@ -568,7 +588,16 @@ public class RoleAjax {
 
 	}
 
-	public List<Map<String, Object>> loadRoleLayouts(String roleId) throws DotDataException {
+	/**
+	 * Returns the layouts assigned to a role, for the layouts grid of the Roles portlet. Only
+	 * users with access to the Roles portlet can list them.
+	 *
+	 * @param roleId the id of the role
+	 * @return one map per layout assigned to the role
+	 * @throws DotSecurityException if the logged-in user has no access to the Roles portlet
+	 */
+	public List<Map<String, Object>> loadRoleLayouts(String roleId) throws DotDataException, PortalException, SystemException, DotSecurityException {
+		validateRolesPortletPermissions(getLoggedInUser());
 		List<Map<String, Object>> list = new ArrayList<>();
 
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();

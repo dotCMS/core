@@ -508,12 +508,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/v1/users",
-							"protocol": "http",
+							"raw": "{{serverURL}}/api/v1/users",
 							"host": [
-								"localhost"
+								"{{serverURL}}"
 							],
-							"port": "8080",
 							"path": [
 								"api",
 								"v1",
@@ -557,12 +555,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/v1/users",
-							"protocol": "http",
+							"raw": "{{serverURL}}/api/v1/users",
 							"host": [
-								"localhost"
+								"{{serverURL}}"
 							],
-							"port": "8080",
 							"path": [
 								"api",
 								"v1",
@@ -602,12 +598,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/v1/users",
-							"protocol": "http",
+							"raw": "{{serverURL}}/api/v1/users",
 							"host": [
-								"localhost"
+								"{{serverURL}}"
 							],
-							"port": "8080",
 							"path": [
 								"api",
 								"v1",
@@ -647,12 +641,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/v1/users",
-							"protocol": "http",
+							"raw": "{{serverURL}}/api/v1/users",
 							"host": [
-								"localhost"
+								"{{serverURL}}"
 							],
-							"port": "8080",
 							"path": [
 								"api",
 								"v1",
@@ -692,12 +684,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/v1/users",
-							"protocol": "http",
+							"raw": "{{serverURL}}/api/v1/users",
 							"host": [
-								"localhost"
+								"{{serverURL}}"
 							],
-							"port": "8080",
 							"path": [
 								"api",
 								"v1",
@@ -736,12 +726,10 @@
 							}
 						},
 						"url": {
-							"raw": "http://localhost:8080/api/v1/users",
-							"protocol": "http",
+							"raw": "{{serverURL}}/api/v1/users",
 							"host": [
-								"localhost"
+								"{{serverURL}}"
 							],
-							"port": "8080",
 							"path": [
 								"api",
 								"v1",
@@ -2774,6 +2762,332 @@
 					"response": []
 				},
 				{
+					"name": "RoleFilter - Resolve CMS Administrator role id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"const entity = pm.response.json().entity;",
+									"const roles = Array.isArray(entity) ? entity : (entity.roles || []);",
+									"const cmsAdmin = roles.find(r => r.roleKey === 'CMS Administrator');",
+									"pm.test(\"admin@dotcms.com holds CMS Administrator\", function () { pm.expect(cmsAdmin, 'CMS Administrator role').to.not.be.undefined; });",
+									"pm.collectionVariables.set('cmsAdminRoleId', cmsAdmin ? cmsAdmin.id : '');"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/roles/users/admin@dotcms.com",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"roles",
+								"users",
+								"admin@dotcms.com"
+							],
+							"query": []
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RoleFilter - roleId lists only CMS Administrators (admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const entity = pm.response.json().entity;",
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"admin@dotcms.com is listed\", function () { pm.expect(entity.map(u => u.emailAddress)).to.include('admin@dotcms.com'); });",
+									"pm.test(\"Every item is a CMS Administrator\", function () { entity.forEach(u => pm.expect(u.admin, u.emailAddress).to.eql(true)); });",
+									"pm.test(\"Seed users (back-end only) are not listed\", function () {",
+									"    const prefix = pm.collectionVariables.get('sortPrefix');",
+									"    pm.expect(entity.filter(u => String(u.userId).startsWith(prefix))).to.be.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/filter?roleId={{cmsAdminRoleId}}&per_page=100",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "roleId",
+									"value": "{{cmsAdminRoleId}}"
+								},
+								{
+									"key": "per_page",
+									"value": "100"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RoleFilter - unknown roleId returns 400 (admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () { pm.response.to.have.status(400); });"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/filter?roleId=no-such-role-{{sortPrefix}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "roleId",
+									"value": "no-such-role-{{sortPrefix}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RoleFilter - comma-separated roleKey (admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const entity = pm.response.json().entity;",
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"The three back-end seed users are listed\", function () {",
+									"    const prefix = pm.collectionVariables.get('sortPrefix');",
+									"    pm.expect(entity.filter(u => String(u.userId).startsWith(prefix)).length).to.eql(3);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/filter?query={{sortPrefix}}&roleKey=DOTCMS_FRONT_END_USER,DOTCMS_BACK_END_USER&per_page=100",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "query",
+									"value": "{{sortPrefix}}"
+								},
+								{
+									"key": "roleKey",
+									"value": "DOTCMS_FRONT_END_USER,DOTCMS_BACK_END_USER"
+								},
+								{
+									"key": "per_page",
+									"value": "100"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RoleFilter - admin flag present for admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const entity = pm.response.json().entity;",
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"admin@dotcms.com carries admin=true\", function () {",
+									"    const admin = entity.find(u => u.emailAddress === 'admin@dotcms.com');",
+									"    pm.expect(admin, 'admin item').to.not.be.undefined;",
+									"    pm.expect(admin.admin).to.eql(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/filter?query=admin@dotcms.com",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "query",
+									"value": "admin@dotcms.com"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "RoleFilter - access role key (admin)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const entity = pm.response.json().entity;",
+									"pm.test(\"Status code is 200\", function () { pm.response.to.have.status(200); });",
+									"pm.test(\"The three back-end seed users are listed\", function () {",
+									"    const prefix = pm.collectionVariables.get('sortPrefix');",
+									"    pm.expect(entity.filter(u => String(u.userId).startsWith(prefix)).length).to.eql(3);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/filter?query={{sortPrefix}}&roleKey=DOTCMS_BACK_END_USER&per_page=100",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"filter"
+							],
+							"query": [
+								{
+									"key": "query",
+									"value": "{{sortPrefix}}"
+								},
+								{
+									"key": "roleKey",
+									"value": "DOTCMS_BACK_END_USER"
+								},
+								{
+									"key": "per_page",
+									"value": "100"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "SortSeed - Delete A Young",
 					"event": [
 						{
@@ -3025,6 +3339,10 @@
 		},
 		{
 			"key": "sortPrefix",
+			"value": ""
+		},
+		{
+			"key": "cmsAdminRoleId",
 			"value": ""
 		}
 	]

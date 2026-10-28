@@ -10,6 +10,7 @@ import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.PortletID;
 import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 
@@ -85,7 +86,22 @@ public interface LayoutAPI {
 	 * @throws DotDataException
 	 */
 	boolean doesUserHaveAccessToPortlet(String portletId, User user) throws DotDataException;
-	
+
+	/**
+	 * Returns whether the user has access to the Users portlet under either of the two ids that identify it
+	 * during the beta period: the legacy {@link PortletID#USERS} id and the Angular {@link PortletID#USERS_BETA}
+	 * id. Both ids point at the same portlet, so every gate that means "has the Users portlet" must accept either;
+	 * this is the single definition of that check, shared so the two ids never drift apart across callers.
+	 *
+	 * @param user The {@link User} to check.
+	 * @return {@code true} if the user has access to the Users portlet under either id.
+	 * @throws DotDataException An error occurred when resolving the user's portlet access.
+	 */
+	default boolean doesUserHaveAccessToUsersPortlet(final User user) throws DotDataException {
+		return doesUserHaveAccessToPortlet(PortletID.USERS.toString(), user)
+				|| doesUserHaveAccessToPortlet(PortletID.USERS_BETA.toString(), user);
+	}
+
 	/**
 	 * Retrieves all layouts in the system
 	 * @author David H Torres

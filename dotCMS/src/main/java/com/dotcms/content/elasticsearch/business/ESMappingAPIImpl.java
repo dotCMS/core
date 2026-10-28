@@ -5,6 +5,7 @@ import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.business.ContentMappingAPI;
 import com.dotcms.content.business.DotMappingException;
 import com.dotcms.content.elasticsearch.constants.ESMappingConstants;
+import com.dotcms.content.filter.ContentFieldFilter;
 import com.dotcms.content.elasticsearch.util.ESUtils;
 import com.dotcms.content.index.IndexMappingRestOperations;
 import com.dotcms.content.index.IndexTag;
@@ -98,6 +99,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -447,13 +449,15 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 	}
 
 	/**
-	 * This method is the same of the toJson except that it returns directly the mlowered map.
+	 * Builds the document indexed for a contentlet, with lower-cased keys. Besides one key per property, it
+	 * holds a {@code catchall} key with every indexed value, which is what a query term without a field name
+	 * searches. The properties that the Content API masks or hides from untrusted callers are left out of
+	 * {@code catchall}, so their values cannot be found that way; see {@link ContentFieldFilter}.
 	 *
-	 * It checks first if this contentlet is already into the temporarily memory otherwise it recreate.
-	 *
-	 * @author Graziano Aliberti - Engineering Ingegneria Informatica S.p.a
-	 *
-	 * Jun 7, 2013 - 3:47:26 PM
+	 * @param contentlet the {@link Contentlet} to index
+	 * @return the document to index
+	 * @throws DotMappingException if the contentlet, its identifier, version, content type, site or folder
+	 *         cannot be read
 	 */
 	@CloseDBIfOpened
 	public Map<String,Object> toMap(final Contentlet contentlet) throws DotMappingException {
@@ -576,6 +580,7 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 						" , reason: " + e.getMessage());
 			}
 
+			final Predicate<String> excludedFromCatchall = ContentFieldFilter.catchallExclusion();
 			for(final Entry<String,Object> entry : contentletMap.entrySet()){
 				final String lowerCaseKey = entry.getKey().toLowerCase();
 				Object lowerCaseValue = entry.getValue();
@@ -601,8 +606,9 @@ public class ESMappingAPIImpl implements ContentMappingAPI {
 					}
 				}
 
-				//exclude null values and relationships because they where appended on the loadRelationships method
-				if(lowerCaseValue!=null && !(lowerCaseValue instanceof List)) {
+				//exclude null values and relationships because they where appended on the loadRelationships method,
+				//and the masked or hidden properties, which would otherwise be searchable without naming their field
+				if(lowerCaseValue!=null && !(lowerCaseValue instanceof List) && !excludedFromCatchall.test(lowerCaseKey)) {
 					sw.append(lowerCaseValue.toString()).append(' ');
 				}
 
