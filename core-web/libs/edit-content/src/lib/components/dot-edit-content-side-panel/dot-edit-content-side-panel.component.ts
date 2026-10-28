@@ -32,7 +32,9 @@ import {
     IMAGE_EDITOR_LAUNCHER
 } from '../../fields/shared/image-editor-launcher';
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
+import { DotPageEditorRequest } from '../../models/dot-edit-content-panel-events.model';
 import { DotEditContentRequest } from '../../models/dot-edit-content-request.model';
+import { DotOpenContentEvent } from '../../models/dot-open-content-event.model';
 import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
 import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
 import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-edit-content.layout.component';
@@ -119,6 +121,18 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
 
     /** The panel closed, for any reason. Emitted once. */
     readonly closed = output<void>();
+
+    /**
+     * Part of the event set both editor panels share, so the opener binds the same outputs to
+     * either. The new editor never asks to open the page editor, so this never emits.
+     */
+    readonly pageEditorRequested = output<DotPageEditorRequest>();
+
+    /**
+     * Content a field in this editor asked to open, for the opener to stack. Part of the shared
+     * event set; the fields start asking through it in a later layer of #38303.
+     */
+    readonly openContent = output<DotOpenContentEvent>();
 
     /**
      * What the overlay host reads the content identity from: the {@link request} mapped to the
