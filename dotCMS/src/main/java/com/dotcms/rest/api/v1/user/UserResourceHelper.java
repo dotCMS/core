@@ -322,7 +322,8 @@ public class UserResourceHelper implements Serializable {
 	 * @return A {@link Map} containing all the parameters that must be changed
 	 *         in order to logout form the 'Login As'.
 	 * @throws DotDataException
-	 *             An error occurred with the input parameters, or when
+	 *             No principal user was given because the session has no
+	 *             active Login As (logged at WARN), or an error occurred when
 	 *             retrieving Site information.
 	 * @throws DotSecurityException
 	 *             The operation is not supported by the user.
@@ -330,6 +331,8 @@ public class UserResourceHelper implements Serializable {
 	public Map<String, Object> doLogoutAs(final String principalUserId, final User currentLoginAsUser,
 			final String serverName) throws DotDataException, DotSecurityException {
 		if (!UtilMethods.isSet(principalUserId)) {
+			Logger.warn(this, String.format("Logout As was requested by user '%s', but the session has no active " +
+					"Login As; the session user was not changed.", currentLoginAsUser.getUserId()));
 			throw new DotDataException("Current user [" + currentLoginAsUser.getUserId()
 			+ "] is not logged in as a different user.");
 		}

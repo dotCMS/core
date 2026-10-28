@@ -116,6 +116,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class,
         ApiTokenResourceTest.class,
         AuthCredentialPushPublishUtilTest.class,
+        com.dotcms.publishing.remote.RemoteReceiverRelationshipsFilterTest.class,
         com.dotcms.rest.ClusterResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.cluster.ClusterNodesResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.system.ConfigurationHelperTest.class,
@@ -123,7 +124,8 @@ import org.junit.runners.Suite.SuiteClasses;
         JsModuleImportIntegrationTest.class,
         com.dotcms.rendering.velocity.WidgetRendererTest.class,
         CMSUserToolTest.class,
-        UserJsViewToolTest.class
+        UserJsViewToolTest.class,
+        com.dotcms.rest.BundleResourceDeleteResponseTest.class
 })
 public class MainSuite2a {
 
