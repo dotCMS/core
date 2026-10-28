@@ -253,7 +253,7 @@ public class UserHandlerTest extends IntegrationTestBase {
                     .id(uniqueId())
                     .emailAddress(uniqueEmail())
                     .firstName("Pushed")
-                    .lastName("User")
+                    .lastName("User " + UUIDGenerator.shorty())
                     .password(PasswordFactoryProxy.generateHash(KNOWN_PASSWORD))
                     .next();
             userIds.add(fromBundle.getUserId());
@@ -296,7 +296,7 @@ public class UserHandlerTest extends IntegrationTestBase {
                     .id(uniqueId())
                     .emailAddress(uniqueEmail())
                     .firstName("Pushed")
-                    .lastName("User")
+                    .lastName("User " + UUIDGenerator.shorty())
                     .password(PasswordFactoryProxy.generateHash(KNOWN_PASSWORD))
                     .next();
             userIds.add(fromBundle.getUserId());
@@ -363,7 +363,7 @@ public class UserHandlerTest extends IntegrationTestBase {
                     .id(sharedKey)
                     .emailAddress(uniqueEmail())
                     .firstName("Pushed")
-                    .lastName("User")
+                    .lastName("User " + UUIDGenerator.shorty())
                     .next();
             userIds.add(fromBundle.getUserId());
 
@@ -409,7 +409,7 @@ public class UserHandlerTest extends IntegrationTestBase {
                         .id(bundleUserId)
                         .emailAddress(uniqueEmail())
                         .firstName("Pushed")
-                        .lastName("User")
+                        .lastName("User " + UUIDGenerator.shorty())
                         .next();
 
                 withLoginBy(Company.AUTH_TYPE_EA, () -> handle(origin,
@@ -614,7 +614,7 @@ public class UserHandlerTest extends IntegrationTestBase {
                 .id(uniqueId())
                 .emailAddress(uniqueEmail())
                 .firstName("Pushed")
-                .lastName("User")
+                .lastName("User " + UUIDGenerator.shorty())
                 .password(PasswordFactoryProxy.generateHash(KNOWN_PASSWORD))
                 .next();
         userIds.add(user.getUserId());
@@ -646,7 +646,7 @@ public class UserHandlerTest extends IntegrationTestBase {
                 .id(uniqueId())
                 .emailAddress(uniqueEmail())
                 .firstName("Stored")
-                .lastName("Receiver User")
+                .lastName("Receiver User " + UUIDGenerator.shorty())
                 .nextPersisted();
         userIds.add(user.getUserId());
         CacheLocator.getUserCache().clearCache();

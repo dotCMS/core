@@ -25,6 +25,7 @@ import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
+import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -144,13 +145,7 @@ public class UserHandler implements IHandler {
                     continue;
                 }
 
-                final User savedUser = userAPI.createUser( user.getUserId(), user.getEmailAddress() );
-                user.setCompanyId( savedUser.getCompanyId() );
-                user.setPassword( PasswordFactoryProxy.generateHash( newRandomPassword() ) );
-                user.setPasswordEncrypted( true );
-                this.savePersonalRole( user, wrapper.getUserRole() );
-                //Saving the user
-                userAPI.save( user, userAPI.getSystemUser(), false );
+                this.createWithRandomPassword( user, wrapper.getUserRole() );
 
                 PushPublishLogger.log(getClass(), PushPublishHandler.USER, PushPublishAction.PUBLISH,
                         user.getUserId(), null, user.getFullName(), config.getId());
@@ -193,6 +188,27 @@ public class UserHandler implements IHandler {
             }
         }
         return false;
+    }
+
+    /**
+     * Creates a new user from the bundle with a newly generated random password, so the one in the
+     * bundle never reaches this instance, and gives it its own role before it is saved.
+     *
+     * @param user the new {@link User} read from the bundle
+     * @param roleFromBundle the user's own {@link Role} as it came in the bundle, may be {@code null}
+     * @throws DotDataException if the user or its role cannot be saved
+     * @throws DotSecurityException if the system user is not allowed to save the user
+     * @throws PasswordException if the random password cannot be hashed
+     */
+    private void createWithRandomPassword ( final User user, final Role roleFromBundle )
+            throws DotDataException, DotSecurityException, PasswordException {
+        final UserAPI userAPI = APILocator.getUserAPI();
+        final User savedUser = userAPI.createUser( user.getUserId(), user.getEmailAddress() );
+        user.setCompanyId( savedUser.getCompanyId() );
+        user.setPassword( PasswordFactoryProxy.generateHash( newRandomPassword() ) );
+        user.setPasswordEncrypted( true );
+        this.savePersonalRole( user, roleFromBundle );
+        userAPI.save( user, userAPI.getSystemUser(), false );
     }
 
     /**
