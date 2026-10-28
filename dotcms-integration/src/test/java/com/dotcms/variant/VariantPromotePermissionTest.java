@@ -13,6 +13,7 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.MultiTreeDataGen;
 import com.dotcms.datagen.RoleDataGen;
@@ -25,9 +26,11 @@ import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.rest.api.v1.experiments.ExperimentsResource;
 import com.dotcms.rest.api.v1.variants.ResponseEntityVariantView;
 import com.dotcms.rest.api.v1.variants.VariantForm;
 import com.dotcms.rest.api.v1.variants.VariantResource;
+import com.dotcms.rest.exception.NotFoundException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
@@ -71,6 +74,8 @@ public class VariantPromotePermissionTest {
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        // the Experiments API refuses every call without a valid license
+        LicenseTestUtil.getLicense();
 
         site = new SiteDataGen().nextPersisted();
         titleField = new FieldDataGen().type(TextField.class).name("title")
@@ -249,6 +254,40 @@ public class VariantPromotePermissionTest {
         new VariantResource().addVariant(requestFor(adminUser), new MockHttpResponse().response(),
                 new VariantForm(byAdmin, "admin"));
         assertTrue(APILocator.getVariantAPI().get(byAdmin).isPresent());
+    }
+
+    /**
+     * Method to test: {@link ExperimentsResource#promoteVariant(HttpServletRequest, javax.servlet.http.HttpServletResponse, String, String, com.dotcms.rest.api.v1.experiments.ExperimentVariantForm)}
+     * Given Scenario: A back-end user without the Experiments tool calls the experiment-level
+     *                 promote endpoint for an experiment id that does not exist, then a user with
+     *                 the tool does the same.
+     * ExpectedResult: The first call is rejected by the tool gate before anything is looked up;
+     *                 the second gets past the gate and fails on the missing experiment.
+     */
+    @Test
+    public void promoteExperimentVariantWithoutExperimentsTool_shouldBeRejected() throws Exception {
+        final String experimentId = "no-such-experiment-" + System.nanoTime();
+
+        try {
+            new ExperimentsResource().promoteVariant(requestFor(backendUser()),
+                    new MockHttpResponse().response(), experimentId, "variant", null);
+            fail("A user without the Experiments tool should not reach the promotion");
+        } catch (final com.dotcms.rest.exception.SecurityException e) {
+            // expected: the InitBuilder tool gate refuses the request
+        }
+
+        final Layout layout = new LayoutDataGen()
+                .portletIds(PortletID.EXPERIMENTS.toString()).nextPersisted();
+        final Role role = new RoleDataGen().layout(layout).nextPersisted();
+        final User experimentsUser = new UserDataGen()
+                .roles(role, APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        try {
+            new ExperimentsResource().promoteVariant(requestFor(experimentsUser),
+                    new MockHttpResponse().response(), experimentId, "variant", null);
+            fail("A missing experiment should not promote anything");
+        } catch (final NotFoundException e) {
+            // expected: past the gate, the experiment lookup is what fails
+        }
     }
 
     // ---------------------------------------------------------------------------------------------

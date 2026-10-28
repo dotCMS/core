@@ -48,14 +48,16 @@ public interface FeatureFlagName {
     String FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER = "FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER";
 
     /**
-     * Kill switch for the destination check on new-content checkin. On by default: creating a
-     * contentlet somewhere other than where its content type places content by default (the
-     * type's own folder or site, or the default site for a type on the System Host) requires,
-     * besides WRITE on the content type, "Can Add Children" or WRITE on that folder or site; the
-     * former is what the content editor and the move operation already enforce. Off: only the
-     * content-type WRITE check runs, as before. Default placements, content on the System Host,
-     * Host contentlets themselves, existing contentlets and the system user are not affected
-     * either way. Environment form:
+     * Kill switch for the destination check on checkin. On by default: creating a contentlet
+     * somewhere other than where its content type places content by default (the type's own
+     * folder or site, or the default site for a type on the System Host) requires, besides WRITE
+     * on the content type, "Can Add Children" or WRITE on that folder or site; the former is what
+     * the content editor and the move operation already enforce. Saving an existing contentlet
+     * with a different site or folder, which moves it there, requires the same grant on the new
+     * place besides WRITE on the contentlet. Off: only the content-type or contentlet WRITE check
+     * runs, as before. Default placements, content on the System Host, Host contentlets
+     * themselves, existing contentlets that stay where they are, and the system user are not
+     * affected either way. Environment form:
      * {@code DOT_FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK}.
      */
     String FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK = "FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK";

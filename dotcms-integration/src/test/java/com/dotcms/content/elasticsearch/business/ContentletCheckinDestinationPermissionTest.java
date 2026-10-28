@@ -20,6 +20,7 @@ import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -40,11 +41,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Covers the destination check that {@link ESContentletAPIImpl} applies when a new contentlet is
- * checked in: besides WRITE on the content type, the user needs "Can Add Children" on the folder
- * or site the contentlet is placed in. Existing contentlets, content placed on the System Host,
- * and the kill switch {@link FeatureFlagName#FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK}
- * are exercised as well.
+ * Covers the destination check that {@link ESContentletAPIImpl} applies on checkin: besides WRITE
+ * on the content type, a new contentlet needs "Can Add Children" or WRITE on the folder or site it
+ * is placed in, and an existing contentlet saved with another site or folder needs the same on
+ * the new place. Edits that keep content where it is, content placed on the System Host, and the
+ * kill switch {@link FeatureFlagName#FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK} are
+ * exercised as well.
  */
 public class ContentletCheckinDestinationPermissionTest {
 
@@ -261,7 +263,8 @@ public class ContentletCheckinDestinationPermissionTest {
      * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}
      * Given Scenario: An existing contentlet on the site without Add Children is edited by a user
      *                 who has WRITE on that contentlet.
-     * ExpectedResult: The edit succeeds; the destination check only applies to new contentlets.
+     * ExpectedResult: The edit succeeds; the destination check only applies to new contentlets
+     *                 and to saves that move a contentlet somewhere else.
      */
     @Test
     public void editExistingContentletOnSite_shouldNotRequireAddChildren() throws Exception {
@@ -274,6 +277,69 @@ public class ContentletCheckinDestinationPermissionTest {
         final Contentlet edited = contentletAPI.checkin(checkout, limitedUser, false);
 
         assertEquals("edited", edited.getStringProperty(titleField.variable()));
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}
+     * Given Scenario: An existing contentlet on the site with Add Children is saved by a user
+     *                 with WRITE on it, first with its site changed to the READ-only site and then
+     *                 into a folder of that site.
+     * ExpectedResult: Both saves are refused and the contentlet stays on its original site.
+     */
+    @Test
+    public void relocateExistingContentletToSiteWithoutAddChildren_shouldBeDenied()
+            throws Exception {
+        final Contentlet existing = checkinAs(APILocator.systemUser(), false, grantedSite, null);
+        grant(existing, limitedRole, TYPE_WRITE);
+        contentletAPI.unlock(existing, APILocator.systemUser(), false);
+
+        final Contentlet toOtherSite = contentletAPI.checkout(existing.getInode(), limitedUser,
+                false);
+        toOtherSite.setHost(otherSite.getIdentifier());
+        toOtherSite.setFolder(Folder.SYSTEM_FOLDER);
+        assertDenied(() -> contentletAPI.checkin(toOtherSite, limitedUser, false));
+
+        final Contentlet toOtherFolder = contentletAPI.checkout(existing.getInode(), limitedUser,
+                false);
+        toOtherFolder.setHost(otherSite.getIdentifier());
+        toOtherFolder.setFolder(otherFolder.getInode());
+        assertDenied(() -> contentletAPI.checkin(toOtherFolder, limitedUser, false));
+
+        final Identifier identifier = APILocator.getIdentifierAPI().find(existing.getIdentifier());
+        assertEquals(grantedSite.getIdentifier(), identifier.getHostId());
+    }
+
+    /**
+     * Method to test: {@link ContentletAPI#checkin(Contentlet, User, boolean)}
+     * Given Scenario: An existing contentlet on the READ-only site is saved by a user with WRITE
+     *                 on it, first with its site changed to the site where they have Add Children
+     *                 and then into a folder of that site where they have it too.
+     * ExpectedResult: Both saves succeed and the identifier follows the contentlet.
+     */
+    @Test
+    public void relocateExistingContentletToSiteWithAddChildren_shouldSucceed() throws Exception {
+        final Contentlet existing = checkinAs(APILocator.systemUser(), false, otherSite, null);
+        grant(existing, limitedRole, TYPE_WRITE);
+        contentletAPI.unlock(existing, APILocator.systemUser(), false);
+
+        final Contentlet toGrantedSite = contentletAPI.checkout(existing.getInode(), limitedUser,
+                false);
+        toGrantedSite.setHost(grantedSite.getIdentifier());
+        toGrantedSite.setFolder(Folder.SYSTEM_FOLDER);
+        final Contentlet moved = contentletAPI.checkin(toGrantedSite, limitedUser, false);
+        assertEquals(grantedSite.getIdentifier(),
+                APILocator.getIdentifierAPI().find(moved.getIdentifier()).getHostId());
+
+        // the move made the contentlet inherit its permissions from the new site again, which
+        // dropped the individual grant above, so give the user WRITE on it once more
+        grant(moved, limitedRole, TYPE_WRITE);
+        contentletAPI.unlock(moved, APILocator.systemUser(), false);
+        final Contentlet toGrantedFolder = contentletAPI.checkout(moved.getInode(), limitedUser,
+                false);
+        toGrantedFolder.setFolder(grantedFolder.getInode());
+        final Contentlet inFolder = contentletAPI.checkin(toGrantedFolder, limitedUser, false);
+        assertEquals(grantedFolder.getPath(),
+                APILocator.getIdentifierAPI().find(inFolder.getIdentifier()).getParentPath());
     }
 
     /**

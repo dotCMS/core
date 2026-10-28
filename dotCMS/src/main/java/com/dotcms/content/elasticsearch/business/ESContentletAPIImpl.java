@@ -262,8 +262,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
     private static Lazy<Boolean> FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION = Lazy.of(() ->
             Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_DB_UNIQUE_FIELD_VALIDATION, true));
     /**
-     * Whether a new contentlet also needs "Can Add Children" on its destination folder or site,
-     * see {@link FeatureFlagName#FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK}. Read on every
+     * Whether a contentlet created in, or moved to, a chosen folder or site also needs "Can Add
+     * Children" or WRITE there, see
+     * {@link FeatureFlagName#FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK}. Read on every
      * call rather than cached so integration tests can toggle it at runtime; the lookup is a map
      * read, not I/O.
      */
@@ -6957,11 +6958,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
     /**
      * Verifies the user may save the given contentlet. An existing contentlet needs WRITE on
-     * itself. A new contentlet needs WRITE on its content type and, unless
-     * {@link FeatureFlagName#FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK} is off,
-     * "Can Add Children" or WRITE on the folder or site it is being placed in when that is not
-     * the type's default placement (see
-     * {@link #checkDestinationPermission(Contentlet, boolean, User)}).
+     * itself; a new contentlet needs WRITE on its content type. On top of that, unless
+     * {@link FeatureFlagName#FEATURE_FLAG_CHECKIN_DESTINATION_PERMISSION_CHECK} is off, a new
+     * contentlet placed somewhere other than its type's default placement, and an existing
+     * contentlet being moved to another site or folder, need "Can Add Children" or WRITE on that
+     * destination (see {@link #checkDestinationPermission(Contentlet, boolean, User)}).
      *
      * @param contentlet           the {@link Contentlet} about to be checked in
      * @param respectFrontendRoles whether front-end roles (anonymous, logged-in site user) count
@@ -6976,24 +6977,21 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         DotPreconditions.checkNotNull(contentlet);
 
-        if (InodeUtils.isSet(contentlet.getIdentifier())) {
-            if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE,
-                    user, respectFrontendRoles)) {
-                this.throwSecurityException(contentlet, user);
-            }
-        } else {
-            if (!permissionAPI.doesUserHavePermission(contentlet.getContentType(),
-                    PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
-                this.throwSecurityException(contentlet, user);
-            }
-            if (isCheckinDestinationPermissionCheckEnabled()) {
-                checkDestinationPermission(contentlet, respectFrontendRoles, user);
-            }
+        final boolean isNew = !InodeUtils.isSet(contentlet.getIdentifier());
+        final Permissionable writeRequiredOn = isNew ? contentlet.getContentType() : contentlet;
+        if (!permissionAPI.doesUserHavePermission(writeRequiredOn, PermissionAPI.PERMISSION_WRITE,
+                user, respectFrontendRoles)) {
+            this.throwSecurityException(contentlet, user);
+        }
+
+        if (isCheckinDestinationPermissionCheckEnabled()
+                && (isNew || isBeingRelocated(contentlet))) {
+            checkDestinationPermission(contentlet, respectFrontendRoles, user);
         }
     }
 
     /**
-     * Requires a grant on the place a new contentlet is going to live in, "Can Add Children" or
+     * Requires a grant on the place a contentlet is going to live in, "Can Add Children" or
      * WRITE, when that place was chosen rather than being where the content type puts its
      * content anyway. "Can Add Children" is the rule the content editor applies when a site or
      * folder is picked and that {@link #move(Contentlet, User, Host, Folder, boolean)} applies to
@@ -7009,7 +7007,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * that cannot be loaded are also left to the content-type check and to validation, so this
      * never turns a validation error into a permission error.
      *
-     * @param contentlet           the new {@link Contentlet}, before it has an identifier
+     * @param contentlet           the {@link Contentlet} being created or moved
      * @param respectFrontendRoles whether front-end roles count towards the permission
      * @param user                 the {@link User} performing the checkin
      * @throws DotSecurityException when the user has neither "Can Add Children" nor WRITE on the
@@ -7021,50 +7019,60 @@ public class ESContentletAPIImpl implements ContentletAPI {
             final User user) throws DotDataException, DotSecurityException {
 
         final ContentType type = contentlet.getContentType();
-        if (type != null && Host.HOST_VELOCITY_VAR_NAME.equalsIgnoreCase(type.variable())) {
+        if (isHostContentType(type)) {
             return;
         }
 
-        final String folderId = InodeUtils.isSet(contentlet.getFolder())
-                && !FolderAPI.SYSTEM_FOLDER.equals(contentlet.getFolder())
-                ? contentlet.getFolder() : null;
-        final String hostId = InodeUtils.isSet(contentlet.getHost())
-                && !Host.SYSTEM_HOST.equals(contentlet.getHost())
-                ? contentlet.getHost() : null;
-        if ((folderId == null && hostId == null) || isDefaultPlacement(type, folderId, hostId)) {
+        final Optional<String> folderId = chosenFolderId(contentlet);
+        final Optional<String> hostId = chosenHostId(contentlet);
+        if ((folderId.isEmpty() && hostId.isEmpty())
+                || isDefaultPlacement(type, folderId, hostId)) {
             return;
         }
 
-        Permissionable destination;
-        final String destinationLabel;
-        try {
-            if (folderId != null) {
-                destination = APILocator.getFolderAPI().find(folderId, APILocator.systemUser(), false);
-                destinationLabel = "folder " + folderId;
-            } else {
-                destination = APILocator.getHostAPI().find(hostId, APILocator.systemUser(), false);
-                destinationLabel = "site " + hostId;
-            }
-        } catch (final DotSecurityException e) {
-            // the lookup runs as the system user, so this cannot happen in practice
-            throw new DotDataException(e.getMessage(), e);
-        }
-
-        if (destination == null || !UtilMethods.isSet(destination.getPermissionId())) {
+        final Optional<Permissionable> destination = loadDestination(folderId, hostId);
+        if (destination.isEmpty()) {
             return;
         }
 
-        if (!permissionAPI.doesUserHavePermission(destination,
-                PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)
-                && !permissionAPI.doesUserHavePermission(destination,
-                PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)) {
+        if (!canAddContentTo(destination.get(), user, respectFrontendRoles)) {
             final String userId = user != null ? user.getUserId() : "Unknown";
             final String message = "User: " + userId
-                    + " doesn't have Add Children or Write permissions on " + destinationLabel
-                    + " to create the Contentlet";
+                    + " doesn't have Add Children or Write permissions on "
+                    + describeDestination(folderId, hostId) + " to place the Contentlet there";
             Logger.warn(this, message);
             throw new DotSecurityException(message);
         }
+    }
+
+    /**
+     * Tells whether an existing contentlet is being saved with a site or folder other than the
+     * one its identifier currently points at, which is how a save moves content between sites or
+     * folders. Only a destination that is actually set counts: a folder other than the System
+     * Folder is compared with the current parent path and site, and a site other than the System
+     * Host with the current site. Saving a contentlet back where it is, or without naming a
+     * place, is not a relocation.
+     *
+     * @param contentlet the existing {@link Contentlet} being checked in
+     * @return {@code true} when the save would move the contentlet somewhere else
+     * @throws DotDataException when the identifier or the folder cannot be loaded
+     */
+    private boolean isBeingRelocated(final Contentlet contentlet) throws DotDataException {
+        final Identifier identifier = APILocator.getIdentifierAPI().find(contentlet.getIdentifier());
+        if (identifier == null || !UtilMethods.isSet(identifier.getId())) {
+            return false;
+        }
+
+        final Optional<String> folderId = chosenFolderId(contentlet);
+        if (folderId.isPresent()) {
+            final Folder folder = loadFolder(folderId.get());
+            return folder != null
+                    && (!identifier.getHostId().equals(folder.getHostId())
+                    || !identifier.getParentPath().equals(folder.getPath()));
+        }
+
+        final Optional<String> hostId = chosenHostId(contentlet);
+        return hostId.isPresent() && !hostId.get().equals(identifier.getHostId());
     }
 
     /**
@@ -7073,28 +7081,165 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * site, or the default site for a type that lives on the System Host. Such a placement adds
      * nothing the user could not reach already, so it is governed by the type permission alone.
      *
-     * @param type     the {@link ContentType} of the new contentlet, possibly {@code null}
-     * @param folderId the destination folder, or {@code null} when the content is not in a folder
-     * @param hostId   the destination site, or {@code null} when none other than the System Host
+     * @param type     the {@link ContentType} of the contentlet, possibly {@code null}
+     * @param folderId the destination folder, when the content is going into one
+     * @param hostId   the destination site, when one other than the System Host is set
      * @return {@code true} when the destination is the type's default placement
      * @throws DotDataException when the default site cannot be loaded
      */
-    private boolean isDefaultPlacement(final ContentType type, final String folderId,
-            final String hostId) throws DotDataException {
+    private boolean isDefaultPlacement(final ContentType type, final Optional<String> folderId,
+            final Optional<String> hostId) throws DotDataException {
 
         if (type == null) {
             return false;
         }
-        if (folderId != null) {
-            return folderId.equals(type.folder());
+        if (folderId.isPresent()) {
+            return folderId.get().equals(type.folder());
+        }
+        if (hostId.isEmpty()) {
+            return false;
         }
         if (UtilMethods.isSet(type.host()) && !Host.SYSTEM_HOST.equals(type.host())) {
-            return hostId.equals(type.host());
+            return hostId.get().equals(type.host());
         }
+        return hostId.get().equals(defaultHostId());
+    }
+
+    /**
+     * Whether the content type is the Host type, whose contentlets are sites themselves and so
+     * have no destination to check.
+     *
+     * @param type the {@link ContentType}, possibly {@code null}
+     * @return {@code true} for the Host content type
+     */
+    private static boolean isHostContentType(final ContentType type) {
+        return type != null && Host.HOST_VELOCITY_VAR_NAME.equalsIgnoreCase(type.variable());
+    }
+
+    /**
+     * The folder a contentlet is addressed to, when one other than the System Folder is set.
+     *
+     * @param contentlet the {@link Contentlet}
+     * @return the folder inode, or empty when the contentlet is not going into a folder
+     */
+    private static Optional<String> chosenFolderId(final Contentlet contentlet) {
+        return Optional.ofNullable(contentlet.getFolder())
+                .filter(folder -> InodeUtils.isSet(folder))
+                .filter(folder -> !FolderAPI.SYSTEM_FOLDER.equals(folder));
+    }
+
+    /**
+     * The site a contentlet is addressed to, when one other than the System Host is set.
+     *
+     * @param contentlet the {@link Contentlet}
+     * @return the site identifier, or empty when no site other than the System Host is set
+     */
+    private static Optional<String> chosenHostId(final Contentlet contentlet) {
+        return Optional.ofNullable(contentlet.getHost())
+                .filter(host -> InodeUtils.isSet(host))
+                .filter(host -> !Host.SYSTEM_HOST.equals(host));
+    }
+
+    /**
+     * Loads the asset the destination check runs against: the folder when one is chosen,
+     * otherwise the site. Lookups run as the system user, since the point is to check the
+     * caller's permission on the result, not to read it on their behalf.
+     *
+     * @param folderId the chosen folder, if any
+     * @param hostId   the chosen site, if any
+     * @return the folder or site, or empty when none is chosen, none can be loaded, or the loaded
+     * asset has no permission id to check against
+     * @throws DotDataException when the lookup fails
+     */
+    private Optional<Permissionable> loadDestination(final Optional<String> folderId,
+            final Optional<String> hostId) throws DotDataException {
+
+        final Permissionable destination;
+        if (folderId.isPresent()) {
+            destination = loadFolder(folderId.get());
+        } else if (hostId.isPresent()) {
+            destination = loadHost(hostId.get());
+        } else {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(destination)
+                .filter(asset -> UtilMethods.isSet(asset.getPermissionId()));
+    }
+
+    /**
+     * Whether the user may put content into the given folder or site: "Can Add Children" or
+     * WRITE on it.
+     *
+     * @param destination          the folder or site
+     * @param user                 the {@link User} to check
+     * @param respectFrontendRoles whether front-end roles count towards the permission
+     * @return {@code true} when either permission is held
+     * @throws DotDataException when the permission lookup fails
+     */
+    private boolean canAddContentTo(final Permissionable destination, final User user,
+            final boolean respectFrontendRoles) throws DotDataException {
+        return permissionAPI.doesUserHavePermission(destination,
+                PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, user, respectFrontendRoles)
+                || permissionAPI.doesUserHavePermission(destination,
+                PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
+    }
+
+    /**
+     * Names the destination for log and error messages.
+     *
+     * @param folderId the chosen folder, if any
+     * @param hostId   the chosen site, if any
+     * @return {@code "folder <inode>"} or {@code "site <identifier>"}
+     */
+    private static String describeDestination(final Optional<String> folderId,
+            final Optional<String> hostId) {
+        return folderId.map(id -> "folder " + id)
+                .orElseGet(() -> "site " + hostId.orElse("unknown"));
+    }
+
+    /**
+     * Loads a folder as the system user.
+     *
+     * @param folderId the folder inode
+     * @return the {@link Folder}, or {@code null} when there is none with that inode
+     * @throws DotDataException when the lookup fails
+     */
+    private static Folder loadFolder(final String folderId) throws DotDataException {
+        try {
+            return APILocator.getFolderAPI().find(folderId, APILocator.systemUser(), false);
+        } catch (final DotSecurityException e) {
+            // the lookup runs as the system user, so this cannot happen in practice
+            throw new DotDataException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Loads a site as the system user.
+     *
+     * @param hostId the site identifier
+     * @return the {@link Host}, or {@code null} when there is none with that identifier
+     * @throws DotDataException when the lookup fails
+     */
+    private static Host loadHost(final String hostId) throws DotDataException {
+        try {
+            return APILocator.getHostAPI().find(hostId, APILocator.systemUser(), false);
+        } catch (final DotSecurityException e) {
+            // the lookup runs as the system user, so this cannot happen in practice
+            throw new DotDataException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * The identifier of the default site, loaded as the system user.
+     *
+     * @return the default site's identifier, or {@code null} when there is none
+     * @throws DotDataException when the lookup fails
+     */
+    private static String defaultHostId() throws DotDataException {
         try {
             final Host defaultHost = APILocator.getHostAPI()
                     .findDefaultHost(APILocator.systemUser(), false);
-            return defaultHost != null && hostId.equals(defaultHost.getIdentifier());
+            return defaultHost != null ? defaultHost.getIdentifier() : null;
         } catch (final DotSecurityException e) {
             // the lookup runs as the system user, so this cannot happen in practice
             throw new DotDataException(e.getMessage(), e);
