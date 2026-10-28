@@ -1,5 +1,21 @@
 # BUILD dotCMS Java Base
 
+## Native libvips colour-safety mitigation
+
+Highway SIMD is disabled in the libvips build as a conservative mitigation for
+resize colour corruption at horizontal shrink factors of 4× or more
+([#38079](https://github.com/dotCMS/core/issues/38079)). Image formats remain supported,
+but SIMD-accelerated operations may be slower. The failing CPU target is not yet confirmed.
+The native verifier rejects Highway-enabled builds and checks RGB/RGBA resize colours
+against a SIMD-disabled reference across the shrink boundary.
+
+Rebuild and publish `dotcms/java-base:<java-version>` for **both architectures**, then
+rebuild the dependent runtime and dev-env images. JVM CI extracts the published base
+image, so its new build-policy check will fail until that image is republished.
+Existing corrupt renditions in `dotGenerated` and CDN caches must also be invalidated
+through the normal cache-maintenance procedure; rebuilding does not repair cached images.
+Do not delete original assets. The separate EXIF-orientation sizing defect is unchanged.
+
 This Dockerfile builds the base container woth java that will be used to build and run dotCMS. 
 
 ### Building Multiarch

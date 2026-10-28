@@ -161,6 +161,13 @@ else
 		pass "OpenEXR delegate disabled"
 	fi
 
+	# Keep the suspect resize path out of shipped builds until it is verified upstream.
+	if config_has_true 'SIMD support with libhwy'; then
+		fail "Highway SIMD is enabled (resize colour corruption: dotCMS/core#38079)"
+	else
+		pass "Highway SIMD disabled"
+	fi
+
 	# Capabilities dotCMS advertises and must keep.
 	REQUIRED_DELEGATES=(
 		'enable GIF load'
@@ -298,6 +305,57 @@ if [ -x "$VIPS_BIN" ]; then
 	else
 		fail "svg: librsvg load failed"
 	fi
+fi
+
+# ---------------------------------------------------------------------------
+# 8. Resize colours across the 4x shrink boundary (dotCMS/core#38079).
+#    thumbnail_image matches the Java Resize filter: unlike thumbnail, it cannot
+#    hide shrinkh corruption by shrinking JPEG/WebP during file loading.
+# ---------------------------------------------------------------------------
+section "resize colour parity"
+
+if [ -x "$VIPS_BIN" ]; then
+	"$VIPS_BIN" --targets
+
+	resize_matches_scalar() {
+		local input="$1" width="$2" label="$3" delta
+		local scalar="${TMPDIR_RUN}/scalar.v" actual="${TMPDIR_RUN}/actual.v"
+		local diff="${TMPDIR_RUN}/diff.v" absolute="${TMPDIR_RUN}/absolute.v"
+		if ! env -u VIPS_VECTOR VIPS_NOVECTOR=1 "$VIPS_BIN" thumbnail_image "$input" "$scalar" "$width" --height "$width" --size force ||
+			! env -u VIPS_NOVECTOR -u IM_NOVECTOR "$VIPS_BIN" thumbnail_image "$input" "$actual" "$width" --height "$width" --size force ||
+			! "$VIPS_BIN" subtract "$scalar" "$actual" "$diff" ||
+			! "$VIPS_BIN" abs "$diff" "$absolute" ||
+			! delta="$("$VIPS_BIN" max "$absolute")"; then
+			fail "${label} resize to ${width}: native operation failed"
+			return
+		fi
+		if awk -v delta="$delta" 'BEGIN { exit !(delta >= 0 && delta <= 1) }'; then
+			pass "${label} resize to ${width}: max channel delta ${delta}"
+		else
+			fail "${label} resize to ${width}: max channel delta ${delta} exceeds 1"
+		fi
+	}
+
+	for bands in 3 4; do
+		colour='16 70 129'
+		[ "$bands" -eq 4 ] && colour='16 70 129 128'
+		if ! "$VIPS_BIN" black "${TMPDIR_RUN}/black.v" 1512 1512 --bands "$bands" ||
+			! "$VIPS_BIN" linear "${TMPDIR_RUN}/black.v" "${TMPDIR_RUN}/colour.v" 1 "$colour" --uchar ||
+			! "$VIPS_BIN" copy "${TMPDIR_RUN}/colour.v" "${TMPDIR_RUN}/colour.png" --interpretation srgb; then
+			fail "could not create ${bands}-band colour fixture"
+			continue
+		fi
+		for width in 379 378 189; do
+			resize_matches_scalar "${TMPDIR_RUN}/colour.png" "$width" "${bands}-band PNG"
+		done
+		if ! "$VIPS_BIN" extract_area "${TMPDIR_RUN}/colour.png" "${TMPDIR_RUN}/colour.webp" 0 0 701 700; then
+			fail "could not create ${bands}-band WebP fixture"
+			continue
+		fi
+		for width in 176 175 130; do
+			resize_matches_scalar "${TMPDIR_RUN}/colour.webp" "$width" "${bands}-band WebP"
+		done
+	done
 fi
 
 # ---------------------------------------------------------------------------

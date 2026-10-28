@@ -110,6 +110,7 @@ log "configure libvips"
 # package: imagequant", "PNG load/save with libspng: true"). Pinning spng keeps
 # PNG behaviour identical to the image we are replacing rather than silently
 # switching PNG codecs as a side effect of this change.
+# shortcut: Highway SIMD stays disabled (#38079) until the failing target passes the resize colour gate.
 meson setup "$MESON_BUILD_DIR" "$SRC_DIR" \
 	--prefix="$VIPS_PREFIX" \
 	--libdir=lib \
@@ -137,7 +138,7 @@ meson setup "$MESON_BUILD_DIR" "$SRC_DIR" \
 	-Dmatio=enabled \
 	-Dopenslide=enabled \
 	-Dcfitsio=enabled \
-	-Dhighway=enabled \
+	-Dhighway=disabled \
 	-Dorc=disabled \
 	-Dimagequant=enabled \
 	-Dquantizr=disabled \
@@ -265,6 +266,7 @@ log "record provenance"
 	echo "prefix: ${VIPS_PREFIX}"
 	echo "built_at: $(date -u +%Y-%m-%dT%H:%M:%SZ)"
 	echo "delegates_disabled: magick openexr pdfium"
+	echo "simd: highway and orc disabled (resize colour mitigation: dotCMS/core#38079)"
 	echo "delegate_notes: png backend pinned to spng to match the stock ubuntu libvips42 build"
 } >"${VIPS_PREFIX}/share/build-info.txt"
 
