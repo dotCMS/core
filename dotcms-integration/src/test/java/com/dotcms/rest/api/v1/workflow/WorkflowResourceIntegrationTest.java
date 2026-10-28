@@ -871,9 +871,15 @@ public class WorkflowResourceIntegrationTest extends BaseWorkflowIntegrationTest
         //System Workflow.
         final Contentlet fileAsset = TestDataUtils.getFileAssetContent(true,
                 languageAPI.getDefaultLanguage().getId());
-        //Document Workflow.
-        final Contentlet documentLike = TestDataUtils.getDocumentLikeContent(true,
+        //Document Workflow. The contentlet is created without a workflow task, so it is indexed
+        //under the first step of every scheme of its content type. Auto assign is turned off
+        //because the checkin listener would otherwise move it, asynchronously and racing with
+        //the query below, to the first step of the System Workflow and drop it from the
+        //Document Management bulk actions.
+        final Contentlet unsavedDocumentLike = TestDataUtils.getDocumentLikeContent(false,
                 languageAPI.getDefaultLanguage().getId(), null);
+        unsavedDocumentLike.setProperty(Contentlet.AUTO_ASSIGN_WORKFLOW, false);
+        final Contentlet documentLike = ContentletDataGen.checkin(unsavedDocumentLike);
 
         final String luceneQuery = String.format(
                 "-contentType:Host -baseType:3 +(conhost:%s conhost:SYSTEM_HOST) +languageId:1 +deleted:false +working:true",
