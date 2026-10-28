@@ -6978,9 +6978,14 @@ public class ESContentletAPIImpl implements ContentletAPI {
         DotPreconditions.checkNotNull(contentlet);
 
         final boolean isNew = !InodeUtils.isSet(contentlet.getIdentifier());
-        final Permissionable writeRequiredOn = isNew ? contentlet.getContentType() : contentlet;
-        if (!permissionAPI.doesUserHavePermission(writeRequiredOn, PermissionAPI.PERMISSION_WRITE,
-                user, respectFrontendRoles)) {
+        // keep the two calls distinct: the ContentType overload of doesUserHavePermission has
+        // its own rules (CMS Owner on the type), which a Permissionable-typed call would skip
+        final boolean canWrite = isNew
+                ? permissionAPI.doesUserHavePermission(contentlet.getContentType(),
+                PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles)
+                : permissionAPI.doesUserHavePermission(contentlet,
+                PermissionAPI.PERMISSION_WRITE, user, respectFrontendRoles);
+        if (!canWrite) {
             this.throwSecurityException(contentlet, user);
         }
 
