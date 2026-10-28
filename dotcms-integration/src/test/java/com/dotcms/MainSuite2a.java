@@ -26,6 +26,9 @@ import com.dotcms.rendering.velocity.viewtools.CMSUserToolTest;
 import com.dotcms.rest.api.v1.content.ContentRelationshipsResourceIntegrationTest;
 import com.dotcms.rest.api.v1.maintenance.MaintenanceResourceIntegrationTest;
 import com.dotmarketing.business.UserDeletionCacheInvalidationTest;
+import com.dotmarketing.image.vips.VipsResizeImageFilterIntegrationTest;
+import com.dotmarketing.image.vips.VipsResizeOrientationIntegrationTest;
+import com.dotmarketing.image.vips.VipsResizePhotoIntegrationTest;
 import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
 import com.dotmarketing.portlets.cmsmaintenance.action.ViewCMSMaintenanceActionTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
@@ -47,6 +50,9 @@ import org.junit.runners.Suite.SuiteClasses;
         InferenceImagesTest.class,
         InferenceLoggingTest.class,
         InferenceModelsTest.class,
+        VipsResizeImageFilterIntegrationTest.class,
+        VipsResizeOrientationIntegrationTest.class,
+        VipsResizePhotoIntegrationTest.class,
         InferenceModelValidationTest.class,
         InferenceSiteIsolationTest.class,
         InferenceTestsAreRegisteredTest.class,
