@@ -21,12 +21,14 @@ import com.dotcms.junit.MainBaseSuite;
 import com.dotcms.rendering.js.JsModuleImportIntegrationTest;
 import com.dotcms.rendering.js.viewtools.UserJsViewToolTest;
 import com.dotcms.rendering.velocity.viewtools.CMSUserToolTest;
+import com.dotcms.rest.api.v1.content.ContentRelationshipsResourceIntegrationTest;
 import com.dotcms.rest.api.v1.maintenance.MaintenanceResourceIntegrationTest;
 import com.dotmarketing.business.UserDeletionCacheInvalidationTest;
 import com.dotmarketing.image.vips.VipsResizeImageFilterIntegrationTest;
 import com.dotmarketing.image.vips.VipsResizeOrientationIntegrationTest;
 import com.dotmarketing.image.vips.VipsResizePhotoIntegrationTest;
 import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
+import com.dotmarketing.portlets.cmsmaintenance.action.ViewCMSMaintenanceActionTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
@@ -46,6 +48,9 @@ import org.junit.runners.Suite.SuiteClasses;
         InferenceImagesTest.class,
         InferenceLoggingTest.class,
         InferenceModelsTest.class,
+        VipsResizeImageFilterIntegrationTest.class,
+        VipsResizeOrientationIntegrationTest.class,
+        VipsResizePhotoIntegrationTest.class
         InferenceModelValidationTest.class,
         InferenceSiteIsolationTest.class,
         InferenceTestsAreRegisteredTest.class,
@@ -120,14 +125,13 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.cluster.ClusterNodesResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.system.ConfigurationHelperTest.class,
         UserDeletionCacheInvalidationTest.class,
+        ViewCMSMaintenanceActionTest.class,
         JsModuleImportIntegrationTest.class,
         com.dotcms.rendering.velocity.WidgetRendererTest.class,
         CMSUserToolTest.class,
         UserJsViewToolTest.class,
         com.dotcms.rest.BundleResourceDeleteResponseTest.class,
-        VipsResizeImageFilterIntegrationTest.class,
-        VipsResizeOrientationIntegrationTest.class,
-        VipsResizePhotoIntegrationTest.class
+        ContentRelationshipsResourceIntegrationTest.class
 })
 public class MainSuite2a {
 
