@@ -155,7 +155,7 @@ public class SecretTool implements ViewTool {
 			boolean hasScriptingRole = checkRoleFromLastModUser(scripting);
 			if (!hasScriptingRole) {
 				final User user = WebAPILocator.getUserWebAPI().getUser(this.request);
-				// try with the current user
+				// try with the request user
 				if (null != user) {
 					hasScriptingRole = APILocator.getRoleAPI().doesUserHaveRole(user, scripting);
 				}

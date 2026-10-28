@@ -4,8 +4,11 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.dotmarketing.business.APILocator;
@@ -98,17 +101,19 @@ public class SecretToolTest {
         User anonymousUser = mock(User.class);
         when(anonymousUser.isAnonymousUser()).thenReturn(true);
         when(userWebAPI.getUser(request)).thenReturn(anonymousUser);
-        givenContextUserWithScriptingRole();
+        final User contextUser = givenContextUserWithScriptingRole();
 
         assertThrows(SecurityException.class, () -> secretTool.canUserEvaluate());
+        verify(roleAPI, never()).doesUserHaveRole(same(contextUser), any(Role.class));
     }
 
     @Test
     public void canUserEvaluate_NoRequestUserAndContextUserHasRole_ThrowsException() throws Exception {
         when(userWebAPI.getUser(request)).thenReturn(null);
-        givenContextUserWithScriptingRole();
+        final User contextUser = givenContextUserWithScriptingRole();
 
         assertThrows(SecurityException.class, () -> secretTool.canUserEvaluate());
+        verify(roleAPI, never()).doesUserHaveRole(same(contextUser), any(Role.class));
     }
 
     @Test
@@ -116,10 +121,11 @@ public class SecretToolTest {
         User requestUser = mock(User.class);
         when(requestUser.isAnonymousUser()).thenReturn(false);
         when(userWebAPI.getUser(request)).thenReturn(requestUser);
-        final Role scriptingRole = givenContextUserWithScriptingRole();
-        when(roleAPI.doesUserHaveRole(requestUser, scriptingRole)).thenReturn(false);
+        final User contextUser = givenContextUserWithScriptingRole();
+        when(roleAPI.doesUserHaveRole(same(requestUser), any(Role.class))).thenReturn(false);
 
         assertThrows(SecurityException.class, () -> secretTool.canUserEvaluate());
+        verify(roleAPI, never()).doesUserHaveRole(same(contextUser), any(Role.class));
     }
 
     @ParameterizedTest(name = "{0}")
@@ -129,10 +135,11 @@ public class SecretToolTest {
         User anonymousUser = mock(User.class);
         when(anonymousUser.isAnonymousUser()).thenReturn(true);
         when(userWebAPI.getUser(request)).thenReturn(anonymousUser);
-        givenContextUserWithScriptingRole();
+        final User contextUser = givenContextUserWithScriptingRole();
 
         assertThrows(SecurityException.class, () -> secretRead.read(secretTool),
                 method + " must check the Scripting Developer role of the request user");
+        verify(roleAPI, never()).doesUserHaveRole(same(contextUser), any(Role.class));
     }
 
     @FunctionalInterface
@@ -153,14 +160,14 @@ public class SecretToolTest {
                         (SecretRead) tool -> tool.getCharArraySystemSecret("key", new char[]{'d'})));
     }
 
-    /** A {@code user} entry in the Velocity context that holds the Scripting Developer role. */
-    private Role givenContextUserWithScriptingRole() throws Exception {
+    /** Puts in the Velocity context a {@code user} entry that holds the Scripting Developer role, and returns it. */
+    private User givenContextUserWithScriptingRole() throws Exception {
         final User contextUser = mock(User.class);
         final Role scriptingRole = mock(Role.class);
         when(velocityContext.get("user")).thenReturn(contextUser);
         when(roleAPI.loadRoleByKey(Role.SCRIPTING_DEVELOPER)).thenReturn(scriptingRole);
         when(roleAPI.doesUserHaveRole(contextUser, scriptingRole)).thenReturn(true);
-        return scriptingRole;
+        return contextUser;
     }
 
     @Test
