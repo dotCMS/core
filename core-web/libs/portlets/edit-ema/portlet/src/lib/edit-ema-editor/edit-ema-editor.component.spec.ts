@@ -3032,8 +3032,17 @@ describe('EditEmaEditorComponent', () => {
                         spectator.debugElement.injector.get(DotContentTypeService),
                         'getContentType'
                     );
+                    store.setSelected({
+                        bounds: { x: 0, y: 0, width: 0, height: 0 },
+                        payload: EDIT_ACTION_PAYLOAD_MOCK
+                    });
+                    spectator.detectChanges();
+                    // Selecting renders quick edit, which loads the type for its own form; only
+                    // what opening the full editor does is asserted.
+                    getContentType.mockClear();
 
-                    openFullEditor();
+                    spectator.component['handleOpenFullEditor']();
+                    spectator.detectChanges();
 
                     expect(getContentType).not.toHaveBeenCalled();
                 });
