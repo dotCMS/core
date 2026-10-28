@@ -931,7 +931,7 @@ describe('DotUveActionsHandlerService – opening content and legacy screens', (
         uveStore: store as unknown as InstanceType<typeof UVEStore>,
         openContent: vi.fn(),
         openLegacyScreen: vi.fn(),
-        inlineEditingService: null,
+        inlineEditingService: null as unknown as InlineEditService,
         contentWindow: null,
         host: 'http://localhost',
         onCopyContent: vi.fn()
