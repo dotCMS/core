@@ -87,7 +87,7 @@ An author editing from Content Drive, the Query Tool, the Pages portlet, a legac
 1. **Given** Content Drive in list or grid view, **When** the author edits or creates content of either type, **Then** the side panel opens, and the list refreshes after a save, as it does today.
 2. **Given** Query Tool results, **When** the author clicks a result of either type, **Then** the side panel opens instead of a new tab, and the results rerun after a save.
 3. **Given** Query Tool results, **When** the author clicks a result that is a page, **Then** the page editor opens, as today.
-4. **Given** the Pages portlet, **When** the author chooses Edit or View on a page, **Then** the side panel opens, with the new editor for page types on the new editor, and the list refreshes after a save.
+4. **Given** the Pages portlet, **When** the author chooses Edit on a page, **Then** the side panel opens, with the new editor for page types on the new editor, and the list refreshes after a save.
 5. **Given** a legacy JSP portlet such as the old content search or Sites, **When** the author edits or creates content, **Then** the side panel opens over the portlet and the portlet's list refreshes after a save or a close.
 6. **Given** the Publishing Queue's asset list or select-bundle dialog, **When** the author edits an asset, **Then** the side panel opens above the dialog, and closing the panel returns to the dialog with focus on the row that opened it.
 7. **Given** a fresh browser tab, **When** the author opens `/<portlet>/<inode>` or `/c/content/new/<contentType>`, **Then** the portlet renders and the side panel opens over it.
@@ -129,6 +129,7 @@ An author in an editor clicks an existing related item in a Relationship field, 
 4. **Given** either block editor inside the new editor with a contentlet block, **When** the author chooses "Edit contentlet", **Then** the contentlet opens in a stacked side panel with no confirm prompt, and the unsaved changes in the editor underneath are intact when the panel closes.
 5. **Given** either block editor inside the legacy editor, itself in a side panel, **When** the author chooses "Edit contentlet", **Then** the contentlet opens in a second side panel stacked on top.
 6. **Given** a stacked panel, **When** the author presses Escape or clicks the mask, **Then** only the front panel closes and the one underneath is unchanged.
+7. **Given** a stacked panel opened by "Create new", **When** the author saves, fixes a typo and saves again, **Then** the field lists the new item once, with the latest title.
 
 ---
 
@@ -176,7 +177,7 @@ Panels stack in open order, the front one is the only one that reacts to Escape 
 - **User can see but not edit the content**: the editor shows its own permission message inside the panel. The opener adds no permission check of its own.
 - **Legacy save of a page for the first time**: the legacy editor asks to open the page editor instead of reporting a save. The opener closes the panel and opens the page editor, as Content Search does.
 - **Delete from the panel**: the opener receives `deleted` and then `closed`, never `saved`. A screen that refreshes on close no longer shows the content.
-- **Workflow action that removes the content** (archive, delete): reported as `deleted` or `closed`, not `saved`.
+- **Workflow action that removes the content** (archive, delete, destroy): the legacy editor calls its window hook with `deleted-contenlet` (or `deleted-page` for a page) and then sends `close`; the new editor leaves the content through its host. Both are reported as `deleted` then `closed`, never `saved`.
 - **Legacy save notification without the saved content's language**: the `saved` payload is fetched by inode, so every listener gets the same shape regardless of editor.
 - **Refresh with a panel open**: unsaved changes are lost, as today. Surfaces that write the open panel to their URL (Content Drive) reopen it; others do not.
 - **Panel opened over a modal dialog, then the dialog closes underneath** (the Publishing Queue dialog times out or is closed by code): the panel stays open and closes normally; focus returns to the screen.
@@ -206,7 +207,7 @@ Panels stack in open order, the front one is the only one that reacts to Escape 
 
 - **FR-007**: Both editors MUST report the same events to the opener: `saved`, `languageChanged`, `pageEditorRequested`, `deleted` and `closed`.
 - **FR-008**: The `saved` payload MUST always be the saved contentlet. For a legacy save, the opener MUST fetch the saved contentlet by inode before reporting it, so every listener receives the same shape.
-- **FR-009**: `deleted` MUST be reported when the content was removed from inside the editor, followed by `closed`, and `saved` MUST NOT be reported for a delete.
+- **FR-009**: `deleted` MUST be reported when the content was removed from inside the editor (a delete, archive or destroy action), followed by `closed`, and `saved` MUST NOT be reported for a delete. The legacy editor already announces a removal through a hook on its own window (`ngEditContentletEvents`, which it calls with `deleted-contenlet` when the content it just saved no longer exists, and with `deleted-page` for a page) before it sends its generic `close`; the panel supplies that hook when the editor loads, so the legacy screens do not change.
 - **FR-010**: The legacy editor's workflow wizard, compare dialog and push publish MUST keep going through the admin's root services, as they do today.
 - **FR-011**: The new-editor panel's dialog-compatibility callbacks (`onContentSaved`, `onCancel`) MUST be removed; openers consume the events instead.
 
@@ -220,14 +221,14 @@ Panels stack in open order, the front one is the only one that reacts to Escape 
 **Surfaces**
 
 - **FR-016**: Every surface listed in User Stories 1 and 2 MUST open the side panel through the opener, for content types on either editor, and MUST NOT open a dialog, a new tab or a full-screen route for an edit or a create.
-- **FR-017**: After a `saved` event, each surface MUST refresh what it shows: Content Drive its list, the UVE its page, the Query Tool its results, the Pages portlet its list, a legacy JSP portlet its list through the admin's iframe reload, and the Publishing Queue its dialog contents. Legacy JSP portlets MUST also refresh on `closed`.
+- **FR-017**: After a `saved` event, each surface MUST refresh what it shows: Content Drive its list, the UVE its page, the Query Tool its results, the Pages portlet its list, a legacy JSP portlet its list through the admin's iframe reload, and the Publishing Queue its dialog contents. Every surface MUST also refresh on `closed`, whichever editor the panel showed: a move to another folder or a translation saved after a language switch inside the legacy editor sends no event the opener can use, so a refresh on close is the only way the screen behind finds out. The cost is one quiet refresh per close, which Content Drive already pays today.
 - **FR-018**: After a `saved` event for URL-mapped content, the UVE MUST compare the saved content's detail URL with the page it is showing and load the new URL when they differ, for both editors. The contract adds no URL-changed flag; the UVE derives it from the saved contentlet.
 - **FR-019**: A restored version MUST be reported as `saved`, carrying the restored contentlet, from both editors. Content Drive's separate restore notification is replaced by it.
 - **FR-020**: A workflow action run inside the legacy editor MUST be reported through the same events (`saved`, `deleted` or `closed`). The contract adds no workflow event.
 - **FR-021**: Content created from the UVE's palette or a container "+" MUST be inserted into that container once, on the first save. A second save in the same panel MUST NOT insert it again or show a duplicate message.
 - **FR-022**: On a page with an experiment running, every editor and legacy screen opened from the UVE MUST edit the experiment's variant.
 - **FR-023**: The SDK's `editContentlet()` MUST open the editor the content type chooses, in the side panel, instead of always opening the legacy iframe dialog.
-- **FR-024**: The Pages portlet's Edit and View MUST open the panel through the opener, so page types on the new editor get the new editor, and MUST reload the list after a save.
+- **FR-024**: The Pages portlet's Edit action (its only edit entry; there is no View action) MUST open the panel through the opener, so page types on the new editor get the new editor, and MUST reload the list after a save.
 - **FR-025**: The legacy JSP events `edit-contentlet`, `create-contentlet`, `edit-host` and `create-host` MUST open the panel through the opener. The `edit-page` and `edit-task` events keep their current behavior.
 - **FR-026**: The deep links `/<portlet>/<inode>` and `/c/content/new/<contentType>` MUST render the portlet and open the panel over it. Closing the panel leaves the author on the portlet.
 - **FR-027**: Query Tool results that are pages MUST keep opening the page editor.
@@ -236,14 +237,14 @@ Panels stack in open order, the front one is the only one that reacts to Escape 
 
 - **FR-028**: Fields that open other content (the Relationship field and both block editors inside the new editor) MUST NOT open panels. They MUST emit a request to open content together with a way to receive the saved result, and the host of the form opens the panel.
 - **FR-029**: Inside a panel, an existing related item MUST open in place, replacing the panel's content and adding a breadcrumb back to the previous content, as today. In the full-screen editor it MUST open in a new panel.
-- **FR-030**: "Create new" in a Relationship field MUST stack a new panel in both hosts, and the field MUST list the new item after a save. "Create new" stays disabled for content types on the legacy editor.
+- **FR-030**: "Create new" in a Relationship field MUST stack a new panel in both hosts, and the field MUST list the new item after a save. The new item MUST be added once: a later save in the same panel updates that row (matched by identifier) instead of adding another, as FR-021 requires for the UVE. "Create new" stays disabled for content types on the legacy editor.
 - **FR-031**: "Edit contentlet" in either block editor inside the new editor MUST open a stacked panel with no confirm prompt and MUST leave the unsaved changes in the editor underneath intact.
 - **FR-032**: Block editors inside the legacy editor MUST send `edit-contentlet` to the container hosting the legacy editor instead of navigating the window. The legacy editor panel MUST forward `edit-contentlet` and `create-contentlet` to its opener, which stacks a new panel.
 - **FR-033**: The block editors' window navigation, their confirm prompt and their writes of the relationship-return breadcrumb to browser storage MUST be removed.
 
 **Panel behavior, both editors**
 
-- **FR-034**: Closing a panel with unsaved changes through the X, Escape, a mask click or browser Back MUST ask before discarding. "Keep editing" keeps the changes; "discard" closes.
+- **FR-034**: Closing a panel with unsaved changes through the X, Escape, a mask click or browser Back MUST ask before discarding. "Keep editing" keeps the changes; "discard" closes. Browser Back reaches the panel on the surfaces that put the open panel in their URL and route Back to it (Content Drive, the Query Tool), as today; the other surfaces do not write the panel to the URL.
 - **FR-035**: Saving MUST keep the panel open and the panel MUST report `saved` on every save, so "save, edit again, save again" refreshes the screen behind each time.
 - **FR-036**: Switching language inside the editor MUST keep the panel open in the new language and report `languageChanged`, so the opener can follow it.
 - **FR-037**: Confirmation toasts MUST appear in the screen that opened the panel.
@@ -304,7 +305,8 @@ Panels stack in open order, the front one is the only one that reacts to Escape 
 - The legacy editor sends no event on a language switch or a restored version: it reloads itself. The panel notices both from the reload, as Content Drive's legacy panel does today.
 - A workflow action completed through the wizard results in the legacy editor's normal save, which sends its save notification, or in a close when the action removed the content. This was verified for #37759. Refreshing on `closed` as well as on `saved` is the safety net where a surface needs one.
 - The saved contentlet fetched by inode after a legacy save carries the detail URL the UVE needs to detect a URL-mapped change, as the UVE's current fetch does.
-- The new editor can report a restored version through the same path it reports a save, since the restore updates the content it holds.
+- The new editor can report a restored version through the same path it reports a save, since the restore updates the content it holds. Today a restore does not go through that path, so this is work inside the editor, not wiring.
+- The new editor can edit and create content in an experiment variant by carrying the variant name to its save, which the admin's save call already forwards to the server. This is verified before the UVE work starts; if the server does not accept it, FR-022 narrows to the legacy editor and this spec is amended.
 - The side panel outlet already supports stacking, mask and Escape per panel, main-navigation collapse and browser Back routing through the content's guard. No change to the outlet is needed.
 - The side panel is attached to the document body and is modal, so it stacks above a PrimeNG modal dialog. The QA note on the issue covers the focus-trap checks; if the dialog's focus trap wins, resolving it is implementation work inside this issue, not a scope change.
 - The Publishing Queue dialogs stay modal dialogs. Only the editor they open moves to the panel.
