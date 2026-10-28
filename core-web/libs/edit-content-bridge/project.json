@@ -6,6 +6,7 @@
     "tags": ["type:feature", "scope:dotcms-ui", "portlet:edit-content"],
     "targets": {
         "build": {
+            "inputs": ["production", "^production", "warBuild"],
             "outputs": ["{workspaceRoot}/dist/libs/edit-content-bridge"]
         }
     }

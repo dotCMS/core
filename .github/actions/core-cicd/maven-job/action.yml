@@ -385,7 +385,10 @@ runs:
     # every other run the newest of those: pull requests and the merge queue can read main's
     # caches, while nothing else can read the ones they would save. The key only decides when
     # main stores a new entry (about 37 MB): when core-web has changed since the last one. Which
-    # artifacts Nx may reuse is decided by Nx's own task hashes, not by this key.
+    # artifacts Nx may reuse is decided by Nx's own task hashes, not by this key, so every file a
+    # shipped build reads must be one of its Nx inputs. Nx's graph alone misses some (Tailwind
+    # scans the whole workspace, styles come from libs/dotcms-scss by path, npm files are read by
+    # path); the warBuild, dotcmsScss and tailwindSources inputs in core-web/nx.json cover them.
     - id: restore-cache-nx
       name: Restore Nx Cache
       if: ${{ inputs.requires-node == 'true' && inputs.generate-artifacts == 'true' && inputs.release-build != 'true' }}
