@@ -135,7 +135,9 @@ With the flag off, the API uses the existing filesystem/NFS paths and makes no r
 With the flag on, new CMS binary writes use
 `binary-assets/{a}/{b}/{inode}/{field}/.revisions/{revision-id}/{filename}`. The Binary field JSON
 keeps its original `value` filename and adds `storageKey` (and `metadataStorageKey` for its
-metadata). The field reference changes in the content transaction, so an uncommitted replacement
+metadata). The revision key is recorded only there, so for a content type with a Binary field,
+check-in writes `contentlet_as_json` even when `SAVE_CONTENTLET_AS_JSON=false`; without it the
+new revision could not be found. The field reference changes in the content transaction, so an uncommitted replacement
 does not overwrite the prior object, and a rollback keeps the previous revision. Legacy binary
 JSON and storage keys remain readable. Reconstructed files keep the stored revision path without
 I/O. Old revisions are kept until whole-inode cleanup. A check-in that rolls back deletes the
@@ -143,6 +145,13 @@ revision and revision metadata it uploaded, through a rollback listener; the key
 UUID, so no other version can reference it. If that delete fails it is logged and the object is
 left behind. Metadata written under a different key during the rolled-back check-in, and
 revisions abandoned by a rollback to a savepoint, are not reclaimed.
+
+Each new version gets its own revision of every binary field, including fields the edit did not
+change, so a check-in that creates a version uploads every binary again (one S3 PUT per field)
+and the bucket holds one copy per version until old versions are deleted and cleanup reclaims
+them. Size the bucket and request budget for that: a content type with large binaries that is
+edited often costs a full copy of each binary per version. Saving without a new version
+(`checkinWithoutVersioning`) reuses the current revision when the file is unchanged.
 
 Custom metadata is copied to replacements, and metadata files and cache entries identify the exact
 binary revision. Binary HTTP responses (`BinaryExporterServlet`) hold a cache lease while they
@@ -182,7 +191,9 @@ recovery archives like the other deletion paths.
 
 The job carries the exact binary and metadata paths stored for the inode when it was recorded, so
 recording it lists the inode's objects inside the deletion transaction, and a storage listing
-failure aborts the deletion. The worker deletes the recorded metadata before the recorded source
+failure aborts the deletion. Old-version maintenance (`DropOldContentletRunner`) lists a batch's
+objects just before it opens its deletion transaction instead, because those versions are no
+longer edited, so the S3 calls do not run while the batch's rows are locked. The worker deletes the recorded metadata before the recorded source
 objects, so a failure leaves the sources available for a retry. It never deletes by prefix: an
 inode can be re-created after the deletion (push publishing keeps the sender's inodes), and the
 revisions it uploads survive. Objects uploaded under the deleted inode by a transaction that
@@ -198,6 +209,12 @@ read, it keeps every recorded file. S3 failures use the job queue's retry policy
 exhausted the job stays failed and can be retried through the job management API. Direct
 submissions through the public job endpoint are rejected. With the flag off, workers do not touch
 storage and pending jobs are not silently completed.
+
+The job removes local cache copies only on the node that runs it. Another node that had cached a
+deleted revision keeps that copy: cache eviction deletes a local file only after it verifies a
+durable copy in S3, and the job has just deleted it. Those copies are unreachable, since nothing
+references them, but they count toward that node's `BINARY_CACHE_MAX_SIZE_MB` until someone removes
+them. Reclaiming them is not implemented yet.
 
 ## Binary field trash
 
