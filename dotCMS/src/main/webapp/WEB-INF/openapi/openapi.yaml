@@ -10499,6 +10499,50 @@ paths:
       summary: Save (upsert) the dotAuth configuration for a site
       tags:
       - dotAuth
+  /v1/dotcdn:
+    delete:
+      operationId: purgeCache
+      requestBody:
+        content:
+          '*/*':
+            schema:
+              $ref: "#/components/schemas/InvalidationForm"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityDotCDNPurgeView"
+          description: CDN purge result
+      summary: Purge CDN cache
+  /v1/dotcdn/stats:
+    get:
+      operationId: getStats
+      parameters:
+      - in: query
+        name: dateFrom
+        schema:
+          type: string
+      - in: query
+        name: dateTo
+        schema:
+          type: string
+      - in: query
+        name: hostId
+        schema:
+          type: string
+      - in: query
+        name: hourly
+        schema:
+          type: boolean
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityDotCDNStatsView"
+          description: CDN statistics for the requested date range
+      summary: Get CDN statistics
   /v1/ema:
     get:
       operationId: getDetails
@@ -28959,6 +29003,76 @@ components:
             $ref: "#/components/schemas/SiteRowView"
         system:
           $ref: "#/components/schemas/SystemView"
+    DotCDNPurgeResponse:
+      type: object
+      description: CDN purge response
+      properties:
+        invalidateAll:
+          type: boolean
+        success:
+          type: boolean
+    DotCDNStats:
+      type: object
+      properties:
+        averageOriginResponseTime:
+          type: integer
+          format: int32
+        bandwidthPretty:
+          type: string
+        bandwidthUsedChart:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+        cacheHitRate:
+          type: number
+          format: double
+        cacheHitRateChart:
+          type: object
+          additionalProperties:
+            type: number
+        cdnDomain:
+          type: string
+        dateFrom:
+          type: string
+        dateTo:
+          type: string
+        error4xxChart:
+          type: object
+          additionalProperties:
+            type: number
+        error5xxChart:
+          type: object
+          additionalProperties:
+            type: number
+        geographicDistribution:
+          type: object
+          additionalProperties:
+            type: object
+            additionalProperties:
+              type: integer
+              format: int64
+        originResponseTimeChart:
+          type: object
+          additionalProperties:
+            type: number
+        requestsServedChart:
+          type: object
+          additionalProperties:
+            type: integer
+            format: int64
+        totalBandwidthUsed:
+          type: integer
+          format: int64
+        totalRequestsServed:
+          type: integer
+          format: int64
+    DotCDNStatsResponse:
+      type: object
+      description: CDN statistics response
+      properties:
+        stats:
+          $ref: "#/components/schemas/DotCDNStats"
     DotTempFile:
       type: object
       properties:
@@ -32056,6 +32170,17 @@ components:
       properties:
         error:
           $ref: "#/components/schemas/Body"
+    InvalidationForm:
+      type: object
+      properties:
+        hostId:
+          type: string
+        invalidateAll:
+          type: boolean
+        urls:
+          type: array
+          items:
+            type: string
     JSONObject:
       type: object
       additionalProperties:
@@ -35130,6 +35255,52 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/DotAuthSitesView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityDotCDNPurgeView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/DotCDNPurgeResponse"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityDotCDNStatsView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/DotCDNStatsResponse"
         errors:
           type: array
           items:
