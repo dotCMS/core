@@ -5,7 +5,7 @@ import {
     SpyObject
 } from '@openng/spectator/vitest';
 import { of, throwError } from 'rxjs';
-import { Mock, Mocked, describe, expect, it, vi } from 'vitest';
+import { Mocked, describe, expect, it, vi } from 'vitest';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse } from '@angular/common/http';
@@ -13,13 +13,15 @@ import { signal } from '@angular/core';
 import { Router } from '@angular/router';
 
 import {
-    DotActionUrlService,
     DotContentSearchService,
-    DotContentTypeService,
     DotHttpErrorManagerService,
     DotRouterService
 } from '@dotcms/data-access';
-import { DotCMSBaseTypesContentTypes, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
+import {
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 import { EDIT_CONTENT_NAVIGATION_OVERRIDE } from '@dotcms/edit-content';
 import { createFakeContentlet, createFakeContentType } from '@dotcms/utils-testing';
 
@@ -53,9 +55,6 @@ const mockStore = () =>
         selectedNode: vi.fn().mockReturnValue(undefined)
     });
 
-/** What `/api/v1/portlet/_actionurl/<type>` answers: the legacy create screen for a type. */
-const CREATE_URL = '/c/portal/layout?p_p_id=content&_content_cmd=new&selectedStructure=news';
-
 /** A content type that opted into the new editor. */
 const NEW_EDITOR_TYPE = createFakeContentType({
     id: 'blog',
@@ -72,23 +71,16 @@ const LEGACY_TYPE = createFakeContentType({
     metadata: {}
 });
 
-/**
- * Answers a content type lookup the way the server would: `news` is on the legacy editor, every
- * other type opted into the new one.
- *
+/*
  * Content Drive no longer chooses the editor (#38303): it hands one request to the opener, which
- * looks the type up. The lookup is answered here only so code that still asks reaches the request
- * it builds; the tests below assert that it is never asked.
+ * looks the type up and resolves a legacy create screen. Neither the content type service nor the
+ * action URL service is provided here, so a service that asked for either would fail every test.
  */
-const answerTypeLookup = (variable: string) =>
-    of(variable === LEGACY_TYPE.variable ? LEGACY_TYPE : NEW_EDITOR_TYPE);
 
 describe('DotContentDriveNavigationService', () => {
     let spectator: SpectatorService<DotContentDriveNavigationService>;
     let service: DotContentDriveNavigationService;
     let router: Mocked<Router>;
-    let contentTypeService: Mocked<DotContentTypeService>;
-    let actionUrlService: Mocked<DotActionUrlService>;
     let dotRouterService: Mocked<DotRouterService>;
     let location: SpyObject<Location>;
     let httpErrorManager: SpyObject<DotHttpErrorManagerService>;
@@ -101,9 +93,6 @@ describe('DotContentDriveNavigationService', () => {
             mockProvider(Router, {
                 navigate: vi.fn()
             }),
-            mockProvider(DotContentTypeService, {
-                getContentType: vi.fn()
-            }),
             mockProvider(DotRouterService, {
                 goToEditPage: vi.fn()
             }),
@@ -114,9 +103,6 @@ describe('DotContentDriveNavigationService', () => {
                 handle: vi.fn().mockReturnValue(of({}))
             }),
             provideContentDriveNavigationOverride(),
-            mockProvider(DotActionUrlService, {
-                getCreateContentletUrl: vi.fn().mockReturnValue(of(CREATE_URL))
-            }),
             mockProvider(DotContentSearchService, {
                 get: vi.fn()
             }),
@@ -128,8 +114,6 @@ describe('DotContentDriveNavigationService', () => {
         spectator = createService();
         service = spectator.service;
         router = spectator.inject(Router);
-        contentTypeService = spectator.inject(DotContentTypeService);
-        actionUrlService = spectator.inject(DotActionUrlService);
         dotRouterService = spectator.inject(DotRouterService);
         location = spectator.inject(Location);
         httpErrorManager = spectator.inject(DotHttpErrorManagerService);
@@ -142,8 +126,6 @@ describe('DotContentDriveNavigationService', () => {
         // Same for the folder being browsed: every test starts at the site root.
         store.path.mockReturnValue('');
         store.selectedNode.mockReturnValue(undefined);
-        contentTypeService.getContentType.mockImplementation(answerTypeLookup);
-        (actionUrlService.getCreateContentletUrl as Mock).mockReturnValue(of(CREATE_URL));
     });
 
     afterEach(() => {
@@ -174,7 +156,6 @@ describe('DotContentDriveNavigationService', () => {
                 title: 'A Page',
                 portletId: 'content-drive'
             });
-            expect(contentTypeService.getContentType).not.toHaveBeenCalled();
             expect(dotRouterService.goToEditPage).not.toHaveBeenCalled();
         });
     });
@@ -251,7 +232,9 @@ describe('DotContentDriveNavigationService', () => {
                 createFakeContentlet({ contentType: LEGACY_TYPE.variable, inode: 'inode-1' })
             );
 
-            expect(contentTypeService.getContentType).not.toHaveBeenCalled();
+            // Opened at once: no lookup service is provided, and no content search runs.
+            expect(service.$editPanelRequest()).not.toBeNull();
+            expect(contentSearch.get).not.toHaveBeenCalled();
         });
     });
 
@@ -323,8 +306,9 @@ describe('DotContentDriveNavigationService', () => {
         it('should leave the editor choice and the create screen to the opener', () => {
             service.createContent(LEGACY_TYPE.variable);
 
-            expect(contentTypeService.getContentType).not.toHaveBeenCalled();
-            expect(actionUrlService.getCreateContentletUrl).not.toHaveBeenCalled();
+            // Opened at once: no lookup service is provided, and no content search runs.
+            expect(service.$editPanelRequest()).not.toBeNull();
+            expect(contentSearch.get).not.toHaveBeenCalled();
         });
 
         /**
@@ -661,7 +645,6 @@ describe('DotContentDriveNavigationService', () => {
 
             const openEdit = () => {
                 service.editContent(BLOG_POST);
-                contentTypeService.getContentType.mockClear();
             };
 
             it('is what the shell provides for the editor', () => {
@@ -691,8 +674,6 @@ describe('DotContentDriveNavigationService', () => {
                 });
                 // A new request, so the panel reopens rather than keeping the new editor.
                 expect(service.$editPanelRequest()).not.toBe(before);
-                // The type was just switched; the service does not look it up.
-                expect(contentTypeService.getContentType).not.toHaveBeenCalled();
                 // Same content, same language: the URL already says so.
                 expect(service.$panelLocation()).toEqual(locationBefore);
             });
@@ -750,9 +731,62 @@ describe('DotContentDriveNavigationService', () => {
                     })
                 );
                 expect(service.$editPanelRequest()).not.toBe(before);
-                // The opener resolves the legacy create screen, not the service.
-                expect(actionUrlService.getCreateContentletUrl).not.toHaveBeenCalled();
                 expect(service.$panelLocation()).toEqual({ kind: 'create', createContent: 'blog' });
+            });
+
+            /**
+             * The request names no editor and the opener remembers the type's old choice, so the
+             * reopen forces the legacy editor, and holds the panel closed for one tick so the panel
+             * helper closes the new editor before it opens the fresh request (#38303).
+             */
+            describe('reopening in the legacy editor', () => {
+                beforeEach(() => vi.useFakeTimers());
+                afterEach(() => vi.useRealTimers());
+
+                it('forces the legacy editor and holds the panel closed until the next tick', () => {
+                    openEdit();
+
+                    service.switchToLegacyEditor({ inode: 'inode-1' }, BLOG_POST, 'blog');
+
+                    expect(service.$forceLegacyEditor()).toBe(true);
+                    expect(service.$reopeningPanel()).toBe(true);
+
+                    vi.runAllTimers();
+
+                    expect(service.$reopeningPanel()).toBe(false);
+                    // Still forced: the panel reopens after the hold, and reads it then.
+                    expect(service.$forceLegacyEditor()).toBe(true);
+                    expect(service.$editPanelRequest()).toEqual(
+                        expect.objectContaining({ mode: 'edit', inode: 'inode-1' })
+                    );
+                });
+
+                it('holds nothing and forces nothing on an ordinary open', () => {
+                    openEdit();
+
+                    expect(service.$forceLegacyEditor()).toBe(false);
+                    expect(service.$reopeningPanel()).toBe(false);
+                });
+
+                it('drops the forced editor on the next open', () => {
+                    openEdit();
+                    service.switchToLegacyEditor({ inode: 'inode-1' }, BLOG_POST, 'blog');
+                    vi.runAllTimers();
+
+                    service.editContent(createFakeContentlet({ inode: 'inode-2' }));
+
+                    expect(service.$forceLegacyEditor()).toBe(false);
+                });
+
+                it('drops the forced editor on close', () => {
+                    openEdit();
+                    service.switchToLegacyEditor({ inode: 'inode-1' }, BLOG_POST, 'blog');
+                    vi.runAllTimers();
+
+                    service.closeEditPanel();
+
+                    expect(service.$forceLegacyEditor()).toBe(false);
+                });
             });
 
             it('declines a switch from another editor and leaves its panel alone', () => {
@@ -986,7 +1020,6 @@ describe('DotContentDriveNavigationService', () => {
                         editContent: 'banner-id',
                         editContentLang: 2
                     });
-                    expect(contentTypeService.getContentType).not.toHaveBeenCalled();
                     expect(router.navigate).not.toHaveBeenCalled();
                 }
             );
@@ -1020,7 +1053,6 @@ describe('DotContentDriveNavigationService', () => {
  */
 describe('DotContentDriveNavigationService, where a create lands', () => {
     let spectator: SpectatorService<DotContentDriveNavigationService>;
-    const getContentType = vi.fn();
     const systemHostSelected = signal(false);
     const currentSite = vi.fn();
     const path = vi.fn();
@@ -1030,13 +1062,9 @@ describe('DotContentDriveNavigationService, where a create lands', () => {
         service: DotContentDriveNavigationService,
         providers: [
             mockProvider(Router, { navigate: vi.fn() }),
-            mockProvider(DotContentTypeService, { getContentType }),
             mockProvider(DotRouterService, { goToEditPage: vi.fn() }),
             mockProvider(Location, { path: vi.fn() }),
             mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
-            mockProvider(DotActionUrlService, {
-                getCreateContentletUrl: vi.fn().mockReturnValue(of(CREATE_URL))
-            }),
             mockProvider(DotContentSearchService, { get: vi.fn() }),
             mockProvider(DotContentDriveStore, {
                 getFilterValue: vi.fn().mockReturnValue(undefined),
@@ -1054,8 +1082,6 @@ describe('DotContentDriveNavigationService, where a create lands', () => {
         currentSite.mockReturnValue({ hostname: 'demo.dotcms.com', identifier: 'site-1' });
         path.mockReturnValue('/about-us/');
         selectedNode.mockReturnValue({ data: { type: 'folder', inode: 'inode-1' } });
-        // See `answerTypeLookup`: answered, never expected to be asked.
-        getContentType.mockImplementation(answerTypeLookup);
         spectator = createService();
     });
 
