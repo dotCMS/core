@@ -34,17 +34,20 @@ public class EditCategoryAction extends DotPortletAction {
 
     /**
      * Handles the requests of the category edit screen. The category named by the {@code inode}
-     * parameter is loaded for the current user; a request without a category and with an
-     * {@code itsnew} parameter is forwarded to the input page. Otherwise, with {@code cmd=add} the
-     * posted form is validated and, when valid, the category is saved; any other request shows the
-     * edit form for the loaded category. Categories are deleted through
-     * {@link com.dotmarketing.portlets.categories.business.CategoryAPI}, not through this action.
+     * parameter is loaded for the current user; when {@code inode} is missing or {@code 0} the
+     * request is for a new category, and with an {@code itsnew} parameter it is forwarded to the
+     * input page. Otherwise, with {@code cmd=add} the posted form is validated: an invalid form goes
+     * back to the input page, and a valid one is saved and the user is sent to the {@code referer}.
+     * A save that {@link com.dotmarketing.portlets.categories.business.CategoryAPI} refuses goes back
+     * to the input page with an error message; any other failure of the save rolls the transaction
+     * back and forwards to the common error page. Any other request shows the edit form for the
+     * loaded category.
      *
      * @param mapping the Struts mapping of the action
      * @param form    the posted category form
      * @param config  the portlet configuration
-     * @param req     the portlet request, with the {@code cmd}, {@code inode} and {@code referer}
-     *                parameters
+     * @param req     the portlet request, with the {@code cmd}, {@code inode}, {@code itsnew} and
+     *                {@code referer} parameters
      * @param res     the portlet response
      * @throws Exception when the category cannot be loaded or the form cannot be filled
      */

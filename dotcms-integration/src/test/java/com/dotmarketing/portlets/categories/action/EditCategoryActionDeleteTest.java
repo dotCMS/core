@@ -53,8 +53,8 @@ import org.junit.Test;
 /**
  * Integration tests for a {@code cmd=delete} request to {@link EditCategoryAction}, driven through
  * {@link EditCategoryAction#processAction} with stored categories, permissions and content: the
- * action has no delete command, so the request leaves the category, its links to its parent and to
- * content, and its permissions as they were, whatever permissions the user holds on it.
+ * request leaves the category, its links to its parent and to content, and its permissions as they
+ * were, whatever permissions the user holds on it.
  */
 public class EditCategoryActionDeleteTest {
 
@@ -89,9 +89,10 @@ public class EditCategoryActionDeleteTest {
 
     /**
      * Removes the contentlets, the content types, the categories (children first), the test users
-     * (handing whatever they own to the admin user) and the owner role. Objects that are already
-     * gone are skipped. Every step runs even when an earlier one fails; the first failure is
-     * rethrown at the end with the others attached.
+     * (handing whatever they own to the admin user) and the owner role. Contentlets and users that
+     * are already gone are skipped; content types, categories and the role are removed through their
+     * data generators, which log a failure instead of throwing it. Every step runs even when an
+     * earlier one fails; the first failure is rethrown at the end with the others attached.
      */
     @AfterClass
     public static void cleanUp() throws Exception {

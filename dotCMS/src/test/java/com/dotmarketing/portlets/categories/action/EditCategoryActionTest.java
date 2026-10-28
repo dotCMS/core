@@ -37,9 +37,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
 
 /**
- * Unit tests for {@link EditCategoryAction}: the action has no delete command, so a request with
- * {@code cmd=delete} is handled like a request with no command. Categories are deleted through
- * {@link CategoryAPI}.
+ * Unit tests for {@link EditCategoryAction}: a request with {@code cmd=delete} is handled like a
+ * request with no command and deletes nothing.
  */
 class EditCategoryActionTest {
 
