@@ -3862,7 +3862,7 @@
 									"listen": "prerequest",
 									"script": {
 										"exec": [
-											"const randomNumber = Math.floor(Math.random() * (999 - 100 + 1) + 100);",
+											"const randomNumber = Date.now();",
 											"pm.collectionVariables.set(\"randomNumber\", randomNumber);",
 											""
 										],
@@ -3939,7 +3939,7 @@
 									"listen": "prerequest",
 									"script": {
 										"exec": [
-											"const randomNumber = Math.floor(Math.random() * (999 - 100 + 1) + 100);",
+											"const randomNumber = Date.now();",
 											"pm.collectionVariables.set(\"randomNumber\", randomNumber);",
 											""
 										],
@@ -5197,7 +5197,7 @@
 											"listen": "prerequest",
 											"script": {
 												"exec": [
-													"const randomNumber = Math.floor(Math.random() * (999 - 100 + 1) + 100);",
+													"const randomNumber = Date.now();",
 													"pm.collectionVariables.set(\"randomNumber\", randomNumber);",
 													""
 												],
@@ -5332,7 +5332,7 @@
 											"listen": "prerequest",
 											"script": {
 												"exec": [
-													"const randomNumber = Math.floor(Math.random() * (999 - 100 + 1) + 100);",
+													"const randomNumber = Date.now();",
 													"pm.collectionVariables.set(\"randomNumber\", randomNumber);",
 													""
 												],
@@ -6006,7 +6006,7 @@
 											"listen": "prerequest",
 											"script": {
 												"exec": [
-													"const randomNumber = Math.floor(Math.random() * (999 - 100 + 1) + 100);",
+													"const randomNumber = Date.now();",
 													"pm.collectionVariables.set(\"randomNumber\", randomNumber);",
 													""
 												],
@@ -6079,7 +6079,7 @@
 											"listen": "prerequest",
 											"script": {
 												"exec": [
-													"const randomNumber = Math.floor(Math.random() * (999 - 100 + 1) + 100);",
+													"const randomNumber = Date.now();",
 													"pm.collectionVariables.set(\"randomNumber\", randomNumber);",
 													""
 												],
@@ -6139,7 +6139,7 @@
 											"listen": "prerequest",
 											"script": {
 												"exec": [
-													"const randomNumber = Math.floor(Math.random() * (999 - 100 + 1) + 100);",
+													"const randomNumber = Date.now();",
 													"pm.collectionVariables.set(\"randomNumber\", randomNumber);",
 													""
 												],
