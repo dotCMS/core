@@ -365,8 +365,11 @@ public class ReindexThreadTest {
                             + "which is the silent stall from issue #36922",
                     drained);
 
-            waitUntil(() -> isSearchable(contentlet), 30_000,
-                    "AC-009: the saved content must be searchable without a manual reindex");
+            final List<Contentlet> found = contentletAPI.search(
+                    "+identifier:" + contentlet.getIdentifier(), 1, 0, null, user,
+                    respectFrontendRoles);
+            assertFalse("AC-009: the saved content must be searchable without a manual reindex",
+                    found.isEmpty());
         } finally {
             ContentletDataGen.destroy(contentlet);
             ReindexThread.startThread();
@@ -430,8 +433,11 @@ public class ReindexThreadTest {
             assertTrue("AC-012: after unpausing, the queue must drain",
                     waitUntilQuiet(() -> queueAPI.recordsInQueue() == 0, 60_000));
 
-            waitUntil(() -> isSearchable(contentlet), 30_000,
-                    "AC-012: content saved while paused must be indexed after the unpause");
+            final List<Contentlet> found = contentletAPI.search(
+                    "+identifier:" + contentlet.getIdentifier(), 1, 0, null, user,
+                    respectFrontendRoles);
+            assertFalse("AC-012: content saved while paused must be indexed after the unpause",
+                    found.isEmpty());
         } finally {
             ContentletDataGen.destroy(contentlet);
             ReindexThread.startThread();
@@ -511,21 +517,6 @@ public class ReindexThreadTest {
             ContentletDataGen.destroy(contentlet);
             ReindexThread.startThread();
         }
-    }
-
-    /**
-     * Whether a search for the contentlet's identifier returns it. An empty reindex queue only
-     * means the bulk request was executed; the document becomes searchable once the index
-     * refreshes, which can be up to a second later, so callers poll with {@link #waitUntil}
-     * instead of searching once.
-     *
-     * @param contentlet the contentlet to look for
-     * @return {@code true} if the search found it
-     * @throws Exception if the search fails
-     */
-    private static boolean isSearchable(final Contentlet contentlet) throws Exception {
-        return !contentletAPI.search("+identifier:" + contentlet.getIdentifier(), 1, 0, null,
-                user, respectFrontendRoles).isEmpty();
     }
 
     /** Polls until the check passes, failing the test with {@code message} on timeout. */
