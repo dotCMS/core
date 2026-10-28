@@ -42,12 +42,12 @@ export type DotEditContentPanelHandlers = Partial<DotEditContentPanelEvents>;
 | `saved` carries a full `DotCMSContentlet` from both editors | The new editor's host already emits one. For the legacy editor, the panel fetches by the saved inode (`save-page` payload `contentletInode`) before emitting |
 | A restored version is a `saved` | New editor: `history.feature.ts` `restoreVersion` calls `host.reportSaved` after `bringBack`. Legacy: after `getVersionBack`, the panel reads the restored inode from the iframe's `?inode=` on reload, fetches, emits |
 | A workflow action is reported through the same events | Legacy: the editor saves and sends `save-page`, or sends `close`/`deleted-page` when the action removed the content. New editor: `workflowActionSuccess` → `reportSaved`, as today |
-| `deleted` is never a `saved` | New editor: `OverlayEditContentHost` suppresses `reportSaved` after `leaveDeletedContent`, as today. Legacy: `deleted-page` is mapped to `deleted`, never to `saved` |
+| `deleted` is never a `saved` | New editor: `OverlayEditContentHost` suppresses `reportSaved` after `leaveDeletedContent`, as today. Legacy: the panel sets `iframeWindow.ngEditContentletEvents = { next: (e) => … }` on every iframe load; the editor calls it with `deleted-contenlet` (`edit_contentlet_js_inc.jsp:716-720`) when the saved content no longer exists, and sends `deleted-page` for a page; both map to `deleted`, never to `saved`. The generic `close` that follows maps to `closed` |
 | `closed` exactly once | Taken from `DotSidePanelRef.closed`, which emits once and completes |
 
-## Known limitation (needs a spec amendment)
+## Surfaces refresh on `closed` as well as on `saved`
 
-The legacy editor sends a plain `close` when a non-page contentlet is deleted (`edit_contentlet_js_inc.jsp:704-715`), so the legacy panel reports `deleted` only for pages. Surfaces refresh on `closed` as well as on `saved`, which drops the deleted content from view either way.
+A move to another folder or a translation saved after a language switch inside the legacy editor sends no usable event, and the surface does not know which editor the opener picked, so every surface refreshes on `closed` too (spec FR-017). One quiet refresh per close.
 
 ## Events the panel handles itself and does not forward
 

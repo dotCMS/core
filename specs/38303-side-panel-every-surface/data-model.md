@@ -48,7 +48,7 @@ What a panel tells its opener. Both panel components expose all five as Angular 
 | `saved` | `DotCMSContentlet` | each successful save or restore | `save-page`, after fetching by inode; a restore after `getVersionBack`, after fetching the restored inode |
 | `languageChanged` | `number` | the overlay host's `languageChanged$` | the `lang` query param on the iframe reload |
 | `pageEditorRequested` | `{ url: string; languageId: number }` | never | `close` carrying `data.redirectUrl` |
-| `deleted` | void | the overlay host's `left$` | `deleted-page` (pages only) |
+| `deleted` | void | the overlay host's `left$` | the editor's `ngEditContentletEvents` window hook, supplied by the panel, called with `deleted-contenlet`; or `deleted-page` for a page |
 | `closed` | void | the panel ref's `closed` | the panel ref's `closed` |
 
 Ordering rules: `deleted` is always followed by `closed`; `saved` is never emitted for a delete; `closed` is emitted exactly once per panel.
@@ -60,7 +60,7 @@ What a field hands its host when it wants other content opened.
 | Field | Type | Required | Rules |
 |---|---|---|---|
 | `request` | `DotEditContentRequest` | yes | An edit request for an existing item or a create request for "create new" |
-| `onSaved` | `(contentlet: DotCMSContentlet) => void` | no | Called on every `saved` of the panel the host opens; the Relationship field uses it to refresh or add a row |
+| `onSaved` | `(contentlet: DotCMSContentlet) => void` | no | Called on every `saved` of the panel the host opens. The Relationship field treats it as an upsert by identifier: add the row once, refresh it on later saves |
 
 Host decision:
 

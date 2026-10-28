@@ -35,7 +35,7 @@ The stacked panel is opened with the **hosting panel's** injector, not the field
 | Caller | Today | After |
 |---|---|---|
 | `DotRelationshipFieldComponent.openRelated` (`dot-relationship-field.component.ts:305`) | flag + host check → own `DotSidePanelService.open` or `goToRelatedContent` or router | `host.openContent({ request: { mode: 'edit', inode, title }, onSaved: refreshRelatedItem })` |
-| `DotRelationshipFieldComponent.showCreateNewContentDialog` (540) | flag → own panel or `DotEditContentDialogComponent` | `host.openContent({ request: { mode: 'new', contentType, title, relationship }, onSaved: addRelatedItem })`. Still disabled for legacy-editor types |
+| `DotRelationshipFieldComponent.showCreateNewContentDialog` (540) | flag → own panel or `DotEditContentDialogComponent`; `onContentSaved` adds the item once, on close | `host.openContent({ request: { mode: 'new', contentType, title, relationship }, onSaved: upsertRelatedItem })`. `onSaved` fires on **every** save of the stacked panel, so it is an upsert: add the row when no listed item has that identifier (`lastChangeSource: 'user'`), otherwise refresh it (`store.refreshItem`, `'load'`). Spec FR-030. Still disabled for legacy-editor types |
 | `DotEditContentBlockEditorComponent` (new) | nothing; the editors navigate `window.parent` | binds the editors' edit output → `host.openContent({ request: { mode: 'edit', inode, contentType } })` |
 
 ## Block editor libs (no dependency on `edit-content`)
