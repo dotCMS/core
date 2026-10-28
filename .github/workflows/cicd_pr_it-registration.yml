@@ -1,0 +1,46 @@
+name: 'IT Registration — PR validate'
+
+# Fails a PR that adds an integration test class which is in none of the CI suites. Such a class
+# compiles fine and is silently never run (green build, zero coverage); see CLAUDE.md and
+# docs/testing/INTEGRATION_TESTS.md. Classes that are intentionally unregistered are listed in
+# dotcms-integration/unregistered-tests.allowlist. Register with `just add-it-test`.
+# Standalone and dependency-free (Python 3 stdlib), seconds to run, no build or stack needed.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'dotcms-integration/src/test/**'
+      - 'dotcms-integration/unregistered-tests.allowlist'
+      - 'scripts/it-suites.py'
+      - 'scripts/it-suites.test.py'
+      - '.github/test-matrix.yml'
+      - '.github/workflows/cicd_pr_it-registration.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: it-registration-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  registration:
+    name: Check integration tests are registered
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: |
+            dotcms-integration/src/test
+            dotcms-integration/unregistered-tests.allowlist
+            scripts
+            .github/test-matrix.yml
+          sparse-checkout-cone-mode: false
+
+      - name: Test the registration script
+        run: python3 scripts/it-suites.test.py
+
+      - name: Check every integration test class is in a suite
+        run: python3 scripts/it-suites.py check
