@@ -82,7 +82,8 @@ public class UserHandler implements IHandler {
      * keeps the ID it has on the sending instance, so other pushed assets that refer to it still
      * match, while every other attribute of that role is set the way dotCMS sets it for any user.
      * A new user whose ID is the key of an existing role is not created, because a user's own
-     * role is found by the user ID.
+     * role is found by the user ID. Neither is a new user whose ID is not trimmed and in lower
+     * case, the form dotCMS stores user IDs in, since that check compares keys exactly.
      *
      * @param bundleFolder the folder where the bundle was extracted
      * @throws Exception if a user file cannot be read or a new user cannot be saved
@@ -125,6 +126,13 @@ public class UserHandler implements IHandler {
 
                 if ( operation.equals( PushPublisherConfig.Operation.UNPUBLISH ) ) {
                     //Nothing to remove, the user does not exist here
+                    continue;
+                }
+
+                //dotCMS stores user IDs trimmed and in lower case, and the checks below need the stored form
+                if ( UtilMethods.isSet( user.getUserId() ) && !isStoredForm( user.getUserId() ) ) {
+                    Logger.warn( this, String.format( "User '%s' was not created: its ID is not trimmed and in lower case",
+                            forLog( user.getUserId() ) ) );
                     continue;
                 }
 
@@ -223,6 +231,18 @@ public class UserHandler implements IHandler {
         personalRole.setLocked( false );
         personalRole.setSystem( true );
         roleAPI.save( personalRole, roleId );
+    }
+
+    /**
+     * Tells whether the user ID is in the form dotCMS stores user IDs in: trimmed and in lower
+     * case. dotCMS always creates IDs in that form, so a bundle from another instance carries them
+     * that way.
+     *
+     * @param userId the user ID read from the bundle, not {@code null}
+     * @return {@code true} if the ID is trimmed and in lower case
+     */
+    private static boolean isStoredForm ( final String userId ) {
+        return userId.equals( userId.trim().toLowerCase() );
     }
 
     /**

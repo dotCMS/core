@@ -384,6 +384,53 @@ public class UserHandlerTest extends IntegrationTestBase {
 
     /**
      * Method to Test: {@link UserHandler#handle(File)}
+     * Given: a role that exists on the receiver, and a bundle that carries a new user whose ID is
+     * that role's key written in upper case or with surrounding spaces
+     * When: the bundle is handled, for every bundle origin
+     * Should: not create the user, since dotCMS stores user IDs trimmed and in lower case, and keep
+     * the existing role with its name and key.
+     */
+    @Test
+    public void test_handle_newUserWithIdOfAnExistingRoleKeyInAnotherForm_isNotCreated()
+            throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        for (final BundleOrigin origin : ORIGINS) {
+            final String sharedKey = uniqueId();
+            final Role existingRole = new RoleDataGen()
+                    .name("Existing Role " + UUIDGenerator.shorty())
+                    .key(sharedKey)
+                    .nextPersisted();
+            roleIds.add(existingRole.getId());
+            userIds.add(sharedKey);
+
+            for (final String bundleUserId : Arrays.asList(sharedKey.toUpperCase(),
+                    " " + sharedKey + " ")) {
+                final User fromBundle = new UserDataGen()
+                        .id(bundleUserId)
+                        .emailAddress(uniqueEmail())
+                        .firstName("Pushed")
+                        .lastName("User")
+                        .next();
+
+                withLoginBy(Company.AUTH_TYPE_EA, () -> handle(origin,
+                        bundleWith(fromBundle, personalRoleFor(fromBundle), Operation.PUBLISH)));
+
+                final String context = describe(Company.AUTH_TYPE_EA, origin)
+                        + ", bundle user ID '" + bundleUserId + "'";
+                assertNull(context + ": no user may be stored under the key of an existing role",
+                        findById(sharedKey));
+                CacheLocator.getCmsRoleCache().clearCache();
+                final Role stored = roleAPI.loadRoleById(existingRole.getId());
+                assertNotNull(context + ": the existing role must still exist", stored);
+                assertEquals(context + ": the existing role must keep its name",
+                        existingRole.getName(), stored.getName());
+                assertEquals(context, sharedKey, stored.getRoleKey());
+            }
+        }
+    }
+
+    /**
+     * Method to Test: {@link UserHandler#handle(File)}
      * Given: a bundle that carries a new user without its own role, or with a role that has no ID
      * When: the bundle is handled, for every bundle origin
      * Should: create the user with the own role dotCMS gives any user.
