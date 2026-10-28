@@ -35,6 +35,7 @@ import com.dotmarketing.image.vips.VipsResizePhotoIntegrationTest;
 import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
 import com.dotmarketing.portlets.cmsmaintenance.action.ViewCMSMaintenanceActionTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
+import com.dotmarketing.portlets.structure.action.EditStructureActionSaveTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -77,6 +78,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.contenttype.ContentTypeResourceUpdateMetadataTest.class,
         com.dotcms.rest.api.v2.contenttype.FieldResourceTest.class,
         com.dotcms.rest.api.v3.contenttype.FieldResourceTest.class,
+        EditStructureActionSaveTest.class,
         com.dotcms.rest.api.v3.contenttype.MoveFieldFormTest.class,
         com.dotcms.rest.api.CorsFilterTest.class,
         com.dotcms.rest.elasticsearch.ESContentResourcePortletTest.class,
