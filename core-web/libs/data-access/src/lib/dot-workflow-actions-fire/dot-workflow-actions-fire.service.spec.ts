@@ -398,7 +398,7 @@ describe('DotWorkflowActionsFireService', () => {
                 .fireTo({
                     inode: '123',
                     actionId: 'save',
-                    data: { title: 'x' },
+                    data: { contentlet: { title: 'x' } },
                     variantName: 'variant-a'
                 })
                 .subscribe((res) => {
