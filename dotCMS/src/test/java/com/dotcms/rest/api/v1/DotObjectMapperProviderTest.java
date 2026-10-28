@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -115,7 +116,7 @@ class DotObjectMapperProviderTest {
         // Given a map with every encoded character, quotes, a backslash and a non-ASCII letter in keys and values
         final Map<String, Object> value = new LinkedHashMap<>();
         value.put("<k>", "</script> & \"q\" \\ ñ");
-        value.put("a/b", "x" + LINE_SEPARATOR + "y");
+        value.put("a/b", "x" + LINE_SEPARATOR + "y" + PARAGRAPH_SEPARATOR + "z");
         value.put("plain", List.of("<i>", "ñ"));
 
         // When it is written with the script-embeddable mapper and read back with the default mapper
@@ -147,17 +148,46 @@ class DotObjectMapperProviderTest {
     void defaultMapper_isNotAffectedByTheScriptEmbeddableMapper() throws Exception {
         // Given both mappers of the same provider
         final DotObjectMapperProvider provider = DotObjectMapperProvider.getInstance();
-        final Map<String, Object> value = Map.of("v", "</script>");
+        final Map<String, Object> value = Map.of("v", "</script>&");
 
-        // When each one writes a value containing a closing script tag
+        // When each one writes a value containing a closing script tag and an ampersand
         final String fromDefault = provider.getDefaultObjectMapper().writeValueAsString(value);
         final String fromScript = provider.getScriptEmbeddableObjectMapper().writeValueAsString(value);
 
-        // Then only the script-embeddable one encodes it, and they do not share a factory
-        assertEquals("{\"v\":\"</script>\"}", fromDefault);
-        assertEquals("{\"v\":\"\\u003C\\u002Fscript\\u003E\"}", fromScript);
+        // Then only the script-embeddable one encodes them, and they do not share a factory
+        assertEquals("{\"v\":\"</script>&\"}", fromDefault);
+        assertEquals("{\"v\":\"\\u003C\\u002Fscript\\u003E\\u0026\"}", fromScript);
         assertNotSame(provider.getDefaultObjectMapper().getFactory(),
                 provider.getScriptEmbeddableObjectMapper().getFactory());
+    }
+
+    @Test
+    void provider_derivesTheScriptEmbeddableMapperFromTheGivenDefaultMapper() throws Exception {
+        // Given a provider built from a default mapper that keeps map keys in insertion order
+        final ObjectMapper unsorted = DotObjectMapperProvider.createDefaultMapper()
+                .disable(SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
+        final DotObjectMapperProvider provider = new DotObjectMapperProvider(unsorted);
+        final Map<String, Object> value = new LinkedHashMap<>();
+        value.put("b", "</script>");
+        value.put("a", 1);
+
+        // When the provider's script-embeddable mapper writes a map
+        final String json = provider.getScriptEmbeddableObjectMapper().writeValueAsString(value);
+
+        // Then it inherits the given configuration (insertion order kept) and still encodes the delimiters
+        assertEquals("{\"b\":\"\\u003C\\u002Fscript\\u003E\",\"a\":1}", json);
+    }
+
+    @Test
+    void scriptEmbeddableMapper_keepsStandardSequencesForControlCharacters() throws Exception {
+        // Given a value with a line feed and a tab
+        final Map<String, Object> value = Map.of("v", "a\nb\tc");
+
+        // When it is written with the script-embeddable mapper
+        final String json = scriptMapper.writeValueAsString(value);
+
+        // Then the control characters keep the standard JSON sequences
+        assertEquals("{\"v\":\"a\\nb\\tc\"}", json);
     }
 
     @Test

@@ -46,7 +46,8 @@ public class DotObjectMapperProvider {
      * inside string values and keys, {@code <}, {@code >}, {@code &}, {@code /} and the Unicode line
      * separators U+2028 and U+2029 are written as Unicode sequences (a backslash, {@code u} and four hex
      * digits), which keeps the text inside the script element and lets the browser parse it as a
-     * JavaScript literal. The parsed values are identical to the ones the default mapper would produce.
+     * JavaScript literal. Parsing that text yields the same values as parsing the default mapper's
+     * output; only the text differs.
      *
      * @return the script-embeddable {@link ObjectMapper}
      */
