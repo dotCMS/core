@@ -91,6 +91,9 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.workflows.business.SaveContentActionletTest.class,
         com.dotmarketing.portlets.workflows.business.WorkflowAPIMultiLanguageTest.class,
         com.dotmarketing.portlets.workflows.business.WorkflowAPITest.class,
+        RulesAPIImplParentChecksIntegrationTest.class,
+        RuleResourcesAccessIntegrationTest.class,
+        RuleRefusedActionsIntegrationTest.class,
         com.dotmarketing.portlets.workflows.model.WorkflowSearcherTest.class,
         com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMappingTest.class,
         com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionletTest.class,
@@ -124,10 +127,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rendering.velocity.WidgetRendererTest.class,
         CMSUserToolTest.class,
         UserJsViewToolTest.class,
-        com.dotcms.rest.BundleResourceDeleteResponseTest.class,
-        RulesAPIImplParentChecksIntegrationTest.class,
-        RuleResourcesAccessIntegrationTest.class,
-        RuleRefusedActionsIntegrationTest.class
+        com.dotcms.rest.BundleResourceDeleteResponseTest.class
 })
 public class MainSuite2a {
 
