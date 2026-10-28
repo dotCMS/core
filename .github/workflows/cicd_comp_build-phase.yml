@@ -76,6 +76,13 @@ on:
         required: false
         type: boolean
         default: false
+      # Only trunk (push to main) and the scheduled nightly set this: they are the builds of
+      # main's own code, and the entry they save is what every PR and merge-queue run restores.
+      save-nx-cache:
+        description: "Save the Nx cache from this build into the calling ref's cache scope. Builds of main's own code only."
+        required: false
+        type: boolean
+        default: false
       # Default true: release, nightly, LTS and sweep callers keep cleaning up.
       # Only the PR, merge-queue and trunk callers pass false (#38203).
       cleanup-runner:
@@ -201,6 +208,7 @@ jobs:
           maven-compiler-release: ${{ inputs.maven-compiler-release }}
           artifact-suffix: ${{ inputs.artifact-suffix }}
           release-build: ${{ inputs.release-build }}
+          save-nx-cache: ${{ inputs.save-nx-cache }}
 
       # Tripwire, deliberately in the BUILD job. The release phase validates
       # before publishing Maven, but it runs after the deployment job has already

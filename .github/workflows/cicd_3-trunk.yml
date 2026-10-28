@@ -71,6 +71,8 @@ jobs:
       java-version: ${{ github.event.inputs.java-version || '' }}
       maven-compiler-release: ${{ github.event.inputs.maven-compiler-release || '' }}
       artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
+      # A push to main builds main's own code; a manual dispatch may come from any branch.
+      save-nx-cache: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
     secrets:
       # Read-write: trunk is trusted.
       build-cache-access-key: ${{ secrets.OVH_S3_BUILD_CACHE_BUCKET_ACCESS_KEY }}
