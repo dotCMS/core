@@ -16419,7 +16419,9 @@ paths:
       - Roles
   /v1/roles/checkuserroles/userid/{userId}/roleids/{roleIds}:
     get:
-      description: Verifies that a user is assigned to one of the specified role IDs
+      description: Verifies that a user is assigned to one of the specified role IDs.
+        Any back-end user can check their own roles; checking another user's roles
+        requires an administrator or access to both the Roles and the Users portlets.
       operationId: checkUserRoles
       parameters:
       - description: User ID to check
@@ -16448,7 +16450,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions
+          description: "Forbidden - checking another user's roles requires an administrator,\
+            \ or Roles and Users portlet access"
         "500":
           content:
             application/json: {}

@@ -1264,16 +1264,23 @@ public class UserAjax {
 	}
 
 	/**
-	 * Verifies 
-	 * @param userId
-	 * @param roles
-	 * @return
-	 * @throws Exception
+	 * Tells whether a user holds at least one of the given roles. A logged-in back-end user can
+	 * always check their own roles; checking another user's roles takes the role membership
+	 * privilege: an administrator, or a user with access to both the Roles and the Users portlets.
+	 *
+	 * @param userId the id of the {@link User} whose roles are checked
+	 * @param roles  the ids of the roles to look for
+	 * @return {@code true} if the user holds at least one of the roles
+	 * @throws DotSecurityException if the user to check is not the caller and the caller does not
+	 *                              have the role membership privilege
+	 * @throws Exception            if the logged-in user or the roles cannot be resolved
 	 */
-	public boolean hasUserRoles(String userId, String[] roles) throws Exception {
-		// Make sure the DWR request calling this method is authenticated
-		getLoggedInUser();
-		RoleAPI roleAPI = APILocator.getRoleAPI();
+	public boolean hasUserRoles(final String userId, final String[] roles) throws Exception {
+		final User loggedInUser = getLoggedInUser();
+		if (null == loggedInUser || !loggedInUser.getUserId().equals(userId)) {
+			validateRoleMembershipPermissions(loggedInUser);
+		}
+		final RoleAPI roleAPI = APILocator.getRoleAPI();
 		return roleAPI.doesUserHaveRoles(userId, Arrays.asList(roles));
 	}
 
