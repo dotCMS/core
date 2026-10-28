@@ -318,8 +318,8 @@ describe('DotLoginAsComponent', () => {
                 component.needPassword.set(true);
                 spectator.detectChanges();
 
-                component.form.get('loginAsUser').setValue(mockUser());
-                component.form.get('password').setValue('password');
+                component.form.get('loginAsUser')?.setValue(mockUser());
+                component.form.get('password')?.setValue('password');
                 component.doLoginAs();
             };
 
