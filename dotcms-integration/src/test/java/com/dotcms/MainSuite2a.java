@@ -90,6 +90,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.contentlet.business.ContentletAPITest.class,
         com.dotmarketing.portlets.contentlet.model.ContentletIntegrationTest.class,
         com.dotmarketing.portlets.contentlet.transform.BinaryToMapTransformerTest.class,
+        com.dotcms.content.elasticsearch.business.ContentletPermissionReplacementIntegrationTest.class,
         com.dotmarketing.portlets.contentlet.transform.ContentletTransformerTest.class,
         com.dotmarketing.portlets.contentlet.transform.WidgetViewStrategyTest.class,
         com.dotmarketing.portlets.contentlet.ajax.ContentletAjaxTest.class,
