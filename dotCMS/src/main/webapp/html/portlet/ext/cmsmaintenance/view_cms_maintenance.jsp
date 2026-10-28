@@ -46,7 +46,6 @@ List<ContentType> structs = APILocator.getContentTypeAPI(APILocator.systemUser()
 <script type="text/javascript" src="/dwr/util.js"></script>
 <script type='text/javascript' src='/dwr/interface/CMSMaintenanceAjax.js'></script>
 <script type="text/javascript" src="/dwr/interface/ThreadMonitorTool.js"></script>
-<script type="text/javascript" src="/dwr/interface/UserSessionAjax.js"></script>
 
 <script language="Javascript">
 dojo.require("dijit.Editor");
@@ -780,38 +779,52 @@ var createRow = function (tableId, rowInnerHtml, className, id) {
     }, tableNode );
 };
 
-function killSessionById(obfSessionId) {
-    var invalidateButtonElem = dijit.byId("invalidateButtonNode-"+obfSessionId);
+/**
+* Returns a value as HTML-escaped text, so it shows as typed inside a table cell
+* @param value
+ */
+function escapeCellText(value) {
+    var holder = document.createElement("div");
+    holder.textContent = (value === null || value === undefined) ? "" : String(value);
+    return holder.innerHTML;
+}
+
+function killSessionById(sessionToken) {
+    var invalidateButtonElem = dijit.byId("invalidateButtonNode-"+sessionToken);
 
 	dojo.style(invalidateButtonElem.domNode,{display:"none",visibility:"hidden"});
-	dojo.query('#killSessionProgress-'+obfSessionId).style({display:"block"});
-	UserSessionAjax.invalidateSession(obfSessionId,{
-			callback:function() {
-				dojo.style(invalidateButtonElem.domNode,{display:"block",visibility:"visible"});
-			    dojo.query('#killSessionProgress-'+obfSessionId).style({display:"none"});
-			    invalidateButtonElem.set('disabled',true);
-
-			    showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-killed"))%>');
-			},
-			errorHandler:function(message) {
-				dojo.style(invalidateButtonElem.domNode,{display:"block",visibility:"visible"});
-			    dojo.query('#killSessionProgress-'+obfSessionId).style({display:"none"});
-
-			    showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-notkilled"))%>');
+	dojo.query('#killSessionProgress-'+sessionToken).style({display:"block"});
+	fetch('/api/v1/maintenance/_sessions/' + encodeURIComponent(sessionToken), {method:'DELETE', cache:'no-cache'})
+		.then(function(response) {
+			dojo.style(invalidateButtonElem.domNode,{display:"block",visibility:"visible"});
+			dojo.query('#killSessionProgress-'+sessionToken).style({display:"none"});
+			if (response.ok) {
+				invalidateButtonElem.set('disabled',true);
+				showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-killed"))%>');
+			} else {
+				showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-notkilled"))%>');
 			}
-	});
+		})
+		.catch(function() {
+			dojo.style(invalidateButtonElem.domNode,{display:"block",visibility:"visible"});
+			dojo.query('#killSessionProgress-'+sessionToken).style({display:"none"});
+			showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-notkilled"))%>');
+		});
 }
 
 function killAllSessions() {
-	UserSessionAjax.invalidateAllSessions({
-			callback:function() {
-			    showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-killed"))%>');
-			    loadUsers();
-			},
-			errorHandler:function(message) {
-			    showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-notkilled"))%>');
+	fetch('/api/v1/maintenance/_sessions', {method:'DELETE', cache:'no-cache'})
+		.then(function(response) {
+			if (response.ok) {
+				showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-killed"))%>');
+				loadUsers();
+			} else {
+				showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-notkilled"))%>');
 			}
-	});
+		})
+		.catch(function() {
+			showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-notkilled"))%>');
+		});
 }
 
 function loadUsers() {
@@ -827,8 +840,15 @@ function loadUsers() {
     cleanTable(rowsClass);
 
     dojo.query('#loggedUsersProgress').style({display:"block"});
-	UserSessionAjax.getSessionList({
-		callback: function(sessionList) {
+	fetch('/api/v1/maintenance/_sessions', {cache:'no-cache'})
+		.then(function(response) {
+			if (!response.ok) {
+				throw new Error("Session list answered " + response.status);
+			}
+			return response.json();
+		})
+		.then(function(data) {
+			var sessionList = data.entity || [];
 		    // Append prefix to invalidate button id
 			var invalidateButtonIdPrefix = "invalidateButtonNode-";
 
@@ -838,27 +858,27 @@ function loadUsers() {
 
                 for(var i=0;i<sessionList.length;i++) {
 					var session=sessionList[i];
-					var html ="<td>"+session.sessionTime+"</td> ";
-					html+="<td>"+session.address+"</td> ";
-					html+="<td>"+session.userId+"</td> ";
-					html+="<td>"+session.userEmail+"</td> ";
-					html+="<td>"+session.userFullName+"</td> ";
+					var html ="<td>"+escapeCellText(session.sessionTime)+"</td> ";
+					html+="<td>"+escapeCellText(session.address)+"</td> ";
+					html+="<td>"+escapeCellText(session.userId)+"</td> ";
+					html+="<td>"+escapeCellText(session.userEmail)+"</td> ";
+					html+="<td>"+escapeCellText(session.userFullName)+"</td> ";
 					html+="<td> ";
-					if( "true" !== session.isCurrent ){
-						html+=" <img style='display:none;' id='killSessionProgress-"+session.obfSession+"' src='/html/images/icons/round-progress-bar.gif'/> ";
-						html+=" <button id='" + invalidateButtonIdPrefix + session.obfSession + "'></button>";
+					if( !session.isCurrent ){
+						html+=" <img style='display:none;' id='killSessionProgress-"+session.token+"' src='/html/images/icons/round-progress-bar.gif'/> ";
+						html+=" <button id='" + invalidateButtonIdPrefix + session.token + "'></button>";
 					}
 
 					html+=" </td>";
 
                     //Creating the row and adding it to the table
-                    createRow(tableId, html, rowsClass, "loggedUser-"+session.obfSession)
+                    createRow(tableId, html, rowsClass, "loggedUser-"+session.token)
 				}
 
 				for(var i=0;i<sessionList.length;i++) {
                     var session=sessionList[i];
 
-                    var id = invalidateButtonIdPrefix + session.obfSession;
+                    var id = invalidateButtonIdPrefix + session.token;
 
                     //Verify if a button widget with this id exist, if it exist we must delete firts before to try to create a new one
                     if (dojo.byId(id)) {
@@ -872,19 +892,19 @@ function loadUsers() {
                             label: "<%= UtilMethods.escapeDoubleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-killsession")) %>",
                             iconClass: "deleteIcon",
                             "class": "killsessionButton",
-                            obsid : session.obfSession,
+                            obsid : session.token,
                             onClick: function(){
                                 killSessionById(this.obsid);
                             }
-                        }, invalidateButtonIdPrefix + session.obfSession);
+                        }, invalidateButtonIdPrefix + session.token);
                     }
 				}
 			}
-		},
-		errorHandler: function(message) {
+		})
+		.catch(function() {
+			dojo.query('#loggedUsersProgress').style({display:"none"});
 			showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-reload-error"))%>');
-		}
-	});
+		});
 
 }
 

@@ -7,14 +7,17 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verifyNoInteractions;
 
+import com.dotcms.cache.DynamicTTLCache;
 import com.dotcms.cache.lettuce.RedisClient;
 import com.dotcms.datagen.LayoutDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.listeners.SessionMonitor;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
+import com.dotcms.mock.request.MockSession;
 import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
@@ -29,22 +32,28 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.cache.provider.CacheProvider;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import java.lang.reflect.Field;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Integration tests for who may use the cache, Redis and JVM information resources of the Maintenance tool, with real
- * roles and layouts: a CMS Administrator is admitted, a back-end user who holds the Maintenance portlet without being
- * a CMS Administrator is not, and neither is a back-end user without the portlet.
+ * Integration tests for who may use the cache, Redis, JVM information and logged-in session routes of the Maintenance
+ * tool, with real roles and layouts: a CMS Administrator is admitted, a back-end user who holds the Maintenance
+ * portlet without being a CMS Administrator is not, and neither is a back-end user without the portlet.
  */
 public class MaintenanceToolsAccessIntegrationTest {
 
@@ -71,24 +80,49 @@ public class MaintenanceToolsAccessIntegrationTest {
         noLayoutUser = new UserDataGen().nextPersisted();
         APILocator.getRoleAPI().addRoleToUser(backendRole, noLayoutUser);
 
-        adminUser = TestUserUtils.getAdminUser();
-        APILocator.getRoleAPI().addRoleToUser(backendRole, adminUser);
+        adminUser = new UserDataGen().roles(APILocator.getRoleAPI().loadCMSAdminRole(), backendRole).nextPersisted();
     }
 
+    /**
+     * Removes the users, role and layout created for these tests, newest first, skipping any that is already gone.
+     * Deleting a user or a role empties the role cache, so the system roles are loaded back for the classes that run
+     * next.
+     */
     @AfterClass
     public static void cleanUp() throws Exception {
-        if (null != maintenanceOnlyUser) {
-            UserDataGen.remove(maintenanceOnlyUser);
-        }
-        if (null != noLayoutUser) {
-            UserDataGen.remove(noLayoutUser);
-        }
+        removeUser(adminUser);
+        removeUser(noLayoutUser);
+        removeUser(maintenanceOnlyUser);
         if (null != maintenanceRole) {
             RoleDataGen.remove(maintenanceRole);
         }
         if (null != maintenanceLayout) {
-            APILocator.getLayoutAPI().removeLayout(
-                    APILocator.getLayoutAPI().findLayout(maintenanceLayout.getId()));
+            try {
+                final Layout storedLayout = APILocator.getLayoutAPI().findLayout(maintenanceLayout.getId());
+                if (null != storedLayout) {
+                    APILocator.getLayoutAPI().removeLayout(storedLayout);
+                }
+            } catch (final Exception e) {
+                Logger.error(MaintenanceToolsAccessIntegrationTest.class, "Unable to remove the test layout", e);
+            }
+        }
+        APILocator.getRoleAPI().loadBackEndUserRole();
+        APILocator.getRoleAPI().loadFrontEndUserRole();
+        APILocator.getRoleAPI().loadCMSAdminRole();
+    }
+
+    /**
+     * Removes a user created for these tests. Deleting a user looks up the role of the system user, which it reaches
+     * only while the {@link Role#SYSTEM} role is in the role cache, and the previous deletion emptied that cache, so the
+     * role is loaded back first.
+     *
+     * @param user the user to remove; {@code null} is ignored
+     * @throws DotDataException if the role cannot be loaded
+     */
+    private static void removeUser(final User user) throws DotDataException {
+        if (null != user) {
+            APILocator.getRoleAPI().loadRoleByKey(Role.SYSTEM);
+            UserDataGen.remove(user);
         }
     }
 
@@ -208,7 +242,7 @@ public class MaintenanceToolsAccessIntegrationTest {
      */
     @Test
     public void cacheObjectRoutes_appsSecretsGroup_returnTheMask() throws Exception {
-        final String key = "maintenance-tools-test-key";
+        final String key = "maintenance-tools-test-key-" + UUID.randomUUID();
         CacheLocator.getAppsCache().putSecret(key, "maintenance-tools-test-value".toCharArray());
         try {
             final String group = CacheLocator.getAppsCache().getPrimaryGroup().toLowerCase();
@@ -229,6 +263,123 @@ public class MaintenanceToolsAccessIntegrationTest {
         } finally {
             CacheLocator.getAppsCache().flushSecret(key);
         }
+    }
+
+    /**
+     * Method to test: {@link MaintenanceResource#listSessions(HttpServletRequest, HttpServletResponse)}
+     * Given scenario: a back-end user whose role has a layout with only the Maintenance portlet, and who is not a CMS
+     * Administrator.
+     * Expected result: the request is rejected with 401, and no session-list secret is stored on the caller's session.
+     */
+    @Test
+    public void listSessions_userWithMaintenanceLayoutOnly_isRejected() {
+        final HttpServletRequest request = requestFor(maintenanceOnlyUser);
+
+        final SecurityException refusal = assertThrows(SecurityException.class,
+                () -> new MaintenanceResource().listSessions(request, new MockHttpResponse()));
+
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), refusal.getResponse().getStatus());
+        assertNull(request.getSession().getAttribute(MaintenanceResource.CSRF_TOKEN_ATTRIBUTE));
+    }
+
+    /**
+     * Method to test: {@link MaintenanceResource#killSession(HttpServletRequest, HttpServletResponse, String)}
+     * Given scenario: a back-end user whose role has a layout with only the Maintenance portlet, and who is not a CMS
+     * Administrator, sends a valid token for another active session, with a fresh session-list secret on its own
+     * session.
+     * Expected result: the request is rejected with 401 and the other session is still active.
+     */
+    @Test
+    public void killSession_userWithMaintenanceLayoutOnly_isRejected() throws Exception {
+        final HttpServletRequest request = requestFor(maintenanceOnlyUser);
+        final String secret = UUID.randomUUID().toString();
+        request.getSession().setAttribute(MaintenanceResource.CSRF_TOKEN_ATTRIBUTE, secret);
+        request.getSession().setAttribute(MaintenanceResource.CSRF_TOKEN_TIMESTAMP_ATTRIBUTE, Instant.now());
+        final HttpSession target = newActiveSession();
+        final String targetId = target.getId();
+        trackSession(target);
+        try {
+            final String token = SessionTokenUtil.obfuscateSessionId(targetId, secret);
+
+            final SecurityException refusal = assertThrows(SecurityException.class,
+                    () -> new MaintenanceResource().killSession(request, new MockHttpResponse(), token));
+
+            assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), refusal.getResponse().getStatus());
+            assertEquals("The other session is still active", noLayoutUser.getUserId(),
+                    target.getAttribute(WebKeys.USER_ID));
+        } finally {
+            untrackSession(targetId);
+        }
+    }
+
+    /**
+     * Method to test: {@link MaintenanceResource#killAllSessions(HttpServletRequest, HttpServletResponse)}
+     * Given scenario: a back-end user whose role has a layout with only the Maintenance portlet, and who is not a CMS
+     * Administrator, while another session is active.
+     * Expected result: the request is rejected with 401 and the other session is still active.
+     */
+    @Test
+    public void killAllSessions_userWithMaintenanceLayoutOnly_isRejected() throws Exception {
+        final HttpSession target = newActiveSession();
+        final String targetId = target.getId();
+        trackSession(target);
+        try {
+            final SecurityException refusal = assertThrows(SecurityException.class,
+                    () -> new MaintenanceResource().killAllSessions(
+                            requestFor(maintenanceOnlyUser), new MockHttpResponse()));
+
+            assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), refusal.getResponse().getStatus());
+            assertEquals("The other session is still active", noLayoutUser.getUserId(),
+                    target.getAttribute(WebKeys.USER_ID));
+        } finally {
+            untrackSession(targetId);
+        }
+    }
+
+    /**
+     * Returns a new session, with its own id, that belongs to the back-end user without the Maintenance layout.
+     *
+     * @return the session
+     */
+    private static HttpSession newActiveSession() {
+        final HttpSession session = new MockSession(UUID.randomUUID().toString());
+        session.setAttribute(WebKeys.USER_ID, noLayoutUser.getUserId());
+        session.setAttribute(SessionMonitor.USER_REMOTE_ADDR, "127.0.0.1");
+        return session;
+    }
+
+    /**
+     * Registers a session in the {@link SessionMonitor} list of active sessions, which the session routes read.
+     *
+     * @param session the session to register
+     * @throws Exception if the list cannot be reached
+     */
+    private static void trackSession(final HttpSession session) throws Exception {
+        activeSessions().put(session.getId(), session);
+    }
+
+    /**
+     * Removes a session registered by {@link #trackSession(HttpSession)} from the {@link SessionMonitor} list.
+     *
+     * @param sessionId the id the session had when it was registered
+     * @throws Exception if the list cannot be reached
+     */
+    private static void untrackSession(final String sessionId) throws Exception {
+        activeSessions().invalidate(sessionId);
+    }
+
+    /**
+     * Returns the {@link SessionMonitor} list of active sessions. It has no public way to add a session, so the
+     * field is read by reflection, as {@code MaintenanceResourceIntegrationTest} does.
+     *
+     * @return the list of active sessions, by session id
+     * @throws Exception if the field cannot be read
+     */
+    @SuppressWarnings("unchecked")
+    private static DynamicTTLCache<String, HttpSession> activeSessions() throws Exception {
+        final Field field = SessionMonitor.class.getDeclaredField("userSessions");
+        field.setAccessible(true);
+        return (DynamicTTLCache<String, HttpSession>) field.get(null);
     }
 
     /**

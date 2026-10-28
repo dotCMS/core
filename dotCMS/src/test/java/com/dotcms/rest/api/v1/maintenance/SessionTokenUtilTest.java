@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Unit tests for {@link SessionTokenUtil}. Verifies that the REST migration of
  * the Logged Users HMAC scheme produces byte-for-byte identical tokens to the
- * legacy DWR implementation in {@code UserSessionAjax}, so existing clients see
+ * legacy DWR implementation formerly in {@code UserSessionAjax}, so existing clients see
  * no regression in token shape or length.
  *
  * @author hassandotcms
