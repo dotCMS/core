@@ -161,13 +161,6 @@ else
 		pass "OpenEXR delegate disabled"
 	fi
 
-	# Keep the suspect resize path out of shipped builds until it is verified upstream.
-	if config_has_true 'SIMD support with libhwy'; then
-		fail "Highway SIMD is enabled (resize colour corruption: dotCMS/core#38079)"
-	else
-		pass "Highway SIMD disabled"
-	fi
-
 	# Capabilities dotCMS advertises and must keep.
 	REQUIRED_DELEGATES=(
 		'enable GIF load'

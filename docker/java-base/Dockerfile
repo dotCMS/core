@@ -121,7 +121,7 @@ libglib2.0-dev libspng-dev libjpeg-dev libtiff-dev libwebp-dev libheif-dev \
 libjxl-dev libopenjp2-7-dev libcgif-dev librsvg2-dev libcairo2-dev \
 libpoppler-glib-dev liblcms2-dev libexif-dev libfontconfig1-dev libpango1.0-dev \
 libarchive-dev libfftw3-dev libmatio-dev libopenslide-dev libcfitsio-dev \
-libimagequant-dev zlib1g-dev"; \
+libhwy-dev libimagequant-dev zlib1g-dev"; \
     rm -f /etc/apt/sources.list.d/pgdg.sources /etc/apt/sources.list.d/pgdg.list; \
     apt update; \
     apt install -y --no-install-recommends $BUILD_DEPS; \
