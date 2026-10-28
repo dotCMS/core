@@ -39,8 +39,8 @@ export interface DotContentEditorChoice {
  * metadata has `CONTENT_EDITOR2_ENABLED`, `'legacy'` otherwise, with the content type it read.
  * The side-panel opener in `@dotcms/edit-content` uses it to pick the panel (#38303).
  *
- * {@link resolveEditUrl} is built on it. Given a contentlet, returns the dotAdmin hash route that should open it for editing.
- * Three shapes, in priority order:
+ * {@link resolveEditUrl} is built on it. Given a contentlet, it returns the dotAdmin hash route
+ * that should open it for editing. Three shapes, in priority order:
  *
  * 1. **HTMLPAGE** (`baseType === HTMLPAGE`)
  *    → `/dotAdmin/#/edit-page/content?url=<url>&language_id=<lang>&mId=edit`
@@ -73,8 +73,8 @@ export interface DotContentEditorChoice {
  * ## Error fallback
  *
  * If the content-type lookup fails (4xx/5xx, network), the resolver chooses the **legacy**
- * editor (and its URL) rather than propagating the error. Rationale: the legacy editor handles every
- * content type, so falling back keeps the user's edit flow working even when metadata
+ * editor (and its URL) rather than propagating the error. Rationale: the legacy editor handles
+ * every content type, so falling back keeps the user's edit flow working even when metadata
  * reads transiently fail. The error is intentionally swallowed — callers that need to
  * react to the failure should query `DotContentTypeService.getContentType()` directly.
  *
@@ -121,12 +121,10 @@ export class DotContentletEditUrlService {
 
         return this.#contentTypeService.getContentType(contentTypeVariableOrId).pipe(
             map((contentType) => {
+                const usesNewEditor =
+                    !!contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
                 const choice: DotContentEditorChoice = {
-                    editor: contentType?.metadata?.[
-                        FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
-                    ]
-                        ? 'new'
-                        : 'legacy',
+                    editor: usesNewEditor ? 'new' : 'legacy',
                     contentType
                 };
                 this.#editorCache.set(contentTypeVariableOrId, choice);
