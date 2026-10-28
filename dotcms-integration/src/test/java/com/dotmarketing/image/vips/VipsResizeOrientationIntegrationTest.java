@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 
 import app.photofox.vipsffm.VImage;
 import app.photofox.vipsffm.VipsOption;
+import com.dotmarketing.util.Config;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -17,6 +18,7 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -31,33 +33,42 @@ public class VipsResizeOrientationIntegrationTest {
     private static final int RAW_HEIGHT = 1512;
     private static final int[] COLOURS = {0xd03020, 0x20c040, 0x2050d0, 0xd0b020};
     private static final int[] TOP_LEFT = {0, 1, 3, 2, 0, 2, 3, 1};
-    private static final File[] INPUTS = new File[8];
     private static File directory;
+    private final String format;
     private final int orientation;
     private final String prefix;
 
-    /** Covers Resize and its Scale alias with every standard orientation value. */
-    @Parameters(name = "orientation={0}, filter={1}")
+    /** Covers all JPEG orientations plus orientation-6 PNG/WebP for Resize and its Scale alias. */
+    @Parameters(name = "{0}, orientation={1}, filter={2}")
     public static Collection<Object[]> cases() {
         final Collection<Object[]> cases = new ArrayList<>();
         for (int orientation = 1; orientation <= 8; orientation++) {
             for (final String prefix : new String[]{"resize", "scale"}) {
-                cases.add(new Object[]{orientation, prefix});
+                cases.add(new Object[]{"jpg", orientation, prefix});
+                if (orientation == 6) {
+                    cases.add(new Object[]{"png", orientation, prefix});
+                    cases.add(new Object[]{"webp", orientation, prefix});
+                }
             }
         }
         return cases;
     }
 
-    /** Selects the orientation and filter parameter prefix for one group of assertions. */
-    public VipsResizeOrientationIntegrationTest(final int orientation, final String prefix) {
+    /** Selects the source format, orientation and filter prefix for one group of assertions. */
+    public VipsResizeOrientationIntegrationTest(final String format, final int orientation,
+            final String prefix) {
+        this.format = format;
         this.orientation = orientation;
         this.prefix = prefix;
     }
 
-    /** Creates synthetic landscape JPEGs with orientation metadata, never a user's photograph. */
+    /** Creates oriented synthetic images; missing libvips skips locally but fails in strict CI. */
     @BeforeClass
     public static void setup() throws Exception {
-        assertTrue("native libvips is required", VipsManager.isAvailable());
+        final boolean available = VipsManager.isAvailable();
+        assertTrue("native libvips is required when DOT_TEST_REQUIRE_LIBVIPS=true",
+                available || !Config.getBooleanProperty("TEST_REQUIRE_LIBVIPS", false));
+        Assume.assumeTrue("native libvips is not available on this host", available);
         directory = Files.createTempDirectory("vips-resize-orientation").toFile();
         final BufferedImage image = new BufferedImage(RAW_WIDTH, RAW_HEIGHT, BufferedImage.TYPE_INT_RGB);
         final Graphics2D graphics = image.createGraphics();
@@ -74,10 +85,13 @@ public class VipsResizeOrientationIntegrationTest {
         }
         final File raw = new File(directory, "raw.jpg");
         assertTrue("JPEG fixture writer must be available", ImageIO.write(image, "jpg", raw));
-        for (int index = 0; index < INPUTS.length; index++) {
-            final int orientation = index + 1;
-            final File input = new File(directory, "orientation-" + orientation + ".jpg");
-            INPUTS[index] = input;
+        for (final Object[] testCase : cases()) {
+            final String format = (String) testCase[0];
+            final int orientation = (int) testCase[1];
+            if (!"resize".equals(testCase[2])) {
+                continue;
+            }
+            final File input = new File(directory, "orientation-" + orientation + "." + format);
             VipsManager.run(arena -> {
                 VImage.newFromFile(arena, raw.getAbsolutePath()).set("orientation", orientation)
                         .writeToFile(input.getAbsolutePath(), VipsOption.Int("Q", 100));
@@ -137,10 +151,12 @@ public class VipsResizeOrientationIntegrationTest {
     /** Checks dimensions, an independently mapped corner colour and removal of orientation metadata. */
     private void assertRendition(final String name, final Map<String, String[]> parameters,
             final int width, final int height) throws Exception {
-        final File output = new File(directory, orientation + "-" + prefix + "-" + name + ".png");
+        final File input = new File(directory, "orientation-" + orientation + "." + format);
+        final File output = new File(directory,
+                format + "-" + orientation + "-" + prefix + "-" + name + ".png");
         final VipsImageFilter filter = "resize".equals(prefix)
                 ? new VipsResizeImageFilter() : new VipsScaleImageFilter();
-        filter.transform(INPUTS[orientation - 1], output, parameters);
+        filter.transform(input, output, parameters);
         final BufferedImage resized = ImageIO.read(output);
         assertNotNull("resized PNG must decode", resized);
         assertEquals("upright width", width, resized.getWidth());

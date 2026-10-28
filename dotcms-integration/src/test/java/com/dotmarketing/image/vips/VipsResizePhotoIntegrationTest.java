@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotmarketing.util.Config;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.net.URL;
@@ -12,6 +13,7 @@ import java.util.Map;
 import javax.imageio.ImageIO;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
+import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -20,10 +22,13 @@ public class VipsResizePhotoIntegrationTest {
 
     private static File directory;
 
-    /** Requires the native engine and creates an isolated output directory. */
+    /** Creates isolated output; missing libvips skips locally but fails when required by CI. */
     @BeforeClass
     public static void setup() throws Exception {
-        assertTrue("native libvips is required", VipsManager.isAvailable());
+        final boolean available = VipsManager.isAvailable();
+        assertTrue("native libvips is required when DOT_TEST_REQUIRE_LIBVIPS=true",
+                available || !Config.getBooleanProperty("TEST_REQUIRE_LIBVIPS", false));
+        Assume.assumeTrue("native libvips is not available on this host", available);
         directory = Files.createTempDirectory("vips-resize-photo").toFile();
     }
 
