@@ -14,7 +14,6 @@ import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.common.db.DotConnect;
-import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -22,21 +21,13 @@ import com.dotmarketing.portlets.hostvariable.model.HostVariable;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import org.junit.After;
 import org.junit.AfterClass;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -59,21 +50,12 @@ public class HostVariableAPIImplTest {
     private static final List<User> users = new ArrayList<>();
     private static final List<Host> sites = new ArrayList<>();
 
-    private static final int SLOW_TEST_REPORT_MINUTES = 3;
-    private static ScheduledExecutorService slowTestReporter;
-    private ScheduledFuture<?> slowTestReport;
-
     /**
-     * Starts the slow-test reporter, boots the integration test environment and creates two Sites plus three users:
-     * one who can edit Site A only, one who can edit both Sites, and one who can only read both Sites.
+     * Boots the integration test environment and creates two Sites plus three users: one who can edit Site A only,
+     * one who can edit both Sites, and one who can only read both Sites.
      */
     @BeforeClass
     public static void prepare() throws Exception {
-        slowTestReporter = Executors.newSingleThreadScheduledExecutor(runnable -> {
-            final Thread thread = new Thread(runnable, "HostVariableAPIImplTest-slow-test-report");
-            thread.setDaemon(true);
-            return thread;
-        });
         IntegrationTestInitService.getInstance().init();
         systemUser = APILocator.systemUser();
         hostAPI = APILocator.getHostAPI();
@@ -94,8 +76,8 @@ public class HostVariableAPIImplTest {
     }
 
     /**
-     * Removes the Sites (and with them their variables) and the users the tests created, then stops the slow-test
-     * reporter. Every step is best effort so one failure does not hide the others.
+     * Removes the Sites (and with them their variables) and the users the tests created. Every step is best effort
+     * so one failure does not hide the others.
      */
     @AfterClass
     public static void cleanup() {
@@ -108,66 +90,6 @@ public class HostVariableAPIImplTest {
             }
         }
         users.forEach(user -> UserDataGen.remove(user, true));
-        slowTestReporter.shutdownNow();
-    }
-
-    /**
-     * Schedules a report of every thread's stack and of the database sessions that are waiting, written to the log
-     * every {@value #SLOW_TEST_REPORT_MINUTES} minutes while the test runs, so a test that stops making progress shows
-     * where it waits. The report does not interrupt the test.
-     */
-    @Before
-    public void scheduleSlowTestReport() {
-        slowTestReport = slowTestReporter.scheduleAtFixedRate(HostVariableAPIImplTest::logThreadsAndDatabaseWaits,
-                SLOW_TEST_REPORT_MINUTES, SLOW_TEST_REPORT_MINUTES, TimeUnit.MINUTES);
-    }
-
-    /**
-     * Cancels the slow-test report of the test that just finished.
-     */
-    @After
-    public void cancelSlowTestReport() {
-        slowTestReport.cancel(false);
-    }
-
-    /**
-     * Writes to the log the state, the held and awaited locks and the full stack of every thread, then the sessions of
-     * the current database with the sessions blocking them and the lock requests that are not granted. The threads are
-     * written first, so they are logged even when the database cannot be read.
-     */
-    private static void logThreadsAndDatabaseWaits() {
-        final StringBuilder threads = new StringBuilder("Test still running after more than ")
-                .append(SLOW_TEST_REPORT_MINUTES).append(" minutes. Threads:\n");
-        for (final ThreadInfo thread : ManagementFactory.getThreadMXBean().dumpAllThreads(true, true)) {
-            threads.append('"').append(thread.getThreadName()).append("\" ").append(thread.getThreadState());
-            if (thread.getLockName() != null) {
-                threads.append(" waiting on ").append(thread.getLockName());
-            }
-            if (thread.getLockOwnerName() != null) {
-                threads.append(" owned by \"").append(thread.getLockOwnerName()).append('"');
-            }
-            threads.append('\n');
-            for (final StackTraceElement frame : thread.getStackTrace()) {
-                threads.append("    at ").append(frame).append('\n');
-            }
-        }
-        Logger.warn(HostVariableAPIImplTest.class, threads.toString());
-
-        final StringBuilder database = new StringBuilder("Database sessions:\n");
-        try {
-            database.append(new DotConnect().setSQL(
-                    "SELECT pid, state, wait_event_type, wait_event, pg_blocking_pids(pid) AS blocked_by, "
-                            + "now() - xact_start AS transaction_age, left(query, 300) AS query "
-                            + "FROM pg_stat_activity WHERE datname = current_database()").loadObjectResults());
-            database.append("\nLock requests not granted:\n").append(new DotConnect().setSQL(
-                    "SELECT l.pid, l.locktype, l.mode, c.relname FROM pg_locks l "
-                            + "LEFT JOIN pg_class c ON c.oid = l.relation WHERE NOT l.granted").loadObjectResults());
-        } catch (final Exception e) {
-            database.append("could not be read: ").append(e.getMessage());
-        } finally {
-            DbConnectionFactory.closeSilently();
-        }
-        Logger.warn(HostVariableAPIImplTest.class, database.toString());
     }
 
     /**
