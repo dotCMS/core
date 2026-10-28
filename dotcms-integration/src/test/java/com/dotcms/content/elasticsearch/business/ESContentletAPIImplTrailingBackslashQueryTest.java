@@ -22,6 +22,7 @@ import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -45,6 +46,7 @@ public class ESContentletAPIImplTrailingBackslashQueryTest extends IntegrationTe
     private static Role otherRole;
     private static User readerUser;
     private static User otherUser;
+    private static User adminUser;
     private static Contentlet readable;
     private static Contentlet hidden;
     private static String query;
@@ -61,6 +63,8 @@ public class ESContentletAPIImplTrailingBackslashQueryTest extends IntegrationTe
         otherRole = new RoleDataGen().nextPersisted();
         readerUser = new UserDataGen().roles(readerRole).nextPersisted();
         otherUser = new UserDataGen().roles(otherRole).nextPersisted();
+        adminUser = new UserDataGen().roles(APILocator.getRoleAPI().loadCMSAdminRole())
+                .nextPersisted();
 
         readable = publishedContent();
         hidden = publishedContent();
@@ -80,6 +84,7 @@ public class ESContentletAPIImplTrailingBackslashQueryTest extends IntegrationTe
         ContentletDataGen.destroy(hidden, true);
         ContentletDataGen.destroy(readable, true);
         ContentTypeDataGen.remove(contentType, true);
+        UserDataGen.remove(adminUser);
         UserDataGen.remove(otherUser);
         UserDataGen.remove(readerUser);
         RoleDataGen.remove(otherRole);
@@ -112,9 +117,7 @@ public class ESContentletAPIImplTrailingBackslashQueryTest extends IntegrationTe
     /**
      * The mirror image of the test above, run by the user holding the other role. It is what keeps
      * the pair honest: each user sees their own contentlet and only that one, so neither result can
-     * be explained by content missing from the index. An administrator could not play that part:
-     * no clause is appended for them, so their query reaches the index exactly as written, and one
-     * ending in a lone backslash is rejected as unparseable and comes back empty.
+     * be explained by content missing from the index.
      */
     @Test
     public void test_queryEndingInBackslash_showsEachUserTheirOwnContent() throws Exception {
@@ -139,6 +142,42 @@ public class ESContentletAPIImplTrailingBackslashQueryTest extends IntegrationTe
     public void test_countOfQueryEndingInBackslash_matchesWhatTheUserCanRead() throws Exception {
         assertEquals(1L,
                 APILocator.getContentletAPI().indexCount(query + " x\\", readerUser, false));
+    }
+
+    /**
+     * Given: an administrator, for whom no clause is appended to the query at all.
+     * When: they run the query ending in a backslash.
+     * Then: they see both contentlets, the same as for the query without it.
+     *
+     * <p>This is the case that fails if the query stops being normalized for callers who get no
+     * clause appended: the query reaches the index with the escape still dangling, does not parse,
+     * and comes back empty rather than with the two contentlets that are there.
+     */
+    @Test
+    public void test_administratorSeesEverythingForAQueryEndingInBackslash() throws Exception {
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+
+        final List<String> control = identifiersOf(
+                contentletAPI.search(query, 100, 0, null, adminUser, false));
+        final List<String> trailingBackslash = identifiersOf(
+                contentletAPI.search(query + " x\\", 100, 0, null, adminUser, false));
+
+        final List<String> both = Stream.of(hidden.getIdentifier(), readable.getIdentifier())
+                .sorted().collect(Collectors.toList());
+
+        assertEquals("an administrator reads both contentlets", both, control);
+        assertEquals("a query ending in a backslash has to match what the same query matches",
+                control, trailingBackslash);
+    }
+
+    /**
+     * The count an administrator gets goes through the same normalization as their search, so it
+     * has to agree with it rather than coming back as zero.
+     */
+    @Test
+    public void test_administratorCountOfQueryEndingInBackslash_matchesTheSearch() throws Exception {
+        assertEquals(2L,
+                APILocator.getContentletAPI().indexCount(query + " x\\", adminUser, false));
     }
 
     /** The identifiers of the given results, sorted, so two result sets can be compared directly. */
