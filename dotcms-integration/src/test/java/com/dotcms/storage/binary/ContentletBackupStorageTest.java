@@ -156,7 +156,10 @@ public class ContentletBackupStorageTest {
                         .getBinary("heroImage").toPath()), "Deleting one language must keep the other's binaries");
             }
             if (deletion.equals("version")) {
-                assertEquals("new image version", Files.readString(api.find(second.getInode(), user, false).getBinary("heroImage").toPath()));
+                final Contentlet kept = api.find(second.getInode(), user, false);
+                assertEquals("new image version", Files.readString(kept.getBinary("heroImage").toPath()));
+                // The unchanged field would lose its bytes if versions ever shared a revision.
+                assertEquals("separate attachment", Files.readString(kept.getBinary("attachment").toPath()));
             }
         } finally {
             Config.setProperty("BACKUP_DELETED_CONTENTLETS_TO_DISK", false);
