@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { Injectable, Injector, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { NavigationEnd, Router } from '@angular/router';
 
@@ -12,6 +12,8 @@ import { GlobalStore } from '@dotcms/store';
 
 import { EditContentHost, EditContentIdentity } from './edit-content-host.model';
 
+import { DotOpenContentEvent } from '../../models/dot-open-content-event.model';
+import { DotEditContentOpenerService } from '../../opener/dot-edit-content-opener.service';
 import {
     DotRelatedContentCrumb,
     DotRelatedContentNavigationStore,
@@ -37,6 +39,9 @@ export class RouterEditContentHost implements EditContentHost {
     readonly #globalStore = inject(GlobalStore);
     readonly #relatedNav = inject(DotRelatedContentNavigationStore);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #opener = inject(DotEditContentOpenerService);
+    /** The shell's injector: a panel this host opens closes when the shell is destroyed. */
+    readonly #injector = inject(Injector);
 
     /** Full-screen navigates through the router, not in place. */
     readonly inPlaceNavigation = false;
@@ -160,6 +165,19 @@ export class RouterEditContentHost implements EditContentHost {
 
     goToCrumb(inode: string, trailInodes: string[]): void {
         this.#navigationGuard(() => this.#navigateToTrail(inode, trailInodes));
+    }
+
+    /**
+     * Opens whatever a field asks for in a panel over the full-screen editor, which stays mounted
+     * with its unsaved edits: a create made from this form, then opened, lives only in that form.
+     * No router navigation and no trail write; the panel closes with the shell, and each of its
+     * saves goes back to the field through `onSaved`.
+     */
+    openContent({ request, onSaved }: DotOpenContentEvent): void {
+        this.#opener.open(request, {
+            injector: this.#injector,
+            saved: (contentlet) => onSaved?.(contentlet)
+        });
     }
 
     /**
