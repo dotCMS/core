@@ -309,19 +309,17 @@ For each new test class created:
    selection rule depends on current CI timings, not on anything visible in the source.
 
    - **JUnit 5** → `dotcms-integration/src/test/java/com/dotcms/Junit5Suite1.java`
-     - Add a `@SelectClasses` entry and the corresponding `import` statement.
 
    - **JUnit 4** → the suite the doc's rule selects. The current set is whatever
      `.github/test-matrix.yml` lists as `test_class`, since that is what CI actually runs.
-     - Add the corresponding `import` statement at the top of that suite file.
      - Do **not** pick by counting `@SuiteClasses` entries. Entry count is not load:
        `MainSuite2b` currently holds 302 entries against `MainSuite2a`'s 52, and the suites
        are balanced on wall-clock CI time, which the doc explains how to measure.
 
 3. **Apply the suite edit** using Edit. Add:
    Run `just add-it-test <fully.qualified.NewTestClass> <SuiteFileName>` instead of editing the
-   suite by hand. It adds the import and the entry at the name-derived position with a trailing
-   comma; appending to the end of the list causes merge-queue conflicts.
+   suite by hand. It adds a fully qualified entry at the name-derived position with a trailing
+   comma (no import); appending to the end of the list causes merge-queue conflicts.
 
 4. **Confirm** in the output: "Added `NewTestClass` to `<SuiteFileName>.java`."
 

@@ -103,11 +103,11 @@ Whenever you add integration-test coverage:
    ```
 
    `just add-it-test` (backed by `scripts/it-suites.py`) resolves the class under
-   `dotcms-integration/src/test/java`, inserts `Foo.class,` before the first existing entry whose
-   simple class name sorts after `Foo` (scanning from the top; the lists are otherwise **not**
-   sorted and are never re-sorted), and adds the matching `import` in the same way. It falls back
-   to the fully qualified name when the simple name collides with another entry or import. Every
-   entry ends with a trailing comma, which Java allows in annotation arrays. It refuses a class
+   `dotcms-integration/src/test/java` and inserts a fully qualified `com.foo.Foo.class,` entry
+   next to the existing entry with the nearest simple class name above `Foo`. The lists are
+   unsorted and are never re-sorted, so this is not an alphabetical insert, and no import is
+   added (a new import would land at the end of the import block, a second hotspot). Every entry
+   ends with a trailing comma, which Java allows in annotation arrays. It refuses a class
    that is already registered in any suite, refuses a suite name that CI does not run, and refuses
    a JUnit 4 test in the JUnit 5 suite (`Junit5Suite1`) or the reverse, because that would be
    skipped silently. With no suite argument it exits and asks for one; pick it with step 1.
@@ -116,8 +116,10 @@ Whenever you add integration-test coverage:
    it. Any two PRs that append to the same suite therefore conflict in the merge queue, and each
    one after the first is bumped as unmergeable (six PRs did this to `MainSuite2a` on 2026-10-28).
    Name-derived positions land in different places for different classes, and the trailing comma
-   means an insertion never touches a neighbouring line. Two classes that sort into the very same
-   gap can still conflict; rebase and re-run the tool for the later one.
+   means an insertion never touches a neighbouring line. Two classes whose names have no existing
+   entry between them (for example `ContentMapWidgetFieldRenderTest` and
+   `ContentRelationshipsResourceIntegrationTest`) still land in the same spot and conflict; rebase
+   and re-run the tool for the later one.
 
    A CI check (`python3 scripts/it-suites.py check`, workflow `cicd_pr_it-registration.yml`)
    fails a PR when a concrete test class with `@Test` methods under `dotcms-integration/src/test/java`
