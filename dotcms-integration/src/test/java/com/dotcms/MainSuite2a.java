@@ -36,6 +36,7 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({
         ChatCompletionsTest.class,
         ChatCompletionsStreamingTest.class,
+        com.dotmarketing.portlets.contentlet.business.HostFactoryImplDefaultSiteTest.class,
         InferenceAuthorizationTest.class,
         InferenceClientConformanceTest.class,
         InferenceEmbeddingsTest.class,
@@ -121,8 +122,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rendering.velocity.WidgetRendererTest.class,
         CMSUserToolTest.class,
         UserJsViewToolTest.class,
-        com.dotcms.rest.BundleResourceDeleteResponseTest.class,
-        com.dotmarketing.portlets.contentlet.business.HostFactoryImplDefaultSiteTest.class
+        com.dotcms.rest.BundleResourceDeleteResponseTest.class
 })
 public class MainSuite2a {
 
