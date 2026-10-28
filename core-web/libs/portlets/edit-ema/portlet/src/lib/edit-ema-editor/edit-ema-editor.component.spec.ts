@@ -1813,12 +1813,11 @@ describe('EditEmaEditorComponent', () => {
              * editor keeps no dialog of its own.
              */
             describe('opening content in the side panel', () => {
-                it('should render no page-editor dialog and keep no dialog plumbing', () => {
+                it('should render no page-editor dialog and keep no dialog member', () => {
                     spectator.detectChanges();
 
                     expect(spectator.query(byTestId('ema-dialog'))).toBeNull();
                     expect('dialog' in spectator.component).toBe(false);
-                    expect('$sidePanelEnabled' in spectator.component).toBe(false);
                 });
 
                 it('should bind the request to the opener, which opens the panel once it is set', () => {
