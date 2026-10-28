@@ -8,7 +8,6 @@ import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
@@ -33,6 +32,23 @@ public class EditCategoryAction extends DotPortletAction {
 		categoryAPI = APILocator.getCategoryAPI();
 	}
 
+    /**
+     * Handles the requests of the category edit screen. The category named by the {@code inode}
+     * parameter is loaded for the current user; a request without a category and with an
+     * {@code itsnew} parameter is forwarded to the input page. Otherwise, with {@code cmd=add} the
+     * posted form is validated and, when valid, the category is saved; any other request shows the
+     * edit form for the loaded category. Categories are deleted through
+     * {@link com.dotmarketing.portlets.categories.business.CategoryAPI}, not through this action.
+     *
+     * @param mapping the Struts mapping of the action
+     * @param form    the posted category form
+     * @param config  the portlet configuration
+     * @param req     the portlet request, with the {@code cmd}, {@code inode} and {@code referer}
+     *                parameters
+     * @param res     the portlet response
+     * @throws Exception when the category cannot be loaded or the form cannot be filled
+     */
+    @Override
     public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req,
             ActionResponse res) throws Exception {
         String cmd = req.getParameter(com.liferay.portal.util.Constants.CMD);
@@ -69,24 +85,7 @@ public class EditCategoryAction extends DotPortletAction {
                 return;
             }
         }
-        // Delete a Category
-        else if (com.liferay.portal.util.Constants.DELETE.equals(cmd)) {
-            Logger.debug(this, "Category:  Deleting Category");
-            
-            try {
-                if(_deleteCategory(form, req, res))
-                    _sendToReferral(req, res, referer);
-                else
-                    setForward(req, mapping.getInput());
-            } catch (Exception e) {
-                _handleException(e, req);
-            }
-            
-            _sendToReferral(req, res, referer);
-            
-            return;
-        }
-        
+
         BeanUtils.copyProperties(form, req.getAttribute(WebKeys.CATEGORY_EDIT));
         setForward(req, "portlet.ext.categories.edit_category");
     }
@@ -138,31 +137,6 @@ public class EditCategoryAction extends DotPortletAction {
         SessionMessages.add(req, "message", "message.category.update");
         return true;
         
-    }
-    
-    /**
-     * REturns true if the category was correctly deleted, false if the user didn't have permission to delete it
-     * @param form
-     * @param req
-     * @param res
-     * @return
-     * @throws DotDataException 
-     */
-    private boolean _deleteCategory(ActionForm form, ActionRequest req, ActionResponse res) throws DotDataException {
-    	User user = _getUser(req);
-        Category cat = (Category) req.getAttribute(WebKeys.CATEGORY_EDIT);
-        
-        InodeFactory.deleteInode(cat);
-		try {
-			categoryAPI.delete(cat, user, false);
-		} catch (DotSecurityException e) {
-        	SessionMessages.add(req, "error", "message.category.permission.error");
-        	return false;
-		}
-
-		req.setAttribute(WebKeys.CATEGORY_EDIT, cat);
-        SessionMessages.add(req, "message", "message.category.delete");
-        return true;
     }
     
     //view category for Action request
