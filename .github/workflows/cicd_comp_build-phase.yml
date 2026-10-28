@@ -51,11 +51,13 @@ on:
         required: false
         type: boolean
         default: true
+      # Off by default: no workflow restores the bundle (restore-classes is used only by
+      # deploy-javadoc, which no workflow calls), and the upload cost ~25 s per build.
       generate-build-classes:
-        description: 'Upload per-module build classes. Only test phases consume them.'
+        description: 'Upload per-module build classes (consumed only by restore-classes callers).'
         required: false
         type: boolean
-        default: true
+        default: false
       java-version:
         description: 'Override Java version (SDKMAN format, e.g., 25.0.1-open)'
         required: false
