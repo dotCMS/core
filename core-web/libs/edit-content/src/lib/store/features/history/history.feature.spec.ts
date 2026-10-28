@@ -1491,6 +1491,10 @@ describe('HistoryFeature', () => {
     describe('restoreVersion', () => {
         beforeEach(() => {
             store.updateContentlet(mockContentlet);
+            // Bring Back answers with a version summary; the restored contentlet is fetched by inode.
+            dotContentletService.getContentletByInode.mockImplementation((inode: string) =>
+                of({ ...mockContentlet, inode })
+            );
         });
 
         it('should restore version and delegate navigation to the host', fakeAsync(() => {
