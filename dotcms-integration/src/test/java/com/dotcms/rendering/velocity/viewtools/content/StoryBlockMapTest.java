@@ -17,6 +17,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -436,13 +437,55 @@ public class StoryBlockMapTest extends IntegrationTestBase {
         final String html = storyBlockMap.toHtml(storyBlockPath);
 
         // The custom render must be applied to the grid-nested contentlet...
-        Assert.assertTrue("Custom render not applied inside grid. HTML: " + html,
+        Assert.assertTrue("Custom render not applied inside grid. "
+                        + (html.contains("custom-grid-render") ? "" : describeTemplateLookupState(host,
+                        storyBlockPath + fileName, checkinContentlet)) + " HTML: " + html,
                 html.contains("custom-grid-render"));
         Assert.assertTrue("Custom render body missing. HTML: " + html,
                 html.contains("grid-custom-body"));
         // ...instead of the default title-only template.
         Assert.assertFalse("Default title-only template was used inside grid. HTML: " + html,
                 html.contains("<h2") && html.contains("grid title</h2>"));
+    }
+
+    /**
+     * Describes how the lookups that {@code #dotParse} relies on resolve the custom template, so a failed
+     * first attempt reports where the lookup diverged instead of only the rendered HTML. It is only
+     * called when the custom render was not applied; every lookup is wrapped so a failure here cannot
+     * mask the assertion that triggered it.
+     *
+     * @param defaultHost the default site, where the template was created
+     * @param templatePath the full path of the custom template, including the file name
+     * @param template the checked-in template contentlet
+     * @return a one-line description of the request site, the identifier lookups by database and by cache,
+     *         and the template's version info
+     */
+    private static String describeTemplateLookupState(final Host defaultHost, final String templatePath,
+            final Contentlet template) {
+
+        final Host requestHost = Try.of(() -> WebAPILocator.getHostWebAPI()
+                .getHost(HttpServletRequestThreadLocal.INSTANCE.getRequest())).getOrNull();
+        final StringBuilder state = new StringBuilder("Template lookup state: defaultHost=")
+                .append(defaultHost.getHostname()).append('/').append(defaultHost.getIdentifier())
+                .append(", requestHost=").append(null == requestHost ? "unresolved"
+                        : requestHost.getHostname() + "/" + requestHost.getIdentifier());
+        for (final Host site : new Host[] {defaultHost, requestHost}) {
+            if (null == site) {
+                continue;
+            }
+            state.append(", site ").append(site.getHostname())
+                    .append(": identifierFromDb=").append(Try.of(() -> APILocator.getIdentifierAPI()
+                            .find(site, templatePath).getId()).getOrElseGet(Throwable::toString))
+                    .append(", identifierFromCache=").append(Try.of(() -> APILocator.getIdentifierAPI()
+                            .loadFromCache(site, templatePath)).map(id -> null == id ? "none" : id.getId())
+                            .getOrElseGet(Throwable::toString));
+        }
+        return state.append(", templateIdentifier=").append(template.getIdentifier())
+                .append(", versionInfo=").append(Try.of(() -> APILocator.getVersionableAPI()
+                        .getContentletVersionInfo(template.getIdentifier(), template.getLanguageId())
+                        .map(info -> "working=" + info.getWorkingInode() + " live=" + info.getLiveInode())
+                        .orElse("none")).getOrElseGet(Throwable::toString))
+                .toString();
     }
 
     /**
