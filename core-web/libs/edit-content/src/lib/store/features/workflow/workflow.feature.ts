@@ -213,6 +213,8 @@ export function withWorkflow() {
                  * host to navigate to the saved content (the host decides how: router
                  * navigation full-screen, in-place/no-op in a dialog).
                  * In case of an error, it updates the state with an error message.
+                 * Every action fires in the experiment variant the editor was opened on, when
+                 * there is one (#38303).
                  *
                  * @param options The options required to fire the workflow action.
                  */
@@ -234,8 +236,13 @@ export function withWorkflow() {
                                 )
                             });
                         }),
-                        switchMap((options) => {
+                        switchMap((actionOptions) => {
                             const currentContentlet = store.contentlet();
+                            const variantName = store.variantName();
+                            // No key at all for the default variant, so nothing is sent for it.
+                            const options = variantName
+                                ? { ...actionOptions, variantName }
+                                : actionOptions;
 
                             // Delete/Destroy remove the content, so the post-action refetch
                             // below would 404. Leave the editor instead of reloading it.
