@@ -88,7 +88,8 @@ describe('DotEditContentBlockEditorComponent', () => {
             // The testing backend parks the request instead: nothing asserts on it, it
             // just must not become an unhandled HttpErrorResponse (five of them here).
             provideHttpClient(),
-            provideHttpClientTesting()
+            provideHttpClientTesting(),
+            { provide: EDIT_CONTENT_HOST, useValue: { openContent: vi.fn() } }
         ],
         detectChanges: false
     });
@@ -224,7 +225,8 @@ describe('DotEditContentBlockEditorComponent — required indicator', () => {
                 getFeatureFlag: vi.fn().mockReturnValue(of(true))
             }),
             provideHttpClient(),
-            provideHttpClientTesting()
+            provideHttpClientTesting(),
+            { provide: EDIT_CONTENT_HOST, useValue: { openContent: vi.fn() } }
         ],
         detectChanges: false
     });
@@ -305,7 +307,10 @@ describe('DotEditContentBlockEditorComponent — opening embedded content', () =
                 {
                     remove: { imports: [DotCMSEditorComponent, BlockEditorModule] },
                     add: {
-                        imports: [MockComponent(DotCMSEditorComponent), MockModule(BlockEditorModule)]
+                        imports: [
+                            MockComponent(DotCMSEditorComponent),
+                            MockModule(BlockEditorModule)
+                        ]
                     }
                 }
             ]
