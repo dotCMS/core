@@ -348,7 +348,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      */
     protected readonly $sourceEditorPanel = signal<DotSourceEditorRequest | null>(null);
 
-
     protected readonly $showBlockEditorSidebar = computed<boolean>(() => {
         const canEditPage = this.uveStore.editorCanEditContent();
         const isEditState = this.uveStore.viewMode() === UVE_MODE.EDIT;
@@ -506,7 +505,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     readonly $handleReloadContentEffect = effect(() => {
         /**
-         * We should not depend on this `$reloadEditorContent` computed to `resetEditorProperties` or `resetDialog`
+         * We should not depend on this `$reloadEditorContent` computed to `resetEditorProperties`
          * This depends on the `code` with each the page renders code. This reset should be done in `widthLoad` signal feature but we can't do it yet
          */
         const { pageType } = this.uveStore.$reloadEditorContent();
@@ -1443,7 +1442,9 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
                     if (!didInsert) {
                         if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
-                            this.handleContainerLimitReached(actionPayload.container.maxContentlets);
+                            this.handleContainerLimitReached(
+                                actionPayload.container.maxContentlets
+                            );
                         } else {
                             this.handleDuplicatedContentlet();
                         }
@@ -1604,7 +1605,10 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      */
     #openContent(
         request: DotEditContentRequest,
-        { actionPayload, fromSdk = false }: { actionPayload?: ActionPayload; fromSdk?: boolean } = {}
+        {
+            actionPayload,
+            fromSdk = false
+        }: { actionPayload?: ActionPayload; fromSdk?: boolean } = {}
     ): void {
         this.#insertion = actionPayload ? { actionPayload, inserted: false } : null;
         this.#fromSdkEdit = fromSdk && request.mode === 'edit';
