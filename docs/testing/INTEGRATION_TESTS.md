@@ -95,24 +95,36 @@ Whenever you add integration-test coverage:
    registered there. Do not leave new coverage in a slower suite just to reuse its class.
    When moving a class, remove its old import and suite entry; keep exactly one registration
    across the regular CI suites, without duplicating its existing tests.
-3. Add the `import` (alphabetized, matching the file's existing import block) **and** append the
-   `Foo.class,` entry to the **end** of the `@SuiteClasses({ ... })` list — the real
-   `@SuiteClasses` lists are not alphabetized or grouped by feature/package at all; new tests are
-   consistently appended at the end.
+3. **Register the class with the script. Never edit a suite list by hand, and never append to
+   the end of it:**
 
-```java
-// In the suite selected from current CI timings, not a fixed example suite:
-// alphabetize the import and append the class entry at the end of @SuiteClasses.
-// MyNewFeatureIntegrationTest is a placeholder, not an existing suite member.
-import com.dotcms.myfeature.MyNewFeatureIntegrationTest; // alphabetized import
-...
-@SuiteClasses({
-    ...
-    RoleResourceUsersIntegrationTest.class,
-    com.dotmarketing.common.reindex.ReindexDeleteJournalTest.class,
-    MyNewFeatureIntegrationTest.class,   // <-- appended at the end
-})
-```
+   ```bash
+   just add-it-test MyNewFeatureIntegrationTest MainSuite2a   # simple or fully qualified class name
+   ```
+
+   `just add-it-test` (backed by `scripts/it-suites.py`) resolves the class under
+   `dotcms-integration/src/test/java`, inserts `Foo.class,` before the first existing entry whose
+   simple class name sorts after `Foo` (scanning from the top; the lists are otherwise **not**
+   sorted and are never re-sorted), and adds the matching `import` in the same way. It falls back
+   to the fully qualified name when the simple name collides with another entry or import. Every
+   entry ends with a trailing comma, which Java allows in annotation arrays. It refuses a class
+   that is already registered in any suite, refuses a suite name that CI does not run, and refuses
+   a JUnit 4 test in the JUnit 5 suite (`Junit5Suite1`) or the reverse, because that would be
+   skipped silently. With no suite argument it exits and asks for one; pick it with step 1.
+
+   **Why not append by hand:** an append edits the last line (to add a comma) and inserts after
+   it. Any two PRs that append to the same suite therefore conflict in the merge queue, and each
+   one after the first is bumped as unmergeable (six PRs did this to `MainSuite2a` on 2026-10-28).
+   Name-derived positions land in different places for different classes, and the trailing comma
+   means an insertion never touches a neighbouring line. Two classes that sort into the very same
+   gap can still conflict; rebase and re-run the tool for the later one.
+
+   A CI check (`python3 scripts/it-suites.py check`, workflow `cicd_pr_it-registration.yml`)
+   fails a PR when a concrete test class with `@Test` methods under `dotcms-integration/src/test/java`
+   is in none of the suites in `.github/test-matrix.yml`. Classes that are intentionally unregistered
+   (helpers, classes run elsewhere) go in `dotcms-integration/unregistered-tests.allowlist` with a
+   reason; that file was seeded with the classes already unregistered when the check was added, so
+   treat each entry as a test that probably never runs and remove it when you register the class.
 
 Verify the suite still resolves the new class:
 

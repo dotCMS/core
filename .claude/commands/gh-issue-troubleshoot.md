@@ -319,8 +319,9 @@ For each new test class created:
        are balanced on wall-clock CI time, which the doc explains how to measure.
 
 3. **Apply the suite edit** using Edit. Add:
-   - The `import com.fully.qualified.NewTestClass;` line in alphabetical order with the other imports.
-   - The `NewTestClass.class,` entry at the end of the `@SuiteClasses` / `@SelectClasses` list, before the closing `})`.
+   Run `just add-it-test <fully.qualified.NewTestClass> <SuiteFileName>` instead of editing the
+   suite by hand. It adds the import and the entry at the name-derived position with a trailing
+   comma; appending to the end of the list causes merge-queue conflicts.
 
 4. **Confirm** in the output: "Added `NewTestClass` to `<SuiteFileName>.java`."
 
