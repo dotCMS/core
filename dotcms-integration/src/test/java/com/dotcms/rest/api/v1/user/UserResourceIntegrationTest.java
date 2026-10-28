@@ -17,6 +17,7 @@ import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.business.Role;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -440,6 +441,52 @@ public class UserResourceIntegrationTest {
             assertFalse("the caller does not hold CMS Administrator, so it must not be listed",
                     items(allowed).stream().anyMatch(item -> caller.getUserId().equals(item.get("userId"))));
         }
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: A back-end user who is NOT a CMS Administrator and does NOT hold the legacy
+     * Users portlet, but holds a Role whose layout carries the Roles portlet and the Angular
+     * {@link PortletID#USERS_BETA} portlet -- the beta-period alias of the Users portlet. The user
+     * filters by the CMS Administrator role key, then asks for {@code includeRoles}.
+     * ExpectedResult: Both calls succeed (200), the listed CMS Administrators still carry the
+     * {@code admin} flag, and {@code includeRoles} is accepted -- the Role-administrator gate honors
+     * the beta Users portlet id exactly like the legacy one, so holders of the new portlet are not
+     * rejected while the legacy portlet is being retired.
+     */
+    @Test
+    public void test_filter_byRole_rolesAndUsersBetaPortletUser_allowedWithAdminFlag() throws Exception {
+        final String suffix = uniq();
+        final String password = "pw" + suffix;
+        final Layout layout = new LayoutDataGen().name("users-beta-roles-" + suffix)
+                .portletIds(PortletID.ROLES.toString(), PortletID.USERS_BETA.toString()).nextPersisted();
+        layoutsToClean.add(layout);
+        final Role portletRole = new RoleDataGen().key("rolesusersbeta" + suffix).nextPersisted();
+        rolesToClean.add(portletRole);
+        APILocator.getRoleAPI().addLayoutToRole(layout, portletRole);
+        final User caller = new UserDataGen().firstName("portletBeta").lastName("RoleFilter")
+                .emailAddress("portletbetarolefilter" + suffix + "@dotcms.com").password(password)
+                .roles(portletRole, TestUserUtils.getBackendRole()).nextPersisted();
+        usersToClean.add(caller);
+        final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+        assertFalse("precondition: caller must not be an admin", caller.isAdmin());
+        assertFalse("precondition: caller must NOT hold the legacy Users portlet",
+                layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller));
+        assertTrue("precondition: caller must hold the Roles portlet and the beta Users portlet",
+                layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), caller)
+                        && layoutAPI.doesUserHaveAccessToUsersPortlet(caller));
+
+        final String cmsAdminRoleId = APILocator.getRoleAPI().loadCMSAdminRole().getId();
+        final Response allowed = resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
+                null, 1, 100, null, "ASC", false, false, null, 0, List.of(cmsAdminRoleId), null, false);
+        assertEquals(Status.OK.getStatusCode(), allowed.getStatus());
+        final Map<String, Object> admin = itemFor(items(allowed), adminUser.getUserId());
+        assertEquals("a Roles + beta-Users portlet user keeps the admin flag", Boolean.TRUE, admin.get("admin"));
+
+        final Response withRoles = resource.filter(mockRequestAs(caller.getEmailAddress(), password), response,
+                null, 1, 100, null, "ASC", false, false, null, 0, List.of(cmsAdminRoleId), null, true);
+        assertEquals("includeRoles must be accepted for a Roles + beta-Users portlet holder",
+                Status.OK.getStatusCode(), withRoles.getStatus());
     }
 
     /**
@@ -1067,6 +1114,118 @@ public class UserResourceIntegrationTest {
 
         assertTrue("a root role merely named 'User...' must be listed", ids.contains(userManagers.getId()));
         assertFalse("the personal role must still be excluded", ids.contains(personal.getId()));
+    }
+
+    // ==================== GET /v1/users/filter — profile fields per caller ====================
+
+    /** Keys every caller gets for each listed user: enough to identify and display the user. */
+    private static final Set<String> DIRECTORY_KEYS = Set.of("userId", "id", "firstName", "lastName",
+            "fullName", "name", "emailAddress", "emailaddress", "gravitar", "type");
+
+    /** Keys of the full profile that only Users-portlet holders and CMS Administrators get. */
+    private static final Set<String> FULL_PROFILE_ONLY_KEYS = Set.of("lastLoginIP", "lastLoginDate",
+            "failedLoginAttempts", "admin", "passwordExpired", "passwordReset", "passwordExpirationDate",
+            "hasConsoleAccess", "active", "backendUser", "frontendUser", "additionalInfo", "createDate",
+            "modificationDate");
+
+    /** A persisted back-end user holding the given extra roles, registered for cleanup. */
+    private static User backendUser(final String tag, final String password, final Role... extraRoles)
+            throws Exception {
+        final Role[] roles = new Role[extraRoles.length + 1];
+        System.arraycopy(extraRoles, 0, roles, 0, extraRoles.length);
+        roles[extraRoles.length] = TestUserUtils.getBackendRole();
+        final User created = new UserDataGen().firstName("Profile").lastName(tag)
+                .emailAddress(tag + "@dotcms.com").password(password).roles(roles).nextPersisted();
+        usersToClean.add(created);
+        return created;
+    }
+
+    /** A persisted role whose layout grants the given portlet, registered for cleanup. */
+    private static Role roleWithPortlet(final String tag, final PortletID portlet) throws Exception {
+        final Role role = new RoleDataGen().key(tag).nextPersisted();
+        rolesToClean.add(role);
+        final Layout layout = new LayoutDataGen().name("Layout " + tag).portletIds(portlet.toString())
+                .nextPersisted();
+        layoutsToClean.add(layout);
+        APILocator.getRoleAPI().addLayoutToRole(layout, role);
+        return role;
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: A back-end user who is not a CMS Administrator and has no access to the Users portlet
+     * lists users.
+     * Expected Result: The call succeeds (200) and every item carries only the directory fields -- id, names,
+     * email and gravatar -- none of the account-state fields such as last login, failed attempts or flags.
+     */
+    @Test
+    public void test_filter_withoutUsersPortlet_itemsCarryDirectoryFieldsOnly() throws Exception {
+        final String suffix = uniq();
+        final String password = "pw" + suffix;
+        final Role plain = new RoleDataGen().key("nousersportlet" + suffix).nextPersisted();
+        rolesToClean.add(plain);
+        final User caller = backendUser("nousersportlet" + suffix, password, plain);
+        assertFalse("precondition: caller must not be an admin", caller.isAdmin());
+        assertFalse("precondition: caller must lack Users portlet access",
+                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller));
+
+        final List<Map<String, Object>> page = items(resource.filter(
+                mockRequestAs(caller.getEmailAddress(), password), response,
+                "", 1, 100, null, "ASC", false, false, null, 0, null, null, false));
+        assertFalse("the list must not be empty", page.isEmpty());
+
+        final Map<String, Object> adminItem = itemFor(page, adminUser.getUserId());
+        assertEquals(adminUser.getEmailAddress(), adminItem.get("emailAddress"));
+        assertEquals(adminUser.getFullName(), adminItem.get("fullName"));
+        for (final Map<String, Object> item : page) {
+            assertTrue("item " + item.get("userId") + " must carry every directory key: " + item.keySet(),
+                    item.keySet().containsAll(DIRECTORY_KEYS));
+            for (final String key : FULL_PROFILE_ONLY_KEYS) {
+                assertFalse("item " + item.get("userId") + " must not carry '" + key + "'", item.containsKey(key));
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: A back-end user who is not a CMS Administrator but has access to the Users portlet lists
+     * users, and so does a CMS Administrator.
+     * Expected Result: Both receive the full profile of each user, including the account-state fields the
+     * Users portlet displays.
+     */
+    @Test
+    public void test_filter_usersPortletHolderAndAdmin_itemsCarryFullProfile() throws Exception {
+        final String suffix = uniq();
+        final String password = "pw" + suffix;
+        final Role usersPortlet = roleWithPortlet("usersportlet" + suffix, PortletID.USERS);
+        final User caller = backendUser("usersportlet" + suffix, password, usersPortlet);
+        assertFalse("precondition: caller must not be an admin", caller.isAdmin());
+        assertTrue("precondition: caller must have Users portlet access",
+                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller));
+
+        final Map<String, Object> asPortletHolder = itemFor(items(resource.filter(
+                mockRequestAs(caller.getEmailAddress(), password), response,
+                adminUser.getUserId(), 1, 40, null, "ASC", false, false, null, 0, null, null, false)),
+                adminUser.getUserId());
+        final Map<String, Object> asAdmin = itemFor(items(resource.filter(
+                mockRequest(), response,
+                adminUser.getUserId(), 1, 40, null, "ASC", false, false, null, 0, null, null, false)),
+                adminUser.getUserId());
+
+        // The account-state fields (minus the admin flag) go to any full-profile caller: the Users-portlet
+        // holder and the administrator alike. The admin flag itself is gated separately on Role-administrator
+        // access (CMS Administrator, or Roles+Users portlets), so a Users-portlet-only holder does not get it.
+        final Set<String> accountStateSansAdmin = new HashSet<>(FULL_PROFILE_ONLY_KEYS);
+        accountStateSansAdmin.remove("admin");
+        for (final Map<String, Object> item : List.of(asPortletHolder, asAdmin)) {
+            assertTrue("full profile must carry every directory key: " + item.keySet(),
+                    item.keySet().containsAll(DIRECTORY_KEYS));
+            assertTrue("full profile must carry every account-state key: " + item.keySet(),
+                    item.keySet().containsAll(accountStateSansAdmin));
+        }
+        assertFalse("a Users-portlet-only holder is not a Role administrator, so it gets no admin flag",
+                asPortletHolder.containsKey("admin"));
+        assertEquals("the administrator keeps the admin flag", Boolean.TRUE, asAdmin.get("admin"));
     }
 
     // ==================== GET /v1/users/filter — orderby / direction (#37458) ====================
