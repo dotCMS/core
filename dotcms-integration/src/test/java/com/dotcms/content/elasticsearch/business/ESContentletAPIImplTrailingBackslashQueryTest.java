@@ -8,6 +8,7 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -39,6 +40,7 @@ import org.junit.Test;
 public class ESContentletAPIImplTrailingBackslashQueryTest extends IntegrationTestBase {
 
     private static User systemUser;
+    private static User adminUser;
     private static ContentType contentType;
     private static User limitedUser;
     private static Contentlet readable;
@@ -49,6 +51,7 @@ public class ESContentletAPIImplTrailingBackslashQueryTest extends IntegrationTe
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
         systemUser = APILocator.systemUser();
+        adminUser = TestUserUtils.getAdminUser();
 
         final Host site = new SiteDataGen().nextPersisted();
         contentType = new ContentTypeDataGen().host(site).nextPersisted();
@@ -94,13 +97,15 @@ public class ESContentletAPIImplTrailingBackslashQueryTest extends IntegrationTe
     }
 
     /**
-     * The same query as an administrator, who is not narrowed by any appended clause, to show that
-     * both contentlets are in the index and that the test above is not passing on an empty index.
+     * The same query as an administrator, who is the one caller no clause is appended for, to show
+     * that both contentlets are in the index and that the test above is not passing on an empty
+     * index. The System User is not that caller: it does not hold the administrator role, so it is
+     * narrowed by the owner clause like anybody else.
      */
     @Test
     public void test_queryEndingInBackslash_isNotHidingAnEmptyIndex() throws Exception {
         final List<String> found = identifiersOf(APILocator.getContentletAPI()
-                .search(query + " x\\", 100, 0, null, systemUser, false));
+                .search(query + " x\\", 100, 0, null, adminUser, false));
 
         assertEquals(List.of(hidden.getIdentifier(), readable.getIdentifier()).stream().sorted()
                         .collect(Collectors.toList()),
