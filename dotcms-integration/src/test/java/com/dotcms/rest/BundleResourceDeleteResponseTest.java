@@ -75,6 +75,11 @@ public class BundleResourceDeleteResponseTest {
         final List<String> identifiers = new ArrayList<>(existingIds);
         identifiers.add(unknownId);
 
+        // The endpoint's back-end role check looks the role key up as a role id, which only
+        // succeeds while the role cache holds the role (#38294). Tests earlier in the suite clear
+        // that cache, so load the role by key to put it back before the request.
+        APILocator.getRoleAPI().loadBackEndUserRole();
+
         final CountDownLatch release = new CountDownLatch(1);
         final Response response;
         try {
