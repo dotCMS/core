@@ -219,6 +219,12 @@ postman-stop:
 test-karate collections='KarateCITests#defaults':
     ./mvnw -pl :dotcms-test-karate verify -Dkarate.test.skip=false -Pdebug -Dit.test={{ collections }}
 
+# Median CI runtime of each MainSuite* across the most recent successful PR Check runs.
+# New integration-test coverage goes in the suite this names, never in a remembered one.
+# Usage: just suite-timings [SAMPLES]   (default: 3, the documented minimum)
+suite-timings samples='3':
+    .github/scripts/suite-timings/suite-timings.sh {{samples}}
+
 # Runs all integration tests
 test-integration:
     ./mvnw -pl :dotcms-integration verify -Dcoreit.test.skip=false

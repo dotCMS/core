@@ -50,52 +50,58 @@ Match the siblings already in your package — the module is ~680 `*Test.java` t
 ### Registering Tests in a MainSuite (CI gate) ⚠️
 
 CI runs integration tests **only** through the JUnit `@SuiteClasses` aggregator suites in
-`dotcms-integration/src/test/java/com/dotcms/` — currently `MainSuite1a`, `MainSuite1b`,
-`MainSuite2a`, `MainSuite2b`, `MainSuite3a` (plus `Junit5Suite1` and `OpenSearchUpgradeSuite`,
-see below). **This set isn't fixed** — a new `MainSuite3b` (or beyond) may get added later as the
-module grows; check `dotcms-integration/src/test/java/com/dotcms/MainSuite*.java` for the
-current list rather than assuming this doc's names are exhaustive or permanent. **A new test
-class that is not listed in one of these suites compiles fine but is silently never executed in
-CI** — green build, zero coverage. This is easy to miss because the class runs locally via
-`-Dit.test=MyTestClass`.
+`dotcms-integration/src/test/java/com/dotcms/`. **A new test class that is not listed in one of
+these suites compiles fine but is silently never executed in CI** — green build, zero coverage.
+This is easy to miss because the class still runs locally via `-Dit.test=MyTestClass`.
 
-**Mandatory placement rule: ALL new integration-test coverage MUST go in the currently
-shortest-running compatible CI suite.** This includes new classes **and new test methods added
-to existing classes**; reusing a class does not exempt its new tests from this rule. An example,
-feature grouping, existing registration, or old timing comment is not placement evidence.
-Keep JUnit 5 and required-profile tests in suites that support their framework and environment.
+Placement is resolved in the order below. Steps 1 and 2 are a compatibility gate, not a
+balancing decision: those two suites are destinations by requirement and never take part in any
+runtime comparison.
 
-Whenever you add integration-test coverage:
+**1. JUnit 5 test? → `Junit5Suite1`.** A JUnit 5 class listed in a `MainSuite*` is silently
+skipped, because those suites run JUnit 4's `@SuiteClasses` runner (`Junit5Suite1`'s own Javadoc
+says so). Stop here.
 
-1. **Measure and select the shortest-running compatible suite before adding coverage.**
-   The `MainSuite*` jobs (currently five — see the note above on this list growing over time)
-   run in parallel in CI, so the goal is to keep their wall-clock times roughly balanced; adding
-   to whichever suite already finishes fastest keeps the overall PR build time down. **Don't
-   hardcode a specific suite name as "the fast one" in this doc or in memory** — suite runtimes
-   shift over time as tests are added/removed elsewhere, so check current timings for every
-   addition, even when no new class is needed. Pull job start/completion times from **at least
-   3 recent, independent PR CI runs**, using successful, completed jobs that actually executed
-   the compatible suites; ignore skipped, cancelled, incomplete, or cache-short-circuited jobs —
-   ```bash
-   gh pr view <recent-PR-number> --repo dotCMS/core --json statusCheckRollup \
-     -q '.statusCheckRollup[] | select(.name? and (.name | test("Integration Tests"))) | "\(.name) \(.startedAt) \(.completedAt)"'
-   ```
-   repeated across 3 different recent PR numbers, and compute the duration of each `MainSuite*`
-   job in each (ignore `Junit5Suite1` and `OpenSearchUpgradeSuite` — those are structurally
-   different, purpose-built suites, not general destinations for a new JUnit4 test). Add the new
-   coverage to the compatible suite with the lowest median elapsed job runtime across the
-   samples. Record the run links, compared runtimes, and chosen suite in the PR description.
-   If timing data is unavailable, report that and ask the developer; do not guess a default.
-   If every current `MainSuite*` is consistently near-saturated and none is meaningfully faster,
-   that's a signal a
-   new `MainSuite` class may be needed — that's a call for whoever owns the CI/test infra, not
-   something to decide unilaterally from a PR sample.
-2. **Recheck existing class placement.** If the class receiving new methods is in a slower suite,
-   move its registration to the selected suite, or put the new tests in a separate class
-   registered there. Do not leave new coverage in a slower suite just to reuse its class.
-   When moving a class, remove its old import and suite entry; keep exactly one registration
-   across the regular CI suites, without duplicating its existing tests.
-3. **Register the class with the script. Never edit a suite list by hand, and never append to
+**2. Needs a live OpenSearch cluster? → `OpenSearchUpgradeSuite`,** which runs under the
+`opensearch-upgrade` profile. Stop here.
+
+**3. Otherwise, measure — the suite name is a result of the measurement, never an input to it.**
+The `MainSuite*` jobs run in parallel and the PR build's wall clock is set by the slowest of
+them, so new coverage goes in whichever one currently finishes first. That suite changes as
+tests are added and removed elsewhere, so **never take a suite name from this document, from a
+nearby class, from an example, or from memory** — read the current set from disk and the current
+timings from CI:
+
+```bash
+ls dotcms-integration/src/test/java/com/dotcms/MainSuite*.java   # the set changes over time
+just suite-timings                                              # medians, fastest first
+```
+
+`just suite-timings` samples the most recent successful PR Check runs (3 by default — pass a
+larger number for steadier medians), keeps only `MainSuite*` jobs that themselves concluded
+successfully — which is what excludes cancelled, skipped and build-cache-short-circuited jobs —
+and prints the median runtime of each suite:
+
+```
+MainSuite    median  samples   each run (min)
+2a           25.8m       3   23, 26, 27
+1a           38.5m       3   40, 39, 38
+...
+-> register new coverage in MainSuite2a (25.8 min median)
+```
+
+Register the class in the suite that last line names, and **paste that output, together with the
+sampled run links the command prints, into the PR description** so a reviewer can check the
+choice. If the command finds no runs or no timings, it says so and exits non-zero: **report that
+and ask the developer. Do not fall back to a default, to the newest suite, or to the one an
+example happens to use.**
+
+**4. A new test method added to an existing class stays with its class.** Reusing a class does
+not require moving its registration to a faster suite: the move touches two `@SuiteClasses`
+files — which everyone appends to, and which is where suite merge conflicts come from — for a
+gain nobody has measured. Only a **new class** triggers the measurement in step 3.
+
+5. **Register the class with the script. Never edit a suite list by hand, and never append to
    the end of it:**
 
    ```bash
@@ -114,7 +120,7 @@ Whenever you add integration-test coverage:
    `org.junit.runner.*` means JUnit 4; `org.junit.jupiter.api.Test`, `ParameterizedTest`,
    `TestFactory` or `RepeatedTest` means JUnit 5; `import org.junit.*;` counts as JUnit 4 unless
    a Jupiter test-annotation import is also present), not from other `org.junit.jupiter` imports
-   such as `Assertions`; a class with both or neither is refused. With no suite argument it exits and asks for one; pick it with step 1.
+   such as `Assertions`; a class with both or neither is refused. With no suite argument it exits and asks for one; pick it with step 3.
 
    **Why not append by hand:** an append edits the last line (to add a comma) and inserts after
    it. Any two PRs that append to the same suite therefore conflict in the merge queue, and each
@@ -159,6 +165,22 @@ Verify the suite still resolves the new class:
 ```bash
 ./mvnw test-compile -pl :dotcms-integration -DskipTests
 ```
+
+#### When a new MainSuite is needed
+
+When `just suite-timings` shows every suite near-saturated — no compatible suite is meaningfully
+faster than the slowest — the shard set is full and a new `MainSuite` is due. The mechanical work
+is small and may be prepared in full: a new suite class in `com.dotcms`, its three lines in
+`.github/test-matrix.yml` (`name`, `test_class`, `stage_name`), and a measured slice of existing
+registrations moved into it so it starts balanced.
+
+**Propose it in its own PR, addressed to whoever owns CI, with the measured numbers attached —
+never bundled into the PR that just wanted to register a test.** Each matrix entry is one more
+parallel runner on every PR, and the same matrix is consumed by the merge queue, trunk, nightly,
+LTS and the OpenSearch phase sweep, so the cost is a job per pipeline per run. That is a
+concurrency and budget decision, not a code one. Once the new shard exists it will be the fastest
+suite, so step 3 will route new coverage into it on its own until it fills.
+
 
 ### The build cache can skip the tests entirely ⚠️
 
