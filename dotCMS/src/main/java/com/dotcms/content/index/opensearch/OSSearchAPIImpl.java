@@ -22,6 +22,7 @@ import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONException;
 import com.dotmarketing.util.json.JSONObject;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 import java.io.IOException;
@@ -290,49 +291,7 @@ public class OSSearchAPIImpl implements SearchAPI {
                     "You must specify a user if you are not respecting frontend roles");
         }
 
-        List<Role> roles = new ArrayList<>();
-        boolean isAdmin = false;
-        if (user != null) {
-            if (!APILocator.getRoleAPI().doesUserHaveRole(user,
-                    APILocator.getRoleAPI().loadCMSAdminRole())) {
-                roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
-            } else {
-                isAdmin = true;
-            }
-        }
-
-        final StringBuffer perms = new StringBuffer();
-        if (!isAdmin && !queryJson.has("permissions:")) {
-            final ContentletAPI contentletAPI = APILocator.getContentletAPIImpl();
-            contentletAPI.addPermissionsToQuery(perms, user, roles, respectFrontendRoles);
-            // Secondary category-permission filter: mirror the ES path
-            // (ESContentletAPIImpl.applyPermissionsToQuery). Without this the categoryperms:
-            // clause is never added under OS, so content restricted by category read permissions
-            // leaks to users who lack the category role (Phase 3 permission-filter gap).
-            contentletAPI.addCategoryPermissionsToQuery(perms, user, roles, respectFrontendRoles);
-        }
-
-        if (perms.length() > 0) {
-            try {
-                final JSONObject permissionsFilter = new JSONObject().put("query_string",
-                        new JSONObject().put("query", perms.toString().trim()));
-                JSONArray boolFilters = new JSONArray("[" + permissionsFilter + "]");
-
-                if (queryJson.has("query")) {
-                    final JSONObject currentQueryJSON =
-                            new JSONObject(queryJson.getJSONObject("query").toString());
-                    boolFilters =
-                            new JSONArray("[" + permissionsFilter + "," + currentQueryJSON + "]");
-                }
-
-                final JSONObject filteredJSON = new JSONObject().put("bool",
-                        new JSONObject().put("must", new JSONObject().put("bool",
-                                new JSONObject().put("must", boolFilters))));
-                queryJson.put("query", filteredJSON);
-            } catch (final JSONException e) {
-                throw new DotStateException("Unable to apply permissions to OS query.", e);
-            }
-        }
+        applyPermissionsFilter(queryJson, user, respectFrontendRoles);
 
         // Override pagination from parameters
         try {
@@ -488,5 +447,70 @@ public class OSSearchAPIImpl implements SearchAPI {
         return indices.working().orElseThrow(
                 () -> new com.dotmarketing.exception.DotRuntimeException(
                         "No working index found for OS search"));
+    }
+
+    /**
+     * Adds the permission filter to a raw query for every non-administrator user, combining it
+     * with the query the caller sent. Administrators are left untouched.
+     *
+     * <p>The filter is built on the server side from the user's roles. Nothing in the request
+     * body takes part in the decision, so a caller cannot influence whether it is applied.</p>
+     *
+     * @param queryJson            the raw query body, modified in place
+     * @param user                 the user the search runs as
+     * @param respectFrontendRoles whether front-end roles count towards the permission check
+     * @return the same {@code queryJson}, so callers and tests can read the body that will be sent
+     * @throws DotDataException if the roles of the user cannot be loaded
+     * @throws DotSecurityException if the permission clauses cannot be built for the user
+     */
+    @VisibleForTesting
+    static JSONObject applyPermissionsFilter(final JSONObject queryJson, final User user,
+            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+
+        List<Role> roles = new ArrayList<>();
+        boolean isAdmin = false;
+        if (user != null) {
+            if (!APILocator.getRoleAPI().doesUserHaveRole(user,
+                    APILocator.getRoleAPI().loadCMSAdminRole())) {
+                roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
+            } else {
+                isAdmin = true;
+            }
+        }
+
+        final StringBuffer perms = new StringBuffer();
+        if (!isAdmin) {
+            final ContentletAPI contentletAPI = APILocator.getContentletAPIImpl();
+            contentletAPI.addPermissionsToQuery(perms, user, roles, respectFrontendRoles);
+            // Secondary category-permission filter: mirror the ES path
+            // (ESContentletAPIImpl.applyPermissionsToQuery). Without this the categoryperms:
+            // clause is never added under OS, so content restricted by category read permissions
+            // leaks to users who lack the category role (Phase 3 permission-filter gap).
+            contentletAPI.addCategoryPermissionsToQuery(perms, user, roles, respectFrontendRoles);
+        }
+
+        if (perms.length() > 0) {
+            try {
+                final JSONObject permissionsFilter = new JSONObject().put("query_string",
+                        new JSONObject().put("query", perms.toString().trim()));
+                JSONArray boolFilters = new JSONArray("[" + permissionsFilter + "]");
+
+                if (queryJson.has("query")) {
+                    final JSONObject currentQueryJSON =
+                            new JSONObject(queryJson.getJSONObject("query").toString());
+                    boolFilters =
+                            new JSONArray("[" + permissionsFilter + "," + currentQueryJSON + "]");
+                }
+
+                final JSONObject filteredJSON = new JSONObject().put("bool",
+                        new JSONObject().put("must", new JSONObject().put("bool",
+                                new JSONObject().put("must", boolFilters))));
+                queryJson.put("query", filteredJSON);
+            } catch (final JSONException e) {
+                throw new DotStateException("Unable to apply permissions to OS query.", e);
+            }
+        }
+
+        return queryJson;
     }
 }

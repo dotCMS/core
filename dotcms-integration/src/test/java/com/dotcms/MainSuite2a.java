@@ -18,6 +18,8 @@ import com.dotcms.inference.rest.InferenceSiteIsolationTest;
 import com.dotcms.inference.rest.InferenceSiteResolutionTest;
 import com.dotcms.inference.rest.InferenceTestsAreRegisteredTest;
 import com.dotcms.junit.MainBaseSuite;
+import com.dotcms.publisher.pusher.AuthCredentialPushPublishUtilTest;
+import com.dotcms.rest.api.v1.authentication.ApiTokenResourceTest;
 import com.dotcms.rendering.js.JsModuleImportIntegrationTest;
 import com.dotcms.rendering.js.viewtools.UserJsViewToolTest;
 import com.dotcms.rendering.velocity.viewtools.CMSUserToolTest;
@@ -114,6 +116,8 @@ import org.junit.runners.Suite.SuiteClasses;
         GenericBundleActivatorIntegrationTest.class,
         com.dotcms.enterprise.publishing.remote.handler.OSGIHandlerTest.class,
         com.dotcms.publisher.receiver.BundlePluginDeploymentTest.class,
+        ApiTokenResourceTest.class,
+        AuthCredentialPushPublishUtilTest.class,
         com.dotcms.publishing.remote.RemoteReceiverRelationshipsFilterTest.class,
         com.dotcms.rest.ClusterResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.cluster.ClusterNodesResourceIntegrationTest.class,

@@ -7,7 +7,6 @@
 <%@page import="com.dotcms.publisher.endpoint.bean.factory.PublishingEndPointFactory"%>
 <%@ page import="com.dotcms.publisher.pusher.PushPublisher" %>
 <%@page import="java.time.LocalDate"%>
-<%@page import="java.time.temporal.ChronoUnit"%>
 <%@page import="java.time.Instant"%>
 <%@page import="java.time.format.DateTimeFormatter"%>
 <%@page import="com.liferay.portal.util.PortalUtil"%>
@@ -244,11 +243,35 @@
 		}
 	}
 
-	function setToken(token){
+	var requestedExpiration = null;
+
+	function setToken(token, expiresDate){
 		authKey = dojo.byId("authKey");
 		authKey.value = token;
 
+		showTokenExpiration(expiresDate);
 		showGetToken(false);
+	}
+
+	// The remote server issues the token with its own maximum lifetime, which this server cannot
+	// know beforehand, so the date entered above is a request. Report the date that came back.
+	function showTokenExpiration(expiresDate){
+		var info = dojo.byId("tokenExpiresInfo");
+		if (!info) {
+			return;
+		}
+		if (!expiresDate) {
+			info.innerHTML = "";
+			return;
+		}
+		var granted = new Date(expiresDate);
+		var capped = requestedExpiration != null
+				&& granted.getTime() < requestedExpiration.getTime() - 60000;
+		var label = capped ?
+				"<%= LanguageUtil.get(pageContext, "publisher_Endpoints_token_expires_capped") %>" :
+				"<%= LanguageUtil.get(pageContext, "publisher_Endpoints_token_expires") %>";
+		info.innerHTML = label + " " + granted.toLocaleString();
+		info.style.color = capped ? "#b35c00" : "";
 	}
 
 	function showErrorGettingToken(e){
@@ -263,6 +286,7 @@
 			var expires = dijit.byId('expiresDate').value;
 
 			var timeDiff = expires.getTime() - nowsers.getTime();
+			requestedExpiration = expires;
 
 			if(timeDiff<1000){
 				alert("you cannot request a key in the past");
@@ -294,7 +318,7 @@
 					"Content-Type": "application/json"
 				},
 				load : function(data){
-					setToken(data.entity.jwt);
+					setToken(data.entity.jwt, data.entity.token ? data.entity.token.expiresDate : null);
 				},
 				error : function(error) {
 					console.error("Error requesting a new APIKey", error);
@@ -442,6 +466,7 @@
 				</dt>
 				<dd>
 					<textarea dojoType="dijit.form.SimpleTextarea" name="authKey" id="authKey" style="width:300px;height:105px;"><%=currentEndpoint.hasAuthKey() ? PublicEncryptionFactory.decryptString( currentEndpoint.getAuthKey().toString())  : "" %></textarea>
+					<div id="tokenExpiresInfo" class="hint-text" style="margin-top:5px;"></div>
 					<div id= "showGetTokenSpan" style="text-align:right">
 						<button dojoType="dijit.form.Button" onClick="showGetToken(true)" id="getToken" class="dijitButtonFlat">Get Token</button>
 					</div>
@@ -495,7 +520,7 @@
 								<td>
 									<input dojoType="dijit.form.DateTextBox" type="text"
 										   name="expiresDate" id="expiresDate"
-										   value='<%=DateTimeFormatter.ofPattern("uuuu-MM-dd").format(LocalDate.now().plus(3, ChronoUnit.YEARS))%>'/>
+										   value='<%=DateTimeFormatter.ofPattern("uuuu-MM-dd").format(LocalDate.now().plusDays(364))%>'/>
 								</td>
 							</tr>
 
