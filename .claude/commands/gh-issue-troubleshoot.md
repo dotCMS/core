@@ -325,7 +325,7 @@ For each new test class created:
    suite by hand. It adds a fully qualified entry at the name-derived position with a trailing
    comma (no import); appending to the end of the list causes merge-queue conflicts.
 
-4. **Confirm** in the output: "Added `NewTestClass` to `<SuiteFileName>.java`."
+4. **Confirm** in the output: "registered <fully.qualified.NewTestClass> in <SuiteFileName>".
 
 If the test class package cannot be determined, warn and skip this step rather than guessing.
 

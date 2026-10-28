@@ -4,18 +4,14 @@ name: 'IT Registration — PR validate'
 # compiles fine and is silently never run (green build, zero coverage); see CLAUDE.md and
 # docs/testing/INTEGRATION_TESTS.md. Classes that are intentionally unregistered are listed in
 # dotcms-integration/unregistered-tests.allowlist. Register with `just add-it-test`.
-# Standalone and dependency-free (Python 3 stdlib), seconds to run, no build or stack needed.
+# Standalone and dependency-free (Python 3 stdlib), about 11 s with the sparse checkout below, no
+# build or stack needed. There is deliberately no `paths` filter: a required check that is skipped
+# by a filter never reports, which blocks the PR. merge_group lets it be required in the queue.
 
 on:
   pull_request:
     branches: [main]
-    paths:
-      - 'dotcms-integration/src/test/**'
-      - 'dotcms-integration/unregistered-tests.allowlist'
-      - 'scripts/it-suites.py'
-      - 'scripts/it-suites.test.py'
-      - '.github/test-matrix.yml'
-      - '.github/workflows/cicd_pr_it-registration.yml'
+  merge_group:
 
 permissions:
   contents: read

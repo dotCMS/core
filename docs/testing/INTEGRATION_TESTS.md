@@ -112,8 +112,9 @@ Whenever you add integration-test coverage:
    a JUnit 4 test in the JUnit 5 suite (`Junit5Suite1`) or the reverse, because that would be
    skipped silently. The framework is read from the test-annotation imports (`org.junit.Test` or
    `org.junit.runner.*` means JUnit 4; `org.junit.jupiter.api.Test`, `ParameterizedTest`,
-   `TestFactory` or `RepeatedTest` means JUnit 5), not from other `org.junit.jupiter` imports such
-   as `Assertions`; a class with both or neither is refused. With no suite argument it exits and asks for one; pick it with step 1.
+   `TestFactory` or `RepeatedTest` means JUnit 5; `import org.junit.*;` counts as JUnit 4 unless
+   a Jupiter test-annotation import is also present), not from other `org.junit.jupiter` imports
+   such as `Assertions`; a class with both or neither is refused. With no suite argument it exits and asks for one; pick it with step 1.
 
    **Why not append by hand:** an append edits the last line (to add a comma) and inserts after
    it. Any two PRs that append to the same suite therefore conflict in the merge queue, and each
@@ -124,13 +125,34 @@ Whenever you add integration-test coverage:
    `ContentRelationshipsResourceIntegrationTest`) still land in the same spot and conflict; rebase
    and re-run the tool for the later one.
 
+   A mid-list insert also runs your test before every existing test that follows it, while an
+   append would have run it last. If a later test depends on leftover state, an order-dependent
+   failure in it can surface in your PR; that is a real ordering bug to fix, not a reason to append.
+
+   **Ordered head blocks.** Some suites open a run of entries with a comment block (for example
+   "Data-scanning tests run FIRST on purpose" in `MainSuite1a`, `MainSuite2a` and `MainSuite3a`,
+   and the reindex block in `MainSuite2b`). Those tests are first because they walk all content
+   created so far, so each leftover from an earlier test makes them slower. The tool never inserts
+   next to an entry in such a group (two or more comment lines, then entries up to the next blank
+   line), so an ordinary test cannot end up between the header and its entries. Adding a test that
+   really does a full scan or full reindex to one of these blocks is the single case where you edit
+   a suite by hand: add one fully qualified `Foo.class,` line inside the block.
+
+   **Moving a test** between suites: delete its old entry by hand (removing is safe, only inserts
+   are conflict-prone), then run `just add-it-test` for the new suite.
+
    A CI check (`python3 scripts/it-suites.py check`, workflow `cicd_pr_it-registration.yml`)
    fails a PR when a concrete test class with `@Test` methods under `dotcms-integration/src/test/java`
    is in none of the suites in `.github/test-matrix.yml`. Classes that are intentionally unregistered
    (helpers, classes run elsewhere) go in `dotcms-integration/unregistered-tests.allowlist` with a
-   reason; that file was seeded with the classes already unregistered when the check was added, so
-   treat each entry as a test that probably never runs and remove it when you register the class. The check also fails on an allow-list entry whose class is
-   now registered or no longer exists, so the list can only shrink.
+   reason, one per line as `fully.qualified.ClassName  # reason`; that file was seeded with the
+   classes already unregistered when the check was added, so treat each entry as a test that
+   probably never runs. `just add-it-test` removes the class's allow-list line when you register it.
+   The check also fails on an allow-list entry whose class is now registered or no longer exists,
+   so the list can only shrink. When it fails, it prints a ready-to-run `just add-it-test` line per
+   missing class. A suite that is not `MainSuite*` or `Junit5Suite*` (for example
+   `OpenSearchUpgradeSuite`) is purpose-built: the tool warns when you target one and does not list
+   it as a choice.
 
 Verify the suite still resolves the new class:
 
