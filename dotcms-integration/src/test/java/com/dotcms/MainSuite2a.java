@@ -80,6 +80,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.contentlet.business.ContentletAPITest.class,
         com.dotmarketing.portlets.contentlet.model.ContentletIntegrationTest.class,
         com.dotmarketing.portlets.contentlet.transform.BinaryToMapTransformerTest.class,
+        com.dotcms.content.elasticsearch.business.ContentletPermissionReplacementIntegrationTest.class,
         com.dotmarketing.portlets.contentlet.transform.ContentletTransformerTest.class,
         com.dotmarketing.portlets.contentlet.transform.WidgetViewStrategyTest.class,
         com.dotmarketing.portlets.contentlet.ajax.ContentletAjaxTest.class,
@@ -121,8 +122,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rendering.velocity.WidgetRendererTest.class,
         CMSUserToolTest.class,
         UserJsViewToolTest.class,
-        com.dotcms.rest.BundleResourceDeleteResponseTest.class,
-        com.dotcms.content.elasticsearch.business.ContentletPermissionReplacementIntegrationTest.class
+        com.dotcms.rest.BundleResourceDeleteResponseTest.class
 })
 public class MainSuite2a {
 
