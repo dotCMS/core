@@ -19789,17 +19789,21 @@ paths:
   /v1/users/filter:
     get:
       description: "Returns a list of dotCMS users based on specified search criteria\
-        \ with pagination support. Each item is the user's data map. When `includeRoles=true`\
-        \ is passed, each item additionally carries a `roles` array listing the user's\
-        \ directly assigned roles as `{id, name, roleKey}` objects (`roleKey` may\
-        \ be null for roles created without a key); roles held through the role hierarchy\
-        \ and the user's personal role are not included. Requesting roles requires\
-        \ being a CMS Administrator or having access to both the Roles and Users portlets\
-        \ (403 otherwise). Without the flag the payload is unchanged. Results can\
-        \ be restricted to users directly holding any of the given roles through `roleKey`\
-        \ and/or `roleId`; filtering by role requires that same privilege. The `admin`\
-        \ flag on each item is only returned to callers with that same privilege;\
-        \ for anyone else it is left out."
+        \ with pagination support. Each item is the user's data map. CMS Administrators\
+        \ and users with access to the Users portlet receive the complete map; any\
+        \ other back-end user receives only the directory fields of each user (`userId`,\
+        \ `id`, `firstName`, `lastName`, `fullName`, `name`, `emailAddress`, `emailaddress`,\
+        \ `gravitar`, `type`). When `includeRoles=true` is passed, each item additionally\
+        \ carries a `roles` array listing the user's directly assigned roles as `{id,\
+        \ name, roleKey}` objects (`roleKey` may be null for roles created without\
+        \ a key); roles held through the role hierarchy and the user's personal role\
+        \ are not included. Requesting roles requires being a CMS Administrator or\
+        \ having access to both the Roles and Users portlets (403 otherwise). Without\
+        \ the flag the payload is unchanged. Results can be restricted to users directly\
+        \ holding any of the given roles through `roleKey` and/or `roleId`; filtering\
+        \ by role requires that same privilege. The `admin` flag on each item is only\
+        \ returned to callers with that same privilege; for anyone else it is left\
+        \ out."
       operationId: filterUsers
       parameters:
       - description: "Filter users by user ID, first name, last name, email address,\
