@@ -66,7 +66,8 @@ import {
     DotEditContentOpenOptions,
     DotEditContentRequest,
     DotLegacyScreenEvent,
-    DotLegacyScreenRequest
+    DotLegacyScreenRequest,
+    loadDotLegacyEditorSidePanel
 } from '@dotcms/edit-content';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
@@ -2472,11 +2473,17 @@ describe('EditEmaEditorComponent', () => {
                     });
                 });
 
+                /**
+                 * The translate screen is the legacy editor's create form pre-filled from the page,
+                 * so it opens in the legacy editor panel, which handles the workflow wizard, compare
+                 * and the unsaved-changes prompt; the generic legacy-screen panel does not (#38303).
+                 */
                 describe('translate page', () => {
                     const PAGE = {
                         identifier: 'test-page-123',
                         inode: 'inode-123',
-                        title: 'Translated page'
+                        title: 'Translated page',
+                        contentType: 'htmlpageasset'
                     } as unknown as DotCMSPage;
 
                     /** The legacy translate screen's URL, exactly as the page editor's dialog built it. */
@@ -2514,72 +2521,106 @@ describe('EditEmaEditorComponent', () => {
                         spectator.detectChanges();
                     };
 
-                    it('should open the legacy translate screen in a legacy-screen panel', () => {
-                        translate();
+                    /** The legacy editor panel the translation opened in: the one given a create screen. */
+                    const translatePanel = (): OpenedPanel => {
+                        const panel = sidePanels
+                            .filter((opened) => 'createUrl' in (opened.config.inputs ?? {}))
+                            .at(-1);
 
-                        expect(legacyScreenRequest()).toEqual({
-                            url: translateUrl(),
-                            title: 'Translated page'
-                        });
-                        expect(inputOf(legacyScreenPanel(), 'request')).toEqual(
-                            legacyScreenRequest()
+                        expect(
+                            panel,
+                            'the editor opens the translation in the legacy editor panel'
+                        ).toBeDefined();
+
+                        return panel as OpenedPanel;
+                    };
+
+                    /** Emits one of the translate panel's outputs, as the legacy editor would. */
+                    const emit = <T>(name: string, value?: T): void => {
+                        const handler = translatePanel().config.outputs?.[name] as
+                            | ((value?: T) => void)
+                            | undefined;
+
+                        expect(handler, `the translate panel binds ${name}`).toEqual(
+                            expect.any(Function)
                         );
+                        handler?.(value);
+                        spectator.detectChanges();
+                    };
+
+                    it('should open the legacy editor panel on the translate screen', async () => {
+                        translate();
+                        const panel = translatePanel();
+
+                        expect(await panel.component).toBe(await loadDotLegacyEditorSidePanel());
+                        expect(inputOf(panel, 'request')).toEqual({
+                            mode: 'new',
+                            contentType: 'htmlpageasset',
+                            languageId: 2,
+                            title: 'Translated page',
+                            siteId: siteId(),
+                            portletId: 'edit-page'
+                        });
+                        expect(inputOf(panel, 'createUrl')).toBe(translateUrl());
                     });
 
-                    it.each([NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED, NG_CUSTOM_EVENTS.SAVE_PAGE])(
-                        'should load the new URL and language on %s when the translation changed the URL',
-                        (name) => {
-                            // A page with no URL map of its own, so the referer names the URL.
-                            pageApi().pageLoad({
-                                clientHost: 'http://localhost:3000',
-                                url: 'index',
-                                language_id: '2',
-                                [PERSONA_KEY]: DEFAULT_PERSONA.identifier
-                            });
-                            translate();
-                            const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
+                    it('should not open the generic legacy-screen panel', () => {
+                        translate();
 
-                            sendLegacyEvent({
-                                name,
-                                payload: {
-                                    htmlPageReferer:
-                                        '/new-url-here?com.dotmarketing.htmlpage.language=1'
-                                }
-                            });
+                        expect(legacyScreenRequest()).toBeNull();
+                    });
 
-                            expect(pageLoadSpy).toHaveBeenCalledWith({
-                                url: '/new-url-here',
-                                language_id: '1'
-                            });
-                        }
-                    );
-
-                    it('should load only the new language when the translation kept the URL', () => {
-                        pageApi().pageLoad({
-                            clientHost: 'http://localhost:3000',
-                            url: 'test-url',
-                            language_id: '1',
-                            [PERSONA_KEY]: DEFAULT_PERSONA.identifier
-                        });
+                    it('should load the saved translation at its URL and in its language, and stay open', () => {
                         translate();
                         const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
 
-                        sendLegacyEvent({
-                            name: NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED,
-                            payload: {
-                                htmlPageReferer: '/test-url?com.dotmarketing.htmlpage.language=2'
-                            }
-                        });
+                        emit(
+                            'saved',
+                            createFakeContentlet({ languageId: 2, url: '/translated-page' })
+                        );
 
-                        expect(pageLoadSpy).toHaveBeenCalledWith({ language_id: '2' });
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            language_id: '2',
+                            url: '/translated-page'
+                        });
+                        expect(translatePanel().ref.isClosed).toBe(false);
                     });
 
-                    it('should close the translate screen when it closes itself', () => {
+                    it('should close the panel and load the page the editor names after the first save', () => {
                         translate();
+                        const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
 
-                        sendLegacyEvent({ name: 'close' });
+                        emit('pageEditorRequested', { url: '/translated-page', languageId: 2 });
 
-                        expect(legacyScreenRequest()).toBeNull();
+                        expect(translatePanel().ref.isClosed).toBe(true);
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/translated-page',
+                            language_id: '2'
+                        });
+                    });
+
+                    it('should reload the page when the panel closes after a save', () => {
+                        translate();
+                        emit(
+                            'saved',
+                            createFakeContentlet({ languageId: 2, url: '/translated-page' })
+                        );
+                        const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+
+                        translatePanel().ref.close();
+
+                        expect(pageReloadSpy).toHaveBeenCalledTimes(1);
+                    });
+
+                    it('should leave the page alone when the panel closes without a save', () => {
+                        translate();
+                        const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
+                        const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+
+                        translatePanel().ref.close();
+
+                        expect(pageReloadSpy).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
                     });
                 });
 
