@@ -4,6 +4,8 @@ import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.Visibility;
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.dotcms.business.WrapInTransaction;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.exception.DotDataException;
@@ -63,6 +65,21 @@ public class RoleAPIImpl implements RoleAPI {
 	@Override
 	public Role loadRoleById(final String roleId) throws DotDataException {
 		return roleFactory.getRoleById(roleId);
+	}
+
+	@CloseDBIfOpened
+	@Override
+	public Role loadRoleByKeyOrId(final String keyOrId) throws DotDataException {
+		if (!UtilMethods.isSet(keyOrId)) {
+			return null;
+		}
+		final boolean idFirst = UUIDUtil.isUUID(keyOrId);
+		final Role first = idFirst ? roleFactory.getRoleById(keyOrId) : roleFactory.loadRoleByKey(keyOrId);
+		if (null != first && UtilMethods.isSet(first.getId())) {
+			return first;
+		}
+		final Role second = idFirst ? roleFactory.loadRoleByKey(keyOrId) : roleFactory.getRoleById(keyOrId);
+		return null != second && UtilMethods.isSet(second.getId()) ? second : null;
 	}
 
 	@Override
