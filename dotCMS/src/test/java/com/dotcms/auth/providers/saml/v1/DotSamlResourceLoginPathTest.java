@@ -31,7 +31,7 @@ import static org.mockito.Mockito.when;
 /**
  * Unit tests for the SAML callback's post-login destination decision,
  * {@link DotSamlResource#resolveLoginPath(HttpServletRequest, HttpSession, IdentityProviderConfiguration)}
- * (private issue #879).
+ * .
  *
  * The callback follows the RelayState, then the session's saved destination, then the configured
  * {@code redirect.after.login}, then {@code /dotAdmin/}. The first two can carry values a visitor controls, so they
@@ -136,8 +136,7 @@ public class DotSamlResourceLoginPathTest {
     }
 
     /**
-     * Given Scenario: no RelayState, and an unsafe destination saved in the session (the original request's
-     * referrer is attacker controlled), with {@code redirect.after.login} configured
+     * Given Scenario: no RelayState, and an unsafe destination saved in the session (the original request's referrer), with {@code redirect.after.login} configured
      * ExpectedResult: the session value is dropped and the configured page is used
      */
     @Test
