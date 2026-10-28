@@ -114,14 +114,17 @@ public class MaintenanceToolsAccessIntegrationTest {
     /**
      * Removes a user created for these tests. Deleting a user looks up the role of the system user, which it reaches
      * only while the {@link Role#SYSTEM} role is in the role cache, and the previous deletion emptied that cache, so the
-     * role is loaded back first.
+     * role is loaded back first. A failure is logged so the rest of the cleanup still runs.
      *
      * @param user the user to remove; {@code null} is ignored
-     * @throws DotDataException if the role cannot be loaded
      */
-    private static void removeUser(final User user) throws DotDataException {
+    private static void removeUser(final User user) {
         if (null != user) {
-            APILocator.getRoleAPI().loadRoleByKey(Role.SYSTEM);
+            try {
+                APILocator.getRoleAPI().loadRoleByKey(Role.SYSTEM);
+            } catch (final DotDataException e) {
+                Logger.error(MaintenanceToolsAccessIntegrationTest.class, "Unable to load the System role", e);
+            }
             UserDataGen.remove(user);
         }
     }

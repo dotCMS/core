@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * Unit tests for {@link SessionTokenUtil}. Verifies that the REST migration of
  * the Logged Users HMAC scheme produces byte-for-byte identical tokens to the
- * legacy DWR implementation formerly in {@code UserSessionAjax}, so existing clients see
+ * legacy DWR implementation of the Logged Users tab, so existing clients see
  * no regression in token shape or length.
  *
  * @author hassandotcms
@@ -61,7 +61,7 @@ class SessionTokenUtilTest {
         final String legacy = legacyObfuscate(SESSION_ID, SECRET);
         final String modern = SessionTokenUtil.obfuscateSessionId(SESSION_ID, SECRET);
         assertEquals(legacy, modern,
-                "REST utility must produce the same token as the original UserSessionAjax code");
+                "REST utility must produce the same token as the legacy DWR implementation");
     }
 
     /**
@@ -104,8 +104,8 @@ class SessionTokenUtilTest {
     }
 
     /**
-     * Reference implementation copied verbatim from the pre-refactor
-     * {@code UserSessionAjax#obfuscateSessionId}. Lives only in this test to pin the
+     * Reference implementation copied verbatim from the legacy DWR implementation of the
+     * Logged Users tab. Lives only in this test to pin the
      * wire format. If a future refactor changes the output, this test will fail.
      */
     private static String legacyObfuscate(final String sessionId, final String secretKey)

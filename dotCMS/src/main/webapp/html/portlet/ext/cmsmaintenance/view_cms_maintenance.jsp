@@ -802,10 +802,12 @@ function killSessionById(sessionToken) {
 				invalidateButtonElem.set('disabled',true);
 				showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-killed"))%>');
 			} else {
+				console.error("Session invalidation answered " + response.status);
 				showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-notkilled"))%>');
 			}
 		})
-		.catch(function() {
+		.catch(function(error) {
+			console.error(error);
 			dojo.style(invalidateButtonElem.domNode,{display:"block",visibility:"visible"});
 			dojo.query('#killSessionProgress-'+sessionToken).style({display:"none"});
 			showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-notkilled"))%>');
@@ -819,10 +821,12 @@ function killAllSessions() {
 				showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-killed"))%>');
 				loadUsers();
 			} else {
+				console.error("Session invalidation answered " + response.status);
 				showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-notkilled"))%>');
 			}
 		})
-		.catch(function() {
+		.catch(function(error) {
+			console.error(error);
 			showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-tab-notkilled"))%>');
 		});
 }
@@ -901,7 +905,8 @@ function loadUsers() {
 				}
 			}
 		})
-		.catch(function() {
+		.catch(function(error) {
+			console.error(error);
 			dojo.query('#loggedUsersProgress').style({display:"none"});
 			showDotCMSSystemMessage('<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext,"logged-users-reload-error"))%>');
 		});
