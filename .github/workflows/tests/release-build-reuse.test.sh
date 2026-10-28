@@ -1095,6 +1095,10 @@ block_has_if "$MAVEN_JOB" delete-built-artifacts-from-cache "release-build != 't
   "a release build does not delete its release coordinates (the caller verifies them afterwards)"
 block_has_if "$MAVEN_JOB" save-cache-maven "release-build != 'true'" \
   "a release build does not write the shared dependency cache"
+for step in delete-built-artifacts-from-cache save-cache-maven save-cache-maven-plugins; do
+  block_has_if "$MAVEN_JOB" "$step" "cache-matched-key == '' \|\| \(github.event_name != 'pull_request' && github.event_name != 'merge_group'\)" \
+    "$step: PR and merge-queue runs save only when they restored nothing (ref-scoped copies evict main's entry)"
+done
 if [[ "$(input_default "$MAVEN_JOB" needs-maven-repo)" == "true" ]]; then
   ok "needs-maven-repo defaults to true (shared callers keep their dependencies)"
 else

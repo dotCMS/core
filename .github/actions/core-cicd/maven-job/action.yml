@@ -699,9 +699,17 @@ runs:
     # coordinates would break the caller's check that they were installed, and a
     # cache entry written from a release build is how release coordinates got into
     # the shared cache in the first place.
+    #
+    # Pull request and merge-queue runs save only when they restored nothing at all.
+    # Their entries are scoped to their own ref, so no other PR can read them, and at
+    # ~690 MB each they filled the 10 GB repository cache within the hour and evicted
+    # the main-branch entry that every run does read (2026-10-28: builds restoring it
+    # scanned projects in 1-2 s and ran Maven in 5-8 min; cold ones took 76-127 s and
+    # ~18 min). A run that restored main's entry under an older pom hash just downloads
+    # the difference; main's next build (nightly) writes the new key.
     - id: delete-built-artifacts-from-cache
       name: Delete Built Artifacts From Cache
-      if: ${{ inputs.generate-artifacts == 'true' && inputs.release-build != 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' }}
+      if: ${{ inputs.generate-artifacts == 'true' && inputs.release-build != 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' && (steps.restore-cache-maven.outputs.cache-matched-key == '' || (github.event_name != 'pull_request' && github.event_name != 'merge_group')) }}
       shell: bash
       run: |
         # Whatever this build installed, under any version (see Stage Built Artifacts for
@@ -721,17 +729,19 @@ runs:
 
     - id: save-cache-maven
       name: Save Maven Repository Cache
-      if: ${{ inputs.generate-artifacts == 'true' && inputs.release-build != 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' }}
+      if: ${{ inputs.generate-artifacts == 'true' && inputs.release-build != 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' && (steps.restore-cache-maven.outputs.cache-matched-key == '' || (github.event_name != 'pull_request' && github.event_name != 'merge_group')) }}
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.m2/repository
         key: ${{ steps.restore-cache-maven.outputs.cache-primary-key }}
 
     # Jobs that start together on a miss all reach this step; the first reserves the key and
-    # the rest log a warning and carry on, so a lost race does not fail a job.
+    # the rest log a warning and carry on, so a lost race does not fail a job. Pull request
+    # and merge-queue runs that restored an older entry skip the save, for the same reason
+    # as Save Maven Repository Cache.
     - id: save-cache-maven-plugins
       name: Save Maven Plugin Cache
-      if: ${{ inputs.needs-maven-repo != 'true' && steps.restore-cache-maven-plugins.outputs.cache-hit != 'true' }}
+      if: ${{ inputs.needs-maven-repo != 'true' && steps.restore-cache-maven-plugins.outputs.cache-hit != 'true' && (steps.restore-cache-maven-plugins.outputs.cache-matched-key == '' || (github.event_name != 'pull_request' && github.event_name != 'merge_group')) }}
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.m2/repository
