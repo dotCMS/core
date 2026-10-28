@@ -1,5 +1,4 @@
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
-import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { Injector } from '@angular/core';
@@ -11,7 +10,6 @@ import { DotMessageService } from '@dotcms/data-access';
 import { EditorToolbarStore } from './editor-toolbar.store';
 import { ToolbarComponent } from './toolbar.component';
 
-import { ContentletEditUrlService } from '../../services/contentlet-edit-url.service';
 import { EditorModalService } from '../../services/editor-modal.service';
 import { EditorPopoverService } from '../../services/editor-popover.service';
 import { EditorStore } from '../../store/editor.store';
@@ -172,10 +170,6 @@ describe('ToolbarComponent — editing an embedded contentlet', () => {
             { provide: DotMessageService, useValue: { get: (key: string) => key } },
             { provide: EditorPopoverService, useValue: { isOpen: () => false, toggle: vi.fn() } },
             { provide: EditorModalService, useValue: {} },
-            {
-                provide: ContentletEditUrlService,
-                useValue: { resolveEditUrl: () => of('/dotAdmin/#/content/embedded-inode') }
-            },
             { provide: ConfirmationService, useValue: { confirm } },
             {
                 provide: EditorStore,
