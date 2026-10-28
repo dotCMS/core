@@ -12,6 +12,7 @@ import com.dotcms.mock.response.MockHttpStatusResponse;
 import com.dotcms.mock.response.MockHttpWriterCaptureResponse;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.UserAPI;
+import com.liferay.portal.model.User;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -361,13 +362,22 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
     /**
      * Whether the servlet resolved the request to an actual user. The servlet leaves the id of the
      * user it resolved on the request; the anonymous user, or no id at all, means the credential
-     * the request carried was not accepted.
+     * the request carried was not accepted. A caller identified by a logged-in session gets its user
+     * from the session, which leaves the user itself on the request ({@code WebKeys.USER}) but, on
+     * this release line, not its id, so the user on the request counts as well.
      *
      * @param request the request after the servlet ran
      * @return true when a real user was resolved
      */
     static boolean resolvedToUser(final HttpServletRequest request) {
-        final Object userId = request.getAttribute(com.liferay.portal.util.WebKeys.USER_ID);
+        if (isRealUserId(request.getAttribute(com.liferay.portal.util.WebKeys.USER_ID))) {
+            return true;
+        }
+        final Object user = request.getAttribute(com.liferay.portal.util.WebKeys.USER);
+        return user instanceof User && isRealUserId(((User) user).getUserId());
+    }
+
+    private static boolean isRealUserId(final Object userId) {
         return userId instanceof String && UtilMethods.isSet((String) userId)
                 && !UserAPI.CMS_ANON_USER_ID.equals(userId);
     }

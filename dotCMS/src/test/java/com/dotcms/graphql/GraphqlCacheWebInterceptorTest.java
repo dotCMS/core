@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotmarketing.business.UserAPI;
+import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.Test;
@@ -114,6 +115,29 @@ public class GraphqlCacheWebInterceptorTest {
 
         when(request.getAttribute(WebKeys.USER_ID)).thenReturn("dotcms.org.1");
         assertTrue(GraphqlCacheWebInterceptor.resolvedToUser(request));
+    }
+
+    /**
+     * Method to test: {@link GraphqlCacheWebInterceptor#resolvedToUser(HttpServletRequest)}
+     * Given Scenario: a caller identified by a logged-in session, whose user is on the request but whose id is not
+     * ExpectedResult: a real user counts as resolved, the anonymous user does not
+     */
+    @Test
+    public void resolvedToUser_acceptsTheUserOnTheRequest() {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+
+        final User anonymous = mock(User.class);
+        when(anonymous.getUserId()).thenReturn(UserAPI.CMS_ANON_USER_ID);
+        when(request.getAttribute(WebKeys.USER)).thenReturn(anonymous);
+        assertFalse(GraphqlCacheWebInterceptor.resolvedToUser(request));
+
+        final User admin = mock(User.class);
+        when(admin.getUserId()).thenReturn("dotcms.org.1");
+        when(request.getAttribute(WebKeys.USER)).thenReturn(admin);
+        assertTrue(GraphqlCacheWebInterceptor.resolvedToUser(request));
+
+        when(request.getAttribute(WebKeys.USER)).thenReturn("not a user");
+        assertFalse(GraphqlCacheWebInterceptor.resolvedToUser(request));
     }
 
     /**
