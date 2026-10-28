@@ -13,6 +13,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.ajax.DwrWebContextRule;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.List;
@@ -95,6 +96,46 @@ public class UserAjaxHasUserRolesIntegrationTest {
         loggedInBackEndUserWithPortlets();
 
         new UserAjax().hasUserRoles(administrator.getUserId(), new String[] {adminRole.getId()});
+    }
+
+    /**
+     * Method to test: {@link UserAjax#hasUserRoles(String, String[])}
+     * Given Scenario: A logged-in back-end user with no portlets asks about a user id that does
+     * not exist.
+     * Expected Result: {@link DotSecurityException}, the same answer as for an existing user.
+     */
+    @Test(expected = DotSecurityException.class)
+    public void plainBackEndUser_checkingUnknownUser_isRejected() throws Exception {
+        loggedInBackEndUserWithPortlets();
+
+        new UserAjax().hasUserRoles("user-id-" + UUIDGenerator.generateUuid(), new String[] {adminRole.getId()});
+    }
+
+    /**
+     * Method to test: {@link UserAjax#hasUserRoles(String, String[])}
+     * Given Scenario: A logged-in back-end user with the Roles portlet but not the Users portlet
+     * checks another user's roles.
+     * Expected Result: {@link DotSecurityException}: both portlets are required.
+     */
+    @Test(expected = DotSecurityException.class)
+    public void rolesPortletOnly_checkingAnotherUser_isRejected() throws Exception {
+        loggedInBackEndUserWithPortlets("roles");
+
+        new UserAjax().hasUserRoles(administrator.getUserId(), new String[] {adminRole.getId()});
+    }
+
+    /**
+     * Method to test: {@link UserAjax#hasUserRoles(String, String[])}
+     * Given Scenario: A logged-in administrator checks another user's roles.
+     * Expected Result: the answer for that user.
+     */
+    @Test
+    public void administrator_checkingAnotherUser_getsTheAnswer() throws Exception {
+        final User plain = loggedInBackEndUserWithPortlets();
+        dwrContext.loginAs(administrator);
+
+        assertTrue(new UserAjax().hasUserRoles(plain.getUserId(), new String[] {backEndRole.getId()}));
+        assertFalse(new UserAjax().hasUserRoles(plain.getUserId(), new String[] {adminRole.getId()}));
     }
 
     /**

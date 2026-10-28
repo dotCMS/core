@@ -1,7 +1,9 @@
 package com.dotcms.rest.api.v1.system.role;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -21,6 +23,8 @@ import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.util.SecurityLogger;
 import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -44,6 +48,7 @@ class RoleResourceCheckRolesTest {
     private final RoleAPI roleAPI = mock(RoleAPI.class);
     private final LayoutAPI layoutAPI = mock(LayoutAPI.class);
     private final User caller = mock(User.class);
+    private final List<String> securityLog = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -93,16 +98,34 @@ class RoleResourceCheckRolesTest {
         verify(roleAPI, never()).doesUserHaveRoles(anyString(), anyList());
     }
 
+    @Test
+    void checkRoles_refusedRequest_logsTheCallerOnly() {
+        // Given a back-end caller without the role membership privilege
+        // When it checks the roles of another user
+        assertThrows(ForbiddenException.class, () -> checkRoles(false, OTHER_USER_ID));
+
+        // Then one security log line names the caller and not the requested user or roles
+        assertEquals(1, securityLog.size());
+        final String line = securityLog.get(0);
+        assertTrue(line.contains(CALLER_ID));
+        assertFalse(line.contains(OTHER_USER_ID));
+        assertFalse(line.contains("role-a"));
+    }
+
     /**
      * Calls {@link RoleResource#checkRoles} as {@link #caller}. The membership privilege is
-     * granted or withheld through the caller's access to the Roles and Users portlets.
+     * granted or withheld through the caller's access to the Roles and Users portlets, and every
+     * security log line is kept in {@link #securityLog}.
      */
     private Response checkRoles(final boolean membershipPrivilege, final String userId) throws Exception {
 
         try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class);
-                MockedStatic<SecurityLogger> ignored = mockStatic(SecurityLogger.class)) {
+                MockedStatic<SecurityLogger> securityLogger = mockStatic(SecurityLogger.class)) {
+            securityLogger.when(() -> SecurityLogger.logInfo(any(), anyString()))
+                    .thenAnswer(invocation -> securityLog.add(invocation.getArgument(1)));
             apiLocator.when(APILocator::getLayoutAPI).thenReturn(layoutAPI);
             when(layoutAPI.doesUserHaveAccessToPortlet(anyString(), eq(caller))).thenReturn(membershipPrivilege);
+            when(layoutAPI.doesUserHaveAccessToUsersPortlet(caller)).thenReturn(membershipPrivilege);
 
             final InitDataObject initData = mock(InitDataObject.class);
             when(initData.getUser()).thenReturn(caller);

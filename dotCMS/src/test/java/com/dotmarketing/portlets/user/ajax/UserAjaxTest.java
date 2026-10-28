@@ -26,6 +26,7 @@ import org.mockito.MockedStatic;
 class UserAjaxTest {
 
     private static final String CALLER_ID = "caller-user-id";
+    private static final String CALLER_EMAIL = "caller@example.com";
     private static final String OTHER_USER_ID = "other-user-id";
     private static final String[] ROLE_IDS = {"role-a", "role-b"};
 
@@ -35,6 +36,7 @@ class UserAjaxTest {
     @BeforeEach
     void setUp() {
         when(caller.getUserId()).thenReturn(CALLER_ID);
+        when(caller.getEmailAddress()).thenReturn(CALLER_EMAIL);
         when(roleAPI.doesUserHaveRoles(anyString(), anyList())).thenReturn(true);
     }
 
@@ -64,6 +66,21 @@ class UserAjaxTest {
             // Then the result of the role lookup is returned
             assertTrue(new UserAjax().hasUserRoles(CALLER_ID, ROLE_IDS));
             verify(roleAPI).doesUserHaveRoles(eq(CALLER_ID), anyList());
+        }
+    }
+
+    @Test
+    void hasUserRoles_ownEmailInsteadOfUserId_isTreatedAsAnotherUser() {
+        try (MockedStatic<DwrUtil> dwrUtil = mockStatic(DwrUtil.class);
+                MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class)) {
+            // Given a logged-in back-end user without the role membership privilege
+            givenCaller(dwrUtil, apiLocator, false);
+
+            // When it sends its own email address instead of its user id
+            // Then the call is rejected, as for any other user, and no role lookup runs
+            assertThrows(DotSecurityException.class,
+                    () -> new UserAjax().hasUserRoles(CALLER_EMAIL, ROLE_IDS));
+            verify(roleAPI, never()).doesUserHaveRoles(anyString(), anyList());
         }
     }
 

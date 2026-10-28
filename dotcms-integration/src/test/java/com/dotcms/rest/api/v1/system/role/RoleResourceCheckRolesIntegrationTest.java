@@ -16,6 +16,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -128,6 +129,33 @@ public class RoleResourceCheckRolesIntegrationTest {
         final User plain = backEndUserWithPortlets();
 
         resource.checkRoles(requestFor(plain), new MockHttpResponse(),
+                administrator.getUserId(), adminRole.getId());
+    }
+
+    /**
+     * Method to test: {@link RoleResource#checkRoles}
+     * Given Scenario: A back-end user with no portlets asks about a user id that does not exist.
+     * Expected Result: {@link ForbiddenException}, the same answer as for an existing user.
+     */
+    @Test(expected = ForbiddenException.class)
+    public void plainBackEndUser_checkingUnknownUser_isForbidden() throws Exception {
+        final User plain = backEndUserWithPortlets();
+
+        resource.checkRoles(requestFor(plain), new MockHttpResponse(),
+                "user-id-" + UUIDGenerator.generateUuid(), adminRole.getId());
+    }
+
+    /**
+     * Method to test: {@link RoleResource#checkRoles}
+     * Given Scenario: A back-end user with the Roles portlet but not the Users portlet checks
+     * another user's roles.
+     * Expected Result: {@link ForbiddenException}: both portlets are required.
+     */
+    @Test(expected = ForbiddenException.class)
+    public void rolesPortletOnly_checkingAnotherUser_isForbidden() throws Exception {
+        final User rolesOnly = backEndUserWithPortlets("roles");
+
+        resource.checkRoles(requestFor(rolesOnly), new MockHttpResponse(),
                 administrator.getUserId(), adminRole.getId());
     }
 

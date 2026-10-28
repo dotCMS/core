@@ -1271,13 +1271,13 @@ public class UserAjax {
 	 * @param userId the id of the {@link User} whose roles are checked
 	 * @param roles  the ids of the roles to look for
 	 * @return {@code true} if the user holds at least one of the roles
-	 * @throws DotSecurityException if the user to check is not the caller and the caller does not
-	 *                              have the role membership privilege
+	 * @throws DotSecurityException if there is no logged-in user, or if the user to check is not the
+	 *                              caller and the caller does not have the role membership privilege
 	 * @throws Exception            if the logged-in user or the roles cannot be resolved
 	 */
 	public boolean hasUserRoles(final String userId, final String[] roles) throws Exception {
 		final User loggedInUser = getLoggedInUser();
-		if (null == loggedInUser || !loggedInUser.getUserId().equals(userId)) {
+		if (!loggedInUser.getUserId().equals(userId)) {
 			validateRoleMembershipPermissions(loggedInUser);
 		}
 		final RoleAPI roleAPI = APILocator.getRoleAPI();
