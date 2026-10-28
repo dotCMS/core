@@ -1221,6 +1221,88 @@ else
   bad "delete-built-artifacts-from-cache runs against a repository holding builds" "body missing or exited non-zero"
 fi
 
+# ============================================ 14. maven-job: background image build ==
+# The test image is built and saved in a background subshell while the artifacts
+# upload, and a later step waits for it. GitHub runs composite bash steps under
+# `bash -eo pipefail`, which the background subshell inherits, so each case below
+# runs the real step bodies the same way. The failure case is the one that matters:
+# a status that never gets written would leave every test job polling for 20 minutes.
+echo "== 14. maven-job: background image build records its outcome =="
+
+IMG="$WORKDIR/img"
+mkdir -p "$IMG/bin" "$IMG/ctx/dotCMS/target" "$IMG/ctx/src" "$IMG/tmp"
+echo hello > "$IMG/ctx/src/f"
+tar -cf "$IMG/ctx/dotCMS/target/docker-build.tar" -C "$IMG/ctx/src" f
+
+# Real bodies, with the hard-coded /tmp paths and the version input pointed at the sandbox.
+for id in build-docker-image-from-archive wait-docker-image-build; do
+  extract_run_body "$MAVEN_JOB" "$id" \
+    | sed -E -e "s#/tmp/#$IMG/tmp/#g" -e 's/\$\{\{ *inputs\.version *\}\}/1.0/g' > "$IMG/$id.sh"
+  # An empty body would "succeed" every case below, so fail loudly instead.
+  [[ -s "$IMG/$id.sh" ]] && ok "$id body is extractable" || bad "$id body is extractable" "not found in $(rel "$MAVEN_JOB")"
+done
+
+# Stub docker: build fails when DOCKER_FAIL=build, hangs when DOCKER_HANG=1 (the
+# hang records its pid so the case can clean it up), `save` writes the tar.
+cat > "$IMG/bin/docker" <<'STUB'
+#!/usr/bin/env bash
+case "$1" in
+  build) [[ "${DOCKER_FAIL:-}" == build ]] && { echo "pull timeout"; exit 7; }
+         if [[ "${DOCKER_HANG:-}" == 1 ]]; then echo $$ > "$RUNNER_TEMP/docker.pid"; exec sleep 60; fi ;;
+  save)  echo image ;;
+esac
+exit 0
+STUB
+chmod +x "$IMG/bin/docker"
+
+# Run the start step the way a runner does: bash -eo pipefail, output discarded.
+image_start() {  # extra env assignments are passed as arguments
+  rm -f "$IMG"/tmp/test-image-build.* "$IMG/tmp/image.tar" "$IMG/tmp/docker.pid"
+  rm -rf "$IMG/tmp/docker-context"
+  ( cd "$IMG/ctx" && env RUNNER_TEMP="$IMG/tmp" SDKMAN_JAVA_VERSION=25 PATH="$IMG/bin:$PATH" "$@" \
+      bash -eo pipefail "$IMG/build-docker-image-from-archive.sh" ) >/dev/null 2>&1
+}
+# Run the wait step; sets WAIT_RC and WAIT_SECS, output lands in $IMG/wait.out.
+wait_step() {
+  local t0=$SECONDS rc=0
+  ( cd "$IMG/ctx" && env RUNNER_TEMP="$IMG/tmp" PATH="$IMG/bin:$PATH" \
+      bash -eo pipefail "$IMG/wait-docker-image-build.sh" ) > "$IMG/wait.out" 2>&1 || rc=$?
+  WAIT_RC=$rc; WAIT_SECS=$((SECONDS - t0))
+}
+
+image_start DOCKER_FAIL=none
+wait_step
+if [[ $WAIT_RC -eq 0 && -s "$IMG/tmp/image.tar" ]]; then
+  ok "a successful build and save passes the wait step and leaves image.tar"
+else
+  bad "a successful build and save passes the wait step and leaves image.tar" "rc=$WAIT_RC: $(tail -n 3 "$IMG/wait.out")"
+fi
+
+image_start DOCKER_FAIL=build
+wait_step
+if [[ $WAIT_RC -ne 0 && $WAIT_SECS -lt 15 ]] && grep -q 'status: 7' "$IMG/wait.out" \
+   && grep -q 'pull timeout' "$IMG/wait.out" && [[ ! -e "$IMG/tmp/image.tar" ]]; then
+  ok "a failing docker build fails the wait step within seconds, with its status and log, and skips the save"
+else
+  bad "a failing docker build fails the wait step within seconds, with its status and log, and skips the save" \
+      "rc=$WAIT_RC after ${WAIT_SECS}s: $(tail -n 3 "$IMG/wait.out")"
+fi
+
+# The background process is killed before it can write a status (job cancelled,
+# OOM kill): the wait step must notice the pid is gone rather than poll to the limit.
+image_start DOCKER_HANG=1
+for _ in 1 2 3 4 5 6 7 8 9 10; do [[ -s "$IMG/tmp/docker.pid" ]] && break; sleep 0.5; done
+kill -9 "$(cat "$IMG/tmp/test-image-build.pid")" 2>/dev/null
+kill "$(cat "$IMG/tmp/docker.pid" 2>/dev/null)" 2>/dev/null
+sleep 1
+wait_step
+if [[ $WAIT_RC -ne 0 && $WAIT_SECS -lt 15 ]] && grep -q 'vanished' "$IMG/wait.out"; then
+  ok "a killed background build fails the wait step at once instead of polling"
+else
+  bad "a killed background build fails the wait step at once instead of polling" \
+      "rc=$WAIT_RC after ${WAIT_SECS}s: $(tail -n 3 "$IMG/wait.out")"
+fi
+
 # ---------------------------------------------------------------------- done --
 echo
 echo "pass=$pass fail=$fail"
