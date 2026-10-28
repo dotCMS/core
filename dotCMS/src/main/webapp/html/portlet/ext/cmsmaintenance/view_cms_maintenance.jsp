@@ -45,7 +45,6 @@ List<ContentType> structs = APILocator.getContentTypeAPI(APILocator.systemUser()
 <script type="text/javascript" src="/dwr/engine.js"></script>
 <script type="text/javascript" src="/dwr/util.js"></script>
 <script type='text/javascript' src='/dwr/interface/CMSMaintenanceAjax.js'></script>
-<script type="text/javascript" src="/dwr/interface/ThreadMonitorTool.js"></script>
 
 <script language="Javascript">
 dojo.require("dijit.Editor");
@@ -680,31 +679,69 @@ function undohighlight(id) {
 }
 
 function getAllThreads() {
-	document.getElementById('threadList').innerHTML = "";
+	var threadList = document.getElementById('threadList');
+	threadList.innerHTML = "";
 	dojo.query('#threadProgress').style({display:"block"});
     const hideSystemThreads = document.getElementById("hideSystemThreads").checked;
-    ThreadMonitorTool.getThreads(hideSystemThreads, {
-        callback:function(data) {
-        	dojo.query('#threadProgress').style({display:"none"});
-            var tempString = "";
-            var parity = "odd";
-            for(var i = 0; i < data.length; i++){
-                tempString += "<li class='" + parity + "'>"+ data[i] +"</li>";
-                if(parity == "odd"){
-                    parity = "even";
-                }else{
-                    parity = "odd";
-                }
+    fetch('/api/v1/maintenance/_threads?hideSystem=' + hideSystemThreads, {cache:'no-cache'})
+        .then(function(response) {
+            if (!response.ok) {
+                throw new Error("Thread dump answered " + response.status);
             }
-
-            dwr.util.setValue("threadList", tempString, { escapeHtml:false });
-
-        },
-        errorHandler:function(message) {
-            alert("Error: " + message);
+            return response.json();
+        })
+        .then(function(data) {
             dojo.query('#threadProgress').style({display:"none"});
+            var dump = document.createElement("pre");
+            dump.textContent = formatThreadDump(data.entity);
+            threadList.innerHTML = "";
+            threadList.appendChild(dump);
+        })
+        .catch(function(error) {
+            console.error(error);
+            dojo.query('#threadProgress').style({display:"none"});
+            alert("Error: " + error.message);
+        });
+}
+
+/**
+* Builds a text thread dump from the thread dump the maintenance threads route returns
+* @param dump
+ */
+function formatThreadDump(dump) {
+    var lines = [dump.timestamp, "Full thread dump " + dump.vmInfo + ":", ""];
+    (dump.threads || []).forEach(function(thread) {
+        lines.push('"' + thread.name + '"' + (thread.daemon ? " daemon" : "") + " prio=" + thread.priority
+                + " Id=" + thread.id + " " + thread.state);
+        if (thread.lockInfo) {
+            lines.push("   waiting on " + thread.lockInfo
+                    + (thread.lockOwnerName ? " owned by \"" + thread.lockOwnerName + "\" Id=" + thread.lockOwnerId : ""));
         }
+        // Held monitors arrive as "<class> at depth <n>"; each one is printed after the frame at that depth
+        var monitors = (thread.lockedMonitors || []).map(function(monitor) {
+            var match = /^(.*) at depth (-?\d+)$/.exec(monitor);
+            return match ? {name: match[1], depth: parseInt(match[2], 10)} : {name: monitor, depth: -1};
+        });
+        var stackTrace = thread.stackTrace || [];
+        stackTrace.forEach(function(frame, depth) {
+            lines.push("\tat " + frame);
+            monitors.filter(function(monitor) { return monitor.depth === depth; }).forEach(function(monitor) {
+                lines.push("\t- locked " + monitor.name);
+            });
+        });
+        monitors.filter(function(monitor) { return monitor.depth < 0 || monitor.depth >= stackTrace.length; })
+            .forEach(function(monitor) {
+                lines.push("\t- locked " + monitor.name);
+            });
+        (thread.lockedSynchronizers || []).forEach(function(synchronizer) {
+            lines.push("\t- locked synchronizer " + synchronizer);
+        });
+        if (thread.deadlocked) {
+            lines.push(" ** Deadlocked **");
+        }
+        lines.push("");
     });
+    return lines.join("\n");
 }
 
 function hideAllThreads() {
@@ -736,23 +773,43 @@ function getSysInfo() {
     cleanTable(rowsClass);
 
     dojo.query('#sysInfoProgress').style({display:"block"});
-    ThreadMonitorTool.getSysProps({
-        callback:function(data) {
-
-        	dojo.query('#sysInfoProgress').style({display:"none"});
-
-            for(var dat in data){
-                var rowData = "<td>"+ dat +"</td><td> " + data[dat] +"</td>";
-                //Creating the row and adding it to the table
-                createRow(tableId, rowData, rowsClass, null);
+    fetch('/api/v1/maintenance/_threads/info', {cache:'no-cache'})
+        .then(function(response) {
+            if (!response.ok) {
+                throw new Error("Thread counts answered " + response.status);
             }
+            return response.json();
+        })
+        .then(function(data) {
+            dojo.query('#sysInfoProgress').style({display:"none"});
+            var info = data.entity;
+            cleanTable(rowsClass);
+            createTextRow(tableId, ["System Startup Time", info.systemStartupTime], rowsClass);
+            createTextRow(tableId, ["Thread Count - Current", info.currentThreadCount], rowsClass);
+            createTextRow(tableId, ["Thread Count - Peak", info.peakThreadCount], rowsClass);
+        })
+        .catch(function(error) {
+            console.error(error);
+            dojo.query('#sysInfoProgress').style({display:"none"});
+            alert("Error: " + error.message);
+        });
+}
 
-        },
-        errorHandler:function(message) {
-        	dojo.query('#sysInfoProgress').style({display:"none"});
-            alert("Error: " + message);
-        }
+/**
+* Creates a tr node whose cells hold the given values as text, and adds it to a table
+* @param tableId
+* @param values
+* @param className
+ */
+function createTextRow(tableId, values, className) {
+    var row = document.createElement("tr");
+    row.className = className;
+    values.forEach(function(value) {
+        var cell = document.createElement("td");
+        cell.textContent = (value === null || value === undefined) ? "" : String(value);
+        row.appendChild(cell);
     });
+    dojo.byId(tableId).appendChild(row);
 }
 
 
@@ -1300,10 +1357,6 @@ function assetHostListTable_deleteHost(hostId){
     background: #94BBFF;
     color: white !important;
 }
-#threadList li.odd{
-    background-color:#ECECEC;
-}
-
 dt.rightdl {
    	width:300px;
    	margin:0px 10px 10px;

@@ -51,8 +51,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Integration tests for who may use the cache, Redis, JVM information and logged-in session routes of the Maintenance
- * tool, with real roles and layouts: a CMS Administrator is admitted, a back-end user who holds the Maintenance
+ * Integration tests for who may use the cache, Redis, JVM information, thread and logged-in session routes of the
+ * Maintenance tool, with real roles and layouts: a CMS Administrator is admitted, a back-end user who holds the Maintenance
  * portlet without being a CMS Administrator is not, and neither is a back-end user without the portlet.
  */
 public class MaintenanceToolsAccessIntegrationTest {
@@ -337,6 +337,35 @@ public class MaintenanceToolsAccessIntegrationTest {
         } finally {
             untrackSession(targetId);
         }
+    }
+
+    /**
+     * Method to test: {@link MaintenanceResource#getThreadDump(HttpServletRequest, HttpServletResponse, boolean)}
+     * Given scenario: a back-end user whose role has a layout with only the Maintenance portlet, and who is not a CMS
+     * Administrator.
+     * Expected result: the request is rejected with 401.
+     */
+    @Test
+    public void getThreadDump_userWithMaintenanceLayoutOnly_isRejected() {
+        final SecurityException refusal = assertThrows(SecurityException.class,
+                () -> new MaintenanceResource().getThreadDump(
+                        requestFor(maintenanceOnlyUser), new MockHttpResponse(), true));
+
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), refusal.getResponse().getStatus());
+    }
+
+    /**
+     * Method to test: {@link MaintenanceResource#getThreadInfo(HttpServletRequest, HttpServletResponse)}
+     * Given scenario: a back-end user whose role has a layout with only the Maintenance portlet, and who is not a CMS
+     * Administrator.
+     * Expected result: the request is rejected with 401.
+     */
+    @Test
+    public void getThreadInfo_userWithMaintenanceLayoutOnly_isRejected() {
+        final SecurityException refusal = assertThrows(SecurityException.class,
+                () -> new MaintenanceResource().getThreadInfo(requestFor(maintenanceOnlyUser), new MockHttpResponse()));
+
+        assertEquals(Response.Status.UNAUTHORIZED.getStatusCode(), refusal.getResponse().getStatus());
     }
 
     /**
