@@ -1,5 +1,6 @@
 package com.dotcms.rest.api.v1.user;
 
+import com.dotcms.api.web.WebSessionContext;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.exception.ExceptionUtil;
 import com.google.common.annotations.VisibleForTesting;
@@ -26,7 +27,9 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.ApiProvider;
+import com.dotmarketing.business.LoginAsSession;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
@@ -441,7 +444,10 @@ public class UserResource implements Serializable {
 		operationId = "filterUsers",
 		summary = "Filter users",
 		description = "Returns a list of dotCMS users based on specified search criteria with pagination support. "
-				+ "Each item is the user's data map. When `includeRoles=true` is passed, each item additionally "
+				+ "Each item is the user's data map. CMS Administrators and users with access to the Users portlet "
+				+ "receive the complete map; any other back-end user receives only the directory fields of each user "
+				+ "(`userId`, `id`, `firstName`, `lastName`, `fullName`, `name`, `emailAddress`, `emailaddress`, "
+				+ "`gravitar`, `type`). When `includeRoles=true` is passed, each item additionally "
 				+ "carries a `roles` array listing the user's directly assigned roles as `{id, name, roleKey}` "
 				+ "objects (`roleKey` may be null for roles created without a key); roles held through the role "
 				+ "hierarchy and the user's personal role are not included. Requesting roles requires being a CMS "
@@ -558,9 +564,10 @@ public class UserResource implements Serializable {
 	 * @throws DotDataException An error occurred when resolving the User's portlet access.
 	 */
 	private boolean isRoleAdministrator(final User user) throws DotDataException {
+		final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		return user.isAdmin() ||
-				(APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user) &&
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), user));
+				(layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user) &&
+						layoutAPI.doesUserHaveAccessToUsersPortlet(user));
 	}
 
 	/**
@@ -704,11 +711,7 @@ public class UserResource implements Serializable {
         final User modUser = initData.getUser();
 
         Logger.debug(this, ()-> "Finding the user by id: " + userId);
-        final boolean isRoleAdministrator = modUser.isAdmin() ||
-                (
-                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-                                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-                );
+        final boolean isRoleAdministrator = this.isRoleAdministrator(modUser);
 
         if (isRoleAdministrator) {
 
@@ -787,7 +790,15 @@ public class UserResource implements Serializable {
 					.CURRENT_HOST)), currentUser.getUserId(), loginAsUserId);
 			this.setImpersonatedUserSite(request, sessionData.get(WebKeys.USER_ID).toString());
 			response = Response.ok(new ResponseEntityView<>(Map.of("loginAs", true))).build();
-		} catch (final NoSuchUserException | DotSecurityException e) {
+		} catch (final DotSecurityException e) {
+			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
+							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
+					e.getMessage()));
+			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
+			// 403, not 401: the caller is authenticated but not allowed; a 401 makes the UI end the session.
+			// The key travels in the error-key header so the UI can tell this denial from other 403s
+			return ExceptionMapperUtil.createResponse(e, "loginas.error.adminrequired", Response.Status.FORBIDDEN);
+		} catch (final NoSuchUserException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
 							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
 					e.getMessage()));
@@ -825,7 +836,10 @@ public class UserResource implements Serializable {
 	/**
 	 * Updates the current HTTP Session data in order to simulate that the impersonated user - the Login As User - is
 	 * logged into the back-end of the system. This involves refreshing the UI of the back-end to reflect the Portlets
-	 * that the impersonated user has access to.
+	 * that the impersonated user has access to. While a Login As is active the session holds a {@link LoginAsSession},
+	 * which Logout As reads to restore the principal user; reverting removes it. The record holds one level only: a
+	 * further Login As started from the impersonated user replaces it, so Logout As then returns to that user rather
+	 * than to the original principal.
 	 *
 	 * @param request         The {@link HttpServletRequest} object.
 	 * @param site            The {@link Host} object representing the Site that the Login As user is directed to.
@@ -841,6 +855,11 @@ public class UserResource implements Serializable {
 			session.setAttribute(WebKeys.PRINCIPAL_USER_ID, null);
 		}
 		final String userToImpersonate = (UtilMethods.isSet(loginAsUserId) ? loginAsUserId : principalUserId);
+		if (UtilMethods.isSet(loginAsUserId)) {
+			session.setAttribute(LoginAsSession.SESSION_KEY, new LoginAsSession(principalUserId, loginAsUserId));
+		} else {
+			session.removeAttribute(LoginAsSession.SESSION_KEY);
+		}
         session.removeAttribute(WebKeys.USER);
 		session.setAttribute(WebKeys.USER_ID, userToImpersonate);
 		PrincipalThreadLocal.setName(userToImpersonate);
@@ -904,6 +923,15 @@ public class UserResource implements Serializable {
 		session.setAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID, currentSite.getIdentifier());
 	}
 
+	/**
+	 * Ends the active Login As and makes the user who started it the session user again. The principal user is
+	 * taken from the {@link LoginAsSession} that {@link #loginAs} stored; a session without an active Login As
+	 * gets a 400 and keeps its current user.
+	 *
+	 * @param httpServletRequest  The {@link HttpServletRequest} object.
+	 * @param httpServletResponse The {@link HttpServletResponse} object.
+	 * @return 200 with {@code logoutAs: true}, or 400 when no Login As is active.
+	 */
 	@Operation(
 	    operationId = "logoutAsUser",
 	    summary = "Logout as user",
@@ -940,13 +968,12 @@ public class UserResource implements Serializable {
 
 		final String serverName = httpServletRequest.getServerName();
 		String principalUserId = null;
-		if (httpServletRequest.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID) != null) {
-			principalUserId = httpServletRequest.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID).toString();
-		}
 		User currentLoginAsUser = new User();
 		Response response;
 		try {
 			currentLoginAsUser = PortalUtil.getUser(httpServletRequest);
+			principalUserId = APILocator.getLoginAsAPI()
+					.getPrincipalUserId(WebSessionContext.getInstance(httpServletRequest));
 			final Map<String, Object> sessionData = this.helper.doLogoutAs(principalUserId, currentLoginAsUser, serverName);
 			revertLoginAsSessionInfo(httpServletRequest, Host.class.cast(sessionData.get(com.dotmarketing.util.WebKeys
 					.CURRENT_HOST)), principalUserId);
@@ -1137,7 +1164,7 @@ public class UserResource implements Serializable {
 		final List<Role> rolesToGrant = new ArrayList<>();
 		for (final String roleEntry : roleEntries) {
 
-			final Role role = this.resolveRole(roleEntry);
+			final Role role = this.roleAPI.loadRoleByKeyOrId(roleEntry);
 			if (null == role) {
 				Logger.debug(this, ()-> "Role '" + roleEntry + "' (key or id) does NOT exist in dotCMS. Ignoring it...");
 				continue;
@@ -1277,11 +1304,7 @@ public class UserResource implements Serializable {
 				.rejectWhenNoUser(true)
 				.init().getUser();
 
-		final boolean isRoleAdministrator = modUser.isAdmin() ||
-				(
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-								APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-				);
+		final boolean isRoleAdministrator = this.isRoleAdministrator(modUser);
 
 		if (isRoleAdministrator) {
 
@@ -1354,11 +1377,7 @@ public class UserResource implements Serializable {
 
         Logger.debug(this, ()-> "Activating user: " + modUser.getUserId());
 
-        final boolean isRoleAdministrator = modUser.isAdmin() ||
-                (
-                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-                                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-                );
+        final boolean isRoleAdministrator = this.isRoleAdministrator(modUser);
 
         if (isRoleAdministrator) {
 
@@ -1437,11 +1456,7 @@ public class UserResource implements Serializable {
 
         Logger.debug(this, ()-> "Deactivating user: " + modUser.getUserId());
 
-        final boolean isRoleAdministrator = modUser.isAdmin() ||
-                (
-                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-                                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-                );
+        final boolean isRoleAdministrator = this.isRoleAdministrator(modUser);
 
         if (isRoleAdministrator) {
 
@@ -1574,17 +1589,6 @@ public class UserResource implements Serializable {
 	}
 
     /**
-     * Resolves a {@code roles} payload entry to a {@link Role}: by key first (legacy precedence),
-     * then by ID. Returns {@code null} when neither matches. Roles created in the Roles portlet may
-     * have no key, so the ID form is the only way to reference them (#37209).
-     */
-    private Role resolveRole(final String keyOrId) throws DotDataException {
-
-        final Role byKey = this.roleAPI.loadRoleByKey(keyOrId);
-        return null != byKey ? byKey : this.roleAPI.loadRoleById(keyOrId);
-    }
-
-    /**
      * The roles an update would add to and remove from a user.
      *
      * @param toAdd    User-assignable roles the user does not hold yet. Decides whether the update
@@ -1636,7 +1640,7 @@ public class UserResource implements Serializable {
         final List<Role> desiredRoles = new ArrayList<>();
         for (final String roleEntry : roleEntries) {
 
-            final Role role = this.resolveRole(roleEntry);
+            final Role role = this.roleAPI.loadRoleByKeyOrId(roleEntry);
             if (null != role) {
                 desiredRoles.add(role);
             } else {
@@ -1772,11 +1776,7 @@ public class UserResource implements Serializable {
 		Logger.debug(this, ()-> "Deleting user " + userIdToDelete + " by the user id " + modUser.getUserId()
 				+ " will the replacement: " + replacementUserId);
 
-		final boolean isRoleAdministrator = modUser.isAdmin() ||
-				(
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-								APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-				);
+		final boolean isRoleAdministrator = this.isRoleAdministrator(modUser);
 
 		if (isRoleAdministrator) {
 
