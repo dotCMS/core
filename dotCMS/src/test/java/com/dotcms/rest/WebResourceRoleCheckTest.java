@@ -21,8 +21,9 @@ import org.junit.Test;
 /**
  * Covers {@link WebResource#hasAnyRole(RoleAPI, User, Set)}, the membership check behind
  * {@link WebResource.InitBuilder#requiredBackendUser(boolean)} and friends. The required roles are
- * collected as role keys, so the check must resolve them through the API rather than treat them as
- * ids, which only worked while the role cache happened to hold the role.
+ * collected as role keys, so the check must resolve them through
+ * {@link RoleAPI#loadRoleByKeyOrId(String)} rather than treat them as ids, which only worked while
+ * the role cache happened to hold the role.
  */
 public class WebResourceRoleCheckTest {
 
@@ -43,13 +44,13 @@ public class WebResourceRoleCheckTest {
 
     /**
      * Method to test: {@link WebResource#hasAnyRole(RoleAPI, User, Set)}
-     * Given scenario: The required role key resolves through {@code loadRoleByKey} and the user
-     * holds that role.
+     * Given scenario: The required role key resolves through {@code loadRoleByKeyOrId} and the
+     * user holds that role.
      * Expected result: Access is granted, and the key is never handed to the id-based overload.
      */
     @Test
-    public void testHasAnyRole_WhenRoleResolvesByKeyAndUserHoldsIt_ShouldReturnTrue() throws Exception {
-        when(roleAPI.loadRoleByKey(Role.DOTCMS_BACK_END_USER)).thenReturn(backendRole);
+    public void testHasAnyRole_WhenRoleResolvesAndUserHoldsIt_ShouldReturnTrue() throws Exception {
+        when(roleAPI.loadRoleByKeyOrId(Role.DOTCMS_BACK_END_USER)).thenReturn(backendRole);
         when(roleAPI.doesUserHaveRole(user, backendRole)).thenReturn(true);
 
         assertTrue(WebResource.hasAnyRole(roleAPI, user, Set.of(Role.DOTCMS_BACK_END_USER)));
@@ -63,7 +64,7 @@ public class WebResourceRoleCheckTest {
      */
     @Test
     public void testHasAnyRole_WhenUserLacksTheRole_ShouldReturnFalse() throws Exception {
-        when(roleAPI.loadRoleByKey(Role.DOTCMS_BACK_END_USER)).thenReturn(backendRole);
+        when(roleAPI.loadRoleByKeyOrId(Role.DOTCMS_BACK_END_USER)).thenReturn(backendRole);
         when(roleAPI.doesUserHaveRole(user, backendRole)).thenReturn(false);
 
         assertFalse(WebResource.hasAnyRole(roleAPI, user, Set.of(Role.DOTCMS_BACK_END_USER)));
@@ -71,14 +72,13 @@ public class WebResourceRoleCheckTest {
 
     /**
      * Method to test: {@link WebResource#hasAnyRole(RoleAPI, User, Set)}
-     * Given scenario: The value is not a role key but a role id, as a caller of
-     * {@code requiredRoles(...)} might pass.
-     * Expected result: The lookup falls back to {@code loadRoleById} and access is granted.
+     * Given scenario: The value is a role id rather than a key, as a caller of
+     * {@code requiredRoles(...)} might pass; the API resolves either form.
+     * Expected result: Access is granted.
      */
     @Test
-    public void testHasAnyRole_WhenValueIsARoleId_ShouldFallBackToLookupById() throws Exception {
-        when(roleAPI.loadRoleByKey(BACKEND_ROLE_ID)).thenReturn(null);
-        when(roleAPI.loadRoleById(BACKEND_ROLE_ID)).thenReturn(backendRole);
+    public void testHasAnyRole_WhenValueIsARoleId_ShouldReturnTrue() throws Exception {
+        when(roleAPI.loadRoleByKeyOrId(BACKEND_ROLE_ID)).thenReturn(backendRole);
         when(roleAPI.doesUserHaveRole(user, backendRole)).thenReturn(true);
 
         assertTrue(WebResource.hasAnyRole(roleAPI, user, Set.of(BACKEND_ROLE_ID)));
@@ -86,13 +86,12 @@ public class WebResourceRoleCheckTest {
 
     /**
      * Method to test: {@link WebResource#hasAnyRole(RoleAPI, User, Set)}
-     * Given scenario: Neither lookup finds a role for the value.
+     * Given scenario: The value resolves to no role at all.
      * Expected result: Access is denied without asking whether the user holds a {@code null} role.
      */
     @Test
     public void testHasAnyRole_WhenRoleIsUnknown_ShouldReturnFalseWithoutMembershipCheck() throws Exception {
-        when(roleAPI.loadRoleByKey("no-such-role")).thenReturn(null);
-        when(roleAPI.loadRoleById("no-such-role")).thenReturn(null);
+        when(roleAPI.loadRoleByKeyOrId("no-such-role")).thenReturn(null);
 
         assertFalse(WebResource.hasAnyRole(roleAPI, user, Set.of("no-such-role")));
         verify(roleAPI, never()).doesUserHaveRole(eq(user), any(Role.class));
@@ -108,8 +107,8 @@ public class WebResourceRoleCheckTest {
         final Role frontendRole = new Role();
         frontendRole.setId("f1a2c3d4-0000-0000-0000-000000000002");
         frontendRole.setRoleKey(Role.DOTCMS_FRONT_END_USER);
-        when(roleAPI.loadRoleByKey(Role.DOTCMS_BACK_END_USER)).thenReturn(backendRole);
-        when(roleAPI.loadRoleByKey(Role.DOTCMS_FRONT_END_USER)).thenReturn(frontendRole);
+        when(roleAPI.loadRoleByKeyOrId(Role.DOTCMS_BACK_END_USER)).thenReturn(backendRole);
+        when(roleAPI.loadRoleByKeyOrId(Role.DOTCMS_FRONT_END_USER)).thenReturn(frontendRole);
         when(roleAPI.doesUserHaveRole(user, backendRole)).thenReturn(false);
         when(roleAPI.doesUserHaveRole(user, frontendRole)).thenReturn(true);
 
@@ -125,7 +124,7 @@ public class WebResourceRoleCheckTest {
     @Test
     public void testHasAnyRole_WhenUserIsNull_ShouldReturnFalse() throws Exception {
         assertFalse(WebResource.hasAnyRole(roleAPI, null, Set.of(Role.DOTCMS_BACK_END_USER)));
-        verify(roleAPI, never()).loadRoleByKey(anyString());
+        verify(roleAPI, never()).loadRoleByKeyOrId(anyString());
     }
 
     /**
@@ -135,7 +134,7 @@ public class WebResourceRoleCheckTest {
      */
     @Test
     public void testHasAnyRole_WhenLookupFails_ShouldReturnFalse() throws Exception {
-        when(roleAPI.loadRoleByKey(Role.DOTCMS_BACK_END_USER)).thenThrow(new DotDataException("boom"));
+        when(roleAPI.loadRoleByKeyOrId(Role.DOTCMS_BACK_END_USER)).thenThrow(new DotDataException("boom"));
 
         assertFalse(WebResource.hasAnyRole(roleAPI, user, Set.of(Role.DOTCMS_BACK_END_USER)));
     }

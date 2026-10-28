@@ -448,11 +448,11 @@ public  class WebResource {
 
     /**
      * Tells whether the user holds at least one of the given roles. Each entry is a role key, such
-     * as {@link Role#DOTCMS_BACK_END_USER}, although a role id is accepted too. The role is looked
-     * up through the {@link RoleAPI} before the membership check, instead of handing the key to
-     * {@link RoleAPI#doesUserHaveRole(User, String)}: that overload expects a role id and only
-     * found a key while the role cache happened to hold the role, so the check failed every time
-     * the cache had just been cleared (for instance, by deleting any role).
+     * as {@link Role#DOTCMS_BACK_END_USER}, although a role id is accepted too. The role is
+     * resolved with {@link RoleAPI#loadRoleByKeyOrId(String)} before the membership check, instead
+     * of handing the key to {@link RoleAPI#doesUserHaveRole(User, String)}: that overload expects
+     * a role id and only found a key while the role cache happened to hold the role, so the check
+     * failed every time the cache had just been cleared (for instance, by deleting any role).
      *
      * @param roleAPI  the {@link RoleAPI} used to resolve the roles and check membership
      * @param user     the {@link User} being checked, possibly {@code null}
@@ -467,32 +467,12 @@ public  class WebResource {
             return false;
         }
         for (final String roleKey : roleKeys) {
-            final Role role = Try.of(() -> resolveRole(roleAPI, roleKey)).getOrNull();
+            final Role role = Try.of(() -> roleAPI.loadRoleByKeyOrId(roleKey)).getOrNull();
             if (null != role && Try.of(() -> roleAPI.doesUserHaveRole(user, role)).getOrElse(false)) {
                 return true;
             }
         }
         return false;
-    }
-
-    /**
-     * Resolves a role by its key first and, failing that, by its id, so both the role keys the
-     * {@link InitBuilder} collects and any id a caller may pass are accepted.
-     *
-     * @param roleAPI the {@link RoleAPI} to look the role up with
-     * @param keyOrId the role key, or the role id
-     *
-     * @return the {@link Role}, or {@code null} if neither lookup finds one
-     *
-     * @throws DotDataException if the lookup fails
-     */
-    private static Role resolveRole(final RoleAPI roleAPI, final String keyOrId) throws DotDataException {
-        final Role byKey = roleAPI.loadRoleByKey(keyOrId);
-        if (null != byKey && UtilMethods.isSet(byKey.getId())) {
-            return byKey;
-        }
-        final Role byId = roleAPI.loadRoleById(keyOrId);
-        return null != byId && UtilMethods.isSet(byId.getId()) ? byId : null;
     }
 
 
