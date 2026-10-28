@@ -40,7 +40,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -752,7 +751,9 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
     }
 
     /**
-     * Create a language variant if it does not exist
+     * Create a language variant if it does not exist. The id is left at 0 so the language API
+     * assigns it; a random long id is negative half the time, and the language outlives this class,
+     * so later classes in the suite would inherit a negative language id.
      * @param languageCode the language code
      * @param countryCode the country code
      * @param languageName the language name
@@ -764,7 +765,7 @@ public class Task240306MigrateLegacyLanguageVariablesTest {
         final List<Language> languages = languageAPI.getLanguages();
         final boolean exists = languages.stream().anyMatch(l -> l.getLanguageCode().equalsIgnoreCase(languageCode) && l.getCountryCode().equalsIgnoreCase(countryCode));
         if (!exists) {
-            new UniqueLanguageDataGen().persist(new Language(new Random().nextLong(), languageCode, countryCode, languageName, countryName));
+            new UniqueLanguageDataGen().persist(new Language(0, languageCode, countryCode, languageName, countryName));
         }
     }
 
