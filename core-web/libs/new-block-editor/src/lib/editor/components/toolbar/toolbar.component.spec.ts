@@ -1,4 +1,24 @@
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/vitest';
+import { of } from 'rxjs';
+import { vi } from 'vitest';
+
+import { Injector } from '@angular/core';
+
+import { ConfirmationService } from 'primeng/api';
+
+import { DotMessageService } from '@dotcms/data-access';
+
+import { EditorToolbarStore } from './editor-toolbar.store';
+import { ToolbarComponent } from './toolbar.component';
+
+import { ContentletEditUrlService } from '../../services/contentlet-edit-url.service';
+import { EditorModalService } from '../../services/editor-modal.service';
+import { EditorPopoverService } from '../../services/editor-popover.service';
+import { EditorStore } from '../../store/editor.store';
+import { createTestEditor } from '../../testing/editor.testing';
 import { createToolbarHarness } from '../../testing/toolbar.testing';
+
+import type { ContentletEditEvent } from '../../extensions/nodes/contentlet/contentlet.types';
 
 /**
  * #37340 AC-008 — emoji authoring is available on EVERY Block Editor field.
@@ -117,5 +137,114 @@ describe('ToolbarComponent — the link button is never gated (#36351)', () => {
         expect(buttonWithIcon('table')).toBeFalsy();
         // `code_blocks`, not `code` — the latter is the inline code mark, which is never gated.
         expect(buttonWithIcon('code_blocks')).toBeFalsy();
+    });
+});
+
+/**
+ * #38303 (R8) — editing an embedded contentlet only asks. The toolbar emits `contentletEdit` and
+ * the host of the editor decides where the content opens (a stacked side panel). It no longer
+ * prompts about unsaved changes, writes a "return to" breadcrumb or navigates the parent window,
+ * all of which threw the author out of the content they were editing.
+ */
+describe('ToolbarComponent — editing an embedded contentlet', () => {
+    const EMBEDDED: ContentletEditEvent = {
+        identifier: 'embedded-id',
+        inode: 'embedded-inode',
+        contentType: 'Blog',
+        title: 'Embedded blog'
+    };
+
+    let spectator: Spectator<ToolbarComponent>;
+
+    /**
+     * Accepts whatever it is asked, as an author clicking "Continue" would, so a navigation behind
+     * a prompt shows up in these tests instead of hiding behind an unanswered one.
+     */
+    const confirm = vi.fn((options: { accept?: () => void }) => options.accept?.());
+
+    /** Stands in for the parent window, whose location the toolbar must leave alone. */
+    const parentWindow = { location: { href: 'http://localhost/dotAdmin/#/content/parent' } };
+
+    const createComponent = createComponentFactory({
+        component: ToolbarComponent,
+        shallow: true,
+        providers: [
+            { provide: DotMessageService, useValue: { get: (key: string) => key } },
+            { provide: EditorPopoverService, useValue: { isOpen: () => false, toggle: vi.fn() } },
+            { provide: EditorModalService, useValue: {} },
+            {
+                provide: ContentletEditUrlService,
+                useValue: { resolveEditUrl: () => of('/dotAdmin/#/content/embedded-inode') }
+            },
+            { provide: ConfirmationService, useValue: { confirm } },
+            {
+                provide: EditorStore,
+                useValue: { isAllowed: () => true, allowedBlocksSet: () => new Set() }
+            },
+            {
+                provide: EditorToolbarStore,
+                // Everything answers "inactive", except the contentlet the author selected.
+                useValue: new Proxy(
+                    {},
+                    {
+                        get: (_target, property) => {
+                            if (property === 'connect') {
+                                return vi.fn().mockReturnValue(() => undefined);
+                            }
+
+                            return property === 'selectedContentlet' ? () => EMBEDDED : () => false;
+                        }
+                    }
+                )
+            }
+        ]
+    });
+
+    beforeEach(() => {
+        confirm.mockClear();
+        parentWindow.location.href = 'http://localhost/dotAdmin/#/content/parent';
+        vi.spyOn(window, 'parent', 'get').mockReturnValue(parentWindow as unknown as Window);
+
+        spectator = createComponent({ detectChanges: false });
+        spectator.setInput('editor', createTestEditor(spectator.inject(Injector)));
+        spectator.detectChanges();
+    });
+
+    afterEach(() => {
+        spectator?.component?.editor()?.destroy();
+        vi.restoreAllMocks();
+    });
+
+    /** Clicks the toolbar's "edit contentlet" button. */
+    const editContentlet = () =>
+        spectator.dispatchMouseEvent(byTestId('toolbar-edit-contentlet'), 'mousedown');
+
+    it('emits contentletEdit with the selected contentlet', () => {
+        const emitted = vi.fn();
+        spectator.output('contentletEdit').subscribe(emitted);
+
+        editContentlet();
+
+        expect(emitted).toHaveBeenCalledWith(EMBEDDED);
+    });
+
+    it('does not prompt about unsaved changes', () => {
+        editContentlet();
+
+        expect(confirm).not.toHaveBeenCalled();
+    });
+
+    it('does not navigate the parent window', () => {
+        editContentlet();
+
+        expect(parentWindow.location.href).toBe('http://localhost/dotAdmin/#/content/parent');
+    });
+
+    it('does not write a "return to" breadcrumb to localStorage', () => {
+        const setItem = vi.spyOn(Storage.prototype, 'setItem');
+
+        editContentlet();
+
+        expect(setItem).not.toHaveBeenCalled();
     });
 });

@@ -1,7 +1,7 @@
 import { SpectatorHost, createHostFactory, mockProvider } from '@openng/spectator/vitest';
-import { MockComponent } from 'ng-mocks';
+import { MockComponent, MockModule } from 'ng-mocks';
 import { of } from 'rxjs';
-import { vi } from 'vitest';
+import { Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -9,6 +9,7 @@ import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
+import { BlockEditorModule } from '@dotcms/block-editor';
 import { DotPropertiesService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotCMSEditorComponent } from '@dotcms/new-block-editor';
@@ -16,6 +17,7 @@ import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotEditContentBlockEditorComponent } from './dot-edit-content-block-editor.component';
 
+import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
 
 @Component({
@@ -282,4 +284,107 @@ describe('DotEditContentBlockEditorComponent — required indicator', () => {
 
         expect(spectator.query('.p-field-hint')).toBeNull();
     });
+});
+
+/**
+ * A block editor asks to edit a contentlet embedded in the document (#38303, R8). Neither editor
+ * navigates the window any more: they emit `contentletEdit`, and the field asks the form's host to
+ * open that content, which stacks a panel.
+ */
+describe('DotEditContentBlockEditorComponent — opening embedded content', () => {
+    let spectator: SpectatorHost<DotEditContentBlockEditorComponent, MockFormComponent>;
+    let host: { openContent: Mock };
+
+    const createHost = createHostFactory({
+        component: DotEditContentBlockEditorComponent,
+        host: MockFormComponent,
+        imports: [ReactiveFormsModule],
+        overrideComponents: [
+            [
+                DotEditContentBlockEditorComponent,
+                {
+                    remove: { imports: [DotCMSEditorComponent, BlockEditorModule] },
+                    add: {
+                        imports: [MockComponent(DotCMSEditorComponent), MockModule(BlockEditorModule)]
+                    }
+                }
+            ]
+        ],
+        providers: [
+            {
+                provide: DotEditContentStore,
+                useValue: {
+                    hasAttemptedSubmit: signal(false),
+                    currentLocale: signal({ id: 2, language: 'Spanish', country: 'Spain' })
+                }
+            },
+            { provide: EDIT_CONTENT_HOST, useFactory: () => host },
+            provideHttpClient(),
+            provideHttpClientTesting()
+        ],
+        detectChanges: false
+    });
+
+    /**
+     * Renders the field with the new editor (`dot-block-editor`) or the old one
+     * (`dot-old-block-editor`), as `FEATURE_FLAG_NEW_BLOCK_EDITOR` decides.
+     */
+    const renderWith = (newEditor: boolean) => {
+        host = { openContent: vi.fn() };
+        spectator = createHost(
+            `<form [formGroup]="formGroup">
+                <dot-edit-content-block-editor [field]="field" [contentlet]="contentlet" />
+            </form>`,
+            {
+                hostProps: {
+                    formGroup: new FormGroup({
+                        [BLOCK_EDITOR_FIELD_MOCK.variable]: new FormControl('')
+                    }),
+                    field: BLOCK_EDITOR_FIELD_MOCK,
+                    contentlet: createFakeContentlet({ [BLOCK_EDITOR_FIELD_MOCK.variable]: '' })
+                },
+                providers: [
+                    mockProvider(DotPropertiesService, {
+                        getFeatureFlag: vi.fn().mockReturnValue(of(newEditor))
+                    })
+                ]
+            }
+        );
+        spectator.detectChanges();
+    };
+
+    // The new editor emits the whole embedded contentlet; the old one only what it needs.
+    it.each([
+        [
+            'the new block editor',
+            true,
+            'dot-block-editor',
+            {
+                identifier: 'embedded-id',
+                inode: 'embedded-inode',
+                contentType: 'Blog',
+                title: 'Embedded blog'
+            }
+        ],
+        [
+            'the old block editor',
+            false,
+            'dot-old-block-editor',
+            { inode: 'embedded-inode', contentType: 'Blog' }
+        ]
+    ])(
+        'should ask the host to open the contentlet %s names, for editing',
+        (_editor, newEditor, selector, emitted) => {
+            renderWith(newEditor);
+            const editor = spectator.debugElement.query(By.css(selector));
+
+            expect(editor, `${selector} renders`).toBeTruthy();
+            editor.triggerEventHandler('contentletEdit', emitted);
+
+            expect(host.openContent).toHaveBeenCalledWith({
+                request: { mode: 'edit', inode: 'embedded-inode', contentType: 'Blog' },
+                source: 'block-editor'
+            });
+        }
+    );
 });
