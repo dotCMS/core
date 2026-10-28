@@ -51,10 +51,16 @@ on:
         required: false
         type: boolean
         default: true
-      # Off by default: no workflow restores the bundle (restore-classes is used only by
-      # deploy-javadoc, which no workflow calls), and the upload cost ~25 s per build.
+      # A pull request build is never deployed, so it can skip the context.
+      upload-docker-context:
+        description: 'Upload the docker-build-context artifact. Only the deployment phase downloads it.'
+        required: false
+        type: boolean
+        default: true
+      # Nothing downloads build-classes: its only reader is the deploy-javadoc
+      # action, which no workflow calls. Off by default to save the 30 s upload.
       generate-build-classes:
-        description: 'Upload per-module build classes (consumed only by restore-classes callers).'
+        description: 'Upload per-module build classes (build-classes artifact).'
         required: false
         type: boolean
         default: false
@@ -213,6 +219,7 @@ jobs:
           version: ${{ inputs.version }}
           generate-docker: ${{ inputs.generate-docker }}
           generate-test-image: ${{ inputs.generate-test-image }}
+          upload-docker-context: ${{ inputs.upload-docker-context }}
           generate-build-classes: ${{ inputs.generate-build-classes }}
           java-version: ${{ inputs.java-version }}
           maven-compiler-release: ${{ inputs.maven-compiler-release }}

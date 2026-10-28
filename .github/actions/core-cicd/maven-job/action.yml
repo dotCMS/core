@@ -45,8 +45,12 @@ inputs:
     description: 'Build, save and upload the throwaway test image. Only test phases consume it.'
     required: false
     default: 'true'
+  upload-docker-context:
+    description: 'Upload the docker-build-context artifact. Only the deployment phase downloads it; pull request builds turn it off. Needs generate-docker.'
+    required: false
+    default: 'true'
   generate-build-classes:
-    description: 'Upload per-module build classes (build-classes artifact). Only test phases consume them.'
+    description: 'Upload per-module build classes (build-classes artifact). Only the deploy-javadoc action reads it, and no workflow calls that action.'
     required: false
     default: 'true'
   needs-history:
@@ -617,22 +621,6 @@ runs:
         tar --null -cf - -T "${LIST}" | tar -xf - -C "${STAGE}"
         du -sh "${STAGE}"
 
-    - id: persist-maven-repo
-      name: Persist Maven Repo
-      if: ${{ inputs.generate-artifacts == 'true' }}
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-      with:
-        name: maven-repo${{ steps.artifact-suffix.outputs.suffix }}
-        path: ${{ runner.temp }}/built-artifacts
-
-    - id: persist-docker-build-context
-      name: Persist Docker Build Context
-      if: ${{ inputs.generate-docker == 'true' }}
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-      with:
-        name: docker-build-context${{ steps.artifact-suffix.outputs.suffix }}
-        path: dotCMS/target/docker-build.tar
-
     - id: get-sdkman-version
       name: Get SDKMAN Java Version
       if: ${{ inputs.generate-docker == 'true' && inputs.generate-test-image == 'true' }}
@@ -654,27 +642,83 @@ runs:
         SDKMAN_JAVA_VERSION="${SDKMAN_JAVA_VERSION//+/-}"
         echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> $GITHUB_ENV
 
+    # The test image is built and saved in the background while the artifacts below
+    # upload: the build and `docker save` are CPU and disk work, the uploads are
+    # network work, and they used to run one after another. The Wait step reports
+    # the build output and fails the job if the build or save failed.
     - id: build-docker-image-from-archive
       name: Build Docker Image from Archive
       if: ${{ inputs.generate-docker == 'true' && inputs.generate-test-image == 'true' }}
       shell: bash
       run: |
-        # Extract the build context from the tar archive
-        mkdir -p /tmp/docker-context
-        tar -xf dotCMS/target/docker-build.tar -C /tmp/docker-context
+        LOG="${RUNNER_TEMP}/test-image-build.log"
+        STATUS="${RUNNER_TEMP}/test-image-build.status"
+        rm -f "${STATUS}"
+        (
+          (
+            set -e
+            # Extract the build context from the tar archive
+            mkdir -p /tmp/docker-context
+            tar -xf dotCMS/target/docker-build.tar -C /tmp/docker-context
 
-        # Build the Docker image from the extracted context
-        docker build --build-arg SDKMAN_JAVA_VERSION="${SDKMAN_JAVA_VERSION}" -t dotcms/dotcms-test:${{ inputs.version }} /tmp/docker-context
+            # Build the Docker image from the extracted context
+            docker build --build-arg SDKMAN_JAVA_VERSION="${SDKMAN_JAVA_VERSION}" -t dotcms/dotcms-test:${{ inputs.version }} /tmp/docker-context
 
-        # Verify the image was created
-        docker images dotcms/dotcms-test:${{ inputs.version }}
+            # Verify the image was created
+            docker images dotcms/dotcms-test:${{ inputs.version }}
 
-    - id: save-docker-image
-      name: Save Docker Image to Tar File
+            docker save dotcms/dotcms-test:${{ inputs.version }} > /tmp/image.tar
+          ) > "${LOG}" 2>&1 < /dev/null
+          echo $? > "${STATUS}"
+        ) > /dev/null 2>&1 < /dev/null &
+
+    # The jars are already deflated, so compressing them again only burns CPU: the
+    # zip is single-threaded and was what paced the upload (about 19 MB/s).
+    - id: persist-maven-repo
+      name: Persist Maven Repo
+      if: ${{ inputs.generate-artifacts == 'true' }}
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: maven-repo${{ steps.artifact-suffix.outputs.suffix }}
+        path: ${{ runner.temp }}/built-artifacts
+        compression-level: 0
+
+    # Only the deployment phase downloads this (trunk, nightly, release and manual
+    # deploy, which reuse the merge-queue build). A pull request build is never
+    # deployed, so it passes upload-docker-context: false.
+    - id: persist-docker-build-context
+      name: Persist Docker Build Context
+      if: ${{ inputs.generate-docker == 'true' && inputs.upload-docker-context == 'true' }}
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: docker-build-context${{ steps.artifact-suffix.outputs.suffix }}
+        path: dotCMS/target/docker-build.tar
+        compression-level: 0
+
+    - id: wait-docker-image-build
+      name: Wait for Docker Image Build
       if: ${{ inputs.generate-docker == 'true' && inputs.generate-test-image == 'true' }}
       shell: bash
-      run: docker save dotcms/dotcms-test:${{ inputs.version }} > /tmp/image.tar
+      run: |
+        LOG="${RUNNER_TEMP}/test-image-build.log"
+        STATUS="${RUNNER_TEMP}/test-image-build.status"
+        # 20 minutes is far beyond the 2 minutes the build and save take.
+        for _ in $(seq 600); do
+          [ -s "${STATUS}" ] && break
+          sleep 2
+        done
+        echo "::group::Docker image build and save output"
+        cat "${LOG}" || true
+        echo "::endgroup::"
+        if [ "$(cat "${STATUS}" 2>/dev/null)" != "0" ]; then
+          echo "::error::Building or saving the test image failed (status: $(cat "${STATUS}" 2>/dev/null || echo 'never finished'))"
+          exit 1
+        fi
+        ls -lh /tmp/image.tar
 
+    # level 1: the layers are mostly jars and apt packages, so level 6 only trims
+    # the 1.3 GB tar to 0.73 GB, at the cost of the single-threaded zip being the
+    # slowest part of the upload.
     - id: upload-docker-image
       name: Upload Docker Image as Artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -682,6 +726,7 @@ runs:
       with:
         name: docker-image${{ steps.artifact-suffix.outputs.suffix }}
         path: /tmp/image.tar
+        compression-level: 1
 
     - id: persist-build-classes
       name: Persist Build Classes
