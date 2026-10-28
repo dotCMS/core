@@ -94,6 +94,7 @@ How it maps the editor's events:
 | `close` with `data.redirectUrl` | emit `pageEditorRequested({ url, languageId })` |
 | `close` otherwise | close the panel (→ `closed`) |
 | `deleted-page` | emit `deleted`; close |
+| window hook `ngEditContentletEvents.next({ name: 'deleted-contenlet' })` (not an `ng-event`; the panel assigns the hook object on the iframe window at every load) | emit `deleted`; the `close` that follows closes the panel |
 | `edit-contentlet-data-updated` | dirty = payload |
 | `workflow-wizard` | `DotWorkflowEventHandlerService.open(data)` (root instance) |
 | `compare-contentlet` | `DotEventsService.notify('compare-contentlet', data)` (root compare dialog) |
