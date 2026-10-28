@@ -7,6 +7,9 @@ import static org.junit.Assert.assertTrue;
 import app.photofox.vipsffm.VImage;
 import app.photofox.vipsffm.VipsOption;
 import com.dotmarketing.util.Config;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -22,11 +25,9 @@ import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 
 /** Verifies displayed geometry and upright pixels for all eight EXIF orientations. */
-@RunWith(Parameterized.class)
+@RunWith(DataProviderRunner.class)
 public class VipsResizeOrientationIntegrationTest {
 
     private static final int RAW_WIDTH = 2016;
@@ -34,13 +35,10 @@ public class VipsResizeOrientationIntegrationTest {
     private static final int[] COLOURS = {0xd03020, 0x20c040, 0x2050d0, 0xd0b020};
     private static final int[] TOP_LEFT = {0, 1, 3, 2, 0, 2, 3, 1};
     private static File directory;
-    private final String format;
-    private final int orientation;
-    private final String prefix;
 
     /** Covers all JPEG orientations plus orientation-6 PNG/WebP for Resize and its Scale alias. */
-    @Parameters(name = "{0}, orientation={1}, filter={2}")
-    public static Collection<Object[]> cases() {
+    @DataProvider(format = "%m[%p[0], orientation=%p[1], filter=%p[2]]")
+    public static Object[][] cases() {
         final Collection<Object[]> cases = new ArrayList<>();
         for (int orientation = 1; orientation <= 8; orientation++) {
             for (final String prefix : new String[]{"resize", "scale"}) {
@@ -51,15 +49,7 @@ public class VipsResizeOrientationIntegrationTest {
                 }
             }
         }
-        return cases;
-    }
-
-    /** Selects the source format, orientation and filter prefix for one group of assertions. */
-    public VipsResizeOrientationIntegrationTest(final String format, final int orientation,
-            final String prefix) {
-        this.format = format;
-        this.orientation = orientation;
-        this.prefix = prefix;
+        return cases.toArray(new Object[0][]);
     }
 
     /** Creates oriented synthetic images; missing libvips skips locally but fails in strict CI. */
@@ -113,44 +103,57 @@ public class VipsResizeOrientationIntegrationTest {
 
     /** A width-only request derives height from the displayed, not stored, aspect ratio. */
     @Test
-    public void widthOnlyPreservesDisplayedAspectRatio() throws Exception {
-        assertRendition("width", Map.of(prefix + "_w", new String[]{"500"}),
-                500, 500 * displayedHeight() / displayedWidth());
+    @UseDataProvider("cases")
+    public void widthOnlyPreservesDisplayedAspectRatio(final String format, final int orientation,
+            final String prefix) throws Exception {
+        assertRendition(format, orientation, prefix, "width",
+                Map.of(prefix + "_w", new String[]{"500"}),
+                500, 500 * displayedHeight(orientation) / displayedWidth(orientation));
     }
 
     /** A height-only request derives width from the displayed aspect ratio. */
     @Test
-    public void heightOnlyPreservesDisplayedAspectRatio() throws Exception {
-        assertRendition("height", Map.of(prefix + "_h", new String[]{"500"}),
-                500 * displayedWidth() / displayedHeight(), 500);
+    @UseDataProvider("cases")
+    public void heightOnlyPreservesDisplayedAspectRatio(final String format, final int orientation,
+            final String prefix) throws Exception {
+        assertRendition(format, orientation, prefix, "height",
+                Map.of(prefix + "_h", new String[]{"500"}),
+                500 * displayedWidth(orientation) / displayedHeight(orientation), 500);
     }
 
     /** Even the no-resampling path must write upright pixels without a second orientation tag. */
     @Test
-    public void unchangedSizeStillNormalisesOrientation() throws Exception {
-        assertRendition("unchanged", Map.of(), displayedWidth(), displayedHeight());
+    @UseDataProvider("cases")
+    public void unchangedSizeStillNormalisesOrientation(final String format, final int orientation,
+            final String prefix) throws Exception {
+        assertRendition(format, orientation, prefix, "unchanged", Map.of(),
+                displayedWidth(orientation), displayedHeight(orientation));
     }
 
     /** Explicit width and height remain an intentional forced-size request. */
     @Test
-    public void explicitDimensionsRemainForced() throws Exception {
-        assertRendition("forced", Map.of(prefix + "_w", new String[]{"500"},
-                prefix + "_h", new String[]{"400"}), 500, 400);
+    @UseDataProvider("cases")
+    public void explicitDimensionsRemainForced(final String format, final int orientation,
+            final String prefix) throws Exception {
+        assertRendition(format, orientation, prefix, "forced",
+                Map.of(prefix + "_w", new String[]{"500"}, prefix + "_h", new String[]{"400"}),
+                500, 400);
     }
 
     /** Returns the upright width; EXIF orientations 5–8 exchange the stored axes. */
-    private int displayedWidth() {
+    private int displayedWidth(final int orientation) {
         return orientation >= 5 ? RAW_HEIGHT : RAW_WIDTH;
     }
 
     /** Returns the upright height for the current orientation. */
-    private int displayedHeight() {
+    private int displayedHeight(final int orientation) {
         return orientation >= 5 ? RAW_WIDTH : RAW_HEIGHT;
     }
 
     /** Checks dimensions, an independently mapped corner colour and removal of orientation metadata. */
-    private void assertRendition(final String name, final Map<String, String[]> parameters,
-            final int width, final int height) throws Exception {
+    private void assertRendition(final String format, final int orientation, final String prefix,
+            final String name, final Map<String, String[]> parameters, final int width,
+            final int height) throws Exception {
         final File input = new File(directory, "orientation-" + orientation + "." + format);
         final File output = new File(directory,
                 format + "-" + orientation + "-" + prefix + "-" + name + ".png");

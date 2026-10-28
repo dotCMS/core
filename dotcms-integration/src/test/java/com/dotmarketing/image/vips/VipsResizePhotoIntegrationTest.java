@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.junit.CustomDataProviderRunner;
 import com.dotmarketing.util.Config;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -38,6 +39,13 @@ public class VipsResizePhotoIntegrationTest {
         if (directory != null) {
             FileUtils.deleteDirectory(directory);
         }
+    }
+
+    /** Keeps direct test selection compatible with the runner MainSuite uses for every class. */
+    @Test
+    public void suiteRunnerDiscoversAllResizeCases() throws Exception {
+        assertEquals(15, new CustomDataProviderRunner(VipsResizeImageFilterIntegrationTest.class).testCount());
+        assertEquals(80, new CustomDataProviderRunner(VipsResizeOrientationIntegrationTest.class).testCount());
     }
 
     /** Uses displayed 1512x2016 dimensions rather than the JPEG's stored 2016x1512 pixels. */

@@ -7,6 +7,9 @@ import static org.junit.Assert.assertTrue;
 import app.photofox.vipsffm.VImage;
 import app.photofox.vipsffm.VipsOption;
 import com.dotmarketing.util.Config;
+import com.tngtech.java.junit.dataprovider.DataProvider;
+import com.tngtech.java.junit.dataprovider.DataProviderRunner;
+import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.file.Files;
@@ -20,21 +23,16 @@ import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
 
 /** Exercises the real Java resize filter and native library across the 4x shrink boundary. */
-@RunWith(Parameterized.class)
+@RunWith(DataProviderRunner.class)
 public class VipsResizeImageFilterIntegrationTest {
 
     private static File directory;
-    private final String format;
-    private final boolean alpha;
-    private final int width;
 
     /** Supplies JPEG, RGB/RGBA PNG and lossy WebP cases below, at and above 4x shrink. */
-    @Parameters(name = "{0}, alpha={1}, width={2}")
-    public static Collection<Object[]> cases() {
+    @DataProvider(format = "%m[%p[0], alpha=%p[1], width=%p[2]]")
+    public static Object[][] cases() {
         final Collection<Object[]> cases = new ArrayList<>();
         for (final String format : new String[]{"png", "jpg", "webp"}) {
             for (final boolean alpha : new boolean[]{false, true}) {
@@ -48,15 +46,7 @@ public class VipsResizeImageFilterIntegrationTest {
                 }
             }
         }
-        return cases;
-    }
-
-    /** Selects the source encoding, alpha channel and target width for one resize. */
-    public VipsResizeImageFilterIntegrationTest(final String format, final boolean alpha,
-            final int width) {
-        this.format = format;
-        this.alpha = alpha;
-        this.width = width;
+        return cases.toArray(new Object[0][]);
     }
 
     /** Creates isolated output; missing libvips skips locally but fails when required by CI. */
@@ -79,9 +69,11 @@ public class VipsResizeImageFilterIntegrationTest {
 
     /** Checks geometry, alpha and each colour channel against known Java-generated pixels. */
     @Test
-    public void resizePreservesColoursAcrossShrinkBoundary() throws Exception {
-        final BufferedImage original = fixture();
-        final File input = source(original);
+    @UseDataProvider("cases")
+    public void resizePreservesColoursAcrossShrinkBoundary(final String format, final boolean alpha,
+            final int width) throws Exception {
+        final BufferedImage original = fixture(format, alpha);
+        final File input = source(original, format, alpha, width);
         final File output = new File(directory, format + "-" + alpha + "-" + width + "-resized.png");
 
         // Call transform directly: runFilter is allowed to fall back to the legacy engine.
@@ -111,7 +103,7 @@ public class VipsResizeImageFilterIntegrationTest {
     }
 
     /** Creates a navy logo region beside a spatially varying RGB gradient with optional alpha. */
-    private BufferedImage fixture() {
+    private BufferedImage fixture(final String format, final boolean alpha) {
         final int sourceWidth = "webp".equals(format) ? 701 : 1512;
         final int sourceHeight = "webp".equals(format) ? 700 : 1512;
         final BufferedImage image = new BufferedImage(sourceWidth, sourceHeight,
@@ -128,7 +120,8 @@ public class VipsResizeImageFilterIntegrationTest {
     }
 
     /** Encodes reference pixels without resizing; no WebP ImageIO decoder is used as an oracle. */
-    private File source(final BufferedImage image) throws Exception {
+    private File source(final BufferedImage image, final String format, final boolean alpha,
+            final int width) throws Exception {
         final File input = new File(directory, format + "-" + alpha + "-" + width + "." + format);
         if ("webp".equals(format)) {
             final File png = new File(directory, input.getName() + ".png");
