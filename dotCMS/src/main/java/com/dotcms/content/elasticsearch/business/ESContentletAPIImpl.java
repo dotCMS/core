@@ -3166,10 +3166,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     .deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, user);
 
             // Remove Rules with this contentlet as Parent.
+            // the parent's rules are removed with it; the caller's permission on the parent was checked above
+            // (canLock + PUBLISH filter in internalDestroy and validateAndFilterContentletsToDelete).
             try {
 
                 APILocator.getRulesAPI()
-                        .deleteRulesByParent(contentlet, user, respectFrontendRoles);
+                        .deleteRulesByParent(contentlet, APILocator.systemUser(), false);
             } catch (InvalidLicenseException ilexp) {
 
                 Logger.warn(this, "An enterprise license is required to delete rules under pages.");
