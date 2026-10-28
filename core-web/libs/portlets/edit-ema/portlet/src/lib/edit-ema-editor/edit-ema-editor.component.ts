@@ -124,6 +124,7 @@ import {
     VTLFile
 } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
+import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
 import { IframeAccessMode, PageType } from '../store/models';
 import {
     TEMPORAL_DRAG_ITEM,
@@ -218,6 +219,11 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     protected readonly uveStore = inject(UVEStore);
+    /**
+     * The store's page API, typed: `withPageApi`'s methods reach the UVEStore type through an index
+     * signature, which strict mode will not let new code call by name.
+     */
+    readonly #pageApi = this.uveStore as unknown as WithPageApiMethods;
 
     /**
      * Right sidebar tab management using NgRx signalState (similar to palette component).
@@ -627,9 +633,9 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         injectEditContentPanel(this.$editRequest, {
             saved: (contentlet) => this.#onPanelSaved(contentlet),
             languageChanged: (languageId) =>
-                this.uveStore.pageLoad({ language_id: String(languageId) }),
+                this.#pageApi.pageLoad({ language_id: String(languageId) }),
             pageEditorRequested: (page) => this.#onPageEditorRequested(page),
-            deleted: () => this.uveStore.pageReload(),
+            deleted: () => this.#pageApi.pageReload(),
             closed: () => this.#onPanelClosed()
         });
 
@@ -1367,7 +1373,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        this.uveStore.editorSave(pageContainers);
+        this.#pageApi.editorSave(pageContainers);
         this.#closeLegacyScreen();
     }
 
@@ -1383,23 +1389,23 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         const htmlPageReferer = payload?.['htmlPageReferer'];
 
         if (typeof htmlPageReferer !== 'string' || !htmlPageReferer) {
-            this.uveStore.pageReload();
+            this.#pageApi.pageReload();
 
             return;
         }
 
         const url = new URL(htmlPageReferer, this.window.location.origin); // Add base for relative URLs
         const targetUrl = getTargetUrl(url.pathname, this.uveStore.pageAsset()?.urlContentMap);
-        const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language');
+        const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language') ?? undefined;
 
-        if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
+        if (shouldNavigate(targetUrl, this.uveStore.pageParams()?.url ?? '')) {
             // Navigate to the new URL if it's different from the current one
-            this.uveStore.pageLoad({ url: targetUrl, language_id });
+            this.#pageApi.pageLoad({ url: targetUrl, language_id });
 
             return;
         }
 
-        this.uveStore.pageLoad({ language_id });
+        this.#pageApi.pageLoad({ language_id });
     }
 
     /**
@@ -1453,7 +1459,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                         return;
                     }
 
-                    this.uveStore.editorSave(pageContainers);
+                    this.#pageApi.editorSave(pageContainers);
                     ref.close();
                 },
                 error: (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error)
@@ -1634,7 +1640,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         }
 
         if (insertion || this.$editRequest()?.mode === 'new') {
-            this.uveStore.pageReload();
+            this.#pageApi.pageReload();
 
             return;
         }
@@ -1670,7 +1676,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         }
 
         this.#checkAndResetActiveContentlet(pageContainers);
-        this.uveStore.editorSave(pageContainers);
+        this.#pageApi.editorSave(pageContainers);
     }
 
     /**
@@ -1680,15 +1686,15 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * @param contentlet The saved contentlet.
      */
     #reloadAfterEdit(contentlet: DotCMSContentlet): void {
-        const urlMap = contentlet?.URL_MAP_FOR_CONTENT;
+        const urlMap = contentlet?.['URL_MAP_FOR_CONTENT'];
 
-        if (shouldNavigate(urlMap, this.uveStore.pageParams()?.url)) {
-            this.uveStore.pageLoad({ url: urlMap });
+        if (shouldNavigate(urlMap, this.uveStore.pageParams()?.url ?? '')) {
+            this.#pageApi.pageLoad({ url: urlMap });
 
             return;
         }
 
-        this.uveStore.pageReload();
+        this.#pageApi.pageReload();
     }
 
     /**
@@ -1700,7 +1706,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     #onPageEditorRequested({ url, languageId }: DotPageEditorRequest): void {
         this.$editRequest.set(null);
         this.#insertion = null;
-        this.uveStore.pageLoad({ url, language_id: String(languageId) });
+        this.#pageApi.pageLoad({ url, language_id: String(languageId) });
     }
 
     /**
@@ -1712,7 +1718,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         this.$editRequest.set(null);
         this.#insertion = null;
         this.#fromSdkEdit = false;
-        this.uveStore.pageReload();
+        this.#pageApi.pageReload();
     }
 
     /**

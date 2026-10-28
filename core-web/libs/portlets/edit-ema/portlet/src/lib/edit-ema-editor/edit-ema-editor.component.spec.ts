@@ -605,6 +605,20 @@ describe('EditEmaEditorComponent', () => {
             return panel as OpenedContent;
         };
 
+        /**
+         * The editor iframe's window, with `postMessage` reduced to the one signature the editor
+         * calls, so a spy on it can be mocked.
+         */
+        const iframeWindow = (): { postMessage: (message: unknown, host: string) => void } => {
+            const contentWindow = spectator.component.iframe?.nativeElement.contentWindow;
+
+            if (!contentWindow) {
+                throw new Error('fixture: the editor iframe has no window');
+            }
+
+            return contentWindow;
+        };
+
         /** The site of the page being edited, which every request names. */
         const siteId = () => store.pageAsset()?.site?.identifier;
 
@@ -1925,7 +1939,9 @@ describe('EditEmaEditorComponent', () => {
                             .containers.find((container) => container.contentletsId.length > 0);
 
                         // Fixture check: the page has a container with content in it.
-                        expect(pageContainer).toBeDefined();
+                        if (!pageContainer) {
+                            throw new Error('fixture: the page lists no container with content');
+                        }
 
                         return {
                             container: {
@@ -2136,10 +2152,7 @@ describe('EditEmaEditorComponent', () => {
                         it('should reload the page and ask the client to reload itself after a save', () => {
                             openFromSdk();
                             const postMessageSpy = vi
-                                .spyOn(
-                                    spectator.component.iframe.nativeElement.contentWindow,
-                                    'postMessage'
-                                )
+                                .spyOn(iframeWindow(), 'postMessage')
                                 .mockImplementation(() => undefined);
                             const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
 
@@ -2276,7 +2289,11 @@ describe('EditEmaEditorComponent', () => {
 
                     it('should accept every type in a container that names none', () => {
                         const payload = containerPayload();
-                        payload.container = { ...payload.container, acceptTypes: undefined };
+                        // The server can leave it out, whatever the type says.
+                        payload.container = {
+                            ...payload.container,
+                            acceptTypes: undefined as unknown as string
+                        };
 
                         addContent('content', payload);
 
@@ -2604,10 +2621,7 @@ describe('EditEmaEditorComponent', () => {
                         openReorder();
                         const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
                         const postMessageSpy = vi
-                            .spyOn(
-                                spectator.component.iframe.nativeElement.contentWindow,
-                                'postMessage'
-                            )
+                            .spyOn(iframeWindow(), 'postMessage')
                             .mockImplementation(() => undefined);
 
                         sendLegacyEvent({ name: NG_CUSTOM_EVENTS.SAVE_MENU_ORDER });
