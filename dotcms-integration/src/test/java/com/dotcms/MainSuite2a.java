@@ -47,6 +47,7 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({
         ChatCompletionsTest.class,
         ChatCompletionsStreamingTest.class,
+        com.dotmarketing.portlets.contentlet.business.HostFactoryImplDefaultSiteTest.class,
         InferenceAuthorizationTest.class,
         InferenceClientConformanceTest.class,
         InferenceEmbeddingsTest.class,
