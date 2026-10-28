@@ -1,7 +1,7 @@
 package com.dotcms.rest.api.v1;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -57,10 +57,8 @@ class DotObjectMapperProviderTest {
         // When it is written with the script-embeddable mapper
         final String json = scriptMapper.writeValueAsString(value);
 
-        // Then both are written as unicode sequences and the raw characters are absent
+        // Then both are written as unicode sequences
         assertEquals("{\"v\":\"x\\u2028y\\u2029z\"}", json);
-        assertFalse(json.contains(LINE_SEPARATOR));
-        assertFalse(json.contains(PARAGRAPH_SEPARATOR));
     }
 
     @Test
@@ -147,15 +145,19 @@ class DotObjectMapperProviderTest {
 
     @Test
     void defaultMapper_isNotAffectedByTheScriptEmbeddableMapper() throws Exception {
-        // Given the script-embeddable mapper has been created from the provider
+        // Given both mappers of the same provider
         final DotObjectMapperProvider provider = DotObjectMapperProvider.getInstance();
-        provider.getScriptEmbeddableObjectMapper();
+        final Map<String, Object> value = Map.of("v", "</script>");
 
-        // When the default mapper writes a value containing a closing script tag
-        final String json = provider.getDefaultObjectMapper().writeValueAsString(Map.of("v", "</script>"));
+        // When each one writes a value containing a closing script tag
+        final String fromDefault = provider.getDefaultObjectMapper().writeValueAsString(value);
+        final String fromScript = provider.getScriptEmbeddableObjectMapper().writeValueAsString(value);
 
-        // Then the default output keeps writing the characters literally
-        assertEquals("{\"v\":\"</script>\"}", json);
+        // Then only the script-embeddable one encodes it, and they do not share a factory
+        assertEquals("{\"v\":\"</script>\"}", fromDefault);
+        assertEquals("{\"v\":\"\\u003C\\u002Fscript\\u003E\"}", fromScript);
+        assertNotSame(provider.getDefaultObjectMapper().getFactory(),
+                provider.getScriptEmbeddableObjectMapper().getFactory());
     }
 
     @Test

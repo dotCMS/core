@@ -44,9 +44,9 @@ public class DotObjectMapperProvider {
      * for example to seed a JavaScript variable from a JSP. It is a copy of the default mapper, so
      * modules, key order and date format are the same, with one difference in the text it produces:
      * inside string values and keys, {@code <}, {@code >}, {@code &}, {@code /} and the Unicode line
-     * separators U+2028 and U+2029 are written as {@code \\uXXXX} sequences, which keeps the text inside
-     * the script element and lets the browser parse it as a JavaScript literal. The parsed values are
-     * identical to the ones the default mapper would produce.
+     * separators U+2028 and U+2029 are written as Unicode sequences (a backslash, {@code u} and four hex
+     * digits), which keeps the text inside the script element and lets the browser parse it as a
+     * JavaScript literal. The parsed values are identical to the ones the default mapper would produce.
      *
      * @return the script-embeddable {@link ObjectMapper}
      */
@@ -83,7 +83,7 @@ public class DotObjectMapperProvider {
     }
 
     /**
-     * Copies the given mapper and installs the character table that makes its output safe to embed in
+     * Copies the given mapper and installs the character table that lets its output be written inside
      * a script element. The copy has its own {@code JsonFactory}, so the source mapper keeps writing
      * plain JSON.
      *
@@ -100,13 +100,16 @@ public class DotObjectMapperProvider {
      * Character table for JSON embedded in an HTML script element. On top of the standard JSON
      * sequences for quotes, backslashes and control characters, the markup delimiters {@code <},
      * {@code >}, {@code &} and {@code /} and the Unicode line separators U+2028 and U+2029 are written
-     * as {@code \\uXXXX}. Every other character, non-ASCII letters included, is written as is.
+     * as Unicode sequences (a backslash, {@code u} and four hex digits). Every other character,
+     * non-ASCII letters included, is written as is.
      */
     private static class ScriptEmbeddableCharacters extends CharacterEscapes {
 
         private static final long serialVersionUID = 1L;
         private static final int LINE_SEPARATOR = 0x2028;
         private static final int PARAGRAPH_SEPARATOR = 0x2029;
+        private static final SerializableString LINE_SEPARATOR_SEQUENCE = new SerializedString("\\u2028");
+        private static final SerializableString PARAGRAPH_SEPARATOR_SEQUENCE = new SerializedString("\\u2029");
 
         private final int[] asciiCodes;
 
@@ -121,7 +124,7 @@ public class DotObjectMapperProvider {
 
         /**
          * Returns the handling of each ASCII character: the standard JSON table, with the four markup
-         * delimiters marked to be written as {@code \\uXXXX}.
+         * delimiters marked to be written as Unicode sequences.
          *
          * @return the per-character table Jackson consults for ASCII input
          */
@@ -132,8 +135,8 @@ public class DotObjectMapperProvider {
 
         /**
          * Returns the sequence to write for a non-ASCII character, or {@code null} to write it as is.
-         * Only the two Unicode line separators get a sequence, because a JavaScript parser treats them
-         * as line breaks inside a string literal.
+         * Only the two Unicode line separators get a sequence, because JavaScript engines before
+         * ES2019 treat them as line terminators inside a string literal.
          *
          * @param ch the code point being written
          * @return the replacement text, or {@code null}
@@ -141,10 +144,10 @@ public class DotObjectMapperProvider {
         @Override
         public SerializableString getEscapeSequence(final int ch) {
             if (ch == LINE_SEPARATOR) {
-                return new SerializedString("\\u2028");
+                return LINE_SEPARATOR_SEQUENCE;
             }
             if (ch == PARAGRAPH_SEPARATOR) {
-                return new SerializedString("\\u2029");
+                return PARAGRAPH_SEPARATOR_SEQUENCE;
             }
             return null;
         }
