@@ -5409,7 +5409,16 @@ describe('DotContentDriveShellComponent', () => {
             it('handles a restored version as a save, with no restore handler', () => {
                 const content = openOn(EDIT_REQUEST);
 
-                expect(Object.keys(content.options)).not.toContain('versionRestored');
+                // The shared panel events, the opener injector and the editor option: nothing else.
+                expect(Object.keys(content.options).sort()).toEqual([
+                    'closed',
+                    'deleted',
+                    'editor',
+                    'injector',
+                    'languageChanged',
+                    'pageEditorRequested',
+                    'saved'
+                ]);
             });
 
             it('clears the request, then refreshes the list quietly, when the panel closes itself', () => {
