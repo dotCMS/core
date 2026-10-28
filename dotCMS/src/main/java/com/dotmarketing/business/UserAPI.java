@@ -356,7 +356,8 @@ public interface UserAPI {
 	 *            - User to check permissions to save
 	 * @param validatePassword
 	 *            - If <code>true</code>, the specified password will be
-	 *            validated and then properly encrypted.
+	 *            validated and then properly encrypted, and the user is
+	 *            flagged as having an encrypted password.
 	 * @param respectFrontEndRoles
 	 */
 	public void save(User userToSave, User user, boolean validatePassword,

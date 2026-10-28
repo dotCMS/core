@@ -490,6 +490,8 @@ public class UserAPIImpl implements UserAPI {
             // Use new password hash method
             try {
                 userToSave.setPassword(PasswordFactoryProxy.generateHash(pwd));
+                // flag it as hashed so EncryptPlainPasswordsJob doesn't hash the hash
+                userToSave.setPasswordEncrypted(true);
             } catch (PasswordException e) {
                 Logger.error(UserAPIImpl.class, "An error occurred generating the hashed password for userId: " + userToSave.getUserId(), e);
                 throw new DotDataException("An error occurred generating the hashed password.");
