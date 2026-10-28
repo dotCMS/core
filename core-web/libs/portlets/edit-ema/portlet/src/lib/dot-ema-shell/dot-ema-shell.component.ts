@@ -54,6 +54,7 @@ import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
 import { DotPageAssetParams, NavigationBarItem } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
+import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
 import { DotUveViewParams } from '../store/models';
 import {
     checkClientHostAccess,
@@ -156,6 +157,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
     #activeEditor: RouteWithOpenContentForEdit | null = null;
 
     readonly uveStore = inject(UVEStore);
+    /**
+     * The store's page API, typed: `withPageApi`'s methods reach the UVEStore type through an index
+     * signature, which strict mode will not let new code call by name.
+     */
+    readonly #pageApi = this.uveStore as unknown as WithPageApiMethods;
     readonly destroyRef = inject(DestroyRef);
     readonly #activatedRoute = inject(ActivatedRoute);
     readonly #router = inject(Router);
@@ -703,7 +709,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             {
                 injector: this.#injector,
                 saved: (contentlet) => this.#onPagePropertiesSaved(page, contentlet),
-                closed: () => this.uveStore.pageReload()
+                closed: () => this.#pageApi.pageReload()
             }
         );
     }
@@ -716,17 +722,17 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
      * @param contentlet The saved page.
      */
     #onPagePropertiesSaved(page: DotCMSPage, contentlet: DotCMSContentlet): void {
-        const url = contentlet?.URL_MAP_FOR_CONTENT || contentlet?.url;
+        const url = contentlet?.['URL_MAP_FOR_CONTENT'] || contentlet?.url;
 
         this.uveStore.workflowFetch(page.inode);
 
-        if (shouldNavigate(url, this.uveStore.pageParams()?.url)) {
-            this.uveStore.pageLoad({ url });
+        if (shouldNavigate(url, this.uveStore.pageParams()?.url ?? '')) {
+            this.#pageApi.pageLoad({ url });
 
             return;
         }
 
-        this.uveStore.pageReload();
+        this.#pageApi.pageReload();
     }
 
     /**
