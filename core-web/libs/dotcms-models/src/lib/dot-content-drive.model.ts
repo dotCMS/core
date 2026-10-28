@@ -1,4 +1,5 @@
 import { DotCMSContentlet } from './dot-contentlet.model';
+import { DotSearchScope } from './dot-search-scope.model';
 
 /**
  * Pagination/sort/filter event shape compatible with PrimeNG's LazyLoadEvent.
@@ -201,7 +202,7 @@ export interface DotContentDriveQueryFilters {
      * Not to be confused with a *browse* scope, which says where you are browsing rather than which
      * fields a search reads.
      */
-    searchScope?: 'TITLE' | 'ALL_FIELDS';
+    searchScope?: DotSearchScope;
 }
 
 /**

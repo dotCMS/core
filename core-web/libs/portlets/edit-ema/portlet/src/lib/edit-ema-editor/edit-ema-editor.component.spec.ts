@@ -56,6 +56,7 @@ import {
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DEFAULT_VARIANT_ID, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotEditContentDialogHeaderComponent } from '@dotcms/edit-content';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
@@ -2659,6 +2660,10 @@ describe('EditEmaEditorComponent', () => {
                             contentletInode: 'contentlet-inode-123'
                         })
                     );
+                    // PrimeNG prints `header` only without a header template; this one adds the state chip.
+                    expect(config.templates).toEqual({
+                        header: DotEditContentDialogHeaderComponent
+                    });
                 });
 
                 it('opens the new editor in the side panel when its flag is on, and clears the request when the panel closes', () => {

@@ -15,7 +15,7 @@ import { MenuItem } from 'primeng/api';
 
 import { filter, map } from 'rxjs/operators';
 
-import { MenuItemEntity } from '@dotcms/dotcms-models';
+import { DotTitleStatus, MenuItemEntity } from '@dotcms/dotcms-models';
 
 import { processSpecialRoute, shouldReplaceLastCrumb } from './breadcrumb.utils';
 
@@ -30,13 +30,21 @@ export interface BreadcrumbState {
      * Each item follows PrimeNG's MenuItem interface. Set to an empty array when no breadcrumbs are available.
      */
     breadcrumbs: MenuItem[];
+
+    /**
+     * The chip shown right after the last crumb's title, or `null` for none. Set only by Edit Content
+     * (the host that owns the title area); every other page leaves it `null` and renders as before.
+     * Never persisted with the breadcrumbs: it describes the page on screen, not the trail.
+     */
+    titleStatus: DotTitleStatus;
 }
 
 /**
  * Initial state for the Breadcrumb feature.
  */
 const initialBreadcrumbState: BreadcrumbState = {
-    breadcrumbs: []
+    breadcrumbs: [],
+    titleStatus: null
 };
 
 /**
@@ -183,6 +191,20 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                 patchState(store, { breadcrumbs: [] });
             };
 
+            /**
+             * Sets the chip shown next to the title in the global header. `null` hides it.
+             *
+             * Not cleared on navigation: Edit Content's route is reused for locale switches and related
+             * content, where the value can stay the same. The page that set it clears it when it leaves.
+             */
+            const setTitleStatus = (titleStatus: DotTitleStatus) => {
+                patchState(store, { titleStatus });
+            };
+
+            const clearTitleStatus = () => {
+                patchState(store, { titleStatus: null });
+            };
+
             const processUrl = (url: string) => {
                 const menu = menuItems();
 
@@ -273,6 +295,8 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                 addNewBreadcrumb,
                 loadBreadcrumbs,
                 clearBreadcrumbs,
+                setTitleStatus,
+                clearTitleStatus,
                 _listenToRouterEvents: listenToRouterEvents,
                 _processUrl: processUrl
             };

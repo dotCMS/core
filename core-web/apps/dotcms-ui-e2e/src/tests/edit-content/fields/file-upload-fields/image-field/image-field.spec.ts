@@ -177,7 +177,10 @@ test.describe('select an existing image through the AssetPicker', () => {
         await picker.waitForVisible();
         await picker.expectConfirmDisabled();
 
-        await picker.searchFor(imageName);
+        // Without the extension, for the same reason as the shared-suffix search below: on Title
+        // scope the analyzer splits a `<random>.png` tail ending in a digit into two tokens, which
+        // the per-word prefix query never matches. The row is still asserted by its full title.
+        await picker.searchFor(imageName.replace(/\.png$/, ''));
         await picker.expectRowVisible(imageName);
 
         await picker.selectRowByTitle(imageName);

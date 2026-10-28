@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 type SpyInstance = ReturnType<typeof vi.spyOn>;
 
 import {
+    DotCMSBaseTypesContentTypes,
     DotCMSContentType,
     DotCMSContentTypeField,
     DotCMSContentTypeFieldVariable,
@@ -25,6 +26,7 @@ import {
     isFilteredType,
     isSingleColumnLayout,
     isValidJson,
+    openContentletPreview,
     resolveLocker,
     sortLocalesTranslatedFirst,
     stringToJson,
@@ -1235,6 +1237,66 @@ describe('Utils Functions', () => {
             });
 
             expect(generatePreviewUrl(contentlet)).toBe('');
+        });
+    });
+
+    describe('openContentletPreview', () => {
+        const host = '48190c8c-42c4-46af-8d1a-0cd5db894797';
+        let windowOpenSpy: SpyInstance;
+
+        beforeEach(() => {
+            windowOpenSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
+            vi.mocked(console.warn).mockClear();
+        });
+
+        afterEach(() => {
+            windowOpenSpy.mockRestore();
+        });
+
+        it('should open the page editor in a new tab for an HTML page', () => {
+            const page = createFakeContentlet({
+                baseType: DotCMSBaseTypesContentTypes.HTMLPAGE,
+                url: '/blog/index',
+                host,
+                languageId: 1
+            });
+
+            openContentletPreview(page);
+
+            expect(windowOpenSpy).toHaveBeenCalledWith(generatePageEditUrl(page), '_blank');
+        });
+
+        it('should open the URL-map preview in a new tab for content that is not a page', () => {
+            const mapped = createFakeContentlet({
+                URL_MAP_FOR_CONTENT: '/blog/post/5-snow-sports-to-try-this-winter',
+                host,
+                languageId: 1
+            });
+
+            openContentletPreview(mapped);
+
+            expect(windowOpenSpy).toHaveBeenCalledWith(generatePreviewUrl(mapped), '_blank');
+        });
+
+        it('should not open anything and should warn when the URL cannot be built', () => {
+            const incomplete = createFakeContentlet({
+                URL_MAP_FOR_CONTENT: undefined,
+                host,
+                languageId: 1
+            });
+
+            openContentletPreview(incomplete);
+
+            expect(windowOpenSpy).not.toHaveBeenCalled();
+            expect(console.warn).toHaveBeenCalledWith(
+                'Preview URL could not be generated due to missing contentlet attributes.'
+            );
+        });
+
+        it('should do nothing when there is no contentlet', () => {
+            openContentletPreview(null);
+
+            expect(windowOpenSpy).not.toHaveBeenCalled();
         });
     });
 

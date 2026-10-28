@@ -16,8 +16,11 @@ import { catchError, switchMap, take, tap } from 'rxjs/operators';
 import { DotSiteService } from '@dotcms/data-access';
 import {
     ComponentStatus,
+    DOT_SEARCH_SCOPE,
     DotCMSContentTypeField,
+    DotSearchScope,
     LOAD_MORE_NODE_TYPE,
+    SEARCH_SCOPE_FILTER_KEY,
     TreeNodeItem
 } from '@dotcms/dotcms-models';
 
@@ -373,6 +376,25 @@ export const DotAssetPickerStore = signalStore(
                 // The tree highlight has to follow the scope, not just the list: it is also what
                 // `$targetFolder` reads to decide where an upload lands.
                 store.selectRootNode();
+            },
+
+            /**
+             * Sets which fields the search term is matched against. Title is the default, so it is
+             * stored as the absence of the key: a fresh opening and `clearFilters` land on Title
+             * without remembering anything, and `$hasNonDefaultFilters` counts All Fields as a change.
+             *
+             * Keeps the browsed folder: only the way the term is read changes, not where it is read.
+             */
+            setSearchScope: (scope: DotSearchScope): void => {
+                const filters = { ...store.filters() };
+
+                if (scope === DOT_SEARCH_SCOPE.TITLE) {
+                    delete filters[SEARCH_SCOPE_FILTER_KEY];
+                } else {
+                    filters[SEARCH_SCOPE_FILTER_KEY] = scope;
+                }
+
+                patchState(store, { filters, ...resetPaging() });
             },
 
             /**

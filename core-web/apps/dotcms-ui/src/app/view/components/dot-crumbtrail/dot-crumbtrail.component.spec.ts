@@ -9,7 +9,13 @@ import {
 
 import { MenuItem } from 'primeng/api';
 
-import { DotCurrentUserService, DotSiteService, DotSystemConfigService } from '@dotcms/data-access';
+import {
+    DotCurrentUserService,
+    DotMessageService,
+    DotSiteService,
+    DotSystemConfigService
+} from '@dotcms/data-access';
+import { DotTitleStatus } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotCollapseBreadcrumbComponent } from '@dotcms/ui';
 import { DOT_SYSTEM_CONFIG_SERVICE_MOCK } from '@dotcms/utils-testing';
@@ -27,7 +33,8 @@ describe('DotCrumbtrailComponent', () => {
             GlobalStore,
             mockProvider(DotSiteService),
             mockProvider(DotSystemConfigService, DOT_SYSTEM_CONFIG_SERVICE_MOCK),
-            mockProvider(DotCurrentUserService)
+            mockProvider(DotCurrentUserService),
+            mockProvider(DotMessageService, { get: (key: string) => key })
         ],
         detectChanges: false
     });
@@ -211,5 +218,95 @@ describe('DotCrumbtrailComponent', () => {
 
         const breadcrumbLast = spectator.query(byTestId('breadcrumb-title'));
         expect(breadcrumbLast.textContent.trim()).toBe('Last');
+    });
+
+    describe('title status chip', () => {
+        const publishedStatus: DotTitleStatus = {
+            state: { live: true, working: true, hasLiveVersion: true }
+        };
+
+        const withTitle = (title = 'My content') => {
+            patchState(unprotected(store), {
+                breadcrumbs: [
+                    { label: 'Home', disabled: true },
+                    { label: title, url: '/content/abc' }
+                ]
+            });
+        };
+
+        it('should not show a chip when no page set a title status', () => {
+            withTitle();
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('title-status-chip'))).toBeFalsy();
+        });
+
+        it('should show the status badge right after the title', () => {
+            withTitle();
+            store.setTitleStatus(publishedStatus);
+            spectator.detectChanges();
+
+            const title = spectator.query(byTestId('breadcrumb-title'));
+            const chip = spectator.query(byTestId('title-status-chip'));
+
+            expect(chip).toBeTruthy();
+            expect(chip?.textContent?.trim()).toBe('Published');
+            const position = title?.compareDocumentPosition(chip as Node) ?? 0;
+
+            expect(position & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+        });
+
+        it('should read "New" for content that has not been saved', () => {
+            withTitle('New Blog');
+            store.setTitleStatus({ state: null });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('title-status-chip'))?.textContent?.trim()).toBe('New');
+        });
+
+        it('should update the chip when the status changes without a reload', () => {
+            withTitle();
+            store.setTitleStatus(publishedStatus);
+            spectator.detectChanges();
+
+            store.setTitleStatus({ state: { live: false, working: true, hasLiveVersion: false } });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('title-status-chip'))?.textContent?.trim()).toBe(
+                'Draft'
+            );
+        });
+
+        it('should remove the chip when the status is cleared', () => {
+            withTitle();
+            store.setTitleStatus(publishedStatus);
+            spectator.detectChanges();
+
+            store.clearTitleStatus();
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('title-status-chip'))).toBeFalsy();
+        });
+
+        it('should not show a chip when there is no title to sit next to', () => {
+            patchState(unprotected(store), { breadcrumbs: [] });
+            store.setTitleStatus(publishedStatus);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('title-status-chip'))).toBeFalsy();
+        });
+
+        it('should let a long title shrink while the chip keeps its size', () => {
+            withTitle('A'.repeat(200));
+            store.setTitleStatus(publishedStatus);
+            spectator.detectChanges();
+
+            const title = spectator.query(byTestId('breadcrumb-title'));
+            const chip = spectator.query(byTestId('title-status-chip'));
+
+            expect(title?.classList.contains('min-w-0')).toBe(true);
+            expect(title?.classList.contains('truncate-text')).toBe(true);
+            expect(chip?.classList.contains('shrink-0')).toBe(true);
+        });
     });
 });

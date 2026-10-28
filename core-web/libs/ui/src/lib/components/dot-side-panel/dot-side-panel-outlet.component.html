@@ -2,6 +2,7 @@
     <dot-side-panel
         [heading]="panel.heading()"
         [contentStyleClass]="panel.ref.contentStyleClass()"
+        [titleStatus]="panel.ref.titleStatus()"
         [front]="last"
         (closeRequested)="panel.ref.requestClose()">
         @if (panel.component()) {

@@ -1,13 +1,13 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { Injectable, OnDestroy, inject } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { NavigationEnd, Router } from '@angular/router';
 
 import { distinctUntilChanged, filter, map } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotTitleStatus } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { EditContentHost, EditContentIdentity } from './edit-content-host.model';
@@ -31,7 +31,7 @@ const DEFAULT_TITLE_PLATFORM = 'dotcms.content.management.platform.title';
  * and its store.
  */
 @Injectable()
-export class RouterEditContentHost implements EditContentHost {
+export class RouterEditContentHost implements EditContentHost, OnDestroy {
     readonly #router = inject(Router);
     readonly #title = inject(Title);
     readonly #globalStore = inject(GlobalStore);
@@ -106,6 +106,22 @@ export class RouterEditContentHost implements EditContentHost {
 
     setContentTitle(label: string): void {
         this.#title.setTitle(`${label} - ${this.#dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`);
+    }
+
+    /**
+     * Hands the chip to the global header, which draws it next to the title.
+     */
+    setTitleStatus(status: DotTitleStatus): void {
+        this.#globalStore.setTitleStatus(status);
+    }
+
+    /**
+     * The editor left the screen: take the chip off the global header so the next page shows none.
+     * Done here and not on navigation, because the editor's route is reused for locale switches and
+     * related content, where the chip must stay.
+     */
+    ngOnDestroy(): void {
+        this.#globalStore.clearTitleStatus();
     }
 
     addBreadcrumb(crumb: { label: string; url: string }): void {

@@ -3,9 +3,12 @@ import { Component, DestroyRef, inject, input, output, signal, viewChild } from 
 import { ButtonModule } from 'primeng/button';
 import { Drawer, DrawerModule } from 'primeng/drawer';
 
+import { DotTitleStatus } from '@dotcms/dotcms-models';
+
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 import { DotKeyboardShortcutService } from '../../services/dot-keyboard-shortcut/dot-keyboard-shortcut.service';
 import { hasOverlayAbove } from '../../services/dot-keyboard-shortcut/overlay';
+import { DotContentletStatusBadgeComponent } from '../dot-contentlet-status-badge/dot-contentlet-status-badge.component';
 
 /**
  * Shared by every side panel, so the author's expanded (full-width) choice carries over between
@@ -56,7 +59,7 @@ function writeExpandedPreference(expanded: boolean): void {
  */
 @Component({
     selector: 'dot-side-panel',
-    imports: [DrawerModule, ButtonModule, DotMessagePipe],
+    imports: [DrawerModule, ButtonModule, DotMessagePipe, DotContentletStatusBadgeComponent],
     templateUrl: './dot-side-panel.component.html',
     // On the document because `appendTo="body"` moves the drawer and its mask out of this
     // component's DOM, so no template binding can hear the mask click.
@@ -76,6 +79,12 @@ export class DotSidePanelComponent {
      * slot would shadow it.
      */
     readonly heading = input('');
+
+    /**
+     * The chip shown right after the heading, or `null` for none. The heading truncates; the chip
+     * keeps its size.
+     */
+    readonly titleStatus = input<DotTitleStatus>(null);
 
     /** Classes for the content area. No padding by default, for content that lays itself out. */
     readonly contentStyleClass = input('p-0!');

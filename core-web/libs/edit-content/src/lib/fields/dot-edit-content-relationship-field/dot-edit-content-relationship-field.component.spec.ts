@@ -29,6 +29,7 @@ import { DotRelationshipFieldComponent } from './components/dot-relationship-fie
 import { DotEditContentRelationshipFieldComponent } from './dot-edit-content-relationship-field.component';
 import { RelationshipFieldStore } from './store/relationship-field.store';
 
+import { DotEditContentDialogHeaderComponent } from '../../components/dot-create-content-dialog/dot-edit-content-dialog-header.component';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
@@ -101,6 +102,15 @@ export class MockFormComponent {
 const submitAttempted = signal(false);
 
 describe('DotEditContentRelationshipFieldComponent', () => {
+    // Opening the "create content" dialog lazy-loads its component, and under Vitest that `import()` is
+    // where the dialog and its Angular graph get transformed — inside the 5s budget of whichever test
+    // clicks first. Under `nx affected` (many projects in parallel) it does not fit and the test times
+    // out. Warming the module here moves the transform outside every test's clock; the sibling
+    // `dot-relationship-field` spec does the same for the same reason.
+    beforeAll(async () => {
+        await import('../../components/dot-create-content-dialog/dot-create-content-dialog.component');
+    });
+
     beforeEach(() => submitAttempted.set(false));
 
     let spectator: SpectatorHost<DotEditContentRelationshipFieldComponent, MockFormComponent>;
@@ -438,6 +448,10 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 );
                 expect(callArgs[1].data.relationshipInfo.isParent).toBe(true);
                 expect(callArgs[1].header).toBe('Create Test Content Type');
+                // PrimeNG prints `header` only without a header template; this one adds the state chip.
+                expect(callArgs[1].templates).toEqual({
+                    header: DotEditContentDialogHeaderComponent
+                });
             });
 
             it('should not open dialog when disabled', () => {

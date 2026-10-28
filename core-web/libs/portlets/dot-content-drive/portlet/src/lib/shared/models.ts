@@ -9,7 +9,9 @@ import {
     DotFolderBulkDuplicateReason,
     DotFolderDeleteFailureReason,
     DotLanguage,
-    DotSite
+    DotSearchScope,
+    DotSite,
+    DOT_SEARCH_SCOPE
 } from '@dotcms/dotcms-models';
 import { EditContentDialogData } from '@dotcms/edit-content';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
@@ -54,21 +56,13 @@ export enum DotContentDriveStatus {
 /**
  * Which fields a Content Drive search term is matched against.
  *
- * Not to be confused with a *browse* scope, which says where you are browsing. A browse scope says
- * where you are; a search scope says how a search reads what is there.
- *
- * `as const` rather than a TS `enum`, per TYPESCRIPT_STANDARDS.md. The values are the wire contract
- * and must match the server's `SearchScope`.
+ * An alias of the shared {@link DOT_SEARCH_SCOPE}, which now lives in `@dotcms/dotcms-models` so the
+ * AssetPicker can use it without importing from this portlet. Content Drive keeps its own names so
+ * nothing else in the portlet changes.
  */
-export const DOT_CONTENT_DRIVE_SEARCH_SCOPE = {
-    /** The term is matched against every indexed field. The default, and today's behaviour. */
-    ALL_FIELDS: 'ALL_FIELDS',
-    /** The term is matched against the contentlet title only. */
-    TITLE: 'TITLE'
-} as const;
+export const DOT_CONTENT_DRIVE_SEARCH_SCOPE = DOT_SEARCH_SCOPE;
 
-export type DotContentDriveSearchScope =
-    (typeof DOT_CONTENT_DRIVE_SEARCH_SCOPE)[keyof typeof DOT_CONTENT_DRIVE_SEARCH_SCOPE];
+export type DotContentDriveSearchScope = DotSearchScope;
 
 /**
  * The sort order of the content drive.

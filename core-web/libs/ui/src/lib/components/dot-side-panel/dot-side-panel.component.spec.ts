@@ -5,6 +5,7 @@ import { Drawer } from 'primeng/drawer';
 import { ZIndexUtils } from 'primeng/utils';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotTitleStatus } from '@dotcms/dotcms-models';
 
 import { DotSidePanelComponent } from './dot-side-panel.component';
 
@@ -206,6 +207,57 @@ describe('DotSidePanelComponent', () => {
             open();
 
             expect(width()).toBe('100%');
+        });
+    });
+
+    describe('title status chip', () => {
+        const PANEL_WITH_STATUS = `
+            <dot-side-panel heading="A very long heading" [titleStatus]="status">
+                <p data-testid="panel-body">The source</p>
+            </dot-side-panel>`;
+
+        const openWithStatus = (status: DotTitleStatus): void => {
+            spectator = createHost(PANEL_WITH_STATUS, {
+                hostProps: { status } as unknown as { front: boolean }
+            }) as unknown as typeof spectator;
+            spectator.detectChanges();
+        };
+
+        it('shows no chip when the panel was not given a status', () => {
+            open();
+
+            expect(query('title-status-chip')).toBeNull();
+        });
+
+        it('shows no chip for a null status', () => {
+            openWithStatus(null);
+
+            expect(query('title-status-chip')).toBeNull();
+        });
+
+        it('shows the status badge right after the heading', () => {
+            openWithStatus({ state: { live: true, working: true, hasLiveVersion: true } });
+
+            const title = query('side-panel-title') as HTMLElement;
+            const chip = query('title-status-chip') as HTMLElement;
+
+            expect(chip.textContent?.trim()).toBe('Published');
+            expect(
+                title.compareDocumentPosition(chip) & Node.DOCUMENT_POSITION_FOLLOWING
+            ).toBeTruthy();
+        });
+
+        it('reads "New" for a status with a null state', () => {
+            openWithStatus({ state: null });
+
+            expect(query('title-status-chip')?.textContent?.trim()).toBe('New');
+        });
+
+        it('lets the heading truncate while the chip keeps its size', () => {
+            openWithStatus({ state: null });
+
+            expect(query('side-panel-title')?.classList.contains('truncate')).toBe(true);
+            expect(query('title-status-chip')?.classList.contains('shrink-0')).toBe(true);
         });
     });
 });

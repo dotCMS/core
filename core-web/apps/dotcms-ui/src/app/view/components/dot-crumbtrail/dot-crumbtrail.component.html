@@ -1,16 +1,26 @@
 @let collapsedBreadcrumbs = $collapsedBreadcrumbs();
 @let lastBreadcrumb = $lastBreadcrumb();
+@let titleStatus = $titleStatus();
 
-<div class="flex flex-col gap-1">
+<div class="flex min-w-0 flex-col gap-1">
     <div data-testid="breadcrumb-crumbs">
         <dot-collapse-breadcrumb [model]="collapsedBreadcrumbs" />
     </div>
 
     @if (lastBreadcrumb) {
-        <div
-            data-testid="breadcrumb-title"
-            class="text-black text-2xl font-semibold tracking-tight leading-tight truncate-text">
-            {{ lastBreadcrumb }}
+        <!-- The title gives way (ellipsis) so the chip, set only by Edit Content, stays fully visible. -->
+        <div class="flex min-w-0 items-center gap-3">
+            <div
+                data-testid="breadcrumb-title"
+                class="truncate-text min-w-0 truncate text-2xl leading-tight font-semibold tracking-tight text-black">
+                {{ lastBreadcrumb }}
+            </div>
+
+            @if (titleStatus) {
+                <div class="shrink-0" data-testid="title-status-chip">
+                    <dot-contentlet-status-badge [state]="titleStatus.state" />
+                </div>
+            }
         </div>
     }
 </div>
