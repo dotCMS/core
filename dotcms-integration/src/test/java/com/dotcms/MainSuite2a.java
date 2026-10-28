@@ -114,6 +114,7 @@ import org.junit.runners.Suite.SuiteClasses;
         InterceptorHandlerTest.class,
         com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcherTest.class,
         com.dotcms.rest.AuditPublishingResourceTest.class,
+        com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPIImplTest.class,
         MaintenanceResourceIntegrationTest.class,
         FolderHandlerTest.class,
         ContentAnalyticsPersistenceModeIT.class,
