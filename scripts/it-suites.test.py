@@ -121,6 +121,60 @@ class ItSuitesTests(unittest.TestCase):
         it.add(self.root, "CTest", "Suite4")
         self.assertEqual(it.unregistered(self.root), [])
 
+    def put(self, rel, text):
+        (self.root / it.TEST_SRC / rel).parent.mkdir(parents=True, exist_ok=True)
+        (self.root / it.TEST_SRC / rel).write_text(text)
+
+    def test_junit4_test_importing_jupiter_assertions_is_still_junit4(self):
+        self.put("com/fresh/MixedTest.java", test_class(
+            "com.fresh", "MixedTest",
+            imports="import org.junit.Test;\nimport static org.junit.jupiter.api.Assertions.assertEquals;"))
+        self.assertEqual(it.class_info(self.root, "MixedTest"), ("com.fresh.MixedTest", False))
+        it.add(self.root, "MixedTest", "Suite4")
+        with self.assertRaisesRegex(SystemExit, "JUnit 4 test"):
+            it.add(self.root, "com.fresh.CTest", "Suite5")
+
+    def test_both_or_neither_junit_annotations_are_refused(self):
+        self.put("com/fresh/BothTest.java", test_class(
+            "com.fresh", "BothTest", imports="import org.junit.Test;\nimport org.junit.jupiter.api.Test;"))
+        self.put("com/fresh/NeitherTest.java", test_class("com.fresh", "NeitherTest", imports=""))
+        with self.assertRaisesRegex(SystemExit, "imports of both"):
+            it.add(self.root, "BothTest", "Suite4")
+        with self.assertRaisesRegex(SystemExit, "no org.junit.Test"):
+            it.add(self.root, "NeitherTest", "Suite4")
+
+    def test_comma_goes_before_a_trailing_comment_on_the_old_last_entry(self):
+        self.suite4.write_text(JUNIT4_SUITE.replace("com.other.FTest.class", "com.other.FTest.class // flaky"))
+        it.add(self.root, "ZTest", "Suite4")
+        self.assertIn("        com.other.FTest.class, // flaky\n        com.fresh.ZTest.class,\n})",
+                      self.suite4.read_text())
+
+    def test_unparseable_suite_shapes_fail_loudly(self):
+        shapes = {
+            "same line as the end": JUNIT4_SUITE.replace("com.other.FTest.class\n})", "com.other.FTest.class})"),
+            "split entry": JUNIT4_SUITE.replace("com.other.FTest.class", "com.other.\n        FTest.class"),
+            "two per line": JUNIT4_SUITE.replace("BTest.class,", "BTest.class, DTest.class,"),
+        }
+        for label, text in shapes.items():
+            with self.subTest(label):
+                self.suite4.write_text(text)
+                with self.assertRaises(SystemExit):
+                    it.Suite(self.suite4)
+
+    def test_close_paren_inside_a_comment_does_not_end_the_block(self):
+        self.suite4.write_text(JUNIT4_SUITE.replace("// a comment between entries", "// see foo({}) here"))
+        self.assertEqual(len(it.Suite(self.suite4).entries), 3)
+
+    def test_nested_abstract_class_does_not_hide_a_test_from_the_guard(self):
+        self.put("com/fresh/NestedTest.java", "package com.fresh;\nimport org.junit.Test;\n"
+                 "public class NestedTest {\n  private abstract static class Helper {}\n  @Test public void t() {}\n}\n")
+        self.assertIn("com.fresh.NestedTest", it.unregistered(self.root))
+
+    def test_check_fails_on_stale_allowlist_entries(self):
+        (self.root / it.ALLOWLIST).write_text("com.other.BTest # now registered\ncom.fresh.Gone\ncom.fresh.CTest\n")
+        self.assertEqual(it.stale_allowlist(self.root),
+                         ["com.other.BTest is now registered in a suite", "com.fresh.Gone no longer exists"])
+
 
 if __name__ == "__main__":
     unittest.main()

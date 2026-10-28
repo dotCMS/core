@@ -25,9 +25,12 @@ MATRIX = Path(".github/test-matrix.yml")
 ALLOWLIST = Path("dotcms-integration/unregistered-tests.allowlist")
 
 BLOCK_START = re.compile(r"@(?:Suite\.)?(SuiteClasses|SelectClasses)\s*\(\s*\{")
-ENTRY = re.compile(r"^(\s*)([\w.]+)\.class(,?)\s*(?://.*)?$")
+ENTRY = re.compile(r"^(\s*)([\w.]+)\.class(,?)(\s*//.*)?$")
 IMPORT = re.compile(r"^import\s+([\w.]+)\s*;")
 TEST_METHOD = re.compile(r"@(?:Test|ParameterizedTest|TestFactory|RepeatedTest)\b")
+JUNIT4 = re.compile(r"^import\s+org\.junit\.(?:Test|runner\.[\w*]+);", re.M)
+JUNIT5 = re.compile(r"^import\s+org\.junit\.jupiter\.api\.(?:Test|TestFactory|RepeatedTest|\*);"
+                    r"|^import\s+org\.junit\.jupiter\.params\.(?:ParameterizedTest|\*);", re.M)
 
 
 def insertion_line(items, name):
@@ -60,17 +63,30 @@ class Suite:
         if len(starts) != 1:
             raise SystemExit(f"{path}: expected one @SuiteClasses/@SelectClasses block, found {len(starts)}")
         self.start = starts[0]
-        self.junit5 = BLOCK_START.search(self.lines[self.start]).group(1) == "SelectClasses"
-        end = next(i for i in range(self.start, len(self.lines)) if "})" in self.lines[i])
-        self.end = end
+        m = BLOCK_START.search(self.lines[self.start])
+        self.junit5 = m.group(1) == "SelectClasses"
+        if self.lines[self.start][m.end():].strip():
+            raise SystemExit(f"{path}:{self.start + 1}: expected nothing after the opening '{{'")
         # (line index, name as written, resolved fully qualified name)
         self.entries = []
-        for i in range(self.start + 1, end):
-            m = ENTRY.match(self.lines[i])
-            if m:
-                self.entries.append((i, m.group(2), self.resolve(m.group(2))))
-            elif ".class" in self.lines[i] and not self.lines[i].lstrip().startswith("//"):
-                raise SystemExit(f"{path}:{i + 1}: unrecognised suite entry: {self.lines[i].strip()}")
+        for i in range(self.start + 1, len(self.lines)):
+            line = self.lines[i]
+            code = line.split("//")[0].strip()
+            if code.startswith("}"):
+                if code != "})":
+                    raise SystemExit(f"{path}:{i + 1}: unsupported end of the suite list: {line.strip()}")
+                break
+            if "})" in code:
+                raise SystemExit(f"{path}:{i + 1}: entry on the same line as '}})': {line.strip()}")
+            if not code or code.startswith(("/*", "*")):
+                continue
+            m = ENTRY.match(line)
+            if not m:
+                raise SystemExit(f"{path}:{i + 1}: unrecognised suite entry "
+                                 f"(one 'Name.class,' per line): {line.strip()}")
+            self.entries.append((i, m.group(2), self.resolve(m.group(2))))
+        else:
+            raise SystemExit(f"{path}: suite list is never closed with '}})'")
 
     def resolve(self, written):
         """Fully qualified name of an entry written as a simple name or an FQN."""
@@ -91,7 +107,7 @@ class Suite:
         at = insertion_line([(i, w.rsplit(".", 1)[-1]) for i, w, _ in self.entries], simple)
         prev = ENTRY.match(self.lines[at - 1])
         if prev and not prev.group(3):  # only the old last entry can lack its comma
-            self.lines[at - 1] = self.lines[at - 1].rstrip() + ","
+            self.lines[at - 1] = f"{prev.group(1)}{prev.group(2)}.class,{prev.group(4) or ''}"
         indent = ENTRY.match(self.lines[self.entries[0][0]]).group(1)
         self.lines.insert(at, f"{indent}{fqn}.class,")
 
@@ -120,7 +136,12 @@ def class_info(root, name):
                                         + "\n  ".join(str(m.relative_to(src)) for m in matches)))
     text = matches[0].read_text()
     pkg = re.search(r"^package\s+([\w.]+);", text, re.M).group(1)
-    return f"{pkg}.{matches[0].stem}", "org.junit.jupiter" in text
+    junit4, junit5 = bool(JUNIT4.search(text)), bool(JUNIT5.search(text))
+    if junit4 == junit5:
+        raise SystemExit(f"{name}: cannot tell JUnit 4 from JUnit 5 ("
+                         + ("imports of both" if junit4 else "no org.junit.Test, org.junit.runner or "
+                            "org.junit.jupiter test-annotation import") + "); fix the imports first")
+    return f"{pkg}.{matches[0].stem}", junit5
 
 
 def add(root, name, suite_name):
@@ -140,16 +161,21 @@ def add(root, name, suite_name):
     print(f"registered {fqn} in {target.name}")
 
 
+def allowlist(root):
+    return [n for n in (l.split("#")[0].strip() for l in (root / ALLOWLIST).read_text().splitlines()) if n]
+
+
 def unregistered(root):
     """Concrete test classes (with @Test methods) that no CI suite lists, minus the allow-list."""
     registered = set().union(*(s.fqns() for s in suites(root)))
-    allowed = {l.split("#")[0].strip() for l in (root / ALLOWLIST).read_text().splitlines()}
+    allowed = set(allowlist(root))
     missing = []
     for path in sorted((root / TEST_SRC).rglob("*.java")):
         text = path.read_text()
-        if (re.search(r"\babstract\s+class\b", text) or not TEST_METHOD.search(text)
-                or BLOCK_START.search(text)):  # abstract bases and the suites themselves
-            continue
+        # top-level abstract bases only: a nested abstract class must not hide the real test
+        abstract = re.search(rf"^(?:\w+\s+)*abstract\s+(?:\w+\s+)*class\s+{path.stem}\b", text, re.M)
+        if abstract or not TEST_METHOD.search(text) or BLOCK_START.search(text):
+            continue  # also skips the suites themselves
         pkg = re.search(r"^package\s+([\w.]+);", text, re.M)
         fqn = f"{pkg.group(1)}.{path.stem}" if pkg else path.stem
         if fqn not in registered and fqn not in allowed:
@@ -157,14 +183,29 @@ def unregistered(root):
     return missing
 
 
+def stale_allowlist(root):
+    """Allow-list entries that are now registered or whose source file is gone: the list only shrinks."""
+    registered = set().union(*(s.fqns() for s in suites(root)))
+    stale = []
+    for fqn in allowlist(root):
+        if fqn in registered:
+            stale.append(f"{fqn} is now registered in a suite")
+        elif not (root / TEST_SRC / (fqn.replace(".", "/") + ".java")).exists():
+            stale.append(f"{fqn} no longer exists")
+    return stale
+
+
 def check(root):
-    missing = unregistered(root)
+    missing, stale = unregistered(root), stale_allowlist(root)
     for fqn in missing:
         print(f"not in any CI suite: {fqn}")
+    for reason in stale:
+        print(f"remove from {ALLOWLIST}: {reason}")
     if missing:
         print(f"\n{len(missing)} integration test class(es) would never run in CI. Register each with\n"
               f"  just add-it-test <TestClass> <Suite>\n"
               f"or, if it is a helper or is run elsewhere, list it in {ALLOWLIST} with a reason.")
+    if missing or stale:
         return 1
     print("every integration test class is registered or allow-listed")
     return 0
