@@ -425,6 +425,34 @@ public interface RoleAPI {
 	 */
 	 boolean doesUserHaveRoles(String userId, List<String> roleIds);
 
+	/**
+	 * Tells whether the user with the given id holds at least one of the given roles, on behalf of
+	 * a requesting user. Any requesting user can check their own roles. Checking another user's
+	 * roles takes the role membership privilege (see {@link #canReadRoleMembership(User)}); without
+	 * it the request is rejected before any user or role is looked up.
+	 *
+	 * @param userId         the id of the {@link User} whose roles are checked; it must be the
+	 *                       exact user id, an email address counts as another user
+	 * @param roleIds        the ids of the roles to look for
+	 * @param requestingUser the {@link User} asking
+	 * @return {@code true} if the user holds at least one of the roles
+	 * @throws DotSecurityException if {@code userId} is not the requesting user's id and the
+	 *                              requesting user does not have the role membership privilege
+	 * @throws DotDataException     if the requesting user's portlet access cannot be resolved
+	 */
+	boolean doesUserHaveRoles(String userId, List<String> roleIds, User requestingUser)
+			throws DotDataException, DotSecurityException;
+
+	/**
+	 * Whether a user may see which users hold a role and which roles a user holds: a CMS
+	 * Administrator, or a user with access to both the Roles and the Users portlets.
+	 *
+	 * @param user the {@link User} making the request
+	 * @return {@code true} when the user may read role membership
+	 * @throws DotDataException if the user's portlet access cannot be resolved
+	 */
+	boolean canReadRoleMembership(User user) throws DotDataException;
+
     /**
      * Checks if the first role parameter is indeed a parent of the second role parameter.
      *

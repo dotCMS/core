@@ -16443,10 +16443,6 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityRoleOperationView"
           description: Role check completed successfully
-        "400":
-          content:
-            application/json: {}
-          description: Bad request - the caller's portlet access could not be resolved
         "401":
           content:
             application/json: {}

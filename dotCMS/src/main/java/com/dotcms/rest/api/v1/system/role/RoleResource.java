@@ -130,7 +130,8 @@ public class RoleResource implements Serializable {
 	 * <p>
 	 * Any back-end user can check their own roles. Checking another user's roles
 	 * takes the role membership privilege: an administrator, or a user with access
-	 * to both the Roles and the Users portlets.
+	 * to both the Roles and the Users portlets. The rule is applied by
+	 * {@link RoleAPI#doesUserHaveRoles(String, List, User)}.
 	 * <p>
 	 * Example:
 	 *
@@ -152,7 +153,6 @@ public class RoleResource implements Serializable {
 	 *         {@link Response} with {@code false}.
 	 * @throws ForbiddenException if the user to check is not the caller and the
 	 *         caller does not have the role membership privilege
-	 * @throws DotDataException if the caller's portlet access cannot be resolved
 	 */
 	@Operation(
 		operationId = "checkUserRoles",
@@ -166,9 +166,6 @@ public class RoleResource implements Serializable {
 					description = "Role check completed successfully",
 					content = @Content(mediaType = "application/json",
 									  schema = @Schema(implementation = ResponseEntityRoleOperationView.class))),
-		@ApiResponse(responseCode = "400",
-					description = "Bad request - the caller's portlet access could not be resolved",
-					content = @Content(mediaType = "application/json")),
 		@ApiResponse(responseCode = "401",
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
@@ -187,7 +184,7 @@ public class RoleResource implements Serializable {
 							   @Parameter(description = "User ID to check", required = true)
 							   final @PathParam("userId") String userId,
 							   @Parameter(description = "Comma-separated list of role IDs", required = true)
-							   final @PathParam("roleIds") String roleIds) throws DotDataException {
+							   final @PathParam("roleIds") String roleIds) {
 
 		final InitDataObject init = new WebResource.InitBuilder(webResource)
 				.requiredBackendUser(true)
@@ -195,19 +192,12 @@ public class RoleResource implements Serializable {
 				.requestAndResponse(request, response)
 				.rejectWhenNoUser(true).init();
 
-		final User user = init.getUser();
-		if (!user.getUserId().equals(userId) && !this.canReadRoleMembership(user)) {
-
-			SecurityLogger.logInfo(this.getClass(), "User " + user.getUserId()
-					+ " is not allowed to check the roles of another user");
-			throw new ForbiddenException("The User: " + user.getUserId()
-					+ " does not have permissions to check the roles of another user");
-		}
-
 		boolean hasUserRole = false;
 		try {
 			String[] roles = roleIds.split(ROLE_ID_SEPARATOR);
-			hasUserRole = this.roleAPI.doesUserHaveRoles(userId, list(roles));
+			hasUserRole = this.roleAPI.doesUserHaveRoles(userId, list(roles), init.getUser());
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e.getMessage());
 		} catch (Exception e) {
 			// In case of unknown error, so we report it as a 500
 			Logger.error(this, "An error occurred when processing the request.", e);
