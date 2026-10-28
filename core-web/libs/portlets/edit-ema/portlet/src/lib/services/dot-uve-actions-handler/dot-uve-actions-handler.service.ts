@@ -9,6 +9,7 @@ import { switchMap, take, tap } from 'rxjs/operators';
 
 import { DotMessageService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotTreeNode } from '@dotcms/dotcms-models';
+import { DotEditContentRequest } from '@dotcms/edit-content';
 import {
     DotCMSInlineEditingPayload,
     DotCMSInlineEditingType,
@@ -18,7 +19,6 @@ import { __DOTCMS_UVE_EVENT__, StyleEditorFormSchema } from '@dotcms/types/inter
 import { DotCopyContentModalService } from '@dotcms/ui';
 
 import { DotBlockEditorSidebarComponent } from '../../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
-import { DotEmaDialogComponent } from '../../components/dot-ema-dialog/dot-ema-dialog.component';
 import {
     ClientContentletArea,
     Container,
@@ -38,13 +38,18 @@ import {
     compareUrlPaths,
     convertClientParamsToPageParams,
     createReorderMenuURL,
-    isSamePageNavigation
+    EditPageRequestContext,
+    isSamePageNavigation,
+    withPageContext
 } from '../../utils';
 import { InlineEditService } from '../inline-edit/inline-edit.service';
 
 export interface ActionsHandlerDependencies {
     uveStore: InstanceType<typeof UVEStore>;
-    dialog: DotEmaDialogComponent;
+    /** Opens content in the side panel; the editor binds the request (#38303). */
+    openContent: (request: DotEditContentRequest) => void;
+    /** Opens a legacy admin screen, such as the menu reorder, in the side panel. */
+    openLegacyScreen: (url: string, title: string) => void;
     blockSidebar?: DotBlockEditorSidebarComponent;
     inlineEditingService: InlineEditService;
     contentWindow: Window | null;
@@ -64,7 +69,8 @@ export class DotUveActionsHandlerService {
     handleAction({ action, payload }: PostMessage, deps: ActionsHandlerDependencies): void {
         const {
             uveStore,
-            dialog,
+            openContent,
+            openLegacyScreen,
             inlineEditingService,
             contentWindow,
             host,
@@ -331,15 +337,31 @@ export class DotUveActionsHandlerService {
                 uveStore.pageReload(pageParams);
                 uveStore.setIsClientReady(true);
             },
+            /**
+             * Handles `editContentlet()` from the SDK: opens the contentlet in the side panel, in
+             * whichever editor its content type uses (#38303).
+             */
             [DotCMSUVEAction.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
-                dialog.editContentlet({ ...contentlet, clientAction: action });
+                openContent(
+                    withPageContext(
+                        {
+                            mode: 'edit',
+                            inode: contentlet.inode,
+                            identifier: contentlet.identifier,
+                            contentType: contentlet.contentType,
+                            languageId: contentlet.languageId,
+                            title: contentlet.title
+                        },
+                        this.#pageContext(uveStore)
+                    )
+                );
             },
             /**
              * Handles the `CREATE_CONTENTLET` postMessage action sent by `window.dotUVE.createContentlet()`
              * (or `createContentlet()` from `@dotcms/uve` in headless setups).
              *
-             * Opens the contentlet creation dialog for the given content type variable.
-             * The newly created contentlet is saved to the system but is NOT inserted
+             * Opens a create for the given content type variable in the side panel, in the page
+             * language. The newly created contentlet is saved to the system but is NOT inserted
              * into the page layout — the page simply reloads after save. This supports
              * use cases like widgets that pull content automatically (e.g. an events widget).
              *
@@ -347,11 +369,12 @@ export class DotUveActionsHandlerService {
              * @see {DotCMSUVEAction.CREATE_CONTENTLET}
              */
             [DotCMSUVEAction.CREATE_CONTENTLET]: ({ contentType }: { contentType: string }) => {
-                dialog.createContentletFromPalette({
-                    variable: contentType,
-                    name: contentType,
-                    language_id: uveStore.pageLanguageId()
-                });
+                openContent(
+                    withPageContext(
+                        { mode: 'new', contentType, languageId: uveStore.pageLanguageId() },
+                        this.#pageContext(uveStore)
+                    )
+                );
             },
             [DotCMSUVEAction.REORDER_MENU]: ({ startLevel, depth }: ReorderMenuPayload) => {
                 const urlObject = createReorderMenuURL({
@@ -361,7 +384,7 @@ export class DotUveActionsHandlerService {
                     hostId: uveStore.pageAsset()?.site?.identifier
                 });
 
-                dialog.openDialogOnUrl(
+                openLegacyScreen(
                     urlObject,
                     this.dotMessageService.get('editpage.content.contentlet.menu.reorder.title')
                 );
@@ -434,5 +457,19 @@ export class DotUveActionsHandlerService {
                 console.warn('Unknown block editor type', type);
                 break;
         }
+    }
+
+    /**
+     * The page an SDK action opens content from: its variant, site and language.
+     *
+     * @param uveStore The page editor's store.
+     * @returns The context {@link withPageContext} completes a request with.
+     */
+    #pageContext(uveStore: InstanceType<typeof UVEStore>): EditPageRequestContext {
+        return {
+            variantId: uveStore.pageVariantId(),
+            siteId: uveStore.pageAsset()?.site?.identifier,
+            languageId: uveStore.pageLanguageId()
+        };
     }
 }

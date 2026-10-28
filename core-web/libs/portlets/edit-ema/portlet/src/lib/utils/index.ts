@@ -6,6 +6,7 @@ import {
     DotDevice,
     DotExperiment
 } from '@dotcms/dotcms-models';
+import { DotEditContentRequest } from '@dotcms/edit-content';
 import {
     DotCMSPage,
     DotCMSPageAssetContainers,
@@ -1003,6 +1004,44 @@ export const createReorderMenuURL = ({
 
     return urlObject.toString();
 };
+
+/** The page an editor request is opened from, as {@link withPageContext} reads it. */
+export interface EditPageRequestContext {
+    /** The experiment variant the page is on. */
+    variantId: string;
+    /** The page's site, if it has one. */
+    siteId: string | undefined;
+    /** The page's language, for content that names none. */
+    languageId: number;
+}
+
+/**
+ * Completes a request the page editor opens in the side panel with the page it is opened from: the
+ * page editor as the portlet, the site, the page's language when the content names none, and the
+ * experiment variant when the page is not on the default one (#38303, FR-022). The one rule every
+ * editor entry point and SDK action shares.
+ *
+ * @param request The content to open: an inode to edit or a content type to create.
+ * @param page The page it is opened from.
+ * @returns The request, completed, without keys it leaves unset.
+ */
+export function withPageContext(
+    request: DotEditContentRequest,
+    page: EditPageRequestContext
+): DotEditContentRequest {
+    const completed: DotEditContentRequest = {
+        ...request,
+        languageId: request.languageId ?? page.languageId,
+        siteId: page.siteId,
+        portletId: 'edit-page',
+        variantName:
+            page.variantId && page.variantId !== DEFAULT_VARIANT_ID ? page.variantId : undefined
+    };
+
+    return Object.fromEntries(
+        Object.entries(completed).filter(([, value]) => value !== undefined)
+    ) as unknown as DotEditContentRequest;
+}
 
 /**
  * Builds the URL of the legacy content selector a container's "+" opens in the side panel: the
