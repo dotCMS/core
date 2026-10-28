@@ -7,10 +7,11 @@ CI runs integration tests only through the aggregator suites listed in .github/t
   scripts/it-suites.py add <TestClass> <Suite>   insert a class into a suite (just add-it-test)
   scripts/it-suites.py check                     fail on test classes that are in no suite
 
-`add` inserts before the first entry whose simple class name sorts after the new one, scanning
-from the top. It never appends at the end (unless the name sorts last) and never re-sorts, and
-every entry keeps a trailing comma, so two PRs adding different tests rarely touch the same lines
-and the merge queue stops bumping them.
+`add` inserts the new entry next to the entry with the nearest simple class name above it. (The
+lists are unsorted, so "first larger name from the top" would send most new classes to the same
+gap.) It never appends at the end unless the name sorts last and never re-sorts. Every entry keeps
+a trailing comma and the new entry is fully qualified with no import, so two PRs adding different
+tests rarely touch the same lines and the merge queue stops bumping them.
 """
 
 import argparse
@@ -81,20 +82,18 @@ class Suite:
         return {fqn for _, _, fqn in self.entries}
 
     def add(self, fqn):
-        """Insert fqn at its name-derived position, with an import unless that would collide."""
+        """Insert the fully qualified fqn at its name-derived position.
+
+        The entry is always fully qualified, with no import: a new import would land at the end of
+        the (unsorted) import block, a second hotspot where concurrent PRs conflict.
+        """
         simple = fqn.rsplit(".", 1)[1]
-        clash = any(w.rsplit(".", 1)[-1] == simple for _, w, _ in self.entries) or simple in self.imports
-        by_import = not clash and fqn.rsplit(".", 1)[0] != self.package
-        written = simple if not clash else fqn
         at = insertion_line([(i, w.rsplit(".", 1)[-1]) for i, w, _ in self.entries], simple)
         prev = ENTRY.match(self.lines[at - 1])
         if prev and not prev.group(3):  # only the old last entry can lack its comma
             self.lines[at - 1] = self.lines[at - 1].rstrip() + ","
         indent = ENTRY.match(self.lines[self.entries[0][0]]).group(1)
-        self.lines.insert(at, f"{indent}{written}.class,")
-        if by_import:
-            imports = [(i, m.group(1)) for i, l in enumerate(self.lines) if (m := IMPORT.match(l))]
-            self.lines.insert(insertion_line(imports, fqn), f"import {fqn};")
+        self.lines.insert(at, f"{indent}{fqn}.class,")
 
     def write(self):
         self.path.write_text("\n".join(self.lines))
