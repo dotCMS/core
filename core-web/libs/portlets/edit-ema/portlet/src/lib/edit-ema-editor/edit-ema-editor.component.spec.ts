@@ -2513,6 +2513,13 @@ describe('EditEmaEditorComponent', () => {
                     it.each([NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED, NG_CUSTOM_EVENTS.SAVE_PAGE])(
                         'should load the new URL and language on %s when the translation changed the URL',
                         (name) => {
+                            // A page with no URL map of its own, so the referer names the URL.
+                            pageApi().pageLoad({
+                                clientHost: 'http://localhost:3000',
+                                url: 'index',
+                                language_id: '2',
+                                [PERSONA_KEY]: DEFAULT_PERSONA.identifier
+                            });
                             translate();
                             const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
 
