@@ -15,7 +15,8 @@
                 [formControlName]="field.variable"
                 [contentlet]="$contentlet()"
                 [hasError]="fieldHasError"
-                [field]="field" />
+                [field]="field"
+                (contentletEdit)="onContentletEdit($event)" />
         } @else {
             <!-- Default to the legacy editor whenever the flag is false OR still resolving — safer than rendering nothing. -->
             <dot-old-block-editor
@@ -23,7 +24,8 @@
                 [formControlName]="field.variable"
                 [contentlet]="$contentlet()"
                 [hasFieldError]="fieldHasError"
-                [field]="field" />
+                [field]="field"
+                (contentletEdit)="onContentletEdit($event)" />
         }
     </dot-card-field-content>
     @if ((fieldHasError && isRequired) || field.hint) {

@@ -8,6 +8,7 @@ import { DotCMSContentlet, DotCMSContentTypeField, FeaturedFlags } from '@dotcms
 import { DotCMSEditorComponent } from '@dotcms/new-block-editor';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
@@ -76,4 +77,21 @@ export class DotEditContentBlockEditorComponent extends BaseWrapperField {
      * It is used to display the language ID in the block editor component.
      */
     readonly $languageId = computed(() => this.$store.currentLocale()?.id ?? 1);
+
+    /** Opens the contentlets an author edits from inside the editor (see {@link onContentletEdit}). */
+    readonly #host = inject(EDIT_CONTENT_HOST);
+
+    /**
+     * The author asked to edit a contentlet embedded in the block editor. Either editor only asks;
+     * the editor's host opens it (#38303, R8), stacked over this content so nothing here is lost.
+     *
+     * @param event The embedded contentlet: the new editor sends its full edit event, the old one
+     * only these two keys.
+     */
+    onContentletEdit({ inode, contentType }: { inode: string; contentType: string }): void {
+        this.#host.openContent({
+            request: { mode: 'edit', inode, contentType },
+            source: 'block-editor'
+        });
+    }
 }
