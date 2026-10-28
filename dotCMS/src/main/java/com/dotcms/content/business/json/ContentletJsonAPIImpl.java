@@ -33,6 +33,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
+import com.dotmarketing.portlets.contentlet.business.BinaryFileFilter;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
@@ -81,6 +82,8 @@ import static com.dotmarketing.util.UtilMethods.isSet;
  * This is meant to deal with a json representation of contentlet stored in only one column.
  */
 public class ContentletJsonAPIImpl implements ContentletJsonAPI {
+
+    private static final BinaryFileFilter binaryFileFilter = new BinaryFileFilter();
 
     final IdentifierAPI identifierAPI;
     final ContentTypeAPI contentTypeAPI;
@@ -438,7 +441,7 @@ public class ContentletJsonAPIImpl implements ContentletJsonAPI {
         }
 
         if (!com.dotcms.storage.AssetStorageFeature.isEnabled()) {
-            final File[] files = binaryFileFolder.listFiles(new com.dotmarketing.portlets.contentlet.business.BinaryFileFilter());
+            final File[] files = binaryFileFolder.listFiles(binaryFileFilter);
             return files != null && files.length > 0 ? Optional.of(files[0]) : Optional.empty();
         }
 

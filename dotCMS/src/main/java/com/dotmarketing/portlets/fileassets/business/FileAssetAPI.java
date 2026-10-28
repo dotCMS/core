@@ -262,17 +262,15 @@ public interface FileAssetAPI {
      * @param fileName The File Asset's name.
      * @param ext      The File Asset's extension.
      * @return The absolute path of the File Asset.
-     * @deprecated Use {@link com.dotcms.storage.binary.BinaryAssetStorageAPI#getBinaryFile} instead.
+     * @see com.dotcms.storage.binary.BinaryAssetStorageAPI#getBinaryFile the lookup to prefer with S3 asset storage enabled
      */
-    @Deprecated
 	public String getRealAssetPath(String inode, String fileName, String ext);
 
 	/**
 	 * @param inode The File Asset's Inode.
 	 * @return The absolute path of the File Asset's field directory.
-	 * @deprecated Use {@link com.dotcms.storage.binary.BinaryAssetStorageAPI#getBinaryFile} instead.
+	 * @see com.dotcms.storage.binary.BinaryAssetStorageAPI#getBinaryFile the lookup to prefer with S3 asset storage enabled
 	 */
-	@Deprecated
 	public String getRealAssetPath(String inode);
 
 	/**
@@ -280,9 +278,8 @@ public interface FileAssetAPI {
 	 * @param inode    The File Asset's Inode.
 	 * @param fileName The Underlying File Name property, e.g. fileAsset.getUnderlyingFileName()
 	 * @return The absolute path of the File Asset.
-	 * @deprecated Use {@link com.dotcms.storage.binary.BinaryAssetStorageAPI#getBinaryFile} instead.
+	 * @see com.dotcms.storage.binary.BinaryAssetStorageAPI#getBinaryFile the lookup to prefer with S3 asset storage enabled
 	 */
-	@Deprecated
 	String getRealAssetPath(String inode, String fileName);
 
 	/**
@@ -291,9 +288,8 @@ public interface FileAssetAPI {
 	 * @param inode    The File Asset's Inode.
 	 * @param fileName The Underlying File Name property.
 	 * @return The absolute path of the File Asset.
-	 * @deprecated Use {@link com.dotcms.storage.binary.BinaryAssetStorageAPI#getBinaryFile} instead.
+	 * @see com.dotcms.storage.binary.BinaryAssetStorageAPI#getBinaryFile the lookup to prefer with S3 asset storage enabled
 	 */
-	@Deprecated
 	String getRealAssetPathIgnoreExtensionCase(String inode, String fileName);
 	
 	/**
