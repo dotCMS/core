@@ -232,16 +232,24 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
         }
     }
 
-    /*
+    /**
      * Testing the "MULTILINGUAGE_FALLBACK" fallback, which means that a key that
      * doesn't exist neither for a given language and country nor for a single language, will be
      * looked up using the default system language.
+     * <p>
+     * The lookup runs against a language created here with a positive id. In MainSuite1a,
+     * {@code Task240306MigrateLegacyLanguageVariablesTest} runs first and seeds es-ES with
+     * {@code new Random().nextLong()} as its id, which is negative about half the time, and leaves
+     * it behind; this class then reuses that language as {@code spanishLanguage}. The key/value
+     * query drops its {@code languageId} clause for negative ids, so the English variable matched
+     * even with the fallback turned off.
      */
     @Test
     public void getLanguageVariableUsingDefaultContentToDefaultLanguage() throws DotContentletValidationException,
             DotContentletStateException, IllegalArgumentException, DotDataException, DotSecurityException {
 
         final LanguageVariableAPI languageVariableAPI = APILocator.getLanguageVariableAPI();
+        final Language noContentLanguage = createLanguageWithId(System.currentTimeMillis());
 
         String key = KEY_1 + new Date().getTime();
 
@@ -256,14 +264,14 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
 
             Config.setProperty(MULTILINGUABLE_FALLBACK_KEY, Boolean.FALSE);
             String languageVariable = languageVariableAPI
-                    .getLanguageVariable(key, spanishLanguage.getId(), systemUser);
+                    .getLanguageVariable(key, noContentLanguage.getId(), systemUser);
 
             Assert.assertNotNull(languageVariable);
             Assert.assertEquals(key, languageVariable);
 
             Config.setProperty(MULTILINGUABLE_FALLBACK_KEY, Boolean.TRUE);
             languageVariable = languageVariableAPI
-                    .getLanguageVariable(key, spanishLanguage.getId(), systemUser);
+                    .getLanguageVariable(key, noContentLanguage.getId(), systemUser);
 
             Assert.assertNotNull(languageVariable);
             Assert.assertNotEquals(key, languageVariable);
@@ -274,8 +282,23 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
             if (null != contentlet) {
                 deleteContentlets(systemUser, contentlet);
             }
+            LanguageDataGen.remove(noContentLanguage);
         }
 
+    }
+
+    /**
+     * Persists a language with a random code and the given id, instead of the hash-derived id
+     * that {@link LanguageDataGen} would assign.
+     *
+     * @param id the id the language is saved with
+     * @return the persisted language
+     */
+    private static Language createLanguageWithId(final long id) {
+        final LanguageDataGen languageDataGen = new LanguageDataGen();
+        final Language language = languageDataGen.next();
+        language.setId(id);
+        return languageDataGen.persist(language);
     }
 
     @Test
