@@ -387,6 +387,36 @@ describe('DotWorkflowActionsFireService', () => {
             req.flush({ entity: mockResult });
         }));
 
+    /**
+     * The experiment variant to save in (#38303, FR-022). Sent as the `variantName` query param, the
+     * way the default-action endpoint already takes it, so the server can keep or fork the
+     * contentlet's variant.
+     */
+    it('should send the variant to save in as a query param when fireTo is given one', () =>
+        new Promise<void>((done) => {
+            spectator.service
+                .fireTo({
+                    inode: '123',
+                    actionId: 'save',
+                    data: { title: 'x' },
+                    variantName: 'variant-a'
+                })
+                .subscribe((res) => {
+                    expect(res).toEqual(dotcmsContentletMock);
+                    done();
+                });
+
+            const req = spectator.expectOne(
+                '/api/v1/workflow/actions/save/fire?indexPolicy=WAIT_FOR&inode=123&variantName=variant-a',
+                HttpMethod.PUT
+            );
+
+            // The variant travels on the URL, never inside the contentlet body.
+            expect(req.request.body).toEqual({ contentlet: { title: 'x' } });
+
+            req.flush({ entity: dotcmsContentletMock });
+        }));
+
     afterEach(() => {
         spectator.controller.verify();
     });
