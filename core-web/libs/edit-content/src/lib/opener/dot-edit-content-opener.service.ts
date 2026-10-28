@@ -176,7 +176,7 @@ export class DotEditContentOpenerService {
 
                 return this.#editUrl.resolveEditor(variable).pipe(
                     switchMap(({ editor, contentType }) => {
-                        const createUrl$ =
+                        const createUrl$: Observable<string | null> =
                             editor === 'legacy' && request.mode === 'new'
                                 ? this.#actionUrl.getCreateContentletUrl(
                                       variable,
