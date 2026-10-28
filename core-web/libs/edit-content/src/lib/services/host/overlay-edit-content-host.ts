@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { Injectable, OnDestroy, computed, inject, signal } from '@angular/core';
+import { Injectable, Injector, OnDestroy, computed, inject, signal } from '@angular/core';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -13,6 +13,8 @@ import {
 } from './edit-content-host.model';
 
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
+import { DotOpenContentEvent } from '../../models/dot-open-content-event.model';
+import { DotEditContentOpenerService } from '../../opener/dot-edit-content-opener.service';
 import {
     DotRelatedContentCrumb,
     DotRelatedContentNavigationStore,
@@ -40,6 +42,9 @@ import {
 @Injectable()
 export class OverlayEditContentHost implements EditContentHost, OnDestroy {
     readonly #relatedNav = inject(DotRelatedContentNavigationStore);
+    readonly #opener = inject(DotEditContentOpenerService);
+    /** The panel's injector: whatever this host stacks closes with the panel, not with a field. */
+    readonly #injector = inject(Injector);
     readonly #config = inject(DynamicDialogConfig, { optional: true });
     readonly #dialogRef = inject(DynamicDialogRef, { optional: true });
     readonly #navigation$ = new Subject<InPlaceNavigationRequest>();
@@ -172,6 +177,35 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
 
     goToCrumb(inode: string, trailInodes: string[]): void {
         this.#navigation$.next({ inode, trail: trailInodes });
+    }
+
+    /**
+     * An edit from a Relationship field replaces this panel's content in place, with a breadcrumb,
+     * as related-content navigation always has: from the content the field names as `from`, or on
+     * a fresh trail when it names none. The field's row refreshes when the author navigates back,
+     * so `onSaved` is not called for it.
+     *
+     * Everything else (any create, a block editor's edit, an edit naming no source) stacks a panel
+     * over this one, opened with this panel's injector rather than the field's: a re-render of the
+     * form underneath must not close the panel on top.
+     */
+    openContent({ request, source, from, onSaved }: DotOpenContentEvent): void {
+        if (source === 'relationship' && request.mode === 'edit' && request.inode) {
+            const target = { inode: request.inode, title: request.title ?? '' };
+
+            if (from) {
+                this.goToRelatedContent(from, target);
+            } else {
+                this.goToCrumb(target.inode, [target.inode]);
+            }
+
+            return;
+        }
+
+        this.#opener.open(request, {
+            injector: this.#injector,
+            saved: (contentlet) => onSaved?.(contentlet)
+        });
     }
 
     ngOnDestroy(): void {
