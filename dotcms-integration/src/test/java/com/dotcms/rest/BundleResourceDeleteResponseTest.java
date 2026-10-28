@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.concurrent.DotConcurrentFactory.SubmitterConfigBuilder;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -16,6 +17,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UUIDGenerator;
+import com.liferay.portal.model.User;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -38,9 +40,26 @@ public class BundleResourceDeleteResponseTest {
 
     private static final List<String> createdBundleIds = new ArrayList<>();
 
+    private static User backendUser;
+    private static String backendUserPassword;
+
+    /**
+     * The request is made by a back-end user created here rather than by the stock admin user.
+     * In the merge queue the admin was found without its back-end role when this test ran last in
+     * MainSuite2a ("lacks one of the required role [DOTCMS_BACK_END_USER]"); this test does not
+     * depend on the state other tests leave the admin in.
+     */
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+
+        final String suffix = UUIDGenerator.shorty();
+        backendUserPassword = "B4ckend-Passw0rd-" + suffix;
+        backendUser = new UserDataGen()
+                .emailAddress("bundle.delete." + suffix + "@dotcms.com")
+                .password(backendUserPassword)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole())
+                .nextPersisted();
     }
 
     @AfterClass
@@ -54,6 +73,7 @@ public class BundleResourceDeleteResponseTest {
             }
         }
         createdBundleIds.clear();
+        UserDataGen.remove(backendUser);
     }
 
     /**
@@ -80,7 +100,7 @@ public class BundleResourceDeleteResponseTest {
         try {
             occupyBundlePool(release);
             response = new BundleResource().deleteBundlesByIdentifiers(
-                    getAdminRequest(), mock(HttpServletResponse.class),
+                    getBackendUserRequest(), mock(HttpServletResponse.class),
                     new DeleteBundlesByIdentifierForm.Builder().identifiers(identifiers).build());
         } finally {
             release.countDown();
@@ -129,14 +149,15 @@ public class BundleResourceDeleteResponseTest {
         ((Map<?, ?>) creators.get(factory)).remove(BundleResource.BUNDLE_THREAD_POOL_SUBMITTER_NAME);
     }
 
-    private static HttpServletRequest getAdminRequest() {
+    private static HttpServletRequest getBackendUserRequest() {
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
                         new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
                                 .request())
                         .request());
         request.setHeader("Authorization",
-                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+                "Basic " + Base64.getEncoder().encodeToString(
+                        (backendUser.getEmailAddress() + ":" + backendUserPassword).getBytes()));
         return request;
     }
 
