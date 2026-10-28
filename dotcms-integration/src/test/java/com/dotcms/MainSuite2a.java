@@ -121,6 +121,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rendering.velocity.WidgetRendererTest.class,
         CMSUserToolTest.class,
         UserJsViewToolTest.class,
+        com.dotcms.rest.BundleResourceDeleteResponseTest.class,
         HostVariableAPIImplTest.class
 })
 public class MainSuite2a {
