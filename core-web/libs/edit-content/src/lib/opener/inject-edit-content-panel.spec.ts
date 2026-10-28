@@ -141,7 +141,7 @@ class TestForcedOpenerComponent {
         const forceLegacy = this.forceLegacy;
 
         return {
-            get editor() {
+            get editor(): 'legacy' | undefined {
                 return forceLegacy() ? 'legacy' : undefined;
             }
         };
