@@ -796,6 +796,10 @@ block_has_if "$BUILD_PHASE" "Verify release coordinates were installed" 'release
   "the coordinate tripwire is in the build job, gated on release-build"
 block_has "$BUILD_PHASE" "Verify release coordinates were installed" 'dotcms-core-\$version\.jar' \
   "the tripwire asserts the exact expected primary artifact"
+# Trunk reuses the merge queue's maven-repo for the CLI native build and deploy, so only
+# pull requests may leave modules out of the build.
+block_has "$BUILD_PHASE" maven-build "github.event_name == 'pull_request' && '-pl !:" \
+  "only pull request builds exclude modules from the reactor"
 
 # ================================================= 12. SAML ships with core ==
 # Issue #38104. SAML used to be released separately, so a core release could
@@ -1095,6 +1099,10 @@ block_has_if "$MAVEN_JOB" delete-built-artifacts-from-cache "release-build != 't
   "a release build does not delete its release coordinates (the caller verifies them afterwards)"
 block_has_if "$MAVEN_JOB" save-cache-maven "release-build != 'true'" \
   "a release build does not write the shared dependency cache"
+for step in delete-built-artifacts-from-cache save-cache-maven save-cache-maven-plugins; do
+  block_has_if "$MAVEN_JOB" "$step" "cache-matched-key == '' \|\| \(github.event_name != 'pull_request' && github.event_name != 'merge_group'\)" \
+    "$step: PR and merge-queue runs save only when they restored nothing (ref-scoped copies evict main's entry)"
+done
 if [[ "$(input_default "$MAVEN_JOB" needs-maven-repo)" == "true" ]]; then
   ok "needs-maven-repo defaults to true (shared callers keep their dependencies)"
 else
