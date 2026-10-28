@@ -46,6 +46,15 @@ public class JVMInfoResource implements Serializable {
             Config.getStringProperty("OBFUSCATE_SYSTEM_ENVIRONMENTAL_VARIABLES", DEFAULT_OBFUSCATE_PATTERN),
             Pattern.CASE_INSENSITIVE);
 
+    /**
+     * Returns release, host, JVM, environment, configuration override and system property
+     * information for this node. Requires a CMS Administrator.
+     *
+     * @param request  the current {@link HttpServletRequest}
+     * @param response the current {@link HttpServletResponse}
+     * @return a map with the {@code release}, {@code host}, {@code jvm}, {@code environment},
+     *         {@code configOverrides} and {@code system} sections
+     */
     @Path("/")
     @GET
     @JSONP
@@ -56,6 +65,7 @@ public class JVMInfoResource implements Serializable {
 
         final InitDataObject initData = new WebResource.InitBuilder(request, response)
                         .requiredBackendUser(true)
+                        .requireAdmin(true)
                         .requestAndResponse(request, response)
                         .rejectWhenNoUser(true)
                         .requiredPortlet("maintenance")

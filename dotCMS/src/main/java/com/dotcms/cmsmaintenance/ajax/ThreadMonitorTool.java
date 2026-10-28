@@ -30,13 +30,22 @@ import javax.servlet.http.HttpServletRequest;
  */
 
 public class ThreadMonitorTool{
+
+    /**
+     * Checks that the logged-in user is a CMS Administrator with access to the Maintenance portlet.
+     *
+     * @return {@code true} when the user is allowed; any other user gets an exception instead
+     * @throws DotRuntimeException if nobody is logged in, or the user is not a CMS Administrator with access to the
+     *                             Maintenance portlet
+     */
     public boolean validateUser() {
         HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user = null;
         try {
             user = com.liferay.portal.util.PortalUtil.getUser(req);
-            if(user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)){
-                throw new DotSecurityException("User does not have access to the CMS Maintance Portlet");
+            if(user == null || !user.isAdmin()
+                    || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)){
+                throw new DotSecurityException("The thread tools require a CMS Administrator with the Maintenance portlet");
             }
             return true;
         } catch (Exception e) {

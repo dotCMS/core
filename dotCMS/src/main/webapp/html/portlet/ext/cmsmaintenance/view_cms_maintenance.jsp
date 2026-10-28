@@ -1859,6 +1859,7 @@ dd.leftdl {
 		<%@ include file="/html/portlet/ext/cmsmaintenance/tail_log.jsp"%>
     </div>
 
+<% if (user.isAdmin()) { %>
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <!-- START System Info TAB -->
     <!-- ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
@@ -1944,6 +1945,7 @@ dd.leftdl {
 
         <img style="display:none;" id="loggedUsersProgress" src="/html/images/icons/round-progress-bar.gif"/>
     </div>
+<% } %>
 
 
 
@@ -1997,7 +1999,9 @@ dojo.require("dijit.form.DateTextBox");
 
 			});
 
+<% if (user.isAdmin()) { %>
 		getSysInfo();
 		loadUsers();
+<% } %>
 	});
 </script>

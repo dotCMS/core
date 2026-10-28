@@ -36,17 +36,18 @@ public class UserSessionAjax {
     private static final Duration TOKEN_EXPIRY_DURATION = Duration.ofMinutes(15);
 
     /**
-     * Validates if the current user has access to the CMS Maintenance Portlet.
+     * Validates that the current user is a CMS Administrator with access to the Maintenance portlet.
      *
-     * @return true if the user has access, otherwise throws an exception.
+     * @return true if the user is allowed, otherwise throws an exception.
      */
     public boolean validateUser() {
         HttpServletRequest req = WebContextFactory.get().getHttpServletRequest();
         User user;
         try {
             user = com.liferay.portal.util.PortalUtil.getUser(req);
-            if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)) {
-                throw new DotSecurityException("User does not have access to the CMS Maintenance Portlet");
+            if (user == null || !user.isAdmin()
+                    || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)) {
+                throw new DotSecurityException("The session tools require a CMS Administrator with the Maintenance portlet");
             }
             return true;
         } catch (NoSuchUserException | DotDataException | DotSecurityException e) {

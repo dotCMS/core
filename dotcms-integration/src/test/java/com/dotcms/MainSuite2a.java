@@ -22,6 +22,7 @@ import com.dotcms.rendering.js.JsModuleImportIntegrationTest;
 import com.dotcms.rendering.js.viewtools.UserJsViewToolTest;
 import com.dotcms.rendering.velocity.viewtools.CMSUserToolTest;
 import com.dotcms.rest.api.v1.maintenance.MaintenanceResourceIntegrationTest;
+import com.dotcms.rest.api.v1.maintenance.MaintenanceToolsAccessIntegrationTest;
 import com.dotmarketing.business.UserDeletionCacheInvalidationTest;
 import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
@@ -119,7 +120,8 @@ import org.junit.runners.Suite.SuiteClasses;
         JsModuleImportIntegrationTest.class,
         com.dotcms.rendering.velocity.WidgetRendererTest.class,
         CMSUserToolTest.class,
-        UserJsViewToolTest.class
+        UserJsViewToolTest.class,
+        MaintenanceToolsAccessIntegrationTest.class
 })
 public class MainSuite2a {
 
