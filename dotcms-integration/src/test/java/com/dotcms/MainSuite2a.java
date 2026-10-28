@@ -50,7 +50,7 @@ import org.junit.runners.Suite.SuiteClasses;
         InferenceModelsTest.class,
         VipsResizeImageFilterIntegrationTest.class,
         VipsResizeOrientationIntegrationTest.class,
-        VipsResizePhotoIntegrationTest.class
+        VipsResizePhotoIntegrationTest.class,
         InferenceModelValidationTest.class,
         InferenceSiteIsolationTest.class,
         InferenceTestsAreRegisteredTest.class,
