@@ -1,5 +1,5 @@
 import { patchState, signalState } from '@ngrx/signals';
-import { EMPTY, Observable, forkJoin, fromEvent, of } from 'rxjs';
+import { Observable, forkJoin, fromEvent, of } from 'rxjs';
 
 import { ClipboardModule } from '@angular/cdk/clipboard';
 import { NgClass, NgStyle } from '@angular/common';
@@ -7,10 +7,10 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
     AfterViewInit,
     ChangeDetectionStrategy,
-    ChangeDetectorRef,
     Component,
     DestroyRef,
     ElementRef,
+    Injector,
     OnDestroy,
     ViewChild,
     WritableSignal,
@@ -47,6 +47,7 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
+    DotCMSBaseTypesContentTypes,
     DotCMSClazzes,
     DotCMSContentlet,
     DotCMSTempFile,
@@ -58,9 +59,12 @@ import {
 } from '@dotcms/dotcms-models';
 import {
     DotEditContentRequest,
+    DotLegacyScreenEvent,
+    DotLegacyScreenRequest,
     DotPageEditorRequest,
     DotSourceEditorRequest,
     injectEditContentPanel,
+    loadDotLegacyScreenSidePanel,
     loadDotSourceEditorSidePanel,
     toSourceEditorRequest
 } from '@dotcms/edit-content';
@@ -68,7 +72,13 @@ import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlet
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { StyleEditorFormSchema, __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
-import { DotCopyContentModalService, DotMessagePipe, injectSidePanel } from '@dotcms/ui';
+import {
+    DotCopyContentModalService,
+    DotMessagePipe,
+    DotSidePanelRef,
+    DotSidePanelService,
+    injectSidePanel
+} from '@dotcms/ui';
 import { WINDOW, isEqual } from '@dotcms/utils';
 import { getContentletsInContainer } from '@dotcms/uve/internal';
 
@@ -90,7 +100,7 @@ import { EmaPageDropzoneComponent } from './components/ema-page-dropzone/ema-pag
 import { EmaDragItem } from './components/ema-page-dropzone/types';
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
-import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
+import { EmaFormSelectorComponent } from '../components/ema-form-selector/ema-form-selector.component';
 import { DotPageApiService, DotPageAssetKeys } from '../services/dot-page-api/dot-page-api.service';
 import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler/dot-uve-actions-handler.service';
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
@@ -107,7 +117,6 @@ import {
     ActionPayload,
     ClientData,
     DeletePayload,
-    DialogAction,
     InsertPayloadFromDelete,
     PageContainer,
     PositionPayload,
@@ -119,7 +128,9 @@ import { IframeAccessMode, PageType } from '../store/models';
 import {
     TEMPORAL_DRAG_ITEM,
     areContainersEquals,
+    createAddContentletUrl,
     createFullURL,
+    createTranslatePageUrl,
     deleteContentletFromContainer,
     getTargetUrl,
     insertContentletInContainer,
@@ -155,7 +166,6 @@ const MESSAGE_KEY = {
         NgStyle,
         FormsModule,
         ReactiveFormsModule,
-        DotEmaDialogComponent,
         ConfirmDialogModule,
         EmaPageDropzoneComponent,
         ProgressBarModule,
@@ -196,7 +206,6 @@ const MESSAGE_KEY = {
     ]
 })
 export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
-    @ViewChild('dialog') dialog: DotEmaDialogComponent;
     @ViewChild('iframe') iframeComponent!: DotUveIframeComponent;
     @ViewChild('blockSidebar') blockSidebar: DotBlockEditorSidebarComponent;
     @ViewChild('customDragImage') customDragImage: ElementRef<HTMLDivElement>;
@@ -283,7 +292,8 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     private readonly router = inject(Router);
     private readonly messageService = inject(MessageService);
     private readonly window = inject(WINDOW);
-    private readonly cd = inject(ChangeDetectorRef);
+    readonly #sidePanels = inject(DotSidePanelService);
+    readonly #injector = inject(Injector);
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private readonly dotCopyContentService = inject(DotCopyContentService);
     private readonly dotCopyContentModalService = inject(DotCopyContentModalService);
@@ -322,18 +332,22 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     #fromSdkEdit = false;
 
     /**
+     * The legacy (JSP) screen open in the generic legacy-screen side panel, or `null` while it is
+     * closed (#38303): the content selector, the translate screen or the menu reorder screen. Bound
+     * with `injectSidePanel` in the constructor; its events arrive through {@link #onLegacyEvent}.
+     */
+    protected readonly $legacyScreenRequest = signal<DotLegacyScreenRequest | null>(null);
+
+    /** The container the open content selector adds to, or `null` for any other screen. */
+    #legacyScreenPayload: ActionPayload | null = null;
+
+    /**
      * Drives the Edit Code side panel: the VTL file whose source is open in Monaco, or `null`
      * when closed. Set from the contentlet tools' VTL menu (see {@link handleEditVTL}); the panel is
      * open while it is set (see the constructor).
      */
     protected readonly $sourceEditorPanel = signal<DotSourceEditorRequest | null>(null);
 
-    // Component builds its own editor props locally
-    protected readonly $showDialogs = computed<boolean>(() => {
-        const canEditPage = this.uveStore.editorCanEditContent();
-        const isEditState = this.uveStore.viewMode() === UVE_MODE.EDIT;
-        return canEditPage && isEditState;
-    });
 
     protected readonly $showBlockEditorSidebar = computed<boolean>(() => {
         const canEditPage = this.uveStore.editorCanEditContent();
@@ -620,6 +634,18 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             closed: () => this.#onPanelClosed()
         });
 
+        // A legacy admin screen, open while `$legacyScreenRequest` is set, in the generic
+        // legacy-screen panel. It passes every `ng-event` the screen sends; closing clears it.
+        injectSidePanel(this.$legacyScreenRequest, {
+            component: loadDotLegacyScreenSidePanel,
+            heading: (request) => request.title,
+            inputs: (request) => ({ request }),
+            outputs: {
+                legacyEvent: (event: DotLegacyScreenEvent) => this.#onLegacyEvent(event)
+            },
+            closed: () => this.#closeLegacyScreen()
+        });
+
         // The Edit Code side panel, open while `$sourceEditorPanel` is set. A save writes the
         // file's working version, which edit mode renders, so the page reloads to show it; the
         // panel then closes itself. Loaded on its first open, so Monaco stays out of this
@@ -767,7 +793,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         this.actionsHandler.handleAction(message, {
             uveStore: this.uveStore,
             openContent: (request) => this.#openContent(request, { fromSdk: true }),
-            openLegacyScreen: (url, title) => this.dialog.openDialogOnUrl(url, title),
+            openLegacyScreen: (url, title) => this.#openLegacyScreen(url, title),
             blockSidebar: this.blockSidebar,
             inlineEditingService: this.inlineEditingService,
             contentWindow: this.contentWindow,
@@ -1053,16 +1079,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Handle the custom event
-     *
-     * @param {DialogAction}
-     * @memberof EditEmaEditorComponent
-     */
-    onCustomEvent(dialogAction: DialogAction) {
-        this.handleNgEvent(dialogAction)?.();
-    }
-
-    /**
      * Check if the active contentlet still exists in the page containers
      * and reset it if it was removed
      *
@@ -1228,130 +1244,64 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         this.handleInlineEditing(e);
     }
 
-    protected handleNgEvent({ event, actionPayload, clientAction }: DialogAction) {
-        const { detail } = event;
+    /**
+     * Opens a legacy admin screen in the generic legacy-screen side panel.
+     *
+     * @param url The screen's same-origin URL.
+     * @param title The panel heading.
+     * @param payload For the content selector, the container the selection goes in.
+     */
+    #openLegacyScreen(url: string, title: string, payload: ActionPayload | null = null): void {
+        this.#legacyScreenPayload = payload;
+        this.$legacyScreenRequest.set({ url, title });
+    }
 
-        return (<Record<NG_CUSTOM_EVENTS, () => void>>{
-            [NG_CUSTOM_EVENTS.EDIT_CONTENTLET_LOADED]: () => {
-                /* */
-            },
-            [NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT]: () => {
-                const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
-                    ...actionPayload,
-                    newContentletId: detail.data.identifier
-                });
+    /** Closes the legacy-screen panel and forgets the container it was adding to. */
+    #closeLegacyScreen(): void {
+        this.#legacyScreenPayload = null;
+        this.$legacyScreenRequest.set(null);
+    }
 
-                if (!didInsert) {
-                    if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
-                        this.handleContainerLimitReached(actionPayload.container.maxContentlets);
-                    } else {
-                        this.handleDuplicatedContentlet();
-                    }
+    /**
+     * Reacts to what a legacy screen opened in the side panel reports: a selection or a "create
+     * new" from the content selector, a save or language switch from the translate screen, and the
+     * menu reorder screen's outcome. Any other event is ignored.
+     *
+     * @param detail The `ng-event` detail the screen dispatched.
+     */
+    #onLegacyEvent(detail: DotLegacyScreenEvent): void {
+        switch (detail?.name) {
+            case NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT:
+                this.#placeSelectedContentlet(String(detail.data?.['identifier'] ?? ''));
+                break;
 
-                    return;
-                }
-
-                this.uveStore.editorSave(pageContainers);
-                this.dialog.resetDialog();
-            },
-            [NG_CUSTOM_EVENTS.SAVE_PAGE]: () => {
-                const { shouldReloadPage, contentletIdentifier } = detail.payload ?? {};
-
-                if (shouldReloadPage) {
-                    this.reloadURLContentMapPage(contentletIdentifier);
-
-                    return;
-                }
-
-                if (!actionPayload) {
-                    this.uveStore.pageReload();
-
-                    return;
-                }
-
-                if (clientAction === DotCMSUVEAction.EDIT_CONTENTLET) {
-                    this.sendMessageToIframe(
-                        {
-                            name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE
-                        },
-                        this.host
-                    );
-                }
-
-                const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
-                    ...actionPayload,
-                    newContentletId: contentletIdentifier
-                });
-
-                if (!didInsert) {
-                    if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
-                        this.handleContainerLimitReached(actionPayload.container.maxContentlets);
-                    } else {
-                        this.handleDuplicatedContentlet();
-                    }
-
-                    return;
-                }
-
-                this.uveStore.editorSave(pageContainers);
-            },
-            /**
-             * Handles the create contentlet event emitted from within the JSP/iframe
-             * when a content type is selected (e.g. via the + button in a container).
-             *
-             * Opens the contentlet creation dialog with the pre-resolved action URL and
-             * inserts the new contentlet into the target container on save.
-             *
-             * @see {NG_CUSTOM_EVENTS.CREATE_CONTENTLET}
-             * @memberof EditEmaEditorComponent
-             */
-            [NG_CUSTOM_EVENTS.CREATE_CONTENTLET]: () => {
-                this.dialog.resetDialog();
+            case NG_CUSTOM_EVENTS.CREATE_CONTENTLET: {
+                // "Create new" in the selector: the create opens in the Edit Content panel and
+                // places the new contentlet in the container the selector was adding to.
+                const actionPayload = this.#legacyScreenPayload;
+                this.#closeLegacyScreen();
                 this.#openContent(
                     this.#buildRequest({
                         mode: 'new',
-                        contentType: detail.data.contentType,
+                        contentType: String(detail.data?.['contentType'] ?? ''),
                         languageId: this.uveStore.pageLanguageId()
                     }),
-                    { actionPayload }
+                    actionPayload ? { actionPayload } : {}
                 );
-            },
-            [NG_CUSTOM_EVENTS.FORM_SELECTED]: () => {
-                const formId = detail.data.identifier;
+                break;
+            }
 
-                this.dotPageApiService
-                    .getFormIndetifier(actionPayload.container.identifier, formId)
-                    .pipe(
-                        tap(() => {
-                            this.uveStore.setUveStatus(UVE_STATUS.LOADING);
-                        }),
-                        map((newFormId: string) => {
-                            return {
-                                ...actionPayload,
-                                newContentletId: newFormId
-                            };
-                        }),
-                        catchError(() => EMPTY),
-                        take(1)
-                    )
-                    .subscribe((response) => {
-                        const { pageContainers, didInsert, errorCode } =
-                            insertContentletInContainer(response);
+            case NG_CUSTOM_EVENTS.SAVE_PAGE:
+            case NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED:
+                this.#followTranslation(detail);
+                break;
 
-                        if (!didInsert) {
-                            if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
-                                this.handleContainerLimitReached(response.container.maxContentlets);
-                            } else {
-                                this.handleDuplicatedContentlet();
-                            }
-                            this.uveStore.setUveStatus(UVE_STATUS.LOADED);
-                        } else {
-                            this.uveStore.editorSave(pageContainers);
-                            this.dialog.resetDialog();
-                        }
-                    });
-            },
-            [NG_CUSTOM_EVENTS.SAVE_MENU_ORDER]: () => {
+            case 'close':
+            case NG_CUSTOM_EVENTS.CANCEL_SAVING_MENU_ORDER:
+                this.#closeLegacyScreen();
+                break;
+
+            case NG_CUSTOM_EVENTS.SAVE_MENU_ORDER:
                 this.messageService.add({
                     severity: 'success',
                     summary: this.dotMessageService.get(
@@ -1362,7 +1312,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                 });
 
                 this.uveStore.pageReload();
-                this.dialog.resetDialog();
+                this.#closeLegacyScreen();
 
                 // This is a temporary solution to "reload" the content by reloading the window
                 // we should change this with a new SDK reload strategy
@@ -1372,8 +1322,9 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                     },
                     this.host
                 );
-            },
-            [NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER]: () => {
+                break;
+
+            case NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER:
                 this.messageService.add({
                     severity: 'error',
                     summary: this.dotMessageService.get(
@@ -1384,32 +1335,128 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                     ),
                     life: 2000
                 });
-            },
-            [NG_CUSTOM_EVENTS.CANCEL_SAVING_MENU_ORDER]: () => {
-                this.dialog.resetDialog();
-                this.cd.detectChanges();
-            },
-            [NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED]: () => {
-                const htmlPageReferer = event.detail.payload?.htmlPageReferer;
-                const url = new URL(htmlPageReferer, this.window.location.origin); // Add base for relative URLs
-                const targetUrl = getTargetUrl(
-                    url.pathname,
-                    this.uveStore.pageAsset()?.urlContentMap
-                );
-                const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language');
+                break;
+        }
+    }
 
-                if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
-                    // Navigate to the new URL if it's different from the current one
-                    this.uveStore.pageLoad({ url: targetUrl, language_id });
+    /**
+     * Places the contentlet chosen in the content selector in the container it was opened for,
+     * saves the page and closes the selector. A duplicate or a full container is reported and the
+     * selector stays open.
+     *
+     * @param identifier The chosen contentlet.
+     */
+    #placeSelectedContentlet(identifier: string): void {
+        const actionPayload = this.#legacyScreenPayload;
 
-                    return;
-                }
+        if (!actionPayload) {
+            return;
+        }
 
-                this.uveStore.pageLoad({
-                    language_id
-                });
+        const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
+            ...actionPayload,
+            newContentletId: identifier
+        });
+
+        if (!didInsert) {
+            if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
+                this.handleContainerLimitReached(actionPayload.container.maxContentlets);
+            } else {
+                this.handleDuplicatedContentlet();
             }
-        })[detail.name];
+
+            return;
+        }
+
+        this.uveStore.editorSave(pageContainers);
+        this.#closeLegacyScreen();
+    }
+
+    /**
+     * Follows a translation saved in the translate screen: loads the page at the URL and in the
+     * language the screen names (`htmlPageReferer`), or only the language when the URL is the same.
+     * Without a referer, reloads the page.
+     *
+     * @param detail The translate screen's `save-page` or `language-is-changed` event.
+     */
+    #followTranslation(detail: DotLegacyScreenEvent): void {
+        const payload = typeof detail.payload === 'object' ? detail.payload : undefined;
+        const htmlPageReferer = payload?.['htmlPageReferer'];
+
+        if (typeof htmlPageReferer !== 'string' || !htmlPageReferer) {
+            this.uveStore.pageReload();
+
+            return;
+        }
+
+        const url = new URL(htmlPageReferer, this.window.location.origin); // Add base for relative URLs
+        const targetUrl = getTargetUrl(url.pathname, this.uveStore.pageAsset()?.urlContentMap);
+        const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language');
+
+        if (shouldNavigate(targetUrl, this.uveStore.pageParams().url)) {
+            // Navigate to the new URL if it's different from the current one
+            this.uveStore.pageLoad({ url: targetUrl, language_id });
+
+            return;
+        }
+
+        this.uveStore.pageLoad({ language_id });
+    }
+
+    /**
+     * Opens the form selector as side panel content. A selected form is resolved to the
+     * contentlet that renders it, placed in the container, and the page saved; the panel then
+     * closes. A form that cannot be resolved reports the error and leaves the panel open.
+     *
+     * @param actionPayload The container the form goes in.
+     */
+    #openFormSelector(actionPayload: ActionPayload): void {
+        const ref = this.#sidePanels.open(EmaFormSelectorComponent, {
+            heading: this.dotMessageService.get('edit.ema.page.dialog.header.search.form'),
+            outputs: {
+                selected: (formId: string) => this.#placeForm(actionPayload, formId, ref)
+            },
+            injector: this.#injector
+        });
+    }
+
+    /**
+     * Places a form chosen in the form selector in its container and saves the page.
+     *
+     * @param actionPayload The container the form goes in.
+     * @param formId The chosen form.
+     * @param ref The form selector's panel, closed once the form is placed.
+     */
+    #placeForm(actionPayload: ActionPayload, formId: string, ref: DotSidePanelRef): void {
+        this.dotPageApiService
+            .getFormIndetifier(actionPayload.container.identifier, formId)
+            .pipe(
+                tap(() => this.uveStore.setUveStatus(UVE_STATUS.LOADING)),
+                take(1)
+            )
+            .subscribe({
+                next: (newContentletId) => {
+                    const { pageContainers, didInsert, errorCode } = insertContentletInContainer({
+                        ...actionPayload,
+                        newContentletId
+                    });
+
+                    if (!didInsert) {
+                        if (errorCode === CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED) {
+                            this.handleContainerLimitReached(actionPayload.container.maxContentlets);
+                        } else {
+                            this.handleDuplicatedContentlet();
+                        }
+                        this.uveStore.setUveStatus(UVE_STATUS.LOADED);
+
+                        return;
+                    }
+
+                    this.uveStore.editorSave(pageContainers);
+                    ref.close();
+                },
+                error: (error: HttpErrorResponse) => this.dotHttpErrorManagerService.handle(error)
+            });
     }
 
     /**
@@ -1819,36 +1866,6 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Reload the URL content map page
-     *
-     * @private
-     * @param {string} inodeOrIdentifier
-     * @memberof EditEmaEditorComponent
-     */
-    private reloadURLContentMapPage(inodeOrIdentifier: string): void {
-        // Set loading state to prevent the user to interact with the iframe
-        this.uveStore.setUveStatus(UVE_STATUS.LOADING);
-
-        this.dotContentletService
-            .getContentletByInode(inodeOrIdentifier)
-            .pipe(
-                catchError((error) => this.handlerError(error)),
-                filter((contentlet) => !!contentlet)
-            )
-            .subscribe(({ URL_MAP_FOR_CONTENT }) => {
-                if (URL_MAP_FOR_CONTENT != this.uveStore.pageParams().url) {
-                    // If the URL is different, we need to navigate to the new URL
-                    this.uveStore.pageLoad({ url: URL_MAP_FOR_CONTENT });
-
-                    return;
-                }
-
-                // If the URL is the same, we need to fetch the new page data
-                this.uveStore.pageReload();
-            });
-    }
-
-    /**
      * Create the payload to insert a contentlet after deleting it
      *
      * @private
@@ -2037,8 +2054,22 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         });
     }
 
-    translatePage(event: { page: DotCMSPage; newLanguage: number }) {
-        this.dialog.translatePage(event);
+    /**
+     * Opens the legacy screen that creates the page's translation into another language, in the
+     * side panel (#38303).
+     *
+     * @param event The page and the language to translate it into.
+     */
+    translatePage({ page, newLanguage }: { page: DotCMSPage; newLanguage: number }) {
+        this.#openLegacyScreen(
+            createTranslatePageUrl(
+                page,
+                newLanguage,
+                this.uveStore.pageVariantId(),
+                this.uveStore.pageAsset()?.site?.identifier
+            ),
+            page.title
+        );
     }
 
     /**
@@ -2182,21 +2213,39 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         patchState(this.#rightSidebarTabState, { currentTab: 1 });
     }
 
+    /**
+     * A container's "+" (#38303): content and widgets open the legacy content selector in the
+     * side panel, filtered by what the container accepts; forms open the form selector.
+     *
+     * @param event What to add and the container it goes in.
+     */
     protected handleAddContent(event: {
         type: 'content' | 'form' | 'widget';
         payload: ActionPayload;
     }): void {
-        switch (event.type) {
-            case 'content':
-                this.dialog.addContentlet(event.payload);
-                break;
-            case 'form':
-                this.dialog.addForm(event.payload);
-                break;
-            case 'widget':
-                this.dialog.addWidget(event.payload);
-                break;
+        const { type, payload } = event;
+
+        if (type === 'form') {
+            this.#openFormSelector(payload);
+
+            return;
         }
+
+        const acceptTypes =
+            type === 'widget'
+                ? DotCMSBaseTypesContentTypes.WIDGET
+                : (payload.container.acceptTypes ?? '*');
+
+        this.#openLegacyScreen(
+            createAddContentletUrl(
+                payload.container.identifier,
+                acceptTypes,
+                payload.language_id,
+                this.uveStore.pageVariantId()
+            ),
+            this.dotMessageService.get('edit.ema.page.dialog.header.search.content'),
+            payload
+        );
     }
 
     /**
