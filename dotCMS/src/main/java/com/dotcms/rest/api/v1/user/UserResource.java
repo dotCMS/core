@@ -790,7 +790,15 @@ public class UserResource implements Serializable {
 					.CURRENT_HOST)), currentUser.getUserId(), loginAsUserId);
 			this.setImpersonatedUserSite(request, sessionData.get(WebKeys.USER_ID).toString());
 			response = Response.ok(new ResponseEntityView<>(Map.of("loginAs", true))).build();
-		} catch (final NoSuchUserException | DotSecurityException e) {
+		} catch (final DotSecurityException e) {
+			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
+							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
+					e.getMessage()));
+			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
+			// 403, not 401: the caller is authenticated but not allowed; a 401 makes the UI end the session.
+			// The key travels in the error-key header so the UI can tell this denial from other 403s
+			return ExceptionMapperUtil.createResponse(e, "loginas.error.adminrequired", Response.Status.FORBIDDEN);
+		} catch (final NoSuchUserException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
 							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
 					e.getMessage()));

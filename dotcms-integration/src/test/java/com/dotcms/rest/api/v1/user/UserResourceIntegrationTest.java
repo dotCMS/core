@@ -251,6 +251,30 @@ public class UserResourceIntegrationTest {
     }
 
     /**
+     * Method to test: {@link UserResource#loginAs}
+     * Given Scenario: a non-admin user holding the Login As role asks to Login As an administrator.
+     * ExpectedResult: the answer is 403 (not 401, which makes the UI end the session) and the
+     * session still belongs to the caller: the administrator is not stored as the session
+     * user and no principal user is set.
+     */
+    @Test
+    public void test_loginAs_nonAdminToAdmin_answers403AndKeepsSession() throws Exception {
+        final String password = "loginAsPwd" + System.currentTimeMillis();
+        final User nonAdmin = newLoginAsUser(password, false);
+        final HttpServletRequest nonAdminRequest = mockRequestAs(nonAdmin.getEmailAddress(), password);
+        final LoginAsForm form = new LoginAsForm.Builder().userId(adminUser.getUserId()).build();
+
+        final Response result = resource.loginAs(nonAdminRequest, response, form);
+
+        assertNotNull(result);
+        assertEquals(Status.FORBIDDEN.getStatusCode(), result.getStatus());
+        assertEquals("loginas.error.adminrequired", result.getHeaderString("error-key"));
+        // the request authentication stores the caller in the session; a denied Login As must leave it there
+        assertEquals(nonAdmin.getUserId(), nonAdminRequest.getSession().getAttribute(WebKeys.USER_ID));
+        assertNull(nonAdminRequest.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
+    }
+
+    /**
      * Given: a non-admin user holding the Login As role and {@code LOGIN_AS_ADMIN_REQUIRES_ADMIN=false}
      * When: they try to Login As an administrator, re-entering their own password
      * Then: the previous behavior is kept and the operation is allowed
