@@ -1,0 +1,1242 @@
+{
+	"info": {
+		"name": "WebDAV password and API-JWT Basic denial - NONE",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Verify Bearer and resolve site",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"var jsonData = pm.response.json();",
+							"",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"    pm.environment.set(\"hostName\", jsonData.entity.hostname);",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/site/currentSite",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"site",
+						"currentSite"
+					]
+				},
+				"description": "### Get Current Site\n\nThis endpoint makes an HTTP GET request to retrieve information about the current site.\n\n#### Request Body\n\nThis request does not require a request body.\n\n#### Response\n\n- Status: 200\n    \n- Content-Type: application/json\n    \n\n##### Response Body\n\nThe response contains information about the current site in JSON format, including various attributes such as aliases, archived status, category ID, content type ID, default status, host, language ID, title, and more.",
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "OPTIONS / password",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "OPTIONS",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"header": [],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt"
+			},
+			"response": []
+		},
+		{
+			"name": "OPTIONS / api-jwt",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "OPTIONS",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt"
+			},
+			"response": []
+		},
+		{
+			"name": "PROPFIND / password",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "PROPFIND",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/xml"
+					}
+				],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt",
+				"body": {
+					"mode": "raw",
+					"raw": "<D:propfind xmlns:D=\"DAV:\"><D:allprop/></D:propfind>"
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PROPFIND / api-jwt",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "PROPFIND",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/xml"
+					}
+				],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt",
+				"body": {
+					"mode": "raw",
+					"raw": "<D:propfind xmlns:D=\"DAV:\"><D:allprop/></D:propfind>"
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PROPPATCH / password",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "PROPPATCH",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/xml"
+					}
+				],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt",
+				"body": {
+					"mode": "raw",
+					"raw": "<D:propertyupdate xmlns:D=\"DAV:\"><D:set><D:prop><D:displayname>denied</D:displayname></D:prop></D:set></D:propertyupdate>"
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PROPPATCH / api-jwt",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "PROPPATCH",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/xml"
+					}
+				],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt",
+				"body": {
+					"mode": "raw",
+					"raw": "<D:propertyupdate xmlns:D=\"DAV:\"><D:set><D:prop><D:displayname>denied</D:displayname></D:prop></D:set></D:propertyupdate>"
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "LOCK / password",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "LOCK",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/xml"
+					}
+				],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt",
+				"body": {
+					"mode": "raw",
+					"raw": "<D:lockinfo xmlns:D=\"DAV:\"><D:lockscope><D:exclusive/></D:lockscope><D:locktype><D:write/></D:locktype></D:lockinfo>"
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "LOCK / api-jwt",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "LOCK",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/xml"
+					}
+				],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt",
+				"body": {
+					"mode": "raw",
+					"raw": "<D:lockinfo xmlns:D=\"DAV:\"><D:lockscope><D:exclusive/></D:lockscope><D:locktype><D:write/></D:locktype></D:lockinfo>"
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "UNLOCK / password",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "UNLOCK",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"header": [],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt"
+			},
+			"response": []
+		},
+		{
+			"name": "UNLOCK / api-jwt",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "UNLOCK",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt"
+			},
+			"response": []
+		},
+		{
+			"name": "COPY / password",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "COPY",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Destination",
+						"value": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/destination.txt"
+					}
+				],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt"
+			},
+			"response": []
+		},
+		{
+			"name": "COPY / api-jwt",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "COPY",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Destination",
+						"value": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/destination.txt"
+					}
+				],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt"
+			},
+			"response": []
+		},
+		{
+			"name": "MOVE / password",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "MOVE",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Destination",
+						"value": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/destination.txt"
+					}
+				],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt"
+			},
+			"response": []
+		},
+		{
+			"name": "MOVE / api-jwt",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "MOVE",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [
+					{
+						"key": "Destination",
+						"value": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/destination.txt"
+					}
+				],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt"
+			},
+			"response": []
+		},
+		{
+			"name": "MKCOL / password",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "MKCOL",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"header": [],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt"
+			},
+			"response": []
+		},
+		{
+			"name": "MKCOL / api-jwt",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "MKCOL",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt"
+			},
+			"response": []
+		},
+		{
+			"name": "GET / password",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"header": [],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt"
+			},
+			"response": []
+		},
+		{
+			"name": "GET / api-jwt",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt"
+			},
+			"response": []
+		},
+		{
+			"name": "HEAD / password",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "HEAD",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"header": [],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt"
+			},
+			"response": []
+		},
+		{
+			"name": "HEAD / api-jwt",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "HEAD",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt"
+			},
+			"response": []
+		},
+		{
+			"name": "PUT / password",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"header": [],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt",
+				"body": {
+					"mode": "raw",
+					"raw": "This must never be written with disabled authentication."
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PUT / api-jwt",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "PUT",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt",
+				"body": {
+					"mode": "raw",
+					"raw": "This must never be written with disabled authentication."
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "DELETE / password",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"header": [],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt"
+			},
+			"response": []
+		},
+		{
+			"name": "DELETE / api-jwt",
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.cookies.jar().clear(pm.environment.get('serverURL'), function (err) {",
+							"    if (err) throw new Error('Could not isolate authentication test cookies');",
+							"});"
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test('Expected authentication policy response', function () { pm.response.to.have.status(401); });"
+						]
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "{{jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"header": [],
+				"url": "{{serverURL}}/webdav/live/1/{{hostName}}/__basic_auth_denied__/not-created.txt"
+			},
+			"response": []
+		}
+	]
+}

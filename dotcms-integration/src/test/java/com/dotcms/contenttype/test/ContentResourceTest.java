@@ -1,5 +1,8 @@
 package com.dotcms.contenttype.test;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 
 import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
@@ -55,7 +58,6 @@ import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import io.vavr.Tuple2;
-import java.util.Base64;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -105,6 +107,9 @@ import static org.mockito.Mockito.when;
 @ApplicationScoped
 @RunWith(DataProviderWeldRunner.class)
 public class ContentResourceTest extends IntegrationTestBase {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     final static String REQUIRED_NUMERIC_FIELD_NAME = "numeric";
     final static String NON_REQUIRED_IMAGE_FIELD_NAME = "image";
@@ -1407,21 +1412,21 @@ public class ContentResourceTest extends IntegrationTestBase {
             final String params = "id/" + content.getIdentifier();
 
             final JSONObject anonymousView = new JSONObject(contentResource.canLockContent(
-                    lockStatusRequest(null, null), mock(HttpServletResponse.class), params)
+                    lockStatusRequest(null), mock(HttpServletResponse.class), params)
                     .getEntity().toString());
             assertTrue(anonymousView.getBoolean("locked"));
             assertFalse(anonymousView.has("lockedBy"));
             assertFalse(anonymousView.has("lockedByName"));
 
             final JSONObject frontendView = new JSONObject(contentResource.canLockContent(
-                    lockStatusRequest(frontendCaller.getEmailAddress(), password),
+                    lockStatusRequest(frontendCaller),
                     mock(HttpServletResponse.class), params).getEntity().toString());
             assertTrue(frontendView.getBoolean("locked"));
             assertFalse(frontendView.has("lockedBy"));
             assertFalse(frontendView.has("lockedByName"));
 
             final JSONObject backendView = new JSONObject(contentResource.canLockContent(
-                    lockStatusRequest(backendCaller.getEmailAddress(), password),
+                    lockStatusRequest(backendCaller),
                     mock(HttpServletResponse.class), params).getEntity().toString());
             assertTrue(backendView.getBoolean("locked"));
             assertEquals(owner.getUserId(), backendView.getString("lockedBy"));
@@ -1443,20 +1448,31 @@ public class ContentResourceTest extends IntegrationTestBase {
     }
 
     /**
-     * Builds a request with Basic credentials for the given user, or with no credentials when
-     * {@code email} is null.
+     * Builds a request that authenticates as the given user with a Bearer API token, or with no
+     * credentials for the anonymous caller. Username/password Basic is disabled by default.
+     *
+     * @param user the fixture user to authenticate as, or null for the anonymous caller
+     * @return the request
      */
-    private static HttpServletRequest lockStatusRequest(final String email, final String password) {
+    private HttpServletRequest lockStatusRequest(final User user) {
         final MockHeaderRequest request = new MockHeaderRequest(new MockSessionRequest(
                 new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/")
                         .request()).request()).request());
-        if (email != null) {
-            request.setHeader("Authorization", "Basic " + Base64.getEncoder()
-                    .encodeToString((email + ":" + password).getBytes()));
+        if (user != null) {
+            request.setHeader("Authorization", TOKEN_UTILS.bearerHeader(user));
         }
         return request;
     }
 
+
+    /**
+     * Builds a request that authenticates with a Bearer API token: the admin token when no user is
+     * supplied, the given user's token otherwise, and no credential for the anonymous user.
+     *
+     * @param jsonPayload the request body, or null
+     * @param user the fixture user to authenticate as, or null for the admin
+     * @return the request
+     */
     private HttpServletRequest createHttpRequest(final String jsonPayload, final User user) throws Exception{
 
         MockHeaderRequest request = new MockHeaderRequest(
@@ -1467,10 +1483,10 @@ public class ContentResourceTest extends IntegrationTestBase {
         );
 
         if (user == null){
-            request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString(("admin@dotcms.com:admin").getBytes()));
+            request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
 
         } else if (!user.equals(userAPI.getAnonymousUser())){
-            request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString((user.getEmailAddress() + ":" + user.getPassword()).getBytes()));
+            request.setHeader("Authorization", TOKEN_UTILS.bearerHeader(user));
         }
 
         if (jsonPayload != null) {

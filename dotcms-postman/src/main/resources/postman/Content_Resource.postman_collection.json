@@ -5270,16 +5270,11 @@
 									],
 									"request": {
 										"auth": {
-											"type": "basic",
-											"basic": [
+											"type": "bearer",
+											"bearer": [
 												{
-													"key": "password",
-													"value": "admin",
-													"type": "string"
-												},
-												{
-													"key": "username",
-													"value": "admin@dotcms.com",
+													"key": "token",
+													"value": "{{jwt}}",
 													"type": "string"
 												}
 											]
@@ -6553,16 +6548,11 @@
 							]
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -6626,16 +6616,11 @@
 							]
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "admin",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "admin@dotcms.com",
+									"key": "token",
+									"value": "{{jwt}}",
 									"type": "string"
 								}
 							]
@@ -6700,6 +6685,31 @@
 								"type": "text/javascript",
 								"packages": {}
 							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"packages": {},
+								"exec": [
+									"if (!pm.collectionVariables.get('widgetAuthorJwt')) {",
+									"    pm.sendRequest({",
+									"        url: pm.environment.get('serverURL') + '/api/v1/apitoken',",
+									"        method: 'POST',",
+									"        header: { Authorization: 'Bearer ' + pm.environment.get('jwt'), 'Content-Type': 'application/json' },",
+									"        body: { mode: 'raw', raw: JSON.stringify({",
+									"            userId: pm.collectionVariables.get('widgetWarningAuthorId'),",
+									"            expirationSeconds: 60000, network: '0.0.0.0/0',",
+									"            claims: { label: 'postman-widget-author' } }) }",
+									"    }, function (err, response) {",
+									"        if (err || response.code !== 200) throw new Error('Widget author token issuance failed');",
+									"        const token = response.json().entity.jwt;",
+									"        if (typeof token !== 'string' || !token.trim()) throw new Error('Missing widget author token');",
+									"        pm.collectionVariables.set('widgetAuthorJwt', token);",
+									"    });",
+									"}"
+								]
+							}
 						}
 					]
 				},
@@ -6735,16 +6745,11 @@
 							]
 						},
 						"auth": {
-							"type": "basic",
-							"basic": [
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "password",
-									"value": "dotcms12345678",
-									"type": "string"
-								},
-								{
-									"key": "username",
-									"value": "widget.warning.author@dotcms.com",
+									"key": "token",
+									"value": "{{widgetAuthorJwt}}",
 									"type": "string"
 								}
 							]
@@ -7566,44 +7571,7 @@
 				"type": "text/javascript",
 				"exec": [
 					"if (!pm.environment.get('jwt')) {",
-					"    console.log(\"generating....\")",
-					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
-					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
-					"",
-					"    if (!pm.environment.get('jwt')) {",
-					"        const username = pm.environment.get(\"user\");",
-					"        const password = pm.environment.get(\"password\");",
-					"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
-					"",
-					"        const requestOptions = {",
-					"            url: apiUrl,",
-					"            method: \"POST\",",
-					"            header: {",
-					"                \"accept\": \"*/*\",",
-					"                \"content-type\": \"application/json\",",
-					"                \"Authorization\": `Basic ${basicAuth}`",
-					"            },",
-					"            body: {",
-					"                mode: \"raw\",",
-					"                raw: JSON.stringify({",
-					"                    \"expirationSeconds\": 7200,",
-					"                    \"userId\": \"dotcms.org.1\",",
-					"                    \"network\": \"0.0.0.0/0\",",
-					"                    \"claims\": {\"label\": \"postman-tests\"}",
-					"                })",
-					"            }",
-					"        };",
-					"",
-					"        pm.sendRequest(requestOptions, function (err, response) {",
-					"            if (err) {",
-					"                console.log(err);",
-					"            } else {",
-					"                const jwt = response.json().entity.jwt;",
-					"                pm.environment.set('jwt', jwt);",
-					"                console.log(jwt);",
-					"            }",
-					"        });",
-					"    }",
+					"    throw new Error('Set environment jwt to a pre-issued dotCMS API token, or use the Node runner.');",
 					"}"
 				]
 			}

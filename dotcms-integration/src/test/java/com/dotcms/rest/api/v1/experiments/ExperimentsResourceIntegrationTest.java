@@ -1,5 +1,8 @@
 package com.dotcms.rest.api.v1.experiments;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -30,7 +33,6 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
-import com.liferay.util.Base64;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -57,6 +59,9 @@ import org.junit.Test;
  * status code itself requires a layer that runs the mapper.
  */
 public class ExperimentsResourceIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static ExperimentsResource resource;
     private static HttpServletResponse response;
@@ -382,8 +387,12 @@ public class ExperimentsResourceIntegrationTest {
                 before, after);
     }
 
+    /**
+     * Builds a request that authenticates as the fixture admin with a Bearer API token.
+     *
+     * @return the authenticated request
+     */
     private HttpServletRequest getHttpRequest() {
-        final String userEmailAndPassword = adminUser.getEmailAddress() + ":admin";
         final MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(
                         new MockAttributeRequest(
@@ -392,7 +401,7 @@ public class ExperimentsResourceIntegrationTest {
                         .request());
 
         request.setHeader("Authorization",
-                "Basic " + new String(Base64.encode(userEmailAndPassword.getBytes())));
+                TOKEN_UTILS.bearerHeader(adminUser));
 
         return request;
     }

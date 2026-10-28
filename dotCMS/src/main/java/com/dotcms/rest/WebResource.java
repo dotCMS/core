@@ -1,5 +1,7 @@
 package com.dotcms.rest;
 
+import com.dotcms.auth.BasicAuthentication;
+import com.dotcms.auth.BasicAuthentication.Mode;
 import com.dotcms.auth.dotAuth.rest.DotAuthSessionCredentialProcessor;
 import com.dotcms.auth.dotAuth.rest.DotAuthSessionCredentialProcessorImpl;
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
@@ -628,7 +630,7 @@ public  class WebResource {
                 user = authenticateUser(userPass.get().username, userPass.get().password, request, response, userAPI);
             } catch (SecurityException e) {
                 // The anonymous fallback only covers header-replayed credentials (BASIC/DOTAUTH).
-                // An explicit request-parameter login (?userid=&pwd=) must still fail hard so it is
+                // An explicit request-parameter login (user/password) must still fail hard so it is
                 // never silently downgraded to anonymous. REST callers (option off) also fail hard.
                 if (!fallbackToAnonymousOnAuthFailure || CRED_SOURCE_REQUEST_PARAMETER.equals(source)) {
                     throw e;
@@ -744,6 +746,19 @@ public  class WebResource {
         return result;
     }
 
+    /**
+     * Parses credentials from an {@code Authorization: Basic <base64>} header.
+     * <p>
+     * The auth scheme is matched case-insensitively (RFC 7235) and the decoded payload is split on
+     * the first colon only, so a secret that itself contains colons (for example a token with
+     * appended data) is kept whole instead of being truncated at the first colon. A payload with no
+     * separator, or with an empty secret, is rejected with {@code 400}.
+     *
+     * @param request the request whose {@code Authorization} header is read
+     * @return the parsed credentials, or empty when no Basic header is present
+     * @throws SecurityException with {@code 400} when the Base64 payload is malformed or has no
+     *         non-empty secret
+     */
     @VisibleForTesting
     static Optional<UsernamePassword> getAuthCredentialsFromBasicAuth(final HttpServletRequest request) throws SecurityException {
 
@@ -751,13 +766,11 @@ public  class WebResource {
         // Extract authentication credentials
         String authentication = request.getHeader(ContainerRequest.AUTHORIZATION);
 
-        if(StringUtils.isNotEmpty(authentication) && authentication.startsWith(BASIC)) {
+        if(StringUtils.isNotEmpty(authentication)
+                && authentication.regionMatches(true, 0, BASIC, 0, BASIC.length())) {
             authentication = authentication.substring(BASIC.length());
-            // @todo ggranum: this should be a split limit 1.
-            // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
-            // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]
-            String[] values = new String(decodeBase64Credentials(authentication), java.nio.charset.StandardCharsets.UTF_8).split(":");
-            if(values.length < 2) {
+            String[] values = new String(decodeBase64Credentials(authentication), java.nio.charset.StandardCharsets.UTF_8).split(":", 2);
+            if(values.length < 2 || values[1].isEmpty()) {
                 // "Invalid syntax for username and password"
                 throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
             }
@@ -780,17 +793,27 @@ public  class WebResource {
         }
     }
 
+    /**
+     * Parses credentials from the custom {@code DOTAUTH} header, whose value is the Base64-encoded
+     * {@code username:secret} pair.
+     * <p>
+     * The decoded payload is split on the first colon only, so a secret that itself contains colons
+     * is kept whole; a payload with no separator, or with an empty secret, is rejected with
+     * {@code 400}.
+     *
+     * @param request the request whose {@code DOTAUTH} header is read
+     * @return the parsed credentials, or empty when the header is absent
+     * @throws SecurityException with {@code 400} when the Base64 payload is malformed or has no
+     *         non-empty secret
+     */
     @VisibleForTesting
     static Optional<UsernamePassword> getAuthCredentialsFromHeaderAuth(HttpServletRequest request) throws SecurityException {
         Optional<UsernamePassword> result =  Optional.empty();
 
         String authentication = request.getHeader("DOTAUTH");
         if(StringUtils.isNotEmpty(authentication)) {
-            // @todo ggranum: this should be a split limit 1.
-            // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
-            // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]
-            String[] values = new String(decodeBase64Credentials(authentication), java.nio.charset.StandardCharsets.UTF_8).split(":");
-            if(values.length < 2) {
+            String[] values = new String(decodeBase64Credentials(authentication), java.nio.charset.StandardCharsets.UTF_8).split(":", 2);
+            if(values.length < 2 || values[1].isEmpty()) {
                 throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
             }
             result = Optional.of(new UsernamePassword(values[0], values[1]));
@@ -799,8 +822,9 @@ public  class WebResource {
     }
 
     /**
-     * Authenticates and returns a {@link User} using <code>username</code> and <code>password</code>.
-     * If a wrong <code>username</code> or <code>password</code> are provided, a SecurityException is thrown
+     * Authenticates a username and credential under the shared Basic authentication policy.
+     * API JWTs identify their active owner without creating a browser login. Only compatibility
+     * mode permits the legacy password login pipeline; rejected credentials produce a 401.
      */
     @VisibleForTesting
     static User authenticateUser(final String username, final String password,
@@ -809,6 +833,21 @@ public  class WebResource {
                                  final UserAPI userAPI) throws SecurityException {
         User user       = null;
         final String ip = request != null ? request.getRemoteAddr() : BLANK;
+        final Mode mode = BasicAuthentication.mode();
+        if (mode == Mode.NONE) {
+            throw new SecurityException("Username and credential authentication is disabled",
+                    Response.Status.UNAUTHORIZED);
+        }
+        // Avoid false JWT audit failures for ordinary passwords in legacy mode.
+        if (mode == Mode.JWT_TOKEN || StringUtils.countMatches(password, ".") == 2) {
+            final Optional<User> tokenUser = BasicAuthentication.authenticateApiToken(username, password, ip);
+            if (tokenUser.isPresent()) {
+                return tokenUser.get();
+            }
+            if (mode != Mode.ALL) {
+                throw new SecurityException("Invalid API token credentials", Response.Status.UNAUTHORIZED);
+            }
+        }
 
         if(StringUtils.isNotEmpty(username) && StringUtils.isNotEmpty(password)) { // providing login and password so let's try to authenticate
 

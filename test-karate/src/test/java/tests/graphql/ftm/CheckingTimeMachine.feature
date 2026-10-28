@@ -114,6 +114,13 @@ Feature: Test Time Machine functionality
   @positive @ftm
   Scenario: Test Time Machine functionality when a publish date is provided expect the future content to be displayed
 
+    # Establish a session so the Time Machine date survives from the page to its asset request.
+    Given url baseUrl + '/api/v1/page/render/'+pageUrl+'?language_id=1&mode=LIVE'
+    And headers commonHeaders
+    When method GET
+    Then status 200
+    And match responseCookies.JSESSIONID.value == '#notnull'
+
     Given url baseUrl + '/api/v1/page/render/'+pageUrl+'?language_id=1&mode=LIVE&publishDate='+formattedFutureDateTime
     And headers commonHeaders
     When method GET

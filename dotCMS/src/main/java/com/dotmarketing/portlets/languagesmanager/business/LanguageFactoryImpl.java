@@ -819,6 +819,10 @@ public class LanguageFactoryImpl extends LanguageFactory {
 		}
 		int rowsAffected;
 		final long id = language.getId();
+		// Resolve the refusal message before the DELETE: once it fails, the transaction is aborted,
+		// and localizing through Company/User afterwards reads that aborted transaction, turning
+		// the friendly 400 into a 500 for session-less API-token callers.
+		final String contentInUseMsg = Sneaky.sneak(()->LanguageUtil.get("message.language.content"));
 		try {
 			Logger.debug(this, ()-> "Deleting the language by id: " + id);
 			rowsAffected = new DotConnect().executeUpdate(DELETE_FROM_LANGUAGE_WHERE_ID, id);
@@ -827,8 +831,7 @@ public class LanguageFactoryImpl extends LanguageFactory {
 			if(message.contains("fk_contentlet_version_info_lang")
 					|| message.contains("fk_con_lang_ver_info_lang")
 					|| message.contains("fk_contentlet_lang")) {
-				final String errorMsg = Sneaky.sneak(()->LanguageUtil.get("message.language.content"));
-				throw new DotStateException(errorMsg, e);
+				throw new DotStateException(contentInUseMsg, e);
 			} else {
 				Logger.error(LanguageFactoryImpl.class, "deleteLanguageById failed to delete the language with id: " + id);
 				throw new DotRuntimeException(e.toString(), e);

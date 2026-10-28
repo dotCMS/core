@@ -15,6 +15,7 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+        com.dotcms.test.util.ApiTokenTestUtilsTest.class,
         com.dotcms.keyvalue.busines.KeyValueAPIImplTest.class,
         com.dotcms.keyvalue.business.KeyValueAPITest.class,
         com.dotcms.tika.TikaUtilsTest.class,
@@ -88,6 +89,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.container.ContainerResourceHostResolutionIT.class,
         com.dotcms.rest.api.v1.theme.ThemeResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.vtl.VTLResourceIntegrationTest.class,
+        com.dotcms.rest.api.v1.vtl.ScriptingAnonymousAccessIntegrationTest.class,
         com.dotcms.rest.api.v1.contenttype.ContentTypeResourceIssue15124Test.class,
         com.dotcms.rest.api.v1.contenttype.FieldResourceTest.class,
         com.dotcms.rest.api.v1.contenttype.ContentTypeResourceTest.class,
@@ -110,6 +112,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ContentletDestroyIndexRemovalTest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexPartialFailurePhaseTest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexProviderSkipTest.class,
+        com.dotcms.rendering.velocity.viewtools.ScriptingFileForgeryIntegrationTest.class,
         com.dotcms.graphql.GraphqlCacheWebInterceptorIntegrationTest.class
 })
 

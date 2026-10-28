@@ -39,26 +39,12 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
 						}
 					]
 				},
@@ -147,26 +133,12 @@
 			],
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
 						}
 					]
 				},
@@ -206,6 +178,22 @@
 					"listen": "test",
 					"script": {
 						"exec": [
+							"// Schedule restore before assertions so Newman bail cannot skip cleanup after a failed test.",
+							"const key = 'CONTENT_APIS_ALLOW_ANONYMOUS';",
+							"const previous = JSON.parse(pm.collectionVariables.get('previousAnonymousAccess'));",
+							"pm.sendRequest({",
+							"    url: pm.environment.get('serverURL') + '/api/v1/system-table' + (previous === null ? '/' + key : ''),",
+							"    method: previous === null ? 'DELETE' : 'POST',",
+							"    header: {Authorization: 'Bearer ' + pm.environment.get('jwt'), 'Content-Type': 'application/json'},",
+							"    body: {mode: 'raw', raw: JSON.stringify({key: key, value: previous})}",
+							"}, function (error, response) {",
+							"    pm.test('Previous anonymous access configuration is restored', function () {",
+							"        pm.expect(error).to.not.exist;",
+							"        pm.expect(response.code).to.equal(200);",
+							"    });",
+							"    if (!error && response.code === 200) pm.collectionVariables.unset('previousAnonymousAccess');",
+							"});",
+							"",
 							"let jsonData = pm.response.json();",
 							"",
 							"pm.test(\"Status code should be 200\", function() {",
@@ -305,7 +293,23 @@
 							"}",
 							"",
 							"",
-							"allowSomeTimeForPublish();",
+							"// The local announcements fixture deliberately serves an anonymous public feed.",
+							"const key = 'CONTENT_APIS_ALLOW_ANONYMOUS';",
+							"const systemTable = pm.environment.get('serverURL') + '/api/v1/system-table';",
+							"const headers = {Authorization: 'Bearer ' + pm.environment.get('jwt'), 'Content-Type': 'application/json'};",
+							"pm.sendRequest({url: systemTable + '/' + key, method: 'GET', header: headers}, function (error, response) {",
+							"    pm.expect(error).to.not.exist;",
+							"    pm.expect(response.code).to.be.oneOf([200, 404]);",
+							"    pm.collectionVariables.set('previousAnonymousAccess', JSON.stringify(response.code === 200 ? response.json().entity : null));",
+							"    pm.sendRequest({",
+							"        url: systemTable, method: 'POST', header: headers,",
+							"        body: {mode: 'raw', raw: JSON.stringify({key: key, value: 'READ'})}",
+							"    }, function (error, response) {",
+							"        pm.expect(error).to.not.exist;",
+							"        pm.expect(response.code).to.equal(200);",
+							"        allowSomeTimeForPublish();",
+							"    });",
+							"});",
 							"",
 							""
 						],
@@ -318,26 +322,12 @@
 			},
 			"request": {
 				"auth": {
-					"type": "basic",
-					"basic": [
+					"type": "bearer",
+					"bearer": [
 						{
-							"key": "password",
-							"value": "admin",
+							"key": "token",
+							"value": "{{jwt}}",
 							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "admin@dotcms.com",
-							"type": "string"
-						},
-						{
-							"key": "saveHelperData",
-							"type": "any"
-						},
-						{
-							"key": "showPassword",
-							"value": false,
-							"type": "boolean"
 						}
 					]
 				},

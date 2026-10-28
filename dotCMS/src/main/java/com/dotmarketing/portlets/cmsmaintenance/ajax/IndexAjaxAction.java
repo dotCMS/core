@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.cmsmaintenance.ajax;
 
+import com.dotcms.auth.BasicAuthentication;
 import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
 import com.dotcms.content.elasticsearch.business.DotIndexException;
 import com.dotcms.content.elasticsearch.business.ESIndexHelper;
@@ -74,9 +75,12 @@ public class IndexAjaxAction extends AjaxAction {
 		try {
 			// Check permissions if the user has access to the CMS Maintenance Portlet
 			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)) {
-				String userName = map.get("u");
-				String password = map.get("p");
-				LoginFactory.doLogin(userName, password, false, request, response);
+				// Only the compatibility mode may exchange URI credentials for a session.
+				if (BasicAuthentication.mode() == BasicAuthentication.Mode.ALL) {
+					String userName = map.get("u");
+					String password = map.get("p");
+					LoginFactory.doLogin(userName, password, false, request, response);
+				}
 				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);
 				if(user==null) {
 				    setUser(request);

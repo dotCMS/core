@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.vtl;
 
 import com.dotcms.rendering.util.ScriptingReaderParams;
+import com.dotcms.rendering.velocity.viewtools.ScriptingFileAttribute;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -65,6 +66,8 @@ public class FileVelocityReader implements VelocityReader {
             throw new DoesNotExistException (e.getMessage(), e);
         }
         final FileAsset getFileAsset = APILocator.getFileAssetAPI().fromContentlet(getFileContent);
+        // lets $dotsecrets check the file's last editor, as it does for page content
+        ScriptingFileAttribute.set(params.getRequest(), getFileContent);
 
         return new InputStreamReader(getFileAsset.getInputStream());
     }

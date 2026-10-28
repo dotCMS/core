@@ -271,7 +271,10 @@ public class BrowserUtil {
                     .find(folderId, APILocator.systemUser(), false);
 
             if (UtilMethods.isSet(folder)) {
-                final HttpSession session = httpServletRequest.getSession(false);
+                // Create the session when absent: this endpoint only records a per-session UI
+                // preference, and API-token callers no longer arrive with a login session that
+                // a former Basic-authentication used to create.
+                final HttpSession session = httpServletRequest.getSession();
                 session.setAttribute(LAST_SELECTED_FOLDER_ID, folderId);
             } else {
                 throw  new NotFoundInDbException("Folder not found :" + folderId);

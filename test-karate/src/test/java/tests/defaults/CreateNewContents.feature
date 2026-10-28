@@ -1,10 +1,8 @@
 Feature: Content Management API Tests
 
   Background:
-    * def authString = 'admin@dotcms.com:admin'
     * def encodedAuth = function(s) { return java.util.Base64.getEncoder().encodeToString(s.getBytes('UTF-8')); }
     * def baseUrl = baseUrl + ''
-    * def authHeader = 'Basic ' + encodedAuth(authString)
     * def commonHeaders = { 'Content-Type': 'application/json', 'Authorization': '#(authHeader)' }
     * def newContent = karate.callSingle('classpath:dependencyfeatures/newContent.feature')
     * def contentId = newContent.contentId
@@ -55,6 +53,6 @@ Feature: Content Management API Tests
     And match response contains expectedError
 
     Examples:
-      | scenario          | useAuth | credentials               | expectedError                                                                            |
-      | No Credentials    | false   | null                      | CONTENT_APIS_ALLOW_ANONYMOUS permission exceeded - system set to READ but WRITE was required |
-      | Wrong Credentials | true    | 'admin@dotcms.com:admin1' | Authentication credentials are required                                               |
+      | scenario           | useAuth | credentials               | expectedError                              |
+      | No Credentials     | false   | null                      | CONTENT_APIS_ALLOW_ANONYMOUS permission denied |
+      | Password as Basic | true    | 'admin@dotcms.com:admin1' | Invalid API token credentials               |

@@ -431,8 +431,9 @@ public class PermissionResource {
         final User systemUser = userAPI.getSystemUser();
         final User targetUser = loadUserByIdOrEmail(userId, systemUser);
 
-        // Get user's individual role
-        final Role userRole = roleAPI.loadRoleById(targetUser.getUserId());
+        // The user's individual role is keyed by the user id, not by a role id: loadRoleById
+        // only resolved it through the warm role-key cache index and NPE'd on a cold cache.
+        final Role userRole = roleAPI.getUserRole(targetUser);
 
         // Build user info (needed in function closure)
         final UserInfoView userInfo = UserInfoView.builder()

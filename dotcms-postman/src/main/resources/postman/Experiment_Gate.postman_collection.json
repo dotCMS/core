@@ -37,10 +37,13 @@
           ],
           "request": {
             "auth": {
-              "type": "basic",
-              "basic": [
-                { "key": "username", "value": "admin@dotcms.com", "type": "string" },
-                { "key": "password", "value": "admin", "type": "string" }
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt}}",
+                  "type": "string"
+                }
               ]
             },
             "method": "POST",
@@ -82,10 +85,13 @@
           ],
           "request": {
             "auth": {
-              "type": "basic",
-              "basic": [
-                { "key": "username", "value": "admin@dotcms.com", "type": "string" },
-                { "key": "password", "value": "admin", "type": "string" }
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt}}",
+                  "type": "string"
+                }
               ]
             },
             "method": "POST",
@@ -127,10 +133,13 @@
           ],
           "request": {
             "auth": {
-              "type": "basic",
-              "basic": [
-                { "key": "username", "value": "admin@dotcms.com", "type": "string" },
-                { "key": "password", "value": "admin", "type": "string" }
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt}}",
+                  "type": "string"
+                }
               ]
             },
             "method": "PUT",
@@ -157,7 +166,7 @@
                   "    url: pm.variables.get('serverURL') + '/api/v1/experiments?status=DRAFT',",
                   "    method: 'GET',",
                   "    header: {",
-                  "        'Authorization': 'Basic ' + btoa('admin@dotcms.com:admin')",
+                  "        'Authorization': 'Bearer ' + pm.environment.get('jwt')",
                   "    }",
                   "}, function (err, res) {",
                   "    if (!err && res.json().entity && res.json().entity.length > 0) {",
@@ -194,10 +203,13 @@
           ],
           "request": {
             "auth": {
-              "type": "basic",
-              "basic": [
-                { "key": "username", "value": "admin@dotcms.com", "type": "string" },
-                { "key": "password", "value": "admin", "type": "string" }
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt}}",
+                  "type": "string"
+                }
               ]
             },
             "method": "POST",
@@ -281,10 +293,13 @@
           ],
           "request": {
             "auth": {
-              "type": "basic",
-              "basic": [
-                { "key": "username", "value": "admin@dotcms.com", "type": "string" },
-                { "key": "password", "value": "admin", "type": "string" }
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt}}",
+                  "type": "string"
+                }
               ]
             },
             "method": "GET",
@@ -334,10 +349,13 @@
           ],
           "request": {
             "auth": {
-              "type": "basic",
-              "basic": [
-                { "key": "username", "value": "admin@dotcms.com", "type": "string" },
-                { "key": "password", "value": "admin", "type": "string" }
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt}}",
+                  "type": "string"
+                }
               ]
             },
             "method": "GET",
@@ -429,10 +447,13 @@
           ],
           "request": {
             "auth": {
-              "type": "basic",
-              "basic": [
-                { "key": "username", "value": "admin@dotcms.com", "type": "string" },
-                { "key": "password", "value": "admin", "type": "string" }
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt}}",
+                  "type": "string"
+                }
               ]
             },
             "method": "GET",
@@ -473,10 +494,13 @@
           ],
           "request": {
             "auth": {
-              "type": "basic",
-              "basic": [
-                { "key": "username", "value": "admin@dotcms.com", "type": "string" },
-                { "key": "password", "value": "admin", "type": "string" }
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt}}",
+                  "type": "string"
+                }
               ]
             },
             "method": "GET",
@@ -509,10 +533,13 @@
           ],
           "request": {
             "auth": {
-              "type": "basic",
-              "basic": [
-                { "key": "username", "value": "admin@dotcms.com", "type": "string" },
-                { "key": "password", "value": "admin", "type": "string" }
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{jwt}}",
+                  "type": "string"
+                }
               ]
             },
             "method": "GET",

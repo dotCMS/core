@@ -3,108 +3,131 @@ package com.dotcms.filters;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import com.dotcms.mock.request.DotCMSMockRequest;
+import com.dotmarketing.util.Config;
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
-/**
- * Covers the credentials requirement on the WebDAV endpoints: a request that carries none is
- * answered with a challenge and never reaches the servlet, whatever method it uses, and a request
- * that carries credentials is forwarded untouched.
- */
+/** Covers the WebDAV credential gate; the helper still has to authenticate any forwarded claim. */
 public class WebDavAuthenticationFilterTest {
 
     private static final String CREDENTIALS = "Basic YWRtaW5AZG90Y21zLmNvbTphZG1pbg==";
-
-    /**
-     * Every WebDAV method the servlet answers. The methods the library routes through its shared
-     * path were already refused without credentials; PROPPATCH and OPTIONS were not. The filter
-     * makes no distinction between them, and this asserts that rather than only the two that were
-     * reported.
-     */
+    private static final String TOKEN_CREDENTIALS = "Basic " + Base64.getEncoder().encodeToString(
+            "dav-user@example.com:test-api-jwt".getBytes(StandardCharsets.UTF_8));
     private static final List<String> WEBDAV_METHODS = List.of(
             "PROPPATCH", "PROPFIND", "OPTIONS", "LOCK", "UNLOCK", "MKCOL", "MOVE", "COPY",
             "GET", "HEAD", "PUT", "DELETE");
+    private String previousMode;
 
-    @Test
-    public void requestWithoutCredentialsIsChallengedAndNeverReachesTheServlet() throws Exception {
-        final FilterChain chain = mock(FilterChain.class);
-        final HttpServletResponse response = mock(HttpServletResponse.class);
-
-        new WebDavAuthenticationFilter().doFilter(request("PROPPATCH", null), response, chain);
-
-        verifyChallenged(response);
-        verify(chain, never()).doFilter(any(), any());
+    /** Save the caller's configuration rather than imposing ALL on the entire suite. */
+    @Before
+    public void rememberMode() {
+        previousMode = Config.getStringProperty("ALLOW_BASIC_AUTH", null);
     }
 
+    /** Restore an absent property as absent as well as restoring explicit values. */
+    @After
+    public void restoreMode() {
+        Config.setProperty("ALLOW_BASIC_AUTH", previousMode);
+    }
+
+    /** Every library method must challenge missing credentials without a container redirect. */
     @Test
-    public void everyMethodIsRefusedWithoutCredentials() throws Exception {
-        for (final String method : WEBDAV_METHODS) {
-            final FilterChain chain = mock(FilterChain.class);
-            final HttpServletResponse response = mock(HttpServletResponse.class);
+    public void everyMethodIsChallengedWithoutCredentialsInEveryMode() throws Exception {
+        for (final String mode : new String[]{null, "NONE", "JWT_TOKEN", "ALL"}) {
+            Config.setProperty("ALLOW_BASIC_AUTH", mode);
+            for (final String method : WEBDAV_METHODS) {
+                final FilterChain chain = mock(FilterChain.class);
+                final HttpServletResponse response = mock(HttpServletResponse.class);
 
-            new WebDavAuthenticationFilter().doFilter(request(method, null), response, chain);
+                new WebDavAuthenticationFilter().doFilter(request(method, null), response, chain);
 
-            verifyChallenged(response);
-            verify(chain, never()).doFilter(any(), any());
+                verifyChallenged(response);
+                verify(chain, never()).doFilter(any(), any());
+            }
         }
     }
 
+    /** A blank header must never open the servlet, even in a mode that permits credentials. */
+    @Test
+    public void blankAuthorizationIsChallengedInEveryMode() throws Exception {
+        for (final String mode : new String[]{null, "NONE", "JWT_TOKEN", "ALL"}) {
+            Config.setProperty("ALLOW_BASIC_AUTH", mode);
+            for (final String header : List.of("", "   ")) {
+                final FilterChain chain = mock(FilterChain.class);
+                final HttpServletResponse response = mock(HttpServletResponse.class);
+
+                new WebDavAuthenticationFilter()
+                        .doFilter(request("PROPPATCH", header), response, chain);
+
+                verifyChallenged(response);
+                verify(chain, never()).doFilter(any(), any());
+            }
+        }
+    }
+
+    /** Explicit NONE, FALSE, empty and unrecognized values do not forward credential-bearing data requests. */
+    @Test
+    public void credentialsAreNotForwardedWhenBasicAuthenticationIsDisabled() throws Exception {
+        for (final String mode : new String[]{"NONE", "false", "invalid-mode", ""}) {
+            Config.setProperty("ALLOW_BASIC_AUTH", mode);
+            for (final String method : List.of("PROPPATCH", "PROPFIND", "GET", "PUT")) {
+                final FilterChain chain = mock(FilterChain.class);
+                final HttpServletResponse response = mock(HttpServletResponse.class);
+
+                new WebDavAuthenticationFilter()
+                        .doFilter(request(method, CREDENTIALS), response, chain);
+
+                verify(chain, never()).doFilter(any(), any());
+                verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                verify(response, never()).sendError(anyInt());
+                verify(response, never()).sendError(anyInt(), anyString());
+            }
+        }
+    }
+
+    /** ALL preserves the legacy username/password handshake; the filter grants no principal. */
+    @Test
+    public void allForwardsCredentialsWithoutAuthenticatingTheRequest() throws Exception {
+        verifyForwarded("ALL", CREDENTIALS);
+    }
+
+    /** JWT_TOKEN uses DAV's username/JWT Basic pair, not a new Bearer authentication flow. */
+    @Test
+    public void jwtTokenForwardsTheBasicPairForHelperValidation() throws Exception {
+        verifyForwarded("JWT_TOKEN", TOKEN_CREDENTIALS);
+    }
+
     /**
-     * A refusal with no challenge leaves a client nothing to do but give up, so the header is part
-     * of the behaviour and not decoration.
+     * The absent-property default resolves to JWT_TOKEN, so a DAV client that sends its
+     * username/API-JWT pair works without configuration; the helper still validates the pair.
      */
     @Test
-    public void theRefusalCarriesABasicChallenge() throws Exception {
+    public void absentDefaultForwardsTheBasicPairLikeJwtToken() throws Exception {
+        Config.setProperty("ALLOW_BASIC_AUTH", null);
+        final FilterChain chain = mock(FilterChain.class);
         final HttpServletResponse response = mock(HttpServletResponse.class);
 
         new WebDavAuthenticationFilter()
-                .doFilter(request("OPTIONS", null), response, mock(FilterChain.class));
+                .doFilter(request("PROPPATCH", TOKEN_CREDENTIALS), response, chain);
 
-        final ArgumentCaptor<String> challenge = ArgumentCaptor.forClass(String.class);
-        verify(response).setHeader(eq("WWW-Authenticate"), challenge.capture());
-        assertTrue("The challenge must name a scheme the client can use: " + challenge.getValue(),
-                challenge.getValue().startsWith("Basic realm="));
-    }
-
-    @Test
-    public void requestWithCredentialsIsForwardedUntouched() throws Exception {
-        final FilterChain chain = mock(FilterChain.class);
-        final HttpServletResponse response = mock(HttpServletResponse.class);
-        final HttpServletRequest request = request("PROPPATCH", CREDENTIALS);
-
-        new WebDavAuthenticationFilter().doFilter(request, response, chain);
-
-        verify(chain).doFilter(request, response);
-        verify(response, never()).sendError(anyInt());
-    }
-
-    /**
-     * A header that is present but empty is not credentials. Treating it as some evidence of a
-     * caller would reopen the path this closes.
-     */
-    @Test
-    public void anEmptyAuthorizationHeaderIsNotCredentials() throws Exception {
-        for (final String header : List.of("", "   ")) {
-            final FilterChain chain = mock(FilterChain.class);
-            final HttpServletResponse response = mock(HttpServletResponse.class);
-
-            new WebDavAuthenticationFilter().doFilter(request("PROPPATCH", header), response, chain);
-
-            verifyChallenged(response);
-            verify(chain, never()).doFilter(any(), any());
-        }
+        verify(chain).doFilter(any(), any());
+        verify(response, never()).setStatus(anyInt());
     }
 
     /** Nothing but HTTP reaches this mapping, but a non-HTTP request must not be swallowed. */
@@ -119,20 +142,36 @@ public class WebDavAuthenticationFilterTest {
         verify(chain).doFilter(request, response);
     }
 
-    /**
-     * A refusal has to be the answer to the request, so the status is set rather than raised as a
-     * container error: web.xml maps 401 to an error page that redirects, and a client handed a 302
-     * to a login page cannot act on it. Caught live, where every refusal came back 302.
-     */
+    /** Forwarding a credential claim must not create an authenticated servlet principal. */
+    private static void verifyForwarded(final String mode, final String credentials) throws Exception {
+        Config.setProperty("ALLOW_BASIC_AUTH", mode);
+        final FilterChain chain = mock(FilterChain.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+        final DotCMSMockRequest request = request("PROPPATCH", credentials);
+
+        new WebDavAuthenticationFilter().doFilter(request, response, chain);
+
+        verify(chain).doFilter(request, response);
+        org.junit.Assert.assertNull(request.getUserPrincipal());
+        verify(response, never()).sendError(anyInt());
+        verify(response, never()).sendError(anyInt(), anyString());
+    }
+
+    /** setStatus avoids web.xml's 401 error-page mapping, which otherwise turns this into 302. */
     private static void verifyChallenged(final HttpServletResponse response) throws Exception {
         verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         verify(response, never()).sendError(anyInt());
+        verify(response, never()).sendError(anyInt(), anyString());
+        final ArgumentCaptor<String> challenge = ArgumentCaptor.forClass(String.class);
+        verify(response).setHeader(eq("WWW-Authenticate"), challenge.capture());
+        assertTrue("DAV clients must receive a usable challenge",
+                challenge.getValue().startsWith("Basic realm="));
     }
 
+    /** Supply the one header the filter reads without mocking the filter itself. */
     private static DotCMSMockRequest request(final String method, final String authorization) {
-        // DotCMSMockRequest holds headers but exposes no setter for them, so the one header this
-        // filter reads is supplied here.
         final DotCMSMockRequest request = new DotCMSMockRequest() {
+            /** Headers have no setter on the mock request. */
             @Override
             public String getHeader(final String name) {
                 return "authorization".equalsIgnoreCase(name) ? authorization : super.getHeader(name);

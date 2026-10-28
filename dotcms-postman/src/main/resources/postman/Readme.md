@@ -2,7 +2,13 @@
 
 # How to run the REST endpoints tests 
 
-The intention of these tests is to validate the response, headers, and return codes for all endpoints. 
+The intention of these tests is to validate the response, headers, and return codes for all endpoints.
+
+Ordinary suites run with Basic authentication disabled (`NONE`). Standalone imports
+must supply **environment** `serverURL` and a pre-issued API-token `jwt`; password
+Basic bootstrap is no longer supported. See the [module authentication guide](../../../../README.md)
+for environment setup, secure Node bootstrap, and the separate `JWT_TOKEN`/`ALL`
+compatibility jobs. Do not enable compatibility modes for the ordinary suite.
 
 ## Running via Maven (Recommended)
 

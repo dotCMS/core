@@ -36,6 +36,7 @@ import com.dotmarketing.quartz.job.StartEndScheduledExperimentsJobTest;
 import com.dotmarketing.startup.runonce.Task220825CreateVariantFieldTest;
 import com.dotmarketing.startup.runonce.Task221007AddVariantIntoPrimaryKeyTest;
 import com.dotmarketing.startup.runonce.Task240306MigrateLegacyLanguageVariablesTest;
+import com.dotmarketing.webdav.DotWebdavAuthenticationIntegrationTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -131,6 +132,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.structure.factories.FieldFactoryTest.class,
         com.dotmarketing.portlets.structure.model.ContentletRelationshipsTest.class,
         com.dotmarketing.portlets.structure.transform.ContentletRelationshipsTransformerTest.class,
+        DotWebdavAuthenticationIntegrationTest.class,
         com.dotcms.enterprise.ClusterUtilIntegrationTest.class,
 })
 

@@ -1,8 +1,6 @@
 Feature: Create content dependencies for tests
 
   Background:
-    * def authString = 'admin@dotcms.com:admin'
-    * def encodedAuth = function(s) { return java.util.Base64.getEncoder().encodeToString(s.getBytes('UTF-8')); }
     * def baseUrl = 'http://localhost:8080'
 
   Scenario: SuccessRequest
@@ -20,7 +18,7 @@ Feature: Create content dependencies for tests
 
     And request { "contentlet": { "stInode" : "f4d7c1b8-2c88-4071-abf1-a5328977b07d", "languageId" : 1, "key": "#(timestampString)", "value": "#(timestampString)"  }  }
     And header Content-Type = 'application/json'
-    And header Authorization = 'Basic ' + encodedAuth(authString)
+    And header Authorization = authHeader
     When method put
     Then status 200
     #* print 'Response:', response

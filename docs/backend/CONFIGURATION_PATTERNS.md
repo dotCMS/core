@@ -92,6 +92,36 @@ and the read site are enough.
 2. **System table** (database)
 3. **Properties files** (all files are loaded)
 
+## Anonymous Content API Access — Upgrade Note
+
+`CONTENT_APIS_ALLOW_ANONYMOUS` defaults to `NONE` in both the bundled configuration and
+when the property is absent. Anonymous requests to APIs governed by this setting require
+authentication; authenticated requests remain subject to their existing permissions.
+This includes content REST APIs, GraphQL, and custom `/api/vtl/*` endpoints that use the
+same access checks. Unrelated public/bootstrap endpoints are unchanged.
+
+**Breaking default change:** installations relying on the previous implicit `READ` default
+must authenticate their API clients or explicitly opt in before upgrading. To retain public
+API reads, set `CONTENT_APIS_ALLOW_ANONYMOUS=READ` in your configuration override, or
+`DOT_CONTENT_APIS_ALLOW_ANONYMOUS=READ` in the deployment environment. Anonymous content
+submission requires an explicit `WRITE` opt-in. Existing explicit `NONE`, `READ`, and `WRITE`
+overrides are preserved, and enabling anonymous access does not bypass content permissions.
+Values are case-insensitive (`none`, `read`, and `write` are accepted); use the documented
+uppercase property/environment variable names. Review headless clients and custom VTL
+endpoints when preparing an upgrade. Servers providing public content feeds, including an
+announcements feed, must explicitly opt into `READ`; instances merely consuming a remote
+public feed do not need to enable anonymous access themselves.
+
+**Rollback note:** these are compiled-in defaults, not stored settings, so rolling the binary
+back to a previous release silently restores the older, more permissive behavior (implicit
+anonymous `READ` on content APIs, and re-enabled Basic/DOTAUTH **password** credentials) without
+any operator action. An installation that must keep the hardened posture across a rollback
+should pin it with environment overrides — `DOT_CONTENT_APIS_ALLOW_ANONYMOUS=NONE` and
+`DOT_ALLOW_BASIC_AUTH=NONE` — which outlive the binary, instead of relying on the in-binary
+defaults. Note the default `JWT_TOKEN` posture needs no pinning on rollback: it validates the
+same persisted token a Bearer header would and never verifies a password. Call the
+default-change out in the release notes.
+
 ## Configuration Documentation Pattern
 When adding new properties, include:
 ```properties

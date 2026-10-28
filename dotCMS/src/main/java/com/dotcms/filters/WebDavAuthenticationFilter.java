@@ -1,5 +1,6 @@
 package com.dotcms.filters;
 
+import com.dotcms.auth.BasicAuthentication;
 import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.UtilMethods;
 import java.io.IOException;
@@ -23,11 +24,10 @@ import javax.servlet.http.HttpServletResponse;
  * with the resource's own answer never consulted or, for a PROPPATCH naming no property, consulted
  * and then discarded.
  *
- * <p>Answering here removes that variation: a request with no credentials gets the RFC 7235
- * challenge it should have got, for every method and whatever the body, and the servlet only ever
- * sees requests that at least claim to be from somebody. Whether that claim is any good, and what
- * the caller may then do, stays where it belongs -- with the library's authentication handlers and
- * the resources' own permission checks.
+ * <p>Answering here removes that variation: disabled Basic authentication or missing credentials
+ * receives a direct RFC 7235 challenge, for every method and whatever the body. When the shared
+ * policy allows credentials, the helper validates the username/password or username/API-JWT pair;
+ * the resources' own permission checks still decide what the authenticated caller may do.
  *
  * <p>This deliberately does not exempt OPTIONS. A client sends it to discover what the server
  * supports, and being challenged is the normal answer to that: every WebDAV client already handles
@@ -37,8 +37,8 @@ public class WebDavAuthenticationFilter implements Filter {
 
     /**
      * Basic is what the library's own challenge offers, and what dotCMS authenticates WebDAV with:
-     * the resources verify a username and password, so there is nothing else to offer here. The
-     * realm is a label a client shows and keys saved credentials by, not a decision input.
+     * the resources verify a username paired with a password or API JWT. The realm is a label a
+     * client shows and keys saved credentials by, not a decision input.
      */
     private static final String CHALLENGE = "Basic realm=\"dotCMS WebDAV\"";
 
@@ -52,6 +52,7 @@ public class WebDavAuthenticationFilter implements Filter {
         // Nothing to release.
     }
 
+    /** Reject disabled or missing credentials without entering the servlet's method handlers. */
     @Override
     public void doFilter(final ServletRequest req, final ServletResponse res, final FilterChain chain)
             throws IOException, ServletException {
@@ -63,16 +64,13 @@ public class WebDavAuthenticationFilter implements Filter {
         final HttpServletRequest request = (HttpServletRequest) req;
         final HttpServletResponse response = (HttpServletResponse) res;
 
-        // Credentials reach WebDAV only in this header: the resources authenticate a username and
-        // password, and the library's handlers read nothing else. A present but blank header is no
-        // more a caller than an absent one.
-        if (!UtilMethods.isSet(request.getHeader("Authorization"))) {
-            // A refused request on an interface that serves nobody anonymously belongs in the
-            // security log, the same as a back-end URL requested without a session. The volume is
-            // bounded: a client is challenged once and then sends credentials up front, so what
-            // lands here past the first request of a handshake is something that never had any.
+        // DAV uses a Basic username/password or username/API-JWT pair in this header. A blank
+        // header is no more a caller than an absent one, and NONE disables either pair.
+        if (BasicAuthentication.mode() == BasicAuthentication.Mode.NONE
+                || !UtilMethods.isSet(request.getHeader("Authorization"))) {
+            // Record the refusal without including the credential-bearing header.
             SecurityLogger.logInfo(WebDavAuthenticationFilter.class,
-                    () -> String.format("Refused WebDAV %s %s from %s: no credentials sent",
+                    () -> String.format("Refused WebDAV %s %s from %s: Basic authentication disabled or credentials missing",
                             request.getMethod(), request.getRequestURI(), request.getRemoteAddr()));
             // setStatus, not sendError: web.xml maps 401 to /html/error/custom-error-page.jsp,
             // which redirects, and a WebDAV client handed a 302 to a login page has nothing it can

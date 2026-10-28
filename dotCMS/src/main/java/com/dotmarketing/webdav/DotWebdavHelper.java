@@ -4,6 +4,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDRE
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.BasicAuthentication;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.bradmcevoy.http.CollectionResource;
@@ -169,8 +170,29 @@ public class DotWebdavHelper {
 		}
 	}
 
+	/**
+	 * Authenticates DAV's username/credential pair under the shared Basic authentication policy.
+	 * Token-only mode never enters the password or pre-authentication pipeline.
+	 *
+	 * @param username the company's configured email or user-id login
+	 * @param passwd the password in ALL mode, or the API JWT in token-only mode
+	 * @return the authenticated {@link User}; resource permission checks still apply
+	 * @throws DotSecurityException if credentials are disabled or invalid
+	 * @throws NoSuchUserException if the named user does not exist
+	 * @throws DotDataException if the user lookup fails
+	 */
 	public User authorizePrincipal(final String username, final String passwd) throws DotSecurityException, NoSuchUserException, DotDataException {
 
+		final BasicAuthentication.Mode mode = BasicAuthentication.mode();
+		if (mode == BasicAuthentication.Mode.NONE) {
+			throw new DotSecurityException("Basic authentication is disabled");
+		}
+		if (mode == BasicAuthentication.Mode.JWT_TOKEN) {
+			final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+			final String ipAddress = request != null ? request.getRemoteAddr() : null;
+			return BasicAuthentication.authenticateApiToken(username, passwd, ipAddress)
+					.orElseThrow(() -> new DotSecurityException("Invalid API token credentials"));
+		}
 
 		final Company company         = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
 		final boolean useEmailAsLogin = !company.getAuthType().equals(Company.AUTH_TYPE_ID);

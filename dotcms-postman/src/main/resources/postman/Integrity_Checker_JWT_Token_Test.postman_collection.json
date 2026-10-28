@@ -50,16 +50,11 @@
 							],
 							"request": {
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
+											"key": "token",
+											"value": "{{jwt}}",
 											"type": "string"
 										}
 									]
@@ -117,6 +112,9 @@
 										"v1",
 										"logout"
 									]
+								},
+								"auth": {
+									"type": "noauth"
 								}
 							},
 							"response": []
@@ -206,75 +204,6 @@
 										"integrity",
 										"{{transactionId}}",
 										"integrityData"
-									]
-								}
-							},
-							"response": []
-						}
-					]
-				},
-				{
-					"name": "using_basic_authentication_instead_JWT_token",
-					"item": [
-						{
-							"name": "request_pp",
-							"event": [
-								{
-									"listen": "test",
-									"script": {
-										"exec": [
-											"pm.test(\"Status code is 200\", function () {",
-											"    pm.response.to.have.status(401);",
-											"});"
-										],
-										"type": "text/javascript"
-									}
-								}
-							],
-							"request": {
-								"auth": {
-									"type": "basic",
-									"basic": [
-										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										}
-									]
-								},
-								"method": "POST",
-								"header": [
-									{
-										"key": "Content-Type",
-										"value": "application/octet-stream",
-										"type": "text"
-									},
-									{
-										"key": "Content-Disposition",
-										"value": "attachment",
-										"type": "text"
-									}
-								],
-								"body": {
-									"mode": "file",
-									"file": {
-										"src": "resources/Push_publish/bundle_test-01EAJHA26FZGPAEZBSGJGNG82A.tar.gz"
-									}
-								},
-								"url": {
-									"raw": "{{serverURL}}/api/bundlePublisher/publish",
-									"host": [
-										"{{serverURL}}"
-									],
-									"path": [
-										"api",
-										"bundlePublisher",
-										"publish"
 									]
 								}
 							},
@@ -446,16 +375,11 @@
 							],
 							"request": {
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "password",
-											"value": "admin",
+											"key": "token",
+											"value": "{{jwt}}",
 											"type": "string"
 										}
 									]
@@ -522,16 +446,11 @@
 							],
 							"request": {
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
+											"key": "token",
+											"value": "{{jwt}}",
 											"type": "string"
 										}
 									]
@@ -589,6 +508,9 @@
 										"v1",
 										"logout"
 									]
+								},
+								"auth": {
+									"type": "noauth"
 								}
 							},
 							"response": []
@@ -597,16 +519,11 @@
 							"name": "Execute Task Upgrade",
 							"request": {
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
+											"key": "token",
+											"value": "{{jwt}}",
 											"type": "string"
 										}
 									]
@@ -720,16 +637,11 @@
 							],
 							"request": {
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
+											"key": "token",
+											"value": "{{jwt}}",
 											"type": "string"
 										}
 									]
@@ -758,16 +670,11 @@
 							"name": "Delete folder",
 							"request": {
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
+											"key": "token",
+											"value": "{{jwt}}",
 											"type": "string"
 										}
 									]
@@ -855,16 +762,11 @@
 							],
 							"request": {
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "username",
-											"value": "admin@dotcms.com",
-											"type": "string"
-										},
-										{
-											"key": "password",
-											"value": "admin",
+											"key": "token",
+											"value": "{{jwt}}",
 											"type": "string"
 										}
 									]
@@ -992,16 +894,11 @@
 							],
 							"request": {
 								"auth": {
-									"type": "basic",
-									"basic": [
+									"type": "bearer",
+									"bearer": [
 										{
-											"key": "password",
-											"value": "admin",
-											"type": "string"
-										},
-										{
-											"key": "username",
-											"value": "admin@dotcms.com",
+											"key": "token",
+											"value": "{{jwt}}",
 											"type": "string"
 										}
 									]

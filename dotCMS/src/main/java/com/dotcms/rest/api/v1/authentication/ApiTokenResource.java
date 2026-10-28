@@ -38,6 +38,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.vavr.control.Try;
 import java.util.Base64;
+import org.glassfish.jersey.client.ClientProperties;
 import org.glassfish.jersey.server.JSONP;
 
 import javax.servlet.http.HttpServletRequest;
@@ -54,9 +55,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.Entity;
-import javax.ws.rs.client.WebTarget;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.NewCookie;
 import javax.ws.rs.core.Response;
 import java.io.Serializable;
 import java.net.ConnectException;
@@ -66,6 +67,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -517,10 +519,18 @@ public class ApiTokenResource implements Serializable {
     }
 
     /**
-     * Request a Token to a remote server
-     * @param request
-     * @param response
-     * @param formData - json data, expecting
+     * Requests an API token from a remote dotCMS instance on behalf of the authenticated admin.
+     *
+     * <p>The credential is exchanged for a session at the remote host first: a JSON login against
+     * {@code /api/v1/authentication} (with {@code backEndLogin}) must return a non-blank
+     * {@code JSESSIONID} cookie, and only that cookie is forwarded to {@code /api/v1/apitoken}.
+     * No Basic header is sent and client redirects are disabled so credentials cannot be replayed
+     * elsewhere. A failed login or a login without a session cookie never reaches token issuance.
+     * The remote status and body are passed through unchanged, and the client and both remote
+     * responses are always closed.</p>
+     *
+     * @param httpRequest the incoming request used to initialize and authorize the caller
+     * @param formData json data, expecting
      * <pre>
      * {
      *    token: {
@@ -663,50 +673,125 @@ public class ApiTokenResource implements Serializable {
             throw new ForbiddenException("Should be Admin user to request a remote token");
         }
 
-        final String protocol = formData.protocol();
-        final String remoteURL = String.format("%s://%s:%d/api/v1/apitoken", protocol, formData.host(), formData.port());
+        final String remoteURL = String.format("%s://%s:%d", formData.protocol(), formData.host(), formData.port());
         final Client client = getRestClient();
+        Response loginResponse = null;
+        Response tokenResponse = null;
 
         try {
 
-            final WebTarget webTarget = client.target(remoteURL);
+            // A redirected credential would travel to a host the admin did not authorize.
+            client.property(ClientProperties.FOLLOW_REDIRECTS, false);
 
-            String password = "";
+            loginResponse = client.target(remoteURL + "/api/v1/authentication")
+                    .request(MediaType.APPLICATION_JSON)
+                    .post(Entity.entity(loginPayload(formData), MediaType.APPLICATION_JSON));
 
-            if (UtilMethods.isSet(formData.password())) {
-                password = new String(Base64.getDecoder().decode(formData.password()), java.nio.charset.StandardCharsets.UTF_8);
+            final int loginStatus = loginResponse.getStatus();
+            final String loginBody = loginResponse.readEntity(String.class);
+
+            if (loginStatus != HttpStatus.SC_OK) {
+                logRemoteFailure(loginStatus, remoteURL);
+                return Response.status(loginStatus).entity(loginBody).build();
             }
 
-            final Response response = webTarget.request(MediaType.APPLICATION_JSON)
-                    .header("Authorization", "Basic " + Base64.getEncoder().encodeToString((formData.login() + ":" + password).getBytes(java.nio.charset.StandardCharsets.UTF_8)))
+            final NewCookie sessionCookie = sessionCookie(loginResponse);
+
+            if (sessionCookie == null) {
+                SecurityLogger.logInfo(ApiTokenResource.class,
+                        String.format("Remote login at %s returned no session cookie", remoteURL));
+                return Response.status(Response.Status.UNAUTHORIZED).entity(loginBody).build();
+            }
+
+            tokenResponse = client.target(remoteURL + "/api/v1/apitoken")
+                    .request(MediaType.APPLICATION_JSON)
+                    .cookie(sessionCookie)
                     .post(Entity.entity(formData.getTokenInfo(), MediaType.APPLICATION_JSON));
 
-            if (response.getStatus() != HttpStatus.SC_OK) {
-                final String message = String.format("Status code : %s", response.getStatus());
-
-                if (response.getStatus() == HttpStatus.SC_UNAUTHORIZED || response.getStatus() == HttpStatus.SC_FORBIDDEN ) {
-                    SecurityLogger.logInfo(ApiTokenResource.class, message);
-                } else {
-                    Logger.error(ApiTokenResource.class, message);
-                }
-            }
+            logRemoteFailure(tokenResponse.getStatus(), remoteURL);
 
             return Response
-                    .status(response.getStatus())
-                    .entity(response.readEntity(String.class))
+                    .status(tokenResponse.getStatus())
+                    .entity(tokenResponse.readEntity(String.class))
                     .build();
         } catch (ProcessingException e){
-            if (e.getCause().getClass() == UnknownHostException.class ||
+            if (e.getCause() != null &&
+                    (e.getCause().getClass() == UnknownHostException.class ||
                     e.getCause().getClass() == NoRouteToHostException.class ||
                     e.getCause().getClass() == ConnectException.class ||
-                    e.getCause().getClass() == IllegalStateException.class) {
+                    e.getCause().getClass() == IllegalStateException.class)) {
                 Logger.error(ApiTokenResource.class, String.format("Invalid server URL: %s", remoteURL));
                 return Response.status(Response.Status.NOT_FOUND).build();
             } else {
                 throw e;
             }
         } finally {
+            closeQuietly(loginResponse);
+            closeQuietly(tokenResponse);
             client.close();
+        }
+    }
+
+    /**
+     * Builds the JSON login body sent to the remote host. The Base64 password is decoded only to
+     * be sent to the remote instance; it is never logged.
+     *
+     * @param formData the remote-token form carrying the remote login and encoded password
+     * @return the login payload expected by {@code POST /api/v1/authentication}
+     */
+    private static Map<String, Object> loginPayload(final RemoteAPITokenForm formData) {
+        final Map<String, Object> payload = new HashMap<>();
+        payload.put("userId", formData.login());
+        payload.put("password", UtilMethods.isSet(formData.password())
+                ? new String(Base64.getDecoder().decode(formData.password()), java.nio.charset.StandardCharsets.UTF_8)
+                : "");
+        payload.put("backEndLogin", true);
+        return payload;
+    }
+
+    /**
+     * Returns the non-blank {@code JSESSIONID} cookie from a remote login response, or
+     * {@code null} when the login did not establish a session.
+     *
+     * @param response the remote login response
+     * @return the session cookie, or {@code null} when it is missing or blank
+     */
+    private static NewCookie sessionCookie(final Response response) {
+        final Map<String, NewCookie> cookies = response.getCookies();
+        final NewCookie cookie = cookies == null ? null : cookies.get("JSESSIONID");
+        return cookie != null && UtilMethods.isSet(cookie.getValue()) ? cookie : null;
+    }
+
+    /**
+     * Logs a non-OK remote status without exposing credentials or token contents.
+     *
+     * @param status the remote response status
+     * @param remoteURL the remote base URL, safe to log
+     */
+    private static void logRemoteFailure(final int status, final String remoteURL) {
+        if (status != HttpStatus.SC_OK) {
+            final String message = String.format("Status code : %s from %s", status, remoteURL);
+            if (status == HttpStatus.SC_UNAUTHORIZED || status == HttpStatus.SC_FORBIDDEN) {
+                SecurityLogger.logInfo(ApiTokenResource.class, message);
+            } else {
+                Logger.error(ApiTokenResource.class, message);
+            }
+        }
+    }
+
+    /**
+     * Closes a remote response if one was opened, swallowing failures so cleanup cannot mask the
+     * result of the call.
+     *
+     * @param response the remote response to close, possibly {@code null}
+     */
+    private static void closeQuietly(final Response response) {
+        if (response != null) {
+            try {
+                response.close();
+            } catch (Exception e) {
+                Logger.debug(ApiTokenResource.class, "Unable to close remote response", e);
+            }
         }
     }
 
