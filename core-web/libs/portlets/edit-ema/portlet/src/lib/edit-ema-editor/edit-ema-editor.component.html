@@ -288,13 +288,6 @@
     </div>
 }
 
-@if ($showDialogs()) {
-    <dot-edit-ema-dialog
-        (action)="onCustomEvent($event)"
-        (reloadFromDialog)="reloadPage()"
-        #dialog
-        data-testId="ema-dialog" />
-}
 <p-confirmDialog
     [style]="{
         width: '400px'
