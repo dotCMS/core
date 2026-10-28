@@ -68,13 +68,9 @@ describe('RelationshipFieldStore', () => {
             mockProvider(DotEditContentService, {
                 getContentById: vi.fn().mockReturnValue(of({}))
             }),
-            // `withFlags` batch-fetches the side-panel flag on init.
+            // Provided only so the cases below can show the store never asks for flags.
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: vi
-                    .fn()
-                    .mockReturnValue(
-                        of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false })
-                    )
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
             })
         ]
     });
@@ -86,6 +82,17 @@ describe('RelationshipFieldStore', () => {
 
     it('should be created', () => {
         expect(store).toBeTruthy();
+    });
+
+    // The field asks its host to open content and reads no flag to decide how (#38303, R8).
+    describe('feature flags', () => {
+        it('should fetch none', () => {
+            expect(spectator.inject(DotPropertiesService).getFeatureFlags).not.toHaveBeenCalled();
+        });
+
+        it('should expose no flags slice', () => {
+            expect('flags' in store).toBe(false);
+        });
     });
 
     describe('Initial State', () => {
@@ -832,13 +839,8 @@ describe('RelationshipFieldStore - Instance Isolation', () => {
         mockProvider(DotEditContentService, {
             getContentById: vi.fn().mockReturnValue(of({}))
         }),
-        // `withFlags` batch-fetches the side-panel flag on init.
         mockProvider(DotPropertiesService, {
-            getFeatureFlags: vi
-                .fn()
-                .mockReturnValue(
-                    of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false })
-                )
+            getFeatureFlags: vi.fn().mockReturnValue(of({}))
         })
     ];
 
