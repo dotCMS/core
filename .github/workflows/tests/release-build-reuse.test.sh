@@ -800,6 +800,11 @@ block_has "$BUILD_PHASE" "Verify release coordinates were installed" 'dotcms-cor
 # pull requests may leave modules out of the build.
 block_has "$BUILD_PHASE" maven-build "github.event_name == 'pull_request' && '-pl !:" \
   "only pull request builds exclude modules from the reactor"
+INIT_PHASE="$REPO_ROOT/.github/workflows/cicd_comp_initialize-phase.yml"
+block_has "$INIT_PHASE" data-download 'workflow: cicd_2-merge-queue\.yml' \
+  "trunk and nightly reuse only merge-queue builds, never a slimmed PR build"
+block_has "$INIT_PHASE" data-download 'workflow_search: false' \
+  "the previous-build search does not fall back to every workflow"
 
 # ================================================= 12. SAML ships with core ==
 # Issue #38104. SAML used to be released separately, so a core release could
