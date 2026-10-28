@@ -2373,7 +2373,8 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	            int index = query.indexOf(stInodestr) + stInodestr.length() + 1;
 	            String inode = null;
 	            try {
-	                inode = query.substring(index, query.indexOf(" ", index));
+	                final int end = query.indexOf(" ", index);
+	                inode = end < 0 ? query.substring(index) : query.substring(index, end);
 	            } catch (StringIndexOutOfBoundsException e) {
 	                Logger.debug(ESContentFactoryImpl.class, e.toString());
 	                inode = query.substring(index);

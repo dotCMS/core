@@ -106,7 +106,8 @@ public class TranslatedQuery implements Serializable {
             int index = query.indexOf(stInodestr) + stInodestr.length() + 1;
             String inode = null;
             try {
-                inode = query.substring(index, query.indexOf(" ", index));
+                final int end = query.indexOf(" ", index);
+                inode = end < 0 ? query.substring(index) : query.substring(index, end);
             } catch (StringIndexOutOfBoundsException e) {
                 Logger.debug(TranslatedQuery.class, e.toString());
                 inode = query.substring(index);
