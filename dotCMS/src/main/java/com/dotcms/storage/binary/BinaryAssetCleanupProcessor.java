@@ -55,13 +55,52 @@ public class BinaryAssetCleanupProcessor implements JobProcessor, Validator {
             return;
         }
         validateInode(inode);
+        requireTransaction();
+        enqueue(inode, storedPaths(inode));
+    }
+
+    /**
+     * Records the cleanup of a deleted inode with paths listed earlier by {@link #storedPaths(String)}.
+     * A caller that deletes inodes nothing else writes to, such as old versions, can list them before
+     * it opens its deletion transaction, so the storage listing does not run while that transaction
+     * holds its locks. With the flag off this does nothing.
+     *
+     * @param inode the deleted contentlet inode
+     * @param paths the binary and metadata paths stored for the inode
+     * @throws DotDataException if there is no transaction or the job cannot be recorded; the caller's
+     *                          deletion then rolls back
+     */
+    public static void enqueue(final String inode, final StoredPaths paths) throws DotDataException {
+        if (!AssetStorageFeature.isEnabled()) {
+            return;
+        }
+        validateInode(inode);
+        requireTransaction();
+        APILocator.getJobQueueManagerAPI().createJob(QUEUE,
+                Map.of("inode", inode, "binaries", paths.binaries(), "metadata", paths.metadata()));
+    }
+
+    /**
+     * Lists the binary and metadata paths stored for an inode, for {@link #enqueue(String, StoredPaths)}.
+     *
+     * @param inode the contentlet inode
+     * @return the paths stored for the inode at this moment
+     * @throws DotDataException if storage cannot be listed
+     */
+    public static StoredPaths storedPaths(final String inode) throws DotDataException {
+        validateInode(inode);
+        final List<String> binaries = List.copyOf(APILocator.getBinaryAssetStorageAPI().listBinaryPaths(inode));
+        return new StoredPaths(binaries,
+                List.copyOf(APILocator.getFileMetadataAPI().listMetadataForInode(inode, binaries)));
+    }
+
+    /** The binary and metadata paths stored for one inode, as recorded in its cleanup job. */
+    public record StoredPaths(List<String> binaries, List<String> metadata) { }
+
+    private static void requireTransaction() throws DotDataException {
         if (!DbConnectionFactory.inTransaction()) {
             throw new DotDataException("Binary cleanup must be recorded in the content deletion transaction");
         }
-        final List<String> binaries = List.copyOf(APILocator.getBinaryAssetStorageAPI().listBinaryPaths(inode));
-        final List<String> metadata = List.copyOf(APILocator.getFileMetadataAPI().listMetadataForInode(inode, binaries));
-        APILocator.getJobQueueManagerAPI().createJob(QUEUE,
-                Map.of("inode", inode, "binaries", binaries, "metadata", metadata));
     }
 
     /**

@@ -74,6 +74,30 @@ class BinaryAssetCleanupProcessorTest {
         }
     }
 
+    @Test void pathsListedBeforeTheTransactionAreRecordedWithoutListingAgain() throws Exception {
+        var queue = mock(JobQueueManagerAPI.class);
+        var storage = mock(BinaryAssetStorageAPI.class);
+        var metadata = mock(FileMetadataAPI.class);
+        when(storage.listBinaryPaths(INODE)).thenReturn(List.of(OLD_REVISION));
+        when(metadata.listMetadataForInode(INODE, List.of(OLD_REVISION))).thenReturn(List.of(OLD_METADATA));
+        try (var locator = mockStatic(APILocator.class);
+             var connection = mockStatic(DbConnectionFactory.class)) {
+            locator.when(APILocator::getJobQueueManagerAPI).thenReturn(queue);
+            locator.when(APILocator::getBinaryAssetStorageAPI).thenReturn(storage);
+            locator.when(APILocator::getFileMetadataAPI).thenReturn(metadata);
+            // Listing needs no transaction; recording still does.
+            final var paths = BinaryAssetCleanupProcessor.storedPaths(INODE);
+            assertThrows(DotDataException.class, () -> BinaryAssetCleanupProcessor.enqueue(INODE, paths));
+            verifyNoInteractions(queue);
+
+            connection.when(DbConnectionFactory::inTransaction).thenReturn(true);
+            BinaryAssetCleanupProcessor.enqueue(INODE, paths);
+            verify(queue).createJob(BinaryAssetCleanupProcessor.QUEUE,
+                    Map.of("inode", INODE, "binaries", List.of(OLD_REVISION), "metadata", List.of(OLD_METADATA)));
+            verify(storage, times(1)).listBinaryPaths(INODE);
+        }
+    }
+
     @Test void disabledFlagDoesNotCreateOrExecuteCleanup() throws Exception {
         Config.setProperty(AssetStorageFeature.FLAG, false);
         try (var locator = mockStatic(APILocator.class)) {
