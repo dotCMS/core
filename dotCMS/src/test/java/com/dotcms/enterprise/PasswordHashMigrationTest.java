@@ -1,0 +1,146 @@
+package com.dotcms.enterprise;
+
+import static com.dotcms.enterprise.PasswordFactoryProxy.AuthenticationStatus.AUTHENTICATED;
+import static com.dotcms.enterprise.PasswordFactoryProxy.AuthenticationStatus.NEEDS_REHASH;
+import static com.dotcms.enterprise.PasswordFactoryProxy.AuthenticationStatus.NOT_AUTHENTICATED;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+
+import com.dotcms.enterprise.de.qaware.heimdall.Password;
+import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
+import com.dotcms.enterprise.de.qaware.heimdall.PasswordImpl;
+import com.dotcms.enterprise.de.qaware.heimdall.algorithm.HashAlgorithmRegistryImpl;
+import com.dotcms.enterprise.de.qaware.heimdall.algorithm.PBKDF2;
+import com.dotcms.enterprise.de.qaware.heimdall.config.ConfigCoderImpl;
+import com.dotcms.enterprise.de.qaware.heimdall.salt.SecureSaltProvider;
+import com.dotmarketing.util.Config;
+import java.io.InputStream;
+import java.util.Base64;
+import java.util.Properties;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+/** Compatibility checks using independently derived, immutable password records. */
+public class PasswordHashMigrationTest {
+
+    private static final Properties FIXTURES = new Properties();
+
+    /** Loads test-only reference vectors without generating them through production code. */
+    @BeforeClass
+    public static void prepare() throws Exception {
+        Config.initializeConfig();
+        try (InputStream input = PasswordHashMigrationTest.class
+                .getResourceAsStream("/password-hash-migration.properties")) {
+            assertNotNull("Reference password records must be available", input);
+            FIXTURES.load(input);
+        }
+    }
+
+    /** A legacy record at today's cost must still verify and request the length upgrade. */
+    @Test
+    public void legacyCurrentCostVerifiesAndRequestsRehash() throws Exception {
+        final String hash = FIXTURES.getProperty("legacy-current-cost");
+
+        assertEquals(NEEDS_REHASH, PasswordFactoryProxy.authPassword(password(), hash));
+        assertEquals(NOT_AUTHENTICATED, PasswordFactoryProxy.authPassword("incorrect", hash));
+    }
+
+    /** Older iteration counts remain verifiable instead of using the current default. */
+    @Test
+    public void legacyLowCostVerifiesAndRequestsRehash() throws Exception {
+        final String hash = FIXTURES.getProperty("legacy-low-cost");
+
+        assertEquals(NEEDS_REHASH, PasswordFactoryProxy.authPassword(password(), hash));
+        assertEquals(NOT_AUTHENTICATED, PasswordFactoryProxy.authPassword("incorrect", hash));
+    }
+
+    /** The new profile must recognize independent 256-bit records, including old salt lengths. */
+    @Test
+    public void currentReferenceRecordVerifiesWithoutProfileRehash() throws Exception {
+        final String hash = FIXTURES.getProperty("current-current-cost");
+
+        assertEquals(AUTHENTICATED, PasswordFactoryProxy.authPassword(password(), hash));
+        assertEquals(NOT_AUTHENTICATED, PasswordFactoryProxy.authPassword("incorrect", hash));
+    }
+
+    /** The new profile must keep the existing cost-based upgrade behavior. */
+    @Test
+    public void currentLowCostStillRequestsRehash() throws Exception {
+        final String hash = FIXTURES.getProperty("current-low-cost");
+
+        assertEquals(NEEDS_REHASH, PasswordFactoryProxy.authPassword(password(), hash));
+        assertEquals(NOT_AUTHENTICATED, PasswordFactoryProxy.authPassword("incorrect", hash));
+    }
+
+    /** Shared generation must write the distinct 256-bit profile, not reinterpret ID 1. */
+    @Test
+    public void generatedHashUses256BitsAndCurrentProfile() throws Exception {
+        final String hash = PasswordFactoryProxy.generateHash(password());
+        final String[] parts = hash.split(":");
+
+        assertEquals(5, parts.length);
+        assertEquals("1", parts[0]);
+        assertEquals("2", parts[1]);
+        assertEquals(32, Base64.getDecoder().decode(parts[4]).length);
+        assertEquals(AUTHENTICATED, PasswordFactoryProxy.authPassword(password(), hash));
+        assertFalse(PasswordFactoryProxy.passwordFactoryCreate().needsRehash(hash));
+    }
+
+    /** Iteration settings must continue to come from the existing configuration. */
+    @Test
+    public void generatedHashPreservesConfiguredIterationCount() throws Exception {
+        final String hash = PasswordFactoryProxy.generateHash(password());
+        final int iterations = Integer.parseInt(
+                new ConfigCoderImpl().decode(hash.split(":")[3]).get("i"), 16);
+
+        assertEquals(Config.getIntProperty("PBKDF2_DEFAULT_ITERATIONS", 600000), iterations);
+    }
+
+    /** Repeated generation must use different random salts and still verify correctly. */
+    @Test
+    public void repeatedGenerationUsesDistinctSalts() throws Exception {
+        final String first = PasswordFactoryProxy.generateHash(password());
+        final String second = PasswordFactoryProxy.generateHash(password());
+
+        assertNotEquals(first.split(":")[2], second.split(":")[2]);
+        assertTrue(PasswordFactoryProxy.passwordFactoryCreate().verify(password(), first));
+        assertTrue(PasswordFactoryProxy.passwordFactoryCreate().verify(password(), second));
+    }
+
+    /** Unknown profile IDs must fail instead of selecting the current default. */
+    @Test
+    public void unknownProfileIsRejected() {
+        final String unknown = FIXTURES.getProperty("legacy-current-cost")
+                .replace("1:1:", "1:7f:");
+
+        assertThrows(PasswordException.class,
+                () -> PasswordFactoryProxy.authPassword(password(), unknown));
+    }
+
+    /** Incomplete serialized records must not authenticate. */
+    @Test
+    public void malformedRecordIsRejected() {
+        assertThrows(PasswordException.class,
+                () -> PasswordFactoryProxy.authPassword(password(), "1:1:incomplete"));
+    }
+
+    /** Demonstrates why deployment must upgrade readers before allowing new-profile writes. */
+    @Test
+    public void oldOnlyRegistryCannotReadNewProfile() throws Exception {
+        final PBKDF2 legacy = new PBKDF2();
+        final Password oldReader = new PasswordImpl(new SecureSaltProvider(),
+                new ConfigCoderImpl(), new HashAlgorithmRegistryImpl(legacy), legacy);
+        final String hash = PasswordFactoryProxy.generateHash(password());
+
+        assertThrows(PasswordException.class, () -> oldReader.verify(password(), hash));
+    }
+
+    /** Returns the known test password associated with the frozen reference records. */
+    private static String password() {
+        return FIXTURES.getProperty("password");
+    }
+}
