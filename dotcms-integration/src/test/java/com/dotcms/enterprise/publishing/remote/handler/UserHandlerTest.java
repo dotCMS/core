@@ -495,6 +495,114 @@ public class UserHandlerTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to Test: {@link UserHandler#handle(File)}
+     * Given: a user that exists on the receiver, and a bundle that carries that same user together
+     * with a personal role that does not exist on the receiver
+     * When: the bundle is handled, for every bundle origin
+     * Should: keep the stored user as it was, and not create the role carried by the bundle.
+     */
+    @Test
+    public void test_handle_existingUserMatchedById_doesNotCreateTheBundleRole() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        for (final BundleOrigin origin : ORIGINS) {
+            final User existing = existingUser();
+            final User fromBundle = copyOf(existing);
+            final Role fromBundleRole = personalRoleFor(fromBundle);
+
+            withLoginBy(Company.AUTH_TYPE_EA, () -> handle(origin,
+                    bundleWith(fromBundle, fromBundleRole, Operation.PUBLISH)));
+
+            final String context = describe(Company.AUTH_TYPE_EA, origin);
+            assertKeptAsItIs(existing, context);
+            CacheLocator.getCmsRoleCache().clearCache();
+            assertNull(context + ": the role carried by the bundle must not be created",
+                    roleAPI.loadRoleById(fromBundleRole.getId()));
+        }
+    }
+
+    /**
+     * Method to Test: {@link UserHandler#handle(File)}
+     * Given: a company that logs users in by user ID, and a bundle that carries a user that does
+     * not exist on the receiver
+     * When: the bundle is handled, for every bundle origin
+     * Should: create the user with the bundle's ID, email address and names.
+     */
+    @Test
+    public void test_handle_newUser_isCreatedWithUserIdLogin() throws Exception {
+        for (final BundleOrigin origin : ORIGINS) {
+            final User fromBundle = newUserFromBundle();
+
+            withLoginBy(Company.AUTH_TYPE_ID, () -> handle(origin,
+                    bundleWith(fromBundle, personalRoleFor(fromBundle), Operation.PUBLISH)));
+
+            final String context = describe(Company.AUTH_TYPE_ID, origin);
+            final User created = findById(fromBundle.getUserId());
+            assertNotNull(context + ": the new user must be created", created);
+            assertEquals(context, fromBundle.getEmailAddress(), created.getEmailAddress());
+            assertEquals(context, fromBundle.getFirstName(), created.getFirstName());
+            assertEquals(context, fromBundle.getLastName(), created.getLastName());
+        }
+    }
+
+    /**
+     * Method to Test: {@link UserHandler#handle(File)}
+     * Given: a single bundle that carries two users that do not exist on the receiver, both with
+     * the same password hash
+     * When: the bundle is handled, for every bundle origin
+     * Should: create both users, each with a different stored password, and neither the bundle's.
+     */
+    @Test
+    public void test_handle_twoNewUsersInOneBundle_getDifferentPasswords() throws Exception {
+        for (final BundleOrigin origin : ORIGINS) {
+            final User first = newUserFromBundle();
+            final User second = newUserFromBundle();
+
+            withLoginBy(Company.AUTH_TYPE_EA, () -> handle(origin, bundleWith(Arrays.asList(
+                    wrapperFor(first, Operation.PUBLISH), wrapperFor(second, Operation.PUBLISH)))));
+
+            final String context = describe(Company.AUTH_TYPE_EA, origin);
+            final User createdFirst = findById(first.getUserId());
+            final User createdSecond = findById(second.getUserId());
+            assertNotNull(context + ": the first user must be created", createdFirst);
+            assertNotNull(context + ": the second user must be created", createdSecond);
+            assertNotEquals(context + ": the two users must not share a stored password",
+                    createdFirst.getPassword(), createdSecond.getPassword());
+            assertNotEquals(context + ": the stored password must not be the bundle's value",
+                    first.getPassword(), createdFirst.getPassword());
+        }
+    }
+
+    /**
+     * Method to Test: {@link UserHandler#handle(File)}
+     * Given: a single bundle that carries an existing user, a new user, and a remove request for a
+     * user that does not exist on the receiver
+     * When: the bundle is handled, for every bundle origin
+     * Should: keep the existing user, create the new one, and create nothing for the remove request.
+     */
+    @Test
+    public void test_handle_bundleWithSeveralUsers_handlesEachOne() throws Exception {
+        for (final BundleOrigin origin : ORIGINS) {
+            final User existing = existingUser();
+            final User existingInBundle = copyOf(existing);
+            existingInBundle.setFirstName("Changed");
+            final User newUser = newUserFromBundle();
+            final User unknownToRemove = newUserFromBundle();
+
+            withLoginBy(Company.AUTH_TYPE_EA, () -> handle(origin, bundleWith(Arrays.asList(
+                    wrapperFor(existingInBundle, Operation.PUBLISH),
+                    wrapperFor(newUser, Operation.PUBLISH),
+                    wrapperFor(unknownToRemove, Operation.UNPUBLISH)))));
+
+            final String context = describe(Company.AUTH_TYPE_EA, origin);
+            assertKeptAsItIs(existing, context);
+            assertNotNull(context + ": the new user must be created",
+                    findById(newUser.getUserId()));
+            assertNull(context + ": the remove request for an unknown user must create nothing",
+                    findById(unknownToRemove.getUserId()));
+        }
+    }
+
     // ---------------------------------------------------------------- helpers
 
     /**
@@ -607,6 +715,31 @@ public class UserHandlerTest extends IntegrationTestBase {
         BundlerUtil.objectToXML(wrapper,
                 new File(usersFolder, user.getUserId() + UserBundler.WRAPPER_DESCRIPTOR_EXTENSION));
         return bundleFolder;
+    }
+
+    /**
+     * Builds a bundle folder holding several user files, one per wrapper, the way a bundle with
+     * more than one user arrives.
+     */
+    private File bundleWith(final List<UserWrapper> wrappers) throws Exception {
+        final File bundleFolder = Files.createTempDirectory("bundle-folder").toFile();
+        toDelete.add(bundleFolder);
+        final File usersFolder = new File(bundleFolder, UserBundler.FOLDER_USERS);
+        usersFolder.mkdirs();
+        for (final UserWrapper wrapper : wrappers) {
+            BundlerUtil.objectToXML(wrapper, new File(usersFolder,
+                    wrapper.getUser().getUserId() + UserBundler.WRAPPER_DESCRIPTOR_EXTENSION));
+        }
+        return bundleFolder;
+    }
+
+    /**
+     * Wraps a user with its personal role and the given operation, for a multi-user bundle.
+     */
+    private UserWrapper wrapperFor(final User user, final Operation operation) throws Exception {
+        final UserWrapper wrapper = new UserWrapper(user, personalRoleFor(user));
+        wrapper.setOperation(operation);
+        return wrapper;
     }
 
     private static void handle(final BundleOrigin origin, final File bundleFolder) throws Exception {
