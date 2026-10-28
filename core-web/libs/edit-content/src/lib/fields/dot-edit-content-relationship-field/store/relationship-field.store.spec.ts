@@ -838,9 +838,6 @@ describe('RelationshipFieldStore - Instance Isolation', () => {
         }),
         mockProvider(DotEditContentService, {
             getContentById: vi.fn().mockReturnValue(of({}))
-        }),
-        mockProvider(DotPropertiesService, {
-            getFeatureFlags: vi.fn().mockReturnValue(of({}))
         })
     ];
 

@@ -13,8 +13,7 @@ import {
     DotContentTypeService,
     DotCurrentUserService,
     DotHttpErrorManagerService,
-    DotMessageService,
-    DotPropertiesService
+    DotMessageService
 } from '@dotcms/data-access';
 import {
     DotCMSClazzes,
@@ -100,8 +99,14 @@ export class MockFormComponent {
 /** Flipped by tests that need the required error to surface (#37464 gates it on save). */
 const submitAttempted = signal(false);
 
+/** The host's `openContent`: the field asks it to create related content (#38303). */
+const openContent = vi.fn();
+
 describe('DotEditContentRelationshipFieldComponent', () => {
-    beforeEach(() => submitAttempted.set(false));
+    beforeEach(() => {
+        submitAttempted.set(false);
+        openContent.mockClear();
+    });
 
     let spectator: SpectatorHost<DotEditContentRelationshipFieldComponent, MockFormComponent>;
     let store: InstanceType<typeof RelationshipFieldStore>;
@@ -132,16 +137,6 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 handle: vi.fn()
             }),
             mockProvider(DotCurrentUserService),
-            // RelationshipFieldStore composes `withFlags`, which calls `getFeatureFlags` on init —
-            // must be mocked (not just `getFeatureFlag`) or the real store throws on construction.
-            // Side panel off by default → showCreateNewContentDialog uses the centered dialog.
-            mockProvider(DotPropertiesService, {
-                getFeatureFlags: vi
-                    .fn()
-                    .mockReturnValue(
-                        of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false })
-                    )
-            }),
             mockProvider(DotEditContentStore, {
                 // BaseWrapperField gates required errors on this.
                 hasAttemptedSubmit: submitAttempted,
@@ -164,7 +159,8 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                     leaveDeletedContent: vi.fn(),
                     goToRestoredVersion: vi.fn(),
                     goToRelatedContent: vi.fn(),
-                    goToCrumb: vi.fn()
+                    goToCrumb: vi.fn(),
+                    openContent
                 }
             }
         ]
@@ -258,15 +254,14 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 expect(openSpy).not.toHaveBeenCalled();
             });
 
-            it('should not show create content dialog when disabled', () => {
-                const openSpy = vi.spyOn(dialogService, 'open');
+            it('should not ask the host to create content when disabled', () => {
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
 
                 fieldComponent.showCreateNewContentDialog();
-                expect(openSpy).not.toHaveBeenCalled();
+                expect(openContent).not.toHaveBeenCalled();
             });
         });
 
@@ -373,9 +368,9 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             });
         });
 
-        describe('Create New Content Dialog', () => {
+        // The field asks its host to create related content; the host opens the panel (#38303).
+        describe('Create New Content', () => {
             let openSpy: MockInstance;
-            let mockDialogRef: DynamicDialogRef;
 
             beforeEach(async () => {
                 spectator.detectChanges();
@@ -402,46 +397,36 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 await new Promise((resolve) => setTimeout(resolve, 0));
                 spectator.flushEffects();
 
-                // Set up spy and mock dialog ref
-                mockDialogRef = {
-                    onClose: of(null),
-                    close: vi.fn()
-                } as unknown as DynamicDialogRef;
-
-                // Set up spy on the service instance
-                openSpy = vi
-                    .spyOn(dialogService, 'open')
-                    .mockReturnValue(mockDialogRef as unknown as DynamicDialogRef);
+                openSpy = vi.spyOn(dialogService, 'open');
             });
 
-            it('should open the new content dialog when the feature flag is enabled', async () => {
-                // Check initial state
+            it('should ask the host to create the related type, joined to this relationship', () => {
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
                 expect(fieldComponent.$isDisabled()).toBe(false);
                 expect(store.contentType()).toEqual(mockContentType);
 
-                await fieldComponent.showCreateNewContentDialog();
+                fieldComponent.showCreateNewContentDialog();
                 spectator.flushEffects();
 
-                expect(openSpy).toHaveBeenCalledTimes(1);
-
-                const callArgs = openSpy.mock.calls[0];
-                expect(callArgs[0]).toBeDefined(); // Dialog component
-                expect(callArgs[1]).toBeDefined(); // Dialog config
-                expect(callArgs[1].modal).toBe(true);
-                expect(callArgs[1].width).toBe('95%');
-                expect(callArgs[1].height).toBe('95%');
-                expect(callArgs[1].data.contentTypeId).toBe('test-content-type');
-                expect(callArgs[1].data.relationshipInfo).toBeDefined();
-                expect(callArgs[1].data.relationshipInfo.relationshipName).toBe(
-                    'relationshipField'
+                expect(openContent).toHaveBeenCalledTimes(1);
+                expect(openContent).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        request: expect.objectContaining({
+                            mode: 'new',
+                            contentType: 'testContentType',
+                            title: 'Create Test Content Type',
+                            relationship: expect.objectContaining({
+                                relationshipName: 'relationshipField',
+                                isParent: true
+                            })
+                        }),
+                        source: 'relationship'
+                    })
                 );
-                expect(callArgs[1].data.relationshipInfo.isParent).toBe(true);
-                expect(callArgs[1].header).toBe('Create Test Content Type');
+                expect(openSpy).not.toHaveBeenCalled();
             });
 
-            it('should not open dialog when disabled', () => {
-                const openSpy = vi.spyOn(dialogService, 'open');
+            it('should not ask the host when disabled', () => {
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
@@ -450,10 +435,10 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 fieldComponent.showCreateNewContentDialog();
                 spectator.flushEffects();
 
-                expect(openSpy).not.toHaveBeenCalled();
+                expect(openContent).not.toHaveBeenCalled();
             });
 
-            it('should not open dialog when content type is not available', () => {
+            it('should not ask the host when content type is not available', () => {
                 // Mock the store's contentType method to return null
                 vi.spyOn(store, 'contentType').mockReturnValue(null);
 
@@ -462,27 +447,27 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 fieldComponent.showCreateNewContentDialog();
                 spectator.flushEffects();
 
-                expect(openSpy).not.toHaveBeenCalled();
+                expect(openContent).not.toHaveBeenCalled();
             });
 
-            it('should handle content creation callback', async () => {
-                const newContentlet = createFakeContentlet({ title: 'New Content', inode: '3' });
+            it('should add the created content to the relationship on its first save', () => {
+                const newContentlet = createFakeContentlet({
+                    title: 'New Content',
+                    inode: '3',
+                    identifier: 'id-3'
+                });
                 const setDataSpy = vi.spyOn(store, 'setData');
 
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
-                await fieldComponent.showCreateNewContentDialog();
+                fieldComponent.showCreateNewContentDialog();
                 spectator.flushEffects();
 
-                // Verify that the dialog was opened
-                expect(openSpy).toHaveBeenCalled();
-
-                // Get the dialog data and call the onContentSaved callback
-                const dialogData = openSpy.mock.calls[0][1].data;
-                dialogData.onContentSaved(newContentlet);
+                const [{ onSaved }] = openContent.mock.calls[0];
+                onSaved(newContentlet);
 
                 expect(setDataSpy).toHaveBeenCalledTimes(1);
                 const callArgs = setDataSpy.mock.calls[0][0];
-                expect(callArgs).toContain(newContentlet);
+                expect(callArgs).toContainEqual(expect.objectContaining({ identifier: 'id-3' }));
             });
         });
 
@@ -640,15 +625,6 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             handle: vi.fn()
         }),
         mockProvider(DotCurrentUserService),
-        // RelationshipFieldStore composes `withFlags`, which calls `getFeatureFlags` on init —
-        // must be mocked or the real store throws on construction.
-        mockProvider(DotPropertiesService, {
-            getFeatureFlags: vi
-                .fn()
-                .mockReturnValue(
-                    of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false })
-                )
-        }),
         mockProvider(DotEditContentStore, {
             // BaseWrapperField gates required errors on this.
             hasAttemptedSubmit: submitAttempted,
