@@ -288,8 +288,8 @@ public class LanguageVariableAPITest extends IntegrationTestBase {
     }
 
     /**
-     * Persists a language with a random code and the given id, instead of the hash-derived id
-     * that {@link LanguageDataGen} would assign.
+     * Persists a language with a random code and the given id, so this test does not depend on
+     * a language, or a language id, left behind by an earlier class in the suite.
      *
      * @param id the id the language is saved with
      * @return the persisted language
