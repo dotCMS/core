@@ -1,4 +1,7 @@
 <%@ include file="/html/portlet/ext/contentlet/publishing/init.jsp" %>
+<%-- Shows the decrypted auth key, so only endpoint managers (Configuration portlet) may load it --%>
+<% request.setAttribute("requiredPortletAccess", PortletID.CONFIGURATION.toString()); %>
+<%@ include file="/html/common/uservalidation.jsp"%>
 <%@page import="com.dotcms.enterprise.publishing.staticpublishing.AWSS3Publisher"%>
 <%@page import="com.dotcms.enterprise.publishing.staticpublishing.StaticPublisher"%>
 <%@page import="com.dotcms.publisher.endpoint.bean.PublishingEndPoint"%>

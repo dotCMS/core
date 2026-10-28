@@ -10520,6 +10520,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityEndpointsView"
           description: Collection of environments.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenException"
+          description: If the user is not an admin and has no access to the Configuration
+            portlet.
       summary: Returns the endpoints
       tags:
       - Environment
@@ -10569,6 +10576,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityEndpointsView"
           description: Collection of environments.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenException"
+          description: If the user is not an admin and has no access to the Configuration
+            portlet.
       summary: Returns the endpoints
       tags:
       - Environment
@@ -10588,6 +10602,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityEndpointView"
           description: Collection of environments.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenException"
+          description: If the user is not an admin and has no access to the Configuration
+            portlet.
       summary: Returns the endpoint by id
       tags:
       - Environment
@@ -33630,15 +33651,6 @@ components:
       properties:
         address:
           type: string
-        authKey:
-          type: object
-          properties:
-            empty:
-              type: boolean
-            length:
-              type: integer
-              format: int32
-              writeOnly: true
         enabled:
           type: boolean
         groupId:
