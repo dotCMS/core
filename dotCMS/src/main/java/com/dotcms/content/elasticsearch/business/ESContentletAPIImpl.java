@@ -1675,11 +1675,16 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * <strong>SECURITY NOTE:</strong> This method MUST be called on any query before
      * passing it to Elasticsearch to ensure proper permission filtering.
      * </p>
+     * <p>
+     * The query is normalized for every caller before anything is appended, so that it means the
+     * same thing whatever the caller's roles are. An administrator therefore gets the query back
+     * normalized but with no clause added.
      *
      * @param luceneQuery The original lucene query string
      * @param user The user making the request (required if not respecting frontend roles)
      * @param respectFrontendRoles Whether to respect frontend roles
-     * @return The query with permissions clauses added
+     * @return the normalized query, with the permission clauses appended unless the caller is an
+     *         administrator
      * @throws DotSecurityException If user is null and not respecting frontend roles
      * @throws DotDataException If there's an error loading roles
      */
@@ -10734,15 +10739,19 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * Counts the documents in the index that match the given query and that the caller is allowed
-     * to read. The permission clauses are appended as text, so the query is normalized first for
-     * every caller, administrators included, and the count is taken from the index rather than
-     * from the database.
+     * Counts the documents in the index that match the given query, restricted by the roles the
+     * caller holds. The clauses are appended as text, so the query is normalized first for every
+     * caller, administrators included.
+     * <p>
+     * Only {@link #addPermissionsToQuery(StringBuffer, User, List, boolean)} is applied here, so
+     * the count is not narrowed by category read permissions the way
+     * {@link #applyPermissionsToQuery(String, User, boolean)} narrows a search, and it can come
+     * out higher than the number of results the same query returns.
      *
      * @param luceneQuery the query written by the caller
      * @param user the {@link User} the count is run for, or {@code null} for an anonymous caller
      * @param respectFrontendRoles whether the anonymous and logged-in-site roles grant read as well
-     * @return how many documents match the query and are readable by the caller
+     * @return how many documents match the query and are granted to one of the caller's roles
      * @throws DotDataException if the count cannot be read from the index
      * @throws DotSecurityException if no user is given and front-end roles are not respected
      */
