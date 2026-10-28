@@ -231,6 +231,24 @@ public class ContentUtils {
 			return pull(query, offset, limit, sort, user, tmDate, respectFrontendRoles);
 		}
 
+	/**
+	 * Runs the given query and returns the page of contentlets the user is allowed to read.
+	 * <p>
+	 * With the Time Machine running, the live and working clauses the caller wrote are dropped and
+	 * rewritten against the future date. The rewritten clauses are placed <em>before</em> what is
+	 * left of the caller's query: after it, a query ending in an unbalanced escape would consume
+	 * the space that separates the two and the first clause would be folded into the caller's last
+	 * term instead of standing on its own.
+	 *
+	 * @param query the caller's query
+	 * @param offset the first result to return
+	 * @param limit how many results to return
+	 * @param sort the sort the results are returned in
+	 * @param user the {@link User} the query is run for
+	 * @param tmDate the Time Machine date in milliseconds, or {@code null} when it is not running
+	 * @param respectFrontendRoles whether the anonymous and logged-in-site roles grant read as well
+	 * @return the page of contentlets matching the query, with the total result count set
+	 */
 	public static PaginatedArrayList<Contentlet> pull(String query, final int offset, final int limit, final String sort, final User user, final String tmDate, final boolean respectFrontendRoles){
 		    final PaginatedArrayList<Contentlet> ret = new PaginatedArrayList<>();
 
@@ -603,7 +621,26 @@ public class ContentUtils {
 	}
 
     /**
-     * Logic used for `pullRelated` and `pullRelatedField` methods
+     * Logic used for `pullRelated` and `pullRelatedField` methods.
+     * <p>
+     * When the caller passes a condition, it is placed <em>last</em> in the query this method
+     * builds, after the language, live and relationship clauses. Those clauses would otherwise
+     * depend on how the caller's condition ends: a condition ending in an unbalanced escape
+     * consumes the space that separates it from whatever follows, and the clause after it would
+     * be folded into the condition's last term instead of standing on its own.
+     *
+     * @param relationship the {@link Relationship} the related content is pulled through
+     * @param contentletIdentifier the identifier of the contentlet the pull starts from
+     * @param condition the caller's query, or empty to pull without one
+     * @param limit how many results to return, or -1 for all of them
+     * @param offset the first result to return
+     * @param sort the sort the results are returned in
+     * @param user the {@link User} the pull is run for
+     * @param tmDate the Time Machine date, or {@code null} when it is not running
+     * @param pullParents whether to pull the parents rather than the children
+     * @param language the language to restrict the results to, or -1 for any language
+     * @param live whether to restrict to live or working content; {@code null} leaves it open
+     * @return the related contentlets the user is allowed to read
      */
     public static List<Contentlet> getPullResults(final Relationship relationship,
             String contentletIdentifier, final String condition, final int limit, int offset,
@@ -632,8 +669,8 @@ public class ContentUtils {
                     pullQuery.append("+live:").append(live).append(" ");
                 }
 
-                pullQuery.append(condition);
-
+                // The caller's condition is appended last, below: anything placed after a
+                // query that ends in an unbalanced escape would lose its separating space.
                 if ((selfRelated && !pullParents) || (!selfRelated && relationship
                         .getParentStructureInode().equals(contentlet.getContentTypeId()))) {
                     //pulling children
@@ -647,7 +684,7 @@ public class ContentUtils {
 
                     pullQuery.append(" +identifier:(").append(String.join(" OR ", relatedContent
                             .stream().map(cont -> cont.getIdentifier()).collect(
-                                    Collectors.toList()))).append(")");
+                                    Collectors.toList()))).append(") ").append(condition);
 
                     final List<String> results = conAPI.searchIndex(pullQuery.toString(), -1,-1, sort, user, true)
                                     .stream()
@@ -661,7 +698,8 @@ public class ContentUtils {
                 } 
                 
                 //pulling parents
-                pullQuery.append(" +" + relationshipName + ":" + contentletIdentifier);
+                pullQuery.append(" +" + relationshipName + ":" + contentletIdentifier + " ")
+                        .append(condition);
                 
                 return pull(pullQuery.toString(), offset, limit, sort, user, tmDate, true);
 
@@ -750,33 +788,45 @@ public class ContentUtils {
                 user, tmDate, pullParents, -1, null);
     }
 
-	public static String addDefaultsToQuery(String query, final boolean editOrPreviewMode, final
-			HttpServletRequest request){
-		String q = "";
+	/**
+	 * Completes a caller's query with the clauses it did not state: the request's language, live
+	 * or working, and not deleted. A clause the query already names is left to the query.
+	 * <p>
+	 * The clauses are placed <em>before</em> the caller's query. Appended after it, a query ending
+	 * in an unbalanced escape would consume the space that separates the two and the first clause
+	 * would be folded into the caller's last term instead of standing on its own.
+	 *
+	 * @param query the caller's query, which may be {@code null}
+	 * @param editOrPreviewMode whether to default to working rather than live content
+	 * @param request the request the language is resolved from
+	 * @return the caller's query preceded by the clauses it did not state
+	 */
+	public static String addDefaultsToQuery(final String query, final boolean editOrPreviewMode,
+			final HttpServletRequest request){
+		final String callerQuery = query != null ? query : "";
+		final StringBuilder defaults = new StringBuilder();
 
-		if(query != null)
-			q = query;
-		else
-			query = q;
-
-		if(!query.contains("languageId")){
-			q += " +languageId:" + WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+		if(!callerQuery.contains("languageId")){
+			defaults.append(" +languageId:")
+					.append(WebAPILocator.getLanguageWebAPI().getLanguage(request).getId());
 		}
 
-		if(!(query.contains("live:") || query.contains("working:") )){
+		if(!(callerQuery.contains("live:") || callerQuery.contains("working:") )){
 			if(editOrPreviewMode && !TimeMachineUtil.isRunning()){
-				q +=" +working:true ";
+				defaults.append(" +working:true ");
 			}else{
-				q +=" +live:true ";
+				defaults.append(" +live:true ");
 			}
 
 		}
 
 
-		if(!UtilMethods.contains(query,"deleted:")){
-			q+=" +deleted:false ";
+		if(!UtilMethods.contains(callerQuery,"deleted:")){
+			defaults.append(" +deleted:false ");
 		}
-		return q;
+
+		return defaults.length() == 0 ? callerQuery
+				: defaults.append(" ").append(callerQuery).toString();
 	}
 
 

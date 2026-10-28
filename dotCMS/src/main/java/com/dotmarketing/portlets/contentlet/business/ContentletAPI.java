@@ -737,8 +737,15 @@ public interface ContentletAPI {
 	 * {@code secondaryPermissionCheck=true}. Self-guards on {@code PERMISSION_SECONDARY_CATEGORY_CHECK}
 	 * and on admin users. Must be applied alongside {@link #addPermissionsToQuery} by every search
 	 * backend (ES and OS) to keep permission filtering consistent across the migration phases.
+	 * <p>
+	 * The fragment is appended as text and only a single space separates it from what the query
+	 * already holds, so the query is normalized first, the same way {@link #addPermissionsToQuery}
+	 * normalizes it: a trailing run of backslashes of odd length is completed with one more, which
+	 * stops it from consuming that separator. Implementations that override this method have to
+	 * keep that normalization, and must not touch the query on the paths where they append
+	 * nothing.
 	 *
-	 * @param buffy the query buffer to append to
+	 * @param buffy the query buffer to append to, normalized in place before the fragment is added
 	 * @param user the user performing the search
 	 * @param roles the user's roles
 	 * @param respectFrontendRoles whether to include the anonymous/frontend role
