@@ -45,7 +45,7 @@ vi.mock('@dotcms/portlets/dot-experiments/portlet', async () => {
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
+import { Signal, isSignal, signal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -79,12 +79,18 @@ import {
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 import {
+    DotEditContentOpenerService,
+    DotEditContentOpenOptions,
+    DotEditContentRequest
+} from '@dotcms/edit-content';
+import {
     DotPageScannerReportComponent,
     DotPageToolsSeoComponent
 } from '@dotcms/portlets/dot-ema/ui';
 import { DotExperimentsPanelStore } from '@dotcms/portlets/dot-experiments/data-access';
 import { GlobalStore } from '@dotcms/store';
-import { DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import { UVE_MODE } from '@dotcms/types';
+import { DotSidePanelRef } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 import {
     CurrentUserDataMock,
@@ -92,6 +98,7 @@ import {
     DotCurrentUserServiceMock,
     DotLanguagesServiceMock,
     DotcmsConfigServiceMock,
+    createFakeContentlet,
     getExperimentMock,
     SiteServiceMock
 } from '@dotcms/utils-testing';
@@ -102,13 +109,11 @@ import { DotEmaShellComponent } from './dot-ema-shell.component';
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
-import { FormStatus, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
+import { UVE_STATUS } from '../shared/enums';
 import {
     dotPropertiesServiceMock,
     MOCK_RESPONSE_HEADLESS,
     PAGE_RESPONSE_BY_LANGUAGE_ID,
-    PAGE_RESPONSE_URL_CONTENT_MAP,
-    PAYLOAD_MOCK,
     URL_CONTENT_MAP_MOCK
 } from '../shared/mocks';
 import { UVEStore } from '../store/dot-uve.store';
@@ -122,16 +127,52 @@ if (typeof globalThis.structuredClone === 'undefined') {
     globalThis.structuredClone = (obj: any) => JSON.parse(JSON.stringify(obj));
 }
 
-/** Creates a dialog action event payload for testing. */
-const createDialogActionEvent = (detail: object) => ({
-    event: new CustomEvent('ng-event', { detail }),
-    actionPayload: PAYLOAD_MOCK,
-    form: {
-        status: FormStatus.SAVED,
-        isTranslation: false
-    },
-    clientAction: DotCMSUVEAction.NOOP
-});
+/** Content the shell opened through the opener, as the fake {@link DotEditContentOpenerService} records it. */
+interface OpenedContent {
+    request: DotEditContentRequest | Signal<DotEditContentRequest>;
+    options: DotEditContentOpenOptions;
+    ref: DotSidePanelRef;
+}
+
+/**
+ * Stands in for the side-panel opener (#38303): records each open and hands back a real panel ref.
+ * Like the real opener, it reports `closed` from the ref.
+ */
+const createOpenerFake = () => {
+    const opened: OpenedContent[] = [];
+
+    return {
+        opened,
+        open: vi.fn(
+            (
+                request: DotEditContentRequest | Signal<DotEditContentRequest>,
+                options: DotEditContentOpenOptions
+            ) => {
+                const ref = new DotSidePanelRef(() => undefined);
+                ref.closed.subscribe(() => options.closed?.());
+                opened.push({ request, options, ref });
+
+                return ref;
+            }
+        )
+    };
+};
+
+// Re-created before each test and read through a factory, so each test gets its own.
+let opener: ReturnType<typeof createOpenerFake>;
+
+/** The page the shell opened last through the opener. */
+const openedPage = (): OpenedContent => {
+    const content = opener.opened.at(-1);
+
+    expect(content, 'the shell opens the page through DotEditContentOpenerService').toBeDefined();
+
+    return content as OpenedContent;
+};
+
+/** The request the shell handed the opener. */
+const requestOf = (content: OpenedContent): DotEditContentRequest =>
+    isSignal(content.request) ? content.request() : content.request;
 
 const NAV_ITEMS = [
     {
@@ -295,9 +336,13 @@ describe('DotEmaShellComponent', () => {
                 useValue: new DotCurrentUserServiceMock()
             },
             provideHttpClient(),
-            provideHttpClientTesting()
+            provideHttpClientTesting(),
+            { provide: DotEditContentOpenerService, useFactory: () => opener }
         ],
         declarations: [
+            // Stubs the page-editor dialog the shell still mounts until the Green half of #38303
+            // removes the mount; rendered for real it pulls in its whole dependency chain. Remove
+            // with that mount.
             MockComponent(DotEmaDialogComponent),
             MockComponent(DotPageToolsSeoComponent),
             MockComponent(DotPageScannerReportComponent)
@@ -426,6 +471,7 @@ describe('DotEmaShellComponent', () => {
     });
 
     beforeEach(() => {
+        opener = createOpenerFake();
         spectator = createComponent();
         siteService = spectator.inject(SiteService) as unknown as SiteServiceMock;
         store = spectator.inject(UVEStore, true);
@@ -684,26 +730,9 @@ describe('DotEmaShellComponent', () => {
                 expect(pageToolsSpy).toHaveBeenCalled();
             });
 
-            it('should trigger action when the properties item is clicked', () => {
-                const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-
-                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
-
-                spectator.triggerEventHandler(navBar, 'action', 'properties');
-
-                expect(dialogSpy).toHaveBeenCalledWith({
-                    contentType: undefined,
-                    identifier: '123',
-                    inode: '123',
-                    title: 'hello world',
-                    angularCurrentPortlet: 'edit-page'
-                });
-            });
-
-            it('routes the properties click through the active editor (new editor/side panel) when the content route is mounted, instead of the legacy dialog', () => {
+            it('routes the properties click through the active editor when the content route is mounted', () => {
                 const openContentForEdit = vi.fn();
                 spectator.component.onRouteActivate({ openContentForEdit });
-                const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
 
                 const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
                 spectator.triggerEventHandler(navBar, 'action', 'properties');
@@ -711,28 +740,55 @@ describe('DotEmaShellComponent', () => {
                 expect(openContentForEdit).toHaveBeenCalledWith(
                     expect.objectContaining({ inode: '123', identifier: '123' })
                 );
-                expect(dialogSpy).not.toHaveBeenCalled();
+                expect(opener.opened.length).toBe(0);
             });
 
-            it('falls back to the legacy dialog when a sibling route (layout/rules/experiments) is active', () => {
+            /**
+             * On the layout, rules and experiments routes there is no editor to ask, so the shell
+             * opens the page in the side panel itself, through the opener (#38303).
+             */
+            it('should open the page in the side panel through the opener when the properties item is clicked', () => {
+                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
+
+                spectator.triggerEventHandler(navBar, 'action', 'properties');
+
+                const page = openedPage();
+                expect(requestOf(page)).toEqual(
+                    expect.objectContaining({
+                        mode: 'edit',
+                        inode: '123',
+                        identifier: '123',
+                        title: 'hello world',
+                        siteId: store.pageAsset()?.site?.identifier,
+                        portletId: 'edit-page'
+                    })
+                );
+                expect(page.options.injector).toBeDefined();
+                expect(page.options.saved).toEqual(expect.any(Function));
+                expect(page.options.closed).toEqual(expect.any(Function));
+            });
+
+            it('opens the page through the opener once a sibling route (layout/rules/experiments) is active', () => {
                 spectator.component.onRouteActivate({ openContentForEdit: vi.fn() });
                 spectator.component.onRouteDeactivate();
-                const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
 
                 const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
                 spectator.triggerEventHandler(navBar, 'action', 'properties');
 
-                expect(dialogSpy).toHaveBeenCalled();
+                expect(requestOf(openedPage())).toEqual(
+                    expect.objectContaining({ mode: 'edit', inode: '123' })
+                );
             });
 
             it('ignores an activated component that does not expose openContentForEdit (a sibling route)', () => {
                 spectator.component.onRouteActivate({ someOtherMethod: vi.fn() });
-                const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
 
                 const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
                 spectator.triggerEventHandler(navBar, 'action', 'properties');
 
-                expect(dialogSpy).toHaveBeenCalled();
+                expect(requestOf(openedPage())).toEqual(
+                    expect.objectContaining({ mode: 'edit', inode: '123' })
+                );
             });
         });
 
@@ -1071,142 +1127,55 @@ describe('DotEmaShellComponent', () => {
             });
         });
 
+        /**
+         * The page's properties, saved in the side panel opened from the layout, rules or
+         * experiments route (#38303). A save can change the page's URL, so the shell loads the new
+         * one or reloads the current one, and refreshes the workflow actions; a close reloads.
+         */
         describe('page properties', () => {
             beforeEach(() => spectator.detectChanges());
 
-            it('should update page params when saving and the url changed', () => {
+            const openProperties = () => {
+                spectator.component.handleItemAction('properties');
+
+                return openedPage();
+            };
+
+            it('should load the page at its new URL when the save changed it', () => {
                 const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
+                const workflowFetchSpy = vi.spyOn(store, 'workflowFetch');
+                const page = openProperties();
 
-                spectator.detectChanges();
-
-                spectator.triggerEventHandler(
-                    DotEmaDialogComponent,
-                    'action',
-                    createDialogActionEvent({
-                        name: NG_CUSTOM_EVENTS.SAVE_PAGE,
-                        payload: {
-                            htmlPageReferer: '/my-awesome-page'
-                        }
-                    })
+                page.options.saved?.(
+                    createFakeContentlet({ inode: '123', identifier: '123', url: '/my-awesome-page' })
                 );
-                spectator.detectChanges();
 
                 expect(pageLoadSpy).toHaveBeenCalledWith({ url: '/my-awesome-page' });
+                expect(workflowFetchSpy).toHaveBeenCalledWith('123');
             });
 
-            it('should get the workflow action when an `UPDATE_WORKFLOW_ACTION` event is received', () => {
-                const spyGetWorkflowActions = vi.spyOn(store, 'workflowFetch');
+            it('should reload the page when the save kept its URL', () => {
+                const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
+                const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+                const workflowFetchSpy = vi.spyOn(store, 'workflowFetch');
+                const page = openProperties();
 
-                spectator.detectChanges();
-
-                spectator.triggerEventHandler(
-                    DotEmaDialogComponent,
-                    'action',
-                    createDialogActionEvent({
-                        name: NG_CUSTOM_EVENTS.UPDATE_WORKFLOW_ACTION
-                    })
+                page.options.saved?.(
+                    createFakeContentlet({ inode: '123', identifier: '123', url: 'index' })
                 );
-                spectator.detectChanges();
 
-                expect(spyGetWorkflowActions).toHaveBeenCalled();
+                expect(pageReloadSpy).toHaveBeenCalledTimes(1);
+                expect(pageLoadSpy).not.toHaveBeenCalled();
+                expect(workflowFetchSpy).toHaveBeenCalledWith('123');
             });
 
-            it('should trigger a store reload when htmlPageReferer is missing (new language version save)', () => {
-                spectator.detectChanges();
-                const spyReload = vi.spyOn(pageApi(), 'pageReload');
+            it('should reload the page when the panel closes', () => {
+                const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+                const page = openProperties();
 
-                spectator.triggerEventHandler(
-                    DotEmaDialogComponent,
-                    'action',
-                    createDialogActionEvent({
-                        name: NG_CUSTOM_EVENTS.SAVE_PAGE,
-                        payload: {}
-                    })
-                );
+                page.ref.close();
 
-                spectator.detectChanges();
-
-                expect(spyReload).toHaveBeenCalled();
-            });
-
-            it('should trigger a store reload if the url is the same', () => {
-                spectator.detectChanges();
-                const spyReload = vi.spyOn(pageApi(), 'pageReload');
-                const spyLocation = vi.spyOn(location, 'go');
-
-                spectator.triggerEventHandler(
-                    DotEmaDialogComponent,
-                    'action',
-                    createDialogActionEvent({
-                        name: NG_CUSTOM_EVENTS.SAVE_PAGE,
-                        payload: {
-                            htmlPageReferer: 'index'
-                        }
-                    })
-                );
-
-                spectator.detectChanges();
-
-                expect(spyReload).toHaveBeenCalled();
-                expect(spyLocation).not.toHaveBeenCalled();
-            });
-
-            it('should reload content from dialog', () => {
-                const reloadSpy = vi.spyOn(pageApi(), 'pageReload');
-
-                spectator.triggerEventHandler(DotEmaDialogComponent, 'reloadFromDialog', null);
-
-                expect(reloadSpy).toHaveBeenCalled();
-            });
-
-            it('should reload page when LANGUAGE_IS_CHANGED fires from the properties dialog', () => {
-                const reloadSpy = vi.spyOn(pageApi(), 'pageReload');
-
-                spectator.triggerEventHandler(
-                    DotEmaDialogComponent,
-                    'action',
-                    createDialogActionEvent({
-                        name: NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED,
-                        payload: { htmlPageReferer: '/index?com.dotmarketing.htmlpage.language=2' }
-                    })
-                );
-                spectator.detectChanges();
-
-                expect(reloadSpy).toHaveBeenCalled();
-            });
-
-            it('should trigger a store reload if the URL from urlContentMap is the same as the current URL', async () => {
-                const reloadSpy = vi.spyOn(pageApi(), 'pageReload');
-                vi.spyOn(dotPageApiService, 'get').mockReturnValue(
-                    of({
-                        ...PAGE_RESPONSE_URL_CONTENT_MAP,
-                        clientResponse: PAGE_RESPONSE_URL_CONTENT_MAP
-                    })
-                );
-
-                pageApi().pageLoad({
-                    url: '/test-url',
-                    language_id: '1',
-                    [PERSONA_KEY]: '1'
-                });
-                spectator.detectChanges();
-                await spectator.fixture.whenStable();
-                spectator.detectChanges();
-
-                spectator.triggerEventHandler(
-                    DotEmaDialogComponent,
-                    'action',
-                    createDialogActionEvent({
-                        name: NG_CUSTOM_EVENTS.SAVE_PAGE,
-                        payload: {
-                            htmlPageReferer: '/test-url'
-                        }
-                    })
-                );
-
-                spectator.detectChanges();
-
-                expect(reloadSpy).toHaveBeenCalled();
+                expect(pageReloadSpy).toHaveBeenCalledTimes(1);
             });
         });
 
