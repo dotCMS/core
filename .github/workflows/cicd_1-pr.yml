@@ -67,6 +67,8 @@ jobs:
       core-build: true
       run-pr-checks: true
       cleanup-runner: false
+      # A pull request build is never deployed, so nothing downloads the context.
+      upload-docker-context: false
     secrets:
       # READ-ONLY key: PR code is untrusted, and a build cache an attacker can
       # write is replayed as a build output on trunk (CVE-2025-36852). Fork PRs

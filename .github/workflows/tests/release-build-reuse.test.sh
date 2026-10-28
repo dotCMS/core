@@ -209,8 +209,8 @@ fi
 
 block_has_if "$MAVEN_JOB" build-docker-image-from-archive "generate-test-image == 'true'" \
   "test-image build is gated on generate-test-image"
-block_has_if "$MAVEN_JOB" save-docker-image "generate-test-image == 'true'" \
-  "test-image save is gated on generate-test-image"
+block_has_if "$MAVEN_JOB" wait-docker-image-build "generate-test-image == 'true'" \
+  "test-image build wait (which follows the background build and save) is gated on generate-test-image"
 block_has_if "$MAVEN_JOB" upload-docker-image "generate-test-image == 'true'" \
   "test-image upload is gated on generate-test-image"
 block_has_if "$MAVEN_JOB" persist-build-classes "generate-build-classes == 'true'" \
