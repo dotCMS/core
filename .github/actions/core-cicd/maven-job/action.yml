@@ -146,6 +146,13 @@ inputs:
       and upload release-looking 1.0.0 coordinates.
     required: false
     default: 'false'
+  save-nx-cache:
+    description: |
+      Save the Nx cache this build used and built (see Restore Nx Cache). Only for builds of
+      main's own code on main: the saved entry lands in main's cache scope, which every pull
+      request and merge-queue run restores from. Never set it for a run that builds another ref.
+    required: false
+    default: 'false'
   artifact-suffix:
     description: 'Artifact suffix without leading separator (e.g., java-25, java-25-ms). Dash prefix added automatically for Maven artifacts. Computed from java-version if not provided.'
     required: false
@@ -378,12 +385,17 @@ runs:
     # Nx task cache for the build job, so core-web only rebuilds the Nx projects whose inputs
     # changed. Nx cannot use a restored .nx/cache (see nx-cache-server.mjs for why), so the
     # entries travel as files that a local server hands to Nx through its remote cache protocol.
-    # Only the build job takes part: it is the one that runs the full Nx build, and release
-    # builds stay out so a published build never takes outputs from the cache.
+    # Only jobs that generate artifacts (the build phase) take part, since they run the full Nx
+    # build. Of those, only release-build: true skips the cache. Everything else uses it, so
+    # images that trunk, the nightly and manual deploys publish can contain outputs Nx restored
+    # from the cache rather than rebuilt.
     #
-    # Only builds of main save (the nightly, and trunk runs that build), and restore-keys gives
-    # every other run the newest of those: pull requests and the merge queue can read main's
-    # caches, while nothing else can read the ones they would save. The key only decides when
+    # Only callers that pass save-nx-cache save, and the build phase sets it only for trunk on a
+    # push to main and the scheduled nightly, the two builds of main's own code. A run that builds
+    # some other ref (manual deploy, CLI release) never saves into main's scope, whatever ref it
+    # was dispatched from. restore-keys gives every run the newest saved entry: pull requests and
+    # the merge queue can read main's caches, while nothing else can read the ones they would
+    # save. The key only decides when
     # main stores a new entry (about 37 MB): when core-web has changed since the last one. Which
     # artifacts Nx may reuse is decided by Nx's own task hashes, not by this key, so every file a
     # shipped build reads must be one of its Nx inputs. Nx's graph alone misses some (Tailwind
@@ -401,10 +413,12 @@ runs:
 
     # The restored entries are moved aside and the server links each one into the fresh
     # directory when Nx asks for it, so the directory saved later holds this run's entries only
-    # and the cache does not grow from run to run. If the server does not come up, the URL is
-    # not exported and the build runs without the cache. If it stops during the build, Nx fails
-    # the build with "Failed to send request ... 127.0.0.1:47321" (Show Nx Cache Server Log
-    # below prints why); it never builds a war from partial output.
+    # and the cache does not grow from run to run. Nx is pointed at the server only once the
+    # server has written its ready file, which it does after it is listening; if the port is
+    # taken, the server exits instead and the build runs without the cache rather than talking
+    # to whatever holds the port. If the server stops during the build, Nx fails the build with
+    # "Failed to send request ... 127.0.0.1:47321" (Show Nx Cache Server Log below prints why);
+    # that is accepted, since it never builds a war from partial output.
     - id: start-nx-cache
       name: Start Nx Cache Server
       if: ${{ steps.restore-cache-nx.outcome == 'success' }}
@@ -417,13 +431,17 @@ runs:
           mv "$NX_CACHE_DIR" "$NX_CACHE_DIR-restored"
           echo "Restored $(ls "$NX_CACHE_DIR-restored" | wc -l) Nx cache entries"
         fi
-        nohup node "$GITHUB_ACTION_PATH/nx-cache-server.mjs" "$NX_CACHE_PORT" "$NX_CACHE_DIR" "$NX_CACHE_DIR-restored" \
+        ready="$RUNNER_TEMP/nx-cache-server.ready"
+        rm -f "$ready"
+        nohup node "$GITHUB_ACTION_PATH/nx-cache-server.mjs" "$NX_CACHE_PORT" "$NX_CACHE_DIR" "$NX_CACHE_DIR-restored" "$ready" \
           > "$RUNNER_TEMP/nx-cache-server.log" 2>&1 &
+        server=$!
         for _ in $(seq 1 50); do
-          if curl -s -o /dev/null "http://127.0.0.1:$NX_CACHE_PORT/v1/cache/0"; then
+          if [[ -s "$ready" ]]; then
             echo "NX_SELF_HOSTED_REMOTE_CACHE_SERVER=http://127.0.0.1:$NX_CACHE_PORT" >> "$GITHUB_ENV"
             exit 0
           fi
+          kill -0 "$server" 2>/dev/null || break
           sleep 0.2
         done
         echo "::warning::Nx cache server did not start; building core-web without the Nx cache"
@@ -867,10 +885,24 @@ runs:
         path: installs
         key: ${{ steps.restore-cache-node.outputs.cache-primary-key }}
 
-    # See Restore Nx Cache. Builds of main only, after a successful build with the server up.
+    # See Restore Nx Cache. An empty directory means Nx asked for nothing and stored nothing, for
+    # example because Maven restored core-web from its own build cache and Nx never ran; saving
+    # it would give every later run an empty entry as the newest one.
+    - id: count-nx-cache
+      name: Count Nx Cache Entries
+      if: ${{ inputs.save-nx-cache == 'true' && env.NX_SELF_HOSTED_REMOTE_CACHE_SERVER != '' }}
+      shell: bash
+      env:
+        NX_CACHE_DIR: ${{ runner.temp }}/nx-cache
+      run: |
+        entries=$(find "$NX_CACHE_DIR" -maxdepth 1 -type f ! -name '*.tmp' 2>/dev/null | wc -l | tr -d ' ')
+        echo "Nx cache entries used or built by this run: $entries"
+        echo "entries=$entries" >> "$GITHUB_OUTPUT"
+
+    # Main's builds only (save-nx-cache), after a successful build with the server up.
     - id: save-cache-nx
       name: Save Nx Cache
-      if: ${{ env.NX_SELF_HOSTED_REMOTE_CACHE_SERVER != '' && github.ref == 'refs/heads/main' && steps.restore-cache-nx.outputs.cache-hit != 'true' }}
+      if: ${{ inputs.save-nx-cache == 'true' && github.ref == 'refs/heads/main' && steps.count-nx-cache.outputs.entries != '' && steps.count-nx-cache.outputs.entries != '0' && steps.restore-cache-nx.outputs.cache-hit != 'true' }}
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ runner.temp }}/nx-cache

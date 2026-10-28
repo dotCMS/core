@@ -151,6 +151,9 @@ jobs:
       java-version: ${{ github.event.inputs.java-version || '' }}
       maven-compiler-release: ${{ github.event.inputs.maven-compiler-release || '' }}
       artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
+      # The scheduled run builds a commit of main (setup checks out main) from main; a manual
+      # dispatch can come from another branch, so only the schedule saves.
+      save-nx-cache: ${{ github.event_name == 'schedule' }}
     permissions:
       contents: read
       packages: write
