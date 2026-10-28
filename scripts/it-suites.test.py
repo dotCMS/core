@@ -84,6 +84,15 @@ class ItSuitesTests(unittest.TestCase):
         it.add(self.root, "ZTest", "Suite4")
         self.assertIn("        com.other.FTest.class,\n        ZTest.class,\n})", self.suite4.read_text())
 
+    def test_unsorted_list_spreads_insertions_by_nearest_name(self):
+        # Entries are B, D, F. A name below B goes before B, one between D and F goes before F:
+        # different gaps, so two PRs adding them do not touch the same lines.
+        (self.root / it.TEST_SRC / "com/fresh/AaTest.java").write_text(test_class("com.fresh", "AaTest"))
+        (self.root / it.TEST_SRC / "com/fresh/EeTest.java").write_text(test_class("com.fresh", "EeTest"))
+        it.add(self.root, "AaTest", "Suite4")
+        it.add(self.root, "EeTest", "Suite4")
+        self.assertEqual(self.entries(), ["AaTest", "BTest", "DTest", "EeTest", "com.other.FTest"])
+
     def test_simple_name_collision_uses_fqn_without_import(self):
         it.add(self.root, "com.fresh.BTest", "Suite4")
         text = self.suite4.read_text()

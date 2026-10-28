@@ -29,6 +29,20 @@ IMPORT = re.compile(r"^import\s+([\w.]+)\s*;")
 TEST_METHOD = re.compile(r"@(?:Test|ParameterizedTest|TestFactory|RepeatedTest)\b")
 
 
+def insertion_line(items, name):
+    """Line to insert `name` at, given (line, name) items in file order that need not be sorted.
+
+    Goes directly before the item with the smallest name above `name` (the first such in the file
+    on ties), or directly after the item with the largest name if none sorts after it. Nothing is
+    re-sorted; two new names only share an insertion point when no existing name falls between them.
+    """
+    # prune: plain string order; switch to casefold only if mixed-case names start misplacing
+    above = [(n, i) for i, n in items if n > name]
+    if above:
+        return min(above)[1]
+    return max((n, -i) for i, n in items)[1] * -1 + 1
+
+
 class Suite:
     """One suite source file: its lines, the @SuiteClasses/@SelectClasses block and its entries."""
 
@@ -72,24 +86,15 @@ class Suite:
         clash = any(w.rsplit(".", 1)[-1] == simple for _, w, _ in self.entries) or simple in self.imports
         by_import = not clash and fqn.rsplit(".", 1)[0] != self.package
         written = simple if not clash else fqn
-        # prune: plain string order; switch to casefold only if mixed-case names start misplacing
-        after = next((i for i, w, _ in self.entries if w.rsplit(".", 1)[-1] > simple), None)
-        last = self.entries[-1][0]
-        indent = ENTRY.match(self.lines[last]).group(1)
-        if after is None:
-            if not self.lines[last].rstrip().endswith(","):
-                self.lines[last] = self.lines[last].rstrip() + ","
-            after = last + 1
-        self.lines.insert(after, f"{indent}{written}.class,")
+        at = insertion_line([(i, w.rsplit(".", 1)[-1]) for i, w, _ in self.entries], simple)
+        prev = ENTRY.match(self.lines[at - 1])
+        if prev and not prev.group(3):  # only the old last entry can lack its comma
+            self.lines[at - 1] = self.lines[at - 1].rstrip() + ","
+        indent = ENTRY.match(self.lines[self.entries[0][0]]).group(1)
+        self.lines.insert(at, f"{indent}{written}.class,")
         if by_import:
-            self.add_import(fqn)
-
-    def add_import(self, fqn):
-        """Insert an import before the first import that sorts after it (else after the last)."""
-        imports = [(i, m.group(1)) for i, l in enumerate(self.lines)
-                   if (m := IMPORT.match(l))]
-        at = next((i for i, name in imports if name > fqn), imports[-1][0] + 1)
-        self.lines.insert(at, f"import {fqn};")
+            imports = [(i, m.group(1)) for i, l in enumerate(self.lines) if (m := IMPORT.match(l))]
+            self.lines.insert(insertion_line(imports, fqn), f"import {fqn};")
 
     def write(self):
         self.path.write_text("\n".join(self.lines))
