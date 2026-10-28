@@ -415,7 +415,7 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <skip>${coreit.test.skip}</skip>
-                    <argLine>${debug.args}</argLine>
+                    <argLine>${debug.args} --enable-native-access=ALL-UNNAMED ${vipsffm.libpath.args}</argLine>
                     <forkCount>${it.test.forkcount}</forkCount>
                     <reuseForks>true</reuseForks>
                     <rerunFailingTestsCount>3</rerunFailingTestsCount>

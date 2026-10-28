@@ -6,8 +6,9 @@ Highway SIMD is disabled in the libvips build as a conservative mitigation for
 resize colour corruption at horizontal shrink factors of 4× or more
 ([#38079](https://github.com/dotCMS/core/issues/38079)). Image formats remain supported,
 but SIMD-accelerated operations may be slower. The failing CPU target is not yet confirmed.
-The native verifier rejects Highway-enabled builds and checks RGB/RGBA resize colours
-against a SIMD-disabled reference across the shrink boundary.
+The native verifier rejects Highway-enabled builds. The Java integration test
+`VipsResizeImageFilterIntegrationTest` checks JPEG and RGB/RGBA PNG/WebP colours against
+decoded source pixels across the shrink boundary, using a navy region and a 2D gradient.
 
 Rebuild and publish `dotcms/java-base:<java-version>` for **both architectures**, then
 rebuild the dependent runtime and dev-env images. JVM CI extracts the published base
