@@ -1,10 +1,10 @@
 import { Params } from '@angular/router';
 
-import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 import { DotCMSUVEAction, StyleEditorProperties } from '@dotcms/types';
 import { InfoPage } from '@dotcms/ui';
 
-import { CommonErrors, DialogStatus, FormStatus } from './enums';
+import { CommonErrors } from './enums';
 
 import { DotPageApiParams } from '../services/dot-page-api/dot-page-api.service';
 
@@ -236,60 +236,6 @@ export interface DotPage {
 }
 
 export type CommonErrorsInfo = Record<CommonErrors, InfoPage>;
-
-export interface DialogForm {
-    status: FormStatus;
-    isTranslation: boolean;
-}
-
-export type DialogType = 'content' | 'form' | 'widget' | null;
-
-export interface EditEmaDialogState {
-    header: string;
-    status: DialogStatus;
-    url: string;
-    type: DialogType;
-    /**
-     * Represent the action payload of the dialog, with the edited contentlet or the new contentlet
-     * that is being created, both inside PageAsset.
-     *
-     * Can be null when the dialog is opened outside of PageAsset, like from the Content API.
-     */
-    actionPayload?: ActionPayload;
-    form: DialogForm;
-    clientAction: DotCMSUVEAction;
-}
-
-export type DialogActionPayload = Pick<EditEmaDialogState, 'actionPayload'>;
-
-export interface DialogAction extends Pick<
-    EditEmaDialogState,
-    'actionPayload' | 'form' | 'clientAction'
-> {
-    event: CustomEvent;
-}
-
-// We can modify this if we add more events, for now I think is enough
-export interface CreateFromPaletteAction extends DialogActionPayload {
-    variable: string;
-    name: string;
-    language_id?: string | number;
-}
-
-export type EditContentletPayload = Partial<
-    DotCMSContentlet & Pick<EditEmaDialogState, 'clientAction'>
->;
-
-export interface CreateContentletAction extends DialogActionPayload {
-    url: string;
-    contentType: string;
-}
-
-export interface AddContentletAction extends DialogActionPayload {
-    containerId: string;
-    acceptTypes: string;
-    language_id: string;
-}
 
 export interface PostMessage {
     action: DotCMSUVEAction;
