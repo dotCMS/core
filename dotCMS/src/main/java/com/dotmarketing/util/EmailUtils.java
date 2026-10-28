@@ -58,8 +58,14 @@ public class EmailUtils {
 	// Use a MailerWrapperFactory to create Mailer instances.
 	private static MailerWrapperFactory mailerFactory = new MailerWrapperFactoryImpl();
 
+	/**
+	 * Replaces the factory that creates the mailers used by {@link #sendMail}. Meant for tests that
+	 * need to capture outgoing mail; pass {@code new MailerWrapperFactoryImpl()} to restore the default.
+	 *
+	 * @param factory the factory that creates the mailers
+	 */
 	@VisibleForTesting
-	static void setMailerWrapperFactory(MailerWrapperFactory factory) {
+	public static void setMailerWrapperFactory(MailerWrapperFactory factory) {
 		mailerFactory = factory;
 	}
 

@@ -129,7 +129,8 @@ import org.junit.runners.Suite.SuiteClasses;
         CMSUserToolTest.class,
         UserJsViewToolTest.class,
         com.dotcms.rest.BundleResourceDeleteResponseTest.class,
-        ContentRelationshipsResourceIntegrationTest.class
+        ContentRelationshipsResourceIntegrationTest.class,
+        com.dotcms.rest.api.v1.authentication.ForgotPasswordResourceIntegrationTest.class
 })
 public class MainSuite2a {
 
