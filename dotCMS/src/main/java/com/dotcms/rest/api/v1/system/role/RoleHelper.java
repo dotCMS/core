@@ -73,7 +73,7 @@ public class RoleHelper {
         final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
         return user.isAdmin() ||
                 (layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user) &&
-                        layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), user));
+                        layoutAPI.doesUserHaveAccessToUsersPortlet(user));
     }
 
     /**
