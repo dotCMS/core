@@ -12,7 +12,6 @@
  */
 package com.dotcms.enterprise;
 
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
@@ -22,13 +21,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthRequest;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.client.RequestOptions;
+import java.util.Optional;
 
 import com.dotcms.cluster.bean.Server;
 import com.dotcms.cluster.business.ServerAPI;
-import com.dotcms.content.elasticsearch.util.DotRestHighLevelClientProvider;
+import com.dotcms.content.index.domain.SearchClusterHealth;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
@@ -39,11 +36,11 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.json.JSONException;
 import com.liferay.util.FileUtil;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
 import io.vavr.control.Try;
 import org.elasticsearch.common.unit.TimeValue;
 
@@ -54,6 +51,17 @@ import org.elasticsearch.common.unit.TimeValue;
  *
  */
 class ClusterUtil {
+
+    /**
+     * The search keys of the status report, emptied together when the search engine can't be
+     * asked. The old Network tab reads them by name, so their names never change.
+     */
+    private static final List<String> SEARCH_KEYS = List.of(
+            "esClusterName", "esTimedout", "esNumberOfNodes", "esNumberOfDataNodes",
+            "esActivePrimaryShards", "esActiveShards", "esRelocatingShards", "esInitializingShards",
+            "esUnassignedShards", "esDelayedUnasignedShards", "esNumberOfPendingTasks",
+            "esNumberOfInFlightFetch", "esTaskMaxWaitingInQueueMillis", "esTaskMaxWaitingTimeMillis",
+            "esActiveShardsPercentAsNumber", "esEngine");
 
     /**
      * Returns the basic information of the current server (local node) in JSON format.
@@ -112,28 +120,37 @@ class ClusterUtil {
             
 
 
-        ClusterHealthRequest request = new ClusterHealthRequest();
-        request.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-        ClusterHealthResponse response = Sneaky.sneak(() -> DotRestHighLevelClientProvider.getInstance().getClient()
-                        .cluster().health(request, RequestOptions.DEFAULT));
-
-        dotCMSNodeStatus.put("esClusterName", response.getClusterName());
-        dotCMSNodeStatus.put("esTimedout", response.isTimedOut());
-        dotCMSNodeStatus.put("esNumberOfNodes", response.getNumberOfNodes());
-        dotCMSNodeStatus.put("esNumberOfDataNodes", response.getNumberOfDataNodes());
-        dotCMSNodeStatus.put("esActivePrimaryShards", response.getActivePrimaryShards());
-        dotCMSNodeStatus.put("esActiveShards", response.getActiveShards());
-        dotCMSNodeStatus.put("esRelocatingShards", response.getRelocatingShards());
-        dotCMSNodeStatus.put("esInitializingShards", response.getInitializingShards());
-        dotCMSNodeStatus.put("esUnassignedShards", response.getUnassignedShards());
-        dotCMSNodeStatus.put("esDelayedUnasignedShards", response.getDelayedUnassignedShards());
-        dotCMSNodeStatus.put("esNumberOfPendingTasks", response.getNumberOfPendingTasks());
-        dotCMSNodeStatus.put("esNumberOfInFlightFetch", response.getNumberOfInFlightFetch());
-        dotCMSNodeStatus.put("esTaskMaxWaitingInQueueMillis", String.valueOf(response.getTaskMaxWaitingTime()));
-        dotCMSNodeStatus.put("esActiveShardsPercentAsNumber", response.getActiveShardsPercent());
-
-        final String esStatus = response.getStatus().toString().toLowerCase();
-        dotCMSNodeStatus.put("esStatus", esStatus);
+        final Optional<SearchClusterHealth> searchHealth =
+                Try.of(() -> APILocator.getESIndexAPI().getClusterHealthSummary())
+                        .onFailure(e -> Logger.warnAndDebug(ClusterUtil.class,
+                                "Could not read the search cluster health: " + e.getMessage(), e))
+                        .toJavaOptional();
+        if (searchHealth.isPresent()) {
+            final SearchClusterHealth health = searchHealth.get();
+            dotCMSNodeStatus.put("esClusterName", health.clusterName());
+            dotCMSNodeStatus.put("esTimedout", health.timedOut());
+            dotCMSNodeStatus.put("esNumberOfNodes", health.numberOfNodes());
+            dotCMSNodeStatus.put("esNumberOfDataNodes", health.numberOfDataNodes());
+            dotCMSNodeStatus.put("esActivePrimaryShards", health.activePrimaryShards());
+            dotCMSNodeStatus.put("esActiveShards", health.activeShards());
+            dotCMSNodeStatus.put("esRelocatingShards", health.relocatingShards());
+            dotCMSNodeStatus.put("esInitializingShards", health.initializingShards());
+            dotCMSNodeStatus.put("esUnassignedShards", health.unassignedShards());
+            dotCMSNodeStatus.put("esDelayedUnasignedShards", health.delayedUnassignedShards());
+            dotCMSNodeStatus.put("esNumberOfPendingTasks", health.numberOfPendingTasks());
+            dotCMSNodeStatus.put("esNumberOfInFlightFetch", health.numberOfInFlightFetch());
+            // kept as a time string ("0s") for the old Network tab; the number is sent separately
+            dotCMSNodeStatus.put("esTaskMaxWaitingInQueueMillis",
+                    String.valueOf(TimeValue.timeValueMillis(health.taskMaxWaitingInQueueMillis())));
+            dotCMSNodeStatus.put("esTaskMaxWaitingTimeMillis", health.taskMaxWaitingInQueueMillis());
+            dotCMSNodeStatus.put("esActiveShardsPercentAsNumber", health.activeShardsPercent());
+            dotCMSNodeStatus.put("esEngine", health.engine().name());
+            dotCMSNodeStatus.put("esStatus", health.status());
+        } else {
+            // the search engine can't be asked: report it as down, but keep the rest of the report
+            SEARCH_KEYS.forEach(key -> dotCMSNodeStatus.put(key, ""));
+            dotCMSNodeStatus.put("esStatus", "red");
+        }
 
         // Asset folder.
         String serverFilePath = Config.getStringProperty("ASSET_REAL_PATH",

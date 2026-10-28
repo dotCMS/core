@@ -7,16 +7,17 @@ action.
 The action restores the `maven-repo` artifact produced by the build phase,
 resolves the project version, and delegates the upload to
 [`.github/scripts/publish-to-s3/publish.sh`](../../../../scripts/publish-to-s3/README.md).
-The script preserves the `com/dotcms/<artifactId>/<version>` layout, writes
-`.sha1`/`.md5` checksums, and regenerates the `maven-metadata.xml` files that
-Artifactory used to create.
+The script recursively discovers modules under `com/dotcms`, including nested
+groups, and preserves the full `<groupPath>/<artifactId>/<version>` layout. It
+writes `.sha1`/`.md5` checksums and regenerates `maven-metadata.xml` with the actual
+groupId, replacing the metadata Artifactory used to create.
 
 ## Inputs
 
 | Input | Required | Default | Description |
 | --- | --- | --- | --- |
 | `version` | no | project version | Version to publish. Set it when the restored `maven-repo` artifact was built from a different ref than the checked-out POM (e.g. releases). |
-| `modules` | no | all modules for the version | Comma-separated artifactIds to restrict the publish to. |
+| `modules` | no | all modules for the version | Comma-separated artifactIds to restrict the publish to, across all nested groups. |
 | `exclude-ext` | no | `repositories,excludeext` | Extra file extensions to skip. |
 | `dry-run` | no | `false` | Print what would be uploaded without writing. |
 | `bucket` | no | `MAVEN_BUNNY_RW_USERNAME` | S3 bucket / Bunny storage zone. |
@@ -44,5 +45,5 @@ Artifactory used to create.
 Public URL for the above with the defaults:
 
 ```
-https://dotcms-repo.b-cdn.net/libs-release/com/dotcms/<artifactId>/<version>/<artifactId>-<version>.jar
+https://dotcms-repo.b-cdn.net/libs-release/<groupPath>/<artifactId>/<version>/<artifactId>-<version>.jar
 ```

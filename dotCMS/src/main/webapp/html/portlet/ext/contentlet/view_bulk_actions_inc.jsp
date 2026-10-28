@@ -44,12 +44,25 @@
     }
 
     /**
+     * Returns the given value as HTML text, so names coming from the JSON response
+     * are rendered literally when the markup below is built by string concatenation.
+     */
+    function asHtmlText(value) {
+        return String(value == null ? '' : value)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
+
+    /**
      *
      */
     function renderSingleAction(action){
         var actionSingleTemplate
             = '<tr class="workflowActionsOption"> '
-            + '   <td style="">&nbsp;&nbsp;'+action.workflowAction.name+'</td> '
+            + '   <td style="">&nbsp;&nbsp;'+asHtmlText(action.workflowAction.name)+'</td> '
             + '     <td style="width:140px;text-align: right"> '
             + '     <button dojoType="dijit.form.Button" class="dijitButton wfAction" '
             + '             data-acction-id="'+action.workflowAction.id+'" '
@@ -103,7 +116,7 @@
         var schemeTemplate
             = '<table class="sTypeTable" style="width:90%; border-collapse: separate; border-spacing: 10px 15px;margin-bottom:10px;">'
             + '  <tr>'
-            + '     <th colspan="2" class="sTypeHeader wfScheme" data-scheme-id="'+scheme.id+'" >'+scheme.name+'</th>'
+            + '     <th colspan="2" class="sTypeHeader wfScheme" data-scheme-id="'+scheme.id+'" >'+asHtmlText(scheme.name)+'</th>'
             + '  </tr>'
             + actionRows
             + '</table>';
@@ -224,8 +237,8 @@
                 var fail = entity.fails[i];
                 markupDetailEntries +=
                     '<tr>' +
-                      '<td colspan="2"> ' + fail.inode + '  &nbsp;</td>' +
-                      '<td> ' + fail.errorMessage + ' </td>' +
+                      '<td colspan="2"> ' + asHtmlText(fail.inode) + '  &nbsp;</td>' +
+                      '<td> ' + asHtmlText(fail.errorMessage) + ' </td>' +
                     '</tr>';
             }
 

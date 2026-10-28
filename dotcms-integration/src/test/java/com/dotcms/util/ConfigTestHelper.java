@@ -1,5 +1,6 @@
 package com.dotcms.util;
 
+import com.dotcms.filters.interceptor.FilterWebInterceptorProvider;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotmarketing.util.Config;
@@ -9,6 +10,7 @@ import com.liferay.portal.struts.MultiMessageResourcesFactory;
 import com.liferay.portal.util.WebAppPool;
 import com.liferay.util.FileUtil;
 
+import org.apache.commons.io.FileUtils;
 import org.mockito.ArgumentMatchers;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
@@ -22,6 +24,7 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Sets configuration and environment details used for Integration Tests
@@ -32,13 +35,23 @@ public class ConfigTestHelper extends Config {
     /**
      * This method will set up a dummy ServletContext needed for testing. The main purpose here
      * is to be able to run the integration tests without the web app container i.e. Tomcat.
+     *
+     * @throws Exception if the testing context or its resources cannot be initialized
      */
     public static void _setupFakeTestingContext() throws Exception {
         // if we need a fake ServletContext
         if (CONTEXT == null) {
             // make sure the tmp dir is there before running
-            new File(System.getProperty("java.io.tmpdir")).mkdirs();
-            ServletContext context = Mockito.mock(ServletContext.class);
+            FileUtils.getTempDirectory().mkdirs();
+            final ServletContext context = Mockito.mock(ServletContext.class);
+            // System bundles must be able to register and retrieve the real interceptor provider.
+            final String providerKey = FilterWebInterceptorProvider.class.getName();
+            final AtomicReference<Object> provider = new AtomicReference<>();
+            Mockito.doAnswer(invocation -> {
+                provider.set(invocation.getArgument(1));
+                return null;
+            }).when(context).setAttribute(Mockito.eq(providerKey), Mockito.any());
+            Mockito.when(context.getAttribute(providerKey)).thenAnswer(invocation -> provider.get());
             Mockito.when(context.getInitParameter("company_id")).thenReturn("dotcms.org");
 
             final ModuleConfig config = Mockito.mock(ModuleConfig.class);

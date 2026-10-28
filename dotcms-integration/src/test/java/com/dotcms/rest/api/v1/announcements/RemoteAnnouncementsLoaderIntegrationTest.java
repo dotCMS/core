@@ -32,7 +32,7 @@ import org.junit.Test;
  */
 public class RemoteAnnouncementsLoaderIntegrationTest {
 
-    public static final String DOTCMS_COM = "https://www2.dotcms.com";
+    public static final String DOTCMS_COM = "https://www.dotcms.com";
 
     // Matches the announcements query path regardless of how the client encodes it
     private static final String ANNOUNCEMENTS_PATH_PATTERN = "/api/content/render/false/query/.*";

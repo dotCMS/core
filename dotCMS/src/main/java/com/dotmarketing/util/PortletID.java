@@ -12,6 +12,7 @@ public enum PortletID {
     CATEGORIES,
     CATEGORIES_LEGACY("categories-legacy"),
     CONFIGURATION, 
+    CONFIGURATION_BETA("configuration-beta"),
     CONTAINERS,
     CONTENT,
     CONTENT_TYPES,
@@ -50,6 +51,13 @@ public enum PortletID {
     SITE_BROWSER,
     SITE_SEARCH,
     USERS,
+    /**
+     * Beta-period alias of {@link #USERS}: the Angular Users portlet ships opt-in as
+     * {@code users-beta} (see {@code portlet.xml}). A gate meaning "can administer users" should accept
+     * either id while both portlets coexist, as {@code UserPaginator#canReadFullProfile} does; not every
+     * Users-portlet check has been widened to the beta id yet. Remove when the Angular portlet is promoted.
+     */
+    USERS_BETA("users-beta"),
     VANITY_URLS,
     WEB_EVENT_REGISTRATIONS,
     WEB_FORMS,
@@ -69,6 +77,12 @@ public enum PortletID {
      * (#37356).
      */
     TOOLS_BETA("tools-beta"),
+    /**
+     * Beta-period alias for the Network portlet. The cluster nodes endpoint accepts it alongside
+     * {@link #CONFIGURATION} while the Angular Network portlet ships opt-in as {@code network-beta}.
+     * Remove when the Network portlet is promoted (#37875).
+     */
+    NETWORK_BETA("network-beta"),
     /**
      * Language Variables ships with the product but is created as a database row by
      * {@code Task241016AddCustomLanguageVariablesPortletToLayout}, in the same shape as an

@@ -17,7 +17,8 @@ const config: XmcpConfig = {
             '@dotcms/ai/runtime': process.cwd() + '/../../libs/sdk/ai/src/runtime.ts',
             '@dotcms/ai/sandbox': process.cwd() + '/../../libs/sdk/ai/src/sandbox/index.ts',
             '@dotcms/ai/adapter': process.cwd() + '/../../libs/sdk/ai/src/adapter/index.ts',
-            '@dotcms/ai/spec': process.cwd() + '/../../libs/sdk/ai/src/spec/index.ts'
+            '@dotcms/ai/spec': process.cwd() + '/../../libs/sdk/ai/src/spec/index.ts',
+            '@dotcms/ai/tools': process.cwd() + '/../../libs/sdk/ai/src/tools/index.ts'
         };
         return rspackConfig;
     }

@@ -13,7 +13,7 @@
             }
         },
         "build": {
-            "dependsOn": ["generate-spec"],
+            "dependsOn": ["^build", "generate-spec"],
             "cache": true,
             "inputs": [
                 "production",
