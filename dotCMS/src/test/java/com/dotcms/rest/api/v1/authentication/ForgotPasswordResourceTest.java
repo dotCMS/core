@@ -39,6 +39,7 @@ import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
@@ -520,6 +521,58 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
         }
     }
 
+    /**
+     * Given one client already has its limit of resets pending,
+     * when it requests a reset for yet another address,
+     * then it gets the same 200 but nothing is queued, while a request from a different client is
+     * still queued, and once one of the first client's resets has run it can queue again.
+     */
+    @Test
+    public void clientAtItsPendingLimit_isNotQueued() throws Exception {
+
+        final int previousLimit = Config.getIntProperty("forgot-password.client.max.pending", 10);
+        Config.setProperty("forgot-password.client.max.pending", 2);
+        try {
+
+            final UserService userService = mock(UserService.class);
+            final List<Runnable> queued = new ArrayList<>();
+            final String burstClient = "198.51.100." + new Random().nextInt(250);
+
+            for (int i = 0; i < 3; i++) {
+
+                final String email = "burst-" + UUID.randomUUID() + "@example.com";
+                final Response response = requestReset(Company.AUTH_TYPE_EA,
+                        new ForgotPasswordForm.Builder().userId(email).build(),
+                        mock(UserLocalManager.class), userService, queued::add, burstClient);
+
+                assertEquals(Status.OK.getStatusCode(), response.getStatus());
+                assertEquals(email, entityOf(response));
+            }
+            assertEquals(2, queued.size());
+
+            requestReset(Company.AUTH_TYPE_EA,
+                    new ForgotPasswordForm.Builder().userId("other-" + UUID.randomUUID() + "@example.com").build(),
+                    mock(UserLocalManager.class), userService, queued::add, burstClient + "1");
+            assertEquals(3, queued.size());
+
+            queued.get(0).run();
+            requestReset(Company.AUTH_TYPE_EA,
+                    new ForgotPasswordForm.Builder().userId("burst-" + UUID.randomUUID() + "@example.com").build(),
+                    mock(UserLocalManager.class), userService, queued::add, burstClient);
+            assertEquals(4, queued.size());
+
+            queued.subList(1, queued.size()).forEach(Runnable::run);
+            assertTrue(ForgotPasswordResource.reserveClientSlot(burstClient, 2));
+            assertTrue(ForgotPasswordResource.reserveClientSlot(burstClient, 2));
+            assertFalse(ForgotPasswordResource.reserveClientSlot(burstClient, 2));
+            ForgotPasswordResource.releaseClientSlot(burstClient);
+            ForgotPasswordResource.releaseClientSlot(burstClient);
+        } finally {
+
+            Config.setProperty("forgot-password.client.max.pending", previousLimit);
+        }
+    }
+
     private static void awaitQuietly(final CountDownLatch latch) {
         try {
             latch.await(30, TimeUnit.SECONDS);
@@ -575,7 +628,20 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
                                   final UserService userService,
                                   final Executor executor) throws Exception {
 
+        return requestReset(authType, form, userLocalManager, userService, executor, null);
+    }
+
+    /**
+     * Same as above, with the request coming from the given client address.
+     */
+    private Response requestReset(final String authType, final ForgotPasswordForm form,
+                                  final UserLocalManager userLocalManager,
+                                  final UserService userService,
+                                  final Executor executor,
+                                  final String remoteAddr) throws Exception {
+
         final HttpServletRequest request = mock(HttpServletRequest.class);
+        when(request.getRemoteAddr()).thenReturn(remoteAddr);
         final HttpSession session = mock(HttpSession.class);
         final CompanyAPI companyAPI = mock(CompanyAPI.class);
         final ServletContext context = mock(ServletContext.class);
