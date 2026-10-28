@@ -88,7 +88,12 @@ jobs:
         if: ${{ inputs.reuse-previous-build == true }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          workflow_search: true
+          # Only merge-queue builds are complete enough to reuse. A pull request build
+          # leaves the CLI and test modules out of maven-repo, and its head_sha is the
+          # PR head commit, which main can receive verbatim (an admin push that bypasses
+          # the queue). Trunk's CLI native build and dotcms-cli deploy would then fail.
+          workflow: cicd_2-merge-queue.yml
+          workflow_search: false
           commit: ${{ github.sha }}
           workflow_conclusion: success
           search_artifacts: true
