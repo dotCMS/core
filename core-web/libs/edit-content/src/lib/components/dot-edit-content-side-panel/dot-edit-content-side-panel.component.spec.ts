@@ -5,7 +5,7 @@ import { Mock, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
-import { DialogService, DynamicDialogConfig } from 'primeng/dynamicdialog';
+import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -231,9 +231,9 @@ describe('DotEditContentSidePanelComponent', () => {
         it('gives the overlay host the identity the request names, variant included', async () => {
             await openRequest();
 
-            const config = spectator.inject(DynamicDialogConfig, true);
-
-            expect(config.data).toEqual(
+            // What the panel's DynamicDialogConfig hands the host; this suite replaces the
+            // component's providers, so the config itself is not injectable here.
+            expect(spectator.component.$dialogData()).toEqual(
                 expect.objectContaining({
                     contentletInode: 'inode-1',
                     contentTypeId: 'Blog',
@@ -251,9 +251,9 @@ describe('DotEditContentSidePanelComponent', () => {
                 languageId: 2
             });
 
-            const config = spectator.inject(DynamicDialogConfig, true);
-
-            expect(config.data).toEqual(
+            // What the panel's DynamicDialogConfig hands the host; this suite replaces the
+            // component's providers, so the config itself is not injectable here.
+            expect(spectator.component.$dialogData()).toEqual(
                 expect.objectContaining({
                     contentletInode: undefined,
                     contentTypeId: 'Blog',

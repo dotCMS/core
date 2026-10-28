@@ -53,6 +53,12 @@ export interface EditContentDialogData {
     folderPath?: string;
 
     /**
+     * The experiment variant to edit or create in, from the side panel's request (#38303). Absent
+     * means the default variant.
+     */
+    variantName?: string;
+
+    /**
      * Optional relationship information when creating content for relationships
      */
     relationshipInfo?: {
