@@ -15,7 +15,9 @@ rebuild the dependent runtime and dev-env images. JVM CI extracts the published 
 image, so its new build-policy check will fail until that image is republished.
 Existing corrupt renditions in `dotGenerated` and CDN caches must also be invalidated
 through the normal cache-maintenance procedure; rebuilding does not repair cached images.
-Do not delete original assets. The separate EXIF-orientation sizing defect is unchanged.
+Do not delete original assets. The runtime Resize/Scale filter also normalises EXIF orientation
+before calculating target dimensions; that Java fix requires rebuilding the application, not
+just replacing its native library.
 
 This Dockerfile builds the base container woth java that will be used to build and run dotCMS. 
 

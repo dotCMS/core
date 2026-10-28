@@ -24,6 +24,8 @@ import com.dotcms.rendering.velocity.viewtools.CMSUserToolTest;
 import com.dotcms.rest.api.v1.maintenance.MaintenanceResourceIntegrationTest;
 import com.dotmarketing.business.UserDeletionCacheInvalidationTest;
 import com.dotmarketing.image.vips.VipsResizeImageFilterIntegrationTest;
+import com.dotmarketing.image.vips.VipsResizeOrientationIntegrationTest;
+import com.dotmarketing.image.vips.VipsResizePhotoIntegrationTest;
 import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
 import org.junit.runner.RunWith;
@@ -122,7 +124,9 @@ import org.junit.runners.Suite.SuiteClasses;
         CMSUserToolTest.class,
         UserJsViewToolTest.class,
         com.dotcms.rest.BundleResourceDeleteResponseTest.class,
-        VipsResizeImageFilterIntegrationTest.class
+        VipsResizeImageFilterIntegrationTest.class,
+        VipsResizeOrientationIntegrationTest.class,
+        VipsResizePhotoIntegrationTest.class
 })
 public class MainSuite2a {
 
