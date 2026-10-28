@@ -26,6 +26,7 @@ package com.dotcms.enterprise.de.qaware.heimdall;
 import com.dotcms.enterprise.de.qaware.heimdall.algorithm.HashAlgorithm;
 import com.dotcms.enterprise.de.qaware.heimdall.algorithm.HashAlgorithmRegistryImpl;
 import com.dotcms.enterprise.de.qaware.heimdall.algorithm.PBKDF2;
+import com.dotcms.enterprise.de.qaware.heimdall.algorithm.PBKDF2_256;
 import com.dotcms.enterprise.de.qaware.heimdall.config.ConfigCoderImpl;
 import com.dotcms.enterprise.de.qaware.heimdall.salt.SecureSaltProvider;
 
@@ -33,17 +34,16 @@ import com.dotcms.enterprise.de.qaware.heimdall.salt.SecureSaltProvider;
  * Factory to create an instance of {@link Password}.
  */
 public final class PasswordFactory {
-    /**
-     * PBKDF#2.
-     */
-    private static final HashAlgorithm PBKDF2 = new PBKDF2();
+    /** Legacy profile retained to verify existing 192-bit password records. */
+    private static final HashAlgorithm LEGACY_PBKDF2 = new PBKDF2();
 
-    /**
-     * Singleton instance.
-     */
-    private static Password password = new PasswordImpl(new SecureSaltProvider(), new ConfigCoderImpl(), new HashAlgorithmRegistryImpl(
-            PBKDF2
-    ), PBKDF2);
+    /** Current profile used for newly generated password records. */
+    private static final HashAlgorithm CURRENT_PBKDF2 = new PBKDF2_256();
+
+    /** Singleton instance that can verify both profiles and writes the current one. */
+    private static final Password password = new PasswordImpl(new SecureSaltProvider(),
+            new ConfigCoderImpl(),
+            new HashAlgorithmRegistryImpl(LEGACY_PBKDF2, CURRENT_PBKDF2), CURRENT_PBKDF2);
 
     /**
      * Static class - no instances allowed.

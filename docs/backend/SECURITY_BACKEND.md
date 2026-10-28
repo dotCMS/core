@@ -92,6 +92,8 @@ public class MySecureForm {
 
 ## Authentication and Authorization
 
+Password-storage profile changes retain legacy verification but can affect mixed-version deployments and rollback. See [Password Hash Migration](PASSWORD_HASH_MIGRATION.md) for the 192-to-256-bit upgrade and required coordinated deployment.
+
 ### Authentication Check Pattern
 ```java
 public Response secureEndpoint(HttpServletRequest request, HttpServletResponse response) {
