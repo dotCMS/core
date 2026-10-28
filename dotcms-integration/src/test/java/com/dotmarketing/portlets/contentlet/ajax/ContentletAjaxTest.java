@@ -48,6 +48,7 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
@@ -690,7 +691,7 @@ public class ContentletAjaxTest {
 			setUpContext();
 			ContentTypeDataGen.remove(contentType);
 			FolderDataGen.remove(folder);
-			UserDataGen.remove(user, true);
+			removeUserAndPermissions(user);
 		}
 	}
 
@@ -724,13 +725,14 @@ public class ContentletAjaxTest {
 		} finally {
 			setUpContext();
 			ContentTypeDataGen.remove(contentType);
-			UserDataGen.remove(user, true);
+			removeUserAndPermissions(user);
 		}
 	}
 
 	/**
 	 * Creates a Content Type with a title and a binary field ({@code doc}) on the System Host,
-	 * using the System Workflow, that the given user can create and edit content of.
+	 * using the System Workflow, that the given user can create and edit content of with the
+	 * System Workflow Save action.
 	 */
 	private static ContentType createEditableTypeWithBinaryField(final User user)
 			throws DotDataException, DotSecurityException {
@@ -758,8 +760,21 @@ public class ContentletAjaxTest {
 				contentType, systemUser, false);
 		permissionAPI.save(new Permission(Contentlet.class.getCanonicalName(),
 				contentType.getPermissionId(), roleId, permissions, true), contentType, systemUser, false);
+		final WorkflowAction saveAction = APILocator.getWorkflowAPI()
+				.findAction(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, systemUser);
+		permissionAPI.save(new Permission(saveAction.getId(), roleId, PermissionAPI.PERMISSION_USE),
+				saveAction, systemUser, false);
 
 		return contentTypeAPI.find(contentType.id());
+	}
+
+	/**
+	 * Removes the given user and the permissions granted to its personal role.
+	 */
+	private static void removeUserAndPermissions(final User user) throws DotDataException {
+		APILocator.getPermissionAPI().removePermissionsByRole(
+				APILocator.getRoleAPI().getUserRole(user).getId());
+		UserDataGen.remove(user, true);
 	}
 
 	/**
