@@ -110,7 +110,10 @@ Whenever you add integration-test coverage:
    ends with a trailing comma, which Java allows in annotation arrays. It refuses a class
    that is already registered in any suite, refuses a suite name that CI does not run, and refuses
    a JUnit 4 test in the JUnit 5 suite (`Junit5Suite1`) or the reverse, because that would be
-   skipped silently. With no suite argument it exits and asks for one; pick it with step 1.
+   skipped silently. The framework is read from the test-annotation imports (`org.junit.Test` or
+   `org.junit.runner.*` means JUnit 4; `org.junit.jupiter.api.Test`, `ParameterizedTest`,
+   `TestFactory` or `RepeatedTest` means JUnit 5), not from other `org.junit.jupiter` imports such
+   as `Assertions`; a class with both or neither is refused. With no suite argument it exits and asks for one; pick it with step 1.
 
    **Why not append by hand:** an append edits the last line (to add a comma) and inserts after
    it. Any two PRs that append to the same suite therefore conflict in the merge queue, and each
@@ -126,7 +129,8 @@ Whenever you add integration-test coverage:
    is in none of the suites in `.github/test-matrix.yml`. Classes that are intentionally unregistered
    (helpers, classes run elsewhere) go in `dotcms-integration/unregistered-tests.allowlist` with a
    reason; that file was seeded with the classes already unregistered when the check was added, so
-   treat each entry as a test that probably never runs and remove it when you register the class.
+   treat each entry as a test that probably never runs and remove it when you register the class. The check also fails on an allow-list entry whose class is
+   now registered or no longer exists, so the list can only shrink.
 
 Verify the suite still resolves the new class:
 

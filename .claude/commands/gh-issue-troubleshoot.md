@@ -300,8 +300,12 @@ Use Edit (for modifying existing files) or Write (for new files). Apply the appr
 For each new test class created:
 
 1. **Determine the JUnit version** by reading the new file:
-   - Imports `org.junit.platform.*` or `org.junit.jupiter.*` → **JUnit 5**
+   - Imports `org.junit.jupiter.api.Test`, `org.junit.jupiter.params.ParameterizedTest`,
+     `TestFactory` or `RepeatedTest` → **JUnit 5**
    - Imports `org.junit.Test` or `org.junit.runner.*` → **JUnit 4**
+   - Other `org.junit.jupiter` imports (e.g. `Assertions`) do not make a test JUnit 5: many JUnit 4
+     tests use them. `just add-it-test` applies this same rule and refuses a class that has both or
+     neither.
 
 2. **Pick the target suite file** by reading
    `docs/testing/INTEGRATION_TESTS.md` → "Registering Tests in a MainSuite (CI gate)".
@@ -316,7 +320,7 @@ For each new test class created:
        `MainSuite2b` currently holds 302 entries against `MainSuite2a`'s 52, and the suites
        are balanced on wall-clock CI time, which the doc explains how to measure.
 
-3. **Apply the suite edit** using Edit. Add:
+3. **Register the class:**
    Run `just add-it-test <fully.qualified.NewTestClass> <SuiteFileName>` instead of editing the
    suite by hand. It adds a fully qualified entry at the name-derived position with a trailing
    comma (no import); appending to the end of the list causes merge-queue conflicts.
