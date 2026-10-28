@@ -72,12 +72,11 @@ public class VipsResizeImageFilterIntegrationTest {
         }
     }
 
-    /** Checks geometry, alpha and each colour channel against the decoded original, not libvips. */
+    /** Checks geometry, alpha and each colour channel against known Java-generated pixels. */
     @Test
     public void resizePreservesColoursAcrossShrinkBoundary() throws Exception {
-        final File input = source();
-        final BufferedImage original = ImageIO.read(input);
-        assertNotNull("source must decode independently of libvips", original);
+        final BufferedImage original = fixture();
+        final File input = source(original);
         final File output = new File(directory, format + "-" + alpha + "-" + width + "-resized.png");
 
         // Call transform directly: runFilter is allowed to fall back to the legacy engine.
@@ -87,7 +86,8 @@ public class VipsResizeImageFilterIntegrationTest {
         final BufferedImage resized = ImageIO.read(output);
         assertNotNull("resized PNG must decode", resized);
         assertEquals(width, resized.getWidth());
-        assertEquals(width * original.getHeight() / original.getWidth(), resized.getHeight());
+        assertEquals("height for source " + original.getWidth() + "x" + original.getHeight(),
+                width * original.getHeight() / original.getWidth(), resized.getHeight());
         assertEquals(alpha, resized.getColorModel().hasAlpha());
         for (final double horizontal : new double[]{0.25, 0.75}) {
             for (final double vertical : new double[]{0.25, 0.75}) {
@@ -106,7 +106,7 @@ public class VipsResizeImageFilterIntegrationTest {
     }
 
     /** Creates a navy logo region beside a spatially varying RGB gradient with optional alpha. */
-    private File source() throws Exception {
+    private BufferedImage fixture() {
         final int sourceWidth = "webp".equals(format) ? 701 : 1512;
         final int sourceHeight = "webp".equals(format) ? 700 : 1512;
         final BufferedImage image = new BufferedImage(sourceWidth, sourceHeight,
@@ -119,6 +119,11 @@ public class VipsResizeImageFilterIntegrationTest {
                 image.setRGB(x, y, ((alpha ? 128 : 255) << 24) | (red << 16) | (green << 8) | blue);
             }
         }
+        return image;
+    }
+
+    /** Encodes reference pixels without resizing; no WebP ImageIO decoder is used as an oracle. */
+    private File source(final BufferedImage image) throws Exception {
         final File input = new File(directory, format + "-" + alpha + "-" + width + "." + format);
         if ("webp".equals(format)) {
             final File png = new File(directory, input.getName() + ".png");

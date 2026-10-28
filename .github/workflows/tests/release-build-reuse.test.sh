@@ -103,13 +103,17 @@ block_has() {
   fi
 }
 
-# As block_has, but the match must be on an `if:` line. A comment or a `with:`
-# value that merely mentions the flag is not a gate.
+# As block_has, but match only the `if:` value, including folded expressions.
+# A later `with:` value that merely mentions the flag is not a gate.
 block_has_if() {
   local blk; blk="$(step_block "$1" "$2")"
   if [[ -z "$blk" ]]; then
     bad "$4" "step '$2' not found in $(rel "$1")"
-  elif grep -E '^[[:space:]]*if:' <<<"$blk" | grep -Eq -- "$3"; then
+  elif awk '
+    /^[[:space:]]*if:/ { reading = 1; print; next }
+    reading && /^[[:space:]]*[[:alnum:]_-]+:/ { exit }
+    reading { print }
+  ' <<<"$blk" | grep -Eq -- "$3"; then
     ok "$4"
   else
     bad "$4" "no 'if:' in step '$2' matches /$3/"
@@ -1050,6 +1054,8 @@ fi
 
 block_has_if "$TEST_PHASE" "Install native libvips (image engine parity tests)" "matrix.name == 'JVM Unit Tests'" \
   "native libvips setup stays with core tests, not the SAML suite"
+block_has_if "$TEST_PHASE" "Install native libvips (image engine parity tests)" "matrix.test_type == 'integration'.*-Dit.test=MainSuite2a" \
+  "native libvips setup includes the resize integration-test shard"
 
 SAML_SRC="${SAML_POM%/pom.xml}/src/main/java"
 if [[ -d "$SAML_SRC" ]]; then
