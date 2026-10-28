@@ -8,7 +8,6 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
-import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -40,9 +39,9 @@ import org.junit.Test;
 public class ESContentletAPIImplTrailingBackslashQueryTest extends IntegrationTestBase {
 
     private static User systemUser;
-    private static User adminUser;
     private static ContentType contentType;
-    private static User limitedUser;
+    private static User readerUser;
+    private static User otherUser;
     private static Contentlet readable;
     private static Contentlet hidden;
     private static String query;
@@ -51,14 +50,14 @@ public class ESContentletAPIImplTrailingBackslashQueryTest extends IntegrationTe
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
         systemUser = APILocator.systemUser();
-        adminUser = TestUserUtils.getAdminUser();
 
         final Host site = new SiteDataGen().nextPersisted();
         contentType = new ContentTypeDataGen().host(site).nextPersisted();
 
         final Role readerRole = new RoleDataGen().nextPersisted();
         final Role otherRole = new RoleDataGen().nextPersisted();
-        limitedUser = new UserDataGen().roles(readerRole).nextPersisted();
+        readerUser = new UserDataGen().roles(readerRole).nextPersisted();
+        otherUser = new UserDataGen().roles(otherRole).nextPersisted();
 
         readable = publishedContent();
         hidden = publishedContent();
@@ -86,9 +85,9 @@ public class ESContentletAPIImplTrailingBackslashQueryTest extends IntegrationTe
         final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
         final List<String> control = identifiersOf(
-                contentletAPI.search(query, 100, 0, null, limitedUser, false));
+                contentletAPI.search(query, 100, 0, null, readerUser, false));
         final List<String> trailingBackslash = identifiersOf(
-                contentletAPI.search(query + " x\\", 100, 0, null, limitedUser, false));
+                contentletAPI.search(query + " x\\", 100, 0, null, readerUser, false));
 
         assertEquals("the fixture is only meaningful if the user reads exactly one of the two",
                 List.of(readable.getIdentifier()), control);
@@ -97,19 +96,25 @@ public class ESContentletAPIImplTrailingBackslashQueryTest extends IntegrationTe
     }
 
     /**
-     * The same query as an administrator, who is the one caller no clause is appended for, to show
-     * that both contentlets are in the index and that the test above is not passing on an empty
-     * index. The System User is not that caller: it does not hold the administrator role, so it is
-     * narrowed by the owner clause like anybody else.
+     * The mirror image of the test above, run by the user holding the other role. It is what keeps
+     * the pair honest: each user sees their own contentlet and only that one, so neither result can
+     * be explained by content missing from the index. An administrator could not play that part:
+     * no clause is appended for them, so their query reaches the index exactly as written, and one
+     * ending in a lone backslash is rejected as unparseable and comes back empty.
      */
     @Test
-    public void test_queryEndingInBackslash_isNotHidingAnEmptyIndex() throws Exception {
-        final List<String> found = identifiersOf(APILocator.getContentletAPI()
-                .search(query + " x\\", 100, 0, null, adminUser, false));
+    public void test_queryEndingInBackslash_showsEachUserTheirOwnContent() throws Exception {
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
 
-        assertEquals(List.of(hidden.getIdentifier(), readable.getIdentifier()).stream().sorted()
-                        .collect(Collectors.toList()),
-                found);
+        final List<String> control = identifiersOf(
+                contentletAPI.search(query, 100, 0, null, otherUser, false));
+        final List<String> trailingBackslash = identifiersOf(
+                contentletAPI.search(query + " x\\", 100, 0, null, otherUser, false));
+
+        assertEquals("the other contentlet is in the index, readable by the other role",
+                List.of(hidden.getIdentifier()), control);
+        assertEquals("a query ending in a backslash has to match what the same query matches",
+                control, trailingBackslash);
     }
 
     /**
@@ -119,7 +124,7 @@ public class ESContentletAPIImplTrailingBackslashQueryTest extends IntegrationTe
     @Test
     public void test_countOfQueryEndingInBackslash_matchesWhatTheUserCanRead() throws Exception {
         assertEquals(1L,
-                APILocator.getContentletAPI().indexCount(query + " x\\", limitedUser, false));
+                APILocator.getContentletAPI().indexCount(query + " x\\", readerUser, false));
     }
 
     /** The identifiers of the given results, sorted, so two result sets can be compared directly. */
