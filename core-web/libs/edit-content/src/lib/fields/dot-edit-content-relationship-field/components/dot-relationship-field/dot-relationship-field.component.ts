@@ -29,22 +29,17 @@ import {
     ContentTypeRelationshipField,
     DotCMSContentlet,
     DotCMSFieldTypes,
-    DotLanguage,
-    FeaturedFlags
+    DotLanguage
 } from '@dotcms/dotcms-models';
 import {
     DotContentletStatusBadgeComponent,
     DotContentThumbnailComponent,
-    DotMessagePipe,
-    DotSidePanelRef,
-    DotSidePanelService
+    DotMessagePipe
 } from '@dotcms/ui';
 
 import { RelationshipFieldStore } from './../../store/relationship-field.store';
 import { AddRelationshipsComponent } from './../add-relationships/add-relationships.component';
 
-import { loadDotEditContentSidePanel } from '../../../../components/dot-edit-content-side-panel/load-dot-edit-content-side-panel';
-import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
 import { LanguagePipe } from '../../../../pipes/language.pipe';
 import { EDIT_CONTENT_HOST } from '../../../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../../../store/edit-content.store';
@@ -129,20 +124,17 @@ export class DotRelationshipFieldComponent
     }
 
     /**
-     * Presentation port. Related-content navigation is delegated to it so it works
-     * the same in full-screen (router) and dialog (in-place reload).
+     * Presentation port. Opening related content, or creating it, is delegated to it: the host
+     * decides between a panel and an in-place reload, so the field never opens one itself.
      */
     readonly #host = inject(EDIT_CONTENT_HOST);
 
     /**
      * A readonly private field that holds an instance of the DialogService.
      * This service is injected using Angular's dependency injection mechanism.
-     * It is used to manage dialog interactions within the component.
+     * It is used to open the existing-content picker.
      */
     readonly #dialogService = inject(DialogService);
-
-    /** Opens the Edit Content side panel (see {@link openSidePanel}). */
-    readonly #sidePanels = inject(DotSidePanelService);
 
     /**
      * Reference to the dynamic dialog. It can be null if no dialog is currently open.
@@ -150,9 +142,6 @@ export class DotRelationshipFieldComponent
      * @type {DynamicDialogRef | null}
      */
     #dialogRef: DynamicDialogRef | null = null;
-
-    /** The side panel this field opened, while it is open (side-panel mode), or `null`. */
-    #sidePanel: DotSidePanelRef | null = null;
 
     /**
      * A signal that holds the menu items for the relationship field.
@@ -287,22 +276,21 @@ export class DotRelationshipFieldComponent
     }
 
     /**
-     * Opens the editor for a related content, restoring the legacy editor's
-     * related-content navigation.
+     * Asks the editor's host to open a related content for editing (#38303, R8). The host decides
+     * how: over the full-screen editor it opens a panel, so the editor stays mounted with its
+     * unsaved edits; inside a panel it replaces the panel's content in place, with a breadcrumb.
      *
-     * From the **full-screen** editor it does not navigate at all: the content opens in a side
-     * panel over the editor, which therefore stays mounted with its edits intact (see
-     * {@link opensInSidePanel}).
-     *
-     * From **inside a panel** it navigates: the host reloads in place and the current content is
-     * seeded as the origin of the trail, so the breadcrumb shows the full path.
+     * The field names the breadcrumb's origin (`from`), since inside a panel only the field knows
+     * what it is showing: the current content, or, for an unsaved new translation (no inode yet),
+     * the version the translation came from. Without a usable origin, or when the origin is the
+     * item itself, it names none and the host starts a fresh trail.
      *
      * No-op when navigation is disabled (a disabled field), when the item has no
      * inode, or when it points at the content already open.
      *
      * @param item The related contentlet whose title was clicked.
      */
-    async openRelated(item: DotCMSContentlet): Promise<void> {
+    openRelated(item: DotCMSContentlet): void {
         if (!this.$canNavigate() || !item?.inode) {
             return;
         }
@@ -313,64 +301,58 @@ export class DotRelationshipFieldComponent
             return;
         }
 
-        // From the full-screen editor, related content opens in a side panel over it instead of
-        // navigating away (see {@link opensInSidePanel}).
-        if (this.#opensInSidePanel()) {
-            this.#openSidePanel({
-                mode: 'edit',
-                contentletInode: item.inode,
-                title: item.title ?? '',
-                onContentSaved: (contentlet) => this.#refreshRelatedItem(contentlet)
-            });
-
-            return;
-        }
-
-        // The current content may have no inode yet — an unsaved new translation
-        // (locale switch → populate/manual). In that case seed the trail with the
-        // version we came from (translationSourceInode) as the origin.
-        const originInode = current?.inode ?? this.#editContentStore.translationSourceInode();
-
-        // No usable origin (or it is the target itself): start a fresh trail.
-        if (!originInode || originInode === item.inode) {
-            this.#host.goToCrumb(item.inode, [item.inode]);
-            return;
-        }
-
-        // Only label the origin crumb with the current content's title when the
-        // origin IS the current content. For a new translation the origin is the
-        // source version (translationSourceInode), a different content, so don't
-        // relabel it with the translation's title — pass '' and let the source's
-        // already-cached title stand (registerTitle ignores empty titles).
-        const originTitle = originInode === current?.inode ? (current?.title ?? '') : '';
-
-        this.#host.goToRelatedContent(
-            { inode: originInode, title: originTitle },
-            { inode: item.inode, title: item.title ?? '' }
-        );
+        this.#host.openContent({
+            request: { mode: 'edit', inode: item.inode, title: item.title ?? '' },
+            source: 'relationship',
+            from: this.#relatedOrigin(item.inode),
+            onSaved: (contentlet) => this.#refreshRelatedItem(contentlet)
+        });
     }
 
     /**
-     * Whether related content opens in a side panel instead of navigating. Decided purely by
-     * where this editor is presented:
+     * The origin of the in-place breadcrumb when the author opens `targetInode` from this field:
+     * the content open in the editor, or, for an unsaved new translation, the version it came from
+     * (`translationSourceInode`). Undefined when there is none, or when it is the target itself,
+     * which tells the host to start a fresh trail.
      *
-     * - **Full-screen** — always the panel. Navigating away would unmount the editor and discard
-     *   whatever is unsaved in it, which is what made "create content from this field, then open
-     *   it" impossible: the new relation lives only in that unsaved form. The panel opens over
-     *   the editor, so it stays mounted and closing the panel returns to it untouched. Nothing
-     *   stacks here — the layer underneath is a route, not a panel.
-     * - **Inside a panel** — never. That context navigates in place and builds its own crumb
-     *   trail, so related content is reached through the breadcrumb rather than a second panel
-     *   on top of the first.
-     *
-     * Without the side panel flag there is no panel to open, so the previous navigation (and its
-     * unsaved-changes prompt) stands.
+     * The origin is labeled with the current content's title only when it IS the current content.
+     * The source version of a translation is another content: it gets an empty title, so its
+     * already-cached title stands (`registerTitle` ignores empty titles).
      */
-    #opensInSidePanel(): boolean {
-        const sidePanelEnabled =
-            this.store.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] ?? false;
+    #relatedOrigin(targetInode: string): { inode: string; title: string } | undefined {
+        const current = this.#editContentStore.contentlet();
+        const originInode = current?.inode ?? this.#editContentStore.translationSourceInode();
 
-        return sidePanelEnabled && !this.#host.inPlaceNavigation;
+        if (!originInode || originInode === targetInode) {
+            return undefined;
+        }
+
+        return {
+            inode: originInode,
+            title: originInode === current?.inode ? (current?.title ?? '') : ''
+        };
+    }
+
+    /**
+     * Places each save of content created from this field: the first save adds the row, later
+     * saves of the same content refresh it (FR-030). The panel the host opens reports every save,
+     * not only the last, so adding on each one would list the same content several times.
+     *
+     * Adding goes through `setData`, a user change that dirties the form, since relating new
+     * content is an edit to the relationship. Refreshing goes through `refreshItem`, a load.
+     */
+    #upsertRelatedItem(contentlet: DotCMSContentlet): void {
+        const listed = this.store
+            .data()
+            .some((item) => item.identifier === contentlet.identifier);
+
+        if (listed) {
+            this.#refreshRelatedItem(contentlet);
+
+            return;
+        }
+
+        this.store.setData([...this.store.data(), this.#withResolvedLanguage(contentlet)]);
     }
 
     /**
@@ -532,93 +514,38 @@ export class DotRelationshipFieldComponent
     }
 
     /**
-     * Opens the new-content editor for creating content and relating it. When the side panel
-     * feature flag is on it opens the right slide-in panel; otherwise the centered dialog (the
-     * previous behavior). Both share the same {@link EditContentDialogData}: `onContentSaved`
-     * adds the created contentlet to this relationship.
+     * Asks the editor's host to create content of the related type, joined to this relationship
+     * (#38303, R8). The host opens the panel (over the full-screen editor, or stacked over the
+     * panel this editor is in); the field only places what it saves, on every save
+     * ({@link upsertRelatedItem}).
+     *
+     * The menu item that calls this stays disabled for a related type on the legacy editor.
      */
-    async showCreateNewContentDialog(): Promise<void> {
+    showCreateNewContentDialog(): void {
         const contentType = this.store.contentType();
         const relationships = this.store.relationships();
         if (this.$isDisabled() || !contentType || !relationships) {
             return;
         }
 
-        const dialogData: EditContentDialogData = {
-            mode: 'new',
-            contentTypeId: contentType.id,
-            title: this.#dotMessageService.get(
-                'contenttypes.content.create.contenttype',
-                contentType.name
-            ),
-            relationshipInfo: {
-                parentContentletId: this.$contentlet()?.inode,
-                relationshipName: this.$field()?.variable,
-                // The descriptor `prepareField` published, which already applied the parent-side
-                // default for a payload that omitted the flag. This used to re-apply `?? true`
-                // over the raw field, in a second place, from data nothing had checked.
-                isParent: relationships.isParentField
+        this.#host.openContent({
+            request: {
+                mode: 'new',
+                contentType: contentType.variable,
+                title: this.#dotMessageService.get(
+                    'contenttypes.content.create.contenttype',
+                    contentType.name
+                ),
+                relationship: {
+                    parentContentletId: this.$contentlet()?.inode,
+                    relationshipName: this.$field()?.variable,
+                    // The descriptor `prepareField` published, which already applied the
+                    // parent-side default for a payload that omitted the flag.
+                    isParent: relationships.isParentField
+                }
             },
-            onContentSaved: (contentlet: DotCMSContentlet) => {
-                // Add the created contentlet to the relationship
-                const currentData = this.store.data();
-                this.store.setData([...currentData, this.#withResolvedLanguage(contentlet)]);
-            }
-        };
-
-        // Read the flag from the store's `withFlags` slice (batch-fetched once on store init).
-        // Read at click time, not construction: this component is created lazily and deep in the
-        // editor, but the store's init fetch has run long before the user clicks, so `flags()` is
-        // resolved by now. If it somehow isn't (empty slice ⇒ `undefined`), fall back to the dialog
-        // (previous behavior) — the safe default.
-        const sidePanelEnabled =
-            this.store.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] ?? false;
-
-        if (sidePanelEnabled) {
-            this.#openSidePanel(dialogData);
-
-            return;
-        }
-
-        const { DotEditContentDialogComponent } =
-            await import('../../../../components/dot-create-content-dialog/dot-create-content-dialog.component');
-
-        this.#dialogRef = this.#dialogService.open(DotEditContentDialogComponent, {
-            appendTo: 'body',
-            baseZIndex: 10000,
-            closable: true,
-            closeOnEscape: true,
-            draggable: false,
-            keepInViewport: true,
-            modal: true,
-            resizable: true,
-            position: 'center',
-            width: '95%',
-            height: '95%',
-            maskStyleClass: 'p-dialog-mask-dynamic p-dialog-create-content',
-            style: { 'max-width': '1400px', 'max-height': '900px' },
-            data: dialogData,
-            header: dialogData.title
-        });
-    }
-
-    /**
-     * Opens the Edit Content side panel over the editor, replacing one this field already has open.
-     * The content is loaded on demand ({@link loadDotEditContentSidePanel}), which also avoids a
-     * static module cycle: side panel → layout → form → field → this component. The panel fires
-     * `dialogData.onContentSaved` (last save) and `dialogData.onCancel` when it closes, and closes
-     * with this field.
-     *
-     * Shared by both entry points: creating content to relate ({@link showCreateNewContentDialog})
-     * and opening an already-related content without leaving the full-screen editor
-     * ({@link openRelated}) — in both cases the editor behind the panel stays mounted.
-     */
-    #openSidePanel(dialogData: EditContentDialogData): void {
-        this.#sidePanel?.close();
-        this.#sidePanel = this.#sidePanels.open(loadDotEditContentSidePanel(), {
-            heading: dialogData.title ?? '',
-            inputs: { data: dialogData },
-            injector: this.#injector
+            source: 'relationship',
+            onSaved: (contentlet) => this.#upsertRelatedItem(contentlet)
         });
     }
 
