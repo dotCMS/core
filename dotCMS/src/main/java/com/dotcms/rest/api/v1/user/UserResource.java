@@ -27,6 +27,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.LoginAsSession;
 import com.dotmarketing.business.NoSuchUserException;
@@ -443,7 +444,10 @@ public class UserResource implements Serializable {
 		operationId = "filterUsers",
 		summary = "Filter users",
 		description = "Returns a list of dotCMS users based on specified search criteria with pagination support. "
-				+ "Each item is the user's data map. When `includeRoles=true` is passed, each item additionally "
+				+ "Each item is the user's data map. CMS Administrators and users with access to the Users portlet "
+				+ "receive the complete map; any other back-end user receives only the directory fields of each user "
+				+ "(`userId`, `id`, `firstName`, `lastName`, `fullName`, `name`, `emailAddress`, `emailaddress`, "
+				+ "`gravitar`, `type`). When `includeRoles=true` is passed, each item additionally "
 				+ "carries a `roles` array listing the user's directly assigned roles as `{id, name, roleKey}` "
 				+ "objects (`roleKey` may be null for roles created without a key); roles held through the role "
 				+ "hierarchy and the user's personal role are not included. Requesting roles requires being a CMS "
@@ -560,9 +564,10 @@ public class UserResource implements Serializable {
 	 * @throws DotDataException An error occurred when resolving the User's portlet access.
 	 */
 	private boolean isRoleAdministrator(final User user) throws DotDataException {
+		final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		return user.isAdmin() ||
-				(APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user) &&
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), user));
+				(layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user) &&
+						layoutAPI.doesUserHaveAccessToUsersPortlet(user));
 	}
 
 	/**
@@ -706,11 +711,7 @@ public class UserResource implements Serializable {
         final User modUser = initData.getUser();
 
         Logger.debug(this, ()-> "Finding the user by id: " + userId);
-        final boolean isRoleAdministrator = modUser.isAdmin() ||
-                (
-                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-                                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-                );
+        final boolean isRoleAdministrator = this.isRoleAdministrator(modUser);
 
         if (isRoleAdministrator) {
 
@@ -1158,7 +1159,7 @@ public class UserResource implements Serializable {
 		final List<Role> rolesToGrant = new ArrayList<>();
 		for (final String roleEntry : roleEntries) {
 
-			final Role role = this.resolveRole(roleEntry);
+			final Role role = this.roleAPI.loadRoleByKeyOrId(roleEntry);
 			if (null == role) {
 				Logger.debug(this, ()-> "Role '" + roleEntry + "' (key or id) does NOT exist in dotCMS. Ignoring it...");
 				continue;
@@ -1299,11 +1300,7 @@ public class UserResource implements Serializable {
 				.rejectWhenNoUser(true)
 				.init().getUser();
 
-		final boolean isRoleAdministrator = modUser.isAdmin() ||
-				(
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-								APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-				);
+		final boolean isRoleAdministrator = this.isRoleAdministrator(modUser);
 
 		if (isRoleAdministrator) {
 
@@ -1376,11 +1373,7 @@ public class UserResource implements Serializable {
 
         Logger.debug(this, ()-> "Activating user: " + modUser.getUserId());
 
-        final boolean isRoleAdministrator = modUser.isAdmin() ||
-                (
-                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-                                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-                );
+        final boolean isRoleAdministrator = this.isRoleAdministrator(modUser);
 
         if (isRoleAdministrator) {
 
@@ -1459,11 +1452,7 @@ public class UserResource implements Serializable {
 
         Logger.debug(this, ()-> "Deactivating user: " + modUser.getUserId());
 
-        final boolean isRoleAdministrator = modUser.isAdmin() ||
-                (
-                        APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-                                APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-                );
+        final boolean isRoleAdministrator = this.isRoleAdministrator(modUser);
 
         if (isRoleAdministrator) {
 
@@ -1603,17 +1592,6 @@ public class UserResource implements Serializable {
 	}
 
     /**
-     * Resolves a {@code roles} payload entry to a {@link Role}: by key first (legacy precedence),
-     * then by ID. Returns {@code null} when neither matches. Roles created in the Roles portlet may
-     * have no key, so the ID form is the only way to reference them (#37209).
-     */
-    private Role resolveRole(final String keyOrId) throws DotDataException {
-
-        final Role byKey = this.roleAPI.loadRoleByKey(keyOrId);
-        return null != byKey ? byKey : this.roleAPI.loadRoleById(keyOrId);
-    }
-
-    /**
      * The roles an update would add to and remove from a user.
      *
      * @param toAdd    User-assignable roles the user does not hold yet. Decides whether the update
@@ -1665,7 +1643,7 @@ public class UserResource implements Serializable {
         final List<Role> desiredRoles = new ArrayList<>();
         for (final String roleEntry : roleEntries) {
 
-            final Role role = this.resolveRole(roleEntry);
+            final Role role = this.roleAPI.loadRoleByKeyOrId(roleEntry);
             if (null != role) {
                 desiredRoles.add(role);
             } else {
@@ -1801,11 +1779,7 @@ public class UserResource implements Serializable {
 		Logger.debug(this, ()-> "Deleting user " + userIdToDelete + " by the user id " + modUser.getUserId()
 				+ " will the replacement: " + replacementUserId);
 
-		final boolean isRoleAdministrator = modUser.isAdmin() ||
-				(
-						APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), modUser) &&
-								APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.USERS.toString(), modUser)
-				);
+		final boolean isRoleAdministrator = this.isRoleAdministrator(modUser);
 
 		if (isRoleAdministrator) {
 
