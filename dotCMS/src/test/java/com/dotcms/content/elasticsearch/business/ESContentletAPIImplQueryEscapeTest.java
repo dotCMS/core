@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.dotmarketing.business.Role;
-import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import java.util.List;
 import org.junit.Test;
@@ -19,8 +18,6 @@ import org.mockito.Mockito;
  * unbalanced escape would otherwise consume.
  */
 public class ESContentletAPIImplQueryEscapeTest {
-
-    private static final String SECONDARY_CATEGORY_CHECK = "PERMISSION_SECONDARY_CATEGORY_CHECK";
 
     private static String balanced(final String query) {
         final StringBuffer buffy = new StringBuffer(query);
@@ -91,19 +88,16 @@ public class ESContentletAPIImplQueryEscapeTest {
         final Role role = Mockito.mock(Role.class);
         Mockito.when(role.getId()).thenReturn("r1");
 
-        final boolean previous = Config.getBooleanProperty(SECONDARY_CATEGORY_CHECK, true);
-        Config.setProperty(SECONDARY_CATEGORY_CHECK, true);
-        try {
-            // The real method runs without the constructor, which would reach out to the APILocator
-            final ESContentletAPIImpl contentletAPI =
-                    Mockito.mock(ESContentletAPIImpl.class, Mockito.CALLS_REAL_METHODS);
-            final StringBuffer buffy = new StringBuffer("+contentType:Blog x\\");
-            contentletAPI.addCategoryPermissionsToQuery(buffy, user, List.of(role), false);
+        // PERMISSION_SECONDARY_CATEGORY_CHECK, which the method self-guards on, is set in no
+        // properties file in this repository, so it holds its default of true and this test does
+        // not have to touch global configuration to reach the append
+        // The real method runs without the constructor, which would reach out to the APILocator
+        final ESContentletAPIImpl contentletAPI =
+                Mockito.mock(ESContentletAPIImpl.class, Mockito.CALLS_REAL_METHODS);
+        final StringBuffer buffy = new StringBuffer("+contentType:Blog x\\");
+        contentletAPI.addCategoryPermissionsToQuery(buffy, user, List.of(role), false);
 
-            assertTrue("the clause must not be folded into the caller's last term: " + buffy,
-                    buffy.toString().startsWith("+contentType:Blog x\\\\ +(categoryperms:r1"));
-        } finally {
-            Config.setProperty(SECONDARY_CATEGORY_CHECK, previous);
-        }
+        assertTrue("the clause must not be folded into the caller's last term: " + buffy,
+                buffy.toString().startsWith("+contentType:Blog x\\\\ +(categoryperms:r1"));
     }
 }
