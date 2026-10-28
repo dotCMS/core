@@ -299,14 +299,35 @@ describe('OverlayEditContentHost', () => {
                 openContent(host, {
                     request: { mode: 'edit', inode: 'inode-b', title: 'B' },
                     source: 'relationship',
+                    from: { inode: 'inode-a', title: 'A' },
                     onSaved: vi.fn()
                 });
 
                 expect(goToRelatedContent).toHaveBeenCalledTimes(1);
+                // The origin is the field's: inside a panel only the field knows what it shows.
+                expect(goToRelatedContent.mock.calls[0][0]).toEqual({
+                    inode: 'inode-a',
+                    title: 'A'
+                });
                 expect(goToRelatedContent.mock.calls[0][1]).toEqual({
                     inode: 'inode-b',
                     title: 'B'
                 });
+                expect(opened().mock.calls.length).toBe(0);
+            });
+
+            it('starts a fresh trail in place when the field names no origin', () => {
+                const goToRelatedContent = vi.spyOn(host, 'goToRelatedContent');
+                const goToCrumb = vi.spyOn(host, 'goToCrumb');
+
+                openContent(host, {
+                    request: { mode: 'edit', inode: 'inode-b', title: 'B' },
+                    source: 'relationship',
+                    onSaved: vi.fn()
+                });
+
+                expect(goToCrumb).toHaveBeenCalledWith('inode-b', ['inode-b']);
+                expect(goToRelatedContent).not.toHaveBeenCalled();
                 expect(opened().mock.calls.length).toBe(0);
             });
         });
