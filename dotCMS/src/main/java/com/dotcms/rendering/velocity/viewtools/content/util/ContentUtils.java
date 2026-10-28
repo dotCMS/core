@@ -245,11 +245,13 @@ public class ContentUtils {
                     final String formatedDate = ESMappingAPIImpl.datetimeFormat.format(futureDate);
 
                     final String notExpired = " +expdate:[" + formatedDate + " TO 29990101000000] ";
-                    final String workingQuery = query + " +working:true " +
+                    // The clauses go before the caller's query: after it, a query ending in
+                    // an unbalanced escape would consume the space that separates the two.
+                    final String workingQuery = "+working:true " +
                             "+pubdate:[" + ESMappingAPIImpl.datetimeFormat.format(new Date())
                             +
-                            " TO " + formatedDate + "] " + notExpired;
-                    final String liveQuery = query + " +live:true " + notExpired;
+                            " TO " + formatedDate + "]" + notExpired + query;
+                    final String liveQuery = "+live:true" + notExpired + query;
 		            
 		            final PaginatedArrayList<Contentlet> workingContent = (PaginatedArrayList<Contentlet>)conAPI.search(workingQuery, limit, offset, sort, user, respectFrontendRoles);
                     final PaginatedArrayList<Contentlet> liveContent = (PaginatedArrayList<Contentlet>)conAPI.search(liveQuery, limit, offset, sort, user, respectFrontendRoles);

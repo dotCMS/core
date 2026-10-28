@@ -39,7 +39,10 @@ import org.junit.Test;
 public class ESContentletAPIImplTrailingBackslashQueryTest extends IntegrationTestBase {
 
     private static User systemUser;
+    private static Host site;
     private static ContentType contentType;
+    private static Role readerRole;
+    private static Role otherRole;
     private static User readerUser;
     private static User otherUser;
     private static Contentlet readable;
@@ -51,11 +54,11 @@ public class ESContentletAPIImplTrailingBackslashQueryTest extends IntegrationTe
         IntegrationTestInitService.getInstance().init();
         systemUser = APILocator.systemUser();
 
-        final Host site = new SiteDataGen().nextPersisted();
+        site = new SiteDataGen().nextPersisted();
         contentType = new ContentTypeDataGen().host(site).nextPersisted();
 
-        final Role readerRole = new RoleDataGen().nextPersisted();
-        final Role otherRole = new RoleDataGen().nextPersisted();
+        readerRole = new RoleDataGen().nextPersisted();
+        otherRole = new RoleDataGen().nextPersisted();
         readerUser = new UserDataGen().roles(readerRole).nextPersisted();
         otherUser = new UserDataGen().roles(otherRole).nextPersisted();
 
@@ -67,11 +70,22 @@ public class ESContentletAPIImplTrailingBackslashQueryTest extends IntegrationTe
         query = "+contentType:" + contentType.variable() + " +live:true +deleted:false";
     }
 
+    /**
+     * Removes everything {@link #prepare()} created, in reverse order of creation, so nothing of
+     * this test's is left behind in the database the rest of the suite shares. Deleting a role
+     * empties the role cache, which is why this class is registered last in its suite.
+     */
     @AfterClass
-    public static void cleanUp() {
+    public static void cleanUp() throws Exception {
         ContentletDataGen.destroy(hidden, true);
         ContentletDataGen.destroy(readable, true);
         ContentTypeDataGen.remove(contentType, true);
+        UserDataGen.remove(otherUser);
+        UserDataGen.remove(readerUser);
+        RoleDataGen.remove(otherRole);
+        RoleDataGen.remove(readerRole);
+        APILocator.getHostAPI().archive(site, systemUser, false);
+        APILocator.getHostAPI().delete(site, systemUser, false);
     }
 
     /**
