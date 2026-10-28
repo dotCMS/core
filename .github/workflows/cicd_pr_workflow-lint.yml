@@ -93,6 +93,12 @@ jobs:
       - name: Lint changed workflow files
         run: |
           set -uo pipefail
+          # Fail closed: without a merge commit HEAD^1 is the previous commit
+          # and only that commit would be linted.
+          if ! git rev-parse --verify --quiet HEAD^2 >/dev/null; then
+            echo "::error::expected a pull request merge commit as HEAD, cannot determine the PR diff"
+            exit 1
+          fi
           mapfile -t changed < <(
             git diff --name-only --diff-filter=d HEAD^1 HEAD -- \
               '.github/workflows/*.yml' '.github/workflows/*.yaml'
