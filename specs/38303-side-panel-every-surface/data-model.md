@@ -61,6 +61,8 @@ What a field hands its host when it wants other content opened.
 |---|---|---|---|
 | `request` | `DotEditContentRequest` | yes | An edit request for an existing item or a create request for "create new" |
 | `onSaved` | `(contentlet: DotCMSContentlet) => void` | no | Called on every `saved` of the panel the host opens. The Relationship field treats it as an upsert by identifier: add the row once, refresh it on later saves |
+| `source` | `'relationship' \| 'block-editor'` | no | Who asked. Only a Relationship-field edit replaces in place inside a panel; anything else, or no source, stacks |
+| `from` | `{ inode; title }` | no | The content the field is showing, for the in-place breadcrumb. The field computes it (an unsaved translation names its source version). Absent → fresh trail |
 
 Host decision:
 
