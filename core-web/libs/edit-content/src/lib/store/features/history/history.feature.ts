@@ -166,6 +166,11 @@ export function withHistory() {
                     )
                 );
 
+                /**
+                 * Brings an older version back as the working version, reports it to the host as
+                 * a save, then shows it. On a failed restore nothing is reported.
+                 * @param inode - The inode of the version to restore
+                 */
                 const restoreVersion = rxMethod<string>(
                     pipe(
                         switchMap((inode) => {
@@ -174,9 +179,14 @@ export function withHistory() {
                             return dotVersionableService.bringBack(inode).pipe(
                                 tapResponse({
                                     next: (restoredVersion) => {
-                                        // Navigate to the restored version. The host decides how:
+                                        // A restored version is a save (#38303): report it first,
+                                        // so whoever opened the editor refreshes. The full-screen
+                                        // host ignores it.
+                                        host.reportSaved(restoredVersion);
+
+                                        // Then show the restored version. The host decides how:
                                         // the full-screen host navigates when the inode changed;
-                                        // the dialog host stays in place (no-op).
+                                        // an overlay reloads the editor in place.
                                         host.goToRestoredVersion(
                                             restoredVersion.inode,
                                             currentContentlet?.inode
