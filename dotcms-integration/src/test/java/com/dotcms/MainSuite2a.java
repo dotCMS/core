@@ -3,7 +3,6 @@ package com.dotcms;
 import com.dotcms.analytics.ContentAnalyticsPersistenceModeIT;
 import com.dotcms.rest.api.v1.analytics.event.EventAnalyticsProxyResourceIntegrationTest;
 import com.dotcms.business.interceptor.InterceptorHandlerTest;
-import com.dotcms.cms.login.LoginTokenInvalidationTest;
 import com.dotcms.enterprise.publishing.remote.handler.FolderHandlerTest;
 import com.dotcms.enterprise.rules.RulesAPIImplParentChecksIntegrationTest;
 import com.dotcms.inference.rest.ChatCompletionsStreamingTest;
@@ -126,6 +125,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcherTest.class,
         com.dotcms.rest.AuditPublishingResourceTest.class,
         com.dotmarketing.portlets.hostvariable.bussiness.HostVariableAPIImplTest.class,
+        com.dotcms.cms.login.LoginTokenInvalidationTest.class,
         MaintenanceResourceIntegrationTest.class,
         FolderHandlerTest.class,
         ContentAnalyticsPersistenceModeIT.class,
@@ -147,8 +147,7 @@ import org.junit.runners.Suite.SuiteClasses;
         CMSUserToolTest.class,
         UserJsViewToolTest.class,
         com.dotcms.rest.BundleResourceDeleteResponseTest.class,
-        ContentRelationshipsResourceIntegrationTest.class,
-        LoginTokenInvalidationTest.class
+        ContentRelationshipsResourceIntegrationTest.class
 })
 public class MainSuite2a {
 
