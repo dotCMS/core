@@ -405,7 +405,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 expect(fieldComponent.$isDisabled()).toBe(false);
                 expect(store.contentType()).toEqual(mockContentType);
 
-                fieldComponent.showCreateNewContentDialog();
+                fieldComponent?.showCreateNewContentDialog();
                 spectator.flushEffects();
 
                 expect(openContent).toHaveBeenCalledTimes(1);
@@ -459,7 +459,7 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 const setDataSpy = vi.spyOn(store, 'setData');
 
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
-                fieldComponent.showCreateNewContentDialog();
+                fieldComponent?.showCreateNewContentDialog();
                 spectator.flushEffects();
 
                 const [{ onSaved }] = openContent.mock.calls[0];
