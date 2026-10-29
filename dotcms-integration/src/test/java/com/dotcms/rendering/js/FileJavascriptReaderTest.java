@@ -174,7 +174,8 @@ public class FileJavascriptReaderTest {
         final Contentlet saved = APILocator.getContentletAPI().checkin(checkout, editor, false);
         APILocator.getContentletAPI().publish(saved, editor, false);
 
-        assertEquals(editor.getUserId(), saved.getModUser());
+        assertEquals("the file should have been saved as the editor",
+                editor.getUserId(), saved.getModUser());
     }
 
     /**

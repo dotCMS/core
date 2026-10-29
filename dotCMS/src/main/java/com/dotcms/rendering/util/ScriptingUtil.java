@@ -26,6 +26,7 @@ public class ScriptingUtil {
 
     public static final String IDENTIFIER = "identifier";
     public static final String ESCAPE_ME_VALUE= " THIS_ESCAPES_LINE_BREAKS ";
+    private static final String REQUIRED_ROLE_MESSAGE = "The file was not saved by a user with the required role";
 
     private static class SingletonHolder {
         private static final ScriptingUtil INSTANCE = new ScriptingUtil();
@@ -119,19 +120,37 @@ public class ScriptingUtil {
             throws DotSecurityException, DotDataException {
 
         final String modUserId = scriptFile.getModUser();
-        final User modUser = UtilMethods.isSet(modUserId)
-                ? Try.of(() -> APILocator.getUserAPI()
-                        .loadUserById(modUserId, APILocator.systemUser(), false)).getOrNull()
-                : null;
+        if (!UtilMethods.isSet(modUserId)) {
+            Logger.warn(this, String.format("File %s was not run: it has no last modifier",
+                    scriptFile.getIdentifier()));
+            throw new DotSecurityException(REQUIRED_ROLE_MESSAGE);
+        }
+
+        final Try<User> loadedUser = Try.of(() -> APILocator.getUserAPI()
+                .loadUserById(modUserId, APILocator.systemUser(), false));
+        if (loadedUser.isFailure()) {
+            Logger.warnAndDebug(ScriptingUtil.class, String.format(
+                    "File %s was not run: its last modifier '%s' could not be loaded: %s",
+                    scriptFile.getIdentifier(), modUserId, loadedUser.getCause().getMessage()),
+                    loadedUser.getCause());
+            throw new DotSecurityException(REQUIRED_ROLE_MESSAGE);
+        }
+        final User modUser = loadedUser.get();
+        if (null == modUser) {
+            Logger.warn(this, String.format("File %s was not run: its last modifier '%s' was not found",
+                    scriptFile.getIdentifier(), modUserId));
+            throw new DotSecurityException(REQUIRED_ROLE_MESSAGE);
+        }
+
         final Role scriptingDeveloper = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);
-        final boolean canScript = null != modUser && (modUser.isAdmin()
-                || APILocator.getRoleAPI().doesUserHaveRole(modUser, scriptingDeveloper));
+        final boolean canScript = modUser.isAdmin()
+                || APILocator.getRoleAPI().doesUserHaveRole(modUser, scriptingDeveloper);
 
         if (!canScript) {
             Logger.warn(this, String.format(
                     "File %s was not run: its last modifier '%s' does not hold the %s role",
                     scriptFile.getIdentifier(), modUserId, Role.SCRIPTING_DEVELOPER));
-            throw new DotSecurityException("The file was not saved by a user with the required role");
+            throw new DotSecurityException(REQUIRED_ROLE_MESSAGE);
         }
     }
 }
