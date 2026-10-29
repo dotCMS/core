@@ -3,11 +3,16 @@
  */
 export const iFramesLocators = {
     main_iframe: 'iframe[name="detailFrame"]',
-    dot_iframe: 'dot-iframe-dialog iframe[name="detailFrame"]',
+    /**
+     * The legacy editor's iframe inside the side panel, the only place content is edited outside
+     * the full-screen route since #38303. The panel renders it through the generic legacy-screen
+     * panel, hence the test id. Pass it to `frameLocator()` scoped to one panel when several are
+     * open.
+     */
+    legacy_editor_iframe: '[data-testid="legacy-screen-iframe"]',
     wysiwygFrame:
         'iframe[title="Rich Text Area\\. Press ALT-F9 for menu\\. Press ALT-F10 for toolbar\\. Press ALT-0 for help"]',
-    dataTestId: '[data-testid="iframe"]',
-    dot_edit_iframe: 'dot-edit-contentlet iframe[name="detailFrame"]'
+    dataTestId: '[data-testid="iframe"]'
 };
 
 /**

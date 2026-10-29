@@ -3,7 +3,7 @@ import { Mock, vi } from 'vitest';
 
 import { Injector } from '@angular/core';
 
-import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotSidePanelRef } from '@dotcms/ui';
@@ -51,7 +51,6 @@ describe('OverlayEditContentHost', () => {
                 registerTitle: vi.fn()
             }),
             mockProvider(DynamicDialogConfig, { data: undefined }),
-            mockProvider(DynamicDialogRef, { close: vi.fn() }),
             mockProvider(DotEditContentOpenerService, {
                 open: vi.fn(() => new DotSidePanelRef(() => undefined))
             })
@@ -88,24 +87,32 @@ describe('OverlayEditContentHost', () => {
         });
 
         // The UVE opens the editor on an experiment variant (#38303, FR-022).
-        it('carries the experiment variant from the dialog config', () => {
-            config.data = { contentletInode: 'inode-9', variantName: 'variant-a' };
+        it('carries the experiment variant from the request', () => {
+            config.data = { mode: 'edit', inode: 'inode-9', variantName: 'variant-a' };
             expect(host.resolveIdentity()).toEqual(
                 expect.objectContaining({ inode: 'inode-9', variantName: 'variant-a' })
             );
         });
 
-        it('maps contentletInode and contentTypeId from the dialog config', () => {
-            config.data = { contentletInode: 'inode-9', contentTypeId: 'Blog' };
+        // The side panel puts its request on the config (#38303).
+        it('maps the inode and the content type from the request', () => {
+            config.data = { mode: 'edit', inode: 'inode-9', contentType: 'Blog' };
             expect(host.resolveIdentity()).toEqual({
                 inode: 'inode-9',
                 contentTypeId: 'Blog'
             });
         });
 
+        it('names no inode for a create, even if the request carries one', () => {
+            config.data = { mode: 'new', inode: 'stale-inode', contentType: 'Blog' };
+            expect(host.resolveIdentity()).toEqual(
+                expect.objectContaining({ inode: undefined, contentTypeId: 'Blog' })
+            );
+        });
+
         // Content Drive starts a create in the language the list is filtered by (#37759, FR-003).
         it('carries the language the opener asked the content to start in', () => {
-            config.data = { mode: 'new', contentTypeId: 'Blog', languageId: 2 };
+            config.data = { mode: 'new', contentType: 'Blog', languageId: 2 };
 
             expect(host.resolveIdentity()).toEqual(
                 expect.objectContaining({ contentTypeId: 'Blog', languageId: 2 })
@@ -114,13 +121,7 @@ describe('OverlayEditContentHost', () => {
     });
 
     describe('leaveDeletedContent', () => {
-        it('closes a DialogService dialog through its ref', () => {
-            host.leaveDeletedContent('SimpleWidget');
-
-            expect(spectator.inject(DynamicDialogRef).close).toHaveBeenCalled();
-        });
-
-        it('emits left$ so overlays without a dialog ref (side panel) can close', () => {
+        it('emits left$ so the side panel can close', () => {
             const leftSpy = vi.fn();
             host.left$.subscribe(leftSpy);
 
@@ -401,29 +402,5 @@ describe('OverlayEditContentHost', () => {
                 expect(goToRelatedContent).not.toHaveBeenCalled();
             });
         });
-    });
-});
-
-describe('OverlayEditContentHost without a dialog ref (side panel injector)', () => {
-    const createHostWithoutRef = createServiceFactory({
-        service: OverlayEditContentHost,
-        providers: [
-            mockProvider(DotRelatedContentNavigationStore, {
-                appendToTrail: vi.fn(),
-                titleCache: vi.fn().mockReturnValue({}),
-                registerTitle: vi.fn()
-            }),
-            mockProvider(DynamicDialogConfig, { data: undefined }),
-            mockProvider(DotEditContentOpenerService)
-        ]
-    });
-
-    it('still emits left$ and does not throw', () => {
-        const hostWithoutRef = createHostWithoutRef().service;
-        const leftSpy = vi.fn();
-        hostWithoutRef.left$.subscribe(leftSpy);
-
-        expect(() => hostWithoutRef.leaveDeletedContent('SimpleWidget')).not.toThrow();
-        expect(leftSpy).toHaveBeenCalledTimes(1);
     });
 });

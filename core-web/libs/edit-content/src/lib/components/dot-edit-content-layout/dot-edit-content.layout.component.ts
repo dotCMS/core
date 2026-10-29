@@ -14,12 +14,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ConfirmationService, ConfirmEventType, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import {
-    DialogService,
-    DynamicDialog,
-    DynamicDialogModule,
-    DynamicDialogRef
-} from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
 import { ToastModule } from 'primeng/toast';
 
@@ -188,26 +183,9 @@ export class DotEditContentLayoutComponent {
         });
     });
 
-    /**
-     * Present when rendered inside a PrimeNG DynamicDialog; null otherwise (e.g.
-     * full-screen). Used to intercept dialog close events for the dirty-content guard.
-     */
-    readonly #dialogRef = inject(DynamicDialogRef, { optional: true });
-
-    /**
-     * The DynamicDialog host component. Injected optionally to access its inner
-     * p-dialog instance (via `dialog`) so we can override `p-dialog.close()` and
-     * prevent the hide animation from starting when there are unsaved changes.
-     */
-    readonly #dynamicDialog = inject(DynamicDialog, { optional: true });
-
     readonly $editContentForm = viewChild(DotEditContentFormComponent);
 
     constructor() {
-        if (this.#dialogRef) {
-            this.#interceptDirtyClose();
-        }
-
         // In-place hosts (dialog) request related-content navigation without a
         // route change; reload the editor here, confirming unsaved changes first.
         const inPlaceNavigation$ = this.#host.inPlaceNavigation$;
@@ -288,60 +266,6 @@ export class DotEditContentLayoutComponent {
 
             this.$store.clearWorkflowActionSuccess();
         });
-    }
-
-    /**
-     * Sets up two intercepts for dirty-content confirmation when rendered inside a dialog:
-     *
-     * 1. pDialog.close override — catches all UI-triggered closes (X button, ESC
-     *    key, mask click). p-dialog.close() sets _visible = false synchronously
-     *    before emitting visibleChange, so we must intercept here — before the
-     *    internal state changes — to prevent the hide animation from starting.
-     *
-     * 2. dialogRef.close override — catches programmatic closes (dialogRef.close()
-     *    called directly from code by whoever opened the dialog).
-     *
-     * No Edit Content surface mounts the editor in a `DialogService` dialog any more: the
-     * opener and the side panel replaced the centered dialog (#38303).
-     */
-    #interceptDirtyClose(): void {
-        const dialogRef = this.#dialogRef!;
-        const originalClose = dialogRef.close.bind(dialogRef);
-
-        // --- Programmatic close path ---
-        dialogRef.close = (value?: unknown) => {
-            if (!this.hasUnsavedChanges() || this.$store.workflowActionSuccess()) {
-                originalClose(value);
-
-                return;
-            }
-
-            this.#confirmIfDirty(
-                () => originalClose(value),
-                () => undefined
-            );
-        };
-
-        // --- UI close path (X button, ESC, mask click) ---
-        // Access p-dialog directly via DynamicDialog.dialog to intercept close()
-        // before it sets _visible = false and starts the hide animation.
-        const pDialog = this.#dynamicDialog?.dialog;
-        if (pDialog) {
-            const originalPDialogClose = pDialog.close.bind(pDialog);
-            pDialog.close = (event: Event) => {
-                if (!this.hasUnsavedChanges() || this.$store.workflowActionSuccess()) {
-                    originalPDialogClose(event);
-
-                    return;
-                }
-
-                event?.preventDefault();
-                this.#confirmIfDirty(
-                    () => originalPDialogClose(event),
-                    () => undefined
-                );
-            };
-        }
     }
 
     /**

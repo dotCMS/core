@@ -9,7 +9,7 @@ import {
     DotMessageService,
     DotPropertiesService
 } from '@dotcms/data-access';
-import { ComponentStatus, FeaturedFlags } from '@dotcms/dotcms-models';
+import { ComponentStatus } from '@dotcms/dotcms-models';
 
 import {
     DEFAULT_LIMIT,
@@ -47,13 +47,9 @@ describe('DotQueryToolStore', () => {
             mockProvider(DotCurrentUserService, {
                 getCurrentUser: vi.fn().mockReturnValue(of({ admin: true }))
             }),
-            // `withFlags` batch-fetches the side-panel flag on init.
+            // Neutral: the store reads no flag (#38303). Provided so a stray read is observable.
             mockProvider(DotPropertiesService, {
-                getFeatureFlags: vi
-                    .fn()
-                    .mockReturnValue(
-                        of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true })
-                    )
+                getFeatureFlags: vi.fn().mockReturnValue(of({}))
             })
         ]
     });
@@ -82,13 +78,18 @@ describe('DotQueryToolStore', () => {
         expect(spectator.service.isAdmin()).toBe(true);
     });
 
-    it('resolves the side-panel feature flag into the flags slice on init', () => {
-        expect(spectator.inject(DotPropertiesService).getFeatureFlags).toHaveBeenCalledWith([
-            FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL
-        ]);
-        expect(spectator.service.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]).toBe(
-            true
-        );
+    // #38303 (R14) — the page opens every result through the opener, which picks the editor, so the
+    // store reads no flag.
+    describe('feature flags', () => {
+        it('should fetch none', () => {
+            expect(
+                (spectator.inject(DotPropertiesService).getFeatureFlags as Mock).mock.calls.length
+            ).toBe(0);
+        });
+
+        it('should expose no flags slice', () => {
+            expect('flags' in spectator.service).toBe(false);
+        });
     });
 
     describe('setters', () => {
