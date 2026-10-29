@@ -3,6 +3,7 @@ package com.dotcms.rendering.velocity.viewtools;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -75,9 +76,11 @@ public final class RestrictedViewToolAccess {
      * @param user the {@link User} to check
      *
      * @return {@code true} if the user is a CMS Administrator or has the Scripting Developer role.
+     * The system user does not count: content saved by it does not
+     * tell who wrote the code.
      */
     public static boolean hasAccess(final User user) {
-        if (null == user || user.isAnonymousUser()) {
+        if (null == user || user.isAnonymousUser() || UserAPI.SYSTEM_USER_ID.equals(user.getUserId())) {
             return false;
         }
         try {

@@ -1,12 +1,17 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.util.Config;
+import com.liferay.portal.model.User;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
@@ -60,5 +65,19 @@ public class RestrictedViewToolAccessDefaultsTest {
         final Set<String> keys = RestrictedViewToolAccess.restrictedToolKeys();
         assertEquals(Set.of("macro", "mailer"), keys);
         assertTrue(keys.stream().noneMatch(String::isBlank));
+    }
+
+    /**
+     * Method to test: {@link RestrictedViewToolAccess#hasAccess(User)}
+     * When: the user is the system user, which is an administrator
+     * Should: not grant access, because content it saved does not tell who wrote the code
+     */
+    @Test
+    public void hasAccess_systemUser_isDenied() {
+        final User system = mock(User.class);
+        when(system.getUserId()).thenReturn(UserAPI.SYSTEM_USER_ID);
+        when(system.isAdmin()).thenReturn(true);
+
+        assertFalse(RestrictedViewToolAccess.hasAccess(system));
     }
 }

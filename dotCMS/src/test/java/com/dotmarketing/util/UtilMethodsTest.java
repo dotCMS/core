@@ -723,6 +723,10 @@ public class UtilMethodsTest extends UnitTestBase {
 		assertEquals("/html/images", UtilMethods.cleanFileSystemPathURI("/html/images"));
 		assertEquals("logo-dark_2.png", UtilMethods.cleanFileSystemPathURI("logo-dark_2.png"));
 		assertEquals("/application/my folder", UtilMethods.cleanFileSystemPathURI("/application/my folder"));
+		// names that only contain the protected words or two dots are regular names
+		assertEquals("/html/web-info", UtilMethods.cleanFileSystemPathURI("/html/web-info"));
+		assertEquals("/meta-info/a", UtilMethods.cleanFileSystemPathURI("/meta-info/a"));
+		assertEquals("/html/report..final", UtilMethods.cleanFileSystemPathURI("/html/report..final"));
 	}
 
 	/**
@@ -735,6 +739,7 @@ public class UtilMethodsTest extends UnitTestBase {
 	public void cleanFileSystemPathURI_rejectsDisallowedPaths() {
 		final String[] disallowed = {
 				null, "", "/WEB-INF", "/web-inf/classes", "/META-INF", "/Meta-Inf/context.xml",
+				"/WEB-INF.", "/html/WEB-INF ", "/WEB-INF../x", "/x/meta-inf",
 				"..", "/html/../../etc", "/html/..", "..\\windows", "/html\\images",
 				"/html/images?x=1", "/html;jsessionid=1", "file:/etc", "/html/*", "/html/%2e%2e",
 				"/html/$x", "/html/a|b", "/html/a,b", "/html/a=b", "/html/a&b", "/html/[a]",

@@ -109,7 +109,18 @@ public class ConfigTool implements ViewTool {
      * @return the property value, or {@code null} if it is not set or not readable from templates
      */
     public String getStringProperty(String name) {
-        return this.getStringProperty(name, null);
+        return getStringPropertyForTemplate(name);
+    }
+
+    /**
+     * Returns a string property under the same rules, and with the same warnings, as
+     * {@code $config}. Other view tools that hand configuration values to templates use it.
+     *
+     * @param name the property name
+     * @return the property value, or {@code null} if it is not set or not readable from templates
+     */
+    public static String getStringPropertyForTemplate(final String name) {
+        return isReadable(name) ? Config.getStringProperty(name, null) : null;
     }
 
     /**

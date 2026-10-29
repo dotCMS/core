@@ -1485,17 +1485,18 @@ public class UtilMethods {
      *
      * @param path The path to validate.
      *
-     * @return The same path, or {@code null} if it is not set, contains a parent-directory
-     * segment ({@code ..}), refers to {@code WEB-INF} or {@code META-INF} or contains any of
+     * @return The same path, or {@code null} if it is not set, has a parent-directory segment
+     * ({@code ..}) or a {@code WEB-INF} or {@code META-INF} segment, or contains any of
      * {@code \ ! : ; & ? $ * " [ ] = | , % < > ~} or control characters.
      */
     public static String cleanFileSystemPathURI(final String path) {
         if (path == null || path.isEmpty()) {
             return null;
         }
-        final String upperCasePath = path.toUpperCase(Locale.ROOT);
-        if (path.contains("..") || upperCasePath.contains("WEB-INF") || upperCasePath.contains("META-INF")) {
-            return null;
+        for (final String segment : path.split("/")) {
+            if (isProtectedPathSegment(segment)) {
+                return null;
+            }
         }
         for (int i = 0; i < path.length(); i++) {
             final char character = path.charAt(i);
@@ -1507,6 +1508,23 @@ public class UtilMethods {
     }
 
 
+
+    /**
+     * Tells whether one segment of a path is a parent-directory reference or names the
+     * {@code WEB-INF} or {@code META-INF} folder. Trailing dots and spaces are ignored, as some
+     * file systems drop them, and the comparison ignores case.
+     *
+     * @param segment a single path segment, without separators
+     *
+     * @return {@code true} if the segment must not be used in a path
+     */
+    private static boolean isProtectedPathSegment(final String segment) {
+        if ("..".equals(segment)) {
+            return true;
+        }
+        final String name = segment.replaceAll("[. ]+$", "").toUpperCase(Locale.ROOT);
+        return "WEB-INF".equals(name) || "META-INF".equals(name);
+    }
 
     public static String validateFileName(String fileName) throws IllegalArgumentException{
 

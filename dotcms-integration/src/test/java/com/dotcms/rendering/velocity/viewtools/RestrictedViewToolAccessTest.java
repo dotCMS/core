@@ -193,6 +193,7 @@ public class RestrictedViewToolAccessTest {
         assertFalse(RestrictedViewToolAccess.hasAccess((User) null));
         assertFalse(RestrictedViewToolAccess.hasAccess(APILocator.getUserAPI().getAnonymousUser()));
         assertFalse(RestrictedViewToolAccess.hasAccess(limitedUser));
+        assertFalse(RestrictedViewToolAccess.hasAccess(APILocator.systemUser()));
         assertTrue(RestrictedViewToolAccess.hasAccess(admin));
 
         final Role scripting = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);

@@ -306,4 +306,18 @@ public class ConfigToolTest {
         assertEquals("My Site", configTool.getStringProperty("velocity.public.test.site.title"));
         assertTrue(ConfigTool.isAllowedKey("DEFAULT_TEMPLATE_NAME"));
     }
+
+    /**
+     * The static reader used by $webapi.getConfigVar follows the same rules as $config: template
+     * properties are returned and other properties are withheld.
+     */
+    @Test
+    public void static_reader_follows_the_same_rules() {
+        setEnvStyleProperty("DOT_VELOCITY_PUBLIC_TEST_READER", "public");
+        setProperty("TEST_READER_OTHER", "other");
+
+        assertEquals("public", ConfigTool.getStringPropertyForTemplate("velocity.public.test.reader"));
+        assertNull(ConfigTool.getStringPropertyForTemplate("TEST_READER_OTHER"));
+        assertNull(ConfigTool.getStringPropertyForTemplate(null));
+    }
 }
