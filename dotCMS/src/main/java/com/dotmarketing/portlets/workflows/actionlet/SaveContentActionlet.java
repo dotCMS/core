@@ -60,6 +60,18 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 		return "This actionlet will checkin the content.";
 	}
 
+	/**
+	 * Checks in the contentlet carried by the workflow processor, with the categories,
+	 * relationships and permissions sent along with it, and puts the saved version back on the
+	 * processor. Any failure is rethrown as a {@link WorkflowActionFailureException}. Validation
+	 * failures and permission refusals ({@link DotSecurityException}) are expected outcomes, so they
+	 * are not logged here as errors; the caller reports them, and a refused permission change is
+	 * also written to the security log where it is decided.
+	 *
+	 * @param processor the workflow processor carrying the contentlet to save
+	 * @param params    the actionlet parameters
+	 * @throws WorkflowActionFailureException if the contentlet cannot be saved
+	 */
 	@WrapInTransaction
 	public void executeAction(final WorkflowProcessor processor,
 							  final Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
@@ -103,7 +115,7 @@ public class SaveContentActionlet extends WorkFlowActionlet {
 			Logger.debug(this,
 					()->"content version already saved for the contentlet: " + contentlet.getIdentifier());
 		} catch (final Exception e) {
-			if (!(e instanceof DotContentletValidationException)) {
+			if (!(e instanceof DotContentletValidationException) && !(e instanceof DotSecurityException)) {
 				Logger.error(this.getClass(), ExceptionUtil.getErrorMessage(e), e);
 			}
             throw new WorkflowActionFailureException(ExceptionUtil.getErrorMessage(e), e);
