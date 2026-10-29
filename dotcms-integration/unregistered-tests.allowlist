@@ -75,7 +75,6 @@ com.dotmarketing.startup.runonce.Task250910AddAnalyticsDashboardPortletToMenuTes
 com.dotmarketing.startup.runonce.Task251029RemoveContentTypesLegacyPortletFromLayoutsTest
 com.dotmarketing.util.HostUtilTest
 com.dotmarketing.util.UtilHTMLTest
-com.dotmarketing.webdav.DotWebdavHelperTest
 com.liferay.portal.ejb.CompanyUtilTest
 com.liferay.portal.ejb.UserPersistenceTest
 com.liferay.portal.model.UserTest
