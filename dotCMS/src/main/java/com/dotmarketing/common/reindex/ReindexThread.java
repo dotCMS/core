@@ -468,8 +468,10 @@ public class ReindexThread {
      * completes) before the next batch starts, so there is no shared mutable state between
      * consecutive batches and no TOCTOU race on the processor reference.</p>
      *
-     * <p>When a batch throws, the journal cursor is reset before the back-off, so the batch's
-     * rows are read again on the next pass instead of waiting for the pause to expire.</p>
+     * <p>When a batch throws (including an {@code Error} that ends the worker), the journal cursor
+     * is reset to 0. The batch's rows are then read again once the local in-memory queue (up to
+     * 2000 rows) has drained and the next load starts from the beginning of the journal, instead
+     * of waiting for the pause to expire.</p>
      */
     private void runReindexLoop() {
         while (!isTerminal()) {
@@ -513,16 +515,17 @@ public class ReindexThread {
                     requestStop();
                     break;
                 }
+                // The batch that threw was neither acked nor marked failed, but the journal
+                // cursor is already past it. Without a reset the next load finds nothing, the
+                // worker pauses itself, and those rows wait out REINDEX_THREAD_PAUSE_IN_MINUTES.
+                // Done before the Error check so a restarted worker also starts from the top.
+                ReindexQueueFactory.resetLastIdReindexed();
                 if (ex instanceof Error) {
                     // Let JVM-level errors propagate to the runnable, which logs, terminates and
                     // clears liveness. Swallowing them here would spin this loop at
                     // SLEEP_ON_ERROR forever against a JVM that cannot recover.
                     throw (Error) ex;
                 }
-                // The batch that threw was neither acked nor marked failed, but the journal
-                // cursor is already past it. Without a reset the next load finds nothing, the
-                // worker pauses itself, and those rows wait out REINDEX_THREAD_PAUSE_IN_MINUTES.
-                ReindexQueueFactory.resetLastIdReindexed();
                 if (ex instanceof ReindexPoolExhaustedException) {
                     // The mapping guard refused the batch because the storage it needs is not
                     // answering. No journal entry was failed, so the work is still queued — back

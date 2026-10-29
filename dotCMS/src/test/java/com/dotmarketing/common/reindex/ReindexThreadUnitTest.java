@@ -792,7 +792,8 @@ public class ReindexThreadUnitTest extends UnitTestBase {
     }
 
     /**
-     * A batch that throws must be read again after the back-off.
+     * A batch that throws must be read again: the journal cursor goes back to 0, so the rows are
+     * reloaded once the local in-memory queue drains.
      *
      * <p>{@code findContentToReindex()} moves {@code ReindexQueueFactory.lastIdIndexed} past every
      * row it hands out. When the batch then throws before its rows are acknowledged or marked as
@@ -831,6 +832,37 @@ public class ReindexThreadUnitTest extends UnitTestBase {
                             throw new IllegalStateException(e);
                         }
                     }, 3_000));
+        } finally {
+            ReindexThread.stopThread();
+            runner.join(3_000);
+            ReindexQueueFactory.resetLastIdReindexed();
+        }
+    }
+
+    /**
+     * An {@code Error} in a batch ends the worker, and must still leave the journal cursor reset,
+     * so the worker restarted by the next unpause reads that batch's rows again.
+     */
+    @Test
+    public void batchEndingTheWorkerWithAnErrorStillResetsTheCursor() throws Exception {
+        final ContentletIndexAPI indexApi = mockIndexApi();
+        doAnswer(inv -> {
+            throw new OutOfMemoryError("simulated");
+        }).when(indexApi).appendToBulkProcessor(any(), any());
+
+        final Field cursor = ReindexQueueFactory.class.getDeclaredField("lastIdIndexed");
+        cursor.setAccessible(true);
+        cursor.setLong(null, 42L);
+
+        final ReindexThread thread = newThread(alwaysWorkingQueue(null), indexApi);
+        setStateRunning(thread);
+
+        final Thread runner = startRunnable(thread);
+        try {
+            runner.join(3_000);
+            assertFalse("the worker should have terminated on the Error", runner.isAlive());
+            assertEquals("the journal cursor must be reset even when the worker dies",
+                    0L, cursor.getLong(null));
         } finally {
             ReindexThread.stopThread();
             runner.join(3_000);
