@@ -70,6 +70,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.factories.MultiTreeAPITest.class,
 
         com.dotcms.rest.api.v1.workflow.WorkflowResourceResponseCodeIntegrationTest.class,
+        com.dotcms.rest.api.v1.workflow.WorkflowResourceCommentsReadAccessTest.class,
         com.dotcms.rest.api.v1.workflow.WorkflowResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.workflow.WorkflowResourceLockUnlockIntegrationTest.class,
         com.dotcms.rest.api.v1.workflow.WorkflowResourceLicenseIntegrationTest.class,
