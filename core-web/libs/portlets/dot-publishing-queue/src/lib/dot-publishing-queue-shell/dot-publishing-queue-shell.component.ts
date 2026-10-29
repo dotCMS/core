@@ -81,7 +81,10 @@ export class DotPublishingQueueShellComponent {
                 closable: true,
                 closeOnEscape: true,
                 draggable: false,
-                position: 'center'
+                position: 'center',
+                // A contentlet row opens the side panel over this dialog; a focus trap here would
+                // keep the panel's editor from taking keystrokes (#38303, R12).
+                focusTrap: false
             }
         );
         this.#selectBundleRef.onClose.pipe(take(1)).subscribe(() => {
@@ -156,6 +159,9 @@ export class DotPublishingQueueShellComponent {
                     closeOnEscape: true,
                     draggable: false,
                     position: 'center',
+                    // A contentlet row opens the side panel over this dialog; a focus trap here
+                    // would keep the panel's editor from taking keystrokes (#38303, R12).
+                    focusTrap: false,
                     data: { allowRemove, bundleName }
                 }
             );
