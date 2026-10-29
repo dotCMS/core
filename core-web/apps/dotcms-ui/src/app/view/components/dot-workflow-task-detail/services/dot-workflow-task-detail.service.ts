@@ -36,7 +36,7 @@ export class DotWorkflowTaskDetailService {
      * Set data to edit a workflow task
      *
      * @param DotTaskAction action
-     * @memberof DotContentletEditorService
+     * @memberof DotWorkflowTaskDetailService
      */
     view(action: DotTaskAction): void {
         this.setData(action);
