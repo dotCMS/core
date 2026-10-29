@@ -83,10 +83,10 @@ export type DotEditContentCreateRequest = DotEditContentRequest & { mode: 'new';
 | UVE: edit, properties, URL-map edit, SDK edit | edit | `inode`, `identifier`, `contentType`, `languageId`, `title`, `variantName`, `siteId`, `portletId: 'edit-page'` |
 | UVE: palette drop, container "+", SDK create | new | `contentType`, `languageId`, `title`, `variantName`, `siteId`, `portletId: 'edit-page'` |
 | Query Tool | edit | `inode`, `identifier`, `contentType`, `languageId`, `title` |
-| Pages portlet | edit | `inode`, `identifier`, `contentType`, `languageId`, `title` |
-| Legacy JSP events (`edit-contentlet`, `edit-host`) | edit | `inode`, `contentType` when sent |
-| Legacy JSP events (`create-contentlet`, `create-host`) | new | `contentType` (`'Host'` for `create-host`), `folderPath` when sent. The JSP's `url` is ignored |
-| Publishing Queue | edit | `inode`, `contentType` (`content_type_name`) |
-| Deep links | edit, new | `inode` or `contentType` from the route |
+| Pages portlet | edit | `inode`, `identifier`, `contentType`, `languageId`, `title`, `portletId: 'pages'` |
+| Legacy JSP events (`edit-contentlet`, `edit-host`) | edit | `inode`, `contentType` when sent, `portletId: <the portlet current when the event arrived>` |
+| Legacy JSP events (`create-contentlet`, `create-host`) | new | `contentType` (`'Host'` for `create-host`), `folderPath` when sent, `portletId` as above. The JSP's `url` is ignored |
+| Publishing Queue | edit | `inode`, `contentType` (`content_type_name`), `portletId: 'publishing-queue'` |
+| Deep links | edit, new | `inode` or `contentType` from the route, `folderInode` from the `folder` query param on a create, `portletId: <the parent portlet, e.g. 'content' or 'pages'>` |
 | Relationship field | edit, new | `inode`, `title` or `contentType`, `title`, `relationship` |
 | Block editors (via the field host or the legacy bridge) | edit | `inode`, `contentType` |
