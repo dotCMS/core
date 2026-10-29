@@ -84,6 +84,7 @@ import org.junit.runners.Suite;
         TotalSizeOfFilesPerThemeMetricTypeTest.class,
         TimeMachineUtilTest.class,
         Task250604UpdateFolderInodesTest.class,
+    com.dotcms.rendering.js.FileJavascriptReaderTest.class,
         FixTask00090RecreateMissingFoldersInParentPathTest.class,
         AnalyticsValidatorUtilTest.class,
         Task250826AddIndexesToUniqueFieldsTableTest.class,
