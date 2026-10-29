@@ -20,6 +20,16 @@
 #   * Critical path - the matrix job must not wait for the build, and the test job
 #     must still wait for both the build and the matrix.
 #
+#   * Full runs (#38336) - the nightly and a trunk dispatch with run-all-tests run every
+#     non-e2e suite in test-matrix.yml. The expected suite list is read straight from
+#     test-matrix.yml and the selector values straight from the callers' YAML; a trunk
+#     push still tests nothing. Those two callers are the only ones whose selection
+#     changed, so they are left out of the input-equivalence check.
+#
+#   * Fail loud (#38336) - run-all-tests with an empty matrix fails the matrix job, and
+#     no legitimate empty matrix (a PR with nothing selected, a trunk push, phase none)
+#     trips it.
+#
 # Run:  bash .github/workflows/tests/test-matrix-equivalence.test.sh
 # Deps: bash 3.2+, git, node, mikefarah yq v4, jq. Run in CI by cicd_pr_workflow-lint.yml.
 
@@ -54,7 +64,8 @@ matrix_script() { yq '.jobs.setup-matrix.steps[] | select(.id == "generate-matri
 
 # Run a github-script body the way the action does: `core` and `require` in scope, the
 # ${{ inputs.* }} placeholders substituted. $1 = script file, $2 = config.json,
-# $3 = space separated name=value pairs, $4 = opensearch phase. Prints the two outputs.
+# $3 = space separated name=value pairs, $4 = opensearch phase. Prints the two outputs,
+# or a single `failed: <message>` line when the script called core.setFailed.
 run_script() {
   local script="$1" config="$2" pairs="$3" phase="$4" body="$WORKDIR/body.js" name value
   cp "$script" "$body"
@@ -67,11 +78,14 @@ run_script() {
   (cd "$(dirname "$config")" && OPENSEARCH_PHASE="$phase" node -e '
     const fs = require("fs");
     const out = {};
-    const core = { setOutput: (k, v) => { out[k] = v; } };
+    let failed = null;
+    const core = { setOutput: (k, v) => { out[k] = v; }, setFailed: m => { failed = m; } };
     console.log = () => {};
     const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
     new AsyncFunction("core", "require", fs.readFileSync(process.argv[1], "utf8"))(core, require)
-      .then(() => process.stdout.write(out.matrix + "\n" + out["has-tests"] + "\n"))
+      .then(() => process.stdout.write(failed !== null
+        ? "failed: " + failed + "\n"
+        : out.matrix + "\n" + out["has-tests"] + "\n"))
       .catch(e => { console.error(e); process.exit(1); });
   ' "$body")
 }
@@ -100,8 +114,6 @@ else
       bad "$name" "old and new matrix differ"
     fi
   done <<'CASES'
-run-all-tests alone, cleanup kept (the nightly call today)|run-all-tests=true e2e=false skip-runner-cleanup=false|
-run-all-tests alone, cleanup skippable (the trunk dispatch call today)|run-all-tests=true e2e=false skip-runner-cleanup=true|
 run-all-tests with every selector on, cleanup kept|run-all-tests=true jvm_unit_test=true cli=true frontend=true postman=true karate=true integration=true e2e=true skip-runner-cleanup=false|
 run-all-tests with every selector on, cleanup skippable|run-all-tests=true jvm_unit_test=true cli=true frontend=true postman=true karate=true integration=true e2e=true skip-runner-cleanup=true|
 PR with frontend only|jvm_unit_test=false cli=false frontend=true postman=false karate=false integration=false e2e=false skip-runner-cleanup=true|
@@ -144,6 +156,11 @@ selection_of() { yq -o=json -I0 "(.jobs.$2.with // {}) | to_entries | map(select
 
 for caller in $CALLERS; do
   file=".github/workflows/$caller.yml"
+  case "$caller" in
+    cicd_3-trunk|cicd_4-nightly)
+      # Changed on purpose (#38336): they now pass every selector. Checked under full runs.
+      continue ;;
+  esac
   if ! git -C "$REPO_ROOT" cat-file -e "$BASE_REF:$file" 2>/dev/null; then
     skip "$caller: BASE_REF $BASE_REF not in local history"
     continue
@@ -165,6 +182,80 @@ for caller in $CALLERS; do
     bad "$caller: test job still passes selection inputs ($rest_keys)"
   fi
 done
+
+# ------------------------------------------------------------------- full runs --
+
+echo "== Nightly and trunk dispatch run every non-e2e suite (#38336)"
+
+# The selector values a caller passes to its test-matrix job, as name=value pairs.
+# Literal booleans are taken as is; `${{ inputs.run-all-tests || X }}` is evaluated with
+# $2 as the run-all-tests dispatch input (empty = not dispatched: a push or the schedule).
+caller_pairs() {
+  local run_all="$2" key value pairs=""
+  while IFS='=' read -r key value; do
+    case "$value" in
+      true|false) ;;
+      '${{ inputs.run-all-tests || true }}') value=true ;;
+      '${{ inputs.run-all-tests || false }}') [[ "$run_all" == true ]] && value=true || value=false ;;
+      *) continue ;;   # opensearch_phase: not a selector
+    esac
+    pairs="$pairs $key=$value"
+  done < <(yq '.jobs.test-matrix.with | to_entries | .[] | .key + "=" + (.value | tostring)' "$1")
+  printf '%s' "${pairs# }"
+}
+
+# Every suite name of every test type except e2e, straight from test-matrix.yml.
+expected_full="$(yq '.test_types[] | select(.condition_input != "e2e") | .suites[].name' "$CONFIG_YML" | sort)"
+expected_count="$(grep -c . <<<"$expected_full")"
+
+full_run() {
+  local label="$1" file="$REPO_ROOT/.github/workflows/$2.yml" pairs out got
+  pairs="$(caller_pairs "$file" "$3")"
+  out="$(run_script "$WORKDIR/new.js" "$WORKDIR/config.json" "$pairs" "")"
+  got="$(sed -n 1p <<<"$out" | jq -r '.include[].name' 2>/dev/null | sort)"
+  if [[ -n "$got" && "$got" == "$expected_full" ]]; then
+    ok "$label: all $expected_count non-e2e suites ($pairs)"
+  else
+    bad "$label: matrix is not every non-e2e suite" \
+      "missing [$(comm -23 <(echo "$expected_full") <(echo "$got") | paste -sd, -)] unexpected [$(comm -13 <(echo "$expected_full") <(echo "$got") | paste -sd, -)] ${out:0:200}"
+  fi
+}
+
+full_run "nightly (schedule)" cicd_4-nightly ""
+full_run "nightly (dispatch)" cicd_4-nightly true
+full_run "trunk dispatch with run-all-tests" cicd_3-trunk true
+
+EMPTY=$'{"include":[]}\nfalse'
+pairs="$(caller_pairs "$REPO_ROOT/.github/workflows/cicd_3-trunk.yml" "")"
+out="$(run_script "$WORKDIR/new.js" "$WORKDIR/config.json" "$pairs" "")"
+[[ "$out" == "$EMPTY" ]] \
+  && ok "trunk push: empty matrix, has-tests false, not failed ($pairs)" \
+  || bad "trunk push did not produce a quiet empty matrix" "$out"
+
+# ------------------------------------------------------------------- fail loud --
+
+echo "== run-all-tests with an empty matrix fails; legitimate empty matrices do not"
+
+# name | inputs | opensearch phase | expect (fail or quiet-empty)
+while IFS='|' read -r name pairs phase expect; do
+  out="$(run_script "$WORKDIR/new.js" "$WORKDIR/config.json" "$pairs" "$phase")"
+  if [[ "$expect" == fail ]]; then
+    [[ "$out" == "failed: run-all-tests is true but the test matrix is empty."* ]] \
+      && ok "$name: fails with a clear error" \
+      || bad "$name: did not fail" "$out"
+  else
+    [[ "$out" == "$EMPTY" ]] \
+      && ok "$name: empty matrix, not failed" \
+      || bad "$name: expected a quiet empty matrix" "$out"
+  fi
+done <<'CASES'
+run-all-tests alone (the nightly call before #38336)|run-all-tests=true e2e=false skip-runner-cleanup=false||fail
+run-all-tests alone (the trunk dispatch call before #38336)|run-all-tests=true e2e=false skip-runner-cleanup=true||fail
+run-all-tests alone under a phase sweep|run-all-tests=true e2e=false|all|fail
+PR with no tests selected|jvm_unit_test=false cli=false frontend=false postman=false karate=false integration=false e2e=false skip-runner-cleanup=true||quiet-empty
+PR with no tests selected, OpenSearch phase none|jvm_unit_test=false cli=false frontend=false postman=false karate=false integration=false e2e=false skip-runner-cleanup=true|none|quiet-empty
+trunk push|run-all-tests=false e2e=false skip-runner-cleanup=true||quiet-empty
+CASES
 
 # --------------------------------------------------------------- critical path --
 
