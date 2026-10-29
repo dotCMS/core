@@ -1,7 +1,10 @@
 import { BundleAssetView } from '@dotcms/dotcms-models';
 
 /** A bundle asset that opens in the content editor: a contentlet naming its inode and its type. */
-export type EditableContentletAsset = BundleAssetView & { inode: string; content_type_name: string };
+export type EditableContentletAsset = BundleAssetView & {
+    inode: string;
+    content_type_name: string;
+};
 
 /**
  * Whether a bundle asset opens in the side panel's content editor (#38303). Only contentlets do,
