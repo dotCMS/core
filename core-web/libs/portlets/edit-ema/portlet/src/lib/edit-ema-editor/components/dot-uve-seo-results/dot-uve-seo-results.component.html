@@ -1,0 +1,11 @@
+@let socialMedia = uveStore.viewSocialMedia();
+@let ogTags = uveStore.editorOgTags();
+
+@if (socialMedia && ogTags) {
+    <dot-results-seo-tool
+        class="col-span-full"
+        [seoMedia]="socialMedia"
+        [seoOGTags]="ogTags"
+        [seoOGTagsResults]="ogTagsResults$"
+        data-testid="results-seo-tool" />
+}

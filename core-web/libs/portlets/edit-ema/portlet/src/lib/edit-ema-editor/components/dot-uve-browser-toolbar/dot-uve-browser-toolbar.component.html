@@ -1,0 +1,143 @@
+<!-- PrimeNG's toolbar CSS is unlayered and outranks utilities, so nowrap and the border widths need `!`. -->
+<p-toolbar
+    [pt]="{
+        root: {
+            class: 'sticky top-0 left-0 z-1000 box-border w-full min-w-0 max-w-full flex-nowrap! overflow-hidden border-0! border-b!'
+        },
+        start: { class: 'shrink-0' },
+        center: {
+            class: '@container/toolbar-center flex min-w-0 flex-1 items-center gap-2 overflow-x-auto'
+        },
+        end: { class: 'shrink-0' }
+    }"
+    [dt]="{ root: { borderColor: '{gray.200}' } }">
+    <ng-template #start>
+        <div class="flex items-center gap-1">
+            @if (store.viewMode() === UVE_MODE.EDIT) {
+                <p-button
+                    (click)="togglePalette()"
+                    [text]="true"
+                    [rounded]="true"
+                    [ariaLabel]="
+                        (store.editorPaletteOpen()
+                            ? 'uve.palette.toggle.close'
+                            : 'uve.palette.toggle.open'
+                        ) | dm
+                    "
+                    size="small"
+                    data-testid="uve-toolbar-palette-toggle">
+                    <!-- One static glyph: the icon names where the panel docks, not what the click
+                         does, so it must not swap per state. `dock_to_right` for a LEFT panel.
+                         `aria-hidden` keeps screen readers off the ligature; the state is on the
+                         button's accessible name. -->
+                    <i
+                        class="material-symbols-outlined"
+                        aria-hidden="true"
+                        data-testid="palette-toggle-icon">
+                        dock_to_right
+                    </i>
+                </p-button>
+            }
+        </div>
+    </ng-template>
+    <ng-template #center>
+        <div
+            class="ml-auto flex max-w-md min-w-0 flex-initial items-center gap-2 rounded-full bg-gray-100 pr-4 @max-3xl/toolbar-center:max-w-none @max-3xl/toolbar-center:flex-none @max-3xl/toolbar-center:pr-0">
+            <p-button
+                (click)="copyUrlOverlay.toggle($event)"
+                [pTooltip]="'editpage.header.copy' | dm"
+                tooltipPosition="bottom"
+                icon="pi pi-link"
+                [text]="true"
+                [rounded]="true"
+                size="small"
+                [pt]="{ icon: { class: 'text-gray-900!' } }"
+                data-testid="uve-toolbar-copy-url">
+                <p-popover #copyUrlOverlay>
+                    <div class="flex max-w-100 flex-col gap-4">
+                        @for (url of $pageURLS(); track url.value) {
+                            <div
+                                class="flex items-center gap-3 not-last:border-b not-last:border-gray-200 not-last:pb-4">
+                                <div class="flex min-w-0 flex-1 flex-col gap-2">
+                                    <span
+                                        class="text-xs leading-[1.2] font-semibold text-gray-700"
+                                        data-testid="copy-url-label">
+                                        {{ url.label | dm }}
+                                    </span>
+                                    <!-- The global unlayered `a` rules in style.css outrank utilities, so the link's color and underline need `!`. -->
+                                    <a
+                                        class="truncate text-sm leading-[1.2] text-gray-900! no-underline! hover:underline!"
+                                        [href]="url.value"
+                                        target="_blank"
+                                        rel="noreferrer noopener"
+                                        data-testid="copy-url-link">
+                                        {{ url.value }}
+                                    </a>
+                                </div>
+                                <p-button
+                                    icon="pi pi-copy"
+                                    [text]="true"
+                                    size="small"
+                                    [rounded]="true"
+                                    (cdkCopyToClipboardCopied)="triggerCopyToast()"
+                                    [cdkCopyToClipboard]="url.value"
+                                    data-testid="copy-url-button" />
+                            </div>
+                        }
+                    </div>
+                </p-popover>
+            </p-button>
+            <div
+                class="min-w-0 flex-1 truncate text-sm leading-normal text-gray-900 @max-3xl/toolbar-center:hidden"
+                data-testid="uve-toolbar-page-url">
+                {{ $pageURL() }}
+            </div>
+        </div>
+        <dot-uve-device-controls
+            [state]="store.$viewDeviceSelectorState()"
+            (stateChange)="store.viewApplyDeviceSelectorChange($event)"
+            data-testid="uve-device-controls" />
+        <div class="mr-auto flex items-center gap-2 rounded-full bg-gray-100 pr-3">
+            <p-button
+                icon="pi pi-undo"
+                size="small"
+                [text]="true"
+                [rounded]="true"
+                [pt]="{ icon: { class: 'text-gray-900!' } }"
+                (onClick)="store.viewZoomReset()"
+                aria-label="Reset zoom and canvas size"
+                data-testid="zoom-reset" />
+            <span class="h-4 w-px bg-gray-300" aria-hidden="true"></span>
+            <dot-uve-iframe-size-input data-testid="uve-iframe-size-input" />
+            <span class="h-4 w-px bg-gray-300" aria-hidden="true"></span>
+            <dot-uve-zoom-controls data-testid="uve-zoom-controls" />
+        </div>
+    </ng-template>
+    <ng-template #end>
+        @let editPanelToggleLabel =
+            (store.editorEditPanelOpen()
+                ? 'uve.edit-panel.toggle.close'
+                : 'uve.edit-panel.toggle.open'
+            ) | dm;
+        <div class="flex items-center gap-1">
+            @if (store.viewMode() === UVE_MODE.EDIT) {
+                <p-button
+                    (click)="toggleEditPanel()"
+                    [text]="true"
+                    [rounded]="true"
+                    [ariaLabel]="editPanelToggleLabel"
+                    size="small"
+                    data-testid="right-sidebar-toggle">
+                    <!-- `dock_to_left` for a RIGHT panel, rendered as-is: the glyph already points
+                         the correct way, so the horizontal flip the SVG pair needed is gone. -->
+                    <i
+                        class="material-symbols-outlined"
+                        aria-hidden="true"
+                        data-testid="right-sidebar-toggle-icon">
+                        dock_to_left
+                    </i>
+                </p-button>
+            }
+        </div>
+    </ng-template>
+</p-toolbar>
