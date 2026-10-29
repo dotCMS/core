@@ -35,7 +35,7 @@ import com.dotmarketing.image.vips.VipsResizePhotoIntegrationTest;
 import com.dotmarketing.osgi.GenericBundleActivatorIntegrationTest;
 import com.dotmarketing.portlets.cmsmaintenance.action.ViewCMSMaintenanceActionTest;
 import com.dotmarketing.portlets.containers.business.ContainerStructureFinderStrategyResolverTest;
-import com.dotmarketing.startup.runonce.Task261028RemoveSearchLegacyPortletsFromLayoutsTest;
+import com.dotmarketing.portlets.structure.action.EditStructureActionSaveTest;
 import org.junit.runner.RunWith;
 import org.junit.runners.Suite.SuiteClasses;
 
@@ -47,6 +47,7 @@ import org.junit.runners.Suite.SuiteClasses;
 @SuiteClasses({
         ChatCompletionsTest.class,
         ChatCompletionsStreamingTest.class,
+        com.dotmarketing.portlets.contentlet.business.HostFactoryImplDefaultSiteTest.class,
         InferenceAuthorizationTest.class,
         InferenceClientConformanceTest.class,
         InferenceEmbeddingsTest.class,
@@ -78,6 +79,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.contenttype.ContentTypeResourceUpdateMetadataTest.class,
         com.dotcms.rest.api.v2.contenttype.FieldResourceTest.class,
         com.dotcms.rest.api.v3.contenttype.FieldResourceTest.class,
+        EditStructureActionSaveTest.class,
         com.dotcms.rest.api.v3.contenttype.MoveFieldFormTest.class,
         com.dotcms.rest.api.CorsFilterTest.class,
         com.dotcms.rest.elasticsearch.ESContentResourcePortletTest.class,
@@ -144,8 +146,7 @@ import org.junit.runners.Suite.SuiteClasses;
         CMSUserToolTest.class,
         UserJsViewToolTest.class,
         com.dotcms.rest.BundleResourceDeleteResponseTest.class,
-        ContentRelationshipsResourceIntegrationTest.class,
-        Task261028RemoveSearchLegacyPortletsFromLayoutsTest.class
+        ContentRelationshipsResourceIntegrationTest.class
 })
 public class MainSuite2a {
 
