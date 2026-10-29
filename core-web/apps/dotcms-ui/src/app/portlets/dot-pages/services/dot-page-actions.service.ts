@@ -1,6 +1,6 @@
 import { forkJoin, Observable, of } from 'rxjs';
 
-import { inject, Injectable, signal } from '@angular/core';
+import { inject, Injectable, Injector, signal } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -13,7 +13,6 @@ import {
     DotHttpErrorManagerService,
     DotMessageService,
     DotRenderMode,
-    DotRouterService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService,
@@ -34,6 +33,7 @@ import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
 import { DotPageListService } from './dot-page-list.service';
 
+import { openEditContentPanel } from '../../../api/util/open-edit-content-panel';
 import { DotCMSPagesStore } from '../store/store';
 
 interface DotPermissions {
@@ -67,7 +67,6 @@ interface DotPermissions {
 export class DotPageActionsService {
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dotActionsService = inject(DotWorkflowsActionsService);
-    readonly #dotRouterService = inject(DotRouterService);
     readonly #dotEventsService = inject(DotEventsService);
     readonly #dialogService = inject(DialogService);
     readonly #dotWorkflowEventHandlerService = inject(DotWorkflowEventHandlerService);
@@ -78,6 +77,8 @@ export class DotPageActionsService {
     readonly #pushPublishService = inject(PushPublishService);
     readonly #dotCMSPagesStore = inject(DotCMSPagesStore);
     readonly #dotPageListService = inject(DotPageListService);
+    /** The Pages portlet's injector: a panel Edit opens closes with the portlet. */
+    readonly #injector = inject(Injector);
 
     /**
      * Cached result of whether Push Publish is actionable for this installation.
@@ -121,9 +122,11 @@ export class DotPageActionsService {
      * for the item and combines them with static actions (favorite, edit, push publish, etc.).
      *
      * @param item Contentlet for which to build the menu model.
+     * @param refresh Refreshes the listing; Edit calls it on every save and when its panel closes.
+     * The Pages component always passes it.
      * @returns PrimeNG menu model.
      */
-    getItems(item: DotCMSContentlet): Observable<MenuItem[]> {
+    getItems(item: DotCMSContentlet, refresh?: () => void): Observable<MenuItem[]> {
         const actions = this.#dotActionsService.getByInode(item.inode, DotRenderMode.LISTING);
         const relatedFavoritePage = this.#getFavoritePageData(item);
 
@@ -132,20 +135,37 @@ export class DotPageActionsService {
             relatedFavoritePage
         }).pipe(
             map(({ actions, relatedFavoritePage }) =>
-                this.#buildMenuItems({ item, actions, relatedFavoritePage })
+                this.#buildMenuItems({ item, actions, relatedFavoritePage, refresh })
             )
         );
     }
 
     /**
-     * Edit action
+     * Edit action: opens the page in the side panel over the listing, in whichever editor its type
+     * uses (#38303). The listing refreshes on every save and when the panel closes.
      *
-     * Navigates to the edit screen for the given inode.
+     * @param item The page (or content) the menu was opened on.
+     * @param refresh Refreshes the listing.
      */
-    #editAction({ inode }: DotCMSContentlet): MenuItem {
+    #editAction(
+        { inode, identifier, contentType, languageId, title }: DotCMSContentlet,
+        refresh?: () => void
+    ): MenuItem {
         return {
             label: this.#dotMessageService.get('Edit'),
-            command: () => this.#dotRouterService.goToEditContentlet(inode)
+            command: () =>
+                void openEditContentPanel(
+                    {
+                        mode: 'edit',
+                        inode,
+                        identifier,
+                        contentType,
+                        languageId,
+                        title,
+                        portletId: 'pages'
+                    },
+                    { injector: this.#injector, saved: refresh, closed: refresh }
+                )
         };
     }
 
@@ -332,15 +352,19 @@ export class DotPageActionsService {
      *
      * @param item Selected contentlet.
      * @param actions Workflow actions resolved for the item.
+     * @param relatedFavoritePage The favorite page pointing at the item, if any.
+     * @param refresh Refreshes the listing after an edit.
      */
     #buildMenuItems({
         item,
         actions,
-        relatedFavoritePage
+        relatedFavoritePage,
+        refresh
     }: {
         item: DotCMSContentlet;
         actions: DotCMSWorkflowAction[];
         relatedFavoritePage: DotCMSContentlet;
+        refresh?: () => void;
     }): MenuItem[] {
         const menuActions: MenuItem[] = [];
 
@@ -356,7 +380,7 @@ export class DotPageActionsService {
         menuActions.push(...this.#buildWorkflowMenuItems(actions, item.inode));
 
         if (this.#canEdit(item)) {
-            menuActions.push(this.#editAction(item));
+            menuActions.push(this.#editAction(item, refresh));
         }
 
         menuActions.push(this.#addToBundleAction(item));

@@ -46,7 +46,6 @@ import { DotAddToBundleComponent } from '@dotcms/ui';
 
 import { DotCreatePageDialogComponent } from './dot-create-page-dialog/dot-create-page-dialog.component';
 import { DotPageFavoritesPanelComponent } from './dot-page-favorites-panel/dot-page-favorites-panel.component';
-import { DotPageStore } from './dot-pages-store/dot-pages.store';
 import { DotPagesTableComponent } from './dot-pages-table/dot-pages-table.component';
 import { DotPageActionsService } from './services/dot-page-actions.service';
 import { DotPageListService } from './services/dot-page-list.service';
@@ -69,7 +68,6 @@ type SavePageEventData = {
 
 @Component({
     providers: [
-        DotPageStore,
         DialogService,
         DotESContentService,
         DotPageListService,
@@ -273,6 +271,15 @@ export class DotPagesComponent {
     }
 
     /**
+     * Reloads the listing after an edit in the side panel (#38303), keeping the filters and the
+     * page the author is on. A refetch of the whole page rather than of the edited row: the panel
+     * may have deleted or archived it, and a row lookup would then report an error.
+     */
+    #refreshPages(): void {
+        this.#dotCMSPagesStore.getPages();
+    }
+
+    /**
      * Opens the PrimeNG popup menu for a page row (three-dots button click).
      * Positions at the button using anchor; menu items are loaded asynchronously.
      *
@@ -282,7 +289,7 @@ export class DotPagesComponent {
         const anchor = originalEvent.currentTarget || originalEvent.target;
         const { clientX, clientY } = originalEvent;
         this.#dotPageActionsService
-            .getItems(data)
+            .getItems(data, () => this.#refreshPages())
             .pipe(take(1))
             .subscribe((actions) => {
                 this.menu()?.show({

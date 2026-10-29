@@ -518,6 +518,8 @@ describe('DotPageActionsService', () => {
             const items = await firstValueFrom(getItems(MOCK_HTMLPAGE_CONTENTLET, refresh));
 
             items.find((item) => item.label === 'Edit')?.command?.({} as MenuItemCommandEvent);
+            // Edit loads the opener on demand: wait for it to open.
+            await vi.dynamicImportSettled();
         };
 
         /** The options the service handed the opener, on its only `open`. */
@@ -821,22 +823,23 @@ describe('DotPageActionsService', () => {
             });
         }));
 
-        it('should handle complete edit workflow', () =>
-            new Promise<void>((done) => {
-                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                    // Step 1: User clicks edit
-                    const editAction = items.find((item) => item.label === 'Edit');
-                    expect(editAction).toBeTruthy();
+        it('should handle complete edit workflow', async () => {
+            const items = await firstValueFrom(
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET, vi.fn())
+            );
 
-                    // Step 2: Router navigates to edit page
-                    editAction?.command?.({} as MenuItemCommandEvent);
+            // Step 1: User clicks edit
+            const editAction = items.find((item) => item.label === 'Edit');
+            expect(editAction).toBeTruthy();
 
-                    expect(mockRouterService.goToEditContentlet).toHaveBeenCalledWith(
-                        MOCK_HTMLPAGE_CONTENTLET.inode
-                    );
-                    done();
-                });
-            }));
+            // Step 2: The page opens in the side panel (#38303)
+            editAction?.command?.({} as MenuItemCommandEvent);
+            await vi.dynamicImportSettled();
+
+            expect(mockOpener.open.mock.calls[0][0]).toEqual(
+                expect.objectContaining({ mode: 'edit', inode: MOCK_HTMLPAGE_CONTENTLET.inode })
+            );
+        });
 
         it('should handle complete push publish workflow', () =>
             new Promise<void>((done) => {
