@@ -1065,7 +1065,7 @@ public class ContentletAjax {
 		try{
 			final String luceneQueryTOElasticSearch = relatedIdentifiers.isEmpty() ?
 					luceneQuery.toString() :
-					appendRelatedIdentifierToQuery(luceneQuery.toString(), relatedIdentifiers);
+					prependRelatedIdentifierToQuery(luceneQuery.toString(), relatedIdentifiers);
 
 			hits =(PaginatedArrayList)conAPI.searchIndex(luceneQueryTOElasticSearch, perPage, offset, finalSort, currentUser, false);
 
@@ -1180,14 +1180,28 @@ public class ContentletAjax {
 		return results;
 	}
 
-	private String appendRelatedIdentifierToQuery(final String luceneQuery,
+	/**
+	 * Restricts the given query to the given identifiers.
+	 * <p>
+	 * The clause is placed before the caller's query rather than after it, which is how a fixed
+	 * clause is composed everywhere else in the search code: what a clause appended at the end
+	 * means depends on how the query ends, since a query ending in an unbalanced escape consumes
+	 * the space that separates the two. The query built here ends in a variant clause written by
+	 * this class, so either order works today; prepending keeps it that way without the next
+	 * caller having to check.
+	 *
+	 * @param luceneQuery the query to restrict
+	 * @param relatedIdentifiers the identifiers the results are restricted to, never empty
+	 * @return the restriction followed by the given query
+	 */
+	private String prependRelatedIdentifierToQuery(final String luceneQuery,
 			final List<String> relatedIdentifiers) {
 
 		Preconditions.checkArgument(UtilMethods.isSet(relatedIdentifiers), "relatedIdentifiers can not be empty or null");
-		final StringBuffer result = new StringBuffer(luceneQuery);
+		final StringBuffer result = new StringBuffer("+identifier:(");
 
-		return result.append(" +identifier:(")
-				.append(String.join(" OR ", relatedIdentifiers)).append(") ")
+		return result.append(String.join(" OR ", relatedIdentifiers)).append(") ")
+				.append(luceneQuery)
 				.toString();
 	}
 
