@@ -639,7 +639,7 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
         });
 
         it('should re-emit the bubble menu contentletEdit as its own', () => {
-            const blockEditorComponent = spectator.query(DotBlockEditorComponent);
+            const blockEditorComponent = spectator.query(DotBlockEditorComponent)!;
             // The menus render once the editor exists; the real one waits on the server.
             editor = new Editor({ extensions: [StarterKit, CharacterCount] });
             blockEditorComponent.editor = editor;
@@ -648,7 +648,7 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
                 .query(By.directive(DotBlockEditorComponent))
                 .injector.get(ChangeDetectorRef)
                 .detectChanges();
-            const bubbleMenu = spectator.query(DotBubbleMenuComponent);
+            const bubbleMenu = spectator.query(DotBubbleMenuComponent)!;
             const emitted = vi.fn();
             blockEditorComponent.contentletEdit.subscribe(emitted);
 
