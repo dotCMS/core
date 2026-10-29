@@ -95,16 +95,6 @@
          <forward name="portlet.ext.categories.view" path="portlet.ext.categories.view" />
          <forward name="portlet.ext.categories.view_categories" path="portlet.ext.categories.view_categories" />
       </action>
-
-      <action path="/ext/categories/view_category" type="com.dotmarketing.portlets.categories.action.ViewCategoryAction" name="CategoryForm" input="portlet.ext.categories.view_category" scope="request" validate="false">
-         <forward name="portlet.ext.categories.view_category" path="portlet.ext.categories.view_category" />
-         <forward name="portlet.ext.categories.view_categories" path="portlet.ext.categories.view_categories" />
-      </action>
-
-      <action path="/ext/categories/edit_category" type="com.dotmarketing.portlets.categories.action.EditCategoryAction" name="CategoryForm" validate="false" input="portlet.ext.categories.edit_category" scope="request">
-         <forward name="portlet.ext.categories.edit_category" path="portlet.ext.categories.edit_category" />
-      </action>
-      <action path="/ext/categories/edit_category_page" type="com.dotmarketing.portlets.categories.action.EditCategoryPageAction" />
       <!-- Category Admin -->
 
       <!-- Contentlet Management -->

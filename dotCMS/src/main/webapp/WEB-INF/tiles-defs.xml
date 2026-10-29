@@ -394,24 +394,6 @@
 		<put name="content"
 			value="/portlet/ext/categories/view_categories.jsp" />
 	</definition>
-
-	<definition name="portlet.ext.categories.view_category"
-		extends="portlet.ext.categories">
-		<put name="content"
-			value="/portlet/ext/categories/view_category.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.categories.edit_category"
-		extends="portlet.ext.categories">
-		<put name="content"
-			value="/portlet/ext/categories/edit_category.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.categories.view_category"
-		extends="portlet.ext.categories">
-		<put name="content"
-			value="/portlet/ext/categories/view_category.jsp" />
-	</definition>
 	<!-- Category Admin -->
 
 	<!-- Entities -->
