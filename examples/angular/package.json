@@ -20,7 +20,7 @@
     "@angular/forms": "22.2.1",
     "@angular/platform-browser": "22.2.1",
     "@angular/platform-browser-dynamic": "22.2.1",
-    "@angular/router": "22.2.1",
+    "@angular/router": "22.2.3",
     "@dotcms/angular": "latest",
     "@dotcms/client": "latest",
     "@dotcms/types": "latest",
@@ -32,7 +32,7 @@
   },
   "devDependencies": {
     "@angular/build": "22.2.1",
-    "@angular/cli": "22.2.1",
+    "@angular/cli": "22.2.4",
     "@angular/compiler-cli": "22.2.1",
     "@tailwindcss/typography": "^0.5.16",
     "@types/jasmine": "~5.1.0",
