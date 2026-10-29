@@ -31,7 +31,7 @@ export interface DotCMSPagesPortletState {
     pagination: DotPagination;
     filters: ListPagesParams;
     languages: DotLanguage[];
-    currentUser?: DotCurrentUser;
+    currentUser: DotCurrentUser | null;
     bundleDialog: {
         show: boolean;
         pageIdentifier: string;
@@ -68,6 +68,10 @@ const initialState: DotCMSPagesPortletState = {
 
 export const DotCMSPagesStore = signalStore(
     withState(initialState),
+    // Right after `withState`: placed last, its required input state makes TypeScript infer the
+    // features before it from that input instead of from their own results, and the store's
+    // type collapses to an index signature under `strict`.
+    withFavorites(),
     withComputed((store) => {
         return {
             $totalRecords: computed<number>(() => store.pagination.totalEntries()),
@@ -153,7 +157,7 @@ export const DotCMSPagesStore = signalStore(
         const globalStore = inject(GlobalStore);
         return {
             onInit: () => {
-                const handleSwitchSite = signalMethod<DotSite>((site: DotSite) => {
+                const handleSwitchSite = signalMethod<DotSite | null>((site) => {
                     if (!site) return;
                     const host = site.identifier;
                     store.getPages({ ...initialFilters, host });
@@ -161,6 +165,5 @@ export const DotCMSPagesStore = signalStore(
                 handleSwitchSite(globalStore.siteDetails);
             }
         };
-    }),
-    withFavorites()
+    })
 );
