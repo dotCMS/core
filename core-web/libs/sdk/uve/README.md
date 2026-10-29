@@ -7,7 +7,7 @@ The `@dotcms/uve` SDK adds live editing to your JavaScript app using the dotCMS 
 With `@dotcms/uve`, framework SDKs are able to:
 - Make pages and contentlets editable
 - Respond to editor events (content updates, mode changes)
-- Trigger modal or inline editing experiences
+- Open content in the editor's side panel, or edit fields inline
 - Sync app routing with the dotCMS editor
 
 ## Table of Contents
@@ -334,7 +334,7 @@ sub.unsubscribe();
 
 ### `editContentlet(contentlet)`
 
-`editContentlet` is a function that opens the dotCMS modal editor for any contentlet in or out of the page area.
+`editContentlet` is a function that opens any contentlet, in or out of the page area, in a side panel over the page, in the editor its content type uses. The page refreshes after every save.
 
 | Input        | Type               | Required | Description                      |
 | ------------ | ------------------ | -------- | -------------------------------- |
