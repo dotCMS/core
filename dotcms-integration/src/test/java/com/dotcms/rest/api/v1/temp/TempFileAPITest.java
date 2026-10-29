@@ -86,12 +86,13 @@ public class TempFileAPITest {
 
     /**
      * A temp file whose name carries a listed extension is refused at creation, in any letter
-     * case, so no later step can turn it into an asset; nothing is created for it.
+     * case, so no later step can turn it into an asset; nothing is created for it. The check runs
+     * on the sanitised name, so a character the sanitiser strips cannot split the extension.
      */
     @Test
     public void testCreateEmptyTempFile_listedExtensionAnyCase_isRefused() {
         final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
-        for (final String name : new String[] {"sample-1.jsp", "sample-2.JSP", "sample-6.JSPX"}) {
+        for (final String name : new String[] {"sample-1.jsp", "sample-2.JSP", "sample-6.JSPX", "sample-7.J:SP"}) {
             assertThrows(name, IllegalArgumentException.class,
                     () -> tempFileAPI.createEmptyTempFile(name, mockHttpServletRequest()));
         }

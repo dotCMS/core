@@ -272,6 +272,7 @@ import com.dotmarketing.startup.runonce.Task260615AlterClusterIdLength;
 import com.dotmarketing.startup.runonce.Task260420AddDotAuthPortletToMenu;
 import com.dotmarketing.startup.runonce.Task260720AddDefaultBaseTypeToFolderTable;
 import com.dotmarketing.startup.runonce.Task260826CreateSystemEventCursorTable;
+import com.dotmarketing.startup.runonce.Task261023RemoveContainersLegacyPortletFromLayouts;
 import com.dotmarketing.startup.runonce.Task261028RemoveSearchLegacyPortletsFromLayouts;
 import com.google.common.collect.ImmutableList;
 
@@ -618,6 +619,7 @@ public class TaskLocatorUtil {
         .add(Task260615AlterClusterIdLength.class)
         .add(Task260720AddDefaultBaseTypeToFolderTable.class)
         .add(Task260826CreateSystemEventCursorTable.class)
+        .add(Task261023RemoveContainersLegacyPortletFromLayouts.class)
         .add(Task261028RemoveSearchLegacyPortletsFromLayouts.class)
         .build();
 

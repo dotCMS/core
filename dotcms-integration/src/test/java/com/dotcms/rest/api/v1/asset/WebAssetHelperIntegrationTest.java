@@ -286,6 +286,33 @@ public class WebAssetHelperIntegrationTest {
 
     /**
      * Method to test : {@link WebAssetHelper#saveUpdateAsset(HttpServletRequest, FileUploadData, User)}
+     * Given Scenario: The requested asset path ends in a name that the temp file layer would
+     * rewrite, here one that starts with a period.
+     * Expected Result: The asset is stored under the requested name, so a later request for the
+     * same path finds it; the temp file's on-disk name is an internal detail.
+     */
+    @Test
+    public void Test_Upload_Keeps_Requested_Asset_Name() throws DotDataException, DotSecurityException, IOException {
+        final MockHeaderRequest request = getMockHeaderRequest();
+        final File newTestFile = FileUtil.createTemporaryFile("lol", ".txt", RandomStringUtils.random(1000));
+        final String requestedName = ".marker-" + RandomStringUtils.randomAlphanumeric(8) + ".txt";
+        final String path = parentFolderPath() + requestedName;
+        final FileUploadDetail detail = new FileUploadDetail(path, language.toString(), true);
+        try (final InputStream inputStream = Files.newInputStream(newTestFile.toPath())) {
+            final WebAssetHelper webAssetHelper = WebAssetHelper.newInstance();
+            final FileUploadData form = new FileUploadData();
+            form.setFileInputStream(inputStream);
+            form.setContentDisposition(getFormDataContentDisposition(newTestFile));
+            form.setAssetPath(path);
+            form.setDetail(detail);
+            final WebAssetView assetInfo = webAssetHelper.saveUpdateAsset(request, form, APILocator.systemUser());
+            Assert.assertTrue(assetInfo instanceof AssetView);
+            Assert.assertEquals(requestedName, ((AssetView) assetInfo).name());
+        }
+    }
+
+    /**
+     * Method to test : {@link WebAssetHelper#saveUpdateAsset(HttpServletRequest, FileUploadData, User)}
      * Given Scenario: We submit a valid path and a file
      * Expected Result: We get the asset info back as proof of success
      * @throws DotDataException

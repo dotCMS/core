@@ -144,6 +144,9 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.ClusterResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.cluster.ClusterNodesResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.system.ConfigurationHelperTest.class,
+        com.dotcms.rest.api.v1.container.ContainerResourceDependenciesIntegrationTest.class,
+        com.dotmarketing.startup.runonce.Task261023RemoveContainersLegacyPortletFromLayoutsTest.class,
+        com.dotmarketing.portlets.templates.business.TemplateAPIFindUsingContainerTest.class,
         com.dotmarketing.startup.runonce.Task261028RemoveSearchLegacyPortletsFromLayoutsTest.class,
         UserDeletionCacheInvalidationTest.class,
         ViewCMSMaintenanceActionTest.class,
@@ -155,6 +158,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentRelationshipsResourceIntegrationTest.class,
         com.dotmarketing.portal.struts.StrutsPathAccessTest.class,
         com.liferay.portal.struts.PortletRequestProcessorAccessTest.class,
+        com.dotcms.security.multipart.MultiPartRequestSecurityWebInterceptorTest.class,
+        com.dotcms.rest.api.v1.temp.TempFileNamingTest.class,
         com.dotmarketing.webdav.DotWebdavHelperTest.class,
 })
 public class MainSuite2a {
