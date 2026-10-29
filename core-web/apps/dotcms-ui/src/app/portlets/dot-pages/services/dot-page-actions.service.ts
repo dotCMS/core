@@ -55,9 +55,8 @@ interface DotPermissions {
  *   which can cause poor UX on slow connections (empty/late menus) and extra network chatter.
  *
  * Migration note:
- * This service was introduced during the migration from the old Pages store to preserve behavior
- * that previously lived in the legacy store method:
- * `apps/dotcms-ui/src/app/portlets/dot-pages/dot-pages-store/dot-pages.store.ts#L928`
+ * This service was introduced during the migration from the old Pages store (`DotPageStore`,
+ * deleted in #38303) to preserve the menu-building behavior that lived there.
  *
  * TODO: Replace this service by enhancing the Pages listing endpoint to include the minimal
  * data needed to render the menu synchronously, then delete this service and simplify callers.
