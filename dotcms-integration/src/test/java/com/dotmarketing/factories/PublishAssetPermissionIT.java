@@ -113,13 +113,14 @@ public class PublishAssetPermissionIT {
 
     /**
      * Method to test: {@link PublishFactory#publishAsset(Inode, User, boolean, boolean)}
-     * Given Scenario: A user holding PUBLISH on a template but not on the container in its layout
+     * Given Scenario: A user holding PUBLISH on a template and only READ on the container in its layout
      * ExpectedResult: The template goes live and the container is left as it was
      */
     @Test
     void test_publishAsset_template_leavesContainerUserCannotPublish() throws Exception {
         final User user = backendUser();
         final Container container = new ContainerDataGen().site(site).nextPersisted();
+        grant(container, user, PermissionAPI.PERMISSION_READ);
         final Template template = unpublishedTemplateWith(container);
         grant(template, user, PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_PUBLISH);
 
@@ -132,13 +133,14 @@ public class PublishAssetPermissionIT {
     /**
      * Method to test:
      * {@link com.dotmarketing.portlets.templates.business.TemplateAPI#publishTemplate(Template, User, boolean)}
-     * Given Scenario: A user holding PUBLISH on a template but not on the container in its layout
+     * Given Scenario: A user holding PUBLISH on a template and only READ on the container in its layout
      * ExpectedResult: The template goes live and the container is left as it was
      */
     @Test
     void test_templateAPI_publishTemplate_leavesContainerUserCannotPublish() throws Exception {
         final User user = backendUser();
         final Container container = new ContainerDataGen().site(site).nextPersisted();
+        grant(container, user, PermissionAPI.PERMISSION_READ);
         final Template template = unpublishedTemplateWith(container);
         grant(template, user, PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_PUBLISH);
 
@@ -179,7 +181,8 @@ public class PublishAssetPermissionIT {
 
     /**
      * Gives the user's own role the permission bits on the asset and, when the asset is a site or
-     * a folder, on the folders and links created under it.
+     * a folder, on the folders and links created under it. A container keeps only its own row, so
+     * READ on it never implies PUBLISH.
      */
     private static void grant(final Permissionable asset, final User user, final int permission)
             throws DotDataException, DotSecurityException {
