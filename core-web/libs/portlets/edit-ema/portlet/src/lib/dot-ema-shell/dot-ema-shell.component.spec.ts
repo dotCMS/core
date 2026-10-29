@@ -1142,7 +1142,11 @@ describe('DotEmaShellComponent', () => {
                 const page = openProperties();
 
                 page.options.saved?.(
-                    createFakeContentlet({ inode: '123', identifier: '123', url: '/my-awesome-page' })
+                    createFakeContentlet({
+                        inode: '123',
+                        identifier: '123',
+                        url: '/my-awesome-page'
+                    })
                 );
 
                 expect(pageLoadSpy).toHaveBeenCalledWith({ url: '/my-awesome-page' });
