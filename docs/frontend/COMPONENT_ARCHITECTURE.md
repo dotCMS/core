@@ -515,6 +515,34 @@ Template — bind to signals with `$` prefix:
 </div>
 ```
 
+## Opening content in the side panel
+
+Every screen that edits or creates content outside the full-screen `#/content` route opens it in the side panel, through one opener in `@dotcms/edit-content` (#38303). A surface never opens an editor, a dialog or a tab for content on its own.
+
+- **Build one request.** A surface describes *what* to open as a [`DotEditContentRequest`](../../core-web/libs/edit-content/src/lib/models/dot-edit-content-request.model.ts): `mode: 'edit'` with an `inode`, or `mode: 'new'` with a `contentType`, plus the context it has (`languageId`, `folderPath`, `variantName`, `portletId`…). It never says *which* editor.
+- **Hand it to the opener.** Call [`DotEditContentOpenerService.open(request, { injector, ...handlers })`](../../core-web/libs/edit-content/src/lib/opener/dot-edit-content-opener.service.ts) for a one-off open, or bind a request signal with [`injectEditContentPanel($request, handlers)`](../../core-web/libs/edit-content/src/lib/opener/inject-edit-content-panel.ts) when the panel follows the surface's state: it opens when the signal is set and closes when it is cleared. The opener picks the new or the legacy editor from the content type.
+- **Handle the five events** ([`DotEditContentPanelEvents`](../../core-web/libs/edit-content/src/lib/models/dot-edit-content-panel-events.model.ts)): `saved` on every save, with the contentlet; `languageChanged`; `pageEditorRequested`; `deleted`, always followed by `closed`; and `closed`, exactly once. Refresh on `saved` **and** on `closed`, because some legacy-editor changes (a move, a translation) send no usable save.
+- **Fields never open overlays.** A field that needs other content opened (Relationship, the block editors) calls `openContent()` on the injected [`EDIT_CONTENT_HOST`](../../core-web/libs/edit-content/src/lib/services/host/edit-content-host.model.ts). The host decides between a new panel, one stacked over the current panel, or replacing its own content in place with a breadcrumb.
+
+```ts
+export class DotMyListComponent {
+    readonly #store = inject(DotMyListStore);
+    readonly $editRequest = signal<DotEditContentRequest | null>(null);
+
+    readonly #panel = injectEditContentPanel(this.$editRequest, {
+        saved: () => this.#store.reload(),
+        closed: () => {
+            this.#store.reload();
+            this.$editRequest.set(null);
+        }
+    });
+
+    edit(row: DotCMSContentlet): void {
+        this.$editRequest.set({ mode: 'edit', inode: row.inode, contentType: row.contentType });
+    }
+}
+```
+
 ## Performance Patterns
 
 ### Change Detection
