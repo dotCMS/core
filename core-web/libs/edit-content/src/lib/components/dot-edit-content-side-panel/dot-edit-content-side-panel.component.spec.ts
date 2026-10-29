@@ -183,7 +183,7 @@ describe('DotEditContentSidePanelComponent', () => {
     /**
      * #38303 (layer 6) — the panel takes a request and reports through its outputs only. The
      * dialog-era `data` input, the only way `onContentSaved` and `onCancel` reached the panel, is
-     * gone with `EditContentDialogData`.
+     * gone with the dialog-era data type.
      */
     describe('without dialog data', () => {
         it('should take a request and no data input', () => {
