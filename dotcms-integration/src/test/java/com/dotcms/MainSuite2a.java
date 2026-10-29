@@ -28,7 +28,6 @@ import com.dotcms.rest.api.v1.content.ContentRelationshipsResourceIntegrationTes
 import com.dotcms.rest.api.v1.maintenance.MaintenanceResourceIntegrationTest;
 import com.dotcms.rest.api.v1.sites.ruleengine.RuleRefusedActionsIntegrationTest;
 import com.dotcms.rest.api.v1.sites.ruleengine.RuleResourcesAccessIntegrationTest;
-import com.dotcms.rest.api.v1.user.UserResourcePasswordIntegrationTest;
 import com.dotmarketing.business.UserDeletionCacheInvalidationTest;
 import com.dotmarketing.image.vips.VipsResizeImageFilterIntegrationTest;
 import com.dotmarketing.image.vips.VipsResizeOrientationIntegrationTest;
@@ -161,7 +160,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.liferay.portal.struts.PortletRequestProcessorAccessTest.class,
         com.dotcms.security.multipart.MultiPartRequestSecurityWebInterceptorTest.class,
         com.dotcms.rest.api.v1.temp.TempFileNamingTest.class,
-        UserResourcePasswordIntegrationTest.class
+        com.dotcms.content.elasticsearch.business.ESContentletAPIImplTrailingBackslashQueryTest.class
 })
 public class MainSuite2a {
 
