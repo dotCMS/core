@@ -799,13 +799,14 @@ public class ESContentFactoryImpl implements ContentletFactory {
      *
      * @param inode {@link Contentlet}'s inode
      * @param ignoreStoryBlock if it is true then the StoryBlock are not hydrated
-     * @return
+     * @return The Contentlet, or an empty {@link Optional} if there is none with that inode.
      */
     // The cache-miss surcharge for the single-contentlet path. Reaching this method IS the
     // miss - find() has already charged the CONTENT_FROM_CACHE base fee, so a warm find
     // costs 1 and a cold one costs 11. Annotations are not inherited, so the @RequestCost on
     // ContentletFactory's findInDb default does nothing here; this needs its own.
     @RequestCost(Price.CONTENT_FROM_DB)
+    @Override
     public Optional<Contentlet> findInDb(final String inode, final boolean ignoreStoryBlock) {
         try {
             if (inode != null) {
@@ -836,16 +837,20 @@ public class ESContentFactoryImpl implements ContentletFactory {
     }
 
     /**
-     * Find a {@link Contentlet}, first look for the  {@link Contentlet} is cache is it is not there then
-     * hit the Database
+     * Finds a {@link Contentlet} by inode, in the contentlet cache first and in the database when
+     * it is not cached. The cache always holds the Story Block values as they are stored.
      *
-     * @param inode {@link Contentlet}'s inode
-     * @param ignoreStoryBlock if it is true, then if the {@link Contentlet} is loaded from cache then the StoryBlock are not refresh
-     *                         if the {@link Contentlet} is loaded from Database then the SToryBlocks are not hydrated
-     * @return
-     * @throws DotStateException
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param inode            The {@link Contentlet}'s inode.
+     * @param ignoreStoryBlock If {@code true}, the Contentlet is returned with its Story Block
+     *                         values as stored, which is the cached instance on a cache hit. If
+     *                         {@code false}, the references in them are refreshed for the user of
+     *                         the current request on a copy.
+     *
+     * @return The {@link Contentlet}, or {@code null} if there is none with that inode.
+     *
+     * @throws DotStateException    The Contentlet could not be read.
+     * @throws DotDataException     An error occurred when reading the database.
+     * @throws DotSecurityException An error occurred when hydrating the Story Block references.
      */
     public Contentlet find(final String inode, final boolean ignoreStoryBlock) throws DotStateException, DotDataException, DotSecurityException {
         Contentlet contentlet = contentletCache.get(inode);
@@ -853,10 +858,8 @@ public class ESContentFactoryImpl implements ContentletFactory {
             if (CACHE_404_CONTENTLET.equals(contentlet.getInode())) {
                 return null;
             }
-
-            if (!ignoreStoryBlock) {
-                return processCachedContentlet(contentlet);
-            }
+            // The cached instance is what the database branch below would cache and return
+            return ignoreStoryBlock ? contentlet : processCachedContentlet(contentlet);
         }
 
         final Optional<Contentlet> dbContentlet = this.findInDb(inode, true);

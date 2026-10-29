@@ -1,13 +1,16 @@
 package com.dotcms.contenttype.business;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
@@ -22,28 +25,47 @@ import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHeaderRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
+import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.rendering.velocity.services.ContentletLoader;
+import com.dotcms.rendering.velocity.util.VelocityUtil;
+import com.dotcms.rendering.velocity.viewtools.ContentsWebAPI;
+import com.dotcms.rendering.velocity.viewtools.JSONTool;
+import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
+import com.dotcms.rest.EmptyHttpResponse;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.api.v1.workflow.WorkflowResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.model.Variant;
+import com.dotcms.workflow.form.FireActionForm;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
+import org.apache.velocity.context.Context;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -543,6 +565,187 @@ public class StoryBlockReferenceAccessTest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Method to test: {@link ContentletLoader#buildVelocity(Contentlet, PageMode, String)}.
+     * Given scenario: the Velocity code of the carrier, which is cached and shared by every user
+     * who renders a page with it, is built for a reader who can read the restricted reference
+     * and for an anonymous reader, in both orders.
+     * Expected result: the code is the same whoever builds it, and the Story Block variable it
+     * sets carries every reference with only the keys that identify it.
+     */
+    @Test
+    public void carrierPageCode_isTheSameForEveryReader_andCarriesOnlyReferenceKeys() throws Exception {
+        final String readerFirst = buildCarrierCodeAs(readerWithRead);
+        final String anonymousSecond = buildCarrierCodeAs(anonymous());
+        final String anonymousFirst = buildCarrierCodeAs(anonymous());
+        final String readerSecond = buildCarrierCodeAs(readerWithRead);
+
+        assertEquals(readerFirst, anonymousSecond);
+        assertEquals(anonymousFirst, readerSecond);
+        assertEquals(readerFirst, anonymousFirst);
+        assertFalse("the shared code must not carry the restricted reference's data",
+                readerFirst.contains(restrictedTarget.getTitle()));
+        assertFalse("the shared code must not carry the public reference's data either",
+                readerFirst.contains(publicTarget.getTitle()));
+    }
+
+    /**
+     * Method to test: the Story Block variable set by the code of
+     * {@link ContentletLoader#buildVelocity(Contentlet, PageMode, String)}.
+     * Given scenario: the code is built once, by one reader, and then rendered inside a container
+     * (which loads the carrier for the request as {@code $dotContentMap}) by a reader who can read
+     * the restricted reference and by an anonymous reader, in both orders.
+     * Expected result: each reader gets the variable resolved for them: the reader with READ gets
+     * both references hydrated, the anonymous reader only the public one.
+     */
+    @Test
+    public void carrierRenderedInAContainer_givesEachReaderTheirOwnStoryBlock() throws Exception {
+        for (final List<User> order : List.of(List.of(readerWithRead, anonymous()),
+                List.of(anonymous(), readerWithRead))) {
+            final String code = buildCarrierCodeAs(order.get(0));
+            for (final User reader : order) {
+                final Map<String, Map<String, Object>> references = referencesIn(renderStoryBlockVariableAs(reader, code));
+
+                assertEquals(publicTarget.getTitle(), references.get(publicTarget.getIdentifier()).get("title"));
+                if (reader.isAnonymousUser()) {
+                    assertOnlyReferenceKeys(references.get(restrictedTarget.getIdentifier()));
+                } else {
+                    assertEquals(restrictedTarget.getTitle(),
+                            references.get(restrictedTarget.getIdentifier()).get("title"));
+                }
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@code ESContentFactoryImpl#find(String, boolean)} with
+     * {@code ignoreStoryBlock = true}.
+     * Given scenario: the carrier is loaded from the database, which caches it, and then found
+     * again.
+     * Expected result: the second call returns the cached instance instead of loading the carrier
+     * from the database again.
+     */
+    @Test
+    public void findIgnoringStoryBlock_onACachedCarrier_returnsTheCachedInstance() throws Exception {
+        final ESContentFactoryImpl factory = (ESContentFactoryImpl) FactoryLocator.getContentletFactory();
+        CacheLocator.getContentletCache().remove(carrier.getInode());
+
+        final Contentlet loaded = factory.find(carrier.getInode(), true);
+        final Contentlet found = factory.find(carrier.getInode(), true);
+
+        assertSame(loaded, found);
+        assertSame(CacheLocator.getContentletCache().get(carrier.getInode()), found);
+    }
+
+    /**
+     * Method to test: {@link com.dotmarketing.portlets.contentlet.business.ContentletAPI#checkin}
+     * with {@link StoryBlockAPI#restoreReferenceData(Object, Object)}.
+     * Given scenario: a back-end user without READ on the restricted contentlet opens a carrier
+     * (getting that reference with only its keys) and saves it back as it got it.
+     * Expected result: the saved carrier keeps the data stored with the restricted reference, so
+     * a reader with READ still gets it when references are not refreshed
+     * ({@code REFRESH_BLOCK_EDITOR_REFERENCES=false}).
+     */
+    @Test
+    public void savingTheStoryBlockAsReceivedByAReaderWithoutRead_keepsTheStoredReferenceData() throws Exception {
+        final Contentlet editedCarrier = ContentletDataGen.publish(new ContentletDataGen(carrierType.id())
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .setProperty(storyBlockField.variable(), carrier.get(storyBlockField.variable()))
+                .nextPersisted());
+        for (final User reader : List.of(readerWithRead, readerWithoutRead)) {
+            PermissionUtilTest.addPermission(editedCarrier, reader,
+                    PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+        }
+        final boolean previous = Config.getBooleanProperty("REFRESH_BLOCK_EDITOR_REFERENCES", true);
+        try {
+            final Object asReceived = asReader(readerWithoutRead, () -> APILocator.getContentletAPI()
+                    .find(editedCarrier.getInode(), readerWithoutRead, false)).get(storyBlockField.variable());
+            assertOnlyReferenceKeys(referencesIn(asReceived).get(restrictedTarget.getIdentifier()));
+
+            final Contentlet checkout = ContentletDataGen.checkout(editedCarrier);
+            checkout.setProperty(storyBlockField.variable(), asReceived);
+            final Contentlet saved = ContentletDataGen.checkin(checkout);
+
+            final Contentlet stored = FactoryLocator.getContentletFactory().findInDb(saved.getInode(), true)
+                    .orElseThrow(() -> new AssertionError("the saved carrier must be in the database"));
+            final Map<String, Map<String, Object>> storedReferences = referencesIn(stored.get(storyBlockField.variable()));
+            assertEquals(restrictedTarget.getTitle(), storedReferences.get(restrictedTarget.getIdentifier()).get("title"));
+            assertEquals(publicTarget.getTitle(), storedReferences.get(publicTarget.getIdentifier()).get("title"));
+
+            Config.setProperty("REFRESH_BLOCK_EDITOR_REFERENCES", false);
+            final Contentlet adminView = asReader(readerWithRead, () -> APILocator.getContentletAPI()
+                    .find(saved.getInode(), readerWithRead, false));
+            assertEquals(restrictedTarget.getTitle(), referencesIn(adminView.get(storyBlockField.variable()))
+                    .get(restrictedTarget.getIdentifier()).get("title"));
+        } finally {
+            Config.setProperty("REFRESH_BLOCK_EDITOR_REFERENCES", previous);
+            ContentletDataGen.destroy(editedCarrier);
+        }
+    }
+
+    /**
+     * Method to test: {@link WorkflowResource#fireActionDefaultSinglePart}.
+     * Given scenario: a back-end user who can edit a carrier but cannot read the restricted
+     * contentlet saves the Story Block as they received it (that reference with only its keys).
+     * Expected result: the carrier is saved with the restricted reference's stored data, and the
+     * contentlet returned to the user carries that reference with only its keys.
+     */
+    @Test
+    public void savingTheStoryBlockAsReceived_returnsToTheEditorOnlyTheReferencesTheyCanRead() throws Exception {
+        final String password = "editor-" + System.currentTimeMillis();
+        final User editor = new UserDataGen().active(true).password(password)
+                .roles(TestUserUtils.getBackendRole()).nextPersisted();
+        final Contentlet editedCarrier = ContentletDataGen.publish(new ContentletDataGen(carrierType.id())
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .setProperty(storyBlockField.variable(), carrier.get(storyBlockField.variable()))
+                .nextPersisted());
+        final int edit = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_PUBLISH;
+        final String editorRole = APILocator.getRoleAPI().getUserRole(editor).getId();
+        APILocator.getPermissionAPI().save(List.of(new Permission(carrierType.getPermissionId(), editorRole, edit, true)),
+                carrierType, APILocator.systemUser(), false);
+        PermissionUtilTest.addPermission(editedCarrier, editor, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, edit);
+        PermissionUtilTest.addPermission(publicTarget, editor,
+                PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+        final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        try {
+            final Object asReceived = asReader(editor, () -> APILocator.getContentletAPI()
+                    .find(editedCarrier.getInode(), editor, false)).get(storyBlockField.variable());
+            assertOnlyReferenceKeys(referencesIn(asReceived).get(restrictedTarget.getIdentifier()));
+
+            final HttpServletRequest request = new MockHeaderRequest(new MockSessionRequest(
+                    new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
+                            .request()).request());
+            ((MockHeaderRequest) request).setHeader("Authorization", "Basic " + Base64.getEncoder()
+                    .encodeToString((editor.getEmailAddress() + ":" + password).getBytes(StandardCharsets.UTF_8)));
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+            final FireActionForm form = new FireActionForm(new FireActionForm.Builder().contentlet(Map.of(
+                    "identifier", editedCarrier.getIdentifier(),
+                    "languageId", editedCarrier.getLanguageId(),
+                    storyBlockField.variable(), asReceived)));
+            final Response response = new WorkflowResource().fireActionDefaultSinglePart(request,
+                    new EmptyHttpResponse(), null, editedCarrier.getIdentifier(), "WAIT_FOR",
+                    String.valueOf(editedCarrier.getLanguageId()), "DEFAULT", SystemAction.EDIT, form);
+
+            assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> returned = (Map<String, Object>) ((ResponseEntityView<?>) response.getEntity()).getEntity();
+            final Map<String, Map<String, Object>> returnedReferences = referencesIn(returned.get(storyBlockField.variable()));
+            assertOnlyReferenceKeys(returnedReferences.get(restrictedTarget.getIdentifier()));
+            assertEquals(publicTarget.getTitle(), returnedReferences.get(publicTarget.getIdentifier()).get("title"));
+
+            final Contentlet stored = FactoryLocator.getContentletFactory()
+                    .findInDb(String.valueOf(returned.get("inode")), true)
+                    .orElseThrow(() -> new AssertionError("the saved carrier must be in the database"));
+            assertEquals(restrictedTarget.getTitle(), referencesIn(stored.get(storyBlockField.variable()))
+                    .get(restrictedTarget.getIdentifier()).get("title"));
+
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
+            ContentletDataGen.destroy(editedCarrier);
+            UserDataGen.remove(editor);
+        }
+    }
+
     // ----------------------------------------------------------------------------------- helpers
 
     /** The carrier in the shared cache still holds the restricted reference's stored data. */
@@ -593,6 +796,36 @@ public class StoryBlockReferenceAccessTest extends IntegrationTestBase {
 
     private static User anonymous() throws Exception {
         return APILocator.getUserAPI().getAnonymousUser();
+    }
+
+    /**
+     * Builds the cached Velocity code of the carrier (LIVE mode) with the given user set in the
+     * current request, from the carrier that user gets.
+     */
+    private static String buildCarrierCodeAs(final User reader) throws Exception {
+        final Contentlet found = findCarrierAs(reader, reader.isAnonymousUser(), true);
+        return asReader(reader, () -> {
+            try (final InputStream code = new ContentletLoader()
+                    .buildVelocity(found, PageMode.LIVE, "storyBlockCarrier.content")) {
+                return new String(code.readAllBytes(), StandardCharsets.UTF_8);
+            }
+        });
+    }
+
+    /**
+     * Renders the given carrier code the way a container does, with the carrier loaded for the
+     * given reader as {@code $dotContentMap}, and returns the Story Block variable it sets.
+     */
+    private static String renderStoryBlockVariableAs(final User reader, final String code) throws Exception {
+        final Contentlet found = findCarrierAs(reader, reader.isAnonymousUser(), false);
+        return asReader(reader, () -> {
+            final Context context = VelocityUtil.getBasicContext();
+            context.put("json", new JSONTool());
+            context.put("contents", new ContentsWebAPI());
+            context.put("dotContentMap", new ContentMap(found, reader, PageMode.LIVE,
+                    APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false), context));
+            return VelocityUtil.eval(code + "$" + storyBlockField.variable(), context).trim();
+        });
     }
 
     /**

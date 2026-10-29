@@ -601,7 +601,127 @@ public class StoryBlockAPIImplReferenceAccessTest {
         verify(contentletAPI, never()).find(eq("deep-inode"), eq(anonymousUser), anyBoolean(), anyBoolean());
     }
 
+    @Test
+    public void limitReferencesToReader_withExplicitReaderAndNoRequest_keepsOnlyReferenceKeys() throws Exception {
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+        final Contentlet stored = storedVersionOf(REF_ID, REF_INODE);
+        when(permissionAPI.doesUserHavePermission(stored, PermissionAPI.PERMISSION_READ, backendUser, false))
+                .thenReturn(false);
+
+        final StoryBlockReferenceResult result = storyBlockAPI
+                .limitReferencesToReader(parentWithStoryBlock(STORY_BLOCK_JSON), backendUser, false);
+
+        assertTrue(result.isRefreshed());
+        assertEquals(referenceKeysOf(REF_ID), referenceDataIn(parentProperties.get("body")));
+        assertEquals(referenceKeysOf(REF_ID), referenceDataIn(parentProperties.get("body_raw")));
+    }
+
+    @Test
+    public void limitReferencesToReader_withExplicitReaderWhoCanRead_keepsTheStoredData() throws Exception {
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+        final Contentlet stored = storedVersionOf(REF_ID, REF_INODE);
+        when(permissionAPI.doesUserHavePermission(stored, PermissionAPI.PERMISSION_READ, backendUser, false))
+                .thenReturn(true);
+
+        storyBlockAPI.limitReferencesToReader(parentWithStoryBlock(STORY_BLOCK_JSON), backendUser, false);
+
+        assertEquals(STORED_TITLE, referenceDataIn(parentProperties.get("body")).get("title"));
+    }
+
+    // --------------------------------------------- restoreReferenceData(Object, Supplier<Object>)
+
+    @Test
+    public void restoreReferenceData_referenceWithOnlyItsKeys_getsTheStoredDataBack() throws Exception {
+        final Object restored = storyBlockAPI.restoreReferenceData(withReference(referenceKeysOf(REF_ID)),
+                () -> STORY_BLOCK_JSON);
+
+        assertEquals(dataOf(contentOf(STORY_BLOCK_JSON).get(1)), referenceDataIn(restored));
+        assertEquals(contentOf(STORY_BLOCK_JSON).get(0), contentOf(restored).get(0),
+                "the paragraph node must be untouched");
+    }
+
+    @Test
+    public void restoreReferenceData_referenceSubmittedWithData_isKeptAsSubmitted() {
+        final String submitted = withReference(Map.of(StoryBlockAPI.IDENTIFIER_KEY, REF_ID,
+                StoryBlockAPI.LANGUAGE_ID_KEY, 1, "title", "edited title"));
+
+        assertSame(submitted, storyBlockAPI.restoreReferenceData(submitted, () -> {
+            throw new AssertionError("the saved value must not be read when no reference needs it");
+        }));
+    }
+
+    @Test
+    public void restoreReferenceData_referenceNotInTheStoredValue_staysReduced() {
+        final String submitted = withReference(referenceKeysOf(REF_ID));
+        final String stored = withReference(Map.of(StoryBlockAPI.IDENTIFIER_KEY, "other-id",
+                StoryBlockAPI.LANGUAGE_ID_KEY, 1, "title", STORED_TITLE));
+
+        assertSame(submitted, storyBlockAPI.restoreReferenceData(submitted, () -> stored));
+    }
+
+    @Test
+    public void restoreReferenceData_storedReferenceInAnotherLanguage_isNotTaken() {
+        final String submitted = withReference(referenceKeysOf(REF_ID));
+        final String stored = withReference(Map.of(StoryBlockAPI.IDENTIFIER_KEY, REF_ID,
+                StoryBlockAPI.LANGUAGE_ID_KEY, 2, "title", STORED_TITLE));
+
+        assertSame(submitted, storyBlockAPI.restoreReferenceData(submitted, () -> stored));
+    }
+
+    @Test
+    public void restoreReferenceData_storedReferenceAlsoReduced_staysReduced() {
+        final String submitted = withReference(referenceKeysOf(REF_ID));
+
+        assertSame(submitted, storyBlockAPI.restoreReferenceData(submitted, () -> withReference(referenceKeysOf(REF_ID))));
+    }
+
+    @Test
+    public void restoreReferenceData_withoutAStoredStoryBlock_returnsTheSubmittedValue() {
+        final String submitted = withReference(referenceKeysOf(REF_ID));
+
+        assertSame(submitted, storyBlockAPI.restoreReferenceData(submitted, () -> null));
+        assertSame(submitted, storyBlockAPI.restoreReferenceData(submitted, () -> "<p>legacy WYSIWYG value</p>"));
+    }
+
+    @Test
+    @SuppressWarnings("unchecked")
+    public void restoreReferenceData_referenceInsideAList_getsTheStoredDataBack() throws Exception {
+        final String submitted = "{\"type\":\"doc\",\"content\":[{\"type\":\"bulletList\",\"content\":["
+                + "{\"type\":\"listItem\",\"content\":[{\"type\":\"dotContent\",\"attrs\":{\"data\":"
+                + "{\"identifier\":\"" + REF_ID + "\",\"languageId\":1}}}]}]}]}";
+
+        final Object restored = storyBlockAPI.restoreReferenceData(submitted, () -> STORY_BLOCK_JSON);
+
+        final Map<String, Object> listItem = (Map<String, Object>) ((List<Object>) contentOf(restored).get(0)
+                .get(StoryBlockAPI.CONTENT_KEY)).get(0);
+        final Map<String, Object> node = ((List<Map<String, Object>>) listItem.get(StoryBlockAPI.CONTENT_KEY)).get(0);
+        assertEquals(STORED_TITLE, dataOf(node).get("title"));
+    }
+
+    @Test
+    public void restoreReferenceData_submittedAsMap_returnsTheRestoredDocument() throws Exception {
+        final Map<String, Object> submitted = storyBlockAPI.toMap(withReference(referenceKeysOf(REF_ID)));
+
+        final Object restored = storyBlockAPI.restoreReferenceData(submitted, () -> STORY_BLOCK_JSON);
+
+        assertEquals(STORED_TITLE, referenceDataIn(restored).get("title"));
+        assertEquals(referenceKeysOf(REF_ID), referenceDataIn(submitted), "the submitted map must not be modified");
+    }
+
     // ----------------------------------------------------------------------------------- helpers
+
+    /** A document like {@link #STORY_BLOCK_JSON}, with the given data in its reference node. */
+    @SuppressWarnings("unchecked")
+    private String withReference(final Map<String, Object> data) {
+        try {
+            final Map<String, Object> document = storyBlockAPI.toMap(STORY_BLOCK_JSON);
+            final List<Map<String, Object>> content = contentOf(document);
+            ((Map<String, Object>) content.get(1).get(StoryBlockAPI.ATTRS_KEY)).put(StoryBlockAPI.DATA_KEY, data);
+            return storyBlockAPI.toJson(document);
+        } catch (final Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
 
     /**
      * Refreshes {@link #STORY_BLOCK_JSON} as anonymous, where the referenced contentlet has a

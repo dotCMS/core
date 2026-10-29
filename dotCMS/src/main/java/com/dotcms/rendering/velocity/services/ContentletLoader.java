@@ -51,6 +51,7 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.apache.velocity.exception.ResourceNotFoundException;
@@ -181,13 +182,14 @@ public class ContentletLoader implements DotLoader {
                 if (UtilMethods.isSet(contFieldValueObject)) {
                     if (JsonUtil.isValidJSON(contFieldValueObject.toString())) {
                         // Replace empty relationship collections with $contents.getEmptyList()
-                        final String jsonStr = contFieldValueObject.toString()
+                        final String jsonStr = this.withReferenceKeysOnly(contFieldValueObject)
                                 .replaceAll(":\\s*\\[\\s*\\]", ":\\$contents.getEmptyList()");
                         sb.append("#set($")
                                 .append(field.variable())
                                 .append("= $json.generate(")
                                 .append(jsonStr)
                                 .append("))");
+                        this.appendReaderStoryBlock(sb, content, field);
                     } else {
                         Logger.warn(this, String.format("Story Block field '%s' in contentlet with ID '%s' does not " +
                                         "contain valid JSON data. Please try to re-publish it.",
@@ -633,6 +635,48 @@ public class ContentletLoader implements DotLoader {
     }
 
 
+
+    /**
+     * Returns the JSON of a Story Block value with every Contentlet reference reduced to the keys
+     * that identify it. The Velocity code built here is cached and shared by every user who
+     * renders the Contentlet, so it must not hold data that only some of them can read.
+     *
+     * @param storyBlockValue The Story Block value, as a JSON String or a Map.
+     *
+     * @return The reduced document as JSON.
+     */
+    @SuppressWarnings("unchecked")
+    private String withReferenceKeysOnly(final Object storyBlockValue) {
+        final Object reduced = APILocator.getStoryBlockAPI().withReferenceKeysOnly(storyBlockValue);
+        if (reduced instanceof Map) {
+            return Try.of(() -> APILocator.getStoryBlockAPI().toJson((Map<String, Object>) reduced))
+                    .getOrElse("{}");
+        }
+        return reduced.toString();
+    }
+
+    /**
+     * Appends the Velocity code that replaces the Story Block variable of a field with the value
+     * resolved for the current reader, when the container rendering the Contentlet has already
+     * loaded it for the request as {@code $dotContentMap}. Anywhere else the variable keeps the
+     * document set before it, whose references only carry their keys.
+     *
+     * @param sb      The Velocity code being built.
+     * @param content The Contentlet being rendered.
+     * @param field   The Story Block field.
+     */
+    private void appendReaderStoryBlock(final StringBuilder sb, final Contentlet content, final Field field) {
+        // #set ignores a null value, so the helper variable is reset first: a field holding HTML
+        // instead of a document has no JSON and must not pick up the previous field's
+        sb.append("#if(\"$!{dotContentMap.contentObject.inode}\" == \"").append(content.getInode()).append("\")")
+                .append("#set($_dotReaderStoryBlock = false)")
+                .append("#set($_dotReaderStoryBlock = $dotContentMap.get(\"").append(field.variable())
+                .append("\").json)")
+                .append("#if($_dotReaderStoryBlock)")
+                .append("#set($").append(field.variable()).append(" = $json.generate($_dotReaderStoryBlock))")
+                .append("#end")
+                .append("#end");
+    }
 
     @Override
     public InputStream writeObject(final VelocityResourceKey key)

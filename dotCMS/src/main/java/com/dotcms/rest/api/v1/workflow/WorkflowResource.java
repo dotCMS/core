@@ -3061,6 +3061,24 @@ public class WorkflowResource {
         }
     }
 
+    /**
+     * Fires a workflow action on a contentlet and returns the resulting contentlet to the caller.
+     * Story Block references in the returned contentlet keep their data only when the caller can
+     * read the contentlet they point to.
+     *
+     * @param request        The current request.
+     * @param fireActionForm The form sent by the caller, if any.
+     * @param user           The user firing the action.
+     * @param contentlet     The contentlet the action is fired on.
+     * @param actionId       The workflow action to fire, or {@code null} when a system action
+     *                       command decides it.
+     * @param fireCommandOpt The system action command to use instead of the workflow API, if any.
+     *
+     * @return A 200 response with the resulting contentlet, and any advisory messages.
+     *
+     * @throws DotDataException     An error occurred when firing the action.
+     * @throws DotSecurityException The user cannot fire the action.
+     */
     private Response fireAction(final HttpServletRequest request,
                                 final FireActionForm fireActionForm,
                                 final User user,
@@ -3118,9 +3136,15 @@ public class WorkflowResource {
         final Contentlet basicContentlet = fireCommandOpt.isPresent()?
                 fireCommandOpt.get().fire(contentlet, this.needSave(fireActionForm), formBuilder.build()):
                 this.workflowAPI.fireContentWorkflow(contentlet, formBuilder.build());
+        // The saved contentlet holds the Story Block references as stored; the caller only gets
+        // the ones they can read. The multiple-contentlet endpoints get here inside a transaction,
+        // so the reader is passed explicitly
         final Contentlet hydratedContentlet = Objects.nonNull(basicContentlet)?
                 new DotTransformerBuilder().contentResourceOptions(false)
-                    .content(basicContentlet).build().hydrate().get(0): basicContentlet;
+                    .content((Contentlet) APILocator.getStoryBlockAPI()
+                            .limitReferencesToReader(new Contentlet(basicContentlet), user,
+                                    pageMode.respectAnonPerms).getValue())
+                    .build().hydrate().get(0): basicContentlet;
 
         if (Objects.nonNull(basicContentlet) && Objects.nonNull(basicContentlet.getVariantId())) {
             hydratedContentlet.setVariantId(basicContentlet.getVariantId());

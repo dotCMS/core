@@ -181,7 +181,8 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
             if (setCurrentDepthValue) {
                 final Integer currentDepth = this.decreaseDepthValue(initialDepthValue);
                 if (null == request) {
-                    // No request to read on behalf of: the stored values are left as they are
+                    // No request means no reader to check READ for (indexing, push publishing,
+                    // background jobs): the stored values are left as they are
                     return new StoryBlockReferenceResult(false, contentlet);
                 }
                 request.setAttribute(CURRENT_DEPTH_ATTR, currentDepth);
@@ -206,6 +207,106 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         }
         return this.processStoryBlockFields(contentlet, this.resolveRequestUser(request),
                 PageMode.get(request).respectAnonPerms, false);
+    }
+
+    @Override
+    @CloseDBIfOpened
+    public StoryBlockReferenceResult limitReferencesToReader(final Contentlet contentlet, final User user,
+                                                             final boolean respectFrontendRoles) {
+        final ContentType contentType = null != contentlet ? contentlet.getContentType() : null;
+        if (null == contentType || !contentType.hasStoryBlockFields()) {
+            return new StoryBlockReferenceResult(false, contentlet);
+        }
+        return this.processStoryBlockFields(contentlet, user, respectFrontendRoles, false);
+    }
+
+    @Override
+    public Object withReferenceKeysOnly(final Object storyBlockValue) {
+        return this.reduceEmbeddedContent(storyBlockValue, false);
+    }
+
+    @Override
+    @SuppressWarnings("unchecked")
+    public Object restoreReferenceData(final Object submittedValue, final Supplier<Object> storedValue) {
+        if (!this.isStoryBlockValue(submittedValue)) {
+            return submittedValue;
+        }
+        try {
+            // A Map value is restored on a deep copy, never on the given instance
+            final Map<String, Object> submitted = this.toMap(submittedValue instanceof Map
+                    ? this.toJson((Map<String, Object>) submittedValue) : submittedValue);
+            final List<Map<String, Object>> reducedData = new ArrayList<>();
+            this.collectReferenceData(submitted, reducedData, true);
+            if (reducedData.isEmpty()) {
+                return submittedValue;
+            }
+            final Object stored = storedValue.get();
+            if (!this.isStoryBlockValue(stored)) {
+                return submittedValue;
+            }
+            final List<Map<String, Object>> storedData = new ArrayList<>();
+            this.collectReferenceData(this.toMap(stored instanceof Map
+                    ? this.toJson((Map<String, Object>) stored) : stored), storedData, false);
+            boolean restored = false;
+            for (final Map<String, Object> data : reducedData) {
+                final Optional<Map<String, Object>> match = storedData.stream()
+                        .filter(candidate -> this.sameReference(candidate, data)).findFirst();
+                if (match.isPresent()) {
+                    data.putAll(match.get());
+                    restored = true;
+                }
+            }
+            return restored ? this.toJson(submitted) : submittedValue;
+        } catch (final JsonProcessingException e) {
+            Logger.debug(this, () -> "Story Block references could not be restored from the saved value: "
+                    + ExceptionUtil.getErrorMessage(e));
+            return submittedValue;
+        }
+    }
+
+    /** Tells whether a value is a Story Block document, as a Map or as a JSON object String. */
+    private boolean isStoryBlockValue(final Object value) {
+        return value instanceof Map || (null != value && isJsonObject(value.toString()));
+    }
+
+    /**
+     * Collects the data maps of the Contentlet references at any level of a Story Block document,
+     * as live instances of the document, so changes to them change the document.
+     *
+     * @param node    The document, or a node of it.
+     * @param found   Where the data maps are added.
+     * @param reduced If {@code true}, only references whose data carries nothing but the keys that
+     *                identify them; otherwise only references whose data carries more than that.
+     */
+    @SuppressWarnings("unchecked")
+    private void collectReferenceData(final Map<String, Object> node, final List<Map<String, Object>> found,
+                                      final boolean reduced) {
+        final Object contents = node.get(CONTENT_KEY);
+        if (!(contents instanceof List)) {
+            return;
+        }
+        for (final Object content : (List<Object>) contents) {
+            if (!(content instanceof Map)) {
+                continue;
+            }
+            final Map<String, Object> contentMap = (Map<String, Object>) content;
+            final Object attrs = contentMap.get(ATTRS_KEY);
+            if (allowedTypes.contains(String.valueOf(contentMap.get(TYPE_KEY))) && attrs instanceof Map
+                    && ((Map<String, Object>) attrs).get(DATA_KEY) instanceof Map) {
+                final Map<String, Object> data = (Map<String, Object>) ((Map<String, Object>) attrs).get(DATA_KEY);
+                if (UtilMethods.isSet(data.get(IDENTIFIER_KEY))
+                        && reduced == REFERENCE_KEYS.containsAll(data.keySet())) {
+                    found.add(data);
+                }
+            }
+            this.collectReferenceData(contentMap, found, reduced);
+        }
+    }
+
+    /** Tells whether two reference data maps point to the same Contentlet and language. */
+    private boolean sameReference(final Map<String, Object> data, final Map<String, Object> other) {
+        return String.valueOf(data.get(IDENTIFIER_KEY)).equals(String.valueOf(other.get(IDENTIFIER_KEY)))
+                && String.valueOf(data.get(LANGUAGE_ID_KEY)).equals(String.valueOf(other.get(LANGUAGE_ID_KEY)));
     }
 
     /**
