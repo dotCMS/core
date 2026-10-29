@@ -19,7 +19,6 @@ import { DotDownloadBundleDialogComponent } from '../_common/dot-download-bundle
 import { DotGenerateSecurePasswordComponent } from '../_common/dot-generate-secure-password/dot-generate-secure-password.component';
 import { DotPushPublishDialogComponent } from '../_common/dot-push-publish-dialog/dot-push-publish-dialog.component';
 import { DotWizardComponent } from '../_common/dot-wizard/dot-wizard.component';
-import { DotCreateContentletComponent } from '../dot-contentlet-editor/components/dot-create-contentlet/dot-create-contentlet.component';
 // Import standalone components
 import { DotLargeMessageDisplayComponent } from '../dot-large-message-display/dot-large-message-display.component';
 import { DotMessageDisplayComponent } from '../dot-message-display/dot-message-display.component';
@@ -36,7 +35,6 @@ import { DotToolbarComponent } from '../dot-toolbar/dot-toolbar.component';
     providers: [MessageService],
     imports: [
         RouterOutlet,
-        DotCreateContentletComponent,
         DotMessageDisplayComponent,
         DotNavigationComponent,
         DotToolbarComponent,
@@ -67,15 +65,5 @@ export class MainComponentLegacyComponent implements OnInit {
         document.body.style.backgroundPosition = '';
         document.body.style.backgroundRepeat = '';
         document.body.style.backgroundSize = '';
-    }
-
-    /**
-     * Handle the custom events emmited by the Create Contentlet
-     *
-     * @param CustomEvent $event
-     * @memberof MainComponentLegacyComponent
-     */
-    onCustomEvent($event: CustomEvent): void {
-        this.dotCustomEventHandlerService.handle($event);
     }
 }

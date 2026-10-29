@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { mockProvider } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
@@ -57,7 +55,6 @@ import { DotDownloadBundleDialogComponent } from '../_common/dot-download-bundle
 import { DotWizardComponent } from '../_common/dot-wizard/dot-wizard.component';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
-// import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentlet-editor.module';
 
 @Component({
     selector: 'dot-alert-confirm',
@@ -124,13 +121,11 @@ const createFeatureFlagResponse = (enabled = 'NOT_FOUND') => ({
 describe('MainLegacyComponent', () => {
     let fixture: ComponentFixture<MainComponentLegacyComponent>;
     let de: DebugElement;
-    let dotCustomEventHandlerService: DotCustomEventHandlerService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             imports: [
                 RouterTestingModule,
-                // DotContentletEditorModule,
                 DotDownloadBundleDialogComponent,
                 DotWizardComponent,
                 MainComponentLegacyComponent
@@ -202,7 +197,6 @@ describe('MainLegacyComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(MainComponentLegacyComponent);
         de = fixture.debugElement;
-        dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
         fixture.detectChanges();
     });
     it('should have basic layout elements', () => {
@@ -255,26 +249,6 @@ describe('MainLegacyComponent', () => {
                 registered.get(MessageService, null) ===
                     mounted.debugElement.injector.get(MessageService)
             ).toBe(true);
-        });
-    });
-
-    describe('Create Contentlet', () => {
-        let createContentlet: DebugElement;
-        beforeEach(() => {
-            createContentlet = de.query(By.css('dot-create-contentlet'));
-        });
-
-        it('should call dotCustomEventHandlerService on customEvent', () => {
-            vi.spyOn(dotCustomEventHandlerService, 'handle');
-            const mockEvent = {
-                detail: {
-                    name: 'create-contentlet',
-                    data: 'test'
-                }
-            };
-            createContentlet.triggerEventHandler('custom', mockEvent);
-
-            expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith(mockEvent);
         });
     });
 });
