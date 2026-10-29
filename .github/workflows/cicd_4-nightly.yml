@@ -165,6 +165,14 @@ jobs:
       contents: read
     with:
       run-all-tests: ${{ inputs.run-all-tests || true }}
+      # Every selector is passed explicitly: one left out arrives as false and turns its
+      # test type off, run-all-tests or not, which is how the nightly ran zero tests (#38336).
+      jvm_unit_test: true
+      cli: true
+      frontend: true
+      postman: true
+      karate: true
+      integration: true
       e2e: false
       # On-demand ES->OS phased run: 'none'/empty (or scheduled) -> off; 1/2/3 -> single phase;
       # all -> sweep phases 1,2,3 across the integration battery.

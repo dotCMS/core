@@ -92,6 +92,15 @@ jobs:
     with:
       skip-runner-cleanup: true
       run-all-tests: ${{ inputs.run-all-tests || false }}
+      # A push (no inputs) tests nothing, since the merge queue already tested the change. A
+      # dispatch with run-all-tests runs every type: each selector has to be passed
+      # explicitly, because one left out arrives as false and turns its type off (#38336).
+      jvm_unit_test: ${{ inputs.run-all-tests || false }}
+      cli: ${{ inputs.run-all-tests || false }}
+      frontend: ${{ inputs.run-all-tests || false }}
+      postman: ${{ inputs.run-all-tests || false }}
+      karate: ${{ inputs.run-all-tests || false }}
+      integration: ${{ inputs.run-all-tests || false }}
       e2e: false
 
   # Test job - runs the matrix computed above once the build is done

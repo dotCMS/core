@@ -218,6 +218,16 @@ Which suites run inside the test phase is a separate question, answered by
 `.github/test-matrix.yml` — see [Integration Tests](../testing/INTEGRATION_TESTS.md) and
 [Backend Unit Tests](../testing/BACKEND_UNIT_TESTS.md).
 
+A test type runs only when the caller passes its selector (`jvm_unit_test`, `cli`, `frontend`,
+`postman`, `karate`, `integration`, `e2e`, the `condition_input` of each type in
+`test-matrix.yml`) as `true` to `cicd_comp_test-matrix.yml`. `run-all-tests` does **not** switch
+on a selector the caller leaves out: a `workflow_call` boolean that is not passed arrives as
+`false`, which cannot be told apart from an explicit `false`, and a `false` selector turns its
+type off. So a caller that wants everything (the nightly, a trunk dispatch) passes every selector
+it wants as `true`. What `run-all-tests: true` adds is a guarantee: if the matrix comes out empty,
+the matrix job fails instead of the run silently testing nothing, which is how the nightly ran
+zero tests for weeks (#38336).
+
 ## Artifact Management
 
 ### Artifact Generation
