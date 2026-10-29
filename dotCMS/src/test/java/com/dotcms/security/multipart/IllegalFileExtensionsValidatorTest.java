@@ -1,6 +1,7 @@
 package com.dotcms.security.multipart;
 
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
@@ -18,7 +19,10 @@ public class IllegalFileExtensionsValidatorTest {
     @Test
     public void listedExtension_anyCase_isRefused() {
         for (final String name : new String[] {"sample-1.jsp", "sample-2.JSP", "sample-3.Jsp", "sample-4.EXE", "sample-5.Sh"}) {
-            assertThrows(name, IllegalArgumentException.class, () -> validator.validate(name));
+            final IllegalArgumentException refusal =
+                    assertThrows(name, IllegalArgumentException.class, () -> validator.validate(name));
+            assertTrue("the message names the file so per-item callers can report it",
+                    refusal.getMessage().contains(name));
         }
     }
 

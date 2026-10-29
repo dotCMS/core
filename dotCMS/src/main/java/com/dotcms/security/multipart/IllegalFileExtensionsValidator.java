@@ -22,7 +22,7 @@ public class IllegalFileExtensionsValidator implements SecureFileValidator {
     private final Set<String> illegalExtensionLowerSet =
             new HashSet<>(Arrays.asList(
                     Config.getCustomArrayProperty("MULTI_PART_ILLEGAL_FILE_EXTENSIONS",
-                            String::toLowerCase, String.class,
+                            value -> value.toLowerCase(Locale.ROOT), String.class,
                             ()-> new String [] {".bat",".exe",".sh",".bin",".jsp",".jspx",".jspf",".swf"}))
             );
 
@@ -30,7 +30,9 @@ public class IllegalFileExtensionsValidator implements SecureFileValidator {
      * Checks the extension of a file name against the block list.
      *
      * @param fileName the file name as received
-     * @throws IllegalArgumentException if the name is missing or its extension is blocked
+     * @throws IllegalArgumentException if the name is missing or its extension is blocked; the
+     *         message names the file so a caller that reports per item (a CSV import row, a job
+     *         submission) can say which one was refused
      */
     @Override
     public void validate(final String fileName) {
@@ -45,7 +47,8 @@ public class IllegalFileExtensionsValidator implements SecureFileValidator {
         if (this.illegalExtensionLowerSet.contains('.' + fileExtension)) {
 
             SecurityLogger.logInfo(this.getClass(), "The filename: '" + fileName + "' is invalid");
-            throw new IllegalArgumentException("Illegal Multipart Request");
+            throw new IllegalArgumentException(
+                    "The file name '" + fileName + "' has an extension that is not allowed");
         }
     }
 }

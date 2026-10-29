@@ -155,7 +155,7 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentRelationshipsResourceIntegrationTest.class,
         com.dotmarketing.portal.struts.StrutsPathAccessTest.class,
         com.liferay.portal.struts.PortletRequestProcessorAccessTest.class,
-        com.dotmarketing.webdav.DotWebdavHelperTest.class
+        com.dotmarketing.webdav.DotWebdavHelperTest.class,
 })
 public class MainSuite2a {
 

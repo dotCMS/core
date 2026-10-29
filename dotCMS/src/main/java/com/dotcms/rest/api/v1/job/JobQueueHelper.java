@@ -342,10 +342,14 @@ public class JobQueueHelper {
     }
 
     /**
-     * if a file is uploaded, move it to temp location and update params
+     * If a file is uploaded, moves it to the temp location and records its id in the params.
+     * A file whose name is refused by the temp file API (an extension on the block list) is not
+     * swallowed: the {@link IllegalArgumentException} is left to the resource layer, which answers
+     * 400 with the file named, instead of creating a job that has no file to work on.
      * @param form The form
      * @param params The params
      * @param request The request
+     * @throws IllegalArgumentException when the uploaded file's name is refused
      */
      void handleUploadIfPresent(final JobParams form, Map<String, Object> params, HttpServletRequest request) {
         final InputStream fileInputStream = form.getFileInputStream();
@@ -356,6 +360,8 @@ public class JobQueueHelper {
                     final DotTempFile tempFile = tempFileAPI.createTempFile(contentDisposition.getFileName(), request, fileInputStream);
                     params.put("tempFileId", tempFile.id);
                     params.put("requestFingerPrint", tempFileAPI.getRequestFingerprint(request));
+                } catch (final IllegalArgumentException e) {
+                    throw e;
                 } catch (Exception e) {
                     Logger.error(this.getClass(), "Error saving temp file", e);
                 }
