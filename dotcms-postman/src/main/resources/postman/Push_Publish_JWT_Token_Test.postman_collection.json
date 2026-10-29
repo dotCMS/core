@@ -433,7 +433,7 @@
 									"});",
 									"",
 									"pm.test(\"Check WWW-Authenticate header\", function () {",
-									"    expected = 'Bearer realm=\"example\",error=\"invalid_token\",error_key=\"__invalid_token__\",error_description=\"\"';",
+									"    expected = 'Bearer realm=\"example\",error=\"invalid_token\",error_key=\"__expired_token__\",error_description=\"\"';",
 									"",
 									"    pm.response.to.be.header('WWW-Authenticate', expected);",
 									"});",
