@@ -342,9 +342,7 @@ export class DotRelationshipFieldComponent
      * content is an edit to the relationship. Refreshing goes through `refreshItem`, a load.
      */
     #upsertRelatedItem(contentlet: DotCMSContentlet): void {
-        const listed = this.store
-            .data()
-            .some((item) => item.identifier === contentlet.identifier);
+        const listed = this.store.data().some((item) => item.identifier === contentlet.identifier);
 
         if (listed) {
             this.#refreshRelatedItem(contentlet);
