@@ -14,17 +14,24 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.StringTokenizer;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Holds the workflow actionlets known to a {@link WorkflowAPIImpl}: the registered actionlet
  * classes and a map of one instance per actionlet, keyed by canonical class name and ordered by
  * localized name.
+ *
+ * <p>Lookups take no lock. The map is rebuilt off to the side and published with a single write
+ * to a volatile field, so a reader sees either the complete map from before a refresh or the
+ * complete map from after it, never {@code null} or a partly filled one. The class list is a
+ * {@link CopyOnWriteArrayList} so it can be iterated while a plugin adds or removes a class.
+ * Changes are serialised on the class, because the map is shared by every instance.
  */
 class ActionletRegistry {
 
-	private final List<Class<? extends WorkFlowActionlet>> actionletClasses = new ArrayList<>();
+	private final List<Class<? extends WorkFlowActionlet>> actionletClasses = new CopyOnWriteArrayList<>();
 
-	private static Map<String, WorkFlowActionlet> actionletMap;
+	private static volatile Map<String, WorkFlowActionlet> actionletMap = Collections.emptyMap();
 
 	/**
 	 * Creates a registry with the given built-in actionlet classes and builds the actionlet map.
@@ -79,10 +86,12 @@ class ActionletRegistry {
 	 * @param workFlowActionletClass the actionlet class to register
 	 */
 	void add(final Class<? extends WorkFlowActionlet> workFlowActionletClass) {
-		//Prevent dupes
-		removeClass(workFlowActionletClass);
-		actionletClasses.add(workFlowActionletClass);
-		refresh();
+		synchronized (ActionletRegistry.class) {
+			//Prevent dupes
+			removeClass(workFlowActionletClass);
+			actionletClasses.add(workFlowActionletClass);
+			refresh();
+		}
 	}
 
 	/**
@@ -92,10 +101,12 @@ class ActionletRegistry {
 	 * @return the actionlet instance that was registered under that name
 	 */
 	WorkFlowActionlet remove(final String workFlowActionletName) {
-		final WorkFlowActionlet actionlet = actionletMap.get(workFlowActionletName);
-		removeClass(actionlet.getClass());
-		refresh();
-		return actionlet;
+		synchronized (ActionletRegistry.class) {
+			final WorkFlowActionlet actionlet = actionletMap.get(workFlowActionletName);
+			removeClass(actionlet.getClass());
+			refresh();
+			return actionlet;
+		}
 	}
 
 	/**
@@ -114,12 +125,7 @@ class ActionletRegistry {
 	 * @return a new list of the actionlets
 	 */
 	List<WorkFlowActionlet> findAll() {
-		final List<WorkFlowActionlet> workFlowActionlets = new ArrayList<>();
-		final Map<String,WorkFlowActionlet>  actionlets  = actionletMap;
-		for (final String actionletName : actionlets.keySet()) {
-			workFlowActionlets.add(actionletMap.get(actionletName));
-		}
-		return workFlowActionlets;
+		return new ArrayList<>(actionletMap.values());
 	}
 
 	/**
@@ -139,67 +145,59 @@ class ActionletRegistry {
 		}
 	}
 
+	/**
+	 * Rebuilds the actionlet map from the {@code dotmarketing-config.properties} actionlet classes
+	 * and the registered classes, sorted by localized name, and publishes it in one assignment.
+	 * Classes that only come from the configuration property are added to the class list.
+	 */
 	private void refresh() {
-		actionletMap = null;
-		if (actionletMap == null) {
-			synchronized (this.getClass()) {
-				if (actionletMap == null) {
+		synchronized (ActionletRegistry.class) {
 
-					List<WorkFlowActionlet> actionletList = new ArrayList<>();
+			List<WorkFlowActionlet> actionletList = new ArrayList<>();
 
-					// get the dotmarketing-config.properties actionlet classes
-					String customActionlets = Config.getStringProperty(WebKeys.WORKFLOW_ACTIONLET_CLASSES, "");
+			// get the dotmarketing-config.properties actionlet classes
+			String customActionlets = Config.getStringProperty(WebKeys.WORKFLOW_ACTIONLET_CLASSES, "");
 
-					StringTokenizer st = new StringTokenizer(customActionlets, ",");
-					while (st.hasMoreTokens()) {
-						String clazz = st.nextToken();
-						try {
-							WorkFlowActionlet actionlet = (WorkFlowActionlet) Class.forName(clazz.trim()).getDeclaredConstructor().newInstance();
-							actionletList.add(actionlet);
-						} catch (Exception e) {
-							Logger.error(WorkflowAPIImpl.class, e.getMessage());
-							Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
-						}
-					}
-
-					// get the included (shipped with) actionlet classes
-					for (Class<? extends WorkFlowActionlet> z : actionletClasses) {
-						try {
-							actionletList.add(z.newInstance());
-						} catch (InstantiationException e) {
-							Logger.error(WorkflowAPIImpl.class, e.getMessage());
-							Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
-						} catch (IllegalAccessException e) {
-							Logger.error(WorkflowAPIImpl.class, e.getMessage());
-							Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
-						}
-					}
-
-					Collections.sort(actionletList, new ActionletComparator());
-					actionletMap = new LinkedHashMap<>();
-					for(WorkFlowActionlet actionlet : actionletList){
-
-						try {
-							actionletMap.put(actionlet.getClass().getCanonicalName(),actionlet.getClass().newInstance());
-							if ( !actionletClasses.contains( actionlet.getClass() ) ) {
-								actionletClasses.add( actionlet.getClass() );
-							}
-						} catch (InstantiationException e) {
-							Logger.error(WorkflowAPIImpl.class,e.getMessage());
-							Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
-						} catch (IllegalAccessException e) {
-							Logger.error(WorkflowAPIImpl.class,e.getMessage());
-							Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
-						}
-					}
+			StringTokenizer st = new StringTokenizer(customActionlets, ",");
+			while (st.hasMoreTokens()) {
+				String clazz = st.nextToken();
+				try {
+					WorkFlowActionlet actionlet = (WorkFlowActionlet) Class.forName(clazz.trim()).getDeclaredConstructor().newInstance();
+					actionletList.add(actionlet);
+				} catch (Exception e) {
+					Logger.error(WorkflowAPIImpl.class, e.getMessage());
+					Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
 				}
 			}
 
+			// get the included (shipped with) actionlet classes
+			for (Class<? extends WorkFlowActionlet> z : actionletClasses) {
+				try {
+					actionletList.add(z.newInstance());
+				} catch (InstantiationException e) {
+					Logger.error(WorkflowAPIImpl.class, e.getMessage());
+					Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
+				} catch (IllegalAccessException e) {
+					Logger.error(WorkflowAPIImpl.class, e.getMessage());
+					Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
+				}
+			}
+
+			Collections.sort(actionletList, new ActionletComparator());
+			final Map<String, WorkFlowActionlet> newActionletMap = new LinkedHashMap<>();
+			for(WorkFlowActionlet actionlet : actionletList){
+				newActionletMap.put(actionlet.getClass().getCanonicalName(), actionlet);
+				if ( !actionletClasses.contains( actionlet.getClass() ) ) {
+					actionletClasses.add( actionlet.getClass() );
+				}
+			}
+			actionletMap = Collections.unmodifiableMap(newActionletMap);
 		}
 	}
 
 	private static class ActionletComparator implements Comparator<WorkFlowActionlet>{
 
+		@Override
 		public int compare(WorkFlowActionlet o1, WorkFlowActionlet o2) {
 			return o1.getLocalizedName().compareTo(o2.getLocalizedName());
 
