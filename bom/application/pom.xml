@@ -247,11 +247,6 @@
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.fileupload-ext</artifactId>
-                <version>ukv_3</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.gif89</artifactId>
                 <version>ukv_2</version>
             </dependency>

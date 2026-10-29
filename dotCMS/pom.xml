@@ -200,10 +200,6 @@
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.fileupload-ext</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.gif89</artifactId>
             <scope>compile</scope>
         </dependency>
