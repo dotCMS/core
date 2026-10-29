@@ -25,13 +25,20 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * to a volatile field, so a reader sees either the complete map from before a refresh or the
  * complete map from after it, never {@code null} or a partly filled one. The class list is a
  * {@link CopyOnWriteArrayList} so it can be iterated while a plugin adds or removes a class.
- * Changes are serialised on the class, because the map is shared by every instance.
+ * Changes are serialised on one static lock, because the map is shared by every instance.
+ *
+ * <p>The class list belongs to each instance, but the published map is static and shared. A
+ * refresh on a second instance (for example a second {@link WorkflowAPIImpl} built in a test)
+ * therefore replaces the shared map with one built from that instance's own class list. This is
+ * the behaviour the map had before it moved here.
  */
 class ActionletRegistry {
 
 	private final List<Class<? extends WorkFlowActionlet>> actionletClasses = new CopyOnWriteArrayList<>();
 
 	private static volatile Map<String, WorkFlowActionlet> actionletMap = Collections.emptyMap();
+
+	private static final Object LOCK = new Object();
 
 	/**
 	 * Creates a registry with the given built-in actionlet classes and builds the actionlet map.
@@ -54,10 +61,9 @@ class ActionletRegistry {
 			if ( z.getName().equals(className.trim())) {
 				try {
 					return z.newInstance();
-				} catch (InstantiationException e) {
-					e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					e.printStackTrace();
+				} catch (InstantiationException | IllegalAccessException e) {
+					Logger.error(WorkflowAPIImpl.class, String.format("Cannot create actionlet '%s': %s",
+							className, e.getMessage()), e);
 				}
 			}
 		}
@@ -86,7 +92,7 @@ class ActionletRegistry {
 	 * @param workFlowActionletClass the actionlet class to register
 	 */
 	void add(final Class<? extends WorkFlowActionlet> workFlowActionletClass) {
-		synchronized (ActionletRegistry.class) {
+		synchronized (LOCK) {
 			//Prevent dupes
 			removeClass(workFlowActionletClass);
 			actionletClasses.add(workFlowActionletClass);
@@ -98,11 +104,18 @@ class ActionletRegistry {
 	 * Unregisters the actionlet with the given canonical class name and rebuilds the actionlet map.
 	 *
 	 * @param workFlowActionletName the canonical class name of the actionlet
-	 * @return the actionlet instance that was registered under that name
+	 * @return the actionlet instance that was registered under that name, or {@code null} when no
+	 * actionlet is registered under it, in which case nothing changes
 	 */
 	WorkFlowActionlet remove(final String workFlowActionletName) {
-		synchronized (ActionletRegistry.class) {
+		synchronized (LOCK) {
 			final WorkFlowActionlet actionlet = actionletMap.get(workFlowActionletName);
+			if (actionlet == null) {
+				Logger.warn(WorkflowAPIImpl.class, String.format(
+						"Cannot remove actionlet '%s': no actionlet is registered under that name",
+						workFlowActionletName));
+				return null;
+			}
 			removeClass(actionlet.getClass());
 			refresh();
 			return actionlet;
@@ -151,7 +164,7 @@ class ActionletRegistry {
 	 * Classes that only come from the configuration property are added to the class list.
 	 */
 	private void refresh() {
-		synchronized (ActionletRegistry.class) {
+		synchronized (LOCK) {
 
 			List<WorkFlowActionlet> actionletList = new ArrayList<>();
 

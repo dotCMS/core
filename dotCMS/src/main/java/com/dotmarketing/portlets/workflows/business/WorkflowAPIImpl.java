@@ -456,6 +456,12 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return workFlowActionletClass.getCanonicalName();
 	}
 
+	/**
+	 * Unregisters the actionlet with the given canonical class name and deletes the workflow
+	 * action classes that use it. An unknown name is logged at WARN and changes nothing.
+	 *
+	 * @param workFlowActionletName the canonical class name of the actionlet
+	 */
 	@Override
 	public void removeActionlet(final String workFlowActionletName) {
 
@@ -463,6 +469,9 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 				() -> "Removing actionlet: " + workFlowActionletName);
 
 		final WorkFlowActionlet actionlet = actionletRegistry.remove(workFlowActionletName);
+		if (actionlet == null) {
+			return;
+		}
 
 		try {
 		    final User user = APILocator.systemUser();

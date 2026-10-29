@@ -101,6 +101,19 @@ public class ActionletRegistryTest {
                 classesOf(registry.findAll()));
     }
 
+    /**
+     * Removing a name that is not registered returns null and leaves the actionlets unchanged,
+     * instead of throwing a NullPointerException.
+     */
+    @Test
+    public void removeOfAnUnknownNameChangesNothing() {
+        final ActionletRegistry registry = new ActionletRegistry(BUILT_INS);
+
+        assertNull(registry.remove("com.example.NoSuchActionlet"));
+        assertEquals(List.of(AlphaActionlet.class, BravoActionlet.class, CharlieActionlet.class),
+                classesOf(registry.findAll()));
+    }
+
     private static void checkLookups(final ActionletRegistry registry) {
         for (final Class<? extends WorkFlowActionlet> builtIn : BUILT_INS) {
             final WorkFlowActionlet found = registry.find(builtIn.getCanonicalName());
