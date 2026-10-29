@@ -330,7 +330,7 @@ const PORTLETS_IFRAME = [
                     {
                         path: 'new',
                         redirectTo: '/c/content',
-                        pathMatch: 'full'
+                        pathMatch: 'full' as const
                     },
                     {
                         loadComponent: () =>
