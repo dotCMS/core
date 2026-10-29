@@ -1,0 +1,47 @@
+<div class="flex flex-col gap-5">
+    <p-message class="block" severity="warn" data-testid="in-use-explainer">
+        {{
+            (hasMany
+                ? 'message.containers.in_use.explainer.many'
+                : 'message.containers.in_use.explainer'
+            ) | dm
+        }}
+    </p-message>
+
+    @for (container of containers; track container.identifier) {
+        <section class="flex flex-col gap-2" data-testid="in-use-container">
+            <h3 class="m-0 flex items-baseline gap-2 text-sm font-semibold text-gray-900">
+                <span class="min-w-0 wrap-break-word" data-testid="in-use-container-name">
+                    {{ hasMany ? container.title : ('message.containers.in_use.used_by' | dm) }}
+                </span>
+                <span class="font-normal text-gray-500">{{ container.templates.length }}</span>
+            </h3>
+
+            <ul
+                class="m-0 list-none divide-y divide-gray-200 overflow-hidden rounded-md border border-gray-200 p-0">
+                @for (template of container.templates; track template.identifier) {
+                    <li class="flex items-baseline justify-between gap-4 px-4 py-3">
+                        <span
+                            class="min-w-0 font-medium wrap-break-word"
+                            data-testid="in-use-template">
+                            {{ template.title }}
+                        </span>
+                        @if (template.siteName) {
+                            <span class="shrink-0 text-sm text-gray-500">
+                                {{ template.siteName }}
+                            </span>
+                        }
+                    </li>
+                }
+            </ul>
+        </section>
+    }
+
+    <div class="flex justify-end">
+        <p-button
+            severity="secondary"
+            [label]="'Close' | dm"
+            (onClick)="ref.close()"
+            data-testid="in-use-close" />
+    </div>
+</div>

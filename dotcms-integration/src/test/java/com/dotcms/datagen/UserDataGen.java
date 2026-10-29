@@ -2,7 +2,9 @@ package com.dotcms.datagen;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.UserFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
@@ -105,6 +107,10 @@ public class UserDataGen extends AbstractDataGen<User> {
         return user;
     }
 
+    /**
+     * Creates the user, then saves its fields. A general save does not write the login token id
+     * ({@code skinid}), so it is stored with {@link UserFactory#updateRememberMeToken}.
+     */
     @Override
     @WrapInTransaction
     public User persist(User user) {
@@ -120,6 +126,7 @@ public class UserDataGen extends AbstractDataGen<User> {
             newUser.setCompanyId(user.getCompanyId());
             newUser.setAdditionalInfo(user.getAdditionalInfo());
             APILocator.getUserAPI().save(newUser, APILocator.systemUser(), false);
+            FactoryLocator.getUserFactory().updateRememberMeToken(newUser.getUserId(), user.getSkinId());
 
             for(final Role role:roles){
                 APILocator.getRoleAPI().addRoleToUser(role, newUser);

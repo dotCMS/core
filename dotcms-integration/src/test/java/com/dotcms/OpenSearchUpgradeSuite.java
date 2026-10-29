@@ -60,7 +60,7 @@ import org.junit.runners.Suite.SuiteClasses;
         OsBootstrapForbiddenIndexTest.class,
         OSSearchAPIImplIntegrationTest.class,
         OSSiteSearchAPIIntegrationTest.class,
-        SiteSearchDualWriteRouterIT.class
+        SiteSearchDualWriteRouterIT.class,
 })
 public class OpenSearchUpgradeSuite {
 }

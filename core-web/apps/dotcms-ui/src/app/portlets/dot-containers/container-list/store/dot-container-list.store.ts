@@ -4,6 +4,7 @@ import { Injectable, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { MenuItem } from 'primeng/api';
+import { DialogService } from 'primeng/dynamicdialog';
 
 import { map, switchMap, take, tap } from 'rxjs/operators';
 
@@ -20,13 +21,15 @@ import {
     DotActionBulkResult,
     DotActionMenuItem,
     DotBulkFailItem,
-    DotContainer
+    DotContainer,
+    DotContainerDependencies
 } from '@dotcms/dotcms-models';
 
 import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
 import { ActionHeaderOptions } from '../../../../shared/models/action-header/action-header-options.model';
 import { DataTableColumn } from '../../../../shared/models/data-table/data-table-column';
 import { DotListingDataTableComponent } from '../../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
+import { DotContainerInUseDialogComponent } from '../dot-container-in-use-dialog/dot-container-in-use-dialog.component';
 
 export interface DotContainerListState {
     containerBulkActions: MenuItem[];
@@ -62,6 +65,7 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
     private dotSiteBrowserService = inject(DotSiteBrowserService);
     private dotAlertConfirmService = inject(DotAlertConfirmService);
     private dotContainersService = inject(DotContainersService);
+    private dialogService = inject(DialogService);
     private paginatorService = inject(PaginatorService);
     private dotSiteService = inject(SiteService);
 
@@ -578,13 +582,42 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             : this.dotRouterService.goToEditContainer(container.identifier);
     }
 
+    /**
+     * Deletes the containers once none of them is used by a template. The templates are looked up
+     * with one request for the whole selection. If any container is in use nothing is deleted and
+     * the containers in use are listed with their templates. A failed lookup also stops the delete
+     * (the error is already shown by the http error manager).
+     */
     private deleteContainer(identifiers: string[]): void {
+        this.dotContainersService
+            .getDependencies(identifiers)
+            .pipe(take(1))
+            .subscribe((lookups) => {
+                if (!lookups) {
+                    return;
+                }
+
+                const inUse = lookups.filter((dependency) => dependency.templates.length);
+
+                if (inUse.length) {
+                    this.notifyContainersInUse(inUse);
+                } else {
+                    this.confirmDelete(identifiers);
+                }
+            });
+    }
+
+    private confirmDelete(identifiers: string[]): void {
         this.dotAlertConfirmService.confirm({
             accept: () => {
                 this.dotContainersService
                     .delete(identifiers)
                     .pipe(take(1))
                     .subscribe((payload: DotActionBulkResult) => {
+                        if (!payload) {
+                            return;
+                        }
+
                         this.updateNotifyMessages({
                             payload,
                             message: this.dotMessageService.get('message.containers.full_delete')
@@ -596,6 +629,30 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
             },
             header: this.dotMessageService.get('Delete-Container'),
             message: this.dotMessageService.get('message.containers.confirm.delete.container')
+        });
+    }
+
+    /**
+     * Tells the user the delete was blocked and which templates hold each container. Nothing is
+     * deleted, so this is a plain dialog and not a bulk-action result.
+     */
+    private notifyContainersInUse(inUse: DotContainerDependencies[]): void {
+        const [first] = inUse;
+
+        this.dialogService.open(DotContainerInUseDialogComponent, {
+            closable: true,
+            closeOnEscape: true,
+            header:
+                inUse.length > 1
+                    ? this.dotMessageService.get(
+                          'message.containers.in_use.header.many',
+                          String(inUse.length)
+                      )
+                    : this.dotMessageService.get('message.containers.in_use.header', first.title),
+            width: '36rem',
+            contentStyle: { 'max-height': '70vh', overflow: 'auto' },
+            baseZIndex: 10000,
+            data: inUse
         });
     }
 
@@ -668,9 +725,11 @@ export class DotContainerListStore extends ComponentStore<DotContainerListState>
     private getContainerName(identifier: string): string {
         const { selectedContainers } = this.get();
 
-        return selectedContainers.find((container: DotContainer) => {
-            return container.identifier === identifier;
-        }).name;
+        return (
+            selectedContainers.find((container: DotContainer) => {
+                return container.identifier === identifier;
+            })?.name ?? identifier
+        );
     }
 
     /**

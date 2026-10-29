@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -51,6 +52,22 @@ public class ReindexAPITest extends IntegrationTestBase {
 
         //wipe out any failed records
         reindexQueueAPI.deleteReindexAndFailedRecords();
+    }
+
+    /**
+     * Removes the journal rows a test claimed through {@code findContentToReindex} and never
+     * acknowledged (for example the delete entries in {@link #test_deleted_records()}). The real
+     * reindex thread cannot pick those rows up because the queue loader already moved past their
+     * ids, so left in place they hold the queue non-empty and the per-test indexer check in
+     * {@code RuleWatcher} waits its full 60 s for a queue that can never drain.
+     *
+     * @throws Exception if the journal rows cannot be deleted
+     */
+    @After
+    public void deleteClaimedJournalRows() throws Exception {
+        // Plain SQL on purpose: deleteReindexAndFailedRecords() only removes rows at REINDEX
+        // priority or lower urgency, and these rows are NORMAL priority.
+        new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
     }
 
     @AfterClass
