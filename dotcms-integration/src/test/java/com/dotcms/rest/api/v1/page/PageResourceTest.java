@@ -730,7 +730,7 @@ public class PageResourceTest {
 
     /**
      * methodToTest {@link PageResource#getPersonalizedPersonasOnPage(HttpServletRequest, HttpServletResponse, String, int, int, String, String, String, String, Boolean)}
-     * Given Scenario: Resuqest persona list with a limited user
+     * Given Scenario: Request the persona list with a limited user that can READ the site holding the page
      * ExpectedResult: Should respect front end roles when the parameter is set to true and not respect it when the
      * parameter is set to false
      */
@@ -748,6 +748,7 @@ public class PageResourceTest {
 
         final User user = new UserDataGen().nextPersisted();
         when(initDataObject.getUser()).thenReturn(user);
+        PageRenderTestUtil.grantPageReadOnSite(host, user);
 
         final PageRenderTestUtil.PageRenderTest pageRenderTest = PageRenderTestUtil.createPage(1, host);
         final HTMLPageAsset pagetest = pageRenderTest.getPage();
