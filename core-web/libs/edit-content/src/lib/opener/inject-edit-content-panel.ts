@@ -1,4 +1,13 @@
-import { DestroyRef, Injector, Signal, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+    DestroyRef,
+    Injector,
+    Signal,
+    computed,
+    effect,
+    inject,
+    signal,
+    untracked
+} from '@angular/core';
 
 import { DotSidePanelRef } from '@dotcms/ui';
 
