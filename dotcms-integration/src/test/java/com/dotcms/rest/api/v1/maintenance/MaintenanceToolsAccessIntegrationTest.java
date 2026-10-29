@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.maintenance;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -35,6 +36,7 @@ import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import java.lang.reflect.Field;
@@ -211,8 +213,8 @@ public class MaintenanceToolsAccessIntegrationTest {
     /**
      * Method to test: {@link CacheResource#showObjects(HttpServletRequest, HttpServletResponse, String, String)}
      * Given scenario: a CMS Administrator lists the user cache after a user was loaded into it.
-     * Expected result: the cached user is listed, and no listed user carries its password, password-reset token or
-     * remember-me token.
+     * Expected result: the cached user is listed as JSON, and no listed user carries its password ({@code password}),
+     * password-reset token ({@code icqId}) or remember-me token ({@code skinId}).
      */
     @Test
     public void showObjects_userCache_listsUsersWithoutCredentials() throws Exception {
@@ -226,12 +228,12 @@ public class MaintenanceToolsAccessIntegrationTest {
 
         boolean userListed = false;
         for (final Object value : entries.values()) {
-            if (value instanceof User) {
-                final User listed = (User) value;
-                assertNull("No password is returned", listed.getPassword());
-                assertNull("No password-reset token is returned", listed.getIcqId());
-                assertNull("No remember-me token is returned", listed.getRememberMeToken());
-                userListed |= maintenanceOnlyUser.getUserId().equals(listed.getUserId());
+            if (value instanceof JsonNode && ((JsonNode) value).has("userId")) {
+                final JsonNode listed = (JsonNode) value;
+                assertFalse("No password is returned", listed.has("password"));
+                assertFalse("No password-reset token is returned", listed.has("icqId"));
+                assertFalse("No remember-me token is returned", listed.has("skinId"));
+                userListed |= maintenanceOnlyUser.getUserId().equals(listed.get("userId").asText());
             }
         }
         assertTrue("The loaded user is listed", userListed);
