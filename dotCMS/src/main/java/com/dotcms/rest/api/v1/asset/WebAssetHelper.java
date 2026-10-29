@@ -20,6 +20,7 @@ import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
+import com.dotcms.util.PathContainmentUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Treeable;
@@ -477,6 +478,9 @@ public class WebAssetHelper {
         final Host host = assetAndPath.resolvedHost();
         final Folder folder = assetAndPath.resolvedFolder();
         final String assetName = null != assetAndPath.asset() ? assetAndPath.asset() : fileName;
+        if (null != fileInputStream && !PathContainmentUtil.isPlainSegment(assetName)) {
+            throw new IllegalArgumentException("The asset name must be a plain file name: " + assetName);
+        }
 
         if (null == fileInputStream) {
             //if no FileInputStream  is present we return the folder info
@@ -506,13 +510,13 @@ public class WebAssetHelper {
                 handleArchivedVersions(user, asset, lang.get());
                 //now checkout and create a new version of the asset in the given language
                 final Contentlet checkout = contentletAPI.checkout(asset.inode(), user, false);
-                updateFileAsset(tempFile.file, host, folder, lang.get(), checkout);
+                updateFileAsset(tempFile.file, assetName, host, folder, lang.get(), checkout);
                 savedAsset = checkinOrPublish(checkout, user, live);
 
             } else {
                 checkFolderPublishPermissions(user, folder);
                 //asset does not exist. So create new one
-                final Contentlet contentlet = makeFileAsset(tempFile.file, host, folder, user, lang.get());
+                final Contentlet contentlet = makeFileAsset(tempFile.file, assetName, host, folder, user, lang.get());
                 savedAsset = checkinOrPublish(contentlet, user, live);
             }
             final FileAsset fileAsset = fileAssetAPI.fromContentlet(savedAsset);
@@ -648,9 +652,27 @@ public class WebAssetHelper {
      */
     Contentlet makeFileAsset(final File file, final Host host, final Folder folder, final User user, final Language lang)
             throws DotDataException, DotSecurityException {
+        return makeFileAsset(file, file.getName(), host, folder, user, lang);
+    }
+
+    /**
+     * Creates a new file asset from the given file, stored under the given name rather than the
+     * file's own name, which for an uploaded temp file is an internal detail.
+     * @param file the binary to save
+     * @param assetName the name the asset is stored under
+     * @param host the site of the asset
+     * @param folder the folder of the asset
+     * @param user the user performing the action
+     * @param lang the language of the asset
+     * @return the contentlet, not yet checked in
+     * @throws DotDataException any data-related exception
+     * @throws DotSecurityException any security violation exception
+     */
+    Contentlet makeFileAsset(final File file, final String assetName, final Host host, final Folder folder,
+            final User user, final Language lang) throws DotDataException, DotSecurityException {
         final Contentlet contentlet = new Contentlet();
         contentlet.setContentTypeId(contentTypeAPI.find("FileAsset").id());
-        return updateFileAsset(file, host, folder, lang, contentlet);
+        return updateFileAsset(file, assetName, host, folder, lang, contentlet);
     }
 
 
@@ -663,9 +685,24 @@ public class WebAssetHelper {
      * @return the contentlet
      */
     Contentlet updateFileAsset(final File file, final Host host, final Folder folder, final Language lang, final Contentlet contentlet){
-        final String name = file.getName();
-        contentlet.setProperty(FileAssetAPI.TITLE_FIELD, name);
-        contentlet.setProperty(FileAssetAPI.FILE_NAME_FIELD, name);
+        return updateFileAsset(file, file.getName(), host, folder, lang, contentlet);
+    }
+
+    /**
+     * Updates a file asset with the given file, stored under the given name rather than the
+     * file's own name.
+     * @param file the binary to save
+     * @param assetName the name the asset is stored under
+     * @param host the site of the asset
+     * @param folder the folder of the asset
+     * @param lang the language of the asset
+     * @param contentlet the contentlet to update
+     * @return the contentlet
+     */
+    Contentlet updateFileAsset(final File file, final String assetName, final Host host, final Folder folder,
+            final Language lang, final Contentlet contentlet){
+        contentlet.setProperty(FileAssetAPI.TITLE_FIELD, assetName);
+        contentlet.setProperty(FileAssetAPI.FILE_NAME_FIELD, assetName);
         contentlet.setProperty(FileAssetAPI.BINARY_FIELD, file);
         if(!folder.isSystemFolder()){
             contentlet.setFolder(folder.getInode());
