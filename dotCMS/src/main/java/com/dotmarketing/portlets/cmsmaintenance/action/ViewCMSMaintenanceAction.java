@@ -13,10 +13,8 @@ import com.dotcms.repackage.org.apache.struts.action.ActionForward;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
-import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.common.reindex.ReindexEntry;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.cmsmaintenance.factories.CMSMaintenanceFactory;
 import com.dotmarketing.portlets.cmsmaintenance.struts.CmsMaintenanceForm;
@@ -31,11 +29,13 @@ import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.MaintenanceUtil;
 import com.dotmarketing.util.Parameter;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.TrashUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.ZipUtil;
 import com.dotmarketing.util.starter.ExportStarterUtil;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.portlet.ActionResponseImpl;
@@ -50,9 +50,7 @@ import java.nio.file.Files;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.zip.ZipOutputStream;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.jsp.PageContext;
@@ -80,6 +78,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 	String backupTempFilePath = ConfigUtils.getBackupPath()+File.separator+"temp";
 	private static String assetRealPath = null;
 	private static String assetPath = File.separator + "assets";
+	private static final String NOT_AUTHORIZED_MESSAGE = "message.cmsmaintenance.notauthorized";
 
 	private final ContentletAPI conAPI = APILocator.getContentletAPI();
 
@@ -132,71 +131,76 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		if(cmd.equals("cache")){
 
 			final User cacheUser = _getUser(req);
-			final String cacheUserId = null != cacheUser ? cacheUser.getUserId() : "unknown";
-			String cacheName = ccf.getCacheName();
-			if (cacheName.equals(com.dotmarketing.util.WebKeys.Cache.CACHE_CONTENTS_INDEX))
-			{
-				Logger.info(this, "Running Contents Index Cache");
-				if(defaultStructure.equals("Rebuild Whole Index")){
-					//structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(defaultStructure);
-				}else
-					structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(ccf.getStructure());
-				if(!InodeUtils.isSet(structure.getInode()))
-				{
-
-					int shards = Config.getIntProperty("es.index.number_of_shards", 1);
-					System.setProperty("es.index.number_of_shards", String.valueOf(shards));
-					Logger.info(this, "Running Contentlet Reindex");
-
-					conAPI.refreshAllContent();
-
-					message = "message.cmsmaintenance.cache.indexrebuilt";
-					AdminLogger.log(ViewCMSMaintenanceAction.class, "processAction", "Running Contentlet Reindex");
-
-				}
-				else
-				{
-					try{
-						Logger.info(this, "Running Contentlet Reindex on Structure: " + structure.getName());
-						conAPI.reindex(structure);
-						message = "message.cmsmaintenance.cache.indexrebuilt";
-						AdminLogger.log(ViewCMSMaintenanceAction.class, "processAction", "Running Contentlet Reindex on structure : "+structure.getName());
-					}catch(DotReindexStateException dre){
-						Logger.warn(this, "Content Reindexation Failed caused by: "+ dre.getMessage());
-						errorMessage = "message.cmsmaintenance.cache.failedtorebuild";
-					}
-				}
-			} else if (cacheName.equals(com.dotmarketing.util.WebKeys.Cache.CACHE_MENU_FILES))
-			{
-				Logger.info(this, String.format("User '%s' is deleting Menu Files", cacheUserId));
-				_deleteMenusCache();
-				message = "message.cmsmaintenance.cache.flushmenucaches";
-			} else if (cacheName.equals("flushCache"))
-			{
-				final String cacheToFlush = req.getParameter("cName");
-				boolean isAllCachesFlush = false;// this boolean is for the messages (logs and UI)
-				try{
-					CacheLocator.getCache(cacheToFlush);
-				}catch (NullPointerException e) {
-					isAllCachesFlush = true;//is a NPE is returned means it's cleaning all the caches
-				}
-				final String msgLogger = isAllCachesFlush
-						? String.format("User '%s' is flushing All Caches", cacheUserId)
-						: String.format("User '%s' is flushing %s Cache", cacheUserId, cacheToFlush);
-				Logger.info(this, msgLogger);
-				_flush(cacheToFlush);
-				//Reloads PushPublishing Filters if all cache or system cache is flushed
-				if(isAllCachesFlush || cacheToFlush.equalsIgnoreCase("system")){
-					DotInitializer.class.cast(APILocator.getPublisherAPI()).init();
-				}
-				message = isAllCachesFlush ? "message.cmsmaintenance.cache.flushallcache" : "message.cmsmaintenance.cache.flushcache";
+			if (!isAuthorizedAdmin(cacheUser)) {
+				errorMessage = NOT_AUTHORIZED_MESSAGE;
+				logUnauthorizedMaintenance(cacheUser, "cache");
 			} else {
-				Logger.info(this, String.format(
-						"User '%s' is flushing Live and Working File Cache", cacheUserId));
-				_deleteFiles(com.dotmarketing.util.WebKeys.Cache.CACHE_LIVE_FILES);
-				_deleteFiles(com.dotmarketing.util.WebKeys.Cache.CACHE_WORKING_FILES);
+				final String cacheUserId = null != cacheUser ? cacheUser.getUserId() : "unknown";
+				String cacheName = ccf.getCacheName();
+				if (cacheName.equals(com.dotmarketing.util.WebKeys.Cache.CACHE_CONTENTS_INDEX))
+				{
+					Logger.info(this, "Running Contents Index Cache");
+					if(defaultStructure.equals("Rebuild Whole Index")){
+						//structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(defaultStructure);
+					}else
+						structure = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(ccf.getStructure());
+					if(!InodeUtils.isSet(structure.getInode()))
+					{
 
-				message = "message.cmsmaintenance.cache.deletefiles";
+						int shards = Config.getIntProperty("es.index.number_of_shards", 1);
+						System.setProperty("es.index.number_of_shards", String.valueOf(shards));
+						Logger.info(this, "Running Contentlet Reindex");
+
+						conAPI.refreshAllContent();
+
+						message = "message.cmsmaintenance.cache.indexrebuilt";
+						AdminLogger.log(ViewCMSMaintenanceAction.class, "processAction", "Running Contentlet Reindex");
+
+					}
+					else
+					{
+						try{
+							Logger.info(this, "Running Contentlet Reindex on Structure: " + structure.getName());
+							conAPI.reindex(structure);
+							message = "message.cmsmaintenance.cache.indexrebuilt";
+							AdminLogger.log(ViewCMSMaintenanceAction.class, "processAction", "Running Contentlet Reindex on structure : "+structure.getName());
+						}catch(DotReindexStateException dre){
+							Logger.warn(this, "Content Reindexation Failed caused by: "+ dre.getMessage());
+							errorMessage = "message.cmsmaintenance.cache.failedtorebuild";
+						}
+					}
+				} else if (cacheName.equals(com.dotmarketing.util.WebKeys.Cache.CACHE_MENU_FILES))
+				{
+					Logger.info(this, String.format("User '%s' is deleting Menu Files", cacheUserId));
+					_deleteMenusCache();
+					message = "message.cmsmaintenance.cache.flushmenucaches";
+				} else if (cacheName.equals("flushCache"))
+				{
+					final String cacheToFlush = req.getParameter("cName");
+					boolean isAllCachesFlush = false;// this boolean is for the messages (logs and UI)
+					try{
+						CacheLocator.getCache(cacheToFlush);
+					}catch (NullPointerException e) {
+						isAllCachesFlush = true;//is a NPE is returned means it's cleaning all the caches
+					}
+					final String msgLogger = isAllCachesFlush
+							? String.format("User '%s' is flushing All Caches", cacheUserId)
+							: String.format("User '%s' is flushing %s Cache", cacheUserId, cacheToFlush);
+					Logger.info(this, msgLogger);
+					_flush(cacheToFlush);
+					//Reloads PushPublishing Filters if all cache or system cache is flushed
+					if(isAllCachesFlush || cacheToFlush.equalsIgnoreCase("system")){
+						DotInitializer.class.cast(APILocator.getPublisherAPI()).init();
+					}
+					message = isAllCachesFlush ? "message.cmsmaintenance.cache.flushallcache" : "message.cmsmaintenance.cache.flushcache";
+				} else {
+					Logger.info(this, String.format(
+							"User '%s' is flushing Live and Working File Cache", cacheUserId));
+					_deleteFiles(com.dotmarketing.util.WebKeys.Cache.CACHE_LIVE_FILES);
+					_deleteFiles(com.dotmarketing.util.WebKeys.Cache.CACHE_WORKING_FILES);
+
+					message = "message.cmsmaintenance.cache.deletefiles";
+				}
 			}
 		} // Download the records that could not be re-indexed in a CSV file
 		else if (cmd.equals("export-failed-as-csv")) {
@@ -204,34 +208,32 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 			HttpServletResponse response = resImpl.getHttpServletResponse();
 			downloadRemainingRecordsAsCsv(response);
 		} //Manage all the search and replace Task
-		else if(cmd.equals("searchandreplace")){
-			Logger.info(this, "Running Search & Replace");
-			Map<String,String> result = searchAndReplace(ccf);
-			if(result.get("type") != null){
-				if(result.get("type").equals("message")){
-					message = "Search and Replace complete <br>" + result.get("message");
-				} else {
-					errorMessage = "Search and Replace complete <br>" + result.get("message");
-				}
-				_deleteFiles(com.dotmarketing.util.WebKeys.Cache.CACHE_LIVE_FILES);
-				_deleteFiles(com.dotmarketing.util.WebKeys.Cache.CACHE_WORKING_FILES);
-				_flush(com.dotmarketing.util.WebKeys.Cache.CACHE_ALL_CACHES);
-			}
-		}
 		//Not being used this is being called using ajax
 		else if(cmd.equals("fixAssetsInconsistencies")){
            // this one NOT
 		} else if(cmd.equals("deleteSystemJob")) {
-            _deleteScheduler(req);
+            final User maintenanceUser = _getUser(req);
+            if (isAuthorizedAdmin(maintenanceUser)) {
+                _deleteScheduler(req);
+            } else {
+                errorMessage = NOT_AUTHORIZED_MESSAGE;
+                logUnauthorizedMaintenance(maintenanceUser, "deleteSystemJob");
+            }
         }
 		//Not being used this is being called using ajax
 		else if(cmd.equals("dropoldassets")){
 
-			Logger.info(this, "Running Drop old Assets");
-			if(_dropAssetOldVersions(ccf) >= 0){
-				message = "message.cmsmaintenance.dropoldassets.sucessfully";
-			}else{
-				errorMessage = "message.cmsmaintenance.dropoldassets.failed";
+			final User maintenanceUser = _getUser(req);
+			if (!isAuthorizedAdmin(maintenanceUser)) {
+				errorMessage = NOT_AUTHORIZED_MESSAGE;
+				logUnauthorizedMaintenance(maintenanceUser, "dropoldassets");
+			} else {
+				Logger.info(this, "Running Drop old Assets");
+				if (_dropAssetOldVersions(ccf) >= 0) {
+					message = "message.cmsmaintenance.dropoldassets.sucessfully";
+				} else {
+					errorMessage = "message.cmsmaintenance.dropoldassets.failed";
+				}
 			}
 
 		}
@@ -407,42 +409,35 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		}
 	}
 
-	private Map<String,String> searchAndReplace(CmsMaintenanceForm form) throws DotDataException{
-
-		String message="";
-		Map<String,String> messageResult = new HashMap<>();
-		boolean isAdmin = false;
-
-		if (UtilMethods.isSet(form.getUserId())) {
-			try {
-				if (APILocator.getUserAPI().isCMSAdmin(APILocator.getUserAPI().loadUserById(form.getUserId(),APILocator.getUserAPI().getSystemUser(),false))) {
-					isAdmin = true;
-				}
-			} catch (NoSuchUserException e) {
-				Logger.error(ViewCMSMaintenanceAction.class,"USER DOESN'T EXIST" + e.getMessage(),e);
-				message = "Cannot find user";
-			} catch (DotSecurityException e) {
-				message = "Failed to check for permissions";
-				Logger.error(ViewCMSMaintenanceAction.class,e.getMessage(),e);
-			}
-		}else{
-			message = "User not passed";
-			Logger.error(ViewCMSMaintenanceAction.class,"No UserId Passed");
+	/**
+	 * Tells whether the given session user is a CMS administrator, the authority required by the
+	 * destructive maintenance operations.
+	 *
+	 * @param sessionUser the user resolved from the session, may be {@code null}
+	 * @return {@code true} only when the user exists and holds the CMS administrator role
+	 */
+	@VisibleForTesting
+	static boolean isAuthorizedAdmin(final User sessionUser) {
+		try {
+			return sessionUser != null && APILocator.getUserAPI().isCMSAdmin(sessionUser);
+		} catch (DotDataException e) {
+			Logger.error(ViewCMSMaintenanceAction.class,
+					"Could not resolve administrator role: " + e.getMessage(), e);
+			return false;
 		}
+	}
 
-		if (isAdmin) {
-			String searchString = form.getSearchString();
-			String replaceString = form.getReplaceString();
-			boolean DBerrorFound = MaintenanceUtil.DBSearchAndReplace(searchString, replaceString);
-			if(DBerrorFound){
-				message = "Search/Replace Finished with Errors.  See Log for more info";
-			}else{
-				message = "Search/Replace Finished Successful";
-			}
-			messageResult.put("type", "message");
-			messageResult.put("message", message);
-		}
-		return messageResult;
+	/**
+	 * Records a rejected maintenance operation in the security log, naming the user, so the
+	 * refusal can be audited later.
+	 *
+	 * @param sessionUser the user that was rejected, may be {@code null}
+	 * @param operation   the maintenance operation that was refused
+	 */
+	private static void logUnauthorizedMaintenance(final User sessionUser, final String operation) {
+		SecurityLogger.logInfo(ViewCMSMaintenanceAction.class, String.format(
+				"User [%s] is not a CMS administrator; rejected maintenance operation: %s",
+				sessionUser != null ? sessionUser.getUserId() : "unknown", operation));
 	}
 
 

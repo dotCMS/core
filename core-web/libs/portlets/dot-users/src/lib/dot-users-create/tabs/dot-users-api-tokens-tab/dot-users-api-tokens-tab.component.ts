@@ -42,18 +42,17 @@ import {
 
 /**
  * Row state derived from the three backend flags. Drives the row tag
- * and which action is available — valid rows can be revoked and
- * reveal their JWT; revoked/expired rows are read-only.
+ * and which action is available — valid rows can be revoked;
+ * revoked/expired rows are read-only.
  */
 type TokenStatus = 'valid' | 'revoked' | 'expired';
 
 /**
  * API Tokens tab. Matches the legacy admin's contract:
  *
- * - Clicking a valid row (or pressing Enter/Space on it) fetches a
- *   FRESH JWT via `GET /api/v1/apitoken/{id}/jwt`. Each call mints a
- *   new signed value on the backend — the token record is unchanged,
- *   so there is no "reveal only once" limitation.
+ * - A token's JWT is shown once, right after the token is created.
+ *   It can't be retrieved again later; a lost JWT means requesting a
+ *   new token.
  * - Revoke (soft) keeps the row visible for audit; the row's Revoke
  *   button is only present on valid rows.
  * - The Show inactive toggle mirrors the legacy checkbox.
@@ -108,13 +107,11 @@ export class DotUsersApiTokensTabComponent {
     protected readonly $loadError = computed(() => this.$status() === ComponentStatus.ERROR);
 
     /**
-     * The reveal dialog's state. `jwt === null` means "still fetching",
-     * a string means "ready to copy". Populated on-demand via row
-     * click or after a create — the backend re-mints on every call.
+     * The reveal dialog's state. It only ever shows the JWT returned by
+     * the create call, which is the one time that JWT is available.
      */
     protected readonly $revealVisible = signal(false);
     protected readonly $revealJwt = signal<string | null>(null);
-    protected readonly $revealTokenId = signal<string>('');
     protected readonly $copied = signal(false);
 
     protected readonly $hasUser = computed(() => !!this.userId());
@@ -184,61 +181,9 @@ export class DotUsersApiTokensTabComponent {
         return `${dash > 0 ? id.slice(0, dash) : id.slice(0, 8)}…`;
     }
 
-    /**
-     * Opens the reveal dialog for a token id and fetches a fresh JWT.
-     * Backend refuses revoked/expired tokens with a 400 — we gate the
-     * caller (`onRowClick`, `onRowKeydown`) to valid rows only so this
-     * never fires for those.
-     */
-    protected reveal(tokenId: string): void {
-        this.$revealTokenId.set(tokenId);
-        this.$revealJwt.set(null);
-        this.$copied.set(false);
-        this.$revealVisible.set(true);
-
-        this.#usersService
-            .getApiTokenJwt(tokenId)
-            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
-            .subscribe({
-                next: (jwt) => this.$revealJwt.set(jwt),
-                error: (error) => {
-                    this.$revealVisible.set(false);
-                    this.#httpErrorManager.handle(error);
-                }
-            });
-    }
-
-    protected onRowClick(token: DotApiToken): void {
-        if (this.statusOf(token) !== 'valid') {
-            return;
-        }
-
-        this.reveal(token.id);
-    }
-
-    /**
-     * Keyboard mirror of `onRowClick`. Space/Enter both open reveal to
-     * match the button-like affordance the row's `role="button"`
-     * advertises — Space needs `preventDefault` so the page doesn't
-     * scroll.
-     */
-    protected onRowKeydown(token: DotApiToken, event: KeyboardEvent): void {
-        if (event.key !== 'Enter' && event.key !== ' ') {
-            return;
-        }
-
-        if (this.statusOf(token) !== 'valid') {
-            return;
-        }
-
-        event.preventDefault();
-        this.reveal(token.id);
-    }
-
     protected closeReveal(): void {
         this.$revealVisible.set(false);
         this.$revealJwt.set(null);
-        this.$revealTokenId.set('');
         this.$copied.set(false);
     }
 
@@ -289,9 +234,8 @@ export class DotUsersApiTokensTabComponent {
             this.$tokens.update((current) => [result.token, ...current]);
             this.reloadTokens();
 
-            // Show the JWT the create call already returned; skips one
-            // round-trip and keeps a single reveal-dialog surface.
-            this.$revealTokenId.set(result.token.id);
+            // Show the JWT the create call returned. This is the only
+            // time it is available.
             this.$revealJwt.set(result.jwt);
             this.$copied.set(false);
             this.$revealVisible.set(true);

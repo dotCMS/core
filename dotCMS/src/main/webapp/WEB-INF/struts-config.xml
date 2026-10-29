@@ -19,7 +19,6 @@
       <form-bean name="HostForm" type="com.dotmarketing.portlets.folders.struts.HostForm"></form-bean>
       <form-bean name="FolderForm" type="com.dotmarketing.portlets.folders.struts.FolderForm"></form-bean>
       <form-bean name="FileUploadForm" type="com.dotmarketing.portlets.fileupload.struts.FileForm"></form-bean>
-      <form-bean name="ContainerForm" type="com.dotmarketing.portlets.containers.struts.ContainerForm"></form-bean>
       <form-bean name="WorkflowTaskForm" type="com.dotmarketing.portlets.workflows.struts.WorkflowTaskForm"></form-bean>
 	    <form-bean name="VirtualLinkForm" type="com.dotmarketing.portlets.virtuallinks.struts.VirtualLinkForm"></form-bean>
       <form-bean name="LanguageForm" type="com.dotmarketing.portlets.languagesmanager.struts.LanguageForm"></form-bean>
@@ -60,6 +59,7 @@
 	<global-forwards>
 		<forward name="/common/error.jsp" path="/common/error.jsp" />
 		<forward name="/portal/error" path="portal.error" />
+		<forward name="/portal/portlet_access_denied" path="portal.portlet_access_denied" />
 	</global-forwards>
 
 	<!-- Action Mappings -->
@@ -189,24 +189,6 @@
       </action>
       <!-- File Upload Management -->
 
-      <!-- Container Management -->
-      <action path="/ext/containers/view_containers" type="com.dotmarketing.portlets.containers.action.ViewContainersAction">
-         <forward name="portlet.ext.containers.view_containers" path="portlet.ext.containers.view_containers" />
-         <forward name="portlet.ext.containers.view" path="portlet.ext.containers.view" />
-      </action>
-      <action path="/ext/containers/edit_container" type="com.dotmarketing.portlets.containers.action.EditContainerAction" name="ContainerForm" scope="request" input="portlet.ext.containers.edit_container" validate="false">
-         <forward name="portlet.ext.containers.edit_container" path="portlet.ext.containers.edit_container"></forward>
-         <forward name="portlet.ext.containers.add_variables" path="portlet.ext.containers.add_variables"></forward>
-      </action>
-      <action path="/ext/containers/publish_containers" type="com.dotmarketing.portlets.containers.action.PublishContainersAction">
-         <forward name="portlet.ext.containers.publish_containers" path="portlet.ext.containers.publish_containers" />
-      </action>
-      <action path="/ext/containers/view_containers_popup" type="com.dotmarketing.portlets.containers.action.ViewContainersAction">
-         <forward name="portlet.ext.containers.view_containers" path="portlet.ext.containers.view_containers_popup" />
-         <forward name="portlet.ext.containers.view" path="portlet.ext.containers.view_containers_popup" />
-      </action>
-
-      <!-- Container  Management -->
 
       <!-- Language Manager -->
       <action path="/ext/languages_manager/view_languages_manager" type="com.dotmarketing.portlets.languagesmanager.action.ViewLanguageAction">
@@ -254,7 +236,6 @@
       <action path="/ext/director/direct" type="com.dotmarketing.portlets.director.action.DirectorAction" >
          <forward name="portlet.ext.director.unlock_contentlet" path="portlet.ext.director.unlock_contentlet"></forward>
          <forward name="portlet.ext.director.unlock_htmlpage" path="portlet.ext.director.unlock_htmlpage"></forward>
-         <forward name="portlet.ext.director.unlock_container" path="portlet.ext.director.unlock_container"></forward>
          <forward name="portlet.ext.director.unlock_link" path="portlet.ext.director.unlock_link"></forward>
          <forward name="portlet.ext.director.unlock_popup_link" path="portlet.ext.director.unlock_popup_link"></forward>
          <forward name="portlet.ext.director.unlock_file" path="portlet.ext.director.unlock_file"></forward>

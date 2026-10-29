@@ -84,6 +84,7 @@ import org.junit.runners.Suite;
         TotalSizeOfFilesPerThemeMetricTypeTest.class,
         TimeMachineUtilTest.class,
         Task250604UpdateFolderInodesTest.class,
+        com.dotcms.rendering.js.FileJavascriptReaderTest.class,
         FixTask00090RecreateMissingFoldersInParentPathTest.class,
         AnalyticsValidatorUtilTest.class,
         Task250826AddIndexesToUniqueFieldsTableTest.class,
@@ -121,6 +122,7 @@ import org.junit.runners.Suite;
         Task260615AlterClusterIdLengthTest.class,
         ImportContentletsActionSmokeTest.class,
         TreeFactoryTest.class,
+    com.dotcms.rest.api.v1.user.UserResourcePasswordIntegrationTest.class,
         PublisherQueueJobTest.class,
         ContentToStringUtilTest.class,
         CacheResourceIntegrationTest.class,
@@ -140,7 +142,7 @@ import org.junit.runners.Suite;
         SystemEventsRetentionIntegrationTest.class,
         com.dotcms.rest.api.v1.portlet.PortletResourceIntegrationTest.class,
         LayoutResourceIntegrationTest.class,
-        com.dotmarketing.webdav.DotWebdavTempPathContainmentTest.class
+        com.dotmarketing.webdav.DotWebdavTempPathContainmentTest.class,
 })
 
 public class MainSuite3a {

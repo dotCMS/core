@@ -1272,6 +1272,13 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test: removing a contentlet's documents through a DELETE journal entry claimed
+     * with {@code findContentToReindex} and applied by a manual bulk request.
+     * Given Scenario: a contentlet saved in several languages, then published.
+     * Expected Result: no document of the identifier remains in the index, and the claimed
+     * journal entry is acknowledged so it cannot hold the reindex queue non-empty afterwards.
+     */
     @Test
     public void testRemoveContentFromIndex() throws DotDataException, DotSecurityException {
 
@@ -1354,6 +1361,9 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         indexAPI.setRefreshPolicy(bulk, IndexBulkRequest.RefreshPolicy.IMMEDIATE);
         indexAPI.appendBulkRequest(bulk, entries.values());
         indexAPI.putToIndex(bulk);
+        // Acknowledge what this test claimed: the DELETE row is otherwise left in the journal,
+        // out of reach of the reindex thread, and holds the queue non-empty for the next check.
+        APILocator.getReindexQueueAPI().deleteReindexEntry(new ArrayList<>(entries.values()));
 
         assertEquals(0, contentletAPI
                 .indexCount("+live:false +identifier:" + baseCon.getIdentifier(), user, false));
