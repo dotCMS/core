@@ -22,7 +22,6 @@ public enum PortletID {
     PLUGINS,
     PLUGINS_LEGACY("plugins-legacy"),
     ES_SEARCH,
-    ES_SEARCH_LEGACY("es-search-legacy"),
     EVENTS,
     EVENTS_APPROVAL,
     FOLDERS,
@@ -39,7 +38,6 @@ public enum PortletID {
     PUBLISHING_QUEUE,
     PUBLISHING_QUEUE_LEGACY("publishing-queue-legacy"),
     QUERY_TOOL,
-    QUERY_TOOL_LEGACY("query-tool-legacy"),
     TAGS,
     TAGS_LEGACY("tags-legacy"),
     TEMPLATES,
@@ -51,6 +49,13 @@ public enum PortletID {
     SITE_BROWSER,
     SITE_SEARCH,
     USERS,
+    /**
+     * Beta-period alias of {@link #USERS}: the Angular Users portlet ships opt-in as
+     * {@code users-beta} (see {@code portlet.xml}). A gate meaning "can administer users" should accept
+     * either id while both portlets coexist, as {@code UserPaginator#canReadFullProfile} does; not every
+     * Users-portlet check has been widened to the beta id yet. Remove when the Angular portlet is promoted.
+     */
+    USERS_BETA("users-beta"),
     VANITY_URLS,
     WEB_EVENT_REGISTRATIONS,
     WEB_FORMS,

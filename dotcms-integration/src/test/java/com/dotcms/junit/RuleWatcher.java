@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexQueueAPI;
 import com.dotmarketing.common.reindex.ReindexQueueFactory;
 import com.dotmarketing.common.reindex.ReindexThread;
@@ -35,6 +36,13 @@ public class RuleWatcher extends TestWatcher {
     public static final String USE_TEST_TRANSACTION_TRACKER = "USE_TEST_TRANSACTION_TRACKER";
     public static final String TEST_TRANSACTION_TRACKER_AUTO_CLOSE_TYPE = "TEST_TRANSACTION_TRACKER_AUTO_CLOSE_TYPE";
     public static final String TRANSACTION_AUTO_CLOSE_DEFAULT = "rollback";
+    /**
+     * How long to wait for the reindex queue to drain after a test before pausing the reindex
+     * thread and deleting what is left. Longer than {@code DEFAULT_INDEX_QUEUE_WAIT} because a
+     * slow-draining test would otherwise leave the thread paused for the tests that follow; it
+     * costs nothing when the queue drains quickly.
+     */
+    private static final int INDEXER_DRAIN_TIMEOUT_SECONDS = 60;
     private Map<Integer, Map<String, String>> overrides = new ConcurrentHashMap<>();
 
     private Set<String> contentTypes = new HashSet<>();
@@ -122,6 +130,12 @@ public class RuleWatcher extends TestWatcher {
 
     //TODO: these should be moved to different classes they could be handled as their own Rules
 
+    /**
+     * After a test, waits for the reindex queue to drain so pending index work does not leak into
+     * the next test. If it does not drain within {@link #INDEXER_DRAIN_TIMEOUT_SECONDS}, the
+     * reindex thread is paused and the whole journal is cleared by {@link #clearStuckJournal()},
+     * so rows the worker can never take cannot make every following test wait as well.
+     */
     private static void indexerTrackerAfter() {
         if (Config.getBooleanProperty(USE_TEST_INDEXER_TRACKER, false)) {
             Logger.info(MainBaseSuite.class, "Checking indexer status...");
@@ -134,13 +148,12 @@ public class RuleWatcher extends TestWatcher {
                         Logger.info(MainBaseSuite.class, "Indexer was not running, unpausing now");
                         ReindexThread.unpause();
                     }
-                    TestDataUtils.waitForEmptyQueue();
-                    boolean queueEmpty = TestDataUtils.waitForEmptyQueue();
+                    boolean queueEmpty =
+                            TestDataUtils.waitForEmptyQueue(INDEXER_DRAIN_TIMEOUT_SECONDS);
                     Logger.info(MainBaseSuite.class, "Indexer Complete=" + queueEmpty);
                     if (!queueEmpty) {
                         ReindexThread.pause();
-                        Logger.info(MainBaseSuite.class, "Cleaning queue");
-                        APILocator.getReindexQueueAPI().deleteReindexAndFailedRecords();
+                        clearStuckJournal();
                     }
                 }
             } catch (DotDataException e) {
@@ -149,6 +162,26 @@ public class RuleWatcher extends TestWatcher {
         }
     }
 
+    /**
+     * Deletes every row of {@code dist_reindex_journal} after the queue failed to drain, and logs
+     * how many rows were removed per priority and action, a sample identifier and the last
+     * recorded failure cause, so a run shows what was stuck. All rows are removed, not only those at REINDEX priority or above
+     * ({@code deleteReindexAndFailedRecords}): rows at NORMAL priority that the worker cannot take
+     * would otherwise survive and stall every later test as well.
+     *
+     * @throws DotDataException if the journal cannot be read or cleared
+     */
+    private static void clearStuckJournal() throws DotDataException {
+        final DotConnect dotConnect = new DotConnect();
+        final List<Map<String, Object>> byPriority = dotConnect.setSQL(
+                "select priority, dist_action, count(*) as total, min(ident_to_index) as sample,"
+                        + " max(index_val) as last_error"
+                        + " from dist_reindex_journal group by priority, dist_action order by priority")
+                .loadObjectResults();
+        dotConnect.setSQL("delete from dist_reindex_journal").loadResult();
+        Logger.info(MainBaseSuite.class, "Cleaned stuck reindex journal, rows removed by "
+                + "priority and action: " + byPriority);
+    }
 
     private void configOverrideTrackerBefore(Description description) {
         if (Config.getBooleanProperty(USE_CONFIG_TEST_OVERRIDE_TRACKER, false)) {

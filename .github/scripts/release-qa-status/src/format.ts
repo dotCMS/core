@@ -81,9 +81,13 @@ export function renderText(report: ReleaseQAReport): string {
     report.summary.missing +
     report.summary.unlinked +
     report.summary.external;
+  // The Excluded section still renders below on a clean release: it is the only
+  // record of which PRs were skipped and why, and after the spec/docs-only rules
+  // the common case is exactly this one — nothing flagged *because* the gaps were
+  // spec PRs. Returning early here would leave that drop unexplained.
   if (totalFlagged === 0) {
     lines.push(':white_check_mark: All non-excluded PRs have a recognized QA verdict.');
-    return lines.join('\n');
+    lines.push('');
   }
 
   for (const key of ['failed', 'missing', 'unlinked', 'external'] as const) {
@@ -99,7 +103,8 @@ export function renderText(report: ReleaseQAReport): string {
   if (report.excluded.length > 0) {
     lines.push(`Excluded (${report.excluded.length})`);
     lines.push(
-      '  Bot / dependency-bump / version-bump / release-machinery PRs (skipped before QA check).'
+      '  Bot / dependency-bump / version-bump / release-machinery / spec-only / docs-only PRs\n' +
+        '  (skipped before QA check).'
     );
     for (const pr of report.excluded) lines.push(renderExcludedTextLine(pr));
     lines.push('');
@@ -161,10 +166,12 @@ export function renderMarkdown(report: ReleaseQAReport): string {
   out.push(`| Excluded | ${s.excluded} |`);
   out.push('');
 
+  // See renderText: the Excluded section below must survive a clean release,
+  // so this reports the all-clear instead of returning on it.
   const flagged = s.failed + s.missing + s.unlinked + s.external;
   if (flagged === 0) {
     out.push(':white_check_mark: All non-excluded PRs have a recognized QA verdict.');
-    return out.join('\n');
+    out.push('');
   }
 
   const sections: Array<{ bucket: PRQAResult[]; key: BucketKey }> = [
@@ -200,7 +207,11 @@ export function renderMarkdown(report: ReleaseQAReport): string {
   if (report.excluded.length > 0) {
     out.push(`## Excluded (${report.excluded.length})`);
     out.push('');
-    out.push('Bot / dependency-bump / version-bump / release-machinery PRs.');
+    out.push(
+      'Bot / dependency-bump / version-bump / release-machinery PRs, plus PRs that ' +
+        'change only specs or documentation (`spec-only` / `docs-only`) and so carry ' +
+        'nothing for QA to exercise.'
+    );
     out.push('');
     out.push('| PR | Title | Author | Reason |');
     out.push('|---|---|---|---|');
