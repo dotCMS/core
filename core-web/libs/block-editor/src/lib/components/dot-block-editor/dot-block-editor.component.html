@@ -27,7 +27,7 @@
     </div>
 
     @if (showCharData || charLimitError || requiredError) {
-        <div class="flex align-items-center mt-3 gap-2">
+        <div class="align-items-center mt-3 flex gap-2">
             <div class="flex-1">
                 @if (requiredError) {
                     <small class="p-invalid" data-testid="required-error">
@@ -55,5 +55,5 @@
 
     <dot-editor-context-menu [editor]="editor" />
     <dot-add-button [editor]="editor" />
-    <dot-bubble-menu [editor]="editor" />
+    <dot-bubble-menu [editor]="editor" (contentletEdit)="contentletEdit.emit($event)" />
 }

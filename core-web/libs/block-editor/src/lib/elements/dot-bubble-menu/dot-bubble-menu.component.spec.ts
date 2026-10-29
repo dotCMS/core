@@ -1,3 +1,4 @@
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
@@ -11,9 +12,13 @@ import { Subscript } from '@tiptap/extension-subscript';
 import { Superscript } from '@tiptap/extension-superscript';
 import { Text } from '@tiptap/extension-text';
 
-import { DotAiConfigService, DotContentTypeService, DotMessageService } from '@dotcms/data-access';
+import { DotAiConfigService, DotMessageService } from '@dotcms/data-access';
 
 import { DotBubbleMenuComponent } from './dot-bubble-menu.component';
+import { getContentletDataFromSelection } from './utils';
+
+// What the author has selected is the util's job; these specs only choose what it answers.
+vi.mock('./utils', () => ({ getContentletDataFromSelection: vi.fn(() => ({})) }));
 
 /**
  * Builds a spy for `editor.chain()` that records the order methods are called on
@@ -74,7 +79,6 @@ describe('DotBubbleMenuComponent - superscript/subscript mutual exclusion', () =
                     provide: DotAiConfigService,
                     useValue: { checkPluginInstallation: () => of(false) }
                 },
-                { provide: DotContentTypeService, useValue: {} },
                 {
                     provide: DotMessageService,
                     useValue: { get: (key: string) => key }
@@ -119,5 +123,76 @@ describe('DotBubbleMenuComponent - superscript/subscript mutual exclusion', () =
             expect(chain.toggleSubscript).toHaveBeenCalledTimes(1);
             expect(runSpy).toHaveBeenCalledTimes(1);
         });
+    });
+});
+
+/**
+ * #38303 (R8) — editing an embedded contentlet only asks. Whoever mounts the editor opens it; the
+ * bubble menu no longer prompts, writes a "return to" breadcrumb or navigates the parent window.
+ */
+describe('DotBubbleMenuComponent - editing an embedded contentlet', () => {
+    let spectator: Spectator<DotBubbleMenuComponent>;
+    let editor: Editor;
+
+    const createComponent = createComponentFactory({
+        component: DotBubbleMenuComponent,
+        detectChanges: false,
+        overrideComponents: [[DotBubbleMenuComponent, { set: { template: '<div></div>' } }]],
+        providers: [
+            {
+                provide: DotAiConfigService,
+                useValue: { checkPluginInstallation: () => of(false) }
+            },
+            { provide: DotMessageService, useValue: { get: (key: string) => key } }
+        ]
+    });
+
+    beforeEach(() => {
+        editor = new Editor({ extensions: [Document, Paragraph, Text], content: '<p>Hi</p>' });
+        spectator = createComponent();
+        spectator.setInput('editor', editor);
+        spectator.detectChanges();
+    });
+
+    afterEach(() => {
+        editor.destroy();
+        vi.restoreAllMocks();
+    });
+
+    it('emits contentletEdit with the selected contentlet inode and content type', () => {
+        vi.mocked(getContentletDataFromSelection).mockReturnValue({
+            inode: 'embedded-inode',
+            contentType: 'Blog'
+        });
+        const emitted = vi.fn();
+        spectator.output('contentletEdit').subscribe(emitted);
+
+        spectator.component['goToContentlet']();
+
+        expect(emitted).toHaveBeenCalledWith({ inode: 'embedded-inode', contentType: 'Blog' });
+    });
+
+    it('neither prompts nor writes a "return to" breadcrumb', () => {
+        vi.mocked(getContentletDataFromSelection).mockReturnValue({
+            inode: 'embedded-inode',
+            contentType: 'Blog'
+        });
+        const confirm = vi.spyOn(window, 'confirm');
+        const setItem = vi.spyOn(Storage.prototype, 'setItem');
+
+        spectator.component['goToContentlet']();
+
+        expect(confirm).not.toHaveBeenCalled();
+        expect(setItem).not.toHaveBeenCalled();
+    });
+
+    it('emits nothing when the selection names no contentlet', () => {
+        vi.mocked(getContentletDataFromSelection).mockReturnValue({});
+        const emitted = vi.fn();
+        spectator.output('contentletEdit').subscribe(emitted);
+
+        spectator.component['goToContentlet']();
+
+        expect(emitted).not.toHaveBeenCalled();
     });
 });
