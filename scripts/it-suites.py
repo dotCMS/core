@@ -190,6 +190,8 @@ def add(root, name, suite_name):
 def remove_from_allowlist(root, fqn):
     """Drop fqn's line from the allow-list; True if there was one."""
     path = root / ALLOWLIST
+    if not path.exists():
+        return False
     lines = path.read_text().split("\n")
     kept = [l for l in lines if l.split("#")[0].strip() != fqn]
     if len(kept) == len(lines):
@@ -199,7 +201,11 @@ def remove_from_allowlist(root, fqn):
 
 
 def allowlist(root):
-    return [n for n in (l.split("#")[0].strip() for l in (root / ALLOWLIST).read_text().splitlines()) if n]
+    """The allow-listed class names; none when the file is absent (a branch older than the guard)."""
+    path = root / ALLOWLIST
+    if not path.exists():
+        return []
+    return [n for n in (l.split("#")[0].strip() for l in path.read_text().splitlines()) if n]
 
 
 def unregistered(root):

@@ -171,6 +171,12 @@ class ItSuitesTests(unittest.TestCase):
                  "public class NestedTest {\n  private abstract static class Helper {}\n  @Test public void t() {}\n}\n")
         self.assertIn("com.fresh.NestedTest", it.unregistered(self.root))
 
+    def test_add_works_without_an_allowlist_file(self):
+        (self.root / it.ALLOWLIST).unlink()
+        it.add(self.root, "com.fresh.BTest", "Suite4")
+        self.assertIn("com.fresh.BTest.class,", self.suite4.read_text())
+        self.assertEqual(it.allowlist(self.root), [])
+
     def test_check_fails_on_stale_allowlist_entries(self):
         (self.root / it.ALLOWLIST).write_text("com.other.BTest # now registered\ncom.fresh.Gone\ncom.fresh.CTest\n")
         self.assertEqual(it.stale_allowlist(self.root),
