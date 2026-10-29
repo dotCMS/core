@@ -39,6 +39,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.factories.PreviewFactory;
+import com.dotmarketing.portal.struts.StrutsPathAccess;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.user.business.UserUtil;
 import com.dotmarketing.util.Config;
@@ -46,7 +47,6 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
-import com.liferay.portal.PortletActiveException;
 import com.liferay.portal.RequiredRoleException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.UserActiveException;
@@ -553,12 +553,27 @@ public class PortalRequestProcessor extends TilesRequestProcessor {
 		return super.processRoles(req, res, mapping);
 	}
 
+	/**
+	 * Restricts the request to the portlets allowed for the mapping's struts action path.
+	 *
+	 * <p>Paths outside the portlet area, such as logging in and out, are left alone; see
+	 * {@link #isPortletPath(String)}. For every other path, access is resolved by
+	 * {@link StrutsPathAccess} from the action path, and a request that is not allowed is forwarded
+	 * to the error page. A request without a user is left to the authentication filter, as it was
+	 * before, so that a login redirect is not turned into an error page.</p>
+	 *
+	 * @param req     the request being processed
+	 * @param res     the response, used to forward a refused request
+	 * @param mapping the Struts {@link ActionMapping} whose path is about to render
+	 * @return {@code true} when the request may continue
+	 * @throws IOException      if the forward cannot be written
+	 * @throws ServletException if the forward fails
+	 */
+	@Override
 	protected boolean processRoles(
-			HttpServletRequest req, HttpServletResponse res,
-			ActionMapping mapping)
+			final HttpServletRequest req, final HttpServletResponse res,
+			final ActionMapping mapping)
 			throws IOException, ServletException {
-
-		boolean authorized = true;
 
 		User user = null;
 
@@ -570,57 +585,21 @@ public class PortalRequestProcessor extends TilesRequestProcessor {
 
 		String path = mapping.getPath();
 
-		if ((user != null) && isPortletPath(path)) {
-			try {
-
-				// Authenticated users can always log out
-
-				if (path.equals(_PATH_PORTAL_LOGOUT)) {
-					return true;
-				}
-
-				if (path.equals(_PATH_PORTAL_LOGOUT_AS)) {
-					return true;
-				}
-
-				// Check roles
-
-				String strutsPath = path.substring(
-						1, path.lastIndexOf(StringPool.SLASH));
-
-				Portlet portlet = null;
-
-				if (portlet != null && portlet.isActive()) {
-//					if (!RoleLocalManagerUtil.hasRoles(user.getUserId(), portlet.getRolesArray())) {
-//
-//						throw new PrincipalException();
-//					}
-				}
-				else if (portlet != null && !portlet.isActive()) {
-					SessionErrors.add(
-							req, PortletActiveException.class.getName());
-
-					authorized = false;
-				}
-			}
-			catch (Exception e) {
-				SessionErrors.add(req, PrincipalException.class.getName());
-
-				authorized = false;
-			}
-		}
-
-		if (!authorized) {
-			ForwardConfig forwardConfig =
-					mapping.findForward(_PATH_PORTAL_ERROR);
-
-			processForwardConfig(req, res, forwardConfig);
-
-			return false;
-		}
-		else {
+		if ((user == null) || !isPortletPath(path)) {
 			return true;
 		}
+
+		if (StrutsPathAccess.canAccess(path, user)) {
+			return true;
+		}
+
+		SessionErrors.add(req, PrincipalException.class.getName());
+
+		ForwardConfig forwardConfig = mapping.findForward(_PATH_PORTAL_ERROR);
+
+		processForwardConfig(req, res, forwardConfig);
+
+		return false;
 	}
 
 	protected StringBuffer getLastPath(HttpServletRequest req) {
