@@ -299,7 +299,10 @@ export class DotEditContentLayoutComponent {
      *    internal state changes — to prevent the hide animation from starting.
      *
      * 2. dialogRef.close override — catches programmatic closes (dialogRef.close()
-     *    called directly from code, e.g. DotEditContentDialogComponent.closeDialog()).
+     *    called directly from code by whoever opened the dialog).
+     *
+     * No Edit Content surface mounts the editor in a `DialogService` dialog any more: the
+     * opener and the side panel replaced the centered dialog (#38303).
      */
     #interceptDirtyClose(): void {
         const dialogRef = this.#dialogRef!;

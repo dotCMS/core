@@ -60,10 +60,10 @@ export interface DotAssetPickerLauncher {
  * because `@dotcms/edit-content` already imports `@dotcms/new-block-editor`, so the Story Block
  * reaching back for it would close a project cycle.
  *
- * Provided by — and only by — the three Angular Edit Content hosts:
+ * Provided by — and only by — the two Angular Edit Content hosts:
  * - `EditContentShellComponent` (full-screen route)
- * - `DotEditContentSidePanelComponent` (slide-in panel)
- * - `DotEditContentDialogComponent` (overlay dialog: UVE, Relationship field)
+ * - `DotEditContentSidePanelComponent` (side panel: UVE, Content Drive, Relationship field and
+ *   every other surface that opens content through `DotEditContentOpenerService`)
  */
 export const ASSET_PICKER_LAUNCHER = new InjectionToken<DotAssetPickerLauncher>(
     'ASSET_PICKER_LAUNCHER'
