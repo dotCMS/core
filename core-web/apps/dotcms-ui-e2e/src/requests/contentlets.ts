@@ -146,6 +146,31 @@ export async function relateContent(
 }
 
 /**
+ * Locks a contentlet for the admin user, through `PUT /api/v1/content/_lock/{inodeOrIdentifier}`.
+ *
+ * The legacy editor opens content read-only unless the user holds its lock
+ * (`EditContentletAction` sets `CONTENT_EDITABLE` only for the lock owner), so a test that edits
+ * in it locks the content first rather than clicking "Make Editable".
+ *
+ * @param request - Playwright APIRequestContext
+ * @param inodeOrIdentifier - The contentlet to lock
+ */
+export async function lockContentlet(
+    request: APIRequestContext,
+    inodeOrIdentifier: string
+): Promise<void> {
+    const response = await request.put(`/api/v1/content/_lock/${inodeOrIdentifier}`, {
+        headers: {
+            Authorization: generateBase64Credentials(admin1.username, admin1.password)
+        }
+    });
+
+    expect(response.status(), `failed to lock ${inodeOrIdentifier}: ${await response.text()}`).toBe(
+        200
+    );
+}
+
+/**
  * Deletes contentlets by their identifiers.
  *
  * Fires DESTROY through the WORKFLOW resource. `/api/v1/content/actions/...` — which this used to
