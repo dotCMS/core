@@ -51,14 +51,30 @@ describe('DotEditContentDeepLinkComponent', () => {
         ]
     });
 
+    /** Lets the component load the opener, which the admin app imports on demand, and open. */
+    const settle = async (): Promise<void> => {
+        await vi.dynamicImportSettled();
+        await new Promise((resolve) => setTimeout(resolve));
+    };
+
     /**
-     * Mounts the component on a deep link.
+     * Mounts the component on a deep link and waits for it to open the panel.
      *
      * @param portlet The portlet `DotRouterService` reports as current: its id and the full URL.
      * @param params The route params (`asset`, or `contentType`).
      * @param queryParams The route query params (`folder` for a create).
      */
-    const mountOn = (
+    const mountOn = async (
+        portlet: { id: string; url: string },
+        params: Params,
+        queryParams: Params = {}
+    ): Promise<void> => {
+        mountWithoutWaiting(portlet, params, queryParams);
+        await settle();
+    };
+
+    /** Mounts the component on a deep link; the panel opens once the opener has loaded. */
+    const mountWithoutWaiting = (
         portlet: { id: string; url: string },
         params: Params,
         queryParams: Params = {}
@@ -153,9 +169,25 @@ describe('DotEditContentDeepLinkComponent', () => {
         });
     });
 
+    // The opener loads on demand: a route left before it arrives opens nothing.
+    describe('a route left before the editor loads', () => {
+        it('should open no panel', async () => {
+            mountWithoutWaiting(
+                { id: 'content', url: '/c/content/abc-inode' },
+                { asset: 'abc-inode' }
+            );
+            spectator.fixture.destroy();
+
+            await settle();
+
+            expect(opened().mock.calls.length).toBe(0);
+            expect(router.navigate.mock.calls.length).toBe(0);
+        });
+    });
+
     describe('a new content (/c/content/new/:contentType)', () => {
-        it('should open a create of the content type on init, naming the parent portlet', () => {
-            mountOn({ id: 'content', url: '/c/content/new/Blog' }, { contentType: 'Blog' });
+        it('should open a create of the content type on init, naming the parent portlet', async () => {
+            await mountOn({ id: 'content', url: '/c/content/new/Blog' }, { contentType: 'Blog' });
 
             expect(openedRequest()).toEqual({
                 mode: 'new',
@@ -165,8 +197,8 @@ describe('DotEditContentDeepLinkComponent', () => {
         });
 
         // Content Drive and the Site Browser pass the folder to create in as `?folder=<inode>`.
-        it('should pre-select the folder the link names', () => {
-            mountOn(
+        it('should pre-select the folder the link names', async () => {
+            await mountOn(
                 { id: 'content', url: '/c/content/new/Blog?folder=folder-inode' },
                 { contentType: 'Blog' },
                 { folder: 'folder-inode' }
@@ -180,8 +212,8 @@ describe('DotEditContentDeepLinkComponent', () => {
             });
         });
 
-        it('should return to the parent portlet when the panel closes', () => {
-            mountOn({ id: 'content', url: '/c/content/new/Blog' }, { contentType: 'Blog' });
+        it('should return to the parent portlet when the panel closes', async () => {
+            await mountOn({ id: 'content', url: '/c/content/new/Blog' }, { contentType: 'Blog' });
 
             refs[0].close();
 
@@ -193,8 +225,8 @@ describe('DotEditContentDeepLinkComponent', () => {
     });
 
     describe('the Pages portlet (/pages/:asset, /pages/new/:contentType)', () => {
-        it('should open the page for editing, naming the Pages portlet', () => {
-            mountOn({ id: 'pages', url: '/pages/page-inode' }, { asset: 'page-inode' });
+        it('should open the page for editing, naming the Pages portlet', async () => {
+            await mountOn({ id: 'pages', url: '/pages/page-inode' }, { asset: 'page-inode' });
 
             expect(openedRequest()).toEqual({
                 mode: 'edit',
@@ -203,8 +235,8 @@ describe('DotEditContentDeepLinkComponent', () => {
             });
         });
 
-        it('should return to the Pages portlet and reload it when the panel closes', () => {
-            mountOn({ id: 'pages', url: '/pages/page-inode' }, { asset: 'page-inode' });
+        it('should return to the Pages portlet and reload it when the panel closes', async () => {
+            await mountOn({ id: 'pages', url: '/pages/page-inode' }, { asset: 'page-inode' });
 
             refs[0].close();
 
@@ -214,8 +246,8 @@ describe('DotEditContentDeepLinkComponent', () => {
             expect(reloadData).toHaveBeenCalledWith('pages');
         });
 
-        it('should return to the Pages portlet after a create', () => {
-            mountOn(
+        it('should return to the Pages portlet after a create', async () => {
+            await mountOn(
                 { id: 'pages', url: '/pages/new/htmlpageasset' },
                 { contentType: 'htmlpageasset' }
             );
