@@ -83,19 +83,11 @@ test('date, date-and-time and time each survive save and reopen @critical', asyn
     expect(before.dateTime).not.toBe('');
     expect(before.time).not.toBe('');
 
-    await formPage.save();
+    // `save()` returns the contentlet the workflow response carries: the form was opened from the
+    // listing, so it is in the side panel and the address never names the new content.
+    const saved = await formPage.save();
 
-    // `save()` only waits for the workflow API response, not for the editor to navigate from
-    // /content/new/<type> to the saved contentlet. Reloading before that lands re-opens the *new*
-    // content form — an empty one — which is why this read back nothing. Same wait the image,
-    // file and binary specs already use.
-    await page.waitForURL(/\/content\/([a-f0-9-]+)/);
-    const [, savedContentIdentifier] = page
-        .url()
-        .match(/\/content\/([a-f0-9-]+)/) as RegExpMatchArray;
-    expect(savedContentIdentifier).toBeTruthy();
-
-    await formPage.goToContent(savedContentIdentifier);
+    await formPage.reopen(saved.inode);
 
     await expect(dateInput).toBeVisible({ timeout: 20000 });
 
