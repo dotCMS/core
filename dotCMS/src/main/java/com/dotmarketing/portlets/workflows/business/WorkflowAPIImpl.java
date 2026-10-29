@@ -153,13 +153,11 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.StringTokenizer;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -186,9 +184,7 @@ import org.osgi.framework.BundleContext;
  */
 public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
-	private final List<Class<? extends WorkFlowActionlet>> actionletClasses;
-
-	private static Map<String, WorkFlowActionlet> actionletMap;
+	private final ActionletRegistry actionletRegistry;
 
 	private final WorkFlowFactory workFlowFactory = FactoryLocator.getWorkFlowFactory();
 
@@ -250,10 +246,8 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	public WorkflowAPIImpl() {
 
-		actionletClasses = new ArrayList<>();
-
       // Add default actionlet classes
-      actionletClasses.addAll(Arrays.asList(
+      actionletRegistry = new ActionletRegistry(Arrays.asList(
               CommentOnWorkflowActionlet.class,
               NotifyUsersActionlet.class,
               ArchiveContentActionlet.class,
@@ -297,7 +291,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
               OpenAITranslationActionlet.class
       ));
 
-		refreshWorkFlowActionletMap();
 		registerBundleService();
 
 		try {
@@ -446,27 +439,11 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 
 	@Override
 	public WorkFlowActionlet newActionlet(String className) throws DotDataException {
-		for ( Class<? extends WorkFlowActionlet> z : actionletClasses ) {
-			if ( z.getName().equals(className.trim())) {
-				try {
-					return z.newInstance();
-				} catch (InstantiationException e) {
-					e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					e.printStackTrace();
-				}
-			}
-		}
-		return null;
+		return actionletRegistry.newActionlet(className);
 	}
 
     private Class<? extends WorkFlowActionlet> getActionletClass(String className) {
-        for ( Class<? extends WorkFlowActionlet> z : actionletClasses ) {
-            if ( z.getName().equals(className.trim())) {
-                return z;
-            }
-        }
-        return null;
+        return actionletRegistry.getActionletClass(className);
     }
 
 	@Override
@@ -475,10 +452,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		Logger.debug(this,
 				() -> "Adding actionlet class: " + workFlowActionletClass);
 
-        //Prevent dupes
-        removeActionlet(workFlowActionletClass);
-		actionletClasses.add(workFlowActionletClass);
-		refreshWorkFlowActionletMap();
+		actionletRegistry.add(workFlowActionletClass);
 		return workFlowActionletClass.getCanonicalName();
 	}
 
@@ -488,9 +462,7 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		Logger.debug(this,
 				() -> "Removing actionlet: " + workFlowActionletName);
 
-		final WorkFlowActionlet actionlet = actionletMap.get(workFlowActionletName);
-		removeActionlet(actionlet.getClass());
-		refreshWorkFlowActionletMap();
+		final WorkFlowActionlet actionlet = actionletRegistry.remove(workFlowActionletName);
 
 		try {
 		    final User user = APILocator.systemUser();
@@ -501,23 +473,6 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		} catch (final Exception e) {
 		    Logger.error(WorkflowAPIImpl.class,String.format("Error removing Actionlet with className '%s'", workFlowActionletName), e);
 			throw new DotRuntimeException(e);
-		}
-	}
-
-	/**
-	 * This method applies an additional "remove-code" in case the first direct remove attempt reports to have failed.
-	 * The reason is that the same class could have been loaded from different ClassLoaders (When they come from OSGI)
-	 * If removing the class directly from the class instance fails then we look it up by name.
-	 * @param workFlowActionletClass
-	 */
-	private void removeActionlet(final Class<? extends WorkFlowActionlet> workFlowActionletClass) {
-		final boolean found = actionletClasses.remove(workFlowActionletClass);
-		if (!found) {
-			final String canonicalName = workFlowActionletClass.getCanonicalName();
-			final Optional<Class<? extends WorkFlowActionlet>> optionalClass = actionletClasses
-					.stream().filter(s -> s.getCanonicalName().equals(canonicalName))
-					.findFirst();
-			optionalClass.ifPresent(actionletClasses::remove);
 		}
 	}
 
@@ -2174,90 +2129,14 @@ public class WorkflowAPIImpl implements WorkflowAPI, WorkflowAPIOsgiService {
 		return  workFlowFactory.findActionClassesByClassName(actionClassName);
 	}
 
-	private void refreshWorkFlowActionletMap() {
-		actionletMap = null;
-		if (actionletMap == null) {
-			synchronized (this.getClass()) {
-				if (actionletMap == null) {
-
-					List<WorkFlowActionlet> actionletList = new ArrayList<>();
-
-					// get the dotmarketing-config.properties actionlet classes
-					String customActionlets = Config.getStringProperty(WebKeys.WORKFLOW_ACTIONLET_CLASSES, "");
-
-					StringTokenizer st = new StringTokenizer(customActionlets, ",");
-					while (st.hasMoreTokens()) {
-						String clazz = st.nextToken();
-						try {
-							WorkFlowActionlet actionlet = (WorkFlowActionlet) Class.forName(clazz.trim()).getDeclaredConstructor().newInstance();
-							actionletList.add(actionlet);
-						} catch (Exception e) {
-							Logger.error(WorkflowAPIImpl.class, e.getMessage());
-							Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
-						}
-					}
-
-					// get the included (shipped with) actionlet classes
-					for (Class<? extends WorkFlowActionlet> z : actionletClasses) {
-						try {
-							actionletList.add(z.newInstance());
-						} catch (InstantiationException e) {
-							Logger.error(WorkflowAPIImpl.class, e.getMessage());
-							Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
-						} catch (IllegalAccessException e) {
-							Logger.error(WorkflowAPIImpl.class, e.getMessage());
-							Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
-						}
-					}
-
-					Collections.sort(actionletList, new ActionletComparator());
-					actionletMap = new LinkedHashMap<>();
-					for(WorkFlowActionlet actionlet : actionletList){
-
-						try {
-							actionletMap.put(actionlet.getClass().getCanonicalName(),actionlet.getClass().newInstance());
-							if ( !actionletClasses.contains( actionlet.getClass() ) ) {
-								actionletClasses.add( actionlet.getClass() );
-							}
-						} catch (InstantiationException e) {
-							Logger.error(WorkflowAPIImpl.class,e.getMessage());
-							Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
-						} catch (IllegalAccessException e) {
-							Logger.error(WorkflowAPIImpl.class,e.getMessage());
-							Logger.debug(WorkflowAPIImpl.class, e.getMessage(), e);
-						}
-					}
-				}
-			}
-
-		}
-	}
-
-	private Map<String, WorkFlowActionlet> getActionlets() throws DotRuntimeException {
-		return actionletMap;
-	}
-
-	private class ActionletComparator implements Comparator<WorkFlowActionlet>{
-
-		public int compare(WorkFlowActionlet o1, WorkFlowActionlet o2) {
-			return o1.getLocalizedName().compareTo(o2.getLocalizedName());
-
-		}
-	}
-
 	@Override
 	public WorkFlowActionlet findActionlet(final String clazz) throws DotRuntimeException {
-		return getActionlets().get(clazz);
+		return actionletRegistry.find(clazz);
 	}
 
 	@Override
 	public List<WorkFlowActionlet> findActionlets() throws DotDataException {
-		final List<WorkFlowActionlet> workFlowActionlets = new ArrayList<>();
-		final Map<String,WorkFlowActionlet>  actionlets  = getActionlets();
-		for (final String actionletName : actionlets.keySet()) {
-			workFlowActionlets.add(getActionlets().get(actionletName));
-		}
-		return workFlowActionlets;
+		return actionletRegistry.findAll();
 
 	}
 
