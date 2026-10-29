@@ -40,7 +40,11 @@ export class DotEditContentDeepLinkComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         const { id: portletId, url } = this.#dotRouterService.currentPortlet;
         const returnUrl = parentPortletUrl(url);
-        const reload = () => this.#dotIframeService.reloadData(portletId);
+        const reload = () => {
+            if (portletId) {
+                this.#dotIframeService.reloadData(portletId);
+            }
+        };
 
         void openEditContentPanel(
             { ...this.#request(), portletId },

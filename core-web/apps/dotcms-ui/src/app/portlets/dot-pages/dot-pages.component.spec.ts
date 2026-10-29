@@ -287,7 +287,7 @@ describe('DotPagesComponent', () => {
             } satisfies DotActionsMenuEventParams);
             const [, refresh] = mockDotPageActionsService.getItems.mock.calls[0];
 
-            refresh();
+            refresh?.();
 
             expect(store.getPages).toHaveBeenCalledWith();
         });
