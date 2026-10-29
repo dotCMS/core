@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -139,6 +140,75 @@ class CacheObjectInputFilterTest {
         assertFalse(filter.isAllowed("com.dotcmsx.Sample"));
         assertFalse(filter.isAllowed("sun.util.calendar.ZoneInfoFile"));
         assertFalse(filter.isAllowed("javax.crypto.SealedObject"));
+    }
+
+    /**
+     * Given: a value whose byte array declares far more elements than the value has bytes
+     * Expected: the read stops before the array is allocated
+     */
+    @Test
+    void rejectsArraysLongerThanTheValue() throws Exception {
+        final byte[] value = serialize(new byte[]{1, 2, 3, 4});
+        // a byte[] ends with its int length followed by its elements: declare Integer.MAX_VALUE elements
+        final byte[] forged = Arrays.copyOf(value, value.length - 4);
+        ByteBuffer.wrap(forged).putInt(forged.length - 4, Integer.MAX_VALUE);
+
+        try (ObjectInputStream in = CacheObjectInputFilter.newObjectInputStream(forged)) {
+            assertThrows(InvalidClassException.class, in::readObject);
+        }
+    }
+
+    /**
+     * Given: large real values, a 1 MB byte array and a map of 10,000 entries with a low load factor
+     * (the largest table a map asks for per entry)
+     * Expected: both are read back
+     */
+    @Test
+    void readsLargeValues() throws Exception {
+        final Map<Integer, Object> map = new HashMap<>(16, 0.25f);
+        for (int i = 0; i < 10_000; i++) {
+            map.put(i, null);
+        }
+        final byte[] bytes = new byte[1_000_000];
+
+        try (ObjectInputStream in = CacheObjectInputFilter.newObjectInputStream(serialize(map))) {
+            assertEquals(map, in.readObject());
+        }
+        try (ObjectInputStream in = CacheObjectInputFilter.newObjectInputStream(serialize(bytes))) {
+            assertArrayEquals(bytes, (byte[]) in.readObject());
+        }
+    }
+
+    /**
+     * Given: lists nested 100 levels deep
+     * Expected: the default limit reads them; a limit of 10 stops the read
+     */
+    @Test
+    void rejectsGraphsDeeperThanTheLimit() throws Exception {
+        List<Object> nested = new ArrayList<>();
+        for (int i = 0; i < 100; i++) {
+            final List<Object> parent = new ArrayList<>();
+            parent.add(nested);
+            nested = parent;
+        }
+        final List<Object> value = nested;
+
+        assertEquals(value, read(new CacheObjectInputFilter(), value));
+        assertThrows(InvalidClassException.class, () -> read(new CacheObjectInputFilter(10, 1_000), value));
+    }
+
+    /**
+     * Given: a list of 1,000 numbers
+     * Expected: a limit of 100 references stops the read
+     */
+    @Test
+    void rejectsGraphsWithMoreReferencesThanTheLimit() {
+        final List<Integer> value = new ArrayList<>();
+        for (int i = 0; i < 1_000; i++) {
+            value.add(100_000 + i);
+        }
+
+        assertThrows(InvalidClassException.class, () -> read(new CacheObjectInputFilter(200, 100), value));
     }
 
     /**
