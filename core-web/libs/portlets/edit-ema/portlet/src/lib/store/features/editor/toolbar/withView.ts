@@ -11,7 +11,7 @@ import { InfoOptions } from '../../../../shared/models';
 import { getFullPageURL, getIsDefaultVariant, getOrientation } from '../../../../utils';
 import { PageComputed } from '../../../features/page/withPage';
 import { Orientation, PageType, UVEState } from '../../../models';
-import { PersonaSelectorProps } from '../models';
+import { DeviceSelectorChange, DeviceSelectorState, PersonaSelectorProps } from '../models';
 
 /**
  * Resolve a device + orientation to pixel dimensions for the iframe.
@@ -39,6 +39,7 @@ function getDeviceDimensions(
  * - Select device for responsive preview (mobile, tablet, desktop)
  * - Control device orientation (portrait/landscape)
  * - Clear device preview to return to edit mode
+ * - Apply a change from either toolbar's device controls via `viewApplyDeviceSelectorChange`
  *
  * **SEO/Social Media Preview:**
  * - Preview how content appears on social platforms (Facebook, Twitter, LinkedIn)
@@ -155,6 +156,14 @@ export function withView() {
             // integer percentage (10–300); display consumers read viewZoomLevel
             // directly.
             $viewZoomFactor: computed(() => store.viewZoomLevel() / 100),
+
+            // What the device controls of both toolbars show: the device preset, the
+            // social-media preview and the orientation.
+            $viewDeviceSelectorState: computed<DeviceSelectorState>(() => ({
+                device: store.viewDevice(),
+                socialMedia: store.viewSocialMedia(),
+                orientation: store.viewDeviceOrientation()
+            })),
 
             // True when no specific device preset is active. In this mode the iframe
             // size tracks the canvas viewport and the user can drag the resize handles.
@@ -291,6 +300,23 @@ export function withView() {
                         seo: socialMedia
                     }
                 });
+            },
+            /**
+             * Apply a change from either toolbar's device controls: a device preset,
+             * a social-media preview or an orientation.
+             */
+            viewApplyDeviceSelectorChange(change: DeviceSelectorChange): void {
+                switch (change.type) {
+                    case 'device':
+                        this.viewSetDevice(change.device);
+                        break;
+                    case 'socialMedia':
+                        this.viewSetSEO(change.socialMedia);
+                        break;
+                    case 'orientation':
+                        this.viewSetOrientation(change.orientation);
+                        break;
+                }
             },
             viewClearDeviceAndSocialMedia: () => {
                 patchState(store, {

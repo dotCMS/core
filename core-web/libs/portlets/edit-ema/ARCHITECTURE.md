@@ -202,12 +202,11 @@ store is the source of truth; the iframe is a measuring instrument.
 
 ### The pencil button's stateless contract
 
-Pencil (full-editor modal) does NOT write to `editorSelected`. It
-receives the hovered contentlet's `ActionPayload` directly via the
-`openFullEditor` output and passes it to `dialog.editContentlet(...)`
-without touching editor selection state. The modal stays orthogonal
-to the selection surface — closing it leaves the editor exactly
-where it was.
+The pencil (the full editor), and the full-edit item in the contentlet tools' menu, do NOT write to `editorSelected`. `DotUveContentletToolsComponent.editContent` reads the hovered contentlet's `ActionPayload` and dispatches `uveEditContentRequested` with the contentlet, and its container as `forkFrom`; it never calls `promoteHoverToSelected`. It sends nothing for a contentlet without an inode or whose `canEdit` is explicitly `false`.
+
+`DotUveContentEditorComponent` is the only listener, and it decides the editor. A contentlet on more than one page first asks whether to edit it on every page or a copy on this page only; a copy is made in place, the page reloads, and the copy opens. Then the content type decides: the new editor when it enables `CONTENT_EDITOR2_ENABLED`, in the side panel when `FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL` is on and in a centered dialog otherwise; the legacy dialog for any other content type, or when the contentlet has none or it cannot be read.
+
+The full editor stays orthogonal to the selection surface: the pencil leaves `editorSelected` as it was.
 
 ### Why two, not three (history)
 
@@ -283,9 +282,27 @@ No special path — composes the cross-cutting rules and the seam.
 ## Where to find things
 
 - Store: `portlet/src/lib/store/`
-- Editor screen + components: `portlet/src/lib/edit-ema-editor/`
+- Editor screen and its regions: `portlet/src/lib/edit-ema-editor/` (see below)
 - Layout-tab screen: `portlet/src/lib/edit-ema-layout/`
 - Cross-screen components: `portlet/src/lib/components/`
 - Services (drag/drop, inline edit, page API, messenger, actions handler): `portlet/src/lib/services/`
 - SDK that runs inside the iframe: `libs/sdk/uve/`
 - Event types: `libs/sdk/types/src/lib/`
+
+### The editor's regions
+
+`EditEmaEditorComponent` (`edit-ema-editor/edit-ema-editor.component.ts`) is layout only: it places the regions on its grid and decides which show in edit and preview mode. It injects only `UVEStore`, binds no inputs or outputs on its regions, and its one call is to put the edit panel back on quick edit each time it is created, because the store outlives it. It also provides `DotPaletteListStore`, so the palette's lists keep their search while the palette hides and comes back, and places the confirm dialog the toolbar, canvas and content editor ask through.
+
+Each region reads and writes `UVEStore` itself: store state for what persists, and the `uveContentEditorEvents` group (`edit-ema-editor/components/dot-uve-content-editor/dot-uve-content-editor.events.ts`) for one-off requests to open a content editor. Only the content editor listens to that group. Folders are under `portlet/src/lib/edit-ema-editor/components/`.
+
+| Region | Folder | Shows | Owns | Store state it uses | Requests it sends |
+|---|---|---|---|---|---|
+| Toolbar | `dot-uve-toolbar/` | Always | Mode, API link, device and social-media selector, URL-mapped content edit, live-mode date, page lock, running experiment, language, persona, workflow actions | `viewMode`, `pageParams`, `pageLanguages`, `$viewDeviceSelectorState`, `viewSocialMedia`, `workflowToggleLock` | `uveTranslatePageRequested`, `uveEditUrlContentMapRequested` |
+| Palette | `dot-uve-palette/` | Edit mode, while `editorCanEditContent()` | Content types, widgets, favorites and the layer tree; opens and closes itself | `editorPaletteOpen`, `pageURI`, `pageLanguageId`, `pageVariantId`, `$allowedContentTypes` | None |
+| Browser toolbar | `dot-uve-browser-toolbar/` | Always, hidden during a social-media preview | Palette and edit-panel toggles, page URL, device controls, zoom, iframe size | `editorPaletteOpen`, `editorEditPanelOpen`, `$viewDeviceSelectorState`, `viewZoomLevel` | None |
+| Canvas | `dot-uve-canvas/` | Always, hidden during a social-media preview | The page's iframe and the overlays on it, messages to and from the page, drops, deletes, link clicks, sizing; reads the page's og tags into the store | `editorSelected`, `editorContentArea`, `editorDragItem`, `editorState`, `$iframeURL`, `$viewCanvasOuterStyles`, `$viewCanvasInnerStyles`, `editorOgTags`, `viewOgTagsResults` | `uveCreateContentRequested`; through its contentlet tools and actions handler also `uveEditContentRequested`, `uveAddContentRequested`, `uveEditSourceRequested`, `uveEditBlockEditorFieldRequested`, `uveReorderMenuRequested`. The actions handler passes on the page's own edit, create and menu-reorder requests only while `editorCanEditContent()` |
+| SEO results | `dot-uve-seo-results/` | Always placed; shows while a social-media preview is chosen and the og tags are read | How the page looks when shared on the chosen social media | `viewSocialMedia`, `editorOgTags`, `viewOgTagsResults` | None |
+| Edit panel | `dot-uve-edit-panel/` | Edit mode | Quick edit and the style editor for the selected contentlet; opens and closes itself | `editorEditPanelOpen`, `editorEditPanelTab`, `editorSelected`, `$editorContentletEditData`, `$styleSchema`, `editorCanEditStyles` | `uveEditContentRequested`, from quick edit |
+| Content editor | `dot-uve-content-editor/` | Always, in any mode | Every content editor: the legacy dialog, the new editor in a dialog or the side panel, the VTL source editor and the block editor sidebar; inserts what the user creates or picks, and reloads the page after a save | `pageAsset`, `pageParams`, `editorInsertContentlet`, `pageReload`; sets `editorContentEditorPlaced` while it is placed | None; it listens to every request in the group |
+
+Outside the editor, the shell (`dot-ema-shell/`) sends `uveEditContentRequested` for the page's Properties while a content editor is placed, which it reads from `editorContentEditorPlaced`: the content editor sets it when it is created and clears it when it is destroyed. On the layout, rules and experiments screens, and on a page the user cannot read (the shell then renders no router outlet), no content editor is placed, so the shell opens its own legacy dialog.
