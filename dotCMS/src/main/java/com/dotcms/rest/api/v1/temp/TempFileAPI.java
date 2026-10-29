@@ -5,6 +5,7 @@ import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.ConversionUtils;
+import com.dotcms.util.PathContainmentUtil;
 import com.dotcms.util.SecurityUtils;
 import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.business.APILocator;
@@ -76,14 +77,40 @@ public class TempFileAPI {
   
 
   /**
-   * Returns an empty TempFile of a unique id and file handle that can be used to write and access a
-   * temp file. The request will be used to create a fingerprint that will be written to the "allowList" and can
-   * be used to retreive the temp resource in other requests
-   * 
-   * @param incomingFileName
-   * @param request
-   * @return
-   * @throws DotSecurityException
+   * Refuses a temp file location that does not resolve strictly inside the temp upload directory.
+   * The comparison is made on canonical paths, so {@code ..} segments and symbolic links are
+   * resolved, and it runs before anything is created on disk. With {@link #createEmptyTempFile}
+   * keeping only the file name part of what it receives, this guard is a second line of defence
+   * rather than the first one; it is kept so the location rule holds whatever the name handling
+   * above it does.
+   *
+   * @param tmpRoot   the temp upload directory
+   * @param candidate the file about to be created
+   * @throws DotRuntimeException if the candidate falls outside the temp upload directory
+   */
+  static void requireInsideTempUploadDir(final File tmpRoot, final File candidate) {
+
+    if (!PathContainmentUtil.isContainedIn(tmpRoot, candidate)) {
+      SecurityLogger.logInfo(TempFileAPI.class, () -> "Attempted file upload outside of temp folder: " + candidate.getPath());
+      throw new DotRuntimeException("Attempted file upload outside of temp folder");
+    }
+  }
+
+  /**
+   * Returns an empty temp file, with a unique id, that the caller can write to and later look up by
+   * that id. The request is used to build the allow list (user, session and request fingerprint)
+   * stored next to the file, which decides who can read the temp resource in later requests.
+   * <p>
+   * Only the file name part of {@code incomingFileName} is used: any directory part is dropped, so
+   * the file always lands in its own folder under the temp upload directory. The location is
+   * checked on canonical paths before anything is created on disk.
+   *
+   * @param incomingFileName the name the file was uploaded with, as received from the client
+   * @param request          the current request, used for the allow list
+   * @return the new {@link DotTempFile}, pointing at a file that does not exist yet
+   * @throws DotSecurityException if the request is not allowed to create temp files
+   * @throws DotRuntimeException  if the name is missing, the file would fall outside the temp
+   *                              upload directory, or its folder cannot be created
    */
   public DotTempFile createEmptyTempFile(final String incomingFileName,final HttpServletRequest request) throws DotSecurityException {
     final String anon = Try.of(() -> APILocator.getUserAPI().getAnonymousUser().getUserId()).getOrElse("anonymous");
@@ -110,21 +137,18 @@ public class TempFileAPI {
     if (incomingFileName == null) {
       throw new DotRuntimeException("Unable to create temp file without a name");
     }
+    // Keep the file name only: callers pass the client's name through, and it may carry a path
+    final String fileName = FileUtil.sanitizeFileName(incomingFileName);
     final String tempFileId = TEMP_RESOURCE_PREFIX + UUIDGenerator.shorty();
-    
-    final String tempFileUri = File.separator + tempFileId + File.separator + incomingFileName;
-    final File tempFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary() + tempFileUri);
-    final File tempFolder = tempFile.getParentFile();
+
+    final File tmpRoot = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary());
+    final File tempFolder = new File(tmpRoot, tempFileId);
+    final File tempFile = new File(tempFolder, fileName);
+
+    requireInsideTempUploadDir(tmpRoot, tempFile);
 
     if (!tempFolder.mkdirs()) {
       throw new DotRuntimeException("Unable to create temp directory:" + tempFolder);
-    }
-
-    final String absFilePath = FileUtil.getAbsolutlePath(tempFile.getPath());
-    final String absTmpPath = FileUtil.getAbsolutlePath(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary());
-    if (!absFilePath.startsWith(absTmpPath)) {
-      SecurityLogger.logInfo(this.getClass(), () -> "Attempted file upload outside of temp folder: " + absFilePath);
-      throw new DotRuntimeException("Invalid file upload");
     }
     createTempPermissionFile(tempFolder, allowList);
     SecurityLogger.logInfo(this.getClass(),"Temp File Created with id: " + tempFileId + ", uploaded by userId: " + user.getUserId());

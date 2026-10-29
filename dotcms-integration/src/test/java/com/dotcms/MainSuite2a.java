@@ -158,6 +158,8 @@ import org.junit.runners.Suite.SuiteClasses;
         ContentRelationshipsResourceIntegrationTest.class,
         com.dotmarketing.portal.struts.StrutsPathAccessTest.class,
         com.liferay.portal.struts.PortletRequestProcessorAccessTest.class,
+        com.dotcms.security.multipart.MultiPartRequestSecurityWebInterceptorTest.class,
+        com.dotcms.rest.api.v1.temp.TempFileNamingTest.class
 })
 public class MainSuite2a {
 
