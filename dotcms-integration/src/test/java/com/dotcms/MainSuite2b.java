@@ -487,6 +487,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.business.IdentifierAPITest.class,
         com.dotmarketing.business.CommitListenerCacheWrapperTest.class,
         com.dotmarketing.business.RoleAPITest.class,
+        com.dotmarketing.business.ajax.RoleAjaxSecurityTest.class,
         com.dotmarketing.business.IdentifierConsistencyIntegrationTest.class,
         com.dotmarketing.business.LayoutAPITest.class,
         com.dotmarketing.business.PermissionAPIIntegrationTest.class,
@@ -592,6 +593,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.business.ajax.RoleAjaxLayoutsIntegrationTest.class,
         com.dotmarketing.portlets.languagesmanager.action.EditLanguageKeysActionTest.class,
         UserServiceFactoryTest.class,
+        com.dotmarketing.portlets.contentlet.action.EditContentletActionRetrieveTest.class,
 })
 
 public class MainSuite2b {
