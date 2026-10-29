@@ -1,9 +1,9 @@
 package com.dotcms.rest.api.v1.system.cache;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
-import static org.junit.jupiter.api.Assertions.assertNotSame;
-import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,6 +19,7 @@ import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.apps.view.SecretView;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.security.apps.AppsCache;
@@ -28,10 +29,20 @@ import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.util.MaintenanceUtil;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.liferay.portal.model.Company;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
+import javax.crypto.spec.SecretKeySpec;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
@@ -45,9 +56,9 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.MockedStatic;
 
 /**
- * Unit tests for the access rules of {@link CacheResource}. Each test runs the real {@link WebResource} checks: the
- * caller holds the back-end role and the Maintenance portlet, and the only thing that changes is whether it is a CMS
- * Administrator.
+ * Unit tests for the access rules of {@link CacheResource} and for the values its object routes return. The access
+ * tests run the real {@link WebResource} checks: the caller holds the back-end role and the Maintenance portlet, and
+ * the only thing that changes is whether it is a CMS Administrator.
  */
 class CacheResourceTest {
 
@@ -67,7 +78,10 @@ class CacheResourceTest {
         final RoleAPI roleAPI = mock(RoleAPI.class);
         when(roleAPI.loadRoleByKeyOrId(anyString())).thenReturn(mock(Role.class));
         when(roleAPI.doesUserHaveRole(any(User.class), any(Role.class))).thenReturn(true);
+        // A user written as JSON reads its own role through the locator
+        when(roleAPI.loadRoleByKey(anyString())).thenReturn(new Role());
         apiLocator = mockStatic(APILocator.class);
+        apiLocator.when(APILocator::getRoleAPI).thenReturn(roleAPI);
         // The route bodies read the cache and cluster infrastructure, which a unit test does not have
         maintenanceUtil = mockStatic(MaintenanceUtil.class);
         cacheLocator = mockStatic(CacheLocator.class);
@@ -177,30 +191,19 @@ class CacheResourceTest {
      * Method to test: {@link CacheResource#responseValue(String, Object)}.
      * Given scenario: a cached {@link User} that has a stored password, a password-reset token and a remember-me
      * token.
-     * Expected result: a different user object with the same id and email and none of the three values, and the
-     * cached user keeps all three.
+     * Expected result: the user as JSON with its id and email and none of the three values, and the cached user
+     * keeps all three.
      */
     @Test
     void responseValue_user_hasNoCredentialsAndLeavesTheCachedUserIntact() {
-        final User cachedUser = new User();
-        cachedUser.setUserId("cached-user");
-        cachedUser.setCompanyId("dotcms.org");
-        cachedUser.setEmailAddress("cached.user@dotcms.local");
-        cachedUser.setLanguageId("en_US");
-        cachedUser.setTimeZoneId("UTC");
-        cachedUser.setPassword("stored-password-value");
-        cachedUser.setIcqId("reset-token-value");
-        cachedUser.setRememberMeToken("remember-me-value");
+        final User cachedUser = userWithCredentials("cached-user");
 
         final Object result = CacheResource.responseValue("userdotcmscache", cachedUser);
 
-        final User returned = assertInstanceOf(User.class, result);
-        assertNotSame(cachedUser, returned);
-        assertEquals("cached-user", returned.getUserId());
-        assertEquals("cached.user@dotcms.local", returned.getEmailAddress());
-        assertNull(returned.getPassword());
-        assertNull(returned.getIcqId());
-        assertNull(returned.getRememberMeToken());
+        final JsonNode returned = assertInstanceOf(JsonNode.class, result);
+        assertEquals("cached-user", returned.get("userId").asText());
+        assertEquals("cached-user@dotcms.local", returned.get("emailAddress").asText());
+        assertHasNoCredentials(returned);
         assertEquals("stored-password-value", cachedUser.getPassword());
         assertEquals("reset-token-value", cachedUser.getIcqId());
         assertEquals("remember-me-value", cachedUser.getRememberMeToken());
@@ -208,14 +211,72 @@ class CacheResourceTest {
 
     /**
      * Method to test: {@link CacheResource#responseValue(String, Object)}.
-     * Given scenario: a value that is neither a user nor in the secrets group.
-     * Expected result: the same value.
+     * Given scenario: users with a stored password, a password-reset token and a remember-me token, held inside a
+     * map and inside a list.
+     * Expected result: each nested user keeps its id and email and has none of the three values.
      */
     @Test
-    void responseValue_otherValue_isUnchanged() {
-        final String value = "cached-value";
+    void responseValue_nestedUser_hasNoCredentials() {
+        final Object fromMap = CacheResource.responseValue("rolecache",
+                Map.of("owner", userWithCredentials("map-user")));
+        final Object fromList = CacheResource.responseValue("rolecache",
+                List.of(userWithCredentials("list-user")));
 
-        assertSame(value, CacheResource.responseValue("contentletcache", value));
+        final JsonNode mapUser = assertInstanceOf(JsonNode.class, fromMap).get("owner");
+        assertEquals("map-user", mapUser.get("userId").asText());
+        assertHasNoCredentials(mapUser);
+        final JsonNode listUser = assertInstanceOf(JsonNode.class, fromList).get(0);
+        assertEquals("list-user", listUser.get("userId").asText());
+        assertHasNoCredentials(listUser);
+    }
+
+    /**
+     * Method to test: {@link CacheResource#responseValue(String, Object)}.
+     * Given scenario: a cached {@link Company} that holds its key.
+     * Expected result: the company comes back with its id and name and without the key, and the cached company
+     * still holds the key.
+     */
+    @Test
+    void responseValue_company_hasNoKeyAndLeavesTheCachedCompanyIntact() throws Exception {
+        final UserAPI userAPI = mock(UserAPI.class);
+        when(userAPI.getDefaultUser()).thenReturn(userWithCredentials("default-user"));
+        apiLocator.when(APILocator::getUserAPI).thenReturn(userAPI);
+        final Company cachedCompany = new Company("sample.company");
+        cachedCompany.setName("Sample Company");
+        cachedCompany.setKeyObj(new SecretKeySpec("0123456789abcdef".getBytes(StandardCharsets.UTF_8), "AES"));
+        final String storedKey = cachedCompany.getKey();
+
+        final Object result = CacheResource.responseValue("CompanyPool", cachedCompany);
+
+        final JsonNode returned = assertInstanceOf(JsonNode.class, result);
+        assertEquals("sample.company", returned.get("companyId").asText());
+        assertEquals("Sample Company", returned.get("name").asText());
+        assertFalse(returned.has("key"));
+        assertHasNoCredentials(returned.get("defaultUser"));
+        assertNotNull(storedKey);
+        assertEquals(storedKey, cachedCompany.getKey());
+    }
+
+    /**
+     * Method to test: {@link CacheResource#responseValue(String, Object)}.
+     * Given scenario: values that are neither users, companies nor in the secrets group: a string, a number, a
+     * boolean, and a map holding text, a date and decimal numbers with and without trailing zeros.
+     * Expected result: the scalars are returned as they are, and the map comes out as the same JSON text the REST
+     * object mapper writes for it.
+     */
+    @Test
+    void responseValue_otherValue_isWrittenAsBefore() throws Exception {
+        final String text = "cached-value";
+        final Integer number = 42;
+        final Map<String, Object> map = Map.of("text", "one", "date", new Date(1_700_000_000_000L),
+                "hundred", new BigDecimal("100"), "price", new BigDecimal("1.10"));
+        final ObjectMapper restMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+
+        assertSame(text, CacheResource.responseValue("contentletcache", text));
+        assertSame(number, CacheResource.responseValue("contentletcache", number));
+        assertSame(Boolean.TRUE, CacheResource.responseValue("contentletcache", Boolean.TRUE));
+        assertEquals(restMapper.writeValueAsString(map),
+                restMapper.writeValueAsString(CacheResource.responseValue("contentletcache", map)));
     }
 
     /**
@@ -230,6 +291,38 @@ class CacheResourceTest {
 
     private static Arguments route(final String name, final RouteCall call) {
         return Arguments.of(name, call);
+    }
+
+    /**
+     * Builds a user that holds a stored password, a password-reset token and a remember-me token.
+     *
+     * @param userId the user id; the email is derived from it
+     * @return the user
+     */
+    private static User userWithCredentials(final String userId) {
+        final User user = new User();
+        user.setUserId(userId);
+        user.setCompanyId("dotcms.org");
+        user.setEmailAddress(userId + "@dotcms.local");
+        user.setLanguageId("en_US");
+        user.setTimeZoneId("UTC");
+        user.setPassword("stored-password-value");
+        user.setIcqId("reset-token-value");
+        user.setRememberMeToken("remember-me-value");
+        return user;
+    }
+
+    /**
+     * Asserts that a user written as JSON carries no stored password, password-reset token ({@code icqId}) or
+     * remember-me token ({@code skinId}).
+     *
+     * @param user the user as JSON
+     */
+    private static void assertHasNoCredentials(final JsonNode user) {
+        assertNotNull(user);
+        assertFalse(user.has("password"));
+        assertFalse(user.has("icqId"));
+        assertFalse(user.has("skinId"));
     }
 
     /**

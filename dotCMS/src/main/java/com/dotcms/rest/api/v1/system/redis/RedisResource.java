@@ -5,7 +5,9 @@ import com.dotcms.cache.lettuce.RedisClientFactory;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.api.v1.apps.view.SecretView;
 import com.dotcms.rest.api.v1.authentication.ResponseUtil;
+import com.dotcms.rest.api.v1.system.cache.CachedValues;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
@@ -136,7 +138,7 @@ public class RedisResource {
     }
 
     /**
-     * Returns the value stored in Redis under the given key.
+     * Returns the value stored in Redis under the given key, as {@link #responseValue(String, Object)} writes it.
      * Requires a CMS Administrator.
      *
      * @param request  the current {@link HttpServletRequest}
@@ -160,7 +162,7 @@ public class RedisResource {
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
-        return Response.ok(new ResponseEntityView(this.client.get(key))).build();
+        return Response.ok(new ResponseEntityView(responseValue(key, this.client.get(key)))).build();
     }
 
     /**
@@ -222,7 +224,7 @@ public class RedisResource {
     }
 
     /**
-     * Returns the hash stored in Redis under the given key.
+     * Returns the hash stored in Redis under the given key, as {@link #responseValue(String, Object)} writes it.
      * Requires a CMS Administrator.
      *
      * @param request  the current {@link HttpServletRequest}
@@ -246,7 +248,7 @@ public class RedisResource {
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
 
-        return Response.ok(new ResponseEntityView(this.client.getHash(key))).build();
+        return Response.ok(new ResponseEntityView(responseValue(key, this.client.getHash(key)))).build();
     }
 
     /**
@@ -348,6 +350,23 @@ public class RedisResource {
                 .rejectWhenNoUser(true).init();
 
         return Response.ok(new ResponseEntityView(this.client.getIncrement(key))).build();
+    }
+
+    /**
+     * Returns what the read routes send back for a stored value. The Redis cache shares this server, so a key it
+     * wrote for the Apps secrets group is answered with the hidden-value mask, and any other value goes through
+     * {@link CachedValues#forResponse(Object)}, which leaves out the credentials of users and the key of companies.
+     *
+     * @param key   the Redis key that was read
+     * @param value the stored value, or {@code null}
+     * @return the mask for an Apps secrets key, otherwise the value as {@link CachedValues#forResponse(Object)}
+     *         returns it
+     */
+    private static Object responseValue(final String key, final Object value) {
+        if (CachedValues.isAppsSecretsKey(key)) {
+            return SecretView.SecretViewSerializer.HIDDEN_SECRET_MASK;
+        }
+        return CachedValues.forResponse(value);
     }
 
 }

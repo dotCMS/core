@@ -2,7 +2,6 @@ package com.dotcms.rest.api.v1.system.cache;
 
 import com.dotcms.enterprise.cache.provider.CacheProviderAPIImpl;
 import com.dotcms.enterprise.cluster.ClusterFactory;
-import com.dotcms.rendering.velocity.viewtools.util.UserCopies;
 import com.dotcms.rest.ResponseEntityListStringView;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
@@ -549,27 +548,24 @@ public class CacheResource {
 
     /**
      * Returns the value the cache object routes send back for one cached entry. Values of the Apps secrets group are
-     * replaced by the hidden-value mask, and a cached {@link User} is returned as a copy without its password,
-     * password-reset token and remember-me token ({@link UserCopies#withoutCredentials(User)}); the cached object is
-     * not modified.
+     * replaced by the hidden-value mask; any other value goes through {@link CachedValues#forResponse(Object)}, which
+     * leaves out the credentials of users and the key of companies wherever they appear. The cached object is not
+     * modified.
      *
      * @param group the cache group the entry belongs to, in any case
      * @param value the cached value, or {@code null} when there is none
-     * @return {@code "NOPE"} when there is no value, the mask for a secret, a copy without credentials for a user,
-     *         otherwise the value
+     * @return {@code "NOPE"} when there is no value, the mask for a secret, otherwise the value as
+     *         {@link CachedValues#forResponse(Object)} returns it
      */
     @VisibleForTesting
     static Object responseValue(final String group, final Object value) {
         if (value == null) {
             return "NOPE";
         }
-        if (CacheLocator.getAppsCache().getPrimaryGroup().equalsIgnoreCase(group)) {
+        if (CachedValues.isAppsSecretsGroup(group)) {
             return SecretView.SecretViewSerializer.HIDDEN_SECRET_MASK;
         }
-        if (value instanceof User) {
-            return UserCopies.withoutCredentials((User) value);
-        }
-        return value;
+        return CachedValues.forResponse(value);
     }
 
     /**
