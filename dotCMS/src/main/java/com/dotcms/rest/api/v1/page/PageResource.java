@@ -75,6 +75,7 @@ import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.web.HostWebAPI;
@@ -1355,13 +1356,15 @@ public class PageResource {
     }
 
     /**
-     * Returns the tree associated to the page
-     * @param request
-     * @param response
-     * @param pageId
-     * @return Response, pair with
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * Returns the tree associated to the page. The caller must be a back-end user with READ
+     * permission on the page.
+     *
+     * @param request  the current request
+     * @param response the current response
+     * @param pageId   identifier of the page
+     * @return the page's multi-tree rows
+     * @throws DotDataException      if the page or its tree cannot be loaded
+     * @throws DoesNotExistException if no page has the given identifier, or the user cannot read it
      */
     @Operation(
             operationId = "getPageContentTree",
@@ -1374,9 +1377,8 @@ public class PageResource {
             @ApiResponse(responseCode = "200", description = "Content tree retrieved successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityMulitreeView.class))),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "User does not have required permissions"),
-            @ApiResponse(responseCode = "404", description = "Page not found")
+            @ApiResponse(responseCode = "401", description = "Authentication required, or the user is not a back-end user"),
+            @ApiResponse(responseCode = "404", description = "Page not found, or the user cannot read it")
     })
     @GET
     @Path("/{pageId}/content/tree")
@@ -1388,7 +1390,9 @@ public class PageResource {
                                                    @Parameter(description = "Identifier of the HTML Page", required = true)
                                                    @PathParam("pageId") final String  pageId) throws SystemException, PortalException, DotDataException, DotSecurityException {
 
-        final User user = this.webResource.init(request, response, true).getUser();
+        final User user = new WebResource.InitBuilder(webResource).requestAndResponse(request, response)
+                .rejectWhenNoUser(true).requiredBackendUser(true).init().getUser();
+        checkPageReadPermission(pageId, user);
 
         Logger.debug(this, ()-> "Getting multitree per page: " + pageId);
 
@@ -1401,17 +1405,19 @@ public class PageResource {
                 Collections.emptyList();
 
         return new ResponseEntityView<>(mulitreeViews);
-    } // getPersonalizedPersonasOnPage
+    } // getContentTree
 
     /**
      * Returns the list of personas with a flag that determine if the persona has been customized on a page or not.
      * { persona:Persona, personalized:boolean, pageId:String  }
-     * @param request
-     * @param response
-     * @param pageId
-     * @return Response, pair with
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * The caller must be a back-end user with READ permission on the page.
+     *
+     * @param request  the current request
+     * @param response the current response
+     * @param pageId   identifier of the page
+     * @return paginated personas with their personalization flag for the page
+     * @throws DotDataException      if the page or the personas cannot be loaded
+     * @throws DoesNotExistException if no page has the given identifier, or the user cannot read it
      */
     @Operation(
             operationId = "getPersonalizedPersonasOnPage",
@@ -1424,9 +1430,8 @@ public class PageResource {
             @ApiResponse(responseCode = "200", description = "Personas with personalization flags retrieved successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityListPersonalizationPersonaPageView.class))),
-            @ApiResponse(responseCode = "401", description = "Authentication required"),
-            @ApiResponse(responseCode = "403", description = "User does not have required permissions"),
-            @ApiResponse(responseCode = "404", description = "Page not found")
+            @ApiResponse(responseCode = "401", description = "Authentication required, or the user is not a back-end user"),
+            @ApiResponse(responseCode = "404", description = "Page not found, or the user cannot read it")
     })
     @GET
     @Path("/{pageId}/personas")
@@ -1452,7 +1457,9 @@ public class PageResource {
             @Parameter(description = "Whether to respect front-end roles for permission checks")
             @QueryParam("respectFrontEndRoles") Boolean respectFrontEndRolesParams) throws SystemException, PortalException, DotDataException, DotSecurityException {
 
-        final User user = this.webResource.init(request, response, true).getUser();
+        final User user = new WebResource.InitBuilder(webResource).requestAndResponse(request, response)
+                .rejectWhenNoUser(true).requiredBackendUser(true).init().getUser();
+        checkPageReadPermission(pageId, user);
         final boolean respectFrontEndRoles = respectFrontEndRolesParams != null ? respectFrontEndRolesParams : PageMode.get(request).respectAnonPerms;
 
         Logger.debug(this, ()-> "Getting page personas per page: " + pageId);
@@ -1469,6 +1476,32 @@ public class PageResource {
         return paginationUtil.getPage(request, user, filter, page, perPage, orderbyParam,
                 OrderDirection.valueOf(direction), extraParams);
     } // getPersonalizedPersonasOnPage
+
+    /**
+     * Confirms that a page with the given identifier exists and that the user can read it. A page
+     * the user cannot read gets the same answer as an identifier that matches no page. The page is
+     * looked up by identifier in any language, working and archived versions included, so pages
+     * that have not been published yet, or have been archived, are handled the same way as
+     * published ones. Front-end roles are not taken into account, as these endpoints are for
+     * back-end users.
+     *
+     * @param pageId identifier of the page
+     * @param user   the user making the request
+     * @throws DoesNotExistException if no page has the given identifier, or the user does not have
+     *                               READ permission on it
+     * @throws DotDataException      if the page or its permissions cannot be loaded
+     */
+    private void checkPageReadPermission(final String pageId, final User user)
+            throws DotDataException {
+
+        final Contentlet page = UtilMethods.isSet(pageId) ?
+                APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageId, true) : null;
+        if (null == page || !Boolean.TRUE.equals(page.isHTMLPage())
+                || !APILocator.getPermissionAPI().doesUserHavePermission(
+                        page, PermissionAPI.PERMISSION_READ, user, false)) {
+            throw new DoesNotExistException("Page not found");
+        }
+    }
 
     private String getPageByPathESQuery(final String pathParam) {
         String hostFilter = "";

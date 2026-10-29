@@ -5914,7 +5914,8 @@ paths:
   /v1/containers:
     delete:
       description: Permanently deletes the specified container. The user must have
-        Edit permissions on the container.
+        Edit permissions on the container. A container that any template still uses
+        is not deleted (409).
       operationId: deleteContainer
       parameters:
       - description: Container identifier to delete
@@ -5937,6 +5938,8 @@ paths:
           description: Forbidden - User lacks edit permissions
         "404":
           description: Container not found
+        "409":
+          description: Conflict - The container is used by one or more templates
       summary: Deletes a container
       tags:
       - Containers
@@ -6139,7 +6142,8 @@ paths:
     delete:
       description: Deletes a list of containers by their identifiers. Returns a summary
         of successful and failed deletions. The user must have Edit permissions on
-        each container.
+        each container. A container that any template still uses is not deleted and
+        is reported as a failure.
       operationId: bulkDeleteContainers
       requestBody:
         content:
@@ -6440,6 +6444,51 @@ paths:
         "500":
           description: Internal server error
       summary: Removes content from a container
+      tags:
+      - Containers
+  /v1/containers/dependencies:
+    get:
+      description: "Returns, for each requested container, its data (inode, identifier,\
+        \ title; the working version when looked up by identifier or folder path)\
+        \ and the templates, readable by the requesting user, that use it. Repeat\
+        \ the containerId parameter to ask about several containers in one call (up\
+        \ to 100); the templates are searched once for all of them. A container's\
+        \ list is empty when no template uses it. Intended to be checked before deleting\
+        \ containers. Requires a back-end user. A template uses a container when it\
+        \ references it: a drawn template in its layout, an advanced template with\
+        \ a #parseContainer call, whether or not the container holds content. Archived\
+        \ templates and the hidden layouts that pages save for themselves count too."
+      operationId: getContainerDependencies
+      parameters:
+      - description: "Container identifier, inode or folder path; repeat the parameter\
+          \ for several containers"
+        in: query
+        name: containerId
+        required: true
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContainerDependenciesListView"
+          description: One entry per requested container with its data and the templates
+            that use it
+        "400":
+          description: "Bad request - A container ID is required, and no more than\
+            \ 100 are accepted"
+        "401":
+          description: Unauthorized - User not authenticated or not a back-end user
+        "403":
+          description: Forbidden - User lacks read permission on one of the containers
+        "404":
+          description: One of the containers was not found
+        "500":
+          description: Internal server error
+      summary: Lists the templates that use each of the given containers
       tags:
       - Containers
   /v1/containers/form/{formId}:
@@ -14564,11 +14613,9 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityMulitreeView"
           description: Content tree retrieved successfully
         "401":
-          description: Authentication required
-        "403":
-          description: User does not have required permissions
+          description: "Authentication required, or the user is not a back-end user"
         "404":
-          description: Page not found
+          description: "Page not found, or the user cannot read it"
       summary: Get the multi-tree content structure of a page
       tags:
       - Page
@@ -14708,11 +14755,9 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityListPersonalizationPersonaPageView"
           description: Personas with personalization flags retrieved successfully
         "401":
-          description: Authentication required
-        "403":
-          description: User does not have required permissions
+          description: "Authentication required, or the user is not a back-end user"
         "404":
-          description: Page not found
+          description: "Page not found, or the user cannot read it"
       summary: Get personalized personas for a page
       tags:
       - Page
@@ -27638,6 +27683,24 @@ components:
           type: string
         working:
           type: boolean
+    ContainerDependenciesView:
+      type: object
+      description: A container and the templates that use it
+      properties:
+        identifier:
+          type: string
+          description: Container identifier
+        inode:
+          type: string
+          description: Container inode
+        templates:
+          type: array
+          description: Templates that use the container; empty when none does
+          items:
+            $ref: "#/components/schemas/TemplateDependencyView"
+        title:
+          type: string
+          description: "Container title, as saved"
     ContainerEntry:
       type: object
       properties:
@@ -34769,6 +34832,31 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityContainerDependenciesListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContainerDependenciesView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityContainerObjectMapView:
       type: object
       properties:
@@ -40416,6 +40504,24 @@ components:
           type: string
         working:
           type: boolean
+    TemplateDependencyView:
+      type: object
+      description: A template that uses the container
+      properties:
+        identifier:
+          type: string
+          description: Template identifier
+        inode:
+          type: string
+          description: Template inode
+        siteName:
+          type: string
+          description: Host name of the template's site; null when the site is not
+            resolvable for the requesting user
+          nullable: true
+        title:
+          type: string
+          description: "Template title, as saved"
     TemplateForm:
       type: object
       description: Form used to create or update a Template in dotCMS. A Template

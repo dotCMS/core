@@ -1074,6 +1074,17 @@ public  class WebResource {
             return Collections.unmodifiableSet(requiredPortlet);
         }
 
+        /**
+         * Returns the role keys the caller must hold for this request to be accepted, such as the
+         * back-end user role added by {@link #requiredBackendUser(boolean)}.
+         *
+         * @return a read-only view of the required role keys
+         */
+        @VisibleForTesting
+        public Set<String> getRequiredRoles() {
+            return Collections.unmodifiableSet(requiredRolesSet);
+        }
+
         public InitBuilder requireLicense(final boolean requireLicense){
             this.requireLicense = requireLicense;
             return this;
