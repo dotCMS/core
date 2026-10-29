@@ -8,7 +8,7 @@ Feature: Maintenance tool routes, scripts and tabs
 
   Background:
     * def fixture = callonce read('classpath:dependencyfeatures/maintenanceToolsAccessSetup.feature')
-    # Removes the users, the role and the layout once the feature ends, whichever scenarios ran
+    # Removes the users, the role and the layout once the feature ends (parallel runner); the last scenario does it too
     * configure afterFeature = function() { karate.call('classpath:dependencyfeatures/maintenanceToolsAccessCleanup.feature@fixture', fixture) }
     * configure cookies = null
     * def encodedAuth = function(s) { return java.util.Base64.getEncoder().encodeToString(s.getBytes('UTF-8')); }
@@ -29,7 +29,7 @@ Feature: Maintenance tool routes, scripts and tabs
       ]
       """
     * def requestsFor = function(headers) { return karate.map(routes, function(route) { return { url: baseUrl + route.path, method: route.method, headers: headers } }) }
-    * def pageUrl = function(url) { return url.indexOf('http') == 0 ? url : baseUrl + url }
+    * def pageUrl = function(url) { return (url.indexOf('http') == 0 ? url : baseUrl + url) + '&in_frame=true&frame=detailFrame&container=true&angularCurrentPortlet=maintenance' }
     * def plainCall =
       """
       function(scriptName, methodName, sessionId) {
@@ -42,7 +42,7 @@ Feature: Maintenance tool routes, scripts and tabs
   @permissions @negative
   Scenario Outline: A <caller> caller gets 401 from every Maintenance tool route
     * def results = call read('classpath:common/utils.feature@makeRequest') requestsFor(callerHeaders['<caller>'])
-    * def statuses = karate.map(results, function(call) { return call.result.status })
+    * def statuses = karate.map(results, function(call) { return call.responseStatus })
     * match each statuses == 401
 
     Examples:
@@ -55,7 +55,7 @@ Feature: Maintenance tool routes, scripts and tabs
   @permissions @negative
   Scenario: A user who holds the Maintenance portlet without being a CMS Administrator is told why
     * def results = call read('classpath:common/utils.feature@makeRequest') requestsFor(callerHeaders.maintenance)
-    * def bodies = karate.map(results, function(call) { return karate.toString(call.result.body) })
+    * def bodies = karate.map(results, function(call) { return karate.toString(call.response) })
     * match each bodies contains 'is not a CMS Administrator'
 
   @permissions @positive
@@ -63,7 +63,7 @@ Feature: Maintenance tool routes, scripts and tabs
     # The Redis key read and the cache object listing are checked with their values in the scenarios below
     * def reads = karate.filter(requestsFor(commonHeaders), function(r) { return r.method == 'get' && r.url.indexOf('/redis/sample-key') < 0 && r.url.indexOf('/objects/') < 0 })
     * def results = call read('classpath:common/utils.feature@makeRequest') reads
-    * def statuses = karate.map(results, function(call) { return call.result.status })
+    * def statuses = karate.map(results, function(call) { return call.responseStatus })
     * match each statuses == 200
 
   @positive
@@ -201,6 +201,7 @@ Feature: Maintenance tool routes, scripts and tabs
     * def adminPage = karate.jsonPath(response, "$.entity[*].menuItems[?(@.id=='maintenance')].url")[0]
 
     Given url pageUrl(adminPage)
+    And header Referer = baseUrl + '/dotAdmin/'
     When method get
     Then status 200
     And match response contains 'id="cache"'
@@ -222,9 +223,16 @@ Feature: Maintenance tool routes, scripts and tabs
     * def maintenancePage = karate.jsonPath(response, "$.entity[*].menuItems[?(@.id=='maintenance')].url")[0]
 
     Given url pageUrl(maintenancePage)
+    And header Referer = baseUrl + '/dotAdmin/'
     When method get
     Then status 200
     And match response contains 'id="cache"'
     And match response !contains 'id="systemProps"'
     And match response !contains 'id="threads"'
     And match response !contains 'id="loggedusers"'
+
+  @permissions
+  Scenario: Remove the users, the role and the layout
+    # The afterFeature hook does the same when the feature runs through the parallel runner, as in CI; a second
+    # pass only finds nothing to delete
+    * call read('classpath:dependencyfeatures/maintenanceToolsAccessCleanup.feature@fixture') fixture

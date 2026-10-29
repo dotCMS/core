@@ -13,7 +13,7 @@ Feature: Users, role and layout for the Maintenance tool access tests
 
     Given url baseUrl + '/api/v1/roles'
     And headers commonHeaders
-    And request { roleName: '#("Maintenance only " + suffix)', roleKey: '#("maintenance-only-" + suffix)', canEditUsers: false, canEditPermissions: false, canEditLayouts: false, description: 'Role whose only layout holds the Maintenance portlet' }
+    And request { roleName: '#("Maintenance only " + suffix)', roleKey: '#("maintenance-only-" + suffix)', canEditUsers: true, canEditPermissions: false, canEditLayouts: true, description: 'Role whose only layout holds the Maintenance portlet' }
     When method post
     Then status 200
     * def roleId = response.entity.id
