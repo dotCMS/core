@@ -24,6 +24,7 @@ import com.dotmarketing.business.IdentifierAPI;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.business.Theme;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -57,12 +58,14 @@ import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.SystemTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.ActivityLogger;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.liferay.portal.model.User;
@@ -72,9 +75,11 @@ import org.apache.commons.io.IOUtils;
 
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -117,6 +122,17 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	private final  Lazy<Template>   systemTemplate         = Lazy.of(SystemTemplate::new);
 
 	private final transient MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+
+	/**
+	 * Seconds the Containers an advanced Template names are remembered after running its body in
+	 * Velocity to find them; {@code 0} turns the memory off. Default: 60.
+	 */
+	static final String CONTAINER_REFERENCES_CACHE_TTL_PROPERTY = "templates.container-references.cache.ttl-seconds";
+
+	/** The most Templates whose Velocity answer is remembered at once. Default: 5000. */
+	static final String CONTAINER_REFERENCES_CACHE_MAX_PROPERTY = "templates.container-references.cache.max-entries";
+
+	private final Lazy<TemplateContainerReferences> containerReferences = Lazy.of(this::newContainerReferences);
 
 
 	@Override
@@ -1200,6 +1216,139 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 			throw new DotSecurityException("User does not have READ permissions over the Template, so unable to view Versions");
 		}
 		return templateAllVersions;
+	}
+
+	/**
+	 * Number of Templates read from the database per query when looking for the Templates that use
+	 * a Container.
+	 */
+	private static final int CONTAINER_USAGE_PAGE_SIZE = 500;
+
+	@Override
+	@CloseDBIfOpened
+	public Map<String, List<Template>> findTemplatesUsingContainers(final Collection<String> containerIdentifiers,
+			final User user) throws DotDataException, DotSecurityException {
+
+		return this.findTemplatesUsingContainers(containerIdentifiers, user, CONTAINER_USAGE_PAGE_SIZE);
+	}
+
+	/**
+	 * Same as {@link #findTemplatesUsingContainers(Collection, User)} with a configurable page size,
+	 * so a test can exercise the paging with a few Templates.
+	 *
+	 * @param containerIdentifiers the identifiers of the {@link Container}s; blank values are ignored
+	 * @param user                 the {@link User} whose read permission selects the Templates returned
+	 * @param pageSize             how many Templates are read from the database per query
+	 * @return the Templates that use each Container, keyed by identifier in the order given
+	 * @throws DotDataException     if the Templates or their Containers cannot be read from the data source
+	 * @throws DotSecurityException if the Templates cannot be filtered by permission
+	 */
+	@VisibleForTesting
+	@CloseDBIfOpened
+	Map<String, List<Template>> findTemplatesUsingContainers(final Collection<String> containerIdentifiers,
+			final User user, final int pageSize) throws DotDataException, DotSecurityException {
+
+		if (pageSize < 1) {
+			throw new IllegalArgumentException("The page size must be at least 1: " + pageSize);
+		}
+
+		final Map<String, List<Template>> usages = new LinkedHashMap<>();
+		if (null != containerIdentifiers) {
+			containerIdentifiers.stream().filter(UtilMethods::isSet)
+					.forEach(identifier -> usages.putIfAbsent(identifier, new ArrayList<>()));
+		}
+		if (usages.isEmpty()) {
+			return usages;
+		}
+
+		// a layout can name a file container by path, so each distinct reference is resolved once
+		// to the identifier it stands for
+		final Map<String, String> resolvedReferences = new HashMap<>();
+		final User systemUser = APILocator.systemUser();
+		int offset = 0;
+		List<Template> page;
+		do {
+			page = this.templateFactory.findWorkingTemplatesPage(offset, pageSize);
+			for (final Template template : page) {
+				for (final String reference : this.referencedContainers(template)) {
+					final String identifier = this.resolveContainerReference(reference, systemUser, resolvedReferences);
+					final List<Template> users = usages.get(identifier);
+					if (null != users && !users.contains(template)) {
+						users.add(template);
+					}
+				}
+			}
+			offset += pageSize;
+		} while (page.size() >= pageSize);
+
+		if (null != user && !UserAPI.SYSTEM_USER_ID.equals(user.getUserId())) {
+			for (final Map.Entry<String, List<Template>> usage : usages.entrySet()) {
+				usage.setValue(this.permissionAPI.filterCollection(usage.getValue(),
+						PermissionAPI.PERMISSION_READ, user, false));
+			}
+		}
+		return usages;
+	}
+
+	/**
+	 * Lists the Containers a Template references, by identifier or path, without checking that the
+	 * Containers exist or hold content: a drawn Template names them in its layout, an advanced one in
+	 * its {@code #parseContainer} calls. The calls of an advanced Template are read from its text
+	 * when that is enough, and only otherwise by running the body in Velocity, which is costly; see
+	 * {@link TemplateContainerReferences}.
+	 *
+	 * @param template the {@link Template} whose Containers are listed
+	 * @return the identifiers or paths of the Containers the Template names
+	 */
+	private Set<String> referencedContainers(final Template template) {
+
+		final Set<String> references = new LinkedHashSet<>();
+		if (template.isDrawed() && UtilMethods.isSet(template.getDrawedBody())) {
+			final TemplateLayout layout = DotTemplateTool.getTemplateLayout(template.getDrawedBody());
+			if (null != layout) {
+				references.addAll(this.getContainersId(layout));
+			}
+		} else {
+			references.addAll(this.containerReferences.get()
+					.forAdvancedTemplate(template.getInode(), template.getBody()));
+		}
+		return references;
+	}
+
+	/**
+	 * Builds the reader of the Containers an advanced Template names, with the cache settings read
+	 * from {@link #CONTAINER_REFERENCES_CACHE_TTL_PROPERTY} and
+	 * {@link #CONTAINER_REFERENCES_CACHE_MAX_PROPERTY} when it is first needed.
+	 *
+	 * @return the {@link TemplateContainerReferences} this API uses
+	 */
+	private TemplateContainerReferences newContainerReferences() {
+
+		return new TemplateContainerReferences(
+				body -> this.getContainersUUIDFromDrawTemplateBody(body).stream()
+						.map(ContainerUUID::getIdentifier).collect(Collectors.toList()),
+				Config.getLongProperty(CONTAINER_REFERENCES_CACHE_TTL_PROPERTY, 60),
+				Config.getLongProperty(CONTAINER_REFERENCES_CACHE_MAX_PROPERTY, 5000));
+	}
+
+	/**
+	 * Gives the identifier of the Container that a reference (identifier or path) stands for, or the
+	 * reference itself when no Container can be found, remembering the answer for the rest of the scan.
+	 */
+	private String resolveContainerReference(final String reference, final User systemUser,
+			final Map<String, String> resolvedReferences) throws DotDataException, DotSecurityException {
+
+		if (!UtilMethods.isSet(reference)) {
+			return reference;
+		}
+		final String known = resolvedReferences.get(reference);
+		if (null != known) {
+			return known;
+		}
+		final String identifier = this.containerAPI.findContainer(reference, systemUser, false, false)
+				.map(Container::getIdentifier).orElse(reference);
+		resolvedReferences.put(reference, identifier);
+		return identifier;
 	}
 
 	@Override
