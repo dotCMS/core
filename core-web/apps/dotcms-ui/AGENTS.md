@@ -32,7 +32,7 @@ yarn nx build dotcms-ui --configuration=development  # Dev build → ../../tomca
 
 # Tests
 yarn nx test dotcms-ui                              # Run all unit tests
-yarn nx test dotcms-ui --testPathPattern=my.spec    # Run a specific spec file
+yarn nx test dotcms-ui -- my.spec                   # Run a specific spec file (Vitest; --testPathPattern errors)
 yarn nx lint dotcms-ui                              # Lint
 ```
 
