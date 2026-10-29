@@ -1415,5 +1415,72 @@ describe('AngularFormBridge with a real FormGroup', () => {
 
             expect((globalThis as any).DotCustomFieldApi).toBe(other);
         });
+
+        /**
+         * #38303 — side panels stack, and the one underneath can close first. Each context pops
+         * the frame it pushed, so the context still on top keeps its bridge, and the root comes
+         * back once both have closed.
+         */
+        describe('a frame closed under a context stacked over it', () => {
+            /** Opens a nested context and gives it a bridge of its own. */
+            const openContext = () => {
+                const frame = AngularFormBridge.pushInstance();
+                const contextBridge = AngularFormBridge.getInstance(
+                    new FormGroup({ title: new FormControl('') }),
+                    zone,
+                    dialogService
+                );
+
+                return { frame, contextBridge };
+            };
+
+            // `resetInstance` leaves the stack alone; close whatever a case left open.
+            afterEach(() => {
+                while (AngularFormBridge['instanceStack'].length) {
+                    AngularFormBridge.popInstance();
+                }
+            });
+
+            it('should keep the bridge of the context on top', () => {
+                const parent = openContext();
+                const stacked = openContext();
+                const destroy = vi.spyOn(stacked.contextBridge, 'forceDestroy');
+
+                AngularFormBridge.popInstance(parent.frame);
+
+                expect(destroy).not.toHaveBeenCalled();
+                expect(AngularFormBridge['instance']).toBe(stacked.contextBridge);
+            });
+
+            it("should destroy the closed context's own bridge", () => {
+                const parent = openContext();
+                openContext();
+                const destroy = vi.spyOn(parent.contextBridge, 'forceDestroy');
+
+                AngularFormBridge.popInstance(parent.frame);
+
+                expect(destroy).toHaveBeenCalledTimes(1);
+            });
+
+            it('should restore the root bridge once the stacked context closes too', () => {
+                const parent = openContext();
+                const stacked = openContext();
+
+                AngularFormBridge.popInstance(parent.frame);
+                AngularFormBridge.popInstance(stacked.frame);
+
+                expect(AngularFormBridge['instance']).toBe(bridge);
+            });
+
+            it('should ignore a frame popped twice', () => {
+                const parent = openContext();
+                const stacked = openContext();
+
+                AngularFormBridge.popInstance(parent.frame);
+                AngularFormBridge.popInstance(parent.frame);
+
+                expect(AngularFormBridge['instance']).toBe(stacked.contextBridge);
+            });
+        });
     });
 });
