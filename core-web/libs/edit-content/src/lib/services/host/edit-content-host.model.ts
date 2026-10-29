@@ -41,6 +41,11 @@ export interface EditContentIdentity {
      * default language when it is unset.
      */
     languageId?: number;
+    /**
+     * The experiment variant to edit or create in, set by an overlay opened on a variant page
+     * (#38303). The editor fires every workflow action in it; absent means the default variant.
+     */
+    variantName?: string;
 }
 
 /**

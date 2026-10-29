@@ -195,7 +195,8 @@ describe('HistoryFeature', () => {
         addBreadcrumb: vi.fn(),
         goToSavedContent: vi.fn(),
         leaveDeletedContent: vi.fn(),
-        goToRestoredVersion: vi.fn()
+        goToRestoredVersion: vi.fn(),
+        reportSaved: vi.fn()
     };
 
     const withTest = () =>
@@ -1490,6 +1491,10 @@ describe('HistoryFeature', () => {
     describe('restoreVersion', () => {
         beforeEach(() => {
             store.updateContentlet(mockContentlet);
+            // Bring Back answers with a version summary; the restored contentlet is fetched by inode.
+            dotContentletService.getContentletByInode.mockImplementation((inode: string) =>
+                of({ ...mockContentlet, inode })
+            );
         });
 
         it('should restore version and delegate navigation to the host', fakeAsync(() => {
@@ -1529,6 +1534,36 @@ describe('HistoryFeature', () => {
             tick();
 
             expect(dotHttpErrorManagerService.handle).toHaveBeenCalled();
+        }));
+
+        // A restored version is a save (#38303, FR-019): the content changed and whoever opened
+        // the editor must refresh, exactly as after a save.
+        it('should report the restored version as a save before navigating to it', fakeAsync(() => {
+            const restoredVersion = { ...mockContentlet, inode: 'restored-inode' };
+            dotVersionableService.bringBack.mockReturnValue(of(restoredVersion));
+            const order: string[] = [];
+            mockHost.reportSaved.mockImplementation(() => order.push('reportSaved'));
+            mockHost.goToRestoredVersion.mockImplementation(() =>
+                order.push('goToRestoredVersion')
+            );
+
+            store.restoreVersion('test-inode');
+            tick();
+
+            expect(mockHost.reportSaved).toHaveBeenCalledWith(restoredVersion);
+            expect(order).toEqual(['reportSaved', 'goToRestoredVersion']);
+        }));
+
+        it('should report no save when the restore fails', fakeAsync(() => {
+            dotVersionableService.bringBack.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 500 }))
+            );
+
+            store.restoreVersion('test-inode');
+            tick();
+
+            expect(mockHost.reportSaved).not.toHaveBeenCalled();
+            expect(mockHost.goToRestoredVersion).not.toHaveBeenCalled();
         }));
     });
 

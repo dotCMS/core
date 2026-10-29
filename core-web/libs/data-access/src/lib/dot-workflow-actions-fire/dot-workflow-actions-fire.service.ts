@@ -27,6 +27,11 @@ export interface DotFireActionOptions<T> {
     inode?: string;
     identifier?: string;
     data?: T;
+    /**
+     * The experiment variant to fire in, sent as the `variantName` query param, never in the body.
+     * Absent means the default variant.
+     */
+    variantName?: string;
 }
 
 export interface DotFireDefaultActionOptions {
@@ -50,7 +55,8 @@ export class DotWorkflowActionsFireService {
         .set('Content-Type', 'application/json');
 
     /**
-     *  Fire a workflow action over a contentlet
+     * Fire a workflow action over a contentlet. The inode, identifier and experiment variant
+     * travel as query params; `data` is the request body.
      *
      * @template T
      * @param {DotFireActionOptions<T>} options
@@ -60,7 +66,7 @@ export class DotWorkflowActionsFireService {
     fireTo<T = Record<string, string>>(
         options: DotFireActionOptions<T>
     ): Observable<DotCMSContentlet> {
-        const { actionId, inode, data, identifier } = options;
+        const { actionId, inode, data, identifier, variantName } = options;
         let urlParams = new HttpParams().set('indexPolicy', 'WAIT_FOR');
 
         if (inode) {
@@ -69,6 +75,10 @@ export class DotWorkflowActionsFireService {
 
         if (identifier) {
             urlParams = urlParams.set('identifier', identifier);
+        }
+
+        if (variantName) {
+            urlParams = urlParams.set('variantName', variantName);
         }
 
         const url = `${this.BASE_URL}/actions/${actionId}/fire`;

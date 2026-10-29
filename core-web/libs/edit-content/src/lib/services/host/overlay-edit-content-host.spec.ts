@@ -55,6 +55,14 @@ describe('OverlayEditContentHost', () => {
             });
         });
 
+        // The UVE opens the editor on an experiment variant (#38303, FR-022).
+        it('carries the experiment variant from the dialog config', () => {
+            config.data = { contentletInode: 'inode-9', variantName: 'variant-a' };
+            expect(host.resolveIdentity()).toEqual(
+                expect.objectContaining({ inode: 'inode-9', variantName: 'variant-a' })
+            );
+        });
+
         it('maps contentletInode and contentTypeId from the dialog config', () => {
             config.data = { contentletInode: 'inode-9', contentTypeId: 'Blog' };
             expect(host.resolveIdentity()).toEqual({

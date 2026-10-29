@@ -8,14 +8,14 @@ import {
     withComputed
 } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { pipe } from 'rxjs';
+import { of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { inject, effect, untracked, computed } from '@angular/core';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 
-import { switchMap, tap } from 'rxjs/operators';
+import { catchError, map, switchMap, tap } from 'rxjs/operators';
 
 import {
     DotHttpErrorManagerService,
@@ -166,19 +166,44 @@ export function withHistory() {
                     )
                 );
 
+                /**
+                 * Brings an older version back as the working version, reports it to the host as
+                 * a save, then shows it. Bring Back answers with a version summary, not a
+                 * contentlet, so the restored contentlet is fetched by its inode first: a save is
+                 * always reported with the full contentlet (#38303). On a failed restore nothing is
+                 * reported; if only that fetch fails, the restored version still shows.
+                 * @param inode - The inode of the version to restore
+                 */
                 const restoreVersion = rxMethod<string>(
                     pipe(
                         switchMap((inode) => {
                             const currentContentlet = store.originalContentlet();
 
                             return dotVersionableService.bringBack(inode).pipe(
+                                switchMap(({ inode: restoredInode }) =>
+                                    dotContentletService.getContentletByInode(restoredInode).pipe(
+                                        map((restored) => ({ restoredInode, restored })),
+                                        catchError((error: HttpErrorResponse) => {
+                                            errorManager.handle(error);
+
+                                            return of({ restoredInode, restored: null });
+                                        })
+                                    )
+                                ),
                                 tapResponse({
-                                    next: (restoredVersion) => {
-                                        // Navigate to the restored version. The host decides how:
+                                    next: ({ restoredInode, restored }) => {
+                                        // A restored version is a save (#38303): report it first,
+                                        // so whoever opened the editor refreshes. The full-screen
+                                        // host ignores it.
+                                        if (restored) {
+                                            host.reportSaved(restored);
+                                        }
+
+                                        // Then show the restored version. The host decides how:
                                         // the full-screen host navigates when the inode changed;
-                                        // the dialog host stays in place (no-op).
+                                        // an overlay reloads the editor in place.
                                         host.goToRestoredVersion(
-                                            restoredVersion.inode,
+                                            restoredInode,
                                             currentContentlet?.inode
                                         );
                                     },

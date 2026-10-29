@@ -7,13 +7,25 @@ import { catchError, map } from 'rxjs/operators';
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
+    DotCMSContentType,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
 
 import { DotContentTypeService } from '../dot-content-type/dot-content-type.service';
 
+/** The two content editors: the new Angular editor, or the legacy (JSP) one. */
+export type DotContentEditor = 'new' | 'legacy';
+
+/** Which editor a content type uses, and the content type the decision was read from. */
+export interface DotContentEditorChoice {
+    editor: DotContentEditor;
+    /** The resolved content type, or `null` when the lookup failed (then `editor` is `'legacy'`). */
+    contentType: DotCMSContentType | null;
+}
+
 /**
- * Canonical resolver for "where in dotAdmin should I open this contentlet for editing?".
+ * Canonical resolver for "which editor opens this content type?" ({@link resolveEditor}) and
+ * "where in dotAdmin should I open this contentlet for editing?" ({@link resolveEditUrl}).
  *
  * This service exists to consolidate logic that has been re-implemented inline at multiple
  * call sites across the admin (Query Tool, Content Drive's `#editContentlet`, the legacy and
@@ -23,8 +35,12 @@ import { DotContentTypeService } from '../dot-content-type/dot-content-type.serv
  *
  * ## What it resolves
  *
- * Given a contentlet, returns the dotAdmin hash route that should open it for editing.
- * Three shapes, in priority order:
+ * {@link resolveEditor} answers the editor decision alone: `'new'` when the content type's
+ * metadata has `CONTENT_EDITOR2_ENABLED`, `'legacy'` otherwise, with the content type it read.
+ * The side-panel opener in `@dotcms/edit-content` uses it to pick the panel (#38303).
+ *
+ * {@link resolveEditUrl} is built on it. Given a contentlet, it returns the dotAdmin hash route
+ * that should open it for editing. Three shapes, in priority order:
  *
  * 1. **HTMLPAGE** (`baseType === HTMLPAGE`)
  *    → `/dotAdmin/#/edit-page/content?url=<url>&language_id=<lang>&mId=edit`
@@ -44,9 +60,10 @@ import { DotContentTypeService } from '../dot-content-type/dot-content-type.serv
  *
  * ## Caching
  *
- * The content-type → `useNewEditor` boolean is cached for the lifetime of the application
- * (the service is `providedIn: 'root'`). A list view rendering 50 contentlets of the same
- * content type hits `/api/v1/contenttype/id/{type}` once, not 50 times.
+ * The editor choice is cached per content type for the lifetime of the application (the
+ * service is `providedIn: 'root'`), one cache for both methods. A list view rendering 50
+ * contentlets of the same content type hits `/api/v1/contenttype/id/{type}` once, not 50 times.
+ * A failed lookup is not cached, so the next call asks the server again.
  *
  * **Cache invalidation caveat:** if an admin toggles `CONTENT_EDITOR2_ENABLED` on a content
  * type during the same session, cached entries go stale until a full page reload. This
@@ -55,9 +72,9 @@ import { DotContentTypeService } from '../dot-content-type/dot-content-type.serv
  *
  * ## Error fallback
  *
- * If the content-type lookup fails (4xx/5xx, network), the resolver returns the **legacy**
- * editor URL rather than propagating the error. Rationale: the legacy editor handles every
- * content type, so falling back keeps the user's edit flow working even when metadata
+ * If the content-type lookup fails (4xx/5xx, network), the resolver chooses the **legacy**
+ * editor (and its URL) rather than propagating the error. Rationale: the legacy editor handles
+ * every content type, so falling back keeps the user's edit flow working even when metadata
  * reads transiently fail. The error is intentionally swallowed — callers that need to
  * react to the failure should query `DotContentTypeService.getContentType()` directly.
  *
@@ -87,8 +104,36 @@ import { DotContentTypeService } from '../dot-content-type/dot-content-type.serv
 export class DotContentletEditUrlService {
     readonly #contentTypeService = inject(DotContentTypeService);
 
-    // Cached per content-type variable: true ⇒ new editor, false ⇒ legacy editor.
-    readonly #editorFlagCache = new Map<string, boolean>();
+    // Cached per content-type variable or id. Only successful lookups land here.
+    readonly #editorCache = new Map<string, DotContentEditorChoice>();
+
+    /**
+     * Resolves which editor opens content of a type: `'new'` when the type's metadata has
+     * `CONTENT_EDITOR2_ENABLED`, `'legacy'` otherwise. A failed lookup falls back to `'legacy'`
+     * with no content type and is not cached, so a transient error does not stick for the session.
+     *
+     * @param contentTypeVariableOrId The content type's variable or id.
+     * @returns An observable that emits the choice once and completes.
+     */
+    resolveEditor(contentTypeVariableOrId: string): Observable<DotContentEditorChoice> {
+        const cached = this.#editorCache.get(contentTypeVariableOrId);
+        if (cached) return of(cached);
+
+        return this.#contentTypeService.getContentType(contentTypeVariableOrId).pipe(
+            map((contentType) => {
+                const usesNewEditor =
+                    !!contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
+                const choice: DotContentEditorChoice = {
+                    editor: usesNewEditor ? 'new' : 'legacy',
+                    contentType
+                };
+                this.#editorCache.set(contentTypeVariableOrId, choice);
+
+                return choice;
+            }),
+            catchError(() => of<DotContentEditorChoice>({ editor: 'legacy', contentType: null }))
+        );
+    }
 
     /**
      * Resolves the dotAdmin URL to open `contentlet` for editing. See the class JSDoc
@@ -103,19 +148,8 @@ export class DotContentletEditUrlService {
         const pageUrl = buildPageEditUrl(contentlet);
         if (pageUrl) return of(pageUrl);
 
-        const cached = this.#editorFlagCache.get(contentlet.contentType);
-        if (cached !== undefined) {
-            return of(buildContentletEditUrl(cached, contentlet.inode));
-        }
-
-        return this.#contentTypeService.getContentType(contentlet.contentType).pipe(
-            catchError(() => of(null)),
-            map((ct) => {
-                const useNewEditor =
-                    !!ct?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
-                this.#editorFlagCache.set(contentlet.contentType, useNewEditor);
-                return buildContentletEditUrl(useNewEditor, contentlet.inode);
-            })
+        return this.resolveEditor(contentlet.contentType).pipe(
+            map(({ editor }) => buildContentletEditUrl(editor === 'new', contentlet.inode))
         );
     }
 }

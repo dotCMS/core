@@ -6,18 +6,14 @@
             [src]="url"
             [title]="request()?.title ?? ''"
             (load)="onIframeLoad()"
-            data-testid="legacy-editor-iframe"></iframe>
+            data-testid="legacy-screen-iframe"></iframe>
         <!-- The same spinner the new editor shows while it reloads. -->
         @if ($loading()) {
             <div
                 class="absolute inset-0 flex items-center justify-center bg-white/60"
-                data-testid="legacy-editor-loading">
+                data-testid="legacy-screen-loading">
                 <i class="pi pi-spin pi-spinner text-4xl text-gray-500"></i>
             </div>
         }
     </div>
 }
-
-<!-- The unsaved-changes prompt, on this panel's own ConfirmationService (see requestClose). On the
-     body, so the drawer it sits in never positions or clips it. -->
-<p-confirmDialog appendTo="body" />

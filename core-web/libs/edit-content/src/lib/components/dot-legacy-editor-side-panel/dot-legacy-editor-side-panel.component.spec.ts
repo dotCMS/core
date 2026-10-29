@@ -4,7 +4,7 @@ import {
     mockProvider,
     Spectator
 } from '@openng/spectator/vitest';
-import { of, Subject } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
 import { NgZone, signal } from '@angular/core';
@@ -12,7 +12,7 @@ import { NgZone, signal } from '@angular/core';
 import { ConfirmationService, ConfirmEventType, Confirmation } from 'primeng/api';
 
 import {
-    DotActionUrlService,
+    DotContentletService,
     DotEventsService,
     DotHttpErrorManagerService,
     DotIframeService,
@@ -21,12 +21,13 @@ import {
     DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
-import { DotFunctionInfo } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotFunctionInfo } from '@dotcms/dotcms-models';
 import { DotSidePanelRef } from '@dotcms/ui';
+import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotLegacyEditorSidePanelComponent } from './dot-legacy-editor-side-panel.component';
 
-import { DotLegacyEditorRequest } from '../../shared/legacy-editor.models';
+import { DotEditContentRequest } from '../../models/dot-edit-content-request.model';
 
 /** The legacy editor's edit screen, as UVE and the full-page wrapper load it. */
 const LAYOUT_PATH = '/c/portal/layout';
@@ -41,24 +42,32 @@ const CREATE_URL =
  */
 let ran$ = new Subject<DotFunctionInfo>();
 
-const CREATE_REQUEST: DotLegacyEditorRequest = {
+const CREATE_REQUEST: DotEditContentRequest = {
     mode: 'new',
-    contentTypeVariable: 'Banner',
+    contentType: 'Banner',
     folderInode: 'f-1',
     languageId: 2,
     title: 'Banner',
-    portletId: 'content-drive',
-    createUrl: CREATE_URL
+    portletId: 'content-drive'
 };
 
-const EDIT_REQUEST: DotLegacyEditorRequest = {
+const EDIT_REQUEST: DotEditContentRequest = {
     mode: 'edit',
     inode: 'abc',
     identifier: 'id-1',
+    contentType: 'Banner',
     languageId: 1,
     title: 'My legacy content',
     portletId: 'content-drive'
 };
+
+/** What the server answers for the saved inode. */
+const SAVED: DotCMSContentlet = createFakeContentlet({
+    inode: 'abc2',
+    identifier: 'id-1',
+    languageId: 1,
+    title: 'My legacy content'
+});
 
 /**
  * A stand-in for the legacy editor's window. The test DOM never loads the JSP, so the panel would
@@ -67,14 +76,10 @@ const EDIT_REQUEST: DotLegacyEditorRequest = {
  */
 interface StubFrame {
     doc: Document;
-    win: Window;
+    win: Window & { ngEditContentletEvents?: { next: (detail: unknown) => void } };
 }
 
-/**
- * The test DOM (happy-dom) would otherwise try to fetch the JSP for every rendered iframe and log
- * "task manager destroyed" errors once each test has torn the frame down. The panel is tested
- * against a stand-in window (see {@link StubFrame}), so no page needs to load.
- */
+/** Keeps the test DOM from fetching the JSP for every rendered iframe. */
 const disableIframePageLoading = (): void => {
     const happyDOM = (window as unknown as { happyDOM?: { settings: Record<string, unknown> } })
         .happyDOM;
@@ -89,14 +94,18 @@ describe('DotLegacyEditorSidePanelComponent', () => {
 
     let spectator: Spectator<DotLegacyEditorSidePanelComponent>;
     /** The panel's ref, reduced to what the content uses. */
-    let panel: { close: Mock; contentStyleClass: ReturnType<typeof signal<string>> };
+    let panel: {
+        close: Mock;
+        contentStyleClass: ReturnType<typeof signal<string>>;
+        closed: Subject<void>;
+    };
 
     const createComponent = createComponentFactory({
         component: DotLegacyEditorSidePanelComponent,
         providers: [
             mockProvider(DotUiColorsService, { setColors: vi.fn() }),
-            mockProvider(DotActionUrlService, {
-                getCreateContentletUrl: vi.fn().mockReturnValue(of(CREATE_URL))
+            mockProvider(DotContentletService, {
+                getContentletByInode: vi.fn().mockReturnValue(of(SAVED))
             }),
             mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
             mockProvider(DotWorkflowEventHandlerService, { open: vi.fn() }),
@@ -113,27 +122,29 @@ describe('DotLegacyEditorSidePanelComponent', () => {
     beforeEach(() => {
         localStorage.clear();
         ran$ = new Subject<DotFunctionInfo>();
-        panel = { close: vi.fn(), contentStyleClass: signal('p-0!') };
+        panel = { close: vi.fn(), contentStyleClass: signal('p-0!'), closed: new Subject<void>() };
 
         spectator = createComponent({
             providers: [{ provide: DotSidePanelRef, useValue: panel }]
         });
 
-        // The factory's mocks are shared across tests: clear their calls and restore the answer a
-        // test may have overridden.
         vi.clearAllMocks();
-        (spectator.inject(DotActionUrlService).getCreateContentletUrl as Mock).mockReturnValue(
-            of(CREATE_URL)
+        (spectator.inject(DotContentletService).getContentletByInode as Mock).mockReturnValue(
+            of(SAVED)
         );
     });
 
     /** `appendTo="body"` teleports the drawer out of the fixture, so queries search the document. */
     const getIframe = (): HTMLIFrameElement | null =>
-        spectator.query<HTMLIFrameElement>(byTestId('legacy-editor-iframe'), { root: true });
+        spectator.query<HTMLIFrameElement>(byTestId('legacy-screen-iframe'), { root: true });
 
-    /** Opens the panel with a request and renders it. */
-    const open = (request: DotLegacyEditorRequest | null = EDIT_REQUEST): void => {
+    /** Opens the panel with a request (and, for a create, the resolved create screen). */
+    const open = (
+        request: DotEditContentRequest | null = EDIT_REQUEST,
+        createUrl: string | null = request?.mode === 'new' ? CREATE_URL : null
+    ): void => {
         spectator.setInput('request', request);
+        spectator.setInput('createUrl', createUrl);
         spectator.detectChanges();
     };
 
@@ -141,11 +152,10 @@ describe('DotLegacyEditorSidePanelComponent', () => {
     const loadFrame = (search = ''): StubFrame => {
         const iframe = getIframe() as HTMLIFrameElement;
         const doc = document.implementation.createHTMLDocument('legacy editor');
-        // An EventTarget, so the panel can listen to the window as it does to the real one.
         const win = Object.assign(new EventTarget(), {
             document: doc,
             location: { search }
-        }) as unknown as Window;
+        }) as unknown as StubFrame['win'];
 
         Object.defineProperty(iframe, 'contentWindow', { configurable: true, get: () => win });
         iframe.dispatchEvent(new Event('load'));
@@ -158,14 +168,19 @@ describe('DotLegacyEditorSidePanelComponent', () => {
         doc.dispatchEvent(new CustomEvent('ng-event', { detail }));
     };
 
+    const searchParams = (): Record<string, string> =>
+        Object.fromEntries(
+            new URL(getIframe()?.getAttribute('src') ?? '', 'http://localhost').searchParams
+        );
+
     describe('edit URL', () => {
-        it('loads the legacy edit screen for the inode, naming Content Drive as the portlet', () => {
+        it('loads the legacy edit screen for the inode, naming the portlet the request came from', () => {
             open();
 
             const url = new URL(getIframe()?.getAttribute('src') ?? '', 'http://localhost');
 
             expect(url.pathname).toBe(LAYOUT_PATH);
-            expect(Object.fromEntries(url.searchParams)).toEqual({
+            expect(searchParams()).toEqual({
                 p_p_id: 'content',
                 p_p_action: '1',
                 p_p_state: 'maximized',
@@ -175,6 +190,27 @@ describe('DotLegacyEditorSidePanelComponent', () => {
                 inode: 'abc',
                 angularCurrentPortlet: 'content-drive'
             });
+        });
+
+        it("defaults the portlet to 'content' when the request names none", () => {
+            open({ ...EDIT_REQUEST, portletId: undefined });
+
+            expect(searchParams()['angularCurrentPortlet']).toBe('content');
+        });
+
+        it('carries the experiment variant and the site when the request has them (UVE)', () => {
+            open({ ...EDIT_REQUEST, variantName: 'variant-a', siteId: 'site-1' });
+
+            expect(searchParams()).toEqual(
+                expect.objectContaining({ variantName: 'variant-a', host_id: 'site-1' })
+            );
+        });
+
+        it('adds neither when the request has none', () => {
+            open();
+
+            expect(searchParams()).not.toHaveProperty('variantName');
+            expect(searchParams()).not.toHaveProperty('host_id');
         });
 
         it('renders no iframe for an edit without an inode', () => {
@@ -191,19 +227,10 @@ describe('DotLegacyEditorSidePanelComponent', () => {
     });
 
     /**
-     * The navigation service resolves the create screen before the panel opens, so a failure opens
-     * nothing (#37759, T112). The panel only pre-selects the folder on the URL it is handed.
+     * The opener resolves the create screen before the panel opens, so a refused create opens
+     * nothing. The panel only pre-selects the folder on the URL it is handed.
      */
     describe('create URL', () => {
-        it('loads the create screen the request carries, without asking the server again', () => {
-            open(CREATE_REQUEST);
-
-            expect(
-                spectator.inject(DotActionUrlService).getCreateContentletUrl
-            ).not.toHaveBeenCalled();
-            expect(getIframe()).not.toBeNull();
-        });
-
         it('pre-selects the folder by appending its inode to the create screen', () => {
             open(CREATE_REQUEST);
 
@@ -211,7 +238,7 @@ describe('DotLegacyEditorSidePanelComponent', () => {
         });
 
         it('starts the query string when the create screen has none', () => {
-            open({ ...CREATE_REQUEST, createUrl: '/c/portal/layout' });
+            open(CREATE_REQUEST, '/c/portal/layout');
 
             expect(getIframe()?.getAttribute('src')).toBe('/c/portal/layout?folder=f-1');
         });
@@ -229,22 +256,22 @@ describe('DotLegacyEditorSidePanelComponent', () => {
         });
 
         it('opens nothing for a create without a create screen', () => {
-            open({ ...CREATE_REQUEST, createUrl: undefined });
+            open(CREATE_REQUEST, null);
 
             expect(getIframe()).toBeNull();
         });
 
         it('refuses a create screen that is not on this server', () => {
-            open({ ...CREATE_REQUEST, createUrl: 'https://elsewhere.example/c/portal/layout' });
+            open(CREATE_REQUEST, 'https://elsewhere.example/c/portal/layout');
 
             expect(getIframe()).toBeNull();
         });
     });
 
     /**
-     * Workflow actions from inside the panel (#37759, US3). The admin app already mounts the
-     * workflow wizard and the push publish dialog on every route; the panel only has to hand them
-     * the event, and hand the wizard's answer back to the legacy editor (FR-009, FR-010).
+     * Workflow actions from inside the panel. The admin app already mounts the workflow wizard and
+     * the push publish dialog on every route; the panel only has to hand them the event, and hand
+     * the wizard's answer back to the legacy editor (FR-010).
      */
     describe('workflow actions', () => {
         it('opens the workflow wizard for an action that needs input', () => {
@@ -266,8 +293,6 @@ describe('DotLegacyEditorSidePanelComponent', () => {
 
             sendLegacyEvent(doc, { name: 'push-publish', data });
 
-            // The root instance is the one the mounted dialog listens to. A component-level
-            // provider would swallow the call and no dialog would open.
             expect(spectator.inject(DotPushPublishDialogService).open).toHaveBeenCalledWith(data);
         });
 
@@ -309,9 +334,9 @@ describe('DotLegacyEditorSidePanelComponent', () => {
     });
 
     /**
-     * Unsaved changes are never lost silently (#37759, US4). The prompt and its wording are the
+     * Unsaved changes are never lost silently (US3, FR-034). The prompt and its wording are the
      * new-editor side panel's (`DotEditContentLayoutComponent`), so both panels ask the same
-     * question (FR-017 to FR-019).
+     * question.
      */
     describe('unsaved changes', () => {
         /** The panel's own confirmation service, the one its `<p-confirmDialog>` renders. */
@@ -369,11 +394,10 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             const { doc } = loadFrame();
             changeAField(doc);
             answerPrompt(answer);
-            const closed = panel.close;
 
             spectator.component.requestClose();
 
-            expect(closed).toHaveBeenCalledTimes(closes);
+            expect(panel.close).toHaveBeenCalledTimes(closes);
         });
 
         it('stops asking once the editor reports the form is clean again', () => {
@@ -382,12 +406,11 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             changeAField(doc);
             sendLegacyEvent(doc, { name: 'edit-contentlet-data-updated', payload: false });
             const confirm = vi.spyOn(panelConfirmation(), 'confirm');
-            const closed = panel.close;
 
             spectator.component.requestClose();
 
             expect(confirm).not.toHaveBeenCalled();
-            expect(closed).toHaveBeenCalledTimes(1);
+            expect(panel.close).toHaveBeenCalledTimes(1);
         });
 
         it('does not ask right after a save', () => {
@@ -417,40 +440,74 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             expect(confirm).not.toHaveBeenCalled();
         });
 
-        it('closes without asking when the editor itself closes, as after a delete', () => {
+        it('closes without asking when the editor itself closes', () => {
             open();
             const { doc } = loadFrame();
             changeAField(doc);
             const confirm = vi.spyOn(panelConfirmation(), 'confirm');
-            const closed = panel.close;
 
             sendLegacyEvent(doc, { name: 'close' });
 
             expect(confirm).not.toHaveBeenCalled();
-            expect(closed).toHaveBeenCalledTimes(1);
+            expect(panel.close).toHaveBeenCalledTimes(1);
         });
     });
 
     /**
-     * Compare versions from the History tab, and Bring Back (#37759, US6). The admin app already
-     * mounts the compare dialog on every route and listens for `compare-contentlet`; its Bring Back
-     * asks the legacy editor to `getVersionBack`, which reloads the editor with that version and
-     * sends no save, so the panel reports the restore once the editor has reloaded.
+     * The five contract events (FR-007 to FR-009). `saved` always carries the full contentlet,
+     * fetched by the saved inode; a restore is a save; a removal is `deleted` then `closed`.
      */
-    describe('compare and Bring Back', () => {
-        it('opens the compare dialog over Content Drive', () => {
+    describe('saved', () => {
+        it('fetches the saved contentlet by inode and reports it', () => {
             open();
             const { doc } = loadFrame();
-            const data = { inode: 'v2', identifier: 'id-1', language: 'en-us' };
+            const saved = vi.fn();
+            spectator.output('saved').subscribe(saved);
 
-            sendLegacyEvent(doc, { name: 'compare-contentlet', data });
+            sendLegacyEvent(doc, {
+                name: 'save-page',
+                payload: { contentletIdentifier: 'id-1', contentletInode: 'abc2' }
+            });
 
-            expect(spectator.inject(DotEventsService).notify).toHaveBeenCalledWith(
-                'compare-contentlet',
-                data
-            );
+            expect(
+                spectator.inject(DotContentletService).getContentletByInode
+            ).toHaveBeenCalledWith('abc2');
+            expect(saved).toHaveBeenCalledWith(SAVED);
         });
 
+        it('reports the error and no save when the fetch fails', () => {
+            (spectator.inject(DotContentletService).getContentletByInode as Mock).mockReturnValue(
+                throwError(() => new Error('404'))
+            );
+            open();
+            const { doc } = loadFrame();
+            const saved = vi.fn();
+            spectator.output('saved').subscribe(saved);
+
+            sendLegacyEvent(doc, {
+                name: 'save-page',
+                payload: { contentletIdentifier: 'id-1', contentletInode: 'abc2' }
+            });
+
+            expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledTimes(1);
+            expect(saved).not.toHaveBeenCalled();
+        });
+
+        it('reports a save for every save, so a second save refreshes the opener again', () => {
+            open();
+            const { doc } = loadFrame();
+            const saved = vi.fn();
+            spectator.output('saved').subscribe(saved);
+            const payload = { contentletIdentifier: 'id-1', contentletInode: 'abc2' };
+
+            sendLegacyEvent(doc, { name: 'save-page', payload });
+            sendLegacyEvent(doc, { name: 'save-page', payload });
+
+            expect(saved).toHaveBeenCalledTimes(2);
+        });
+    });
+
+    describe('restore (Bring Back)', () => {
         it('brings the chosen version back in the editor', () => {
             open();
             const { win } = loadFrame();
@@ -462,39 +519,125 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             expect(getVersionBack).toHaveBeenCalledWith('v1');
         });
 
-        it('reports the restore once the editor has reloaded with it, and only once', () => {
+        it('reports the restored version as a save once the editor has reloaded with it, once', () => {
             open();
             const { win } = loadFrame();
             Object.assign(win, { getVersionBack: vi.fn() });
-            const restored = vi.fn();
-            spectator.output('versionRestored').subscribe(restored);
+            const saved = vi.fn();
+            spectator.output('saved').subscribe(saved);
+            const restored = createFakeContentlet({ inode: 'v1-restored', identifier: 'id-1' });
+            (spectator.inject(DotContentletService).getContentletByInode as Mock).mockReturnValue(
+                of(restored)
+            );
 
             ran$.next({ name: 'getVersionBack', args: ['v1'] });
 
-            expect(restored).not.toHaveBeenCalled();
+            expect(saved).not.toHaveBeenCalled();
 
-            loadFrame();
-            loadFrame();
+            loadFrame('?p_p_id=content&inode=v1-restored&lang=1');
+            loadFrame('?p_p_id=content&inode=v1-restored&lang=1');
 
-            expect(restored).toHaveBeenCalledTimes(1);
+            expect(
+                spectator.inject(DotContentletService).getContentletByInode
+            ).toHaveBeenCalledWith('v1-restored');
+            expect(saved).toHaveBeenCalledTimes(1);
+            expect(saved).toHaveBeenCalledWith(restored);
         });
 
-        it('reports no restore for a reload with no Bring Back', () => {
+        it('reports no save for a reload with no Bring Back', () => {
             open();
             loadFrame();
-            const restored = vi.fn();
-            spectator.output('versionRestored').subscribe(restored);
+            const saved = vi.fn();
+            spectator.output('saved').subscribe(saved);
 
-            loadFrame();
+            loadFrame('?p_p_id=content&inode=abc');
 
-            expect(restored).not.toHaveBeenCalled();
+            expect(saved).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('deleted', () => {
+        it('supplies the window hook the editor calls when it removed the content', () => {
+            open();
+            const { win } = loadFrame();
+
+            expect(typeof win.ngEditContentletEvents?.next).toBe('function');
+        });
+
+        it('reports deleted, never saved, when the editor announces a removed contentlet', () => {
+            open();
+            const { win, doc } = loadFrame();
+            const deleted = vi.fn();
+            const saved = vi.fn();
+            const closed = vi.fn();
+            spectator.output('deleted').subscribe(deleted);
+            spectator.output('saved').subscribe(saved);
+            spectator.output('closed').subscribe(closed);
+
+            // The JSP: the hook first, then the generic close.
+            win.ngEditContentletEvents?.next({ name: 'deleted-contenlet', data: {} });
+            sendLegacyEvent(doc, { name: 'close' });
+
+            expect(deleted).toHaveBeenCalledTimes(1);
+            expect(saved).not.toHaveBeenCalled();
+            expect(panel.close).toHaveBeenCalledTimes(1);
+        });
+
+        it('reports deleted then closes when a page was deleted', () => {
+            open();
+            const { doc } = loadFrame();
+            const deleted = vi.fn();
+            spectator.output('deleted').subscribe(deleted);
+
+            sendLegacyEvent(doc, { name: 'deleted-page', payload: {} });
+
+            expect(deleted).toHaveBeenCalledTimes(1);
+            expect(panel.close).toHaveBeenCalledTimes(1);
+        });
+
+        it('ignores other calls through the hook', () => {
+            open();
+            const { win } = loadFrame();
+            const deleted = vi.fn();
+            spectator.output('deleted').subscribe(deleted);
+
+            win.ngEditContentletEvents?.next({ name: 'save', data: {} });
+
+            expect(deleted).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('closed', () => {
+        it('reports closed once when the panel closes, for any reason', () => {
+            open();
+            const closed = vi.fn();
+            spectator.output('closed').subscribe(closed);
+
+            panel.closed.next();
+            panel.closed.complete();
+
+            expect(closed).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('compare versions', () => {
+        it('opens the root compare dialog', () => {
+            open();
+            const { doc } = loadFrame();
+            const data = { inode: 'v2', identifier: 'id-1', language: 'en-us' };
+
+            sendLegacyEvent(doc, { name: 'compare-contentlet', data });
+
+            expect(spectator.inject(DotEventsService).notify).toHaveBeenCalledWith(
+                'compare-contentlet',
+                data
+            );
         });
     });
 
     /**
-     * The URL follows the open panel (#37759, US7). Switching language inside the legacy editor
-     * reloads it with `lang=<id>` and sends no event, so the panel reads the language off the
-     * reload (FR-020), and reports saves in the language it is showing (FR-025).
+     * Switching language inside the legacy editor reloads it with `lang=<id>` and sends no event,
+     * so the panel reads the language off the reload (FR-036).
      */
     describe('language', () => {
         it('reports a switch to another language, once', () => {
@@ -520,46 +663,6 @@ describe('DotLegacyEditorSidePanelComponent', () => {
 
             expect(changed).not.toHaveBeenCalled();
         });
-
-        it('reports saves in the language it switched to', () => {
-            open();
-            loadFrame();
-            const { doc } = loadFrame('?lang=3');
-            const saved = vi.fn();
-            spectator.output('saved').subscribe(saved);
-
-            sendLegacyEvent(doc, {
-                name: 'save-page',
-                payload: { contentletIdentifier: 'id-1', contentletInode: 'abc-es' }
-            });
-
-            expect(saved).toHaveBeenCalledWith({
-                identifier: 'id-1',
-                inode: 'abc-es',
-                languageId: 3
-            });
-        });
-
-        it('reads the language off the saved version when it does not know which one it shows', () => {
-            open({ ...EDIT_REQUEST, languageId: 0 });
-            const { doc } = loadFrame();
-            const saved = vi.fn();
-            spectator.output('saved').subscribe(saved);
-
-            sendLegacyEvent(doc, {
-                name: 'save-page',
-                payload: {
-                    contentletIdentifier: 'id-1',
-                    contentletInode: 'abc-it',
-                    allLangContentlets: [
-                        { inode: 'abc-en', identifier: 'id-1', languageId: 1 },
-                        { inode: 'abc-it', identifier: 'id-1', languageId: 4 }
-                    ]
-                }
-            });
-
-            expect(saved).toHaveBeenCalledWith(expect.objectContaining({ languageId: 4 }));
-        });
     });
 
     describe('first save of a new page', () => {
@@ -567,7 +670,6 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             open(CREATE_REQUEST);
             const { doc } = loadFrame();
             const pageEditor = vi.fn();
-            const closed = panel.close;
             spectator.output('pageEditorRequested').subscribe(pageEditor);
 
             sendLegacyEvent(doc, {
@@ -576,32 +678,93 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             });
 
             expect(pageEditor).toHaveBeenCalledWith({ url: '/blog/new-page', languageId: 2 });
-            expect(closed).not.toHaveBeenCalled();
+            expect(panel.close).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * A block editor inside the legacy editor asks to open other content (FR-032). The custom
+     * element bridge dispatches `edit-contentlet` on the iframe document; the panel hands it to the
+     * opener, which stacks a panel. The legacy editor's window is never navigated.
+     */
+    describe('content that opens other content', () => {
+        it('asks the opener to open an existing contentlet a block editor named', () => {
+            open();
+            const { doc } = loadFrame();
+            const openContent = vi.fn();
+            spectator.output('openContent').subscribe(openContent);
+
+            sendLegacyEvent(doc, {
+                name: 'edit-contentlet',
+                data: { inode: 'rel-1', contentType: 'Blog' }
+            });
+
+            expect(openContent).toHaveBeenCalledWith({
+                request: { mode: 'edit', inode: 'rel-1', contentType: 'Blog' },
+                source: 'block-editor'
+            });
+            expect(panel.close).not.toHaveBeenCalled();
+        });
+
+        it('asks the opener to create content a legacy screen named', () => {
+            open();
+            const { doc } = loadFrame();
+            const openContent = vi.fn();
+            spectator.output('openContent').subscribe(openContent);
+
+            sendLegacyEvent(doc, {
+                name: 'create-contentlet',
+                data: { url: '/ignored', contentType: 'Blog', folderPath: '/news/' }
+            });
+
+            expect(openContent).toHaveBeenCalledWith({
+                request: { mode: 'new', contentType: 'Blog', folderPath: '/news/' },
+                source: 'block-editor'
+            });
+        });
+    });
+
+    describe('legacy editor events', () => {
+        it("closes the panel on the editor's own close", () => {
+            open();
+            const { doc } = loadFrame();
+
+            sendLegacyEvent(doc, { name: 'close' });
+
+            expect(panel.close).toHaveBeenCalledTimes(1);
+        });
+
+        it('ignores events it has no use for', () => {
+            open();
+            const { doc } = loadFrame();
+            const saved = vi.fn();
+            spectator.output('saved').subscribe(saved);
+
+            sendLegacyEvent(doc, { name: 'edit-contentlet-loaded', data: { contentType: 'Blog' } });
+            sendLegacyEvent(doc, { name: 'edit-page', data: { url: '/home' } });
+            sendLegacyEvent(doc, { name: 'update-workflow-action' });
+
+            expect(panel.close).not.toHaveBeenCalled();
+            expect(saved).not.toHaveBeenCalled();
+        });
+
+        it('listens to the new document after every reload, and only once', () => {
+            open();
+            const first = loadFrame();
+            const second = loadFrame();
+
+            sendLegacyEvent(first.doc, { name: 'close' });
+            sendLegacyEvent(second.doc, { name: 'close' });
+
+            expect(panel.close).toHaveBeenCalledTimes(1);
         });
     });
 
     describe('loading', () => {
-        const spinner = () => spectator.query(byTestId('legacy-editor-loading'), { root: true });
+        const spinner = () => spectator.query(byTestId('legacy-screen-loading'), { root: true });
 
         it('shows a spinner until the legacy editor has loaded', () => {
             open();
-
-            expect(spinner()).toBeTruthy();
-
-            loadFrame();
-            spectator.detectChanges();
-
-            expect(spinner()).toBeNull();
-        });
-
-        // The editor reloads itself on a save, a language switch or a restored version.
-        it('shows it again while the legacy editor reloads itself', () => {
-            open();
-            const { win } = loadFrame();
-            spectator.detectChanges();
-
-            win.dispatchEvent(new Event('pagehide'));
-            spectator.detectChanges();
 
             expect(spinner()).toBeTruthy();
 
@@ -622,16 +785,6 @@ describe('DotLegacyEditorSidePanelComponent', () => {
         });
     });
 
-    describe('layout', () => {
-        it('asks the drawer for no padding and a flex row, so the iframe fills it', () => {
-            open();
-
-            expect(panel.contentStyleClass()).toBe('p-0! flex');
-        });
-    });
-
-    // The close button, Escape in the admin page and the mask belong to the drawer, which sends
-    // them to `requestClose`; they are tested with it, in `@dotcms/ui`.
     describe('closing', () => {
         it('closes the panel from requestClose when nothing changed', () => {
             open();
@@ -639,125 +792,6 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             spectator.component.requestClose();
 
             expect(panel.close).toHaveBeenCalledTimes(1);
-        });
-
-        /** Every keydown on the admin page while `run` runs. */
-        const keysOnAdminPage = (run: () => void): KeyboardEvent[] => {
-            const keys: KeyboardEvent[] = [];
-            const listener = (event: Event) => keys.push(event as KeyboardEvent);
-            document.addEventListener('keydown', listener);
-            run();
-            document.removeEventListener('keydown', listener);
-
-            return keys;
-        };
-
-        it('presses Escape again on the admin page when it is pressed inside the legacy editor, which the admin page never sees', () => {
-            open();
-            const { doc } = loadFrame();
-
-            const keys = keysOnAdminPage(() =>
-                doc.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))
-            );
-
-            expect(keys).toEqual([expect.objectContaining({ key: 'Escape', cancelable: true })]);
-        });
-
-        // The admin page can't see the editor's own dialogs (Dojo, TinyMCE), so an Escape one of
-        // them already handled is told apart by having been consumed.
-        it('keeps an Escape the legacy editor already handled to itself', () => {
-            open();
-            const { doc } = loadFrame();
-            const handledByEditor = new KeyboardEvent('keydown', {
-                key: 'Escape',
-                bubbles: true,
-                cancelable: true
-            });
-            handledByEditor.preventDefault();
-
-            const keys = keysOnAdminPage(() => doc.dispatchEvent(handledByEditor));
-
-            expect(keys).toEqual([]);
-        });
-    });
-
-    describe('legacy editor events', () => {
-        it("closes the panel on the editor's own close", () => {
-            open();
-            const { doc } = loadFrame();
-            const closed = panel.close;
-
-            sendLegacyEvent(doc, { name: 'close' });
-
-            expect(closed).toHaveBeenCalledTimes(1);
-        });
-
-        it('closes the panel when a page was deleted', () => {
-            open();
-            const { doc } = loadFrame();
-            const closed = panel.close;
-
-            sendLegacyEvent(doc, { name: 'deleted-page', payload: {} });
-
-            expect(closed).toHaveBeenCalledTimes(1);
-        });
-
-        it('reports a save with the identifier, the saved inode and the language it shows', () => {
-            open();
-            const { doc } = loadFrame();
-            const saved = vi.fn();
-            spectator.output('saved').subscribe(saved);
-
-            sendLegacyEvent(doc, {
-                name: 'save-page',
-                payload: {
-                    contentletIdentifier: 'id-1',
-                    contentletInode: 'abc2',
-                    allLangContentlets: [{ inode: 'abc2', identifier: 'id-1', languageId: 1 }]
-                }
-            });
-
-            expect(saved).toHaveBeenCalledWith({
-                identifier: 'id-1',
-                inode: 'abc2',
-                languageId: 1
-            });
-        });
-
-        it('applies the admin UI colors to the editor once it loads', () => {
-            open();
-            const { doc } = loadFrame();
-
-            expect(spectator.inject(DotUiColorsService).setColors).toHaveBeenCalledWith(
-                doc.querySelector('html')
-            );
-        });
-
-        it('ignores events it has no use for', () => {
-            open();
-            const { doc } = loadFrame();
-            const closed = panel.close;
-            const saved = vi.fn();
-            spectator.output('saved').subscribe(saved);
-
-            sendLegacyEvent(doc, { name: 'edit-contentlet-loaded', data: { contentType: 'Blog' } });
-            sendLegacyEvent(doc, { name: 'edit-page', data: { url: '/home' } });
-
-            expect(closed).not.toHaveBeenCalled();
-            expect(saved).not.toHaveBeenCalled();
-        });
-
-        it('listens to the new document after every reload, and only once', () => {
-            open();
-            const first = loadFrame();
-            const second = loadFrame();
-            const closed = panel.close;
-
-            // The old document is gone after a reload; only the current one is heard.
-            sendLegacyEvent(first.doc, { name: 'close' });
-            sendLegacyEvent(second.doc, { name: 'close' });
-
-            expect(closed).toHaveBeenCalledTimes(1);
         });
     });
 });

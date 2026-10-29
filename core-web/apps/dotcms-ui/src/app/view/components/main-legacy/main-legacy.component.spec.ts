@@ -11,7 +11,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 import {
     DotAlertConfirmService,
@@ -216,6 +216,19 @@ describe('MainLegacyComponent', () => {
     it('should have messages components', () => {
         expect(de.query(By.css('dot-large-message-display')) !== null).toBe(true);
         expect(de.query(By.css('dot-large-message-display')) !== null).toBe(true);
+    });
+
+    /**
+     * Panels opened by root services (the legacy JSP portlets' events, the deep links) resolve
+     * their toasts through the root injector (#38303, FR-037). Nothing provided a PrimeNG
+     * MessageService or a toast at the admin root before, so their messages had nowhere to go.
+     */
+    describe('side panel toasts', () => {
+        it('should provide a MessageService and a toast beside the side panel outlet', () => {
+            expect(de.injector.get(MessageService)).toBeDefined();
+            expect(de.query(By.css('p-toast'))).not.toBeNull();
+            expect(de.query(By.css('dot-side-panel-outlet'))).not.toBeNull();
+        });
     });
 
     describe('Create Contentlet', () => {
