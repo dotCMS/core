@@ -346,7 +346,11 @@ public class ReindexQueueFactory {
 
     private static long lastIdIndexed = 0;
 
-    @VisibleForTesting
+    /**
+     * Moves the journal cursor back to the start, so the next load reads every row this node owns
+     * again, including rows handed out earlier whose batch never finished. {@link ReindexThread}
+     * calls it after a batch throws; tests call it to start from a known state.
+     */
     static void resetLastIdReindexed() {
         lastIdIndexed = 0;
     }

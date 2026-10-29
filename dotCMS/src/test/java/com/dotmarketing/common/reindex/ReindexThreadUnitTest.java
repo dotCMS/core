@@ -792,6 +792,53 @@ public class ReindexThreadUnitTest extends UnitTestBase {
     }
 
     /**
+     * A batch that throws must be read again after the back-off.
+     *
+     * <p>{@code findContentToReindex()} moves {@code ReindexQueueFactory.lastIdIndexed} past every
+     * row it hands out. When the batch then throws before its rows are acknowledged or marked as
+     * failed (the pool is exhausted, so loading the content and marking the failure both fail),
+     * those rows are still in the journal but below the cursor. The next load found nothing,
+     * the worker paused itself for {@code REINDEX_THREAD_PAUSE_IN_MINUTES}, and the rows waited
+     * that long. Seen in CI as {@code ShortyIdApiTest.test404CacheWhenDBDown} stalling the
+     * suite's 60 second drain.</p>
+     */
+    @Test
+    public void failedBatchIsReadAgainAfterTheBackOff() throws Exception {
+        final AtomicInteger appends = new AtomicInteger();
+        final ContentletIndexAPI indexApi = mockIndexApi();
+        doAnswer(inv -> {
+            appends.incrementAndGet();
+            throw new DotDataException("Connection is not available");
+        }).when(indexApi).appendToBulkProcessor(any(), any());
+
+        final Field cursor = ReindexQueueFactory.class.getDeclaredField("lastIdIndexed");
+        cursor.setAccessible(true);
+        cursor.setLong(null, 42L);
+
+        final ReindexThread thread = newThread(alwaysWorkingQueue(null), indexApi);
+        setStateRunning(thread);
+
+        final Thread runner = startRunnable(thread);
+        try {
+            assertTrue("the batch should have been attempted",
+                    awaitTrue(() -> appends.get() > 0, 3_000));
+            assertTrue("a batch that threw must be read again, so the journal cursor must go "
+                            + "back to the start; it is " + cursor.getLong(null),
+                    awaitTrue(() -> {
+                        try {
+                            return cursor.getLong(null) == 0L;
+                        } catch (IllegalAccessException e) {
+                            throw new IllegalStateException(e);
+                        }
+                    }, 3_000));
+        } finally {
+            ReindexThread.stopThread();
+            runner.join(3_000);
+            ReindexQueueFactory.resetLastIdReindexed();
+        }
+    }
+
+    /**
      * Review finding 5 — {@code pause()} must not downgrade the terminal {@code SHUTDOWN}.
      *
      * <p>{@code pause()} is public and is called from {@code ContentletIndexAPIImpl} around a full

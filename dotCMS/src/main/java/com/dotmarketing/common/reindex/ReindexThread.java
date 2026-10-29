@@ -467,6 +467,9 @@ public class ReindexThread {
      * and {@link IndexBulkProcessor}. The processor is closed (blocking until {@code afterBulk}
      * completes) before the next batch starts, so there is no shared mutable state between
      * consecutive batches and no TOCTOU race on the processor reference.</p>
+     *
+     * <p>When a batch throws, the journal cursor is reset before the back-off, so the batch's
+     * rows are read again on the next pass instead of waiting for the pause to expire.</p>
      */
     private void runReindexLoop() {
         while (!isTerminal()) {
@@ -516,6 +519,10 @@ public class ReindexThread {
                     // SLEEP_ON_ERROR forever against a JVM that cannot recover.
                     throw (Error) ex;
                 }
+                // The batch that threw was neither acked nor marked failed, but the journal
+                // cursor is already past it. Without a reset the next load finds nothing, the
+                // worker pauses itself, and those rows wait out REINDEX_THREAD_PAUSE_IN_MINUTES.
+                ReindexQueueFactory.resetLastIdReindexed();
                 if (ex instanceof ReindexPoolExhaustedException) {
                     // The mapping guard refused the batch because the storage it needs is not
                     // answering. No journal entry was failed, so the work is still queued — back
