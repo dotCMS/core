@@ -240,10 +240,7 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
 
         const request = contentlet
             ? this.#editRequest(contentlet, contentlet.identifier, contentTypeVariable)
-            : this.#createRequest(
-                  contentTypeVariable,
-                  open.languageId ?? this.#createLanguageId()
-              );
+            : this.#createRequest(contentTypeVariable, open.languageId ?? this.#createLanguageId());
 
         this.#forceLegacyEditor.set(true);
         this.#panelRequest.set(request);

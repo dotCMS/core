@@ -5304,7 +5304,10 @@ describe('DotContentDriveShellComponent', () => {
         const openedContent = (): OpenedContent => {
             const content = opener.opened.at(-1);
 
-            expect(content, 'the shell opens content through DotEditContentOpenerService').toBeDefined();
+            expect(
+                content,
+                'the shell opens content through DotEditContentOpenerService'
+            ).toBeDefined();
 
             return content as OpenedContent;
         };
@@ -5398,9 +5401,9 @@ describe('DotContentDriveShellComponent', () => {
                     identifier: 'id-9',
                     languageId: 2
                 });
-                expect(
-                    (store.reloadContentDrive as Mock).mock.invocationCallOrder[0]
-                ).toBeLessThan((navigationService.panelSaved as Mock).mock.invocationCallOrder[0]);
+                expect((store.reloadContentDrive as Mock).mock.invocationCallOrder[0]).toBeLessThan(
+                    (navigationService.panelSaved as Mock).mock.invocationCallOrder[0]
+                );
                 // The panel stays open after a save.
                 expect(navigationService.closeEditPanel).not.toHaveBeenCalled();
             });
