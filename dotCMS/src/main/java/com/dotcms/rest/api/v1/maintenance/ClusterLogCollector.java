@@ -6,9 +6,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.FileInputStream;
@@ -17,9 +14,6 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -45,7 +39,11 @@ public class ClusterLogCollector {
 
     private static final int DEFAULT_TIMEOUT_SECONDS = 300;
     private static final int DEFAULT_CONNECT_TIMEOUT_SECONDS = 10;
-    private static final String DEFAULT_SCHEME = "auto";
+    private static final String HTTP_SCHEME = "http";
+    private static final String HTTPS_SCHEME = "https";
+    private static final String HTTPS_FAILURE_HINT = " (peers are reached over HTTPS and verified"
+            + " against the JVM trust store; set " + CONFIG_SCHEME
+            + "=http to reach them over plain HTTP)";
 
     private final List<Server> peerServers;
     private final String fileName;
@@ -86,13 +84,15 @@ public class ClusterLogCollector {
      * <p>The scheme used for peer requests is controlled by the
      * {@code CLUSTER_LOG_DOWNLOAD_SCHEME} configuration property:
      * <ul>
-     *   <li>{@code "auto"} (default) — tries HTTPS first, falls back to HTTP</li>
-     *   <li>{@code "https"} — HTTPS only</li>
-     *   <li>{@code "http"} — HTTP only</li>
+     *   <li>{@code "http"}: plain HTTP</li>
+     *   <li>any other value, or none (default): HTTPS</li>
      * </ul>
      *
-     * <p>When HTTPS is used, self-signed certificates are accepted because
-     * cluster-internal communication is trusted.
+     * <p>HTTPS peers are verified with the JVM's default trust store and hostname
+     * check: each peer must present a certificate the JVM trusts, issued for the
+     * address it is reached at (its IP address when the server record has one).
+     * A peer request that fails is reported in {@code _errors.txt} and is not
+     * retried with another scheme.
      *
      * @return a {@link StreamingOutput} streaming the assembled ZIP
      */
@@ -102,10 +102,12 @@ public class ClusterLogCollector {
                 CONFIG_CONNECT_TIMEOUT_SECONDS, DEFAULT_CONNECT_TIMEOUT_SECONDS);
         final int readTimeout = Config.getIntProperty(
                 CONFIG_TIMEOUT_SECONDS, DEFAULT_TIMEOUT_SECONDS);
-        final String scheme = Config.getStringProperty(CONFIG_SCHEME, DEFAULT_SCHEME);
+        final String scheme = resolveScheme();
+        final String failureHint = HTTPS_SCHEME.equals(scheme) ? HTTPS_FAILURE_HINT : "";
 
-        final HttpClient httpsClient = buildHttpClient(connectTimeout, true);
-        final HttpClient httpClient = buildHttpClient(connectTimeout, false);
+        final HttpClient httpClient = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(connectTimeout))
+                .build();
 
         // Fire off all peer requests in parallel
         final Map<String, CompletableFuture<byte[]>> futures = new LinkedHashMap<>();
@@ -118,29 +120,10 @@ public class ClusterLogCollector {
                 continue;
             }
 
-            final String basePath = host + ":" + localPort
+            final String url = scheme + "://" + host + ":" + localPort
                     + "/api/v1/maintenance/_downloadLog/" + fileName;
 
-            final CompletableFuture<byte[]> future;
-
-            if ("auto".equalsIgnoreCase(scheme)) {
-                // Try HTTPS first, fall back to HTTP on connection failure
-                future = fetchLog(httpsClient, "https://" + basePath, readTimeout, peer)
-                        .thenCompose(resp -> {
-                            if (resp != null) {
-                                return CompletableFuture.completedFuture(resp);
-                            }
-                            Logger.info(this, "HTTPS failed for peer " + peer.serverId
-                                    + ", falling back to HTTP");
-                            return fetchLog(httpClient, "http://" + basePath, readTimeout, peer);
-                        });
-            } else if ("https".equalsIgnoreCase(scheme)) {
-                future = fetchLog(httpsClient, "https://" + basePath, readTimeout, peer);
-            } else {
-                future = fetchLog(httpClient, "http://" + basePath, readTimeout, peer);
-            }
-
-            futures.put(labelForServer(peer), future);
+            futures.put(labelForServer(peer), fetchLog(httpClient, url, readTimeout, peer));
         }
 
         // Wait for all responses
@@ -156,12 +139,13 @@ public class ClusterLogCollector {
                     Logger.info(this, "Received log from " + label
                             + " (" + body.length + " bytes)");
                 } else {
-                    final String msg = "Server " + label + " — no successful response";
+                    final String msg = "Server " + label + " — no successful response" + failureHint;
                     Logger.warn(this, msg);
                     errors.add(msg);
                 }
             } catch (Exception e) {
-                final String msg = "Failed to retrieve log from " + label + ": " + e.getMessage();
+                final String msg = "Failed to retrieve log from " + label + ": " + e.getMessage()
+                        + failureHint;
                 Logger.warn(this, msg, e);
                 errors.add(msg);
             }
@@ -194,10 +178,24 @@ public class ClusterLogCollector {
     }
 
     /**
+     * Returns the scheme for peer requests: {@code http} when
+     * {@code CLUSTER_LOG_DOWNLOAD_SCHEME} is {@code http} (case and surrounding
+     * spaces ignored), otherwise {@code https}.
+     *
+     * @return {@code "http"} or {@code "https"}
+     */
+    private static String resolveScheme() {
+        final String configured = Config.getStringProperty(CONFIG_SCHEME, HTTPS_SCHEME);
+        return configured != null && HTTP_SCHEME.equalsIgnoreCase(configured.trim())
+                ? HTTP_SCHEME
+                : HTTPS_SCHEME;
+    }
+
+    /**
      * Attempts to fetch a log file from the given URL. Returns the response
      * body bytes on success (HTTP 200), or {@code null} on failure. Connection
-     * errors (e.g. HTTPS not available) return null without logging an error
-     * so the caller can fall back to another scheme.
+     * errors (refused connections, failed TLS handshakes, timeouts) are logged
+     * at INFO and return {@code null}; the caller reports the peer as failed.
      */
     private CompletableFuture<byte[]> fetchLog(final HttpClient client,
                                                 final String url,
@@ -234,60 +232,6 @@ public class ClusterLogCollector {
                     return null;
                 });
     }
-
-    /**
-     * Builds an {@link HttpClient} with the given connect timeout. When
-     * {@code trustAllCerts} is {@code true}, the client accepts any TLS
-     * certificate — this is appropriate for cluster-internal communication
-     * where peers may use self-signed certificates.
-     */
-    private HttpClient buildHttpClient(final int connectTimeoutSeconds,
-                                        final boolean trustAllCerts) {
-        final HttpClient.Builder builder = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(connectTimeoutSeconds));
-
-        if (trustAllCerts) {
-            try {
-                final SSLContext sslContext = SSLContext.getInstance("TLS");
-                sslContext.init(null, new TrustManager[]{TRUST_ALL_MANAGER}, null);
-                builder.sslContext(sslContext);
-
-                // Java's HttpClient internally forces the endpoint identification
-                // algorithm to "HTTPS", ignoring any SSLParameters we set.
-                // The only way to disable hostname/SAN verification is this
-                // system property. Cluster peers often use self-signed certs
-                // without SAN entries for every possible container IP address.
-                System.setProperty(
-                        "jdk.internal.httpclient.disableHostnameVerification", "true");
-            } catch (NoSuchAlgorithmException | KeyManagementException e) {
-                Logger.error(this, "Failed to create trust-all SSL context, "
-                        + "HTTPS with self-signed certs will not work: " + e.getMessage(), e);
-            }
-        }
-
-        return builder.build();
-    }
-
-    /**
-     * A trust manager that accepts all certificates. Used only for
-     * cluster-internal peer communication where self-signed certs are expected.
-     */
-    private static final X509TrustManager TRUST_ALL_MANAGER = new X509TrustManager() {
-        @Override
-        public void checkClientTrusted(final X509Certificate[] chain, final String authType) {
-            // Trust all — cluster-internal
-        }
-
-        @Override
-        public void checkServerTrusted(final X509Certificate[] chain, final String authType) {
-            // Trust all — cluster-internal
-        }
-
-        @Override
-        public X509Certificate[] getAcceptedIssuers() {
-            return new X509Certificate[0];
-        }
-    };
 
     /**
      * Resolves the best address for a peer server. Prefers the

@@ -267,8 +267,9 @@ public class MaintenanceResource implements Serializable {
      * <p>
      * The local server's log is always included. For every other alive server in
      * the cluster, this method creates a short-lived API token and calls the
-     * peer's {@code _downloadLog} endpoint over HTTP using the Java native
-     * {@link java.net.http.HttpClient}.
+     * peer's {@code _downloadLog} endpoint over HTTPS, or over plain HTTP when
+     * {@code CLUSTER_LOG_DOWNLOAD_SCHEME} is {@code http}, using the Java native
+     * {@link java.net.http.HttpClient} (see {@link ClusterLogCollector#collect()}).
      * <p>
      * If a peer server is unreachable or returns an error, the ZIP will still
      * contain all successfully retrieved logs plus an {@code _errors.txt} entry
