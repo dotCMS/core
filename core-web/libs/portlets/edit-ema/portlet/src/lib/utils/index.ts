@@ -4,18 +4,20 @@ import {
     DotCMSContentlet,
     DotContainerMap,
     DotDevice,
-    DotExperiment
+    DotExperiment,
+    EXPERIMENT_RETURN_PARAM
 } from '@dotcms/dotcms-models';
 import {
     DotCMSPage,
     DotCMSPageAssetContainers,
+    DotCMSSite,
     DotCMSURLContentMap,
     DotCMSVanityUrl,
     DotCMSViewAsPersona
 } from '@dotcms/types';
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
-import { DotPageApiParams } from '../services/dot-page-api/dot-page-api.service';
+import { DotPageApiParams, DotPageAssetKeys } from '../services/dot-page-api/dot-page-api.service';
 import { COMMON_ERRORS, DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { CONTAINER_INSERT_ERROR } from '../shared/enums';
 import {
@@ -25,7 +27,8 @@ import {
     ContentTypeDragPayload,
     DotPageAssetParams,
     DragDatasetItem,
-    PageContainer
+    PageContainer,
+    SelectedContentlet
 } from '../shared/models';
 import { IframeAccessMode, Orientation } from '../store/models';
 
@@ -400,6 +403,36 @@ export function areContainersEquals(
         currentContainer.identifier === containerToFind?.identifier &&
         currentContainer.uuid === containerToFind?.uuid
     );
+}
+
+/**
+ * Whether the selected contentlet is gone from the container it was selected in, once the page's
+ * containers become `pageContainers`. False when no contentlet is selected.
+ *
+ * @param {SelectedContentlet | null} selected - The editor's selection.
+ * @param {PageContainer[]} pageContainers - The page's containers after a change.
+ * @return {boolean} True when the selection points at a contentlet that is no longer there.
+ */
+export function isSelectedContentletGone(
+    selected: SelectedContentlet | null,
+    pageContainers: PageContainer[]
+): boolean {
+    const payload = selected?.payload;
+
+    if (!payload?.contentlet?.identifier) {
+        return false;
+    }
+
+    const selectedContentletId = payload.contentlet.identifier;
+
+    return !pageContainers.some((container) => {
+        // For now, if is not the same container, we deactivate the active contentlet
+        // This can be improved in the future to check if the contentlet was moved, but we need to implement optimistic updates in UVE first
+        // Because moving contentlets change the container structure, and we need to have a rollback mechanism in case the update fails
+        const isSameContainer = areContainersEquals(container, payload.container);
+
+        return container.contentletsId?.includes(selectedContentletId) && isSameContainer;
+    });
 }
 
 /**
@@ -1029,11 +1062,12 @@ export const checkClientHostAccess = (
  * Otherwise, it falls back to the URL extracted from the event.
  *
  * @param {string | undefined} url - The URL extracted from the event.
+ * @param {DotCMSURLContentMap | undefined} urlContentMap - The page's URL map, when it has one.
  * @returns {string | undefined} - The final target URL for navigation, or undefined if none.
  */
 export function getTargetUrl(
     url: string | undefined,
-    urlContentMap: DotCMSURLContentMap
+    urlContentMap: DotCMSURLContentMap | undefined
 ): string | undefined {
     // Return URL from content map or fallback to the provided URL
     return urlContentMap?.URL_MAP_FOR_CONTENT || url;
@@ -1048,6 +1082,37 @@ export function getTargetUrl(
 export function shouldNavigate(targetUrl: string | undefined, currentUrl: string): boolean {
     // Navigate if the target URL is defined and different from the current URL
     return targetUrl !== undefined && !compareUrlPaths(targetUrl, currentUrl);
+}
+
+/**
+ * The page to load after the legacy editor saved a page in a new language. The language comes from
+ * the `htmlPageReferer` the editor reports; the URL is added only when that page is not the one on
+ * screen. A URL-mapped page is compared by its URL map, since its referer is the detail page.
+ *
+ * @param {string} htmlPageReferer - The page URL the legacy editor reports, relative or absolute.
+ * @param {string} options.origin - Where a relative referer resolves from.
+ * @param {DotCMSURLContentMap | undefined} options.urlContentMap - The URL map of the page on screen, if any.
+ * @param {string} options.currentUrl - The URL of the page on screen.
+ * @returns The params for `pageLoad`: the language, plus the URL when the page moved. The language
+ * is `undefined` when the referer carries none, which the legacy editor never sends.
+ */
+export function getLanguageChangePageParams(
+    htmlPageReferer: string,
+    {
+        origin,
+        urlContentMap,
+        currentUrl
+    }: { origin: string; urlContentMap: DotCMSURLContentMap | undefined; currentUrl: string }
+): { url?: string; language_id?: string } {
+    const url = new URL(htmlPageReferer, origin); // Add base for relative URLs
+    const targetUrl = getTargetUrl(url.pathname, urlContentMap);
+    const language_id = url.searchParams.get('com.dotmarketing.htmlpage.language') ?? undefined;
+
+    if (shouldNavigate(targetUrl, currentUrl)) {
+        return { url: targetUrl, language_id };
+    }
+
+    return { language_id };
 }
 
 /**
@@ -1229,6 +1294,57 @@ export const isSamePageNavigation = (incomingUrl: string, currentUrl: string): b
 
     return target.pathname === current.pathname;
 };
+
+/**
+ * Tells whether a link's hostname points at the site of the page being edited.
+ *
+ * Pages often link to their own site with an absolute URL
+ * (`https://www.site.com/news?year=2025`), and the admin usually runs on a
+ * different host than the site. Those links must load inside the editor like
+ * relative ones, so the site's hostname and aliases count as internal, as
+ * well as the admin host itself.
+ *
+ * @param {string} hostname - Hostname of the clicked link
+ * @param {Pick<DotCMSSite, 'hostname' | 'aliases'> | undefined} site - Site of the edited page
+ * @param {string} adminHostname - Hostname the admin runs on
+ * @returns {boolean} `true` when the link belongs to the edited site
+ */
+export function isPageSiteHost(
+    hostname: string,
+    site: Pick<DotCMSSite, 'hostname' | 'aliases'> | undefined,
+    adminHostname: string
+): boolean {
+    // Aliases are stored one per line, but commas are accepted too.
+    const aliases = (site?.aliases ?? '').split(/[\s,]+/);
+    const siteHosts = [adminHostname, site?.hostname, ...aliases];
+
+    return siteHosts.some((host) => !!host && host.toLowerCase() === hostname.toLowerCase());
+}
+
+/**
+ * Returns the query params of the current page that the editor does not own,
+ * such as a filter a page link added.
+ *
+ * `pageLoad` merges new params over the current ones, so these would otherwise
+ * survive every later link navigation. Setting them to `undefined` clears
+ * them: `undefined` values are left out of both the Page API request and the
+ * admin URL. Editor params (language, persona, mode, variant, device…) are not
+ * returned, so they still follow the editor.
+ *
+ * @param {DotPageAssetParams | null} pageParams - Params of the current page
+ * @returns {string[]} The keys of the page-owned params
+ */
+export function getPageOwnedParamKeys(pageParams: DotPageAssetParams | null): string[] {
+    const editorKeys = new Set<string>([
+        ...Object.values(DotPageAssetKeys),
+        EXPERIMENT_RETURN_PARAM,
+        'device',
+        'orientation',
+        'seo'
+    ]);
+
+    return Object.keys(pageParams ?? {}).filter((key) => !editorKeys.has(key));
+}
 
 /**
  * Scrolls a traditional page's iframe to the element a URL fragment points at.

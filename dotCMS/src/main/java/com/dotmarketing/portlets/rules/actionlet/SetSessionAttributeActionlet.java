@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
+import com.dotcms.rest.exception.InvalidRuleParameterException;
 import com.google.common.base.Preconditions;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
@@ -7,6 +8,7 @@ import com.dotmarketing.portlets.rules.parameter.ParameterDefinition;
 import com.dotmarketing.portlets.rules.parameter.display.TextInput;
 import com.dotmarketing.portlets.rules.parameter.type.TextType;
 import java.util.Map;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang.StringUtils;
@@ -44,12 +46,30 @@ public class SetSessionAttributeActionlet extends RuleActionlet<SetSessionAttrib
         return new Instance(parameters);
     }
 
+    /**
+     * Refuses session attribute names that only dotCMS sets.
+     *
+     * @param parameters The action parameters, keyed by parameter name.
+     * @return The reserved attribute name, or empty when the name is an ordinary one.
+     */
+    @Override
+    public Optional<String> getRefusedName(final Map<String, ParameterModel> parameters) {
+        return reservedAttributeName(parameters, SESSION_KEY);
+    }
+
     static class Instance implements RuleComponentInstance {
 
         private final String key;
         private final String value;
 
+        /**
+         * Builds the action from its parameters, refusing a reserved session attribute name with a
+         * client error.
+         */
         public Instance(Map<String, ParameterModel> parameters) {
+            if (reservedAttributeName(parameters, SESSION_KEY).isPresent()) {
+                throw new InvalidRuleParameterException("The attribute name is reserved for dotCMS");
+            }
             key = parameters.get(SESSION_KEY).getValue();
             String v = parameters.get(SESSION_VALUE).getValue();
             value = v != null ? v : "";

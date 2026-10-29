@@ -16,7 +16,8 @@ import { DotColorIconComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { ContentletPayload } from '../../../../shared/models';
 import { UVEStore } from '../../../../store/dot-uve.store';
-import { ContentletEditData, CopyMode } from '../types';
+import { ContentletEditData } from '../../../../store/features/editor/models';
+import { CopyMode } from '../types';
 
 /**
  * Asks the user "edit this contentlet on every page where it appears,
