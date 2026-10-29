@@ -414,11 +414,16 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 	}
 
 	/**
-	 * This method was extracted from {@link PublishFactory#publishAsset(Inode, User, boolean)},
-	 * since in the future template wont inherit from WebAsset
-	 * @param template
-	 * @throws DotDataException
-	 * @throws DotSecurityException
+	 * Makes the template's working version live and publishes the containers it uses that the
+	 * user holds PUBLISH on; a container the user may not publish is left as it is. Extracted from
+	 * {@link PublishFactory#publishAsset(Inode, User, boolean)}, since in the future template wont
+	 * inherit from WebAsset.
+	 *
+	 * @param template the {@link Template} to publish
+	 * @param user the {@link User} publishing, whose PUBLISH permission decides each container
+	 * @throws DotDataException if the template or its containers cannot be read or saved
+	 * @throws DotSecurityException if the template's files cannot be read as the user
+	 * @throws WebAssetException if a container cannot be published
 	 */
 	private void publishTemplate(final Template template,final User user)
 			throws DotSecurityException, DotDataException, WebAssetException {
@@ -448,7 +453,13 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 						"*****I'm a Template -- Publishing my Container Child= " + container
 								.getInode());
 				if (!container.isLive()) {
-					PublishFactory.publishAsset(container, user, false);
+					if (this.permissionAPI.doesUserHavePermission(container, PERMISSION_PUBLISH, user, false)) {
+						PublishFactory.publishAsset(container, user, false);
+					} else {
+						Logger.debug(this, () -> "The user: " + user.getUserId()
+								+ " does not have permission to publish the container: " + container.getIdentifier()
+								+ ", leaving it unpublished");
+					}
 				}
 			}
 			templateWorkingVersion.setModDate(new java.util.Date());

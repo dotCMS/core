@@ -81,15 +81,15 @@ public class PublishFactory {
 	}
 
     /**
-     * This method publish a given and asset and its related assets, if a user is passed the method will check permissions to publish,
-     * if the user doesn't have permission to publish one of the related assets then that one will be skipped.
+     * Publishes the given asset and its related assets for the user on the request: the user must
+     * hold PUBLISH on the asset itself, and related assets the user may not publish are skipped.
      *
-     * @param webAsset
-     * @param req
-     * @return
-     * @throws WebAssetException
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * @param webAsset the {@link Inode} whose working version goes live
+     * @param req the request whose user does the publishing
+     * @return true once the asset is published, false when no user can be read from the request
+     * @throws WebAssetException if the asset cannot be published
+     * @throws DotSecurityException if the user holds no PUBLISH permission on the asset
+     * @throws DotDataException if the asset or its permissions cannot be read
      */
     public static boolean publishAsset(Inode webAsset,HttpServletRequest req) throws WebAssetException, DotSecurityException, DotDataException {
 		User user;
@@ -97,6 +97,10 @@ public class PublishFactory {
 			user = PortalUtil.getUser(req);
 		} catch (Exception e1) {
 			Logger.error(PublishFactory.class, "publishAsset: Cannot obtain the user from the request.", e1);
+			return false;
+		}
+		if (user == null) {
+			Logger.error(PublishFactory.class, "publishAsset: There is no user on the request.");
 			return false;
 		}
 
@@ -257,18 +261,19 @@ public class PublishFactory {
 	}
 
 	/**
-	 * This method publish a given and asset and its related assets
-	 * if a user is passed the method will check permissions to publish
-	 * if the user doesn't have permission to publish one of the related assets
-	 * then that one will be skipped
-	 * @param webAsset
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @param isNewVersion  - if passed false then the webasset's mod user and mod date will NOT be altered. @see {@link ContentletAPI#checkinWithoutVersioning(Contentlet, java.util.Map, List, List, User, boolean)}checkinWithoutVersioning.
-	 * @return
-	 * @throws WebAssetException
-	 * @throws DotSecurityException
-	 * @throws DotDataException
+	 * Publishes the working version of the given asset for the given user, and whatever the asset
+	 * drags along: a template's containers, a page's related content, a link's menus. The user
+	 * must hold PUBLISH on the asset itself, or the call is refused before anything is touched.
+	 * Related assets the user may not publish are left as they are.
+	 *
+	 * @param webAsset the {@link Inode} whose working version goes live
+	 * @param user the {@link User} publishing, who must hold PUBLISH on the asset
+	 * @param respectFrontendRoles whether front-end roles count towards the permission checks
+	 * @param isNewVersion if false the asset's mod user and mod date are left as they are. @see {@link ContentletAPI#checkinWithoutVersioning(Contentlet, java.util.Map, List, List, User, boolean)}checkinWithoutVersioning.
+	 * @return true once the asset is published
+	 * @throws WebAssetException if the asset cannot be published
+	 * @throws DotSecurityException if there is no user, or the user holds no PUBLISH permission on the asset
+	 * @throws DotDataException if the asset or its permissions cannot be read
 	 */
 	@SuppressWarnings("unchecked")
 	@WrapInTransaction  // TODO: we need to create a publishAsset method in API and move transactional annotation to there
@@ -279,6 +284,7 @@ public class PublishFactory {
 
 		if (webAsset instanceof WebAsset)
 		{
+			requirePublishPermission((WebAsset) webAsset, user, respectFrontendRoles);
 			try {
 				WebAssetFactory.publishAsset((WebAsset) webAsset, user, isNewVersion); // todo: reviewing here
 			} catch (Exception e) {
@@ -306,7 +312,12 @@ public class PublishFactory {
 
 				Logger.debug(PublishFactory.class, "*****I'm a Template -- Publishing my Container Child=" + container.getInode());
 				if(!container.isLive()){
-					publishAsset(container,user, respectFrontendRoles, isNewVersion);
+					if (permissionAPI.doesUserHavePermission(container, PERMISSION_PUBLISH, user, respectFrontendRoles)) {
+						publishAsset(container,user, respectFrontendRoles, isNewVersion);
+					} else {
+						Logger.debug(PublishFactory.class, "publishAsset: user = " + user.getUserId()
+								+ " does not have permission to publish the container " + container.getInode() + ", skipping it");
+					}
 				}
 
 
@@ -348,6 +359,29 @@ public class PublishFactory {
 
 		return true;
 
+	}
+
+	/**
+	 * Refuses the publish unless the user holds PUBLISH on the asset.
+	 *
+	 * @param webAsset the {@link WebAsset} about to be published
+	 * @param user the {@link User} publishing
+	 * @param respectFrontendRoles whether front-end roles count towards the permission check
+	 * @throws DotSecurityException if there is no user, or the user holds no PUBLISH permission on the asset
+	 * @throws DotDataException if the permissions cannot be read
+	 */
+	private static void requirePublishPermission(final WebAsset webAsset, final User user,
+			final boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+		if (user == null) {
+			throw new DotSecurityException("A user is required to publish the " + webAsset.getType()
+					+ " " + webAsset.getInode());
+		}
+		if (!permissionAPI.doesUserHavePermission(webAsset, PERMISSION_PUBLISH, user, respectFrontendRoles)) {
+			Logger.warn(PublishFactory.class, "publishAsset: user = " + user.getUserId()
+					+ " does not have permission to publish the " + webAsset.getType() + " " + webAsset.getInode());
+			throw new DotSecurityException("User " + user.getUserId() + " does not have permission to publish the "
+					+ webAsset.getType() + " " + webAsset.getInode());
+		}
 	}
 
     /**

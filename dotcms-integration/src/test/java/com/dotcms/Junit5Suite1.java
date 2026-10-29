@@ -52,6 +52,8 @@ import org.junit.platform.suite.api.Suite;
 @SelectClasses({
         JobQueueManagerAPICDITest.class,
         PostgresJobQueueIntegrationTest.class,
+        com.dotmarketing.factories.PublishAssetPermissionIT.class,
+        com.dotmarketing.portlets.links.action.PublishLinksActionIT.class,
         JobQueueManagerAPIIntegrationTest.class,
         JobQueueDomainQueuesBypassIntegrationTest.class,
         JobQueueHelperIntegrationTest.class,
