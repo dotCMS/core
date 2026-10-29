@@ -194,15 +194,9 @@ test.describe('WYSIWYG — insert an image through the AssetPicker', () => {
         await field.expectImageInserted(image.identifier, image.inode, image.title);
 
         await formPage.fillTextField(`E2E WYSIWYG ${uniqueSuffix()}`);
-        await formPage.save();
+        const saved = await formPage.save();
 
-        await page.waitForURL(/\/content\/([a-f0-9-]+)/);
-        const [, savedIdentifier] = page.url().match(/\/content\/([a-f0-9-]+)/) as RegExpMatchArray;
-        expect(savedIdentifier).toBeTruthy();
-
-        await page.goto(`/dotAdmin/#/content/${savedIdentifier}`);
-        await page.waitForLoadState('domcontentloaded');
-        await page.getByTestId('title').waitFor({ state: 'visible', timeout: 15000 });
+        await formPage.reopen(saved.inode);
 
         await field.expectVisible();
         await field.expectImageInserted(image.identifier, image.inode, image.title);
