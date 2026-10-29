@@ -42,6 +42,7 @@ import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
@@ -282,7 +283,8 @@ public class XsltTool implements ViewTool {
 		final TransformerFactory factory;
 		try {
 			factory = newRestrictedFactory();
-		} catch (Exception e) {
+		} catch (Exception | TransformerFactoryConfigurationError e) {
+			// newInstance() reports a missing or unusable engine as an Error, not an Exception.
 			Logger.warn(XsltTool.class,
 					"XSLTTool could not check how the XSLT engine is configured: " + e.getMessage(), e);
 			return false;
