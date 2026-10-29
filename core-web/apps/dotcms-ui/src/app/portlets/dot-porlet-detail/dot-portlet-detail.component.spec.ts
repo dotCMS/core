@@ -1,4 +1,5 @@
 import { mockProvider } from '@openng/spectator/vitest';
+import { MockComponent } from 'ng-mocks';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -41,6 +42,7 @@ import {
 } from '@dotcms/dotcms-js';
 import { LoginServiceMock, MockDotRouterService } from '@dotcms/utils-testing';
 
+import { DotEditContentDeepLinkComponent } from './dot-edit-content-deep-link/dot-edit-content-deep-link.component';
 import { DotPortletDetailComponent } from './dot-portlet-detail.component';
 
 import { DotCustomEventHandlerService } from '../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
@@ -49,7 +51,6 @@ import { DotMenuService } from '../../api/services/dot-menu.service';
 import { MockDotUiColorsService } from '../../test/dot-test-bed';
 import { DotDownloadBundleDialogComponent } from '../../view/components/_common/dot-download-bundle-dialog/dot-download-bundle-dialog.component';
 import { IframeOverlayService } from '../../view/components/_common/iframe/service/iframe-overlay.service';
-import { DotContentletEditorService } from '../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotWorkflowTaskDetailService } from '../../view/components/dot-workflow-task-detail/services/dot-workflow-task-detail.service';
 
 describe('DotPortletDetailComponent', () => {
@@ -88,7 +89,6 @@ describe('DotPortletDetailComponent', () => {
                 DotEventsService,
                 DotGenerateSecurePasswordService,
                 DotLicenseService,
-                DotContentletEditorService,
                 DotWorkflowTaskDetailService,
                 DotDownloadBundleDialogService,
                 DotPushPublishDialogService,
@@ -101,6 +101,10 @@ describe('DotPortletDetailComponent', () => {
                 BrowserAnimationsModule,
                 DotDownloadBundleDialogComponent
             ]
+        }).overrideComponent(DotPortletDetailComponent, {
+            // The deep link opens a side panel on init; its own spec covers that.
+            remove: { imports: [DotEditContentDeepLinkComponent] },
+            add: { imports: [MockComponent(DotEditContentDeepLinkComponent)] }
         });
     }));
 
@@ -124,7 +128,7 @@ describe('DotPortletDetailComponent', () => {
 
         fixture.detectChanges();
         expect(de.query(By.css('dot-workflow-task')) === null).toBe(true);
-        expect(de.query(By.css('dot-contentlets')) === null).toBe(false);
+        expect(de.query(By.css('dot-edit-content-deep-link')) === null).toBe(false);
     });
 
     it('should have dot-workflow-task when parent route id is workflow', () => {
@@ -141,10 +145,10 @@ describe('DotPortletDetailComponent', () => {
 
         fixture.detectChanges();
         expect(de.query(By.css('dot-workflow-task'))).toBeTruthy();
-        expect(de.query(By.css('dot-contentlets')) === null).toBe(true);
+        expect(de.query(By.css('dot-edit-content-deep-link')) === null).toBe(true);
     });
 
-    it('should have dot-contentlets when parent route id is content', () => {
+    it('should open the content deep link when parent route id is content', () => {
         Object.defineProperty(router, 'parent', {
             value: {
                 snapshot: {
@@ -157,7 +161,7 @@ describe('DotPortletDetailComponent', () => {
         });
 
         fixture.detectChanges();
-        expect(de.query(By.css('dot-contentlets'))).toBeTruthy();
+        expect(de.query(By.css('dot-edit-content-deep-link'))).toBeTruthy();
         expect(de.query(By.css('dot-workflow-task')) === null).toBe(true);
     });
 });

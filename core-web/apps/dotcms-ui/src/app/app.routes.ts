@@ -320,11 +320,17 @@ const PORTLETS_IFRAME = [
                 path: ':id',
                 children: [
                     {
-                        loadChildren: () =>
-                            import('@components/dot-contentlet-editor/dot-contentlet-editor.routes').then(
-                                (m) => m.dotContentletEditorRoutes
+                        // A create deep link opens the side panel over the portlet (#38303).
+                        loadComponent: () =>
+                            import('@portlets/dot-porlet-detail/dot-edit-content-deep-link/dot-edit-content-deep-link.component').then(
+                                (m) => m.DotEditContentDeepLinkComponent
                             ),
-                        path: 'new'
+                        path: 'new/:contentType'
+                    },
+                    {
+                        path: 'new',
+                        redirectTo: '/c/content',
+                        pathMatch: 'full'
                     },
                     {
                         loadComponent: () =>
