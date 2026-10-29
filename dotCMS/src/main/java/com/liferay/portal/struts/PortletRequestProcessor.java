@@ -39,9 +39,9 @@ import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.repackage.org.apache.struts.tiles.TilesRequestProcessor;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.portal.struts.StrutsPathAccess;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
-import com.liferay.portal.model.Portlet;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.portal.util.PortalUtil;
@@ -214,9 +214,26 @@ public class PortletRequestProcessor extends TilesRequestProcessor {
 		return super.processMapping(req, res, path);
 	}
 
+	/**
+	 * Restricts the request to the portlets allowed for the mapping's struts action path.
+	 *
+	 * <p>Access is resolved by {@link StrutsPathAccess} from the action path. In the render phase a
+	 * request that is not allowed is forwarded to the access denied page; in the action phase it is
+	 * only stopped, because the forward machinery writes through the portlet response and the action
+	 * phase does not have a render response to write to. The action phase is followed by the render
+	 * phase of the same portlet, which lands on this method again and renders the page.</p>
+	 *
+	 * @param req     the request being processed
+	 * @param res     the response, used to forward a request that is not allowed
+	 * @param mapping the Struts {@link ActionMapping} whose path is about to run
+	 * @return {@code true} when the request may continue
+	 * @throws IOException      if the forward cannot be written
+	 * @throws ServletException if the forward fails
+	 */
+	@Override
 	protected boolean processRoles(
-			HttpServletRequest req, HttpServletResponse res,
-			ActionMapping mapping)
+			final HttpServletRequest req, final HttpServletResponse res,
+			final ActionMapping mapping)
 		throws IOException, ServletException {
 
 		User user = null;
@@ -229,41 +246,18 @@ public class PortletRequestProcessor extends TilesRequestProcessor {
 
 		String path = mapping.getPath();
 
-		if (user != null) {
-			try {
-				String strutsPath = path.substring(
-					1, path.lastIndexOf(StringPool.SLASH));
-
-				Portlet portlet = null;
-
-				if (portlet != null && portlet.isActive()) {
-//					if (!RoleLocalManagerUtil.hasRoles(
-//							user.getUserId(), portlet.getRolesArray())) {
-//						
-//						
-//						throw new PrincipalException();
-//					}
-				}
-				else if (portlet != null && !portlet.isActive()) {
-					ForwardConfig forwardConfig =
-						mapping.findForward(_PATH_PORTAL_PORTLET_INACTIVE);
-
-					processForwardConfig(req, res, forwardConfig);
-
-					return false;
-				}
-			}
-			catch (Exception e) {
-				ForwardConfig forwardConfig =
-					mapping.findForward(_PATH_PORTAL_PORTLET_ACCESS_DENIED);
-
-				processForwardConfig(req, res, forwardConfig);
-
-				return false;
-			}
+		if (StrutsPathAccess.canAccess(path, user)) {
+			return true;
 		}
 
-		return true;
+		if (req.getAttribute(WebKeys.JAVAX_PORTLET_RESPONSE) instanceof RenderResponse) {
+			ForwardConfig forwardConfig =
+				mapping.findForward(_PATH_PORTAL_PORTLET_ACCESS_DENIED);
+
+			processForwardConfig(req, res, forwardConfig);
+		}
+
+		return false;
 	}
 
 	protected boolean processValidateAction(
@@ -388,7 +382,5 @@ public class PortletRequestProcessor extends TilesRequestProcessor {
 
 	private static String _PATH_PORTAL_PORTLET_ACCESS_DENIED =
 		"/portal/portlet_access_denied";
-	private static String _PATH_PORTAL_PORTLET_INACTIVE =
-		"/portal/portlet_inactive";
 
 }

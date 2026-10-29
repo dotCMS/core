@@ -1,4 +1,5 @@
 import { patchState, WritableStateSource } from '@ngrx/signals';
+import { Events } from '@ngrx/signals/events';
 import {
     SpyObject,
     createComponentFactory,
@@ -7,7 +8,7 @@ import {
     mockProvider
 } from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
-import { Subject, of, throwError } from 'rxjs';
+import { Subject, Subscription, of, throwError } from 'rxjs';
 import { describe, expect, vi } from 'vitest';
 
 /**
@@ -100,6 +101,10 @@ import { EditEmaNavigationBarComponent } from './components/edit-ema-navigation-
 import { DotEmaShellComponent } from './dot-ema-shell.component';
 
 import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
+import {
+    DotUveEditContentRequest,
+    uveContentEditorEvents
+} from '../edit-ema-editor/components/dot-uve-content-editor/dot-uve-content-editor.events';
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { FormStatus, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
@@ -700,39 +705,63 @@ describe('DotEmaShellComponent', () => {
                 });
             });
 
-            it('routes the properties click through the active editor (new editor/side panel) when the content route is mounted, instead of the legacy dialog', () => {
-                const openContentForEdit = vi.fn();
-                spectator.component.onRouteActivate({ openContentForEdit });
-                const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+            // The content editor tells the store whether it is placed. It is placed only on the
+            // content screen with a page the user can read; the layout, rules and experiments
+            // screens, and a page the user cannot read (no router outlet), have none.
+            describe('properties and the content editor', () => {
+                let editRequests: DotUveEditContentRequest[];
 
-                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
-                spectator.triggerEventHandler(navBar, 'action', 'properties');
+                const clickProperties = () => {
+                    const navBar = spectator.debugElement.query(
+                        By.css('[data-testid="ema-nav-bar"]')
+                    );
+                    spectator.triggerEventHandler(navBar, 'action', 'properties');
+                };
 
-                expect(openContentForEdit).toHaveBeenCalledWith(
-                    expect.objectContaining({ inode: '123', identifier: '123' })
-                );
-                expect(dialogSpy).not.toHaveBeenCalled();
-            });
+                let editRequestsSubscription: Subscription;
 
-            it('falls back to the legacy dialog when a sibling route (layout/rules/experiments) is active', () => {
-                spectator.component.onRouteActivate({ openContentForEdit: vi.fn() });
-                spectator.component.onRouteDeactivate();
-                const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+                beforeEach(() => {
+                    editRequests = [];
+                    editRequestsSubscription = spectator
+                        .inject(Events)
+                        .on(uveContentEditorEvents.uveEditContentRequested)
+                        .subscribe(({ payload }) => editRequests.push(payload));
+                });
 
-                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
-                spectator.triggerEventHandler(navBar, 'action', 'properties');
+                // The events outlive each test, so a subscription left open would record the
+                // next tests' requests too.
+                afterEach(() => editRequestsSubscription.unsubscribe());
 
-                expect(dialogSpy).toHaveBeenCalled();
-            });
+                it("should ask the content editor to edit the page's contentlet while one is placed, instead of opening the legacy dialog", () => {
+                    store.editorSetContentEditorPlaced(true);
+                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
 
-            it('ignores an activated component that does not expose openContentForEdit (a sibling route)', () => {
-                spectator.component.onRouteActivate({ someOtherMethod: vi.fn() });
-                const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+                    clickProperties();
 
-                const navBar = spectator.debugElement.query(By.css('[data-testid="ema-nav-bar"]'));
-                spectator.triggerEventHandler(navBar, 'action', 'properties');
+                    expect(editRequests).toEqual([
+                        {
+                            contentlet: expect.objectContaining({ inode: '123', identifier: '123' })
+                        }
+                    ]);
+                    expect(dialogSpy).not.toHaveBeenCalled();
+                });
 
-                expect(dialogSpy).toHaveBeenCalled();
+                it("should open the page's properties in the legacy dialog once the content editor is gone", () => {
+                    store.editorSetContentEditorPlaced(true);
+                    store.editorSetContentEditorPlaced(false);
+                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
+
+                    clickProperties();
+
+                    expect(editRequests).toEqual([]);
+                    expect(dialogSpy).toHaveBeenCalledWith({
+                        contentType: undefined,
+                        identifier: '123',
+                        inode: '123',
+                        title: 'hello world',
+                        angularCurrentPortlet: 'edit-page'
+                    });
+                });
             });
         });
 

@@ -210,6 +210,15 @@ public class LazyUserAPIWrapper implements UserAPI {
         this.getUserAPI().updatePassword(user, newpass, currentUser, respectFrontEndRoles);
     }
 
+    /**
+     * Delegates to {@link UserAPI#invalidateLoginTokens(String)}, which gives the user a new login
+     * token id so the login tokens issued before now are rejected.
+     */
+    @Override
+    public String invalidateLoginTokens(final String userId) throws DotDataException {
+        return this.getUserAPI().invalidateLoginTokens(userId);
+    }
+
     @Override
     public void markToDelete(User userToDelete) throws DotDataException {
         this.getUserAPI().markToDelete(userToDelete);
