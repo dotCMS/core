@@ -469,8 +469,17 @@ public class ApiTokenResource implements Serializable {
             throw new DotSecurityException("User should be Admin");
         }
 
+        // null and 0.0.0.0/0 are the only ways to ask for a token without an IP restriction; any
+        // other value must be a valid CIDR, otherwise the caller would get an unrestricted token
+        // while believing it is pinned to a network
         final String netmaskStr = formData.network!=null && !"0.0.0.0/0".equals(formData.network)? formData.network:null;
-        final String netmask    = Try.of(()->new SubnetUtils(netmaskStr).getInfo().getCidrSignature()).getOrNull();
+        final String netmask    = netmaskStr == null ? null
+                : Try.of(()->new SubnetUtils(netmaskStr).getInfo().getCidrSignature()).getOrNull();
+        if (netmaskStr != null && netmask == null) {
+
+            return ExceptionMapperUtil.createResponse(new DotStateException("Invalid network: " + netmaskStr
+                    + " (expected CIDR notation, e.g. 10.0.0.0/8)"), Response.Status.BAD_REQUEST);
+        }
         final Map<String, Object> claims = formData.claims;
         final int expirationSeconds      = formData.expirationSeconds;
 

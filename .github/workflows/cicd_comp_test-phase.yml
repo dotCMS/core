@@ -325,15 +325,18 @@ jobs:
           fi
 
       # The libvips image engine (IMAGE_API_USE_LIBVIPS) is exercised by VipsParityTest.
-      # Install native libvips on the JVM unit-test runner so those tests run instead of
-      # self-skipping. The library is extracted from the published dotcms/java-base image
+      # Install native libvips for JVM parity tests and MainSuite2a's resize integration
+      # tests. Missing native support must not silently turn either into a green skip.
+      # The library is extracted from the published dotcms/java-base image
       # rather than installed from Ubuntu, because libvips is now built from source there
       # with the ImageMagick and OpenEXR delegates removed (#36546) - installing Ubuntu's
       # libvips42 would make the parity tests exercise a different native configuration
       # than the one we ship.
       # Bounded so a wedged registry or mirror can't burn the job timeout (#37118).
       - name: Install native libvips (image engine parity tests)
-        if: matrix.test_type == 'jvm' && matrix.name == 'JVM Unit Tests'
+        if: >-
+          (matrix.test_type == 'jvm' && matrix.name == 'JVM Unit Tests')
+          || (matrix.test_type == 'integration' && contains(matrix.maven_args, '-Dit.test=MainSuite2a'))
         timeout-minutes: 15
         env:
           # Passed through env rather than interpolated into the script body: `${{ }}` is
@@ -392,6 +395,7 @@ jobs:
           cleanup-runner: ${{ matrix.cleanup_runner }}
           dotcms-license: ${{ matrix.needs_license == true && secrets.DOTCMS_LICENSE || '' }}
           requires-node: ${{ matrix.needs_node == true }}
+          needs-maven-repo: ${{ matrix.needs_maven_deps == true }}
           needs-docker-image: ${{ matrix.needs_docker == true }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
           artifacts-from: ${{ env.ARTIFACT_RUN_ID }}

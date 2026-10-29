@@ -1,6 +1,12 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotcms.UnitTestBase;
+import com.dotcms.auth.providers.oauth.OAuthConstants;
+import com.dotcms.filters.interceptor.saml.SamlWebInterceptor;
+import com.dotcms.saml.DotSamlConstants;
+import com.dotcms.rest.exception.InvalidRuleParameterException;
+import com.dotmarketing.filters.TimeMachineFilter;
+import com.liferay.portal.util.WebKeys;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
@@ -24,6 +30,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.mock;
 
 @RunWith(DataProviderRunner.class)
@@ -90,6 +97,41 @@ public class SetRequestAttributeActionletTest extends UnitTestBase {
         actionlet.evaluate(request, null, new SetRequestAttributeActionlet.Instance(params));
 
         Mockito.verify(request).setAttribute(keyValue, "");
+    }
+
+    /**
+     * Request attribute names that only dotCMS itself sets, including the login-flow keys and the
+     * per-site SAML user key.
+     */
+    @DataProvider
+    public static Object[] reservedNames() {
+        return new Object[]{WebKeys.USER_ID, WebKeys.USER, WebKeys.PRINCIPAL_USER_ID,
+                WebKeys.LOGIN_TO_EDIT_MODE, OAuthConstants.SESSION_NATIVE_LOGIN,
+                TimeMachineFilter.TM_DATE_VAR, TimeMachineFilter.TM_LANG_VAR,
+                TimeMachineFilter.TM_HOST_VAR, OAuthConstants.SESSION_STATE,
+                SamlWebInterceptor.ORIGINAL_REQUEST,
+                "48190c8c-42c4-46af-8d1a-0cd5db894797" + DotSamlConstants.SAML_USER_ID};
+    }
+
+    /**
+     * Given an action that names a request attribute only dotCMS sets,
+     * When the action is validated, as it is when it is saved,
+     * Then it is rejected with a client error.
+     */
+    @Test
+    @UseDataProvider("reservedNames")
+    public void reservedRequestAttributeNameIsRejected(final String name) {
+        final SetRequestAttributeActionlet actionlet = new SetRequestAttributeActionlet();
+
+        assertThrows(InvalidRuleParameterException.class,
+                () -> actionlet.doCheckValid(action(name, "value")));
+    }
+
+    private static RuleAction action(final String name, final String value) {
+        final RuleAction action = new RuleAction();
+        action.setParameters(ImmutableList.of(new ParameterModel(REQUEST_KEY, name),
+                new ParameterModel(REQUEST_VALUE, value)));
+        return action;
     }
 
     public static class TestCase {

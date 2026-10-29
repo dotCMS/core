@@ -389,6 +389,20 @@ public interface RoleAPI {
 	 Role loadRoleByKey(String key) throws DotDataException;
 
 	/**
+	 * Loads a role by its key or by its id, for callers that accept either, such as the roles an
+	 * endpoint requires or the entries of a user's {@code roles} payload. Neither lookup caches a
+	 * miss, so the order matters: a value shaped like a UUID is tried as an id first and anything
+	 * else as a key first, and the other lookup only runs when the first one finds nothing.
+	 *
+	 * @param keyOrId the role key, or the role id
+	 *
+	 * @return the {@link Role}, or {@code null} if the value is blank or neither lookup finds one
+	 *
+	 * @throws DotDataException if a lookup fails
+	 */
+	 Role loadRoleByKeyOrId(String keyOrId) throws DotDataException;
+
+	/**
 	 * Retrieves the special role for user
 	 * @param user
 	 * @return

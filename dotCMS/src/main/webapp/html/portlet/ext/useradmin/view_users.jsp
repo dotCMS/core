@@ -1,5 +1,4 @@
 <%@page import="java.time.LocalDate"%>
-<%@page import="java.time.temporal.ChronoUnit"%>
 <%@page import="java.time.Instant"%>
 <%@page import="java.time.format.DateTimeFormatter"%>
 <%@ include file="/html/portlet/ext/useradmin/init.jsp" %>
@@ -470,7 +469,7 @@
 			</label></td>
 			<td><input dojoType="dijit.form.DateTextBox" type="text"
 				name="expiresDate" id="expiresDate"
-				value="<%=DateTimeFormatter.ofPattern("uuuu-MM-dd").format(LocalDate.now().plus(3, ChronoUnit.YEARS))%>"></td>
+				value="<%=DateTimeFormatter.ofPattern("uuuu-MM-dd").format(LocalDate.now().plusDays(364))%>"></td>
 		</tr>
 
 		<tr>
