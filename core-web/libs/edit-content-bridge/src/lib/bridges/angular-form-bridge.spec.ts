@@ -1444,7 +1444,10 @@ describe('AngularFormBridge with a real FormGroup', () => {
             it('should keep the bridge of the context on top', () => {
                 const parent = openContext();
                 const stacked = openContext();
-                const destroy = vi.spyOn(stacked.contextBridge, 'forceDestroy');
+                const destroy = vi.spyOn(
+                    stacked.contextBridge as unknown as { forceDestroy: () => void },
+                    'forceDestroy'
+                );
 
                 AngularFormBridge.popInstance(parent.frame);
 
@@ -1455,7 +1458,10 @@ describe('AngularFormBridge with a real FormGroup', () => {
             it("should destroy the closed context's own bridge", () => {
                 const parent = openContext();
                 openContext();
-                const destroy = vi.spyOn(parent.contextBridge, 'forceDestroy');
+                const destroy = vi.spyOn(
+                    parent.contextBridge as unknown as { forceDestroy: () => void },
+                    'forceDestroy'
+                );
 
                 AngularFormBridge.popInstance(parent.frame);
 

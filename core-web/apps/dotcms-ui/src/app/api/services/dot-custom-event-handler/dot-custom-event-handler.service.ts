@@ -152,7 +152,11 @@ export class DotCustomEventHandlerService {
      */
     #openInSidePanel(request: DotEditContentRequest): void {
         const portletId = this.dotRouterService.currentPortlet.id;
-        const reload = () => this.dotIframeService.reloadData(portletId);
+        const reload = () => {
+            if (portletId) {
+                this.dotIframeService.reloadData(portletId);
+            }
+        };
 
         void openEditContentPanel(
             { ...request, portletId },

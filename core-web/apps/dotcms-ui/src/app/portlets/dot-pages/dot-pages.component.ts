@@ -276,7 +276,7 @@ export class DotPagesComponent {
      * may have deleted or archived it, and a row lookup would then report an error.
      */
     #refreshPages(): void {
-        this.#dotCMSPagesStore.getPages();
+        this.#dotCMSPagesStore['getPages']();
     }
 
     /**
