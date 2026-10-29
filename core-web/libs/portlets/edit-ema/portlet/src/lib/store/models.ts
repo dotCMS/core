@@ -19,6 +19,8 @@ import { UVEFeatureFlags } from '../shared/consts';
 import { EDITOR_STATE, UVE_STATUS } from '../shared/enums';
 import { DotPageAssetParams, SelectedContentlet } from '../shared/models';
 
+import type { UVE_EDIT_PANEL_TABS } from './features/editor/models';
+
 /**
  * Page type classification enum
  * Provides semantic clarity over boolean flag
@@ -122,6 +124,13 @@ export interface UVEState {
     editorSelected: SelectedContentlet | null;
     editorPaletteOpen: boolean;
     editorEditPanelOpen: boolean;
+    /** The tab the edit panel shows: quick edit or the style editor. */
+    editorEditPanelTab: UVE_EDIT_PANEL_TABS;
+    /**
+     * Whether the content editor is placed, so a request to open one has a listener. It is placed
+     * only on the content screen with a page the user can read.
+     */
+    editorContentEditorPlaced: boolean;
     editorOgTags: SeoMetaTags | null;
     editorStyleSchemas: StyleEditorFormSchema[];
 

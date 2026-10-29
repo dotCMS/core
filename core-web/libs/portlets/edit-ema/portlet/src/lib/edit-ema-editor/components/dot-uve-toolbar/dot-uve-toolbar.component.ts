@@ -1,3 +1,5 @@
+import { injectDispatch } from '@ngrx/signals/events';
+
 import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
@@ -5,7 +7,6 @@ import {
     Signal,
     computed,
     inject,
-    output,
     signal,
     viewChild
 } from '@angular/core';
@@ -51,13 +52,13 @@ import { DotEmaInfoDisplayComponent } from './components/dot-ema-info-display/do
 import { DotEmaRunningExperimentComponent } from './components/dot-ema-running-experiment/dot-ema-running-experiment.component';
 import { DotToggleLockButtonComponent } from './components/dot-toggle-lock-button/dot-toggle-lock-button.component';
 import { DotUveDeviceSelectorComponent } from './components/dot-uve-device-selector/dot-uve-device-selector.component';
-import { DeviceSelectorChange } from './components/dot-uve-device-selector/dot-uve-device-selector.models';
 import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-actions/dot-uve-workflow-actions.component';
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
 import { InfoOptions } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { DeviceSelectorChange } from '../../../store/features/editor/models';
 import { PageType } from '../../../store/models';
 import {
     convertLocalTimeToUTC,
@@ -66,6 +67,7 @@ import {
 } from '../../../utils';
 import { readExperimentsPortletSwitch } from '../../../utils/experiments-portlet-switch.util';
 import { CLEARED_VARIANT_PARAMS, leaveTheVariant } from '../../../utils/leave-the-variant.util';
+import { uveContentEditorEvents } from '../dot-uve-content-editor/dot-uve-content-editor.events';
 
 @Component({
     selector: 'dot-uve-toolbar',
@@ -97,11 +99,8 @@ export class DotUveToolbarComponent {
     $personaSelector = viewChild<EditEmaPersonaSelectorComponent>('personaSelector');
     $languageSelector = viewChild<DotLanguageSelectorComponent>('languageSelector');
 
-    translatePage = output<{ page: DotCMSPage; newLanguage: number }>();
-    editUrlContentMap = output<DotCMSURLContentMap>();
-    deviceSelectorChange = output<DeviceSelectorChange>();
-
     readonly #store = inject(UVEStore);
+    readonly #contentEditor = injectDispatch(uveContentEditorEvents);
     readonly #messageService = inject(MessageService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #confirmationService = inject(ConfirmationService);
@@ -229,14 +228,7 @@ export class DotUveToolbarComponent {
     // Computed properties for presentational children
     readonly isTraditionalPage = computed(() => this.#store.pageType() === PageType.TRADITIONAL);
 
-    // Build unified device selector state
-    readonly $deviceSelectorState = computed(() => {
-        return {
-            device: this.#store.viewDevice(),
-            socialMedia: this.#store.viewSocialMedia(),
-            orientation: this.#store.viewDeviceOrientation()
-        };
-    });
+    readonly $deviceSelectorState = this.#store.$viewDeviceSelectorState;
 
     // Build complete toggle lock options for presentational component
     readonly $lockOptions = computed(() => {
@@ -308,6 +300,15 @@ export class DotUveToolbarComponent {
             event.isLockedByCurrentUser,
             event.lockedBy
         );
+    }
+
+    /**
+     * Handle a device, social-media or orientation change from the presentational
+     * DotUveDeviceSelectorComponent
+     * @param change The change the user picked
+     */
+    protected applyDeviceSelectorChange(change: DeviceSelectorChange): void {
+        this.#store.viewApplyDeviceSelectorChange(change);
     }
 
     /**
@@ -517,6 +518,15 @@ export class DotUveToolbarComponent {
     }
 
     /**
+     * Asks the content editor to edit the contentlet a URL-mapped page shows.
+     *
+     * @param contentlet the page's URL-mapped contentlet
+     */
+    protected editUrlContentMap(contentlet: DotCMSURLContentMap): void {
+        this.#contentEditor.uveEditUrlContentMapRequested(contentlet);
+    }
+
+    /**
      * Handle the language selection
      *
      * @param {number} language
@@ -651,7 +661,7 @@ export class DotUveToolbarComponent {
             acceptIcon: 'hidden',
             key: 'shell-confirm-dialog',
             accept: () => {
-                this.translatePage.emit({
+                this.#contentEditor.uveTranslatePageRequested({
                     page: page,
                     newLanguage: language.id
                 });
