@@ -12,7 +12,9 @@ import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TextAreaField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.WysiwygField;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.rendering.velocity.WidgetRenderer;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rendering.velocity.viewtools.RestrictedViewToolAccess;
@@ -53,14 +55,15 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
     }
 
     /**
-     * Main Transform function
-     * @param contentlet
-     * @param map
-     * @param options
-     * @param user
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * Replaces every Velocity-renderable field of the content map with the text its value produces
+     * when evaluated as Velocity. A widget whose field values must stay as text is returned
+     * untouched, so the map carries the same literal values the widget endpoint returns.
+     *
+     * @param contentlet the {@link Contentlet} being transformed
+     * @param map the content map built so far, modified in place
+     * @param options the options the caller asked the transformer for
+     * @param user the {@link User} the transformation runs for
+     * @return the content map, with the renderable fields rendered unless the widget rule says otherwise
      */
     @Override
     protected Map<String, Object> transform(final Contentlet contentlet,
@@ -71,6 +74,8 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
                 .filter(RenderFieldStrategy::isFieldRenderable).collect(Collectors.toList());
 
         final HttpServletRequestImpersonator impersonator = HttpServletRequestImpersonator.newInstance();
+        // Resolved once here rather than per field: it reads the widget's last modifier
+        final boolean renderVelocity = rendersFieldValues(contentlet);
 
         if (UtilMethods.isSet(rederableFields)) {
             rederableFields.forEach(field ->
@@ -78,10 +83,33 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
                             renderFieldValue(impersonator.request(),
                                     HttpServletResponseThreadLocal.INSTANCE.getResponse(),
                                     RenderFieldStrategy.getFieldValue(contentlet, field), contentlet,
-                                    field.variable())));
+                                    field.variable(), renderVelocity)));
         }
 
         return map;
+    }
+
+    /**
+     * Decides whether a contentlet's field values may be evaluated as Velocity. Only widgets are
+     * restricted: their field values run exactly when {@link WidgetRenderer} would evaluate them,
+     * which keeps every caller that renders a field telling the same story about the same widget.
+     * Every other content type renders as it always has.
+     *
+     * @param contentlet the {@link Contentlet} whose field is about to be rendered
+     * @return {@code true} when the field values may be evaluated
+     */
+    public static boolean rendersFieldValues(final Contentlet contentlet) {
+        final ContentType contentType = null == contentlet ? null : contentlet.getContentType();
+        if (null == contentType || BaseContentType.WIDGET != contentType.baseType()) {
+            return true;
+        }
+        if (WidgetRenderer.getInstance().rendersFieldVelocity(contentlet)) {
+            return true;
+        }
+        Logger.debug(RenderFieldStrategy.class.getName(), () -> String.format(
+                "Widget %s: field values left as text, widget field scripting is off for this widget",
+                contentlet.getIdentifier()));
+        return false;
     }
 
     private static String getFieldValue(final Contentlet contentlet, final Field field) {
@@ -152,22 +180,45 @@ public class RenderFieldStrategy extends AbstractTransformStrategy<Contentlet> {
     }
 
     /**
-     * Evaluates a field value as Velocity, with the view tools the content's author may use, and
-     * returns the result: the {@code $dotJSON} map when the code filled it, the rendered text
-     * otherwise, or the raw value when rendering produced nothing.
+     * Returns the text a field value produces when evaluated as Velocity, with the view tools the
+     * content's author may use, or the value itself when this contentlet's field values must not
+     * be evaluated.
      *
-     * @param request    the current request, used to build the Velocity context
-     * @param response   the current response, used to build the Velocity context
-     * @param fieldValue the field value to evaluate
-     * @param contentlet the {@link Contentlet} the field belongs to
-     * @param fieldVar   the field's velocity variable name
-     *
-     * @return the rendered value, or {@code null} when the field value is empty
+     * @param request the current request, used to build the Velocity context
+     * @param response the current response, used to build the Velocity context
+     * @param fieldValue the raw field value
+     * @param contentlet the {@link Contentlet} the value belongs to
+     * @param fieldVar the field's variable name, used for logging
+     * @return the rendered value, the {@code $dotJSON} map the value produced, or the raw value
      */
     public static Object renderFieldValue(final HttpServletRequest request,
             final HttpServletResponse response, final String fieldValue,
             final Contentlet contentlet, final String fieldVar) {
+        return renderFieldValue(request, response, fieldValue, contentlet, fieldVar,
+                rendersFieldValues(contentlet));
+    }
+
+    /**
+     * Same as {@link #renderFieldValue(HttpServletRequest, HttpServletResponse, String, Contentlet,
+     * String)} for a caller that already resolved the rule, so a whole content map costs one
+     * lookup instead of one per field.
+     *
+     * @param request the current request, used to build the Velocity context
+     * @param response the current response, used to build the Velocity context
+     * @param fieldValue the raw field value
+     * @param contentlet the {@link Contentlet} the value belongs to
+     * @param fieldVar the field's variable name, used for logging
+     * @param renderVelocity {@code false} to return the value as it is stored
+     * @return the rendered value, the {@code $dotJSON} map the value produced, or the raw value
+     */
+    static Object renderFieldValue(final HttpServletRequest request,
+            final HttpServletResponse response, final String fieldValue,
+            final Contentlet contentlet, final String fieldVar, final boolean renderVelocity) {
         if(!UtilMethods.isSet(fieldValue)) return null;
+
+        if (!renderVelocity) {
+            return fieldValue;
+        }
 
         final org.apache.velocity.context.Context context = (request!=null && response!=null)
                 ? VelocityUtil.getInstance().getContext(request, response)

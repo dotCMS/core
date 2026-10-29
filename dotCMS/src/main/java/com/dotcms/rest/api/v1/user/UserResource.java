@@ -1481,7 +1481,8 @@ public class UserResource implements Serializable {
 	 * Updates a user from the payload and, when the payload has a {@code roles} field, reconciles the
 	 * user's roles with it. Changing roles requires a CMS Administrator; the role change is checked
 	 * before anything is saved, so a refused request changes nothing. Sending the roles the user
-	 * already holds is not a change.
+	 * already holds is not a change. A new password also invalidates the login tokens issued to the
+	 * user before the change.
 	 *
 	 * @param modUser        The user performing the request.
 	 * @param request        The current request.
@@ -1571,6 +1572,10 @@ public class UserResource implements Serializable {
 
 			this.userAPI.save(userToSave, modUser, validatePassword,
 					!WebAPILocator.getUserWebAPI().isLoggedToBackend(request));
+			if (UtilMethods.isSet(updateUserForm.getPassword())) {
+				// login tokens issued before the password change stop working
+				userToSave.setRememberMeToken(this.userAPI.invalidateLoginTokens(userToSave.getUserId()));
+			}
 			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' has been updated.");
 
