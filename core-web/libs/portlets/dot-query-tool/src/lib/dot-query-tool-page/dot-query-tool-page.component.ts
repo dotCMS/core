@@ -5,17 +5,15 @@ import { DOCUMENT, Location } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    computed,
     DestroyRef,
     effect,
     inject,
-    Injector,
     OnInit,
     signal,
     untracked,
     viewChild
 } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -33,7 +31,7 @@ import { TableModule } from 'primeng/table';
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { catchError, filter, switchMap, take } from 'rxjs/operators';
+import { catchError, take } from 'rxjs/operators';
 
 import {
     DotContentletEditUrlService,
@@ -42,8 +40,8 @@ import {
     DotGlobalMessageService,
     DotMessageService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
-import { EditContentDialogData, loadDotEditContentSidePanel } from '@dotcms/edit-content';
+import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotEditContentRequest, injectEditContentPanel } from '@dotcms/edit-content';
 import {
     DOT_MONACO_BASE_OPTIONS,
     DOT_MONACO_RAW_OPTIONS,
@@ -52,7 +50,6 @@ import {
     DotMessagePipe,
     DotMonacoRunShortcutEditor,
     getDotMonacoRunShortcutLabel,
-    injectSidePanel,
     PrincipalConfiguration,
     registerDotMonacoRunShortcut
 } from '@dotcms/ui';
@@ -115,37 +112,21 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly #editUrlResolver = inject(DotContentletEditUrlService);
     readonly #contentSearch = inject(DotContentSearchService);
     readonly #destroyRef = inject(DestroyRef);
-    readonly #injector = inject(Injector);
 
     /** Keyboard shortcut shown in the Run button tooltip (`⌘ + Enter` / `Ctrl + Enter`). */
     readonly runShortcutLabel = getDotMonacoRunShortcutLabel(this.#document.defaultView?.navigator);
 
     #lastSyncedUrl: string | null = null;
 
-    /**
-     * Feature flag gating the side panel. When off, editing a result opens the editor in a new
-     * browser tab (the previous behavior); when on, results that resolve to the new content editor
-     * open in the in-page side panel instead. Read from the store's `withFlags` slice (batch-fetched
-     * once on init, degrades to `false` on a failed config read) — defaults to `false` until it
-     * resolves, so the safe/previous new-tab behavior is used meanwhile.
-     */
-    readonly $sidePanelEnabled = computed(
-        () => this.store.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] ?? false
-    );
-
-    /** Content shown in the Edit Content side panel, or `null` when it is closed. */
-    readonly $editPanelRequest = signal<EditContentDialogData | null>(null);
+    /** The content open in the side panel, or `null` when it is closed. */
+    readonly $editRequest = signal<DotEditContentRequest | null>(null);
 
     /**
-     * The Edit Content side panel, open while {@link $editPanelRequest} is set (new-editor results,
-     * with the feature flag on; legacy and page results still open in a new tab). Reloads the
-     * results on save. Loaded on its first open, so the editor stays out of this portlet's chunk.
+     * The side panel, open while {@link $editRequest} is set, in whichever editor the content's type
+     * uses (#38303). Every save reruns the search; a close reruns it too and clears the request.
      */
-    readonly #editPanel = injectSidePanel(this.$editPanelRequest, {
-        component: loadDotEditContentSidePanel,
-        heading: (data) => data.title ?? '',
-        inputs: (data) => ({ data }),
-        outputs: { saved: () => this.onEditPanelSaved() },
+    readonly #editPanel = injectEditContentPanel(this.$editRequest, {
+        saved: () => this.onEditPanelSaved(),
         closed: () => this.onEditPanelClosed()
     });
 
@@ -163,7 +144,7 @@ export class DotQueryToolPageComponent implements OnInit {
      */
     // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects
     readonly #editContentUrlEffect = effect(() => {
-        const request = this.$editPanelRequest();
+        const request = this.$editRequest();
 
         untracked(() =>
             this.#syncEditContentParam(
@@ -292,9 +273,7 @@ export class DotQueryToolPageComponent implements OnInit {
             this.store.runSearch();
         }
 
-        // Shareable deep-link: `?editContent=<identifier>` reopens the edit panel on load. No flag
-        // gate — the param is only ever written while the side panel is active (flag on), so its
-        // presence already implies a panel context (and the flag may not have resolved yet).
+        // Shareable deep-link: `?editContent=<identifier>` reopens the edit panel on load.
         const editContent = params.get('editContent');
         if (editContent) {
             this.#resolveAndOpenByIdentifier(editContent);
@@ -307,7 +286,7 @@ export class DotQueryToolPageComponent implements OnInit {
         const locationSubscription = this.#location.subscribe((event) => {
             const backParams = new URLSearchParams(event.url?.split('?')[1] ?? '');
             const editContentParam = backParams.get('editContent');
-            const request = this.$editPanelRequest();
+            const request = this.$editRequest();
 
             if (request?.mode === 'edit' && request.identifier !== editContentParam) {
                 // Restore the param so the URL matches the still-open panel while the guard decides.
@@ -355,54 +334,30 @@ export class DotQueryToolPageComponent implements OnInit {
         });
     }
 
+    /**
+     * Opens a result for editing (#38303, R13). A page opens the page editor in a new tab, as
+     * before; any other result opens in the side panel over the results, in whichever editor its
+     * type uses, which the opener decides.
+     *
+     * @param contentlet The result whose title was clicked.
+     * @param event The click, whose default navigation is cancelled.
+     */
     onResultClick(contentlet: DotCMSContentlet, event: MouseEvent): void {
         event.preventDefault();
 
-        // Side panel enabled: resolve first (no intermediate tab). New-editor content opens in
-        // the in-page panel; legacy-editor and HTMLPAGE content still open in a new tab. For a
-        // cached content type the resolver answers synchronously, so the fallback `window.open`
-        // stays within the click gesture and the popup blocker accepts it.
-        if (this.$sidePanelEnabled()) {
+        if (contentlet.baseType === 'HTMLPAGE') {
             this.#editUrlResolver
                 .resolveEditUrl(contentlet)
                 .pipe(take(1))
                 .subscribe({
-                    next: (url) => {
-                        if (this.#isNewEditorUrl(url)) {
-                            this.$editPanelRequest.set({
-                                mode: 'edit',
-                                contentletInode: contentlet.inode,
-                                identifier: contentlet.identifier,
-                                title: contentlet.title
-                            });
-
-                            return;
-                        }
-
-                        window.open(url, '_blank');
-                    },
+                    next: (url) => window.open(url, '_blank'),
                     error: () => this.#globalMessage.error()
                 });
 
             return;
         }
 
-        // Side panel disabled: open the placeholder synchronously so the popup blocker accepts it,
-        // then assign the resolved URL once DotContentletEditUrlService returns. The resolver may
-        // answer synchronously (HTMLPAGE / cached content type) — that's fine, subscribe still
-        // delivers on the same tick.
-        const placeholder = window.open('about:blank', '_blank');
-        if (!placeholder) return;
-        this.#editUrlResolver
-            .resolveEditUrl(contentlet)
-            .pipe(take(1))
-            .subscribe({
-                next: (url) => (placeholder.location.href = url),
-                error: () => {
-                    placeholder.close();
-                    this.#globalMessage.error();
-                }
-            });
+        this.$editRequest.set(toEditRequest(contentlet));
     }
 
     /** Re-runs the search after a save so the results table reflects the edited content. */
@@ -410,18 +365,13 @@ export class DotQueryToolPageComponent implements OnInit {
         this.store.runSearch();
     }
 
-    /** Clears the side panel request, closing the panel. */
-    onEditPanelClosed(): void {
-        this.$editPanelRequest.set(null);
-    }
-
     /**
-     * True when `url` targets the new content editor (`/dotAdmin/#/content/<inode>`). The legacy
-     * editor (`/c/content/`) and the page editor (`/edit-page/`) resolve to different prefixes, so
-     * only the new editor is eligible for the in-page side panel.
+     * The panel closed itself: rerun the search, since a move or a translation saved inside the
+     * legacy editor reports no save (FR-017), and clear the request.
      */
-    #isNewEditorUrl(url: string): boolean {
-        return url.startsWith('/dotAdmin/#/content/');
+    onEditPanelClosed(): void {
+        this.store.runSearch();
+        this.$editRequest.set(null);
     }
 
     /**
@@ -450,32 +400,19 @@ export class DotQueryToolPageComponent implements OnInit {
     }
 
     /**
-     * Resolves a shared `?editContent=` identifier to its working contentlet and opens the panel.
-     * Gated on the side-panel flag (via `$sidePanelEnabled`, the store's `withFlags` slice, awaited
-     * through `toObservable` + `filter(Boolean)`): with the flag off there is no in-page editor in
-     * Query Tool — editing opens a new tab, which needs a user gesture and can't be triggered on
-     * load — so the deep link is ignored (AC15) and the content search never fires. The param can
-     * outlive the flag being on (shared link / bookmark / staging→prod), hence the gate.
+     * Resolves a shared `?editContent=` identifier to its working contentlet and opens the panel on
+     * it, with the same request a click on that result would open.
      *
-     * Waiting on the flag (rather than checking it after firing the search) avoids two problems: a
-     * wasted content search on every deep-link load while the flag is off, and a race between the
-     * flag's config fetch and this search where the search could resolve first and silently drop a
-     * valid deep link. `filter(Boolean)` never emits while the flag is `false`, so `takeUntilDestroyed`
-     * is required to stop waiting if the component is destroyed first.
+     * @param identifier The identifier the link names.
      */
     #resolveAndOpenByIdentifier(identifier: string): void {
-        toObservable(this.$sidePanelEnabled, { injector: this.#injector })
+        this.#contentSearch
+            .get<{ jsonObjectView: { contentlets: DotCMSContentlet[] } }>({
+                query: `+identifier:${identifier} +working:true`,
+                limit: 1
+            })
             .pipe(
-                filter(Boolean),
-                take(1),
-                switchMap(() =>
-                    this.#contentSearch
-                        .get<{ jsonObjectView: { contentlets: DotCMSContentlet[] } }>({
-                            query: `+identifier:${identifier} +working:true`,
-                            limit: 1
-                        })
-                        .pipe(catchError(() => EMPTY))
-                ),
+                catchError(() => EMPTY),
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((entity) => {
@@ -484,12 +421,7 @@ export class DotQueryToolPageComponent implements OnInit {
                     return;
                 }
 
-                this.$editPanelRequest.set({
-                    mode: 'edit',
-                    contentletInode: contentlet.inode,
-                    identifier,
-                    title: contentlet.title
-                });
+                this.$editRequest.set(toEditRequest({ ...contentlet, identifier }));
             });
     }
 
@@ -539,4 +471,20 @@ export class DotQueryToolPageComponent implements OnInit {
         const n = Number.parseInt(value, 10);
         return Number.isFinite(n) ? n : fallback;
     }
+}
+
+/**
+ * The edit request for a search result. The content type is the result's own variable, so the
+ * opener picks the editor without fetching the contentlet first.
+ *
+ * @param contentlet The result to edit.
+ */
+function toEditRequest({
+    inode,
+    identifier,
+    contentType,
+    languageId,
+    title
+}: DotCMSContentlet): DotEditContentRequest {
+    return { mode: 'edit', inode, identifier, contentType, languageId, title };
 }
