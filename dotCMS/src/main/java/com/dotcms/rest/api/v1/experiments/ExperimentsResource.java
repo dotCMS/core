@@ -30,6 +30,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotcms.experiments.business.FreeSlotOccupiedException;
+import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
@@ -510,6 +511,9 @@ public class ExperimentsResource {
     /**
      * Promotes a Variant to become the DEFAULT variant of the Page of the Experiment
      * Returns the updated version of the Experiment.
+     * <p>
+     * Like the Variants resource, this needs the Experiments tool besides a back-end user; the
+     * page and template-layout permissions are then enforced by the Experiments API.
      */
     @PUT
     @Path("/{experimentId}/variants/{name}/_promote")
@@ -522,7 +526,7 @@ public class ExperimentsResource {
             @PathParam("experimentId") final String experimentId,
             @PathParam("name") final String variantName,
             ExperimentVariantForm experimentVariantForm) throws DotDataException, DotSecurityException {
-        final InitDataObject initData = getInitData(request, response);
+        final InitDataObject initData = getInitDataRequiringExperimentsTool(request, response);
         final User user = initData.getUser();
 
         final Optional<Experiment> experimentToUpdate =  experimentsAPI.find(experimentId, user);
@@ -768,6 +772,26 @@ public class ExperimentsResource {
         return new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .init();
+    }
+
+    /**
+     * Authenticates a request that, besides a back-end user, needs access to the Experiments
+     * tool (CMS Administrators always qualify). Used by the operations that change what the
+     * site serves, such as promoting a variant; the read-only endpoints the page editor calls
+     * keep the plain {@link #getInitData(HttpServletRequest, HttpServletResponse)} gate.
+     *
+     * @param request  the current {@link HttpServletRequest}
+     * @param response the current {@link HttpServletResponse}
+     * @return the resolved {@link InitDataObject} carrying the authenticated {@link User}
+     */
+    private InitDataObject getInitDataRequiringExperimentsTool(final HttpServletRequest request,
+            final HttpServletResponse response) {
+        return new WebResource.InitBuilder(webResource)
+                .requestAndResponse(request, response)
+                .requiredBackendUser(true)
+                .requiredPortlet(PortletID.EXPERIMENTS.toString())
                 .rejectWhenNoUser(true)
                 .init();
     }
