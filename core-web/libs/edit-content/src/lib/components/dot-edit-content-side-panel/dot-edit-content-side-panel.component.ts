@@ -40,9 +40,10 @@ import { OverlayEditContentHost } from '../../services/host/overlay-edit-content
 import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-edit-content.layout.component';
 
 /**
- * The new Edit Content editor as a side panel's content, as an alternative to the full-screen route
- * or the centered dialog. Openers open it through `DotSidePanelService` (or `injectSidePanel`), with
- * the content's title as the heading; it closes the panel through its `DotSidePanelRef`.
+ * The new Edit Content editor as a side panel's content, as an alternative to the full-screen route.
+ * Surfaces open it through `DotEditContentOpenerService` (or, while they still pass `data`,
+ * `DotSidePanelService`), with the content's title as the heading; it closes the panel through its
+ * `DotSidePanelRef`.
  *
  * It reuses the overlay editor plumbing: it provides {@link OverlayEditContentHost} (identity from
  * the dialog config, in-place navigation, chrome no-ops) and, since it is not opened through
@@ -214,7 +215,11 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
         }
     }
 
-    /** Fires the `data` lifecycle callbacks on close, matching {@link DotEditContentDialogComponent}. */
+    /**
+     * Fires the `data` lifecycle callbacks on close: the last save, then `onCancel`, the order the
+     * centered dialog this panel replaced used. Openers using the {@link request} input hear back
+     * through the outputs instead.
+     */
     #fireCloseCallbacks(): void {
         const data = this.data();
 
