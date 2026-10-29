@@ -1,20 +1,25 @@
+import { Dispatcher } from '@ngrx/signals/events';
 import {
     Spectator,
+    SpyObject,
     byTestId,
     createComponentFactory,
     mockProvider
 } from '@openng/spectator/vitest';
-import { vi } from 'vitest';
+import { Mock, vi } from 'vitest';
 
-import { signal } from '@angular/core';
+import { WritableSignal, reflectComponentType, signal } from '@angular/core';
 
 import { DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { TEMP_EMPTY_CONTENTLET_TYPE } from '@dotcms/uve/internal';
 
 import { DotUveContentletToolsComponent } from './dot-uve-contentlet-tools.component';
 
 import { ContentletPayload, SelectedContentlet, VTLFile } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { UVE_EDIT_PANEL_TABS } from '../../../store/features/editor/models';
+import { uveContentEditorEvents } from '../dot-uve-content-editor/dot-uve-content-editor.events';
 import { ContentletArea } from '../ema-page-dropzone/types';
 
 /**
@@ -84,11 +89,16 @@ const MOCK_EMPTY_CONTENTLET_AREA: ContentletArea = {
 
 describe('DotUveContentletToolsComponent', () => {
     let spectator: Spectator<DotUveContentletToolsComponent>;
+    let dispatcher: SpyObject<Dispatcher>;
     /**
      * Writable mock for the store's `editorSelected` signal. The SDK's
      * CONTENTLET_CLICKED handler sets this; tests drive it directly.
      */
     let editorSelected: ReturnType<typeof signal<SelectedContentlet | null>>;
+    /** Writable mock for the store's permission check on the selected contentlet. */
+    let editorCanEditSelectedContentlet: WritableSignal<boolean>;
+    let setEditPanelOpen: Mock;
+    let editorSetEditPanelTab: Mock;
 
     const createComponent = createComponentFactory({
         component: DotUveContentletToolsComponent,
@@ -115,12 +125,16 @@ describe('DotUveContentletToolsComponent', () => {
                     // bottom clip offset unless a test overrides it.
                     viewIframeHeight: () => 800,
                     // promoteHoverToSelected calls setSelected on the store
-                    // before emitting select/quick-edit events. Stub it so
-                    // the (click) handler doesn't throw and the output fires.
-                    setSelected: vi.fn()
+                    // before the quick-edit and style buttons open the panel.
+                    // Stub it so the (click) handler doesn't throw.
+                    setSelected: vi.fn(),
+                    editorCanEditSelectedContentlet,
+                    setEditPanelOpen,
+                    editorSetEditPanelTab
                 })
             }
         ],
+        componentProviders: [Dispatcher],
         detectChanges: false
     });
 
@@ -128,6 +142,9 @@ describe('DotUveContentletToolsComponent', () => {
         // Tests start with the hovered contentlet also selected so the
         // selected overlay renders alongside the hover overlay.
         editorSelected = signal<SelectedContentlet | null>(toSelected(MOCK_CONTENTLET_AREA));
+        editorCanEditSelectedContentlet = signal(true);
+        setEditPanelOpen = vi.fn();
+        editorSetEditPanelTab = vi.fn();
 
         spectator = createComponent({
             props: {
@@ -136,6 +153,8 @@ describe('DotUveContentletToolsComponent', () => {
                 showStyleEditorOption: false
             }
         });
+        dispatcher = spectator.inject(Dispatcher, true);
+        vi.spyOn(dispatcher, 'dispatch');
         spectator.detectChanges();
     });
 
@@ -388,52 +407,215 @@ describe('DotUveContentletToolsComponent', () => {
         });
     });
 
-    describe('Outputs', () => {
-        describe('selectContent', () => {
-            it('should emit selectContent when clicking palette button', () => {
+    describe('opening the edit panel', () => {
+        /** The selection the quick-edit and style buttons make of the hovered contentlet. */
+        const HOVERED_AS_SELECTED: SelectedContentlet = {
+            ...toSelected(MOCK_CONTENTLET_AREA),
+            payload: { ...MOCK_CONTENTLET_AREA.payload, position: 'after' }
+        };
+
+        const clickHoverButton = (testId: string) => {
+            const host = spectator.query(byTestId(testId)) as HTMLElement;
+            spectator.click(host.querySelector('button') as Element);
+        };
+
+        const actionsMenuEntry = (symbol: string) =>
+            spectator.component.actionsMenuItems().find((item) => item.symbol === symbol);
+
+        /**
+         * Hovers and selects a contentlet carrying the given `canEdit`, as the page renders it.
+         * `undefined` leaves the field out, as headless and SDK-rendered pages do.
+         */
+        const hoverWithPermission = (canEdit: boolean | undefined) => {
+            const area: ContentletArea = {
+                ...MOCK_CONTENTLET_AREA,
+                payload: {
+                    ...MOCK_CONTENTLET_AREA.payload,
+                    contentlet: {
+                        ...(MOCK_CONTENTLET_AREA.payload.contentlet as ContentletPayload),
+                        ...(canEdit === undefined ? {} : { canEdit })
+                    }
+                }
+            };
+            spectator.setInput('contentletArea', area);
+            editorSelected.set(toSelected(area));
+            editorCanEditSelectedContentlet.set(canEdit !== false);
+            spectator.detectChanges();
+        };
+
+        it('should not emit openQuickEdit or selectContent', () => {
+            const outputs = reflectComponentType(DotUveContentletToolsComponent)?.outputs.map(
+                ({ propName }) => propName
+            );
+
+            expect(outputs).not.toContain('openQuickEdit');
+            expect(outputs).not.toContain('selectContent');
+        });
+
+        describe('quick edit', () => {
+            it('should open the panel on the quick-edit tab when clicking the quick-edit button', () => {
+                clickHoverButton('hover-quick-edit-button');
+
+                expect(setEditPanelOpen).toHaveBeenCalledWith(true);
+                expect(editorSetEditPanelTab).toHaveBeenCalledWith(UVE_EDIT_PANEL_TABS.QUICK_EDIT);
+            });
+
+            it('should select the hovered contentlet before opening the panel', () => {
+                const setSelected = spectator.inject(UVEStore).setSelected as Mock;
+
+                clickHoverButton('hover-quick-edit-button');
+
+                expect(setSelected).toHaveBeenCalledWith(HOVERED_AS_SELECTED);
+                expect(setSelected.mock.invocationCallOrder[0]).toBeLessThan(
+                    setEditPanelOpen.mock.invocationCallOrder[0]
+                );
+            });
+
+            it("should open the panel on the quick-edit tab from the collapsed menu's entry", () => {
+                actionsMenuEntry('edit')?.command?.({});
+
+                expect(setEditPanelOpen).toHaveBeenCalledWith(true);
+                expect(editorSetEditPanelTab).toHaveBeenCalledWith(UVE_EDIT_PANEL_TABS.QUICK_EDIT);
+            });
+
+            it('should open the panel for a contentlet whose page gives no permission', () => {
+                hoverWithPermission(undefined);
+
+                clickHoverButton('hover-quick-edit-button');
+
+                expect(setEditPanelOpen).toHaveBeenCalledWith(true);
+            });
+
+            it('should refuse a contentlet the user cannot edit', () => {
+                // The entry is disabled for it, but a stale menu can still run its command.
+                hoverWithPermission(false);
+
+                actionsMenuEntry('edit')?.command?.({});
+
+                expect(setEditPanelOpen).not.toHaveBeenCalled();
+                expect(editorSetEditPanelTab).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('style editor', () => {
+            beforeEach(() => {
                 spectator.setInput('showStyleEditorOption', true);
                 spectator.detectChanges();
+            });
 
-                const paletteButton = spectator.query(
-                    byTestId('hover-palette-button')
-                ) as HTMLElement;
-                const handler = vi.fn();
-                spectator.output('selectContent').subscribe(handler);
-                spectator.click(paletteButton.querySelector('button') as Element);
+            it('should open the panel on the style tab when clicking the style button', () => {
+                clickHoverButton('hover-palette-button');
 
-                expect(handler).toHaveBeenCalledWith({
-                    ...MOCK_CONTENTLET_AREA.payload,
-                    position: 'after'
+                expect(setEditPanelOpen).toHaveBeenCalledWith(true);
+                expect(editorSetEditPanelTab).toHaveBeenCalledWith(
+                    UVE_EDIT_PANEL_TABS.STYLE_EDITOR
+                );
+            });
+
+            it('should select the hovered contentlet before opening the panel', () => {
+                const setSelected = spectator.inject(UVEStore).setSelected as Mock;
+
+                clickHoverButton('hover-palette-button');
+
+                expect(setSelected).toHaveBeenCalledWith(HOVERED_AS_SELECTED);
+                expect(setSelected.mock.invocationCallOrder[0]).toBeLessThan(
+                    setEditPanelOpen.mock.invocationCallOrder[0]
+                );
+            });
+
+            it("should open the panel on the style tab from the collapsed menu's entry", () => {
+                actionsMenuEntry('palette')?.command?.({});
+
+                expect(setEditPanelOpen).toHaveBeenCalledWith(true);
+                expect(editorSetEditPanelTab).toHaveBeenCalledWith(
+                    UVE_EDIT_PANEL_TABS.STYLE_EDITOR
+                );
+            });
+
+            it('should refuse a contentlet the user cannot edit', () => {
+                // The entry is disabled for it, but a stale menu can still run its command.
+                hoverWithPermission(false);
+
+                actionsMenuEntry('palette')?.command?.({});
+
+                expect(setEditPanelOpen).not.toHaveBeenCalled();
+                expect(editorSetEditPanelTab).not.toHaveBeenCalled();
+            });
+        });
+    });
+
+    describe('Outputs', () => {
+        describe('full-editor (pencil) button', () => {
+            /** The request the pencil makes for the hovered contentlet. */
+            const EDIT_HOVERED_CONTENTLET = uveContentEditorEvents.uveEditContentRequested({
+                contentlet: MOCK_CONTENTLET_AREA.payload.contentlet as unknown as DotCMSContentlet,
+                forkFrom: MOCK_CONTENTLET_AREA.payload.container
+            });
+
+            const fullEditorMenuItem = () =>
+                spectator.component.actionsMenuItems().find((item) => item.symbol === 'edit_note');
+
+            /** Hovers a contentlet whose payload carries the given overrides. */
+            const hoverContentlet = (overrides: Partial<ContentletPayload>) => {
+                spectator.setInput('contentletArea', {
+                    ...MOCK_CONTENTLET_AREA,
+                    payload: {
+                        ...MOCK_CONTENTLET_AREA.payload,
+                        contentlet: {
+                            ...(MOCK_CONTENTLET_AREA.payload.contentlet as ContentletPayload),
+                            ...overrides
+                        }
+                    }
+                });
+                spectator.detectChanges();
+            };
+
+            it('should ask to edit the hovered contentlet, forking from its container', () => {
+                const editButton = spectator.query(byTestId('hover-edit-button')) as HTMLElement;
+                spectator.click(editButton.querySelector('button') as Element);
+
+                expect(dispatcher.dispatch).toHaveBeenCalledWith(EDIT_HOVERED_CONTENTLET, {
+                    scope: 'self'
                 });
             });
-        });
 
-        describe('quick-edit (bolt) button', () => {
-            it('should emit openQuickEdit when clicking the bolt button', () => {
-                const handler = vi.fn();
-                spectator.output('openQuickEdit').subscribe(handler);
+            it("should ask the same from the collapsed menu's full editor entry", () => {
+                fullEditorMenuItem()?.command?.({});
 
-                const boltButton = spectator.query(
-                    byTestId('hover-quick-edit-button')
-                ) as HTMLElement;
-                spectator.click(boltButton.querySelector('button') as Element);
-
-                expect(handler).toHaveBeenCalled();
+                expect(dispatcher.dispatch).toHaveBeenCalledWith(EDIT_HOVERED_CONTENTLET, {
+                    scope: 'self'
+                });
             });
-        });
 
-        describe('full-editor (pencil) button', () => {
-            it('should emit openFullEditor with the hovered payload', () => {
-                const handler = vi.fn();
-                spectator.output('openFullEditor').subscribe(handler);
+            it('should leave the selection alone', () => {
+                // The pencil is stateless: opening the full editor must not change what is
+                // selected in the editor.
+                const store = spectator.inject(UVEStore);
+                (store.setSelected as ReturnType<typeof vi.fn>).mockClear();
 
                 const editButton = spectator.query(byTestId('hover-edit-button')) as HTMLElement;
                 spectator.click(editButton.querySelector('button') as Element);
 
-                expect(handler).toHaveBeenCalledWith({
-                    ...MOCK_CONTENTLET_AREA.payload,
-                    position: 'after'
-                });
+                expect(store.setSelected).not.toHaveBeenCalled();
+            });
+
+            it('should ask nothing for a contentlet the user cannot edit', () => {
+                // The button is disabled, but the toolbar can be driven from stale bounds or
+                // programmatically, so the guard must not rest on the disabled state alone.
+                hoverContentlet({ canEdit: false });
+
+                fullEditorMenuItem()?.command?.({});
+
+                expect(dispatcher.dispatch).not.toHaveBeenCalled();
+            });
+
+            it('should ask nothing for a contentlet without an inode', () => {
+                hoverContentlet({ inode: undefined });
+
+                const editButton = spectator.query(byTestId('hover-edit-button')) as HTMLElement;
+                spectator.click(editButton.querySelector('button') as Element);
+
+                expect(dispatcher.dispatch).not.toHaveBeenCalled();
             });
         });
 
@@ -454,73 +636,76 @@ describe('DotUveContentletToolsComponent', () => {
             });
         });
 
-        describe('addContent', () => {
-            it('should emit addContent with type "content" when selecting content from menu', () => {
+        describe('uveAddContentRequested', () => {
+            it('should ask to add content above the contentlet when selecting content from the top menu', () => {
                 const addTopButton = spectator.query(byTestId('hover-add-top-button'));
                 const button = addTopButton?.querySelector('button');
                 spectator.click(button as Element);
                 spectator.detectChanges();
 
                 // Get the menu items and trigger the first command
-                const handler = vi.fn();
-                spectator.output('addContent').subscribe(handler);
                 const menuItems = spectator.component.menuItems();
                 menuItems[0].command?.({});
 
-                expect(handler).toHaveBeenCalledWith({
-                    type: 'content',
-                    payload: {
-                        ...MOCK_CONTENTLET_AREA.payload,
-                        position: 'before'
-                    }
-                });
+                expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                    uveContentEditorEvents.uveAddContentRequested({
+                        type: 'content',
+                        into: {
+                            ...MOCK_CONTENTLET_AREA.payload,
+                            position: 'before'
+                        }
+                    }),
+                    { scope: 'self' }
+                );
             });
 
-            it('should emit addContent with type "widget" when selecting widget from menu', () => {
+            it('should ask to add a widget below the contentlet when selecting widget from the bottom menu', () => {
                 const addBottomButton = spectator.query(byTestId('hover-add-bottom-button'));
                 const button = addBottomButton?.querySelector('button');
                 spectator.click(button as Element);
                 spectator.detectChanges();
 
                 // Get the menu items and trigger the second command
-                const handler = vi.fn();
-                spectator.output('addContent').subscribe(handler);
                 const menuItems = spectator.component.menuItems();
                 menuItems[1].command?.({});
 
-                expect(handler).toHaveBeenCalledWith({
-                    type: 'widget',
-                    payload: {
-                        ...MOCK_CONTENTLET_AREA.payload,
-                        position: 'after'
-                    }
-                });
+                expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                    uveContentEditorEvents.uveAddContentRequested({
+                        type: 'widget',
+                        into: {
+                            ...MOCK_CONTENTLET_AREA.payload,
+                            position: 'after'
+                        }
+                    }),
+                    { scope: 'self' }
+                );
             });
 
-            it('should emit addContent with type "form" when selecting form from menu', () => {
+            it('should ask to add a form below the contentlet when selecting form from the bottom menu', () => {
                 const addBottomButton = spectator.query(byTestId('hover-add-bottom-button'));
                 const button = addBottomButton?.querySelector('button');
                 spectator.click(button as Element);
                 spectator.detectChanges();
 
                 // Get the menu items and trigger the third command (form)
-                const handler = vi.fn();
-                spectator.output('addContent').subscribe(handler);
                 const menuItems = spectator.component.menuItems();
                 menuItems[2].command?.({});
 
-                expect(handler).toHaveBeenCalledWith({
-                    type: 'form',
-                    payload: {
-                        ...MOCK_CONTENTLET_AREA.payload,
-                        position: 'after'
-                    }
-                });
+                expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                    uveContentEditorEvents.uveAddContentRequested({
+                        type: 'form',
+                        into: {
+                            ...MOCK_CONTENTLET_AREA.payload,
+                            position: 'after'
+                        }
+                    }),
+                    { scope: 'self' }
+                );
             });
         });
 
-        describe('editVTL', () => {
-            it('should emit editVTL with file when clicking VTL menu item', () => {
+        describe('uveEditSourceRequested', () => {
+            it('should ask to edit the source of the file when clicking VTL menu item', () => {
                 const expectedFile: VTLFile = {
                     inode: 'vtl-inode-1',
                     name: 'template1.vtl'
@@ -532,15 +717,16 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.detectChanges();
 
                 // Get the VTL menu items and trigger the first command
-                const handler = vi.fn();
-                spectator.output('editVTL').subscribe(handler);
                 const vtlMenuItems = spectator.component.vtlMenuItems();
                 vtlMenuItems[0].command?.({});
 
-                expect(handler).toHaveBeenCalledWith(expectedFile);
+                expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                    uveContentEditorEvents.uveEditSourceRequested(expectedFile),
+                    { scope: 'self' }
+                );
             });
 
-            it('should emit editVTL with second file when clicking second VTL menu item', () => {
+            it('should ask to edit the source of the second file when clicking second VTL menu item', () => {
                 const expectedFile: VTLFile = {
                     inode: 'vtl-inode-2',
                     name: 'template2.vtl'
@@ -552,12 +738,13 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.detectChanges();
 
                 // Get the VTL menu items and trigger the second command
-                const handler = vi.fn();
-                spectator.output('editVTL').subscribe(handler);
                 const vtlMenuItems = spectator.component.vtlMenuItems();
                 vtlMenuItems[1].command?.({});
 
-                expect(handler).toHaveBeenCalledWith(expectedFile);
+                expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                    uveContentEditorEvents.uveEditSourceRequested(expectedFile),
+                    { scope: 'self' }
+                );
             });
         });
     });
@@ -814,10 +1001,7 @@ describe('DotUveContentletToolsComponent', () => {
     });
 
     describe('Position flag behavior', () => {
-        it('should emit addContent with "before" position when clicking top add button', () => {
-            const handler = vi.fn();
-            spectator.output('addContent').subscribe(handler);
-
+        it('should ask to add "before" the contentlet when clicking top add button', () => {
             const addTopButton = spectator.query(byTestId('hover-add-top-button'));
             const button = addTopButton?.querySelector('button');
             spectator.click(button as Element);
@@ -827,18 +1011,16 @@ describe('DotUveContentletToolsComponent', () => {
             const menuItems = spectator.component.menuItems();
             menuItems[0].command?.({});
 
-            expect(handler).toHaveBeenCalledWith({
-                type: 'content',
-                payload: expect.objectContaining({
-                    position: 'before'
-                })
-            });
+            expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                uveContentEditorEvents.uveAddContentRequested({
+                    type: 'content',
+                    into: expect.objectContaining({ position: 'before' })
+                }),
+                { scope: 'self' }
+            );
         });
 
-        it('should emit addContent with "after" position when clicking bottom add button', () => {
-            const handler = vi.fn();
-            spectator.output('addContent').subscribe(handler);
-
+        it('should ask to add "after" the contentlet when clicking bottom add button', () => {
             const addBottomButton = spectator.query(byTestId('hover-add-bottom-button'));
             const button = addBottomButton?.querySelector('button');
             spectator.click(button as Element);
@@ -848,12 +1030,13 @@ describe('DotUveContentletToolsComponent', () => {
             const menuItems = spectator.component.menuItems();
             menuItems[0].command?.({});
 
-            expect(handler).toHaveBeenCalledWith({
-                type: 'content',
-                payload: expect.objectContaining({
-                    position: 'after'
-                })
-            });
+            expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                uveContentEditorEvents.uveAddContentRequested({
+                    type: 'content',
+                    into: expect.objectContaining({ position: 'after' })
+                }),
+                { scope: 'self' }
+            );
         });
     });
 
@@ -1255,17 +1438,16 @@ describe('DotUveContentletToolsComponent', () => {
      * dismissed leaves the selection untouched.
      */
     describe('choosing a VTL file promotes the hovered contentlet', () => {
-        it('promotes the hovered contentlet and still emits the file', () => {
+        it('promotes the hovered contentlet before asking to edit the file', () => {
             const store = spectator.inject(UVEStore);
-            const emitted: VTLFile[] = [];
-            spectator.component.editVTL.subscribe((file: VTLFile) => emitted.push(file));
+            const setSelected = store.setSelected as ReturnType<typeof vi.fn>;
 
             spectator.setInput('contentletArea', MOCK_CONTENTLET_AREA);
             spectator.detectChanges();
 
             spectator.component.vtlMenuItems()[0].command?.({} as never);
 
-            expect(store.setSelected).toHaveBeenCalledWith(
+            expect(setSelected).toHaveBeenCalledWith(
                 expect.objectContaining({
                     bounds: {
                         x: MOCK_CONTENTLET_AREA.x,
@@ -1275,7 +1457,16 @@ describe('DotUveContentletToolsComponent', () => {
                     }
                 })
             );
-            expect(emitted).toEqual([{ inode: 'vtl-inode-1', name: 'template1.vtl' }]);
+            expect(dispatcher.dispatch).toHaveBeenCalledWith(
+                uveContentEditorEvents.uveEditSourceRequested({
+                    inode: 'vtl-inode-1',
+                    name: 'template1.vtl'
+                }),
+                { scope: 'self' }
+            );
+            expect(setSelected.mock.invocationCallOrder[0]).toBeLessThan(
+                dispatcher.dispatch.mock.invocationCallOrder[0]
+            );
         });
 
         /**
