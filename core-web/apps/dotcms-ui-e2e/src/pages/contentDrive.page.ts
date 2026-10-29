@@ -108,6 +108,18 @@ export class ContentDrivePage {
         await expect(this.currentSiteHostname).toBeVisible({ timeout: 20000 });
     }
 
+    /**
+     * Opens Content Drive on a contentlet's edit link (`?editContent=<identifier>`), which opens it
+     * in the side panel over the listing — the same link Content Drive writes while a panel is open.
+     *
+     * @param identifier The contentlet's identifier; the portlet resolves its working inode.
+     */
+    async goToEditContent(identifier: string) {
+        await this.page.goto(`${Portlet.ContentDrive}?editContent=${identifier}`);
+        await this.page.waitForLoadState('domcontentloaded');
+        await expect(this.toolbar).toBeVisible({ timeout: 20000 });
+    }
+
     async expectSiteHostname(hostname: string) {
         await expect(this.currentSiteHostname).toContainText(hostname, {
             timeout: 15000,
