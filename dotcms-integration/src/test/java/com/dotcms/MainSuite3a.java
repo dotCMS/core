@@ -140,7 +140,9 @@ import org.junit.runners.Suite;
         SystemEventsRetentionIntegrationTest.class,
         com.dotcms.rest.api.v1.portlet.PortletResourceIntegrationTest.class,
         LayoutResourceIntegrationTest.class,
-        com.dotmarketing.webdav.DotWebdavTempPathContainmentTest.class
+        com.dotmarketing.webdav.DotWebdavTempPathContainmentTest.class,
+        com.dotcms.rest.api.v1.system.role.RoleResourceCheckRolesIntegrationTest.class,
+        com.dotmarketing.portlets.user.ajax.UserAjaxHasUserRolesIntegrationTest.class
 })
 
 public class MainSuite3a {
