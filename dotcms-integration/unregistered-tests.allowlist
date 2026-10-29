@@ -26,7 +26,6 @@ com.dotcms.publishing.BundlerUtilIntegrationTest
 com.dotcms.publishing.listener.SecurityKeyResetTest
 com.dotcms.rendering.velocity.servlet.VelocityLiveModeTest
 com.dotcms.rest.api.v1.DotObjectMapperProviderTest
-com.dotcms.rest.api.v1.authentication.ApiTokenResourceTest
 com.dotcms.rest.api.v1.content.search.LuceneQueryBuilderTest
 com.dotcms.rest.api.v1.page.PageResourceHelperTest
 com.dotcms.rest.api.v1.usage.UsageResourceIntegrationTest
