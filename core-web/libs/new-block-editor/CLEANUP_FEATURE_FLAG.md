@@ -385,7 +385,7 @@ yarn nx run dotcms-block-editor:build:production
 yarn nx run edit-content:lint
 yarn nx run portlets-edit-ema-portlet:lint
 yarn nx run portlets-edit-ema-ui:lint
-yarn nx run data-access:test --testPathPattern=dot-properties
+yarn nx run data-access:test -- dot-properties
 ./mvnw compile -pl :dotcms-core --am
 ```
 

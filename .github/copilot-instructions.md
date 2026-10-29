@@ -129,8 +129,8 @@ pnpm install                    # Required before first test
 # Run specific component tests (RECOMMENDED)
 nx run dotcms-ui:test --testNamePattern="ContentTypeComponent"
 
-# Run all tests in a file
-nx run dotcms-ui:test --testPathPattern="dot-edit-content"
+# Run all tests in a file (Vitest filters by path; --testPathPattern errors)
+pnpm nx test dotcms-ui -- dot-edit-content
 
 # Run all unit tests
 nx run dotcms-ui:test
