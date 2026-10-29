@@ -23,13 +23,6 @@ import { DotPublishingQueueAssetListDialogComponent } from './dot-publishing-que
 
 import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
 
-// Only the opener's class is needed, as the token the dialog injects. Loading the real barrel pulls
-// in the block editors and TipTap's collaboration packages, which this project's Vitest config does
-// not inline (`y-protocols/awareness` fails to resolve).
-vi.mock('@dotcms/edit-content', () => ({
-    DotEditContentOpenerService: class DotEditContentOpenerService {}
-}));
-
 /** Whether anything resolved `DotContentletEditUrlService` while the dialog was mounted. */
 let editUrlServiceInjected: boolean;
 

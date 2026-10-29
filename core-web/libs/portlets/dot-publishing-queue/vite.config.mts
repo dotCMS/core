@@ -130,7 +130,16 @@ export default defineConfig(() => ({
                     /ng2-dragula/,
                     /ngx-markdown/,
                     /ngx-tiptap/,
-                    /primeng/
+                    /primeng/,
+                    // The dialogs open content through @dotcms/edit-content, whose block editors
+                    // load TipTap's ESM-only packages; same list as dot-query-tool (#38303).
+                    /y-protocols/,
+                    /lib0/,
+                    /y-prosemirror/,
+                    /@tiptap/,
+                    /marked/,
+                    /lowlight/,
+                    /devlop/
                 ]
             }
         },
