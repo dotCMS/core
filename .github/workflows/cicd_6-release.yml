@@ -545,11 +545,18 @@ jobs:
   # the same deliberate CLI/LTS exclusion the promote-latest job uses, not reinvented here).
   # Non-blocking (allow_failure: true) so a changelog publish failure never fails the
   # software release (FR-008). Additive: existing phases are untouched.
+  # !cancelled() so a cancelled release-notes job (runner blip) still reaches this phase,
+  # which then fails loudly on the empty release body instead of being silently skipped.
+  # A skipped release-notes means the release itself failed, so publish nothing.
   changelog-site-publish:
     name: Changelog Site Publish
     needs: [ release-prepare, deployment, release-notes ]
     if: >-
-      needs.release-prepare.outputs.is_latest == 'true'
+      !cancelled()
+      && needs.release-prepare.result == 'success'
+      && needs.deployment.result == 'success'
+      && needs.release-notes.result != 'skipped'
+      && needs.release-prepare.outputs.is_latest == 'true'
       && github.repository == 'dotcms/core'
     uses: ./.github/workflows/cicd_comp_changelog-site-publish-phase.yml
     with:
