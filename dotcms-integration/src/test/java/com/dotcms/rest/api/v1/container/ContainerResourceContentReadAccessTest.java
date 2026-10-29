@@ -21,6 +21,7 @@ import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.PaginationUtil;
@@ -52,8 +53,9 @@ import org.junit.Test;
  * into a container: the contentlet is served only to a caller who can read the version they would
  * be served, whether it is addressed by identifier or by inode.
  * <p>
- * The permission decision runs against the real content, permission and container APIs. Only the
- * Velocity merge is replaced, so a rendered response is recognized by the merge being called.
+ * The permission decision runs against the real content, permission and container APIs. The
+ * calling user is supplied through a mocked {@link WebResource}, and the Velocity merge is replaced,
+ * so a rendered response is recognized by the merge being called.
  */
 public class ContainerResourceContentReadAccessTest {
 
@@ -67,6 +69,8 @@ public class ContainerResourceContentReadAccessTest {
     private static Contentlet anonymousReadableContentWithDraft;
     private static Contentlet unpublishedContent;
     private static Contentlet unpublishedAnonymousReadableContent;
+    private static Contentlet readableContentWithDraft;
+    private static Contentlet archivedReadableContent;
     private static User backendUserWithoutAccess;
     private static User frontendUserWithoutAccess;
     private static User reader;
@@ -76,8 +80,9 @@ public class ContainerResourceContentReadAccessTest {
      * Creates a site with three published contentlets: one readable only by a dedicated reader,
      * one the anonymous role can read, and one the anonymous role can read that also has a newer
      * unpublished version. Adds two contentlets that were never published: one readable by the
-     * reader and one the anonymous role can read. Also creates a back-end user and a front-end user
-     * with no permission on the first one.
+     * reader and one the anonymous role can read, one readable by the reader with a newer unpublished
+     * version, and an archived one readable by the reader. Also creates a back-end user and a
+     * front-end user with no permission on the first one.
      */
     @BeforeClass
     public static void prepare() throws Exception {
@@ -92,6 +97,8 @@ public class ContainerResourceContentReadAccessTest {
         anonymousReadableContentWithDraft = ContentletDataGen.publish(newContent(contentType));
         unpublishedContent = newContent(contentType);
         unpublishedAnonymousReadableContent = newContent(contentType);
+        readableContentWithDraft = ContentletDataGen.publish(newContent(contentType));
+        archivedReadableContent = newContent(contentType);
 
         backendUserWithoutAccess = newUser(TestUserUtils.getBackendRole());
         frontendUserWithoutAccess = newUser(TestUserUtils.getFrontendRole());
@@ -103,6 +110,11 @@ public class ContainerResourceContentReadAccessTest {
         grantRead(anonymousReadableContentWithDraft, anonymousRole.getId());
         grantRead(unpublishedContent, APILocator.getRoleAPI().getUserRole(reader).getId());
         grantRead(unpublishedAnonymousReadableContent, anonymousRole.getId());
+        grantRead(readableContentWithDraft, APILocator.getRoleAPI().getUserRole(reader).getId());
+        grantRead(archivedReadableContent, APILocator.getRoleAPI().getUserRole(reader).getId());
+        ContentletDataGen.createNewVersion(readableContentWithDraft,
+                VariantAPI.DEFAULT_VARIANT, Map.of("title", "draft-" + System.currentTimeMillis()));
+        ContentletDataGen.archive(archivedReadableContent);
         // A newer working version that is not published
         ContentletDataGen.createNewVersion(anonymousReadableContentWithDraft,
                 VariantAPI.DEFAULT_VARIANT, Map.of("title", "draft-" + System.currentTimeMillis()));
@@ -288,6 +300,129 @@ public class ContainerResourceContentReadAccessTest {
         assertThrows(ResourceNotFoundException.class, () -> resourceFor(frontendUserWithoutAccess, velocityUtil)
                 .containerContent(requestFor(frontendUserWithoutAccess), response(),
                         Container.SYSTEM_CONTAINER, unpublishedAnonymousReadableContent.getIdentifier(), null));
+
+        verify(velocityUtil, never()).merge(anyString(), any());
+    }
+
+    /**
+     * Given a back-end user whose READ comes only from the anonymous role, and a published contentlet
+     * with a newer unpublished version,
+     * When the user renders it by identifier,
+     * Then the request is forbidden: a back-end user is served the working version, which the
+     * anonymous role does not open.
+     */
+    @Test
+    public void containerContent_byIdentifier_backendUser_anonymousReadableWithNewerDraft_isForbidden() {
+        assertForbidden(backendUserWithoutAccess, requestFor(backendUserWithoutAccess),
+                anonymousReadableContentWithDraft.getIdentifier());
+    }
+
+    /**
+     * Given a back-end user whose READ comes only from the anonymous role, and a contentlet that was
+     * never published,
+     * When the user renders it by identifier,
+     * Then the request is forbidden.
+     */
+    @Test
+    public void containerContent_byIdentifier_backendUser_anonymousReadableUnpublished_isForbidden() {
+        assertForbidden(backendUserWithoutAccess, requestFor(backendUserWithoutAccess),
+                unpublishedAnonymousReadableContent.getIdentifier());
+    }
+
+    /**
+     * Given a front-end user with no READ on the contentlet,
+     * When the user renders it with the container passed as a query parameter,
+     * Then the request is forbidden and nothing is rendered.
+     */
+    @Test
+    public void containerContentByQueryParam_byIdentifier_frontendUserWithoutRead_isForbidden() {
+        final VelocityUtil velocityUtil = velocityUtil();
+
+        assertThrows(ForbiddenException.class, () -> resourceFor(frontendUserWithoutAccess, velocityUtil)
+                .containerContentByQueryParam(requestFor(frontendUserWithoutAccess), response(),
+                        Container.SYSTEM_CONTAINER, null, restrictedContent.getIdentifier()));
+
+        verify(velocityUtil, never()).merge(anyString(), any());
+    }
+
+    /**
+     * Given a front-end user, a Time Machine date on the request, and a published contentlet the
+     * anonymous role can read that has a newer unpublished version,
+     * When the user renders it by identifier,
+     * Then the request is forbidden, since the Time Machine can render the working version.
+     */
+    @Test
+    public void containerContent_byIdentifier_frontendUser_timeMachine_anonymousReadableWithNewerDraft_isForbidden() {
+        final HttpServletRequest request = requestFor(frontendUserWithoutAccess);
+        when(request.getAttribute(PageResource.TM_DATE)).thenReturn("4102444800000");
+
+        assertForbidden(frontendUserWithoutAccess, request,
+                anonymousReadableContentWithDraft.getIdentifier());
+    }
+
+    /**
+     * Given a back-end user granted READ on a published contentlet with a newer unpublished version,
+     * When the user renders it by identifier,
+     * Then the contentlet is rendered.
+     */
+    @Test
+    public void containerContent_byIdentifier_userWithRead_newerDraft_isRendered() throws Exception {
+        assertRendered(reader, readableContentWithDraft);
+    }
+
+    /**
+     * Given an administrator,
+     * When rendering a contentlet only a dedicated reader can read, by identifier,
+     * Then the contentlet is rendered.
+     */
+    @Test
+    public void containerContent_byIdentifier_admin_isRendered() throws Exception {
+        assertRendered(TestUserUtils.getAdminUser(), restrictedContent);
+    }
+
+    /**
+     * Given a back-end user granted READ on the contentlet,
+     * When the user renders it by its inode,
+     * Then the contentlet is rendered.
+     */
+    @Test
+    public void containerContent_byInode_userWithRead_isRendered() throws Exception {
+        final ChainedContext context = mock(ChainedContext.class);
+        final VelocityUtil velocityUtil = velocityUtil(context);
+
+        final Response response = resourceFor(reader, velocityUtil).containerContent(requestFor(reader),
+                response(), Container.SYSTEM_CONTAINER, restrictedContent.getInode(), null);
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        verify(velocityUtil).merge(anyString(), any());
+    }
+
+    /**
+     * Given a back-end user granted READ on an archived contentlet,
+     * When the user renders it by identifier,
+     * Then the request answers not found and nothing is rendered.
+     */
+    @Test
+    public void containerContent_byIdentifier_archived_isNotFound() {
+        final VelocityUtil velocityUtil = velocityUtil();
+
+        assertThrows(ResourceNotFoundException.class, () -> resourceFor(reader, velocityUtil)
+                .containerContent(requestFor(reader), response(),
+                        Container.SYSTEM_CONTAINER, archivedReadableContent.getIdentifier(), null));
+
+        verify(velocityUtil, never()).merge(anyString(), any());
+    }
+
+    /**
+     * Renders the contentlet by identifier as the given user, with the given request, and checks
+     * that the request is forbidden and nothing is rendered.
+     */
+    private static void assertForbidden(final User user, final HttpServletRequest request,
+            final String identifier) {
+        final VelocityUtil velocityUtil = velocityUtil();
+
+        assertThrows(ForbiddenException.class, () -> resourceFor(user, velocityUtil)
+                .containerContent(request, response(), Container.SYSTEM_CONTAINER, identifier, null));
 
         verify(velocityUtil, never()).merge(anyString(), any());
     }

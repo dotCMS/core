@@ -15,6 +15,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.BulkResultView;
 import com.dotcms.rest.api.FailedResultView;
+import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.rest.api.v1.page.ResponseEntityPaginatedArrayListMapView;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
@@ -81,6 +82,7 @@ import java.util.Map;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -347,7 +349,7 @@ public class ContainerResource implements Serializable {
 
             final Contentlet contentlet =
                     (contentShorty.type == ShortType.IDENTIFIER) ?
-                            this.findReadableContentletByIdentifier(contentShorty.longId, servedMode, user):
+                            this.findReadableContentletByIdentifier(req, contentShorty.longId, servedMode, user):
                             this.contentletAPI.find(contentShorty.longId, user, mode.respectAnonPerms);
             if (null == contentlet) {
                 throw new ResourceNotFoundException("Can't find contentlet:" + SecurityUtils.sanitizeForLogging(contentletId));
@@ -367,11 +369,16 @@ public class ContainerResource implements Serializable {
      * Finds the version of a contentlet that the given user is served, by identifier, checking
      * that the user can read it.
      * <p>
-     * Back-end users in edit mode are served a working version; any other user a live version. The
-     * DEFAULT variant is preferred. Permissions granted to front-end roles, including CMS Anonymous,
-     * count towards READ; the permission API only applies CMS Anonymous to live versions, so it never
-     * opens a working version.
+     * Archived versions are not served. Back-end users in edit mode are served a working version;
+     * any other user a live version. The DEFAULT variant is preferred. Permissions granted to
+     * front-end roles, including CMS Anonymous, count towards READ; the permission API only applies
+     * CMS Anonymous to live versions, so it never opens a working version.
+     * <p>
+     * While a Time Machine date is set, the container can render the working version of content
+     * scheduled to be published by that date, so a user served live content must be able to read
+     * the working version too.
      *
+     * @param request    the current request, which may carry a Time Machine date
      * @param identifier the contentlet's identifier
      * @param mode       the {@link PageMode} the user is served in
      * @param user       the {@link User} making the request
@@ -380,23 +387,44 @@ public class ContainerResource implements Serializable {
      * @throws DotSecurityException      if the user cannot read the contentlet
      * @throws ResourceNotFoundException if there is no version to serve
      */
-    private Contentlet findReadableContentletByIdentifier(final String identifier,
+    private Contentlet findReadableContentletByIdentifier(final HttpServletRequest request,
+                                                          final String identifier,
                                                           final PageMode mode,
                                                           final User user)
             throws DotDataException, DotSecurityException {
 
-        final Optional<String> servedInode = this.versionableAPI.findContentletVersionInfos(identifier).stream()
+        final Optional<ContentletVersionInfo> served = this.versionableAPI.findContentletVersionInfos(identifier).stream()
+                .filter(info -> !info.isDeleted())
                 .sorted(Comparator.comparing(
                         (ContentletVersionInfo info) -> !VariantAPI.DEFAULT_VARIANT.name().equals(info.getVariant())))
-                .map(info -> mode.showLive ? info.getLiveInode() : info.getWorkingInode())
-                .filter(UtilMethods::isSet)
+                .filter(info -> UtilMethods.isSet(mode.showLive ? info.getLiveInode() : info.getWorkingInode()))
                 .findFirst();
-        final Contentlet contentlet = servedInode.isPresent()
-                ? this.contentletAPI.find(servedInode.get(), user, true) : null;
+        final Contentlet contentlet = served.isPresent()
+                ? this.contentletAPI.find(mode.showLive ? served.get().getLiveInode() : served.get().getWorkingInode(), user, true)
+                : null;
         if (null == contentlet) {
             throw new ResourceNotFoundException("Can't find contentlet:" + SecurityUtils.sanitizeForLogging(identifier));
         }
+        if (mode.showLive && isTimeMachineOn(request)
+                && !served.get().getLiveInode().equals(served.get().getWorkingInode())) {
+            this.contentletAPI.find(served.get().getWorkingInode(), user, true);
+        }
         return contentlet;
+    }
+
+    /**
+     * Tells whether a Time Machine date is set on the request or the session, as the page API does
+     * when a page is requested with a future publish date.
+     *
+     * @param request the current request
+     * @return {@code true} when a Time Machine date is set
+     */
+    private static boolean isTimeMachineOn(final HttpServletRequest request) {
+        if (null != request.getAttribute(PageResource.TM_DATE)) {
+            return true;
+        }
+        final HttpSession session = request.getSession(false);
+        return null != session && null != session.getAttribute(PageResource.TM_DATE);
     }
 
     /**

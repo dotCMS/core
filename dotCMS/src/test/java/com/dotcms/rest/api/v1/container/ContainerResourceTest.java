@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -16,6 +15,7 @@ import static org.mockito.Mockito.when;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.variant.VariantAPI;
@@ -31,6 +31,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.liferay.portal.model.User;
+import com.liferay.portal.util.WebKeys;
 import java.util.List;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
@@ -51,6 +52,7 @@ class ContainerResourceTest {
     private static final String IDENTIFIER = "c0ffee00-0000-4000-8000-000000000001";
     private static final String INODE = "c0ffee00-0000-4000-8000-000000000002";
     private static final String LIVE_INODE = "c0ffee00-0000-4000-8000-000000000003";
+    private static final String OTHER_INODE = "c0ffee00-0000-4000-8000-000000000004";
     private static final String CONTENT_TITLE = "Quarterly Results Draft";
 
     private final WebResource webResource = mock(WebResource.class);
@@ -90,9 +92,6 @@ class ContainerResourceTest {
                 .thenReturn(List.of(versionInfo(LIVE_INODE)));
         // Any lookup made on behalf of the caller is denied
         when(contentletAPI.find(anyString(), eq(user), anyBoolean()))
-                .thenThrow(new DotSecurityException("no READ on " + CONTENT_TITLE));
-        when(contentletAPI.findContentletByIdentifier(eq(IDENTIFIER), anyBoolean(), anyLong(),
-                any(), eq(user), anyBoolean()))
                 .thenThrow(new DotSecurityException("no READ on " + CONTENT_TITLE));
 
         // Rendering resolves the current site through WebAPILocator; fail fast here instead of
@@ -220,6 +219,97 @@ class ContainerResourceTest {
 
             assertThrows(ResourceNotFoundException.class,
                     () -> resource.containerContent(request, response, CONTAINER_ID, INODE, null));
+        }
+
+        verify(velocityUtil, never()).merge(anyString(), any());
+    }
+
+    /**
+     * Given a contentlet whose first version found is archived, and another version that is not
+     * When it is rendered into a container by identifier
+     * Then the archived version is never read; the other one is read as the caller
+     */
+    @Test
+    void containerContent_byIdentifier_archivedVersionIsSkipped() throws Exception {
+        givenIdentifierShorty();
+        final ContentletVersionInfo archived = versionInfo(OTHER_INODE);
+        archived.setDeleted(true);
+        when(versionableAPI.findContentletVersionInfos(IDENTIFIER))
+                .thenReturn(List.of(archived, versionInfo(LIVE_INODE)));
+        when(contentletAPI.find(LIVE_INODE, user, true))
+                .thenThrow(new DotSecurityException("no READ on " + CONTENT_TITLE));
+
+        assertThrows(ForbiddenException.class,
+                () -> resource.containerContent(request, response, CONTAINER_ID, IDENTIFIER, null));
+
+        verify(contentletAPI, never()).find(eq(OTHER_INODE), any(), anyBoolean());
+    }
+
+    /**
+     * Given a contentlet with a version in another variant listed before its DEFAULT variant version
+     * When it is rendered into a container by identifier
+     * Then the DEFAULT variant version is the one read as the caller
+     */
+    @Test
+    void containerContent_byIdentifier_defaultVariantIsPreferred() throws Exception {
+        givenIdentifierShorty();
+        final ContentletVersionInfo otherVariant = versionInfo(OTHER_INODE);
+        otherVariant.setVariant("experiment-variant");
+        when(versionableAPI.findContentletVersionInfos(IDENTIFIER))
+                .thenReturn(List.of(otherVariant, versionInfo(LIVE_INODE)));
+        when(contentletAPI.find(LIVE_INODE, user, true))
+                .thenThrow(new DotSecurityException("no READ on " + CONTENT_TITLE));
+
+        assertThrows(ForbiddenException.class,
+                () -> resource.containerContent(request, response, CONTAINER_ID, IDENTIFIER, null));
+
+        verify(contentletAPI, never()).find(eq(OTHER_INODE), any(), anyBoolean());
+    }
+
+    /**
+     * Given a back-end caller, and a contentlet whose working and live versions differ
+     * When it is rendered into a container by identifier
+     * Then the working version is the one read as the caller
+     */
+    @Test
+    void containerContent_byIdentifier_backendCaller_readsWorkingVersion() throws Exception {
+        givenIdentifierShorty();
+        when(user.isBackendUser()).thenReturn(true);
+        when(request.getAttribute(WebKeys.USER)).thenReturn(user);
+        when(versionableAPI.findContentletVersionInfos(IDENTIFIER))
+                .thenReturn(List.of(versionInfo(LIVE_INODE)));
+        when(contentletAPI.find(INODE, user, true))
+                .thenThrow(new DotSecurityException("no READ on " + CONTENT_TITLE));
+
+        assertThrows(ForbiddenException.class,
+                () -> resource.containerContent(request, response, CONTAINER_ID, IDENTIFIER, null));
+
+        verify(contentletAPI, never()).find(eq(LIVE_INODE), any(), anyBoolean());
+    }
+
+    /**
+     * Given a caller served live content while a Time Machine date is set, and a contentlet whose
+     * working version the caller cannot read
+     * When it is rendered into a container by identifier
+     * Then the request is forbidden and nothing is rendered, since the Time Machine can render the
+     * working version
+     */
+    @Test
+    void containerContent_byIdentifier_timeMachine_requiresReadOnWorkingVersion() throws Exception {
+        givenIdentifierShorty();
+        when(request.getAttribute(PageResource.TM_DATE)).thenReturn("4102444800000");
+        when(versionableAPI.findContentletVersionInfos(IDENTIFIER))
+                .thenReturn(List.of(versionInfo(LIVE_INODE)));
+        when(contentletAPI.find(LIVE_INODE, user, true)).thenReturn(contentlet);
+        when(contentletAPI.find(INODE, user, true))
+                .thenThrow(new DotSecurityException("no READ on " + CONTENT_TITLE));
+
+        try (MockedStatic<WebAPILocator> webApiLocator = mockStatic(WebAPILocator.class)) {
+            webApiLocator.when(WebAPILocator::getHostWebAPI)
+                    .thenThrow(new AssertionError("the contentlet must not be rendered"));
+
+            assertThrows(ForbiddenException.class,
+                    () -> resource.containerContent(request, response, CONTAINER_ID, IDENTIFIER, null));
         }
 
         verify(velocityUtil, never()).merge(anyString(), any());
