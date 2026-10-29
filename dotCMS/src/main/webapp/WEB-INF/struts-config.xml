@@ -59,6 +59,7 @@
 	<global-forwards>
 		<forward name="/common/error.jsp" path="/common/error.jsp" />
 		<forward name="/portal/error" path="portal.error" />
+		<forward name="/portal/portlet_access_denied" path="portal.portlet_access_denied" />
 	</global-forwards>
 
 	<!-- Action Mappings -->

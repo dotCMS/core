@@ -3166,10 +3166,12 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     .deleteWorkflowTaskByContentletIdAnyLanguage(contentlet, user);
 
             // Remove Rules with this contentlet as Parent.
+            // the parent's rules are removed with it; the caller's permission on the parent was checked above
+            // (canLock + PUBLISH filter in internalDestroy and validateAndFilterContentletsToDelete).
             try {
 
                 APILocator.getRulesAPI()
-                        .deleteRulesByParent(contentlet, user, respectFrontendRoles);
+                        .deleteRulesByParent(contentlet, APILocator.systemUser(), false);
             } catch (InvalidLicenseException ilexp) {
 
                 Logger.warn(this, "An enterprise license is required to delete rules under pages.");
@@ -5430,7 +5432,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         final Contentlet contentletReturned = checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, false);
 
-        this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+        this.handlePermissions(permissions, user, contentletReturned);
 
         return contentletReturned;
     }
@@ -5472,7 +5474,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     checkin(contentlet, contentRelationships, cats, user, respectFrontendRoles, true,
                 false);
 
-        this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+        this.handlePermissions(permissions, user, contentletReturned);
 
         return contentletReturned;
     }
@@ -5495,7 +5497,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final Contentlet contentletReturned = checkin(contentlet, relationshipsData, cats, user, respectFrontendRoles, false,
                 false);
 
-        this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+        this.handlePermissions(permissions, user, contentletReturned);
 
         return contentletReturned;
     }
@@ -10524,7 +10526,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     final Contentlet contentletReturned = checkin(contentlet, contentletRelationships, cats,
                             user, respectFrontendRoles, false, false);
 
-                    this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+                    this.handlePermissions(permissions, user, contentletReturned);
                     return contentletReturned;
                 } else {
                     final String workingInode = working.getInode();
@@ -10534,7 +10536,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
                     final Contentlet contentletReturned =  checkin(contentlet, contentletRelationships, cats,
                             user, respectFrontendRoles, false, false);
 
-                    this.handlePermissions(permissions, user, respectFrontendRoles, contentletReturned);
+                    this.handlePermissions(permissions, user, contentletReturned);
                     return contentletReturned;
                 }
             }
@@ -10865,47 +10867,43 @@ public class ESContentletAPIImpl implements ContentletAPI {
         final Contentlet contentletReturned = checkin(contentlet, contentRelationships, cats, user,
                 respectFrontendRoles, true, generateSystemEvent);
 
-        handlePermissions(selectedPermissions, user, respectFrontendRoles, contentletReturned);
+        handlePermissions(selectedPermissions, user, contentletReturned);
 
         return contentletReturned;
     }
 
+    /**
+     * Replaces the individual permissions of a saved contentlet with the permissions sent along
+     * with it. Whether the user may change them is decided right away, before anything is removed:
+     * a user who may not edit the contentlet's permissions can only send its current permissions,
+     * which leaves them as they are; any other list is refused. An allowed replacement runs after
+     * the transaction commits or, without a transaction, immediately.
+     *
+     * @param selectedPermissions the permissions sent with the contentlet, may be empty
+     * @param user                the user saving the contentlet
+     * @param contentlet          the saved contentlet
+     * @throws DotDataException     if the current permissions cannot be read
+     * @throws DotSecurityException if the user may not edit the contentlet's permissions and the
+     *                              list differs from the current one
+     */
     private void handlePermissions(final List<Permission> selectedPermissions,
                                    final User user,
-                                   final boolean respectFrontendRoles,
-                                   final Contentlet contentlet) {
+                                   final Contentlet contentlet)
+            throws DotDataException, DotSecurityException {
 
         if (InodeUtils.isSet(contentlet.getInode()) && UtilMethods.isSet(
                 selectedPermissions)) {
 
-            final Runnable savePermissions = () -> {
+            final Optional<Runnable> replacement = ESContentletAPIHelper.INSTANCE.permissionReplacement(
+                    this.permissionAPI, contentlet, selectedPermissions, user, APILocator.systemUser());
 
-                try {
+            if (replacement.isPresent()) {
 
-                    Logger.debug(this,
-                            () -> "Removing the permissions for: " + contentlet.getTitle() +
-                                    ", id: " + contentlet.getIdentifier());
-                    this.permissionAPI.removePermissions(contentlet);
-                    Logger.debug(this,
-                            () -> "Saving the permissions for: " + contentlet.getTitle() +
-                                    ", id: " + contentlet.getIdentifier());
-                    this.permissionAPI.save(selectedPermissions.stream()
-                                    .map(permission -> new Permission(contentlet.getPermissionId(),
-                                            permission.getRoleId(), permission.getPermission()))
-                                    .collect(Collectors.toList()), contentlet, user,
-                            respectFrontendRoles);
-                } catch (Exception e) {
-
-                    Logger.error(this,
-                            "Could not save the permissions for: " + contentlet.getTitle() +
-                                    ", id: " + contentlet.getIdentifier() + ", msg: "
-                                    + e.getMessage(), e);
-                }
-            };
-
-            FunctionUtils.ifOrElse(DbConnectionFactory.inTransaction(),
-                    () -> HibernateUtil.addCommitListener(contentlet.getInode(), savePermissions),
-                    () -> savePermissions.run());
+                final Runnable task = replacement.get();
+                FunctionUtils.ifOrElse(DbConnectionFactory.inTransaction(),
+                        () -> HibernateUtil.addCommitListener(contentlet.getInode(), task),
+                        task::run);
+            }
         }
     }
 
