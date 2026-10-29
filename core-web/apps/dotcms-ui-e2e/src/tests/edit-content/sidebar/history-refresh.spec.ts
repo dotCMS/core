@@ -10,15 +10,17 @@ import { generateBase64Credentials } from '@utils/generateBase64Credential';
  * The bug had two faces, one per host, so both are covered here:
  * - Full-screen (routed): the save navigates, which re-initializes the store and empties
  *   the version list. Without the fix the list stayed empty.
- * - Dialog (overlay): the save does NOT navigate, so nothing clears or re-fetches.
- *   Without the fix the list stayed stale until the dialog was closed and reopened.
+ * - Overlay (the side panel, which the "dialog host" tests below still call the dialog): the
+ *   save does NOT navigate, so nothing clears or re-fetches. Without the fix the list stayed
+ *   stale until the overlay was closed and reopened.
  *
  * Notes:
  * - Sidebar tab headers carry no data-testid; they are identified by role/tab index
  *   (0 = Actions, 1 = History, 2 = Comments). The panels themselves DO have testids
  *   (`history`, `activities`), so the assertions anchor on those.
- * - The dialog is only reachable in production from UVE or the relationship field's
- *   "New Content" item. The latter needs no page/template setup, so it is used here.
+ * - Since #38303 every screen outside the full-screen route edits in the side panel. The
+ *   relationship field's "New Content" item opens one from the full-screen route with no
+ *   page/template setup, so it is used here.
  */
 
 const HISTORY_TAB_INDEX = 1;

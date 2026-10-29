@@ -1,8 +1,17 @@
-import { expect, Page } from '@playwright/test';
+import { expect, type Locator, Page } from '@playwright/test';
 import { clickAddNewContentFromList, goToContentList } from '@utils/contentListingNavigation';
 
 export class NewEditContentFormPage {
-    constructor(private page: Page) {}
+    /**
+     * @param page - Playwright page
+     * @param root - Where the form is. Defaults to the whole page, which is enough while one form
+     *   is open; pass a side panel (`getByTestId('side-panel')`) when another one is open behind
+     *   it, since both carry the same field test ids and workflow buttons (#38303).
+     */
+    constructor(
+        private page: Page,
+        private root: Page | Locator = page
+    ) {}
 
     /**
      * Navigates to the Content portlet filtered by content type.
@@ -14,17 +23,18 @@ export class NewEditContentFormPage {
 
     /**
      * From the content listing (Dojo portlet inside iframe), clicks the "+"
-     * dropdown and selects "Add New Content" to open the new content form.
+     * dropdown and selects "Add New Content", which opens the new content form in the side panel
+     * over the listing (#38303).
      */
     async clickNewContentFromList() {
         await clickAddNewContentFromList(this.page);
 
         // Wait for the Angular form to render (replaces networkidle which is unreliable in SPAs)
-        await this.page.getByTestId('title').waitFor({ state: 'visible', timeout: 15000 });
+        await this.root.getByTestId('title').waitFor({ state: 'visible', timeout: 15000 });
     }
 
     async fillTextField(text: string) {
-        const textFieldLocator = this.page.getByTestId('title');
+        const textFieldLocator = this.root.getByTestId('title');
         await textFieldLocator.waitFor({ state: 'visible', timeout: 10000 });
         await textFieldLocator.fill(text);
     }
@@ -52,8 +62,8 @@ export class NewEditContentFormPage {
      * workflow buttons at once, so a single regex locator would match 2+ roles and break strict mode.
      */
     async save() {
-        const saveButton = this.page.getByRole('button', { name: 'Save' });
-        const publishButton = this.page.getByRole('button', { name: 'Publish' });
+        const saveButton = this.root.getByRole('button', { name: 'Save' });
+        const publishButton = this.root.getByRole('button', { name: 'Publish' });
         const actionButton = (await saveButton.isVisible()) ? saveButton : publishButton;
 
         await expect(actionButton).toBeVisible();
