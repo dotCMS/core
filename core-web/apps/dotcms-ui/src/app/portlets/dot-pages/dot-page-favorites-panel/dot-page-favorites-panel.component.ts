@@ -10,8 +10,8 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPagesCardComponent } from './dot-pages-card/dot-pages-card.component';
 
-import { LOCAL_STORAGE_FAVORITES_PANEL_KEY } from '../dot-pages-store/dot-pages.store';
 import { DotActionsMenuEventParams } from '../dot-pages.component';
+import { LOCAL_STORAGE_FAVORITES_PANEL_KEY } from '../dot-pages.constants';
 
 @Component({
     selector: 'dot-page-favorites-panel',

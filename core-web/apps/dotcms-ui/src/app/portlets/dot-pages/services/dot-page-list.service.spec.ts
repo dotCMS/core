@@ -8,7 +8,7 @@ import { DotCMSContentlet, ESContent } from '@dotcms/dotcms-models';
 
 import { DotPageListService, ListPagesParams } from './dot-page-list.service';
 
-import { FAVORITE_PAGE_LIMIT } from '../dot-pages-store/dot-pages.store';
+import { FAVORITE_PAGE_LIMIT } from '../dot-pages.constants';
 
 const MOCK_ES_CONTENT: ESContent = {
     contentTook: 0,

@@ -6,8 +6,7 @@ export const iFramesLocators = {
     dot_iframe: 'dot-iframe-dialog iframe[name="detailFrame"]',
     wysiwygFrame:
         'iframe[title="Rich Text Area\\. Press ALT-F9 for menu\\. Press ALT-F10 for toolbar\\. Press ALT-0 for help"]',
-    dataTestId: '[data-testid="iframe"]',
-    dot_edit_iframe: 'dot-edit-contentlet iframe[name="detailFrame"]'
+    dataTestId: '[data-testid="iframe"]'
 };
 
 /**
