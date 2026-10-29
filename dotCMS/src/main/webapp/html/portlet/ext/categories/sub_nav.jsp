@@ -10,7 +10,7 @@
 	Portlet portlet1 = PortletManagerUtil.getPortletById(company.getCompanyId(), portletId1);
 	String strutsAction = ParamUtil.get(request, "struts_action", null);
 	
-	if (!UtilMethods.isSet(strutsAction) || strutsAction.equals(portlet1.getInitParams().get("view-action")) || strutsAction.equals("/ext/categories/view_category")) {
+	if (!UtilMethods.isSet(strutsAction) || strutsAction.equals(portlet1.getInitParams().get("view-action"))) {
 		List<CrumbTrailEntry> crumbTrailEntries = new ArrayList<CrumbTrailEntry>();
 		
 		boolean isSelectedTab = (layout != null && layouts !=null && layout.getId().equals(layouts[0].getId()));
