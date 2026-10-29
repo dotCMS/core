@@ -1,3 +1,5 @@
+import { injectDispatch } from '@ngrx/signals/events';
+
 import {
     ChangeDetectionStrategy,
     Component,
@@ -5,7 +7,6 @@ import {
     effect,
     inject,
     input,
-    output,
     signal,
     untracked
 } from '@angular/core';
@@ -17,10 +18,12 @@ import { TEMP_EMPTY_CONTENTLET_TYPE } from '@dotcms/uve/internal';
 
 import { DotUveCopyDecisionComponent } from './dot-uve-copy-decision/dot-uve-copy-decision.component';
 import { DotUveQuickEditFormComponent } from './dot-uve-quick-edit-form/dot-uve-quick-edit-form.component';
-import { ContentletEditData, ContentletField } from './types';
+import { ContentletField } from './types';
 
 import { UVEStore } from '../../../store/dot-uve.store';
+import { ContentletEditData } from '../../../store/features/editor/models';
 import { getQuickEditFields, parseFieldValues } from '../../utils';
+import { uveContentEditorEvents } from '../dot-uve-content-editor/dot-uve-content-editor.events';
 
 type QuickEditMode =
     | 'decide'
@@ -58,11 +61,10 @@ type QuickEditMode =
 })
 export class DotUveContentletQuickEditComponent {
     readonly #uveStore = inject(UVEStore);
+    readonly #contentEditor = injectDispatch(uveContentEditorEvents);
 
     readonly data = input.required<ContentletEditData>();
     readonly loading = input<boolean>(false);
-
-    readonly openFullEditor = output<void>();
 
     readonly #decisionMade = signal(false);
     readonly #lastIdentifierForDecision = signal<string | undefined>(undefined);
@@ -73,7 +75,7 @@ export class DotUveContentletQuickEditComponent {
 
     /**
      * Whether the user may edit the selected contentlet. Read from the DOM
-     * payload's `canEdit`, which `$contentletEditData` carries across the
+     * payload's `canEdit`, which the store's `$editorContentletEditData` carries across the
      * page-asset swap. Fail-open: absent means allowed, since headless pages
      * never supply it.
      */
@@ -149,6 +151,22 @@ export class DotUveContentletQuickEditComponent {
     /** Wired to the copy-decision component's `decisionMade` output. */
     protected handleDecisionMade(): void {
         this.#decisionMade.set(true);
+    }
+
+    /**
+     * Wired to the form's `openFullEditor` output and the no-fields button. Opens the full editor
+     * on the contentlet the panel shows, which comes from the page asset, so it is the latest
+     * saved version even after a save changed its inode. No container goes along: this panel has
+     * its own copy prompt.
+     */
+    protected openFullEditor(): void {
+        const { contentlet } = this.data();
+
+        if (!contentlet?.inode) {
+            return;
+        }
+
+        this.#contentEditor.uveEditContentRequested({ contentlet });
     }
 
     /** Wired to the form component's `closed` output (Cancel button). */

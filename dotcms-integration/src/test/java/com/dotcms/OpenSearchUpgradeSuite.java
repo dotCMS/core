@@ -62,7 +62,7 @@ import org.junit.runners.Suite.SuiteClasses;
         OSSearchAPIImplIntegrationTest.class,
         OSSiteSearchAPIIntegrationTest.class,
         SiteSearchDualWriteRouterIT.class,
-        OSTrailingBackslashQueryTest.class
+        OSTrailingBackslashQueryTest.class,
 })
 public class OpenSearchUpgradeSuite {
 }
