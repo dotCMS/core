@@ -94,6 +94,7 @@ class ClusterLogCollectorPeerRequestTest {
     private SSLContext savedDefaultContext;
     private String savedHostnameProperty;
     private HttpServer peer;
+    private int peerStatus = 200;
     private File localLog;
 
     /**
@@ -286,6 +287,45 @@ class ClusterLogCollectorPeerRequestTest {
         assertTrue(errors.contains(SCHEME_KEY), "Error entry should name " + SCHEME_KEY + ": " + errors);
     }
 
+    /**
+     * With the {@code http} scheme, the error entry of a failed peer does not carry the scheme
+     * setting hint.
+     */
+    @Test
+    void httpScheme_failedPeer_errorEntryHasNoSchemeHint() throws Exception {
+        Config.setProperty(SCHEME_KEY, "http");
+        final int closedPort = startHttpPeer();
+        peer.stop(0);
+        peer = null;
+
+        final Map<String, String> zip = collectFrom(closedPort);
+
+        assertTrue(zip.containsKey(ERRORS_ENTRY), "Expected " + ERRORS_ENTRY + " in " + zip.keySet());
+        final String errors = zip.get(ERRORS_ENTRY);
+        assertTrue(errors.contains("peer-node"), "Error entry should name the peer: " + errors);
+        assertFalse(errors.contains(SCHEME_KEY), "Error entry should not name " + SCHEME_KEY + ": " + errors);
+    }
+
+    /**
+     * A verified HTTPS peer that answers with an error status is reported with that status and
+     * without the scheme setting hint.
+     */
+    @Test
+    void httpsPeerErrorStatus_errorEntryNamesStatusWithoutSchemeHint() throws Exception {
+        SSLContext.setDefault(contextTrustingTestCa);
+        peerStatus = 500;
+
+        final Map<String, String> zip = collectFrom(startHttpsPeer(caIssuedForLoopback));
+
+        assertEquals(List.of("Bearer " + BEARER_TOKEN), receivedAuthorization, "Peer requests");
+        assertFalse(zip.containsKey(PEER_ENTRY), "No peer log entry expected: " + zip.keySet());
+        assertTrue(zip.containsKey(ERRORS_ENTRY), "Expected " + ERRORS_ENTRY + " in " + zip.keySet());
+        final String errors = zip.get(ERRORS_ENTRY);
+        assertTrue(errors.contains("peer-node"), "Error entry should name the peer: " + errors);
+        assertTrue(errors.contains("HTTP 500"), "Error entry should give the status: " + errors);
+        assertFalse(errors.contains(SCHEME_KEY), "Error entry should not name " + SCHEME_KEY + ": " + errors);
+    }
+
     // ---- assertions ----
 
     private void assertNoRequestAndLocalLogWithErrors(final Map<String, String> zip) {
@@ -340,7 +380,7 @@ class ClusterLogCollectorPeerRequestTest {
     private void answer(final HttpExchange exchange) throws IOException {
         receivedAuthorization.add(String.valueOf(exchange.getRequestHeaders().getFirst("Authorization")));
         final byte[] body = PEER_LOG.getBytes(StandardCharsets.UTF_8);
-        exchange.sendResponseHeaders(200, body.length);
+        exchange.sendResponseHeaders(peerStatus, body.length);
         try (OutputStream out = exchange.getResponseBody()) {
             out.write(body);
         }

@@ -41,9 +41,9 @@ public class ClusterLogCollector {
     private static final int DEFAULT_CONNECT_TIMEOUT_SECONDS = 10;
     private static final String HTTP_SCHEME = "http";
     private static final String HTTPS_SCHEME = "https";
-    private static final String HTTPS_FAILURE_HINT = " (peers are reached over HTTPS and verified"
-            + " against the JVM trust store; set " + CONFIG_SCHEME
-            + "=http to reach them over plain HTTP)";
+    private static final String HTTPS_FAILURE_HINT = " (peers are reached over HTTPS and must"
+            + " present a certificate trusted by this JVM for the address they are reached at;"
+            + " set " + CONFIG_SCHEME + "=http to reach them over plain HTTP instead)";
 
     private final List<Server> peerServers;
     private final String fileName;
@@ -91,8 +91,8 @@ public class ClusterLogCollector {
      * <p>HTTPS peers are verified with the JVM's default trust store and hostname
      * check: each peer must present a certificate the JVM trusts, issued for the
      * address it is reached at (its IP address when the server record has one).
-     * A peer request that fails is reported in {@code _errors.txt} and is not
-     * retried with another scheme.
+     * A peer request that fails is reported in {@code _errors.txt} with its
+     * reason and is not retried with another scheme.
      *
      * @return a {@link StreamingOutput} streaming the assembled ZIP
      */
@@ -103,14 +103,14 @@ public class ClusterLogCollector {
         final int readTimeout = Config.getIntProperty(
                 CONFIG_TIMEOUT_SECONDS, DEFAULT_TIMEOUT_SECONDS);
         final String scheme = resolveScheme();
-        final String failureHint = HTTPS_SCHEME.equals(scheme) ? HTTPS_FAILURE_HINT : "";
+        final boolean httpsScheme = HTTPS_SCHEME.equals(scheme);
 
         final HttpClient httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(connectTimeout))
                 .build();
 
         // Fire off all peer requests in parallel
-        final Map<String, CompletableFuture<byte[]>> futures = new LinkedHashMap<>();
+        final Map<String, CompletableFuture<PeerResponse>> futures = new LinkedHashMap<>();
 
         for (final Server peer : peerServers) {
             final String host = resolvePeerHost(peer);
@@ -130,22 +130,23 @@ public class ClusterLogCollector {
         final Map<String, byte[]> peerLogs = new LinkedHashMap<>();
         final List<String> errors = new ArrayList<>();
 
-        for (final Map.Entry<String, CompletableFuture<byte[]>> entry : futures.entrySet()) {
+        for (final Map.Entry<String, CompletableFuture<PeerResponse>> entry : futures.entrySet()) {
             final String label = entry.getKey();
             try {
-                final byte[] body = entry.getValue().join();
-                if (body != null) {
-                    peerLogs.put(label, body);
+                final PeerResponse response = entry.getValue().join();
+                if (response.body != null) {
+                    peerLogs.put(label, response.body);
                     Logger.info(this, "Received log from " + label
-                            + " (" + body.length + " bytes)");
+                            + " (" + response.body.length + " bytes)");
                 } else {
-                    final String msg = "Server " + label + " — no successful response" + failureHint;
+                    final String hint = httpsScheme && response.connectionFailed
+                            ? HTTPS_FAILURE_HINT : "";
+                    final String msg = "Server " + label + " — " + response.failure + hint;
                     Logger.warn(this, msg);
                     errors.add(msg);
                 }
             } catch (Exception e) {
-                final String msg = "Failed to retrieve log from " + label + ": " + e.getMessage()
-                        + failureHint;
+                final String msg = "Failed to retrieve log from " + label + ": " + e.getMessage();
                 Logger.warn(this, msg, e);
                 errors.add(msg);
             }
@@ -192,15 +193,21 @@ public class ClusterLogCollector {
     }
 
     /**
-     * Attempts to fetch a log file from the given URL. Returns the response
-     * body bytes on success (HTTP 200), or {@code null} on failure. Connection
-     * errors (refused connections, failed TLS handshakes, timeouts) are logged
-     * at INFO and return {@code null}; the caller reports the peer as failed.
+     * Attempts to fetch a log file from the given URL. The returned response holds
+     * the body on success (HTTP 200); otherwise it holds a short reason: the HTTP
+     * status the peer answered with, or a connection failure (refused connection,
+     * failed TLS handshake, timeout) whose details are logged at INFO.
+     *
+     * @param client      the HTTP client shared by all peer requests
+     * @param url         the peer's {@code _downloadLog} URL
+     * @param readTimeout the request timeout, in seconds
+     * @param peer        the peer server, for logging
+     * @return a future that always completes normally with the peer's response
      */
-    private CompletableFuture<byte[]> fetchLog(final HttpClient client,
-                                                final String url,
-                                                final int readTimeout,
-                                                final Server peer) {
+    private CompletableFuture<PeerResponse> fetchLog(final HttpClient client,
+                                                      final String url,
+                                                      final int readTimeout,
+                                                      final Server peer) {
 
         Logger.info(this, "Requesting log from peer server " + peer.serverId + ": " + url);
 
@@ -214,11 +221,11 @@ public class ClusterLogCollector {
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
                 .thenApply(resp -> {
                     if (resp.statusCode() == 200) {
-                        return resp.body();
+                        return PeerResponse.success(resp.body());
                     }
                     Logger.warn(this, "Server " + peer.serverId + " returned HTTP "
                             + resp.statusCode() + " for " + url);
-                    return null;
+                    return PeerResponse.failure("HTTP " + resp.statusCode(), false);
                 })
                 .exceptionally(ex -> {
                     // Unwrap CompletionException to get the real cause
@@ -226,11 +233,48 @@ public class ClusterLogCollector {
                     if (cause instanceof IOException) {
                         // Connection refused, SSL handshake failure, timeouts, etc.
                         Logger.info(this, "Connection to " + url + " failed: " + cause.getMessage());
-                    } else {
-                        Logger.warn(this, "Error fetching " + url + ": " + cause.getMessage(), cause);
+                        return PeerResponse.failure("connection failed", true);
                     }
-                    return null;
+                    Logger.warn(this, "Error fetching " + url + ": " + cause.getMessage(), cause);
+                    return PeerResponse.failure("request failed", false);
                 });
+    }
+
+    /**
+     * Result of one peer request: the log content, or a short reason why there is none.
+     */
+    private static final class PeerResponse {
+
+        private final byte[] body;
+        private final String failure;
+        private final boolean connectionFailed;
+
+        private PeerResponse(final byte[] body, final String failure, final boolean connectionFailed) {
+            this.body = body;
+            this.failure = failure;
+            this.connectionFailed = connectionFailed;
+        }
+
+        /**
+         * A successful response.
+         *
+         * @param body the log file content
+         * @return the response
+         */
+        private static PeerResponse success(final byte[] body) {
+            return new PeerResponse(body, null, false);
+        }
+
+        /**
+         * A failed request.
+         *
+         * @param reason           a short reason, written to {@code _errors.txt}
+         * @param connectionFailed {@code true} when no HTTP response was received
+         * @return the response
+         */
+        private static PeerResponse failure(final String reason, final boolean connectionFailed) {
+            return new PeerResponse(null, reason, connectionFailed);
+        }
     }
 
     /**

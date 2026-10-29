@@ -27,8 +27,9 @@ import org.junit.Test;
 
 /**
  * Tests for {@link ClusterLogCollector}. Exercises ZIP assembly, file naming,
- * scheme selection (auto/https/http), and error handling when peers are
- * unreachable.
+ * and error handling when peers are unreachable. How the scheme and the peer
+ * certificate are handled is covered by the unit test
+ * {@code ClusterLogCollectorPeerRequestTest}.
  */
 public class ClusterLogCollectorTest {
 
@@ -74,7 +75,10 @@ public class ClusterLogCollectorTest {
     @Test
     public void test_collect_unreachablePeer_includesErrorFile() throws Exception {
 
-        // Force HTTP only to avoid HTTPS fallback delay
+        // Plain HTTP, so the unreachable peer fails on the connection itself
+        final String previousScheme = Config.getStringProperty("CLUSTER_LOG_DOWNLOAD_SCHEME", null);
+        final String previousConnectTimeout =
+                Config.getStringProperty("CLUSTER_LOG_DOWNLOAD_CONNECT_TIMEOUT_SECONDS", null);
         Config.setProperty("CLUSTER_LOG_DOWNLOAD_SCHEME", "http");
         Config.setProperty("CLUSTER_LOG_DOWNLOAD_CONNECT_TIMEOUT_SECONDS", 2);
 
@@ -107,8 +111,8 @@ public class ClusterLogCollectorTest {
                     errorsEntry.content.contains("node-peer")
                             || errorsEntry.content.contains("peer-id"));
         } finally {
-            Config.setProperty("CLUSTER_LOG_DOWNLOAD_SCHEME", "auto");
-            Config.setProperty("CLUSTER_LOG_DOWNLOAD_CONNECT_TIMEOUT_SECONDS", 10);
+            Config.setProperty("CLUSTER_LOG_DOWNLOAD_SCHEME", previousScheme);
+            Config.setProperty("CLUSTER_LOG_DOWNLOAD_CONNECT_TIMEOUT_SECONDS", previousConnectTimeout);
         }
     }
 
