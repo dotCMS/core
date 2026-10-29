@@ -790,7 +790,15 @@ public class UserResource implements Serializable {
 					.CURRENT_HOST)), currentUser.getUserId(), loginAsUserId);
 			this.setImpersonatedUserSite(request, sessionData.get(WebKeys.USER_ID).toString());
 			response = Response.ok(new ResponseEntityView<>(Map.of("loginAs", true))).build();
-		} catch (final NoSuchUserException | DotSecurityException e) {
+		} catch (final DotSecurityException e) {
+			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
+							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
+					e.getMessage()));
+			revertLoginAsSessionInfo(request, currentSite, currentUser.getUserId());
+			// 403, not 401: the caller is authenticated but not allowed; a 401 makes the UI end the session.
+			// The key travels in the error-key header so the UI can tell this denial from other 403s
+			return ExceptionMapperUtil.createResponse(e, "loginas.error.adminrequired", Response.Status.FORBIDDEN);
+		} catch (final NoSuchUserException e) {
 			SecurityLogger.logInfo(UserResource.class, String.format("ERROR: An attempt to login as a different user " +
 							"was made by UserID '%s' / Remote IP '%s': %s", currentUser.getUserId(), request.getRemoteAddr(),
 					e.getMessage()));
@@ -1473,7 +1481,8 @@ public class UserResource implements Serializable {
 	 * Updates a user from the payload and, when the payload has a {@code roles} field, reconciles the
 	 * user's roles with it. Changing roles requires a CMS Administrator; the role change is checked
 	 * before anything is saved, so a refused request changes nothing. Sending the roles the user
-	 * already holds is not a change.
+	 * already holds is not a change. A new password also invalidates the login tokens issued to the
+	 * user before the change.
 	 *
 	 * @param modUser        The user performing the request.
 	 * @param request        The current request.
@@ -1563,6 +1572,10 @@ public class UserResource implements Serializable {
 
 			this.userAPI.save(userToSave, modUser, validatePassword,
 					!WebAPILocator.getUserWebAPI().isLoggedToBackend(request));
+			if (UtilMethods.isSet(updateUserForm.getPassword())) {
+				// login tokens issued before the password change stop working
+				userToSave.setRememberMeToken(this.userAPI.invalidateLoginTokens(userToSave.getUserId()));
+			}
 			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' has been updated.");
 
