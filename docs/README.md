@@ -33,6 +33,7 @@ Descriptions say **when to load** the doc, not what it contains.
 | [APPS_CONFIGURATION.md](backend/APPS_CONFIGURATION.md) | Deciding who may change or read Apps configuration, or using its legacy delegation feature flag |
 | [DATABASE_PATTERNS.md](backend/DATABASE_PATTERNS.md) | Writing SQL, using `DotConnect`, or reasoning about transactions |
 | [SECURITY_BACKEND.md](backend/SECURITY_BACKEND.md) | Input validation, auth, SQL/XSS prevention, secure logging on the backend specifically |
+| [LOGIN_LOCKOUT.md](backend/LOGIN_LOCKOUT.md) | Working on login lockout, configuring it, or unlocking a locked-out user (support runbook) |
 | [VIRTUAL_THREADS.md](backend/VIRTUAL_THREADS.md) | Deciding whether a workload belongs on a virtual thread — socket I/O yes, file I/O no |
 | [JANDEX_METADATA_SCANNING.md](backend/JANDEX_METADATA_SCANNING.md) | Looking up classes or annotations at runtime — prefer this over reflection |
 | [HEALTH_MONITORING.md](backend/HEALTH_MONITORING.md) | Working on health endpoints or runtime log levels |

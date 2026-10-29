@@ -5,6 +5,7 @@ import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
+import com.dotcms.auth.LoginLockout;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ResponseEntityView;
@@ -25,7 +26,6 @@ import com.dotmarketing.business.UserProxyAPI;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.ActivityLogger;
@@ -227,7 +227,7 @@ public class UserResourceHelper implements Serializable {
 			}
 			if (!UtilMethods.isSet(loginAsUserPwd)) {
 				throw new DotDataException("The 'Login As' user password is required.", "loginas.error.missingloginaspwd");
-			} else if (!LoginFactory.passwordMatch(loginAsUserPwd, currentUser)) {
+			} else if (!LoginLockout.getInstance().passwordMatch(loginAsUserPwd, currentUser)) {
 				throw new DotDataException("The 'Login As' user password is invalid.",
 						"loginas.error.invalidloginascredentials");
 			}
@@ -449,6 +449,7 @@ public class UserResourceHelper implements Serializable {
 
 			if (userToSave.getUserId().equalsIgnoreCase(modUser.getUserId())) {
 
+				// Goes through login lockout: counted, and refused under a lock, like any other password check
 				boolean passwordMatch = loginService.passwordMatch(updateUserForm.getCurrentPassword(), modUser);
 
 				if (!passwordMatch){
