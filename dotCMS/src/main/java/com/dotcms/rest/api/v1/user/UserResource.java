@@ -1488,8 +1488,9 @@ public class UserResource implements Serializable {
 	 * already holds is not a change.
 	 * <p>
 	 * When the payload has a password, it must meet the configured password policy and is stored
-	 * hashed, and the login tokens issued to the user before the change are invalidated. Without a
-	 * password, the stored one is left as it is.
+	 * hashed, and the login tokens issued to the user before the change are invalidated (both done by
+	 * {@link UserAPI#save(User, User, boolean, boolean)}). Without a password, the stored one is left
+	 * as it is.
 	 *
 	 * @param modUser        The user performing the request.
 	 * @param request        The current request.
@@ -1581,12 +1582,9 @@ public class UserResource implements Serializable {
 				this.roleAPI.checkUserRolesChange(modUser, userToSave, roleChanges.toAdd(), roleChanges.toRemove());
 			}
 
+			// with validatePassword=true, save also invalidates the login tokens issued before the change
 			this.userAPI.save(userToSave, modUser, validatePassword,
 					!WebAPILocator.getUserWebAPI().isLoggedToBackend(request));
-			if (UtilMethods.isSet(updateUserForm.getPassword())) {
-				// login tokens issued before the password change stop working
-				userToSave.setRememberMeToken(this.userAPI.invalidateLoginTokens(userToSave.getUserId()));
-			}
 			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' has been updated.");
 
