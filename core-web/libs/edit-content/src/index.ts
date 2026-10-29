@@ -2,9 +2,9 @@ export * from './lib/edit-content.routes';
 export * from './lib/fields/dot-edit-content-file-field/components/dot-binary-field-ce-bridge/dot-binary-field-ce-bridge.component';
 export * from './lib/fields/dot-edit-content-file-field/components/dot-file-field/dot-file-field.component';
 export * from './lib/fields/dot-edit-content-tag-field/components/tag-field/tag-field.component';
-export * from './lib/models/dot-edit-content-dialog.interface';
 export * from './lib/services/dot-edit-content.service';
-// The Edit Content side panel's content, loaded on demand: open it with DotSidePanelService.
+// The Edit Content side panel's content, loaded on demand. Surfaces open content through
+// DotEditContentOpenerService below, which picks this panel or the legacy one.
 export { loadDotEditContentSidePanel } from './lib/components/dot-edit-content-side-panel/load-dot-edit-content-side-panel';
 
 // Open any content in the side panel, in whichever editor its type uses (#38303): one request,
