@@ -464,7 +464,9 @@ describe('DotContentDriveNavigationService', () => {
         });
 
         it('exposes every request through one signal, with no second one for the legacy editor', () => {
-            const requestSignals = Object.keys(service).filter((key) => key.endsWith('PanelRequest'));
+            const requestSignals = Object.keys(service).filter((key) =>
+                key.endsWith('PanelRequest')
+            );
 
             expect(requestSignals).toEqual(['$editPanelRequest']);
         });
