@@ -77,7 +77,7 @@ class ContainerResourceTest {
 
         resource = new ContainerResource(webResource, mock(PaginationUtil.class), mock(FormAPI.class),
                 mock(ContainerAPI.class), versionableAPI, velocityUtil, shortyAPI,
-                contentletAPI);
+                contentletAPI, mock(ContainerDependenciesHelper.class));
     }
 
     /**

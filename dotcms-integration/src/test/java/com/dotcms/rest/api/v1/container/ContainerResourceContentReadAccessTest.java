@@ -458,7 +458,7 @@ public class ContainerResourceContentReadAccessTest {
         return new ContainerResource(webResource, mock(PaginationUtil.class),
                 APILocator.getFormAPI(), APILocator.getContainerAPI(),
                 APILocator.getVersionableAPI(), velocityUtil, APILocator.getShortyAPI(),
-                APILocator.getContentletAPI());
+                APILocator.getContentletAPI(), mock(ContainerDependenciesHelper.class));
     }
 
     private static VelocityUtil velocityUtil() {
