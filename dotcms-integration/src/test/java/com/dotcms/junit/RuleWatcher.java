@@ -133,8 +133,9 @@ public class RuleWatcher extends TestWatcher {
     /**
      * After a test, waits for the reindex queue to drain so pending index work does not leak into
      * the next test. If it does not drain within {@link #INDEXER_DRAIN_TIMEOUT_SECONDS}, the
-     * reindex thread is paused and the whole journal is cleared by {@link #clearStuckJournal()},
-     * so rows the worker can never take cannot make every following test wait as well.
+     * reindex thread is paused and the whole journal is cleared by
+     * {@link #clearStuckJournal(String)}, so rows the worker can never take cannot make every
+     * following test wait as well.
      */
     private static void indexerTrackerAfter() {
         if (Config.getBooleanProperty(USE_TEST_INDEXER_TRACKER, false)) {
@@ -152,8 +153,10 @@ public class RuleWatcher extends TestWatcher {
                             TestDataUtils.waitForEmptyQueue(INDEXER_DRAIN_TIMEOUT_SECONDS);
                     Logger.info(MainBaseSuite.class, "Indexer Complete=" + queueEmpty);
                     if (!queueEmpty) {
+                        // Read before pausing, or the state would always say PAUSED.
+                        final String workerState = reindexWorkerState();
                         ReindexThread.pause();
-                        clearStuckJournal();
+                        clearStuckJournal(workerState);
                     }
                 }
             } catch (DotDataException e) {
@@ -172,9 +175,10 @@ public class RuleWatcher extends TestWatcher {
      * ({@code deleteReindexAndFailedRecords}): rows at NORMAL priority that the worker cannot take
      * would otherwise survive and stall every later test as well.
      *
+     * @param workerState the reindex worker's state, read before the suite paused it
      * @throws DotDataException if the journal cannot be read or cleared
      */
-    private static void clearStuckJournal() throws DotDataException {
+    private static void clearStuckJournal(final String workerState) throws DotDataException {
         final DotConnect dotConnect = new DotConnect();
         final List<Map<String, Object>> byPriority = dotConnect.setSQL(
                 "select priority, dist_action, count(*) as total, min(ident_to_index) as sample,"
@@ -183,7 +187,7 @@ public class RuleWatcher extends TestWatcher {
                 .loadObjectResults();
         dotConnect.setSQL("delete from dist_reindex_journal").loadResult();
         Logger.info(MainBaseSuite.class, "Cleaned stuck reindex journal, rows removed by "
-                + "priority and action: " + byPriority + "; " + reindexWorkerState());
+                + "priority and action: " + byPriority + "; " + workerState);
     }
 
     /**
