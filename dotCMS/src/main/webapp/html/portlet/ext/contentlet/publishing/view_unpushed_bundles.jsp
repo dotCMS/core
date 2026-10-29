@@ -192,6 +192,20 @@
 			<br>
 		<%}%>
 
+<%
+	// The language editor lives in the Languages portlet's struts directory, which is restricted to
+	// the portlets that own it (see StrutsPathAccess). Only offer the link to a user who can
+	// actually open it; everybody else gets the plain title, as for any other asset type.
+	boolean canEditLanguages = false;
+	try {
+		canEditLanguages =
+				APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.LANGUAGES.toString(), user)
+						|| APILocator.getLayoutAPI().doesUserHaveAccessToPortlet(PortletID.LOCALES.toString(), user);
+	} catch (final Exception e) {
+		com.dotmarketing.util.Logger.warn(this.getClass(),
+				"Unable to resolve Languages portlet access for the bundle list", e);
+	}
+%>
 
 <script>
 	function addRow(data, bundleId){
@@ -207,10 +221,14 @@
 					"<strong style=\"text-decoration: underline;\">" + data.title + "</strong>  : " + data.content_type_name +
 					"</a>";
 		} else if (data.type === "language" ) {
-			content += "<a href=\"/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=<%=PortletID.LANGUAGES%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_<%=PortletID.LANGUAGES%>_struts_action=/ext/languages_manager/edit_language&_<%=PortletID.LANGUAGES%>_id=1&_<%=PortletID.LANGUAGES%> _cmd=edit&referer=<%=referer %>\">" +
-					"<img src=\"/html/images/languages/" + data.language_code + "_" + data.country_code + ".gif\" border=\"0\" />&nbsp;" +
-					"<strong style=\"text-decoration: underline;\">" + data.title + "</strong>  : " + (data.content_type_name === 'Page Asset' ? 'Page' : data.content_type_name) +
-					"</a>";
+			var languageFlag = "<img src=\"/html/images/languages/" + data.language_code + "_" + data.country_code + ".gif\" border=\"0\" />&nbsp;";
+			var languageLabel = "<strong style=\"text-decoration: underline;\">" + data.title + "</strong>  : " + (data.content_type_name === 'Page Asset' ? 'Page' : data.content_type_name);
+			<%if (canEditLanguages) {%>
+				content += "<a href=\"/c/portal/layout?p_l_id=<%=layoutId %>&p_p_id=<%=PortletID.LANGUAGES%>&p_p_action=1&p_p_state=maximized&p_p_mode=view&_<%=PortletID.LANGUAGES%>_struts_action=/ext/languages_manager/edit_language&_<%=PortletID.LANGUAGES%>_id=1&_<%=PortletID.LANGUAGES%> _cmd=edit&referer=<%=referer %>\">" +
+						languageFlag + languageLabel + "</a>";
+			<%} else {%>
+				content += languageFlag + languageLabel;
+			<%}%>
 		} else {
 			content += "<strong>" + data.title + "</strong> : " + data.type;
 		}

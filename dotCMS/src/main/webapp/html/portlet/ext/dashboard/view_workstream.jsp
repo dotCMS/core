@@ -26,7 +26,6 @@ params.put("cmd",new String[] {Constants.VIEW_ACTIVITY_STREAM});
 String referer = com.dotmarketing.util.PortletURLUtil.getActionURL(request,WindowState.MAXIMIZED.toString(),params)+"&hostId="+hostId;
 List<Layout> layoutList=null;
 String templateURL ="";
-String containerURL ="";
 String linkURL ="";
 String pagesURL ="";
 String filesURL ="";
@@ -38,8 +37,6 @@ try {
 		for(String portletId : portletIdsForLayout){
 		if (portletId.equals(PortletID.TEMPLATES)) {
 			templateURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.TEMPLATES+"&p_p_action=1";
-		}else if (portletId.equals(PortletID.CONTAINERS)) {
-			containerURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id="+PortletID.CONTAINERS+"&p_p_action=1";
 		}else if (portletId.equals("EXT_1")) {
 			linkURL = "/c/portal/layout?p_l_id=" + layoutObj.getId() +"&p_p_id=EXT_1&p_p_action=1";
 		}else if (portletId.equals(PortletID.HTML_PAGES)) {
@@ -219,10 +216,7 @@ try {
      	}
 
        function editContainer(contInode){
-    	     var URL = '<%=containerURL%>&p_p_state=maximized&p_p_mode=view&_containers_struts_action=%2Fext%2Fcontainers%2Fedit_container&_containers_cmd=edit&host_id={host_id}&inode={inode}&referer=<%=referer%>';	   	     	              	     	           	     	        	  	     	        
-    	     var hostId = dijit.byId("dahboardHostSelectorWorkStream").value;
-    	     var href = dojo.replace(URL, {inode: contInode, host_id: hostId})
-    		 window.location=href;	
+    	     window.location = '/dotAdmin/#/containers/edit/' + encodeURIComponent(contInode);
        	}
 
        function editLink(contInode){
