@@ -1,7 +1,7 @@
 <%@ page import="com.liferay.portlet.LiferayWindowState" %>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
 <%@ page import="com.liferay.portal.language.LanguageUtil" %>
-<%@ include file="/html/portlet/ext/containers/init.jsp" %>
+<%@ include file="/html/portlet/ext/folders/init.jsp" %>
 <%@ include file="/html/portlet/ext/remotepublish/init.jsp" %>
 
 <script language="Javascript">
@@ -114,11 +114,6 @@
 	}
 	function previewTemplate(objId) {
 	   previewtemwin = window.open('<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/templates/preview_template" /></portlet:actionURL>&inode=' + objId, "previewtemwin", 'width=800,height=600,scrollbars=yes,resizable=yes');
-	}
-	function deleteContainer(objId,openNodes,referer) {
-		if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "folder.delete.selected.container")) %>')) {
-			self.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/edit_container" /></portlet:actionURL>&cmd=delete&inode=' + objId + '&referer=' + referer + openNodes;
-		}
 	}
 	function deleteTemplate(objId,openNodes,referer) {
 		if (confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "folder.delete.selected.template")) %>')) {
@@ -285,16 +280,6 @@
 	function selectFileVersion(parentId,objId,openNodes,referer) {
         if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "folder.replace.file.working.version")) %>')){
 			window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/files/edit_file" /></portlet:actionURL>&cmd=getversionback&inode=' + parentId + '&inode_version=' + objId + '&referer=' + referer + openNodes;
-	    }
-	}
-    function deleteContainerVersion(objId,openNodes,referer){
-        if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "folder.delete.container.version")) %>')){
-			window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/edit_container" /></portlet:actionURL>&cmd=deleteversion&inode=' + objId + '&referer=' + referer + openNodes;
-        }
-    }
-	function selectContainerVersion(objId,openNodes,referer) {
-        if(confirm('<%= UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "folder.replace.container.working.version")) %>')){
-			window.location = '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/edit_container" /></portlet:actionURL>&cmd=getversionback&inode_version=' + objId + '&referer=' + referer + openNodes;
 	    }
 	}
     function deleteTemplateVersion(objId,openNodes,referer){
@@ -582,15 +567,6 @@
 		}
 	}
 
-	function editContainer (objId, userId, referer, live, working, write) {
-		var loc = '';
-		loc += '<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>"><portlet:param name="struts_action" value="/ext/containers/edit_container" /><portlet:param name="cmd" value="edit" /></portlet:actionURL>&inode=' + objId + '&referer=' + encodeURIComponent(referer);
-		if(inFrame){
-			window.location = loc;
-		}else{
-			top.location = loc;
-		}
-	}
 
 	function editContentlet (objId, userId, referer, live, working, write, contentType) {
 

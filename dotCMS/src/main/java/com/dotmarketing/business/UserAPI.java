@@ -410,6 +410,30 @@ public interface UserAPI {
 	public void updatePassword(User user, String newpass, User currentUser, boolean respectFrontEndRoles) throws DotSecurityException, DotDataException, DotInvalidPasswordException;
 
 	/**
+	 * Makes every login token issued to the user so far unusable, by storing a new random UUID as
+	 * the user's login token id ({@link User#getRememberMeToken()}).
+	 * <p>
+	 * A login JWT (the login cookie, also accepted as a Bearer header) carries the login token id
+	 * the user had when it was issued, as its {@code jti}, and is accepted only while that id still
+	 * equals the stored value. No token issued so far carries the new random value, so all of them
+	 * fail that check from now on, on every node. The next login issues JWTs with the new value, so
+	 * they work as usual. API tokens are checked against their own records, not this value, so they
+	 * are not affected.
+	 * <p>
+	 * The user APIs change the login token id only through this method: on logout, on a password
+	 * change, when revoking a user's login tokens, and to set the first value on login. (The legacy
+	 * Liferay persistence also gives the user a fresh random value when it saves certain changes.)
+	 * Only that column is written, so concurrent changes to other user fields are kept, and no save
+	 * writes the value held by a {@link User} object, so saving one loaded earlier cannot bring an
+	 * old value back.
+	 *
+	 * @param userId the id of the user whose login tokens are invalidated
+	 * @return the new login token id, so a caller holding a {@link User} can keep it current
+	 * @throws DotDataException if {@code userId} is blank or the new value cannot be stored
+	 */
+	String invalidateLoginTokens(String userId) throws DotDataException;
+
+	/**
 	 * 
 	 * @param userToDelete
 	 * @throws DotDataException

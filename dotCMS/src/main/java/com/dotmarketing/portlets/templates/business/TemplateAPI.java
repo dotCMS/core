@@ -372,6 +372,31 @@ public interface TemplateAPI {
 	List<Template> findTemplatesByContainerInode(final String containerInode) throws DotDataException;
 
 	/**
+	 * Finds the Templates that use each of the given Containers, in a single pass over the Templates.
+	 * <p>Every Template in the database counts, archived ones and the hidden layouts that pages save
+	 * for themselves ({@code anonymous_layout_}) included. A Template uses a Container when it
+	 * references it: a drawn Template in its layout, an advanced (non-drawn) Template with a
+	 * {@code #parseContainer} call, whether or not the Container already holds content. Containers
+	 * are matched by identifier, so any version of the Container counts, and a reference by full path
+	 * ({@code //site/application/containers/name/}) to a file-based Container counts for that
+	 * Container; a path without the site cannot be resolved here and is not matched. File-based Templates are not listed
+	 * because they are not in the database.</p>
+	 * <p>Which Containers each Template uses is resolved as the system user, so a Container the
+	 * given user cannot read does not make the lookup fail. The user only decides which of the
+	 * Templates found are returned: the ones that user can read.</p>
+	 *
+	 * @param containerIdentifiers the identifiers of the {@link Container}s; blank values are ignored
+	 * @param user                 the {@link User} whose read permission selects the Templates
+	 *                             returned (the system user gets all of them)
+	 * @return one entry per distinct, non-blank identifier, in the order given, with the Templates
+	 * that use it (an empty list when none does); empty when no identifier is given
+	 * @throws DotDataException     if the Templates or their Containers cannot be read from the data source
+	 * @throws DotSecurityException if the Templates cannot be filtered by permission
+	 */
+	Map<String, List<Template>> findTemplatesUsingContainers(Collection<String> containerIdentifiers, User user)
+			throws DotDataException, DotSecurityException;
+
+	/**
 	 * Check if a template is archived.
 	 * @param template
 	 * @return true if template is archived, false if not.

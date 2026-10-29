@@ -172,14 +172,16 @@ public class WidgetRenderer {
     }
 
     /**
-     * Tells whether the text produced by the widget code gets evaluated once more as Velocity,
-     * which runs any Velocity found in the widget field values.
+     * Tells whether the Velocity written in a widget's field values runs. This renderer asks it
+     * before evaluating the widget code's output a second time, and the content REST endpoints ask
+     * it before rendering the field values they return next to that output, so a widget is treated
+     * the same way everywhere it is rendered outside a page.
      *
      * @param widget the widget being rendered
      * @return {@code true} only when the feature flag is on (its default) and the widget's last
      * modifier holds the Scripting Developer role
      */
-    boolean rendersFieldVelocity(final Contentlet widget) {
+    public boolean rendersFieldVelocity(final Contentlet widget) {
         if (!Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER, true)) {
             Logger.debug(this, () -> String.format("Widget %s: field values render as text, %s is off",
                     widget.getIdentifier(), FeatureFlagName.FEATURE_FLAG_WIDGET_FIELD_VELOCITY_RENDER));
