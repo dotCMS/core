@@ -104,12 +104,14 @@ jobs:
       actions: read
       pull-requests: write
 
-  # Test job - runs various tests based on initialization outputs
-  test:
-    name: PR Test
-    needs: [ initialize,build ]
-    if: always() && !failure() && !cancelled()
-    uses: ./.github/workflows/cicd_comp_test-phase.yml
+  # Test matrix - decides which test jobs run. It needs no build output, so it runs in
+  # parallel with the build instead of sitting between the build and the tests.
+  test-matrix:
+    name: PR Test Matrix
+    needs: [ initialize ]
+    uses: ./.github/workflows/cicd_comp_test-matrix.yml
+    permissions:
+      contents: read
     with:
       skip-runner-cleanup: true
       jvm_unit_test: ${{ fromJSON(needs.initialize.outputs.filters).jvm_unit_test == 'true' }}
@@ -131,6 +133,17 @@ jobs:
          || (contains(github.event.pull_request.labels.*.name, 'OpenSearch:Phase-2') && '2')
          || (contains(github.event.pull_request.labels.*.name, 'OpenSearch:Phase-3') && '3')
          || '' }}
+
+  # Test job - runs the matrix computed above once the build is done
+  test:
+    name: PR Test
+    needs: [ initialize, build, test-matrix ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_test-phase.yml
+    with:
+      matrix: ${{ needs.test-matrix.outputs.matrix }}
+      has-tests: ${{ needs.test-matrix.outputs.has-tests }}
+      opensearch_phase: ${{ needs.test-matrix.outputs.opensearch_phase }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
 
@@ -258,7 +271,7 @@ jobs:
   finalize:
     name: Finalize
     if: always()
-    needs: [ test, validate-sdk-package-shapes ]
+    needs: [ test-matrix, test, validate-sdk-package-shapes ]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       needsData: ${{ toJson(needs) }}

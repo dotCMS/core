@@ -90,6 +90,7 @@ import org.junit.runners.Suite;
         SecondaryCategoryPermissionTest.class,
         RequestCostReportTest.class,
         OpenAIVisionAPIImplTest.class,
+    com.dotcms.rest.api.v1.container.ContainerResourceContentReadAccessTest.class,
         ContentDriveBrowseScopeTest.class,
         ContentDriveFieldFilterTest.class,
         ContentDriveHelperContentletAPIComparisonTest.class,
@@ -140,7 +141,7 @@ import org.junit.runners.Suite;
         SystemEventsRetentionIntegrationTest.class,
         com.dotcms.rest.api.v1.portlet.PortletResourceIntegrationTest.class,
         LayoutResourceIntegrationTest.class,
-        com.dotmarketing.webdav.DotWebdavTempPathContainmentTest.class
+        com.dotmarketing.webdav.DotWebdavTempPathContainmentTest.class,
 })
 
 public class MainSuite3a {

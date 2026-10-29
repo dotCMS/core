@@ -156,7 +156,8 @@ larger than `docs/backend/`, `docs/testing/` and `docs/core/` combined.
 
 ## 7. 86 Integration Tests That Never Run in CI — Size: M
 
-`scripts/validate-integration-test-registration.sh` (added in #37590) measures it: **632 classes
+`scripts/validate-integration-test-registration.sh` (added in #37590, since replaced by
+`scripts/it-suites.py check`, which fails PRs on new unregistered classes) measured it: **632 classes
 registered** in a CI suite against **693 concrete `*Test.java`** in `dotcms-integration` — **86 that
 exist, compile, and are never executed by any CI job.**
 

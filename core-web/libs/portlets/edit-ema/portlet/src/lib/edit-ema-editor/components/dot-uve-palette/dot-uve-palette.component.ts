@@ -1,6 +1,6 @@
 import { patchState, signalState } from '@ngrx/signals';
 
-import { ChangeDetectionStrategy, Component, computed, inject, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
@@ -9,8 +9,12 @@ import { DotPageLayoutService } from '@dotcms/data-access';
 import { DotUvePaletteListComponent, DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotRowReorderComponent } from './components/dot-row-reorder/dot-row-reorder.component';
+import {
+    DotRowReorderComponent,
+    DotRowReorderSelectEvent
+} from './components/dot-row-reorder/dot-row-reorder.component';
 
+import { UveIframeMessengerService } from '../../../services/iframe-messenger/uve-iframe-messenger.service';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { UVE_PALETTE_TABS } from '../../../store/features/editor/models';
 
@@ -25,7 +29,7 @@ interface TabHeaderConfig {
  * between different UVE-related resources (content types, components, styles, etc.).
  *
  * Container component that uses signalState for local UI state (tab selection)
- * and reads shared state from UVEStore.
+ * and reads shared state from UVEStore, including whether the palette is open.
  */
 @Component({
     selector: 'dot-uve-palette',
@@ -37,12 +41,18 @@ interface TabHeaderConfig {
         DotUvePaletteListComponent
     ],
     templateUrl: './dot-uve-palette.component.html',
-    styleUrl: './dot-uve-palette.component.scss',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'block overflow-hidden border-r border-gray-200 transition-[width] duration-300 ease-[ease-in-out]',
+        // Narrows to nothing while the palette is closed, as its panel slides out.
+        '[class.w-[clamp(280px,15vw,320px)]]': 'uveStore.editorPaletteOpen()',
+        '[class.w-0]': '!uveStore.editorPaletteOpen()'
+    }
 })
 export class DotUvePaletteComponent {
     protected readonly uveStore = inject(UVEStore);
     protected readonly dotPageLayoutService = inject(DotPageLayoutService);
+    readonly #iframeMessenger = inject(UveIframeMessengerService);
     protected readonly $tabHeaders = computed<TabHeaderConfig[]>(() => {
         const tabs: TabHeaderConfig[] = [
             {
@@ -76,9 +86,6 @@ export class DotUvePaletteComponent {
         root: { class: 'h-full min-h-0' },
         tablist: { class: 'bg-gray-100' }
     };
-
-    /** Emits whenever the active tab in the palette changes. */
-    onTabChange = output<UVE_PALETTE_TABS>();
 
     protected readonly TABS_MAP = UVE_PALETTE_TABS;
     protected readonly DotUVEPaletteListTypes = DotUVEPaletteListTypes;
@@ -119,11 +126,6 @@ export class DotUvePaletteComponent {
      */
     readonly $activeTab = this.#localState.currentTab;
 
-    /**
-     * Emits when a tree node is selected to scroll to the corresponding element.
-     */
-    onNodeSelect = output<{ selector: string; type: string }>();
-
     constructor() {
         // Tab management is now handled locally without effects
     }
@@ -138,7 +140,23 @@ export class DotUvePaletteComponent {
         if (value !== undefined && value !== null) {
             const tab = value as UVE_PALETTE_TABS;
             patchState(this.#localState, { currentTab: tab });
-            this.onTabChange.emit(tab);
         }
+    }
+
+    /**
+     * Asks the page in the canvas to scroll to the section selected in the layer tree. A node
+     * that is not a section is ignored.
+     *
+     * @param event The selected node; a section's selector is `#section-N` or `#dot-section-N`
+     */
+    protected handleRowSelect({ selector }: DotRowReorderSelectEvent): void {
+        // Extract 1-based section index from '#section-N' or '#dot-section-N'
+        const match = selector.match(/#(?:dot-)?section-(\d+)/);
+
+        if (!match) {
+            return;
+        }
+
+        this.#iframeMessenger.scrollToSection(parseInt(match[1], 10));
     }
 }
