@@ -396,9 +396,14 @@ describe('DotCustomEventHandlerService', () => {
             return opened().mock.calls[0][1] as DotEditContentOpenOptions;
         };
 
-        /** Sends one of the legacy portlets' events, as `IframePortletLegacyComponent` does. */
-        const send = (name: string, data: Record<string, unknown>): void =>
+        /**
+         * Sends one of the legacy portlets' events, as `IframePortletLegacyComponent` does, and
+         * waits for the handler to load the opener, which the admin app imports on demand.
+         */
+        const send = async (name: string, data: Record<string, unknown>): Promise<void> => {
             service.handle(new CustomEvent('ng-event', { detail: { name, data } }));
+            await vi.dynamicImportSettled();
+        };
 
         beforeEach(() => {
             opened().mockClear();
@@ -407,8 +412,8 @@ describe('DotCustomEventHandlerService', () => {
         });
 
         describe('edit-contentlet', () => {
-            it('should open the contentlet for editing, naming the portlet that asked', () => {
-                send('edit-contentlet', { inode: '123', contentType: 'Blog' });
+            it('should open the contentlet for editing, naming the portlet that asked', async () => {
+                await send('edit-contentlet', { inode: '123', contentType: 'Blog' });
 
                 expect(openedRequest()).toEqual({
                     mode: 'edit',
@@ -418,10 +423,10 @@ describe('DotCustomEventHandlerService', () => {
                 });
             });
 
-            it('should neither route to the legacy edit screen nor to the new editor', () => {
+            it('should neither route to the legacy edit screen nor to the new editor', async () => {
                 vi.spyOn(router, 'navigate');
 
-                send('edit-contentlet', { inode: '123', contentType: 'Blog' });
+                await send('edit-contentlet', { inode: '123', contentType: 'Blog' });
 
                 expect((dotRouterService.goToEditContentlet as Mock).mock.calls.length).toBe(0);
                 expect((router.navigate as Mock).mock.calls.length).toBe(0);
@@ -429,8 +434,8 @@ describe('DotCustomEventHandlerService', () => {
         });
 
         describe('edit-host', () => {
-            it('should open the site for editing with no content type, which the opener fetches', () => {
-                send('edit-host', { inode: 'host-inode' });
+            it('should open the site for editing with no content type, which the opener fetches', async () => {
+                await send('edit-host', { inode: 'host-inode' });
 
                 const request = openedRequest();
                 expect(request).toEqual({ mode: 'edit', inode: 'host-inode', portletId: PORTLET_ID });
@@ -440,8 +445,8 @@ describe('DotCustomEventHandlerService', () => {
         });
 
         describe('create-contentlet', () => {
-            it('should open a create of the content type in the folder, ignoring the JSP url', () => {
-                send('create-contentlet', {
+            it('should open a create of the content type in the folder, ignoring the JSP url', async () => {
+                await send('create-contentlet', {
                     url: '/c/portal/layout?p_l_id=1&p_p_id=content&_content_cmd=new',
                     contentType: 'Blog',
                     folderPath: 'default/level1/level2/'
@@ -459,8 +464,8 @@ describe('DotCustomEventHandlerService', () => {
         });
 
         describe('create-host', () => {
-            it('should open a create of a site, ignoring the JSP url', () => {
-                send('create-host', { url: '/c/portal/layout?p_l_id=1&p_p_id=sites' });
+            it('should open a create of a site, ignoring the JSP url', async () => {
+                await send('create-host', { url: '/c/portal/layout?p_l_id=1&p_p_id=sites' });
 
                 const request = openedRequest();
                 expect(request).toEqual({ mode: 'new', contentType: 'Host', portletId: PORTLET_ID });
@@ -470,8 +475,8 @@ describe('DotCustomEventHandlerService', () => {
 
         // The UVE's own selector event: the UVE handles it now, so it never reaches the opener here.
         describe('create-contentlet-from-edit-page', () => {
-            it('should not open a panel', () => {
-                send('create-contentlet-from-edit-page', { url: 'hello.world.com' });
+            it('should not open a panel', async () => {
+                await send('create-contentlet-from-edit-page', { url: 'hello.world.com' });
 
                 expect(opened().mock.calls.length).toBe(0);
             });
@@ -483,30 +488,30 @@ describe('DotCustomEventHandlerService', () => {
             ['create-contentlet', { contentType: 'Blog', folderPath: 'default/' }],
             ['create-host', { url: '/c/portal/layout?p_p_id=sites' }]
         ])('%s', (name, data) => {
-            it('should hand the opener the injector the admin root registered, not the root one', () => {
+            it('should hand the opener the injector the admin root registered, not the root one', async () => {
                 expect(
                     typeof (service as WithInjector).setInjector,
                     'the admin root can register its injector'
                 ).toBe('function');
 
-                send(name, data);
+                await send(name, data);
 
                 // Compared by identity: printing an injector runs the worker out of memory.
                 expect(openOptions().injector === adminRootInjector).toBe(true);
             });
 
-            it('should reload the portlet that asked on every save', () => {
+            it('should reload the portlet that asked on every save', async () => {
                 const reloadData = vi.spyOn(dotIframeService, 'reloadData');
-                send(name, data);
+                await send(name, data);
 
                 openOptions().saved?.(createFakeContentlet({ inode: 'saved-inode' }));
 
                 expect(reloadData).toHaveBeenCalledWith(PORTLET_ID);
             });
 
-            it('should reload the portlet that asked when the panel closes', () => {
+            it('should reload the portlet that asked when the panel closes', async () => {
                 const reloadData = vi.spyOn(dotIframeService, 'reloadData');
-                send(name, data);
+                await send(name, data);
 
                 openOptions().closed?.();
 
@@ -515,8 +520,8 @@ describe('DotCustomEventHandlerService', () => {
         });
 
         // The opener picks the editor per content type; the global flag swap is gone.
-        it('should never read the content editor flag', () => {
-            send('edit-contentlet', { inode: '123', contentType: 'Blog' });
+        it('should never read the content editor flag', async () => {
+            await send('edit-contentlet', { inode: '123', contentType: 'Blog' });
 
             expect(getKeys.mock.calls.length).toBe(0);
         });

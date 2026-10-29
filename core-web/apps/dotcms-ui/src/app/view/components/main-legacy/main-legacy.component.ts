@@ -1,5 +1,6 @@
 import {
     Component,
+    Injector,
     OnInit,
     ViewEncapsulation,
     inject,
@@ -51,6 +52,14 @@ import { DotToolbarComponent } from '../dot-toolbar/dot-toolbar.component';
 })
 export class MainComponentLegacyComponent implements OnInit {
     private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
+
+    /**
+     * Hands the custom-event handler this component's injector, so the side panels the legacy
+     * portlets' events open live under it and find the MessageService and toast above (#38303).
+     */
+    constructor() {
+        this.dotCustomEventHandlerService.setInjector(inject(Injector));
+    }
 
     ngOnInit(): void {
         document.body.style.backgroundColor = '';
