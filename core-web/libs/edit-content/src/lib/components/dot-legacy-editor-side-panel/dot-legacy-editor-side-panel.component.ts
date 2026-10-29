@@ -167,9 +167,7 @@ export class DotLegacyEditorSidePanelComponent implements DotSidePanelContent {
             .pipe(takeUntilDestroyed())
             .subscribe((call) => this.#runInEditor(call));
 
-        this.#panel.closed
-            .pipe(take(1), takeUntilDestroyed())
-            .subscribe(() => this.closed.emit());
+        this.#panel.closed.pipe(take(1), takeUntilDestroyed()).subscribe(() => this.closed.emit());
     }
 
     /**
@@ -229,8 +227,9 @@ export class DotLegacyEditorSidePanelComponent implements DotSidePanelContent {
         const hook: DotLegacyEditorHook = {
             next: (detail) => this.#zone.run(() => this.#handleHook(detail))
         };
-        (editorWindow as Window & { ngEditContentletEvents?: DotLegacyEditorHook })
-            .ngEditContentletEvents = hook;
+        (
+            editorWindow as Window & { ngEditContentletEvents?: DotLegacyEditorHook }
+        ).ngEditContentletEvents = hook;
     }
 
     /**
