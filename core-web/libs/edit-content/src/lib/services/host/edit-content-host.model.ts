@@ -4,6 +4,7 @@ import { InjectionToken, Signal } from '@angular/core';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
+import { DotOpenContentEvent } from '../../models/dot-open-content-event.model';
 import { DotRelatedContentCrumb } from '../../store/dot-related-content-navigation.store';
 
 /**
@@ -212,6 +213,15 @@ export interface EditContentHost {
      * @param trailInodes The trail trimmed to (and including) that crumb.
      */
     goToCrumb(inode: string, trailInodes: string[]): void;
+
+    /**
+     * A field (Relationship, a block editor) wants other content opened. The host decides whether
+     * to open a new panel, stack one over itself, or replace its own content in place with a
+     * breadcrumb. Fields never open panels or navigate themselves (#38303).
+     *
+     * @param event What to open, who asked, and the field's reply to each save.
+     */
+    openContent(event: DotOpenContentEvent): void;
 }
 
 /**

@@ -33,11 +33,41 @@ createApplication(appConfig)
             customElements.define('dotcms-old-block-editor', element);
         }
 
+        document.addEventListener('contentletEdit', forwardContentletEdit, true);
+
         if (!environment.production) {
             wireDevDemo();
         }
     })
     .catch((err) => console.error(err));
+
+/** The two tags this bundle registers, the only elements whose `contentletEdit` is ours. */
+const EDITOR_TAGS = new Set(['DOTCMS-BLOCK-EDITOR', 'DOTCMS-OLD-BLOCK-EDITOR']);
+
+/**
+ * Hands "edit this embedded contentlet" from either editor to the legacy editor's panel (#38303):
+ * the panel listens for `ng-event` on this document and opens the contentlet in a stacked panel,
+ * so the author never leaves the content they are editing.
+ *
+ * Registered on `document` because the JSP creates the editor elements, not this bundle, so there
+ * is no instance to subscribe to here. Registered for the capture phase because Angular Elements
+ * re-dispatches an output as `new CustomEvent(name, { detail })` on the element, which does not
+ * bubble: only a capturing listener above the element sees it.
+ */
+function forwardContentletEdit(event: Event): void {
+    const target = event.target as Element | null;
+    if (!target || !EDITOR_TAGS.has(target.tagName)) return;
+
+    // The new editor sends its whole edit event; the old one only these two keys.
+    const { inode, contentType } = (event as CustomEvent<{ inode: string; contentType: string }>)
+        .detail;
+
+    document.dispatchEvent(
+        new CustomEvent('ng-event', {
+            detail: { name: 'edit-contentlet', data: { inode, contentType } }
+        })
+    );
+}
 
 /**
  * Local dev only: when `index.html` includes `<dotcms-block-editor id="demo">`, prefill it with

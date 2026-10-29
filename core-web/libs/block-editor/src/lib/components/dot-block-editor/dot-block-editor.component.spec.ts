@@ -2,14 +2,18 @@ import { Spectator } from '@openng/spectator';
 import { createComponentFactory } from '@openng/spectator/vitest';
 import { vi } from 'vitest';
 
-import { Component } from '@angular/core';
+import { ChangeDetectorRef, Component } from '@angular/core';
 import { FormControl, FormGroup } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 
-import { AnyExtension, JSONContent } from '@tiptap/core';
+import { AnyExtension, Editor, JSONContent } from '@tiptap/core';
+import CharacterCount from '@tiptap/extension-character-count';
+import StarterKit from '@tiptap/starter-kit';
 
 import { DotBlockEditorComponent } from './dot-block-editor.component';
 
 import { BlockEditorModule } from '../../block-editor.module';
+import { DotBubbleMenuComponent } from '../../elements/dot-bubble-menu/dot-bubble-menu.component';
 
 const BLOCK_EDITOR_FIELD = {
     attrs: {
@@ -610,6 +614,47 @@ describe('DotBlockEditorComponent - ControlValueAccessor', () => {
             blockEditorComponent.onBlockEditorChange(BLOCK_EDITOR_FIELD);
 
             expect(control.errors).toBeNull();
+        });
+    });
+
+    // #38303 — the bubble menu only asks; the editor passes the ask to whoever mounts it.
+    describe('editing an embedded contentlet', () => {
+        let editor: Editor;
+
+        // The menus' PrimeNG context menu reads it on init; jsdom has none.
+        beforeEach(() => {
+            vi.stubGlobal(
+                'matchMedia',
+                vi.fn(() => ({
+                    matches: false,
+                    addEventListener: vi.fn(),
+                    removeEventListener: vi.fn()
+                }))
+            );
+        });
+
+        afterEach(() => {
+            editor?.destroy();
+            vi.unstubAllGlobals();
+        });
+
+        it('should re-emit the bubble menu contentletEdit as its own', () => {
+            const blockEditorComponent = spectator.query(DotBlockEditorComponent)!;
+            // The menus render once the editor exists; the real one waits on the server.
+            editor = new Editor({ extensions: [StarterKit, CharacterCount] });
+            blockEditorComponent.editor = editor;
+            // Checked through its own ref: the form host above it is not dirty.
+            spectator.debugElement
+                .query(By.directive(DotBlockEditorComponent))
+                .injector.get(ChangeDetectorRef)
+                .detectChanges();
+            const bubbleMenu = spectator.query(DotBubbleMenuComponent)!;
+            const emitted = vi.fn();
+            blockEditorComponent.contentletEdit.subscribe(emitted);
+
+            bubbleMenu.contentletEdit.emit({ inode: 'embedded-inode', contentType: 'Blog' });
+
+            expect(emitted).toHaveBeenCalledWith({ inode: 'embedded-inode', contentType: 'Blog' });
         });
     });
 });

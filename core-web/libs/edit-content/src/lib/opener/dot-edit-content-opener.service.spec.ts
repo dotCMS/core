@@ -395,6 +395,41 @@ describe('DotEditContentOpenerService', () => {
             expect(input<DotEditContentRequest>(second, 'request')).toEqual(event.request);
         });
 
+        /**
+         * #38303 (US6) — stacking appends: the outlet keeps the panel underneath as it was, and
+         * closing the one on top leaves it open. The fake outlet records the panels on screen.
+         */
+        it('appends the stacked panel, and closing it leaves the first open and unchanged', async () => {
+            const onScreen: DotSidePanelRef[] = [];
+            open.mockImplementation(() => {
+                const ref: DotSidePanelRef = new DotSidePanelRef(() =>
+                    onScreen.splice(onScreen.indexOf(ref), 1)
+                );
+                onScreen.push(ref);
+
+                return ref;
+            });
+
+            const first = spectator.service.open(EDIT_REQUEST, { injector });
+            const { config: firstConfig } = await lastOpen();
+            firstConfig.outputs?.['openContent']({
+                request: { mode: 'edit', inode: 'rel-1', contentType: 'Banner' }
+            } as never);
+            await lastOpen();
+
+            expect(onScreen.length, 'two panels on screen').toBe(2);
+            const second = onScreen[1];
+            expect(second === first).toBe(false);
+
+            second.close();
+
+            expect(onScreen.length).toBe(1);
+            expect(onScreen[0] === first).toBe(true);
+            expect(first.isClosed).toBe(false);
+            expect(heading(firstConfig)).toBe('My post');
+            expect(input<DotEditContentRequest>(firstConfig, 'request')).toEqual(EDIT_REQUEST);
+        });
+
         it("routes the stacked panel's saves to the event's reply", async () => {
             spectator.service.open(EDIT_REQUEST, { injector });
             const { config: first } = await lastOpen();

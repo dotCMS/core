@@ -131,6 +131,12 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     @Input() hasFieldError = false;
     @Input() value: Content = '';
     @Output() valueChange = new EventEmitter<JSONContent>();
+    /**
+     * The author asked to edit a contentlet embedded in this editor, from the bubble menu. Whoever
+     * mounts the editor opens it (#38303): the Edit Content form, or the legacy JSP editor through
+     * the custom element's bridge.
+     */
+    @Output() contentletEdit = new EventEmitter<{ inode: string; contentType: string }>();
     public allowedContentTypes: string;
     public customStyles: string;
     public displayCountBar: boolean | string = true;

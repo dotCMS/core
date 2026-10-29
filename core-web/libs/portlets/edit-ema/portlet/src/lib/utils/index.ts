@@ -6,6 +6,7 @@ import {
     DotDevice,
     DotExperiment
 } from '@dotcms/dotcms-models';
+import { DotEditContentRequest } from '@dotcms/edit-content';
 import {
     DotCMSPage,
     DotCMSPageAssetContainers,
@@ -16,7 +17,13 @@ import {
 
 import { EmaDragItem } from '../edit-ema-editor/components/ema-page-dropzone/types';
 import { DotPageApiParams } from '../services/dot-page-api/dot-page-api.service';
-import { COMMON_ERRORS, DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
+import {
+    COMMON_ERRORS,
+    CONTENTLET_SELECTOR_URL,
+    DEFAULT_PERSONA,
+    LAYOUT_URL,
+    PERSONA_KEY
+} from '../shared/consts';
 import { CONTAINER_INSERT_ERROR } from '../shared/enums';
 import {
     ActionPayload,
@@ -998,6 +1005,113 @@ export const createReorderMenuURL = ({
     return urlObject.toString();
 };
 
+/** The page an editor request is opened from, as {@link withPageContext} reads it. */
+export interface EditPageRequestContext {
+    /** The experiment variant the page is on. */
+    variantId: string;
+    /** The page's site, if it has one. */
+    siteId: string | undefined;
+    /** The page's language, for content that names none. */
+    languageId: number;
+}
+
+/**
+ * Completes a request the page editor opens in the side panel with the page it is opened from: the
+ * page editor as the portlet, the site, the page's language when the content names none, and the
+ * experiment variant when the page is not on the default one (#38303, FR-022). The one rule every
+ * editor entry point and SDK action shares.
+ *
+ * @param request The content to open: an inode to edit or a content type to create.
+ * @param page The page it is opened from.
+ * @returns The request, completed, without keys it leaves unset.
+ */
+export function withPageContext(
+    request: DotEditContentRequest,
+    page: EditPageRequestContext
+): DotEditContentRequest {
+    const completed: DotEditContentRequest = {
+        ...request,
+        languageId: request.languageId ?? page.languageId,
+        siteId: page.siteId,
+        portletId: 'edit-page',
+        variantName:
+            page.variantId && page.variantId !== DEFAULT_VARIANT_ID ? page.variantId : undefined
+    };
+
+    return Object.fromEntries(
+        Object.entries(completed).filter(([, value]) => value !== undefined)
+    ) as unknown as DotEditContentRequest;
+}
+
+/**
+ * Builds the URL of the legacy content selector a container's "+" opens in the side panel: the
+ * contents (or widgets) a container accepts, in a language, for an experiment variant (#38303).
+ *
+ * @param containerId The container the selection goes in.
+ * @param acceptTypes The content types the container accepts, `WIDGET` for widgets, `*` for any.
+ * @param languageId The language to list content in.
+ * @param variantName The experiment variant the page is on.
+ * @returns The selector's same-origin URL.
+ */
+export function createAddContentletUrl(
+    containerId: string,
+    acceptTypes: string,
+    languageId: string,
+    variantName: string
+): string {
+    const queryParams = new URLSearchParams({
+        ng: 'true',
+        container_id: containerId,
+        add: acceptTypes,
+        language_id: languageId,
+        variantName
+    });
+
+    return `${CONTENTLET_SELECTOR_URL}?${queryParams.toString()}`;
+}
+
+/**
+ * Builds the URL of the legacy screen that creates a page's translation into another language,
+ * opened in the side panel when the page editor switches to a language the page lacks (#38303).
+ *
+ * @param page The page to translate; its working inode when it is a working version.
+ * @param newLanguage The language to translate into.
+ * @param variantName The experiment variant the page is on.
+ * @param siteId The page's site, sent as `host_id` when there is one.
+ * @returns The translate screen's same-origin URL.
+ */
+export function createTranslatePageUrl(
+    page: DotCMSPage,
+    newLanguage: number | string,
+    variantName: string,
+    siteId: string | undefined
+): string {
+    const { working, workingInode, inode } = page;
+    const pageInode = working ? workingInode : inode;
+    const queryParams = new URLSearchParams({
+        p_p_id: 'content',
+        p_p_action: '1',
+        p_p_state: 'maximized',
+        angularCurrentPortlet: 'edit-page',
+        _content_sibbling: pageInode,
+        _content_cmd: 'edit',
+        p_p_mode: 'view',
+        _content_sibblingStructure: pageInode,
+        _content_struts_action: '/ext/contentlet/edit_contentlet',
+        inode: '',
+        lang: newLanguage.toString(),
+        populateaccept: 'true',
+        reuseLastLang: 'true',
+        variantName
+    });
+
+    if (siteId) {
+        queryParams.set('host_id', siteId);
+    }
+
+    return `${LAYOUT_URL}?${queryParams.toString()}`;
+}
+
 /**
  * Check if the clientHost is in the whitelist provided by the app
  *
@@ -1033,7 +1147,7 @@ export const checkClientHostAccess = (
  */
 export function getTargetUrl(
     url: string | undefined,
-    urlContentMap: DotCMSURLContentMap
+    urlContentMap: DotCMSURLContentMap | undefined
 ): string | undefined {
     // Return URL from content map or fallback to the provided URL
     return urlContentMap?.URL_MAP_FOR_CONTENT || url;

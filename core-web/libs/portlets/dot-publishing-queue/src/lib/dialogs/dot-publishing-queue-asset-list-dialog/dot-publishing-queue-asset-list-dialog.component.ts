@@ -1,9 +1,10 @@
-import { Subject, forkJoin, of } from 'rxjs';
+import { Subject } from 'rxjs';
 
 import {
     ChangeDetectionStrategy,
     Component,
     DestroyRef,
+    Injector,
     computed,
     effect,
     inject,
@@ -25,14 +26,15 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { catchError, debounceTime, distinctUntilChanged, map, take } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
-import { DotContentletEditUrlService, DotMessageService } from '@dotcms/data-access';
-import { BundleAssetView, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotMessageService } from '@dotcms/data-access';
+import { BundleAssetView } from '@dotcms/dotcms-models';
+import { DotEditContentOpenerService } from '@dotcms/edit-content';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
-import { groupContentletAssetsByType } from '../../util/asset-groups.util';
+import { isEditableContentlet } from '../../util/editable-asset.util';
 
 /** Show the search input only when the bundle is big enough that scrolling alone is painful. */
 const ASSET_SEARCH_THRESHOLD = 10;
@@ -62,7 +64,9 @@ export class DotPublishingQueueAssetListDialogComponent {
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #destroyRef = inject(DestroyRef);
-    readonly #editUrlService = inject(DotContentletEditUrlService);
+    readonly #opener = inject(DotEditContentOpenerService);
+    /** The dialog's injector: a panel a row opens closes with the dialog. */
+    readonly #injector = inject(Injector);
     /** Optional — present only when opened via DialogService. */
     readonly #dialogConfig = inject(DynamicDialogConfig, { optional: true });
     readonly #dialogRef = inject(DynamicDialogRef, { optional: true });
@@ -78,12 +82,6 @@ export class DotPublishingQueueAssetListDialogComponent {
 
     readonly $assetSearch = signal('');
     readonly #searchSubject = new Subject<string>();
-
-    /** Per-asset edit URL, resolved by `DotContentletEditUrlService` after each
-     * asset list load. Non-contentlet assets (templates, languages, containers,
-     * etc.) are never resolved and stay plain text — same rule as the Select
-     * Bundle dialog. */
-    readonly $assetEditUrls = signal<Map<string, string>>(new Map());
 
     /** Search input only shows when the loaded asset list has more than ASSET_SEARCH_THRESHOLD items. */
     readonly $showAssetSearch = computed(
@@ -116,27 +114,10 @@ export class DotPublishingQueueAssetListDialogComponent {
             .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
             .subscribe((value) => this.$assetSearch.set(value));
 
-        // Reset input + resolved URLs every time the dialog is reused for a
-        // different bundle. The bundleId signal changes before assets stream in,
-        // so this only cleans up — resolution kicks off in the assets effect below.
+        // Reset the search every time the dialog is reused for a different bundle.
         effect(() => {
             this.store.selectedBundleId();
-            untracked(() => {
-                this.$assetSearch.set('');
-                this.$assetEditUrls.set(new Map());
-            });
-        });
-
-        // Resolve contentlet edit URLs once the store finishes loading. The
-        // service caches by content type, so many contentlets of the same type
-        // trigger a single metadata fetch.
-        effect(() => {
-            const status = this.store.assetListStatus();
-            const assets = this.store.selectedAssets();
-            if (status !== 'loaded') {
-                return;
-            }
-            untracked(() => this.#resolveAssetEditUrls(assets));
+            untracked(() => this.$assetSearch.set(''));
         });
     }
 
@@ -144,56 +125,37 @@ export class DotPublishingQueueAssetListDialogComponent {
         this.#searchSubject.next(value);
     }
 
-    /** Opens the resolved contentlet editor URL in a new tab. No-op for assets
-     * without a resolved URL (non-contentlet types or still-loading). Mirrors the
-     * behavior of the Select Bundle dialog. */
-    onAssetRowClick(asset: BundleAssetView): void {
-        const url = this.editUrlFor(asset);
-        if (url) {
-            window.open(url, '_blank', 'noopener');
-        }
-    }
+    /** Template helper: only contentlet rows open, so only they get the pointer cursor. */
+    protected readonly isEditableContentlet = isEditableContentlet;
 
-    /** Template helper — used to bind `cursor-pointer` on linkable rows and to
-     * short-circuit `onAssetRowClick` when the asset isn't linkable. */
-    editUrlFor(asset: BundleAssetView): string | null {
-        return this.$assetEditUrls().get(asset.asset) ?? null;
+    /**
+     * Opens a contentlet row in the side panel over this dialog, in whichever editor its type uses
+     * (#38303, R12); closing the panel returns to the dialog on the same row. Every save, and the
+     * close, reload the asset list (FR-017). Other rows do nothing.
+     *
+     * @param asset The clicked row.
+     */
+    onAssetRowClick(asset: BundleAssetView): void {
+        if (!isEditableContentlet(asset)) {
+            return;
+        }
+
+        const reload = () => this.store.loadAssets();
+
+        this.#opener.open(
+            {
+                mode: 'edit',
+                inode: asset.inode,
+                contentType: asset.content_type_name,
+                portletId: 'publishing-queue'
+            },
+            { injector: this.#injector, saved: reload, closed: reload }
+        );
     }
 
     /** Closes the dialog. Called from the footer Close button. */
     closeDialog(): void {
         this.#dialogRef?.close();
-    }
-
-    /** Same fan-out avoidance as the Select Bundle dialog: group by content type,
-     * fetch once per type, apply the resolved URL to every asset in that group.
-     * See `groupContentletAssetsByType` and the rationale in the sister dialog. */
-    #resolveAssetEditUrls(assets: BundleAssetView[]): void {
-        const groups = groupContentletAssetsByType(assets);
-
-        for (const [contentType, group] of groups) {
-            const perAsset$ = group.map((asset) =>
-                this.#editUrlService
-                    .resolveEditUrl({ inode: asset.inode, contentType } as DotCMSContentlet)
-                    .pipe(
-                        take(1),
-                        catchError(() => of('')),
-                        map((url) => [asset.asset, url] as const)
-                    )
-            );
-
-            forkJoin(perAsset$).subscribe((entries) => {
-                this.$assetEditUrls.update((prev) => {
-                    const next = new Map(prev);
-                    for (const [key, url] of entries) {
-                        if (url) {
-                            next.set(key, url);
-                        }
-                    }
-                    return next;
-                });
-            });
-        }
     }
 
     onRemoveAsset(asset: BundleAssetView): void {

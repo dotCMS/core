@@ -1,12 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { mockProvider } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component, DebugElement, Input } from '@angular/core';
+import { Component, DebugElement, Injector, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -57,7 +55,6 @@ import { DotDownloadBundleDialogComponent } from '../_common/dot-download-bundle
 import { DotWizardComponent } from '../_common/dot-wizard/dot-wizard.component';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
-// import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentlet-editor.module';
 
 @Component({
     selector: 'dot-alert-confirm',
@@ -112,6 +109,11 @@ class MockDotLargeMessageDisplayComponent {}
 })
 class MockDotPushPublishDialogComponent {}
 
+/** The handler once it can be told which injector its panels live under (#38303). */
+type HandlerWithInjector = DotCustomEventHandlerService & {
+    setInjector?: (injector: Injector) => void;
+};
+
 const createFeatureFlagResponse = (enabled = 'NOT_FOUND') => ({
     [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: enabled
 });
@@ -119,13 +121,11 @@ const createFeatureFlagResponse = (enabled = 'NOT_FOUND') => ({
 describe('MainLegacyComponent', () => {
     let fixture: ComponentFixture<MainComponentLegacyComponent>;
     let de: DebugElement;
-    let dotCustomEventHandlerService: DotCustomEventHandlerService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             imports: [
                 RouterTestingModule,
-                // DotContentletEditorModule,
                 DotDownloadBundleDialogComponent,
                 DotWizardComponent,
                 MainComponentLegacyComponent
@@ -197,7 +197,6 @@ describe('MainLegacyComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(MainComponentLegacyComponent);
         de = fixture.debugElement;
-        dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
         fixture.detectChanges();
     });
     it('should have basic layout elements', () => {
@@ -229,25 +228,27 @@ describe('MainLegacyComponent', () => {
             expect(de.query(By.css('p-toast'))).not.toBeNull();
             expect(de.query(By.css('dot-side-panel-outlet'))).not.toBeNull();
         });
-    });
 
-    describe('Create Contentlet', () => {
-        let createContentlet: DebugElement;
-        beforeEach(() => {
-            createContentlet = de.query(By.css('dot-create-contentlet'));
-        });
+        /**
+         * The legacy portlets' events reach the root `DotCustomEventHandlerService`, whose panels
+         * must live under this component so they find the MessageService above, not the root
+         * injector, where nothing provides one (#38303, T090).
+         */
+        it('should register its own injector with the custom-event handler', () => {
+            const handler = TestBed.inject(DotCustomEventHandlerService) as HandlerWithInjector;
+            expect(typeof handler.setInjector, 'the handler accepts an injector').toBe('function');
+            const setInjector = vi.spyOn(handler as Required<HandlerWithInjector>, 'setInjector');
 
-        it('should call dotCustomEventHandlerService on customEvent', () => {
-            vi.spyOn(dotCustomEventHandlerService, 'handle');
-            const mockEvent = {
-                detail: {
-                    name: 'create-contentlet',
-                    data: 'test'
-                }
-            };
-            createContentlet.triggerEventHandler('custom', mockEvent);
+            const mounted = TestBed.createComponent(MainComponentLegacyComponent);
+            mounted.detectChanges();
 
-            expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith(mockEvent);
+            expect(setInjector.mock.calls.length).toBe(1);
+            const [registered] = setInjector.mock.calls[0];
+            // Compared by identity: printing an injector runs the worker out of memory.
+            expect(
+                registered.get(MessageService, null) ===
+                    mounted.debugElement.injector.get(MessageService)
+            ).toBe(true);
         });
     });
 });

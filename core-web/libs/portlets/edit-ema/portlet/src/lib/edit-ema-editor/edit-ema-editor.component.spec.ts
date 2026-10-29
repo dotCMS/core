@@ -1,4 +1,4 @@
-import { patchState, WritableStateSource } from '@ngrx/signals';
+import { patchState } from '@ngrx/signals';
 import {
     SpectatorRouting,
     byTestId,
@@ -11,14 +11,14 @@ import { Mock, MockInstance, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { DebugElement, EventEmitter, Input, Output, signal, Component } from '@angular/core';
+import { EventEmitter, Input, Output, Signal, signal, Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { Confirmation, ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService } from 'primeng/dynamicdialog';
 
 import { map } from 'rxjs/operators';
 
@@ -55,10 +55,23 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
-import { DEFAULT_VARIANT_ID, DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
+import {
+    DEFAULT_VARIANT_ID,
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
+import {
+    DotEditContentOpenerService,
+    DotEditContentOpenOptions,
+    DotEditContentRequest,
+    DotLegacyScreenEvent,
+    DotLegacyScreenRequest,
+    loadDotLegacyEditorSidePanel
+} from '@dotcms/edit-content';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
-import { DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
+import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 import {
     DOT_VELOCITY_LANGUAGE_ID,
@@ -81,6 +94,7 @@ import {
     MockDotHttpErrorManagerService,
     MockDotMessageService,
     URL_MAP_CONTENTLET,
+    createFakeContentlet,
     createFakeContentType,
     getDraftExperimentMock,
     getRunningExperimentMock,
@@ -98,26 +112,32 @@ import { DotUveToolbarComponent } from './components/dot-uve-toolbar/dot-uve-too
 import { EditEmaEditorComponent } from './edit-ema-editor.component';
 
 import { DotBlockEditorSidebarComponent } from '../components/dot-block-editor-sidebar/dot-block-editor-sidebar.component';
-import { DotEmaDialogComponent } from '../components/dot-ema-dialog/dot-ema-dialog.component';
+import { EmaFormSelectorComponent } from '../components/ema-form-selector/ema-form-selector.component';
 import { DotPageApiParams, DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler/dot-uve-actions-handler.service';
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
-import { DEFAULT_PERSONA, HOST, PERSONA_KEY } from '../shared/consts';
+import {
+    CONTENTLET_SELECTOR_URL,
+    DEFAULT_PERSONA,
+    HOST,
+    LAYOUT_URL,
+    PERSONA_KEY
+} from '../shared/consts';
 import { EDITOR_STATE, NG_CUSTOM_EVENTS, UVE_STATUS } from '../shared/enums';
 import {
     EDIT_ACTION_PAYLOAD_MOCK,
     MOCK_RESPONSE_HEADLESS,
-    PAYLOAD_MOCK,
     QUERY_PARAMS_MOCK,
     UVE_PAGE_RESPONSE_MAP,
     dotPropertiesServiceMock,
     mockCurrentUser
 } from '../shared/mocks';
-import { ActionPayload, ContentletPayload, VTLFile } from '../shared/models';
+import { ActionPayload, ContentletPayload, PositionPayload, VTLFile } from '../shared/models';
 import { UVEStore } from '../store/dot-uve.store';
 import { WithPageApiMethods } from '../store/features/page-api/withPageApi';
-import { IframeAccessMode, PageType, UVEState } from '../store/models';
+import { IframeAccessMode, PageType } from '../store/models';
+import { insertContentletInContainer } from '../utils';
 
 global.URL.createObjectURL = vi.fn(
     () => 'blob:http://localhost:3000/12345678-1234-1234-1234-123456789012'
@@ -175,6 +195,91 @@ const mockInlineEditService = {
     removeInlineEdit: vi.fn(),
     handleInlineEdit: vi.fn(),
     initEditor: vi.fn()
+};
+
+/** Content the editor opened through the opener, as the fake {@link DotEditContentOpenerService} records it. */
+interface OpenedContent {
+    request: DotEditContentRequest | Signal<DotEditContentRequest>;
+    options: DotEditContentOpenOptions;
+    ref: DotSidePanelRef;
+}
+
+/**
+ * Stands in for the side-panel opener (#38303): records each open and hands back a real panel ref,
+ * so `closed` and `isClosed` behave as the outlet's would. Like the real opener, it reports
+ * `closed` from the ref. `requestClose` is a spy that does nothing, as a guard holding the panel
+ * open would.
+ */
+const createOpenerFake = () => {
+    const opened: OpenedContent[] = [];
+
+    return {
+        opened,
+        open: vi.fn(
+            (
+                request: DotEditContentRequest | Signal<DotEditContentRequest>,
+                options: DotEditContentOpenOptions
+            ) => {
+                const ref = new DotSidePanelRef(() => undefined);
+                vi.spyOn(ref, 'requestClose').mockImplementation(() => undefined);
+                ref.closed.subscribe(() => options.closed?.());
+                opened.push({ request, options, ref });
+
+                return ref;
+            }
+        )
+    };
+};
+
+// Re-created before each test and read through a factory, so each test gets its own.
+let opener: ReturnType<typeof createOpenerFake>;
+
+/**
+ * Where a content type is dropped: a container the page does not list yet, with room. The editor
+ * captures the drop as `getPageSavePayload(position)`, which takes the page's containers.
+ */
+const DROP_POSITION: PositionPayload = {
+    container: {
+        identifier: 'drop-container',
+        uuid: '1',
+        acceptTypes: 'Blog',
+        maxContentlets: 5,
+        contentletsId: []
+    }
+};
+
+/** A panel the editor opened through `DotSidePanelService`, recorded instead of rendered. */
+interface OpenedPanel {
+    component: unknown;
+    config: DotSidePanelConfig;
+    ref: DotSidePanelRef;
+}
+
+/**
+ * Records every panel opened through the side-panel service: the legacy screens the editor binds
+ * with `injectSidePanel` and the form selector it opens directly. Each gets a real ref.
+ *
+ * @param sidePanels The editor's side-panel service.
+ * @returns The panels opened, in order.
+ */
+const recordSidePanels = (sidePanels: DotSidePanelService): OpenedPanel[] => {
+    const opened: OpenedPanel[] = [];
+
+    vi.spyOn(sidePanels, 'open').mockImplementation((component, config) => {
+        const ref = new DotSidePanelRef(() => undefined);
+        opened.push({ component, config, ref });
+
+        return ref;
+    });
+
+    return opened;
+};
+
+/** Reads a panel input, which `injectSidePanel` binds as a signal. */
+const inputOf = <T>(panel: OpenedPanel, name: string): T | undefined => {
+    const value = panel.config.inputs?.[name];
+
+    return (typeof value === 'function' ? (value as () => T)() : value) as T | undefined;
 };
 
 // Stub components to avoid ng-mocks signal query issues
@@ -344,6 +449,7 @@ const createRouting = () =>
             Router,
             DotSeoMetaTagsUtilService,
             DialogService,
+            { provide: DotEditContentOpenerService, useFactory: () => opener },
             DotCopyContentService,
             DotCopyContentModalService,
             DotWorkflowActionsFireService,
@@ -472,15 +578,79 @@ describe('EditEmaEditorComponent', () => {
 
         const createComponent = createRouting();
 
-        const triggerCustomEvent = (
-            element: DebugElement,
-            eventName: string,
-            eventObj: unknown
-        ) => {
-            spectator.triggerEventHandler(element, eventName, eventObj);
+        /** The editor's edit request, or `undefined` while the editor has no such signal. */
+        const editRequest = (): DotEditContentRequest | null | undefined =>
+            (
+                spectator.component as unknown as {
+                    $editRequest?: Signal<DotEditContentRequest | null>;
+                }
+            ).$editRequest?.();
+
+        /** The editor's legacy-screen request, or `undefined` while it has no such signal. */
+        const legacyScreenRequest = (): DotLegacyScreenRequest | null | undefined =>
+            (
+                spectator.component as unknown as {
+                    $legacyScreenRequest?: Signal<DotLegacyScreenRequest | null>;
+                }
+            ).$legacyScreenRequest?.();
+
+        /** The content panel the editor opened last through the opener. */
+        const editPanel = (): OpenedContent => {
+            const panel = opener.opened.at(-1);
+
+            expect(
+                panel,
+                'the editor opens content through DotEditContentOpenerService'
+            ).toBeDefined();
+
+            return panel as OpenedContent;
+        };
+
+        /**
+         * The editor iframe's window, with `postMessage` reduced to the one signature the editor
+         * calls, so a spy on it can be mocked.
+         */
+        const iframeWindow = (): { postMessage: (message: unknown, host: string) => void } => {
+            const contentWindow = spectator.component.iframe?.nativeElement.contentWindow;
+
+            if (!contentWindow) {
+                throw new Error('fixture: the editor iframe has no window');
+            }
+
+            return contentWindow;
+        };
+
+        /** The site of the page being edited, which every request names. */
+        const siteId = () => store.pageAsset()?.site?.identifier;
+
+        /** The edit request the pencil opens for `EDIT_ACTION_PAYLOAD_MOCK`'s contentlet. */
+        const pencilRequest = (): DotEditContentRequest => ({
+            mode: 'edit',
+            inode: 'contentlet-inode-123',
+            identifier: 'contentlet-identifier-123',
+            contentType: 'test',
+            languageId: store.pageLanguageId(),
+            title: 'Hello World',
+            siteId: siteId(),
+            portletId: 'edit-page'
+        });
+
+        /**
+         * The callbacks the editor hands the actions handler with an SDK message. The handler is
+         * mocked, so this reads what the editor passed it.
+         */
+        const actionDeps = (action: DotCMSUVEAction, payload: unknown = {}) => {
+            spectator.component['handleUveMessage']({ action, payload });
+            const [, deps] = mockDotUveActionsHandlerService.handleAction.mock.calls.at(-1) as [
+                unknown,
+                Record<string, unknown>
+            ];
+
+            return deps;
         };
 
         beforeEach(() => {
+            opener = createOpenerFake();
             spectator = createComponent({
                 queryParams: { language_id: 1, url: 'index' },
                 data: {
@@ -678,7 +848,7 @@ describe('EditEmaEditorComponent', () => {
             });
 
             it('should show the editor components when there is a running experiement and initialize the editor in a default variant', async () => {
-                const componentsToShow = ['palette', 'dialog', 'confirm-dialog'];
+                const componentsToShow = ['palette', 'confirm-dialog'];
 
                 spectator.activatedRouteStub.setQueryParam('variantName', DEFAULT_VARIANT_ID);
 
@@ -1616,15 +1786,16 @@ describe('EditEmaEditorComponent', () => {
                     store.setIsClientReady(true);
                 });
 
-                it('should edit urlContentMap page', () => {
+                // Editing the content a URL-mapped page shows was a legacy-only dialog flow; it is
+                // now an ordinary edit request, so the content type picks the editor (#38303).
+                it('should open the URL-mapped content as an ordinary edit request', () => {
                     spectator.detectChanges();
-                    const dialog = spectator.query(DotEmaDialogComponent);
-                    vi.spyOn(dialog!, 'editUrlContentMapContentlet');
 
                     const payload = {
                         identifier: '123',
                         inode: '456',
-                        title: 'Hello World'
+                        title: 'Hello World',
+                        contentType: 'Blog'
                     } as unknown as DotCMSURLContentMap;
 
                     spectator.triggerEventHandler(
@@ -1633,63 +1804,17 @@ describe('EditEmaEditorComponent', () => {
                         payload
                     );
 
-                    expect(dialog.editUrlContentMapContentlet).toHaveBeenCalledWith(payload);
-                });
-
-                describe('reorder navigation', () => {
-                    it('should reload the page after saving the new navigation order', () => {
-                        const reloadSpy = vi.spyOn(pageApi(), 'pageReload');
-                        const messageSpy = vi.spyOn(messageService, 'add');
-                        const dialog = spectator.debugElement.query(
-                            By.css("[data-testId='ema-dialog']")
-                        );
-
-                        triggerCustomEvent(dialog, 'action', {
-                            event: new CustomEvent('ng-event', {
-                                detail: {
-                                    name: NG_CUSTOM_EVENTS.SAVE_MENU_ORDER
-                                }
-                            })
-                        });
-
-                        expect(reloadSpy).toHaveBeenCalled();
-
-                        expect(messageSpy).toHaveBeenCalledWith({
-                            severity: 'success',
-                            summary: 'editpage.content.contentlet.menu.reorder.title',
-                            detail: 'message.menu.reordered',
-                            life: 2000
-                        });
-
-                        const pDialog = dialog.query(By.css('p-dialog'));
-
-                        // Access the PrimeNG Dialog component instance to verify visible property
-                        expect(pDialog.componentInstance.visible).toBe(false);
-                    });
-
-                    it('should advice the users when they can not save the new order', () => {
-                        const messageSpy = vi.spyOn(messageService, 'add');
-                        const dialog = spectator.debugElement.query(
-                            By.css("[data-testId='ema-dialog']")
-                        );
-
-                        triggerCustomEvent(dialog, 'action', {
-                            event: new CustomEvent('ng-event', {
-                                detail: {
-                                    name: NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER
-                                }
-                            })
-                        });
-
-                        expect(messageSpy).toHaveBeenCalledWith({
-                            severity: 'error',
-                            summary: 'editpage.content.contentlet.menu.reorder.title',
-                            detail: 'error.menu.reorder.user_has_not_permission',
-                            life: 2000
-                        });
-                    });
-
-                    afterEach(() => vi.clearAllMocks());
+                    expect(editRequest()).toEqual(
+                        expect.objectContaining({
+                            mode: 'edit',
+                            inode: '456',
+                            identifier: '123',
+                            contentType: 'Blog',
+                            title: 'Hello World',
+                            siteId: siteId(),
+                            portletId: 'edit-page'
+                        })
+                    );
                 });
 
                 beforeEach(() => {
@@ -1697,437 +1822,887 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
-            describe('add', () => {
-                it('should add contentlet after backend emit SAVE_CONTENTLET', () => {
+            /**
+             * Every editor flow opens the side panel through the opener, for both editor types: one
+             * request signal bound with `injectEditContentPanel` (#38303, FR-001 to FR-003). The page
+             * editor keeps no dialog of its own.
+             */
+            describe('opening content in the side panel', () => {
+                it('should render no page-editor dialog and keep no dialog member', () => {
                     spectator.detectChanges();
 
-                    const editorSaveMock = vi.spyOn(pageApi(), 'editorSave');
-
-                    const payload: ActionPayload = { ...PAYLOAD_MOCK };
-
-                    store.setContentletArea({
-                        x: 100,
-                        y: 100,
-                        width: 500,
-                        height: 500,
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
-                        type: 'content',
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    const dialog = spectator.debugElement.query(
-                        By.css('[data-testId="ema-dialog"]')
-                    );
-
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.CREATE_CONTENTLET,
-                                data: {
-                                    url: 'test/url',
-                                    contentType: 'test'
-                                }
-                            }
-                        })
-                    });
-
-                    spectator.detectChanges();
-
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.SAVE_PAGE,
-                                payload: {
-                                    contentletIdentifier: 'some-random-identifier'
-                                }
-                            }
-                        }),
-                        actionPayload: PAYLOAD_MOCK
-                    });
-
-                    spectator.detectChanges();
-
-                    expect(editorSaveMock).toHaveBeenCalledWith(PAYLOAD_MOCK.pageContainers);
-
-                    spectator.detectChanges();
+                    expect(spectator.query(byTestId('ema-dialog'))).toBeNull();
+                    expect('dialog' in spectator.component).toBe(false);
                 });
 
-                it('should not add contentlet after backend emit SAVE_CONTENTLET and contentlet is dupe', () => {
+                it('should bind the request to the opener, which opens the panel once it is set', () => {
+                    spectator.component['handleEditWithCopyDecision'](EDIT_ACTION_PAYLOAD_MOCK);
                     spectator.detectChanges();
 
-                    const payload: ActionPayload = { ...PAYLOAD_MOCK };
+                    const panel = editPanel();
+                    const request = panel.request as Signal<DotEditContentRequest>;
 
-                    store.setContentletArea({
-                        x: 100,
-                        y: 100,
-                        width: 500,
-                        height: 500,
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
-                        type: 'content',
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    const dialog = spectator.debugElement.query(
-                        By.css('[data-testId="ema-dialog"]')
-                    );
-
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.CREATE_CONTENTLET,
-                                data: {
-                                    url: 'test/url',
-                                    contentType: 'test'
-                                }
-                            }
-                        })
-                    });
-
-                    spectator.detectChanges();
-
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.SAVE_PAGE,
-                                payload: {
-                                    contentletIdentifier: PAYLOAD_MOCK.container.contentletsId[0] // An already added contentlet
-                                }
-                            }
-                        }),
-                        actionPayload: payload
-                    });
-
-                    spectator.detectChanges();
-
-                    expect(addMessageSpy).toHaveBeenCalledWith({
-                        severity: 'info',
-                        summary: 'Content already added',
-                        detail: 'This content is already added to this container',
-                        life: 2000
-                    });
+                    expect(opener.opened.length).toBe(1);
+                    expect(request()).toEqual(pencilRequest());
+                    expect(panel.options.injector).toBeDefined();
                 });
 
-                it('should add contentlet after backend emit CONTENT_SEARCH_SELECT', () => {
-                    const saveMock = vi.spyOn(pageApi(), 'editorSave');
-
-                    spectator.detectChanges();
-
-                    const payload: ActionPayload = {
-                        language_id: '1',
-                        pageContainers: [
-                            {
-                                identifier: 'container-identifier-123',
-                                uuid: 'uuid-123',
-                                contentletsId: ['contentlet-identifier-123']
-                            }
-                        ],
-                        contentlet: {
-                            identifier: 'contentlet-identifier-123',
-                            inode: 'contentlet-inode-123',
-                            title: 'Hello World',
-                            contentType: 'test',
-                            onNumberOfPages: 1
-                        },
-                        container: {
-                            identifier: 'container-identifier-123',
-                            acceptTypes: 'test',
-                            uuid: 'uuid-123',
-                            maxContentlets: 2,
-                            contentletsId: ['123']
-                        },
-                        pageId: 'test',
-                        position: 'after'
+                /**
+                 * Every request carries the experiment variant the page is on, so the editor saves
+                 * in it, but only when it is not the default variant (#38303, FR-022).
+                 */
+                describe('the experiment variant', () => {
+                    const loadVariant = () => {
+                        pageApi().pageLoad({
+                            clientHost: 'http://localhost:3000',
+                            url: 'index',
+                            language_id: '1',
+                            mode: UVE_MODE.EDIT,
+                            [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
+                            variantName: 'variant-a'
+                        });
+                        spectator.detectChanges();
+                        // Fixture check: the page is on the variant the requests must name.
+                        expect(store.pageVariantId()).toBe('variant-a');
                     };
 
-                    store.setContentletArea({
-                        x: 100,
-                        y: 100,
-                        width: 500,
-                        height: 500,
-                        payload
+                    it('should name the variant on an edit from a variant page', () => {
+                        loadVariant();
+
+                        spectator.component['handleEditWithCopyDecision'](EDIT_ACTION_PAYLOAD_MOCK);
+
+                        expect(editRequest()).toEqual(
+                            expect.objectContaining({ mode: 'edit', variantName: 'variant-a' })
+                        );
                     });
 
-                    spectator.detectComponentChanges();
+                    it('should name the variant on a create from a variant page', () => {
+                        loadVariant();
 
-                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
-                        type: 'content',
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    const dialog = spectator.debugElement.query(
-                        By.css('[data-testId="ema-dialog"]')
-                    );
-
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
-                                data: {
-                                    identifier: 'new-contentlet-identifier-123',
-                                    inode: '123'
-                                }
+                        spectator.component.placeItem(structuredClone(DROP_POSITION), {
+                            baseType: 'CONTENT',
+                            contentType: 'Blog',
+                            draggedPayload: {
+                                type: 'content-type' as const,
+                                item: { variable: 'Blog', name: 'Blog' }
                             }
-                        }),
-                        actionPayload: payload
+                        });
+
+                        expect(editRequest()).toEqual(
+                            expect.objectContaining({ mode: 'new', variantName: 'variant-a' })
+                        );
                     });
 
-                    spectator.detectChanges();
+                    it('should name no variant on the default variant', () => {
+                        spectator.component['handleEditWithCopyDecision'](EDIT_ACTION_PAYLOAD_MOCK);
 
-                    expect(saveMock).toHaveBeenCalledWith([
+                        expect(editRequest()).toEqual(expect.objectContaining({ mode: 'edit' }));
+                        expect(editRequest()?.variantName).toBeUndefined();
+                    });
+                });
+
+                /**
+                 * The edit panel's events (#38303, FR-007 to FR-021). The page refreshes on every
+                 * save while the panel stays open; a create from a drop is placed once.
+                 */
+                describe('edit panel events', () => {
+                    const contentTypeDrop = {
+                        baseType: 'CONTENT',
+                        contentType: 'Blog',
+                        draggedPayload: {
+                            type: 'content-type' as const,
+                            item: { variable: 'Blog', name: 'Blog' }
+                        }
+                    };
+
+                    /**
+                     * What placing `newContentletId` where `position` names saves, computed on a
+                     * copy of the drop the editor captured, before the editor places anything.
+                     */
+                    const containersAfterInsert = (
+                        position: PositionPayload,
+                        newContentletId: string
+                    ) => {
+                        const result = insertContentletInContainer({
+                            ...structuredClone(store.getPageSavePayload(structuredClone(position))),
+                            newContentletId
+                        });
+                        // Fixture check: the drop's container has room.
+                        expect(result.didInsert).toBe(true);
+
+                        return result.pageContainers;
+                    };
+
+                    /** A drop into a container the page lists, already holding its maximum. */
+                    const fullContainerPosition = (): PositionPayload => {
+                        const pageContainer = store
+                            .$pageData()
+                            .containers.find((container) => container.contentletsId.length > 0);
+
+                        // Fixture check: the page has a container with content in it.
+                        if (!pageContainer) {
+                            throw new Error('fixture: the page lists no container with content');
+                        }
+
+                        return {
+                            container: {
+                                identifier: pageContainer.identifier,
+                                uuid: pageContainer.uuid,
+                                acceptTypes: 'Blog',
+                                maxContentlets: pageContainer.contentletsId.length
+                            }
+                        };
+                    };
+
+                    it('should place a created contentlet once, with the drop it was created for, then save the page', () => {
+                        const editorSaveSpy = vi.spyOn(pageApi(), 'editorSave');
+                        spectator.component.placeItem(
+                            structuredClone(DROP_POSITION),
+                            contentTypeDrop
+                        );
+                        spectator.detectChanges();
+                        const expected = containersAfterInsert(DROP_POSITION, 'new-identifier');
+
+                        editPanel().options.saved?.(
+                            createFakeContentlet({ identifier: 'new-identifier' })
+                        );
+
+                        expect(editorSaveSpy).toHaveBeenCalledTimes(1);
+                        expect(editorSaveSpy).toHaveBeenCalledWith(expected);
+                    });
+
+                    it('should open a create request for the dropped type in the page language', () => {
+                        spectator.component.placeItem(
+                            structuredClone(DROP_POSITION),
+                            contentTypeDrop
+                        );
+
+                        expect(editRequest()).toEqual(
+                            expect.objectContaining({
+                                mode: 'new',
+                                contentType: 'Blog',
+                                languageId: store.pageLanguageId(),
+                                siteId: siteId(),
+                                portletId: 'edit-page'
+                            })
+                        );
+                    });
+
+                    it('should only reload the page on a later save from the same create panel', () => {
+                        const editorSaveSpy = vi.spyOn(pageApi(), 'editorSave');
+                        spectator.component.placeItem(
+                            structuredClone(DROP_POSITION),
+                            contentTypeDrop
+                        );
+                        spectator.detectChanges();
+                        const { saved } = editPanel().options;
+                        saved?.(createFakeContentlet({ identifier: 'new-identifier' }));
+                        const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+
+                        saved?.(createFakeContentlet({ identifier: 'new-identifier' }));
+
+                        expect(editorSaveSpy).toHaveBeenCalledTimes(1);
+                        expect(pageReloadSpy).toHaveBeenCalledTimes(1);
+                    });
+
+                    it('should warn and keep the panel open when the container is full', () => {
+                        const editorSaveSpy = vi.spyOn(pageApi(), 'editorSave');
+                        spectator.component.placeItem(fullContainerPosition(), contentTypeDrop);
+                        spectator.detectChanges();
+                        const panel = editPanel();
+                        const request = editRequest();
+
+                        panel.options.saved?.(
+                            createFakeContentlet({ identifier: 'new-identifier' })
+                        );
+
+                        expect(addMessageSpy).toHaveBeenCalledWith(
+                            expect.objectContaining({ severity: 'warn' })
+                        );
+                        expect(editorSaveSpy).not.toHaveBeenCalled();
+                        expect(panel.ref.isClosed).toBe(false);
+                        expect((panel.ref.requestClose as Mock).mock.calls.length).toBe(0);
+                        expect(editRequest()).toBe(request);
+                    });
+
+                    describe('after an edit', () => {
+                        const openEdit = () => {
+                            spectator.component['handleEditWithCopyDecision'](
+                                EDIT_ACTION_PAYLOAD_MOCK
+                            );
+                            spectator.detectChanges();
+
+                            return editPanel();
+                        };
+
+                        it('should load the new URL when the saved content maps to another one', () => {
+                            const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
+                            const panel = openEdit();
+
+                            panel.options.saved?.(
+                                createFakeContentlet({
+                                    identifier: 'contentlet-identifier-123',
+                                    URL_MAP_FOR_CONTENT: '/blog/a-new-slug'
+                                })
+                            );
+
+                            expect(pageLoadSpy).toHaveBeenCalledWith({ url: '/blog/a-new-slug' });
+                        });
+
+                        it.each([
+                            ['maps to no URL', undefined],
+                            ['maps to the same URL', 'index']
+                        ])('should reload the page when the saved content %s', (_label, urlMap) => {
+                            const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
+                            const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+                            const panel = openEdit();
+
+                            panel.options.saved?.(
+                                createFakeContentlet({
+                                    identifier: 'contentlet-identifier-123',
+                                    URL_MAP_FOR_CONTENT: urlMap
+                                })
+                            );
+
+                            expect(pageReloadSpy).toHaveBeenCalledTimes(1);
+                            expect(pageLoadSpy).not.toHaveBeenCalled();
+                        });
+
+                        it('should use the saved contentlet as it is, without fetching it again', () => {
+                            const contentletService = spectator.inject(DotContentletService, true);
+                            const fetchSpy = vi.spyOn(contentletService, 'getContentletByInode');
+                            const panel = openEdit();
+
+                            panel.options.saved?.(
+                                createFakeContentlet({ identifier: 'contentlet-identifier-123' })
+                            );
+
+                            expect(fetchSpy).not.toHaveBeenCalled();
+                        });
+
+                        it('should load the page in the language the editor switched to', () => {
+                            const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
+                            const panel = openEdit();
+
+                            panel.options.languageChanged?.(3);
+
+                            expect(pageLoadSpy).toHaveBeenCalledWith({ language_id: '3' });
+                        });
+
+                        it('should reload the page when the content is deleted', () => {
+                            const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+                            const panel = openEdit();
+
+                            panel.options.deleted?.();
+
+                            expect(pageReloadSpy).toHaveBeenCalledTimes(1);
+                        });
+
+                        // The safety net for workflow actions run in the legacy editor, which report
+                        // nothing the page can use (#38303, R4).
+                        it('should reload the page and clear the request when the panel closes itself', () => {
+                            const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+                            const panel = openEdit();
+
+                            panel.ref.close();
+
+                            expect(pageReloadSpy).toHaveBeenCalledTimes(1);
+                            expect(editRequest()).toBeNull();
+                        });
+                    });
+
+                    /**
+                     * The SDK's `editContentlet()` reaches the editor through the actions handler's
+                     * `openContent` callback. A headless page renders itself, so a save also asks
+                     * the client to reload.
+                     */
+                    describe('from the SDK', () => {
+                        const SDK_REQUEST: DotEditContentRequest = {
+                            mode: 'edit',
+                            inode: 'sdk-inode',
+                            identifier: 'sdk-identifier',
+                            contentType: 'Blog',
+                            languageId: 1,
+                            title: 'From the SDK',
+                            portletId: 'edit-page'
+                        };
+
+                        /** Opens content the way the actions handler does for `editContentlet()`. */
+                        const openFromSdk = () => {
+                            const deps = actionDeps(DotCMSUVEAction.EDIT_CONTENTLET, {
+                                inode: 'sdk-inode'
+                            });
+                            const openContent = deps['openContent'] as
+                                | ((request: DotEditContentRequest) => void)
+                                | undefined;
+
+                            expect(
+                                openContent,
+                                'the editor hands the actions handler openContent'
+                            ).toEqual(expect.any(Function));
+                            openContent?.(SDK_REQUEST);
+                            spectator.detectChanges();
+                        };
+
+                        it('should open the request the actions handler built', () => {
+                            openFromSdk();
+
+                            expect(editRequest()).toEqual(expect.objectContaining(SDK_REQUEST));
+                        });
+
+                        it('should reload the page and ask the client to reload itself after a save', () => {
+                            openFromSdk();
+                            const postMessageSpy = vi
+                                .spyOn(iframeWindow(), 'postMessage')
+                                .mockImplementation(() => undefined);
+                            const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+
+                            editPanel().options.saved?.(
+                                createFakeContentlet({ identifier: 'sdk-identifier' })
+                            );
+
+                            expect(pageReloadSpy).toHaveBeenCalledTimes(1);
+                            expect(postMessageSpy).toHaveBeenCalledWith(
+                                { name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE },
+                                '*'
+                            );
+                        });
+                    });
+                });
+            });
+
+            /**
+             * Legacy screens that are not editors open in the generic legacy-screen panel, and the
+             * form selector opens as panel content: no dialog (#38303, US5, R7, R10).
+             */
+            describe('legacy screens in the side panel', () => {
+                /** Every panel opened through the side-panel service in this test. */
+                let sidePanels: OpenedPanel[];
+
+                beforeEach(() => {
+                    sidePanels = recordSidePanels(spectator.inject(DotSidePanelService));
+                });
+
+                /** The legacy-screen panel the editor opened last: its request names a URL. */
+                const legacyScreenPanel = (): OpenedPanel => {
+                    const panel = sidePanels
+                        .filter(
+                            (opened) =>
+                                typeof inputOf<{ url?: string }>(opened, 'request')?.url ===
+                                'string'
+                        )
+                        .at(-1);
+
+                    expect(
+                        panel,
+                        'the editor opens legacy screens in the side panel'
+                    ).toBeDefined();
+
+                    return panel as OpenedPanel;
+                };
+
+                /** Sends an `ng-event` from the legacy screen, as the generic panel passes it on. */
+                const sendLegacyEvent = (detail: DotLegacyScreenEvent): void => {
+                    const handler = legacyScreenPanel().config.outputs?.['legacyEvent'] as
+                        | ((event: DotLegacyScreenEvent) => void)
+                        | undefined;
+
+                    expect(handler, 'the legacy screen panel binds legacyEvent').toEqual(
+                        expect.any(Function)
+                    );
+                    handler?.(detail);
+                    spectator.detectChanges();
+                };
+
+                /** Clicks "add" on a container, through the contentlet tools. */
+                const addContent = (
+                    type: 'content' | 'widget' | 'form',
+                    payload: ActionPayload
+                ) => {
+                    spectator.detectChanges();
+                    store.setContentletArea({ x: 100, y: 100, width: 500, height: 500, payload });
+                    spectator.detectComponentChanges();
+                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
+                        type,
+                        payload
+                    });
+                    spectator.detectChanges();
+                };
+
+                /** A container with room, below a contentlet already on the page. */
+                const containerPayload = (maxContentlets = 2): ActionPayload => ({
+                    language_id: '1',
+                    pageContainers: [
                         {
                             identifier: 'container-identifier-123',
                             uuid: 'uuid-123',
-                            contentletsId: [
-                                'contentlet-identifier-123',
-                                'new-contentlet-identifier-123'
-                            ],
-                            personaTag: undefined
-                        }
-                    ]);
-                });
-
-                it('should not add contentlet after backend emit CONTENT_SEARCH_SELECT and contentlet is dupe', () => {
-                    spectator.detectChanges();
-
-                    const payload: ActionPayload = {
-                        language_id: '1',
-                        pageContainers: [
-                            {
-                                identifier: 'container-identifier-123',
-                                uuid: 'uuid-123',
-                                contentletsId: ['contentlet-identifier-123']
-                            }
-                        ],
-                        contentlet: {
-                            identifier: 'contentlet-identifier-123',
-                            inode: 'contentlet-inode-123',
-                            title: 'Hello World',
-                            contentType: 'test',
-                            onNumberOfPages: 1
-                        },
-                        container: {
-                            identifier: 'container-identifier-123',
-                            acceptTypes: 'test',
-                            uuid: 'uuid-123',
-                            maxContentlets: 1,
                             contentletsId: ['contentlet-identifier-123']
-                        },
-                        pageId: 'test',
-                        position: 'before'
-                    };
-
-                    store.setContentletArea({
-                        x: 100,
-                        y: 100,
-                        width: 500,
-                        height: 500,
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
-                        type: 'content',
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    const dialog = spectator.debugElement.query(
-                        By.css('[data-testId="ema-dialog"]')
-                    );
-
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
-                                data: {
-                                    identifier: 'contentlet-identifier-123',
-                                    inode: '123'
-                                }
-                            }
-                        }),
-                        actionPayload: payload
-                    });
-
-                    spectator.detectChanges();
-
-                    expect(addMessageSpy).toHaveBeenCalledWith({
-                        severity: 'info',
-                        summary: 'Content already added',
-                        detail: 'This content is already added to this container',
-                        life: 2000
-                    });
-                });
-
-                it('should add widget after backend emit CONTENT_SEARCH_SELECT', () => {
-                    const saveMock = vi.spyOn(pageApi(), 'editorSave');
-
-                    spectator.detectChanges();
-
-                    const payload: ActionPayload = {
-                        language_id: '1',
-                        pageContainers: [
-                            {
-                                identifier: 'container-identifier-123',
-                                uuid: 'uuid-123',
-                                contentletsId: ['contentlet-identifier-123']
-                            }
-                        ],
-                        contentlet: {
-                            identifier: 'contentlet-identifier-123',
-                            inode: 'contentlet-inode-123',
-                            title: 'Hello World',
-                            contentType: 'test',
-                            onNumberOfPages: 1
-                        },
-                        container: {
-                            identifier: 'container-identifier-123',
-                            acceptTypes: 'test',
-                            uuid: 'uuid-123',
-                            maxContentlets: 2,
-                            contentletsId: ['123']
-                        },
-                        pageId: 'test',
-                        position: 'after'
-                    };
-
-                    store.setContentletArea({
-                        x: 100,
-                        y: 100,
-                        width: 500,
-                        height: 500,
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
-                        type: 'widget',
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    const dialog = spectator.debugElement.query(
-                        By.css('[data-testId="ema-dialog"]')
-                    );
-
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
-                                data: {
-                                    identifier: 'new-contentlet-identifier-123',
-                                    inode: '123'
-                                }
-                            }
-                        }),
-                        actionPayload: payload
-                    });
-
-                    spectator.detectChanges();
-
-                    expect(saveMock).toHaveBeenCalledWith([
-                        {
-                            identifier: 'container-identifier-123',
-                            uuid: 'uuid-123',
-                            contentletsId: [
-                                'contentlet-identifier-123',
-                                'new-contentlet-identifier-123'
-                            ],
-                            personaTag: undefined
                         }
-                    ]);
+                    ],
+                    contentlet: {
+                        identifier: 'contentlet-identifier-123',
+                        inode: 'contentlet-inode-123',
+                        title: 'Hello World',
+                        contentType: 'test',
+                        onNumberOfPages: 1
+                    },
+                    container: {
+                        identifier: 'container-identifier-123',
+                        acceptTypes: 'test',
+                        uuid: 'uuid-123',
+                        maxContentlets,
+                        contentletsId: ['123']
+                    },
+                    pageId: 'test',
+                    position: 'after'
                 });
 
-                it('should not add widget after backend emit CONTENT_SEARCH_SELECT and widget is dupe', () => {
-                    spectator.detectChanges();
-
-                    const payload: ActionPayload = {
+                /** The content selector's URL, exactly as the page editor's dialog built it. */
+                const selectorUrl = (containerId: string, acceptTypes: string) =>
+                    `${CONTENTLET_SELECTOR_URL}?${new URLSearchParams({
+                        ng: 'true',
+                        container_id: containerId,
+                        add: acceptTypes,
                         language_id: '1',
-                        pageContainers: [
-                            {
-                                identifier: 'container-identifier-123',
-                                uuid: 'uuid-123',
-                                contentletsId: ['contentlet-identifier-123']
-                            }
-                        ],
-                        contentlet: {
-                            identifier: 'contentlet-identifier-123',
-                            inode: 'contentlet-inode-123',
-                            title: 'Hello World',
-                            contentType: 'test',
-                            onNumberOfPages: 1
-                        },
-                        container: {
-                            identifier: 'container-identifier-123',
-                            acceptTypes: 'test',
-                            uuid: 'uuid-123',
-                            maxContentlets: 1,
-                            contentletsId: ['contentlet-identifier-123']
-                        },
-                        pageId: 'test',
-                        position: 'before'
-                    };
+                        variantName: DEFAULT_VARIANT_ID
+                    }).toString()}`;
 
-                    store.setContentletArea({
-                        x: 100,
-                        y: 100,
-                        width: 500,
-                        height: 500,
-                        payload
-                    });
+                describe('add content and add widget', () => {
+                    it.each([
+                        ['content', 'test'],
+                        ['widget', DotCMSBaseTypesContentTypes.WIDGET]
+                    ] as const)(
+                        'should open the content selector for %s in a legacy-screen panel',
+                        (type, acceptTypes) => {
+                            addContent(type, containerPayload());
 
-                    spectator.detectComponentChanges();
-
-                    spectator.triggerEventHandler(DotUveContentletToolsComponent, 'addContent', {
-                        type: 'widget',
-                        payload
-                    });
-
-                    spectator.detectComponentChanges();
-
-                    const dialog = spectator.debugElement.query(
-                        By.css('[data-testId="ema-dialog"]')
+                            expect(legacyScreenRequest()).toEqual({
+                                url: selectorUrl('container-identifier-123', acceptTypes),
+                                title: spectator
+                                    .inject(DotMessageService, true)
+                                    .get('edit.ema.page.dialog.header.search.content')
+                            });
+                            expect(inputOf(legacyScreenPanel(), 'request')).toEqual(
+                                legacyScreenRequest()
+                            );
+                        }
                     );
 
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
-                                data: {
-                                    identifier: 'contentlet-identifier-123',
-                                    inode: '123'
-                                }
-                            }
-                        }),
-                        actionPayload: payload
+                    it('should accept every type in a container that names none', () => {
+                        const payload = containerPayload();
+                        // The server can leave it out, whatever the type says.
+                        payload.container = {
+                            ...payload.container,
+                            acceptTypes: undefined as unknown as string
+                        };
+
+                        addContent('content', payload);
+
+                        expect(legacyScreenRequest()?.url).toBe(
+                            selectorUrl('container-identifier-123', '*')
+                        );
                     });
 
-                    spectator.detectChanges();
+                    it.each(['content', 'widget'] as const)(
+                        'should place the selected %s, save the page and close the selector',
+                        (type) => {
+                            const editorSaveSpy = vi.spyOn(pageApi(), 'editorSave');
+                            addContent(type, containerPayload());
 
-                    expect(addMessageSpy).toHaveBeenCalledWith({
-                        severity: 'info',
-                        summary: 'Content already added',
-                        detail: 'This content is already added to this container',
-                        life: 2000
+                            sendLegacyEvent({
+                                name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
+                                data: { identifier: 'new-contentlet-identifier-123', inode: '123' }
+                            });
+
+                            expect(editorSaveSpy).toHaveBeenCalledWith([
+                                {
+                                    identifier: 'container-identifier-123',
+                                    uuid: 'uuid-123',
+                                    contentletsId: [
+                                        'contentlet-identifier-123',
+                                        'new-contentlet-identifier-123'
+                                    ],
+                                    personaTag: undefined
+                                }
+                            ]);
+                            expect(legacyScreenRequest()).toBeNull();
+                        }
+                    );
+
+                    it('should warn and keep the selector open when the selection is already in the container', () => {
+                        addContent('content', containerPayload(1));
+
+                        sendLegacyEvent({
+                            name: NG_CUSTOM_EVENTS.CONTENT_SEARCH_SELECT,
+                            data: { identifier: 'contentlet-identifier-123', inode: '123' }
+                        });
+
+                        expect(addMessageSpy).toHaveBeenCalledWith({
+                            severity: 'info',
+                            summary: 'Content already added',
+                            detail: 'This content is already added to this container',
+                            life: 2000
+                        });
+                        expect(legacyScreenRequest()).toEqual(
+                            expect.objectContaining({ url: expect.any(String) })
+                        );
+                    });
+
+                    /**
+                     * "Create new" in the content selector: the selector closes and the edit panel
+                     * opens a create for that type, which places the new contentlet in the
+                     * container it was asked for.
+                     */
+                    describe('creating from the selector', () => {
+                        const createFromSelector = (payload: ActionPayload) => {
+                            addContent('content', payload);
+                            sendLegacyEvent({
+                                name: NG_CUSTOM_EVENTS.CREATE_CONTENTLET,
+                                data: { url: '/ignored/create/url', contentType: 'Blog' }
+                            });
+                        };
+
+                        it('should close the selector and open a create request for the type', () => {
+                            createFromSelector(containerPayload());
+
+                            expect(legacyScreenRequest()).toBeNull();
+                            expect(editRequest()).toEqual(
+                                expect.objectContaining({
+                                    mode: 'new',
+                                    contentType: 'Blog',
+                                    languageId: store.pageLanguageId(),
+                                    siteId: siteId(),
+                                    portletId: 'edit-page'
+                                })
+                            );
+                        });
+
+                        it('should place the created contentlet in that container on its first save', () => {
+                            const editorSaveSpy = vi.spyOn(pageApi(), 'editorSave');
+                            const payload = containerPayload();
+                            createFromSelector(structuredClone(payload));
+
+                            editPanel().options.saved?.(
+                                createFakeContentlet({ identifier: 'created-identifier' })
+                            );
+
+                            const { pageContainers } = insertContentletInContainer({
+                                ...structuredClone(payload),
+                                newContentletId: 'created-identifier'
+                            });
+                            expect(editorSaveSpy).toHaveBeenCalledWith(pageContainers);
+                        });
+
+                        it('should warn and keep the panel open when the created contentlet is already there', () => {
+                            const payload = containerPayload(1);
+                            createFromSelector(structuredClone(payload));
+                            const panel = editPanel();
+
+                            panel.options.saved?.(
+                                createFakeContentlet({ identifier: 'contentlet-identifier-123' })
+                            );
+
+                            expect(addMessageSpy).toHaveBeenCalledWith(
+                                expect.objectContaining({ severity: 'info' })
+                            );
+                            expect(panel.ref.isClosed).toBe(false);
+                        });
+                    });
+                });
+
+                /** The form selector is panel content of its own, not a legacy screen. */
+                describe('add form', () => {
+                    const formPanel = (): OpenedPanel => {
+                        const panel = sidePanels
+                            .filter((opened) => opened.component === EmaFormSelectorComponent)
+                            .at(-1);
+
+                        expect(
+                            panel,
+                            'the editor opens the form selector in the side panel'
+                        ).toBeDefined();
+
+                        return panel as OpenedPanel;
+                    };
+
+                    const selectForm = (formId: string) => {
+                        const selected = formPanel().config.outputs?.['selected'] as
+                            | ((id: string) => void)
+                            | undefined;
+
+                        expect(selected, 'the form selector panel binds selected').toEqual(
+                            expect.any(Function)
+                        );
+                        selected?.(formId);
+                        spectator.detectChanges();
+                    };
+
+                    it('should place the selected form, save the page and close the selector', () => {
+                        const pageApiService = spectator.inject(DotPageApiService);
+                        const getFormIdentifier = vi.fn().mockReturnValue(of('form-content-id'));
+                        Object.assign(pageApiService, { getFormIndetifier: getFormIdentifier });
+                        const editorSaveSpy = vi.spyOn(pageApi(), 'editorSave');
+                        addContent('form', containerPayload());
+
+                        selectForm('form-id');
+
+                        expect(getFormIdentifier).toHaveBeenCalledWith(
+                            'container-identifier-123',
+                            'form-id'
+                        );
+                        expect(editorSaveSpy).toHaveBeenCalledWith([
+                            expect.objectContaining({
+                                contentletsId: ['contentlet-identifier-123', 'form-content-id']
+                            })
+                        ]);
+                        expect(formPanel().ref.isClosed).toBe(true);
+                    });
+
+                    it('should keep the selector open when the form cannot be resolved', () => {
+                        const pageApiService = spectator.inject(DotPageApiService);
+                        Object.assign(pageApiService, {
+                            getFormIndetifier: vi
+                                .fn()
+                                .mockReturnValue(throwError(() => new Error('not found')))
+                        });
+                        addContent('form', containerPayload());
+
+                        selectForm('form-id');
+
+                        expect(formPanel().ref.isClosed).toBe(false);
+                    });
+                });
+
+                /**
+                 * The translate screen is the legacy editor's create form pre-filled from the page,
+                 * so it opens in the legacy editor panel, which handles the workflow wizard, compare
+                 * and the unsaved-changes prompt; the generic legacy-screen panel does not (#38303).
+                 */
+                describe('translate page', () => {
+                    const PAGE = {
+                        identifier: 'test-page-123',
+                        inode: 'inode-123',
+                        title: 'Translated page',
+                        contentType: 'htmlpageasset'
+                    } as unknown as DotCMSPage;
+
+                    /** The legacy translate screen's URL, exactly as the page editor's dialog built it. */
+                    const translateUrl = () => {
+                        const params = new URLSearchParams({
+                            p_p_id: 'content',
+                            p_p_action: '1',
+                            p_p_state: 'maximized',
+                            angularCurrentPortlet: 'edit-page',
+                            _content_sibbling: 'inode-123',
+                            _content_cmd: 'edit',
+                            p_p_mode: 'view',
+                            _content_sibblingStructure: 'inode-123',
+                            _content_struts_action: '/ext/contentlet/edit_contentlet',
+                            inode: '',
+                            lang: '2',
+                            populateaccept: 'true',
+                            reuseLastLang: 'true',
+                            variantName: DEFAULT_VARIANT_ID
+                        });
+                        const site = siteId();
+                        if (site) {
+                            params.set('host_id', site);
+                        }
+
+                        return `${LAYOUT_URL}?${params.toString()}`;
+                    };
+
+                    const translate = () => {
+                        spectator.detectChanges();
+                        spectator.triggerEventHandler(DotUveToolbarStubComponent, 'translatePage', {
+                            page: PAGE,
+                            newLanguage: 2
+                        });
+                        spectator.detectChanges();
+                    };
+
+                    /** The legacy editor panel the translation opened in: the one given a create screen. */
+                    const translatePanel = (): OpenedPanel => {
+                        const panel = sidePanels
+                            .filter((opened) => 'createUrl' in (opened.config.inputs ?? {}))
+                            .at(-1);
+
+                        expect(
+                            panel,
+                            'the editor opens the translation in the legacy editor panel'
+                        ).toBeDefined();
+
+                        return panel as OpenedPanel;
+                    };
+
+                    /** Emits one of the translate panel's outputs, as the legacy editor would. */
+                    const emit = <T>(name: string, value?: T): void => {
+                        const handler = translatePanel().config.outputs?.[name] as
+                            | ((value?: T) => void)
+                            | undefined;
+
+                        expect(handler, `the translate panel binds ${name}`).toEqual(
+                            expect.any(Function)
+                        );
+                        handler?.(value);
+                        spectator.detectChanges();
+                    };
+
+                    it('should open the legacy editor panel on the translate screen', async () => {
+                        translate();
+                        const panel = translatePanel();
+
+                        expect(await panel.component).toBe(await loadDotLegacyEditorSidePanel());
+                        expect(inputOf(panel, 'request')).toEqual({
+                            mode: 'new',
+                            contentType: 'htmlpageasset',
+                            languageId: 2,
+                            title: 'Translated page',
+                            siteId: siteId(),
+                            portletId: 'edit-page'
+                        });
+                        expect(inputOf(panel, 'createUrl')).toBe(translateUrl());
+                    });
+
+                    it('should not open the generic legacy-screen panel', () => {
+                        translate();
+
+                        expect(legacyScreenRequest()).toBeNull();
+                    });
+
+                    it('should load the saved translation at its URL and in its language, and stay open', () => {
+                        translate();
+                        const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
+
+                        emit(
+                            'saved',
+                            createFakeContentlet({ languageId: 2, url: '/translated-page' })
+                        );
+
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            language_id: '2',
+                            url: '/translated-page'
+                        });
+                        expect(translatePanel().ref.isClosed).toBe(false);
+                    });
+
+                    it('should close the panel and load the page the editor names after the first save', () => {
+                        translate();
+                        const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
+
+                        emit('pageEditorRequested', { url: '/translated-page', languageId: 2 });
+
+                        expect(translatePanel().ref.isClosed).toBe(true);
+                        expect(pageLoadSpy).toHaveBeenCalledWith({
+                            url: '/translated-page',
+                            language_id: '2'
+                        });
+                    });
+
+                    it('should reload the page when the panel closes after a save', () => {
+                        translate();
+                        emit(
+                            'saved',
+                            createFakeContentlet({ languageId: 2, url: '/translated-page' })
+                        );
+                        const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+
+                        translatePanel().ref.close();
+
+                        expect(pageReloadSpy).toHaveBeenCalledTimes(1);
+                    });
+
+                    it('should leave the page alone when the panel closes without a save', () => {
+                        translate();
+                        const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
+                        const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+
+                        translatePanel().ref.close();
+
+                        expect(pageReloadSpy).not.toHaveBeenCalled();
+                        expect(pageLoadSpy).not.toHaveBeenCalled();
+                    });
+                });
+
+                /** The SDK's `reorderMenu()` reaches the editor through `openLegacyScreen`. */
+                describe('reorder menu', () => {
+                    const REORDER_URL = '/c/portal/layout?p_p_id=site-browser&reorder=true';
+
+                    const openReorder = () => {
+                        spectator.detectChanges();
+                        const deps = actionDeps(DotCMSUVEAction.REORDER_MENU, {
+                            startLevel: 1,
+                            depth: 2
+                        });
+                        const openLegacyScreen = deps['openLegacyScreen'] as
+                            | ((url: string, title: string) => void)
+                            | undefined;
+
+                        expect(
+                            openLegacyScreen,
+                            'the editor hands the actions handler openLegacyScreen'
+                        ).toEqual(expect.any(Function));
+                        openLegacyScreen?.(REORDER_URL, 'Reorder the menu');
+                        spectator.detectChanges();
+                    };
+
+                    it('should open the reorder screen in a legacy-screen panel', () => {
+                        openReorder();
+
+                        expect(legacyScreenRequest()).toEqual({
+                            url: REORDER_URL,
+                            title: 'Reorder the menu'
+                        });
+                        expect(inputOf(legacyScreenPanel(), 'request')).toEqual(
+                            legacyScreenRequest()
+                        );
+                    });
+
+                    it('should confirm, reload the page, ask the client to reload and close after saving the order', () => {
+                        openReorder();
+                        const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+                        const postMessageSpy = vi
+                            .spyOn(iframeWindow(), 'postMessage')
+                            .mockImplementation(() => undefined);
+
+                        sendLegacyEvent({ name: NG_CUSTOM_EVENTS.SAVE_MENU_ORDER });
+
+                        expect(addMessageSpy).toHaveBeenCalledWith({
+                            severity: 'success',
+                            summary: 'editpage.content.contentlet.menu.reorder.title',
+                            detail: 'message.menu.reordered',
+                            life: 2000
+                        });
+                        expect(pageReloadSpy).toHaveBeenCalledTimes(1);
+                        expect(postMessageSpy).toHaveBeenCalledWith(
+                            { name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE },
+                            '*'
+                        );
+                        expect(legacyScreenRequest()).toBeNull();
+                    });
+
+                    it('should tell the user and keep the screen open when the order cannot be saved', () => {
+                        openReorder();
+
+                        sendLegacyEvent({ name: NG_CUSTOM_EVENTS.ERROR_SAVING_MENU_ORDER });
+
+                        expect(addMessageSpy).toHaveBeenCalledWith({
+                            severity: 'error',
+                            summary: 'editpage.content.contentlet.menu.reorder.title',
+                            detail: 'error.menu.reorder.user_has_not_permission',
+                            life: 2000
+                        });
+                        expect(legacyScreenRequest()).toEqual(
+                            expect.objectContaining({ url: REORDER_URL })
+                        );
+                    });
+
+                    it('should close the screen when the reorder is cancelled', () => {
+                        openReorder();
+
+                        sendLegacyEvent({ name: NG_CUSTOM_EVENTS.CANCEL_SAVING_MENU_ORDER });
+
+                        expect(legacyScreenRequest()).toBeNull();
                     });
                 });
             });
@@ -2276,8 +2851,8 @@ describe('EditEmaEditorComponent', () => {
                     expect(confirmDialog.getAttribute('rejectIcon')).toBe('hidden');
                 });
 
-                it('should show the dialogs when we can edit a variant', () => {
-                    const componentsToHide = ['dialog', 'confirm-dialog']; // Test id of components that should hide when entering preview modes
+                it('should show the confirm dialog when we can edit a variant', () => {
+                    const componentsToHide = ['confirm-dialog']; // Test id of components that should hide when entering preview modes
 
                     spectator.detectChanges();
 
@@ -2297,109 +2872,6 @@ describe('EditEmaEditorComponent', () => {
                     componentsToHide.forEach((testId) => {
                         expect(spectator.query(byTestId(testId))).not.toBeNull();
                     });
-                });
-            });
-
-            describe('language selected', () => {
-                it('should update the URL and language when the user create a new translation changing the URL', () => {
-                    pageApi().pageLoad({
-                        clientHost: 'http://localhost:3000',
-                        url: 'index',
-                        language_id: '2',
-                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
-                    });
-
-                    const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
-
-                    spectator.detectChanges();
-                    const dialog = spectator.debugElement.query(
-                        By.css('[data-testId="ema-dialog"]')
-                    );
-
-                    spectator.detectComponentChanges();
-
-                    store.setSelected({
-                        bounds: { x: 0, y: 0, width: 0, height: 0 },
-                        payload: EDIT_ACTION_PAYLOAD_MOCK
-                    });
-                    spectator.component['handleOpenFullEditor']();
-
-                    spectator.detectComponentChanges();
-
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED,
-                                payload: {
-                                    htmlPageReferer:
-                                        '/new-url-here?com.dotmarketing.htmlpage.language=1'
-                                }
-                            }
-                        })
-                    });
-
-                    expect(pageLoadSpy).toHaveBeenCalledWith({
-                        url: '/new-url-here',
-                        language_id: '1'
-                    });
-                });
-
-                it('should update the language when the user create a new translation', () => {
-                    pageApi().pageLoad({
-                        clientHost: 'http://localhost:3000',
-                        url: 'test-url',
-                        language_id: '1',
-                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
-                    });
-
-                    const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
-                    spectator.detectChanges();
-
-                    const dialog = spectator.debugElement.query(
-                        By.css('[data-testId="ema-dialog"]')
-                    );
-                    triggerCustomEvent(dialog, 'action', {
-                        event: new CustomEvent('ng-event', {
-                            detail: {
-                                name: NG_CUSTOM_EVENTS.LANGUAGE_IS_CHANGED,
-                                payload: {
-                                    htmlPageReferer:
-                                        '/test-url?com.dotmarketing.htmlpage.language=2'
-                                }
-                            }
-                        })
-                    });
-
-                    expect(pageLoadSpy).toHaveBeenCalledWith({
-                        language_id: '2'
-                    });
-                });
-
-                it('should call dialog.translatePage when toolbar emits translatePage', () => {
-                    pageApi().pageLoad({
-                        clientHost: 'http://localhost:3000',
-                        url: 'index',
-                        language_id: '1',
-                        [PERSONA_KEY]: DEFAULT_PERSONA.identifier
-                    });
-                    spectator.detectChanges();
-
-                    const translatePagePayload = {
-                        page: { identifier: 'test-page-123', inode: 'inode-123' },
-                        newLanguage: 2
-                    };
-                    const dialogTranslatePageSpy = vi.spyOn(
-                        spectator.component.dialog,
-                        'translatePage'
-                    );
-
-                    spectator.triggerEventHandler(
-                        DotUveToolbarStubComponent,
-                        'translatePage',
-                        translatePagePayload
-                    );
-
-                    expect(dialogTranslatePageSpy).toHaveBeenCalledWith(translatePagePayload);
                 });
             });
 
@@ -2581,28 +3053,16 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
+            /**
+             * Quick edit's "full editor" opens the selected contentlet in the side panel through one
+             * request, whatever editor its type uses: the opener picks it (#38303).
+             */
             describe('handleOpenFullEditor', () => {
                 afterEach(() => {
                     vi.restoreAllMocks();
                 });
 
-                it('should open legacy ema dialog when the content type does not enable the new editor', () => {
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of(
-                            createFakeContentType({
-                                variable: 'test',
-                                name: 'Test',
-                                metadata: {
-                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                                }
-                            })
-                        )
-                    );
-                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
-
+                const openFullEditor = () => {
                     store.setSelected({
                         bounds: { x: 0, y: 0, width: 0, height: 0 },
                         payload: EDIT_ACTION_PAYLOAD_MOCK
@@ -2610,128 +3070,42 @@ describe('EditEmaEditorComponent', () => {
                     spectator.detectChanges();
                     spectator.component['handleOpenFullEditor']();
                     spectator.detectChanges();
+                };
 
-                    expect(dialogSpy).toHaveBeenCalledWith(
-                        expect.objectContaining({ inode: 'contentlet-inode-123' })
-                    );
-                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
-                });
+                it('should open the selected contentlet in the side panel', () => {
+                    openFullEditor();
 
-                it('should open the new edit content dialog when CONTENT_EDITOR2_ENABLED is true on the content type', async () => {
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of(
-                            createFakeContentType({
-                                variable: 'test',
-                                name: 'Test',
-                                metadata: {
-                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
-                                }
-                            })
-                        )
-                    );
-                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                    const dialogRefMock = {
-                        onClose: new Subject<void | unknown>(),
-                        close: vi.fn()
-                    };
-                    const dialogServiceOpenSpy = vi
-                        .spyOn(spectator.inject(DialogService), 'open')
-                        .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
-
-                    store.setSelected({
-                        bounds: { x: 0, y: 0, width: 0, height: 0 },
-                        payload: EDIT_ACTION_PAYLOAD_MOCK
-                    });
-                    spectator.detectChanges();
-                    spectator.component['handleOpenFullEditor']();
-                    spectator.detectChanges();
-
-                    await spectator.fixture.whenStable();
-
-                    expect(dialogSpy).not.toHaveBeenCalled();
-                    expect(dialogServiceOpenSpy).toHaveBeenCalled();
-                    const [, config] = dialogServiceOpenSpy.mock.calls[0];
-                    expect(config.data).toEqual(
+                    expect(editRequest()).toEqual(
                         expect.objectContaining({
                             mode: 'edit',
-                            contentletInode: 'contentlet-inode-123'
+                            inode: 'contentlet-inode-123',
+                            identifier: 'contentlet-identifier-123',
+                            title: 'Hello World',
+                            siteId: siteId(),
+                            portletId: 'edit-page'
                         })
                     );
+                    expect(opener.opened.length).toBe(1);
                 });
 
-                it('opens the new editor in the side panel when its flag is on, and clears the request when the panel closes', () => {
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of(
-                            createFakeContentType({
-                                variable: 'test',
-                                name: 'Test',
-                                metadata: {
-                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
-                                }
-                            })
-                        )
+                it('should leave the editor choice to the opener, without looking the type up', () => {
+                    const getContentType = vi.spyOn(
+                        spectator.debugElement.injector.get(DotContentTypeService),
+                        'getContentType'
                     );
-                    const closed = new Subject<void>();
-                    const openSpy = vi
-                        .spyOn(spectator.inject(DotSidePanelService), 'open')
-                        .mockReturnValue({ closed } as unknown as DotSidePanelRef);
-                    // The store's type does not expose its state as writable signals.
-                    patchState(store as unknown as WritableStateSource<UVEState>, {
-                        flags: {
-                            ...store.flags(),
-                            [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
-                        }
-                    });
-
                     store.setSelected({
                         bounds: { x: 0, y: 0, width: 0, height: 0 },
                         payload: EDIT_ACTION_PAYLOAD_MOCK
                     });
                     spectator.detectChanges();
+                    // Selecting renders quick edit, which loads the type for its own form; only
+                    // what opening the full editor does is asserted.
+                    getContentType.mockClear();
+
                     spectator.component['handleOpenFullEditor']();
                     spectator.detectChanges();
 
-                    expect(openSpy).toHaveBeenCalledTimes(1);
-                    const [, config] = openSpy.mock.calls[0];
-                    expect((config.heading as () => string)()).toBe('Hello World');
-                    expect((config.inputs?.['data'] as () => unknown)()).toEqual(
-                        expect.objectContaining({
-                            mode: 'edit',
-                            contentletInode: 'contentlet-inode-123'
-                        })
-                    );
-
-                    closed.next();
-                    closed.complete();
-
-                    expect(spectator.component['$editContentPanel']()).toBeNull();
-                });
-
-                it('should fall back to legacy dialog when getContentType throws', () => {
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        throwError(() => new Error('network error'))
-                    );
-                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
-
-                    store.setSelected({
-                        bounds: { x: 0, y: 0, width: 0, height: 0 },
-                        payload: EDIT_ACTION_PAYLOAD_MOCK
-                    });
-                    spectator.detectChanges();
-                    spectator.component['handleOpenFullEditor']();
-                    spectator.detectChanges();
-
-                    expect(dialogSpy).toHaveBeenCalledWith(
-                        expect.objectContaining({ inode: 'contentlet-inode-123' })
-                    );
-                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                    expect(getContentType).not.toHaveBeenCalled();
                 });
             });
 
@@ -2742,91 +3116,46 @@ describe('EditEmaEditorComponent', () => {
                     vi.restoreAllMocks();
                 });
 
-                it('should open the legacy VTL dialog when the contentlet lookup fails', () => {
+                // The Edit Source fallback: with no contentlet to read, the file is opened by its
+                // inode; the opener fetches it to learn its type.
+                it('should open the file by its inode when the contentlet lookup fails', () => {
                     const dotContentletService =
                         spectator.debugElement.injector.get(DotContentletService);
                     vi.spyOn(dotContentletService, 'getContentletByInode').mockReturnValue(
                         throwError(() => new Error('network error'))
                     );
-                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editVTLContentlet');
 
                     spectator.component.handleEditVTL(VTL_FILE_MOCK);
                     spectator.detectChanges();
 
-                    expect(dialogSpy).toHaveBeenCalledWith(VTL_FILE_MOCK);
-                });
-
-                it('should open the legacy dialog when the resolved content type does not enable the new editor', () => {
-                    const dotContentletService =
-                        spectator.debugElement.injector.get(DotContentletService);
-                    vi.spyOn(dotContentletService, 'getContentletByInode').mockReturnValue(
-                        of({ ...URL_MAP_CONTENTLET, inode: 'vtl-inode-123', contentType: 'test' })
-                    );
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of(
-                            createFakeContentType({
-                                variable: 'test',
-                                name: 'Test',
-                                metadata: {
-                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                                }
-                            })
-                        )
-                    );
-                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
-
-                    spectator.component.handleEditVTL(VTL_FILE_MOCK);
-                    spectator.detectChanges();
-
-                    expect(dialogSpy).toHaveBeenCalledWith(
-                        expect.objectContaining({ inode: 'vtl-inode-123' })
-                    );
-                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
-                });
-
-                it('should open the new edit content flow when CONTENT_EDITOR2_ENABLED is true on the resolved content type', async () => {
-                    const dotContentletService =
-                        spectator.debugElement.injector.get(DotContentletService);
-                    vi.spyOn(dotContentletService, 'getContentletByInode').mockReturnValue(
-                        of({ ...URL_MAP_CONTENTLET, inode: 'vtl-inode-123', contentType: 'test' })
-                    );
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of(
-                            createFakeContentType({
-                                variable: 'test',
-                                name: 'Test',
-                                metadata: {
-                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
-                                }
-                            })
-                        )
-                    );
-                    const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                    const dialogRefMock = {
-                        onClose: new Subject<void | unknown>(),
-                        close: vi.fn()
-                    };
-                    const dialogServiceOpenSpy = vi
-                        .spyOn(spectator.inject(DialogService), 'open')
-                        .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
-
-                    spectator.component.handleEditVTL(VTL_FILE_MOCK);
-                    spectator.detectChanges();
-
-                    await spectator.fixture.whenStable();
-
-                    expect(dialogSpy).not.toHaveBeenCalled();
-                    expect(dialogServiceOpenSpy).toHaveBeenCalled();
-                    const [, config] = dialogServiceOpenSpy.mock.calls[0];
-                    expect(config.data).toEqual(
+                    expect(editRequest()).toEqual(
                         expect.objectContaining({
                             mode: 'edit',
-                            contentletInode: 'vtl-inode-123'
+                            inode: 'vtl-inode-123',
+                            title: 'my-template.vtl',
+                            siteId: siteId(),
+                            portletId: 'edit-page'
+                        })
+                    );
+                });
+
+                it('should open the resolved contentlet in the side panel when the source editor does not handle it', () => {
+                    const dotContentletService =
+                        spectator.debugElement.injector.get(DotContentletService);
+                    vi.spyOn(dotContentletService, 'getContentletByInode').mockReturnValue(
+                        of({ ...URL_MAP_CONTENTLET, inode: 'vtl-inode-123', contentType: 'test' })
+                    );
+
+                    spectator.component.handleEditVTL(VTL_FILE_MOCK);
+                    spectator.detectChanges();
+
+                    expect(editRequest()).toEqual(
+                        expect.objectContaining({
+                            mode: 'edit',
+                            inode: 'vtl-inode-123',
+                            identifier: URL_MAP_CONTENTLET.identifier,
+                            contentType: 'test',
+                            portletId: 'edit-page'
                         })
                     );
                 });
@@ -2882,12 +3211,6 @@ describe('EditEmaEditorComponent', () => {
                     };
 
                     it("should open a Velocity file's source instead of the content editor", async () => {
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogServiceOpenSpy = vi.spyOn(
-                            spectator.inject(DialogService),
-                            'open'
-                        );
-
                         await openVelocityFile();
 
                         const [{ config }] = opened;
@@ -2897,8 +3220,9 @@ describe('EditEmaEditorComponent', () => {
                             language: DOT_VELOCITY_LANGUAGE_ID
                         });
                         expect((config.heading as () => string)()).toBe('my-template.vtl');
-                        expect(dialogSpy).not.toHaveBeenCalled();
-                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                        // No content editor opened alongside it.
+                        expect(editRequest() ?? null).toBeNull();
+                        expect(opener.opened.length).toBe(0);
                     });
 
                     it.each([
@@ -2954,6 +3278,11 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
+            /**
+             * The pencil opens the contentlet in the side panel through one request, whatever editor
+             * its type uses (#38303). On a contentlet shown on several pages it asks first whether to
+             * edit everywhere or a copy for this page.
+             */
             describe('handleEditWithCopyDecision', () => {
                 const MULTI_PAGE_PAYLOAD: ActionPayload = {
                     ...EDIT_ACTION_PAYLOAD_MOCK,
@@ -2968,188 +3297,54 @@ describe('EditEmaEditorComponent', () => {
                 });
 
                 describe('single-page contentlet (onNumberOfPages: 1)', () => {
-                    it('should open legacy dialog when feature flag is disabled', () => {
-                        const dotContentTypeService =
-                            spectator.debugElement.injector.get(DotContentTypeService);
-                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                            of(
-                                createFakeContentType({
-                                    variable: 'test',
-                                    name: 'Test',
-                                    metadata: {
-                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                                    }
-                                })
-                            )
-                        );
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogServiceOpenSpy = vi.spyOn(
-                            spectator.inject(DialogService),
-                            'open'
-                        );
-
+                    it('should open one edit request for the contentlet', () => {
                         spectator.component['handleEditWithCopyDecision'](EDIT_ACTION_PAYLOAD_MOCK);
-                        spectator.detectChanges();
 
-                        expect(dialogSpy).toHaveBeenCalledWith(
-                            expect.objectContaining({ inode: 'contentlet-inode-123' })
-                        );
-                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                        expect(editRequest()).toEqual(pencilRequest());
                     });
 
-                    it('should open new edit content dialog when feature flag is enabled', async () => {
-                        const dotContentTypeService =
-                            spectator.debugElement.injector.get(DotContentTypeService);
-                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                            of(
-                                createFakeContentType({
-                                    variable: 'test',
-                                    name: 'Test',
-                                    metadata: {
-                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
-                                    }
-                                })
+                    // Before #38303 the UVE looked the type up and opened a different dialog per
+                    // editor; now a legacy-type contentlet gets the same request.
+                    it('should open the same request for a legacy-type contentlet, without looking the type up', () => {
+                        const getContentType = vi
+                            .spyOn(
+                                spectator.debugElement.injector.get(DotContentTypeService),
+                                'getContentType'
                             )
-                        );
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogRefMock = {
-                            onClose: new Subject<void | unknown>(),
-                            close: vi.fn()
-                        };
-                        const dialogServiceOpenSpy = vi
-                            .spyOn(spectator.inject(DialogService), 'open')
-                            .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
+                            .mockReturnValue(
+                                of(
+                                    createFakeContentType({
+                                        variable: 'test',
+                                        name: 'Test',
+                                        metadata: {
+                                            [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
+                                        }
+                                    })
+                                )
+                            );
 
                         spectator.component['handleEditWithCopyDecision'](EDIT_ACTION_PAYLOAD_MOCK);
-                        spectator.detectChanges();
 
-                        await spectator.fixture.whenStable();
-
-                        expect(dialogSpy).not.toHaveBeenCalled();
-                        expect(dialogServiceOpenSpy).toHaveBeenCalled();
-                        const [, config] = dialogServiceOpenSpy.mock.calls[0];
-                        expect(config.data).toEqual(
-                            expect.objectContaining({
-                                mode: 'edit',
-                                contentletInode: 'contentlet-inode-123'
-                            })
-                        );
-                    });
-
-                    it('should fall back to legacy dialog when getContentType throws', () => {
-                        const dotContentTypeService =
-                            spectator.debugElement.injector.get(DotContentTypeService);
-                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                            throwError(() => new Error('network error'))
-                        );
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogServiceOpenSpy = vi.spyOn(
-                            spectator.inject(DialogService),
-                            'open'
-                        );
-
-                        spectator.component['handleEditWithCopyDecision'](EDIT_ACTION_PAYLOAD_MOCK);
-                        spectator.detectChanges();
-
-                        expect(dialogSpy).toHaveBeenCalledWith(
-                            expect.objectContaining({ inode: 'contentlet-inode-123' })
-                        );
-                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                        expect(editRequest()).toEqual(pencilRequest());
+                        expect(getContentType).not.toHaveBeenCalled();
                     });
                 });
 
                 describe('multi-page contentlet (onNumberOfPages > 1)', () => {
-                    it('should open legacy dialog when flag is disabled and user edits all pages', () => {
-                        const dotContentTypeService =
-                            spectator.debugElement.injector.get(DotContentTypeService);
-                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                            of(
-                                createFakeContentType({
-                                    variable: 'test',
-                                    name: 'Test',
-                                    metadata: {
-                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                                    }
-                                })
-                            )
-                        );
+                    it('should open the original when the user edits it on every page', () => {
                         vi.spyOn(
                             spectator.inject(DotCopyContentModalService),
                             'open'
                         ).mockReturnValue(of({ shouldCopy: false }));
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogServiceOpenSpy = vi.spyOn(
-                            spectator.inject(DialogService),
-                            'open'
-                        );
 
                         spectator.component['handleEditWithCopyDecision'](MULTI_PAGE_PAYLOAD);
                         spectator.detectChanges();
 
-                        expect(dialogSpy).toHaveBeenCalledWith(
-                            expect.objectContaining({ inode: 'contentlet-inode-123' })
-                        );
-                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                        expect(editRequest()).toEqual(pencilRequest());
                     });
 
-                    it('should open new edit content dialog when flag is enabled and user edits all pages', async () => {
-                        const dotContentTypeService =
-                            spectator.debugElement.injector.get(DotContentTypeService);
-                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                            of(
-                                createFakeContentType({
-                                    variable: 'test',
-                                    name: 'Test',
-                                    metadata: {
-                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
-                                    }
-                                })
-                            )
-                        );
-                        vi.spyOn(
-                            spectator.inject(DotCopyContentModalService),
-                            'open'
-                        ).mockReturnValue(of({ shouldCopy: false }));
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogRefMock = {
-                            onClose: new Subject<void | unknown>(),
-                            close: vi.fn()
-                        };
-                        const dialogServiceOpenSpy = vi
-                            .spyOn(spectator.inject(DialogService), 'open')
-                            .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
-
-                        spectator.component['handleEditWithCopyDecision'](MULTI_PAGE_PAYLOAD);
-                        spectator.detectChanges();
-
-                        await spectator.fixture.whenStable();
-
-                        expect(dialogSpy).not.toHaveBeenCalled();
-                        expect(dialogServiceOpenSpy).toHaveBeenCalled();
-                        const [, config] = dialogServiceOpenSpy.mock.calls[0];
-                        expect(config.data).toEqual(
-                            expect.objectContaining({
-                                mode: 'edit',
-                                contentletInode: 'contentlet-inode-123'
-                            })
-                        );
-                    });
-
-                    it('should open new edit content dialog with copied contentlet inode when flag is enabled and user copies', async () => {
+                    it('should reload the page and open the copy when the user edits this page only', () => {
                         const COPIED_INODE = 'copied-contentlet-inode-456';
-                        const dotContentTypeService =
-                            spectator.debugElement.injector.get(DotContentTypeService);
-                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                            of(
-                                createFakeContentType({
-                                    variable: 'test',
-                                    name: 'Test',
-                                    metadata: {
-                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
-                                    }
-                                })
-                            )
-                        );
                         vi.spyOn(
                             spectator.inject(DotCopyContentModalService),
                             'open'
@@ -3158,65 +3353,28 @@ describe('EditEmaEditorComponent', () => {
                             spectator.inject(DotCopyContentService),
                             'copyInPage'
                         ).mockReturnValue(
-                            of({ inode: COPIED_INODE, contentType: 'test' } as DotCMSContentlet)
-                        );
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogRefMock = {
-                            onClose: new Subject<void | unknown>(),
-                            close: vi.fn()
-                        };
-                        const dialogServiceOpenSpy = vi
-                            .spyOn(spectator.inject(DialogService), 'open')
-                            .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
-
-                        spectator.component['handleEditWithCopyDecision'](MULTI_PAGE_PAYLOAD);
-                        spectator.detectChanges();
-
-                        await spectator.fixture.whenStable();
-
-                        expect(dialogSpy).not.toHaveBeenCalled();
-                        expect(dialogServiceOpenSpy).toHaveBeenCalled();
-                        const [, config] = dialogServiceOpenSpy.mock.calls[0];
-                        expect(config.data).toEqual(
-                            expect.objectContaining({
-                                mode: 'edit',
-                                contentletInode: COPIED_INODE
-                            })
-                        );
-                    });
-
-                    it('should fall back to legacy dialog and still reload page when getContentType throws after copy', () => {
-                        const dotContentTypeService =
-                            spectator.debugElement.injector.get(DotContentTypeService);
-                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                            throwError(() => new Error('network error'))
-                        );
-                        vi.spyOn(
-                            spectator.inject(DotCopyContentModalService),
-                            'open'
-                        ).mockReturnValue(of({ shouldCopy: true }));
-                        const COPIED_INODE = 'copied-contentlet-inode-456';
-                        vi.spyOn(
-                            spectator.inject(DotCopyContentService),
-                            'copyInPage'
-                        ).mockReturnValue(
-                            of({ inode: COPIED_INODE, contentType: 'test' } as DotCMSContentlet)
+                            of({
+                                inode: COPIED_INODE,
+                                identifier: 'copied-identifier',
+                                contentType: 'test',
+                                title: 'Hello World'
+                            } as DotCMSContentlet)
                         );
                         const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogServiceOpenSpy = vi.spyOn(
-                            spectator.inject(DialogService),
-                            'open'
-                        );
 
                         spectator.component['handleEditWithCopyDecision'](MULTI_PAGE_PAYLOAD);
                         spectator.detectChanges();
 
                         expect(pageReloadSpy).toHaveBeenCalled();
-                        expect(dialogSpy).toHaveBeenCalledWith(
-                            expect.objectContaining({ inode: COPIED_INODE })
+                        expect(editRequest()).toEqual(
+                            expect.objectContaining({
+                                mode: 'edit',
+                                inode: COPIED_INODE,
+                                identifier: 'copied-identifier',
+                                contentType: 'test',
+                                portletId: 'edit-page'
+                            })
                         );
-                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
                     });
                 });
 
@@ -3238,33 +3396,13 @@ describe('EditEmaEditorComponent', () => {
                     };
 
                     it('should not open any editor for a contentlet the user cannot edit', () => {
-                        // Mock the content type so the permitted path WOULD open
-                        // the legacy dialog synchronously. Without this the test
-                        // would pass vacuously, proving nothing about the guard.
-                        const dotContentTypeService =
-                            spectator.debugElement.injector.get(DotContentTypeService);
-                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                            of(
-                                createFakeContentType({
-                                    variable: 'test',
-                                    name: 'Test',
-                                    metadata: {
-                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                                    }
-                                })
-                            )
-                        );
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-                        const dialogServiceOpenSpy = vi.spyOn(
-                            spectator.inject(DialogService),
-                            'open'
-                        );
-
+                        // The permitted path opens synchronously, so a missing request here proves
+                        // the guard and not a pending lookup.
                         spectator.component['handleEditWithCopyDecision'](DENIED_PAYLOAD);
                         spectator.detectChanges();
 
-                        expect(dialogSpy).not.toHaveBeenCalled();
-                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                        expect(editRequest() ?? null).toBeNull();
+                        expect(opener.opened.length).toBe(0);
                     });
 
                     it('should not open the copy decision modal for a denied multi-page contentlet', () => {
@@ -3297,25 +3435,12 @@ describe('EditEmaEditorComponent', () => {
 
                     it('should still open the editor when the permission field is absent', () => {
                         // Headless payloads carry no canEdit; fail open.
-                        const dotContentTypeService =
-                            spectator.debugElement.injector.get(DotContentTypeService);
-                        vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                            of(
-                                createFakeContentType({
-                                    variable: 'test',
-                                    name: 'Test',
-                                    metadata: {
-                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                                    }
-                                })
-                            )
-                        );
-                        const dialogSpy = vi.spyOn(spectator.component.dialog, 'editContentlet');
-
                         spectator.component['handleEditWithCopyDecision'](EDIT_ACTION_PAYLOAD_MOCK);
                         spectator.detectChanges();
 
-                        expect(dialogSpy).toHaveBeenCalled();
+                        expect(editRequest()).toEqual(
+                            expect.objectContaining({ inode: 'contentlet-inode-123' })
+                        );
                     });
                 });
             });
@@ -3547,6 +3672,11 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
+            /**
+             * A content type dropped from the palette opens a create request in the side panel at
+             * once, whatever editor the type uses (#38303). Placing the new contentlet is covered
+             * under "edit panel events"; the content selector's "create new" under "legacy screens".
+             */
             describe('placeItem - content-type drag', () => {
                 const contentTypeDragItem = {
                     baseType: 'CONTENT',
@@ -3564,235 +3694,22 @@ describe('EditEmaEditorComponent', () => {
                     vi.restoreAllMocks();
                 });
 
-                it('should open the new edit content dialog when CONTENT_EDITOR2_ENABLED is true', () => {
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of(
-                            createFakeContentType({
-                                variable: 'TestContentType',
-                                name: 'Test Content Type',
-                                metadata: {
-                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
-                                }
-                            })
-                        )
+                it('should open a create request for the dropped type without looking the type up', () => {
+                    const getContentType = vi.spyOn(
+                        spectator.debugElement.injector.get(DotContentTypeService),
+                        'getContentType'
                     );
 
-                    const dialogRefMock = {
-                        onClose: new Subject<void | unknown>(),
-                        close: vi.fn()
-                    };
-                    const dialogServiceOpenSpy = vi
-                        .spyOn(spectator.inject(DialogService), 'open')
-                        .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
-                    const createFromPaletteSpy = vi.spyOn(
-                        spectator.component.dialog,
-                        'createContentletFromPalette'
+                    spectator.component.placeItem(
+                        structuredClone(DROP_POSITION),
+                        contentTypeDragItem
                     );
-
-                    spectator.component.placeItem(EDIT_ACTION_PAYLOAD_MOCK, contentTypeDragItem);
                     spectator.detectChanges();
 
-                    expect(createFromPaletteSpy).not.toHaveBeenCalled();
-                    expect(dialogServiceOpenSpy).toHaveBeenCalled();
-                    const [, config] = dialogServiceOpenSpy.mock.calls[0];
-                    expect(config.data).toEqual(
-                        expect.objectContaining({
-                            mode: 'new',
-                            contentTypeId: 'TestContentType'
-                        })
+                    expect(editRequest()).toEqual(
+                        expect.objectContaining({ mode: 'new', contentType: 'TestContentType' })
                     );
-                });
-
-                it('should open the legacy dialog when CONTENT_EDITOR2_ENABLED is false', () => {
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of(
-                            createFakeContentType({
-                                variable: 'TestContentType',
-                                name: 'Test Content Type',
-                                metadata: {
-                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                                }
-                            })
-                        )
-                    );
-
-                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
-                    const createFromPaletteSpy = vi.spyOn(
-                        spectator.component.dialog,
-                        'createContentletFromPalette'
-                    );
-
-                    spectator.component.placeItem(EDIT_ACTION_PAYLOAD_MOCK, contentTypeDragItem);
-                    spectator.detectChanges();
-
-                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
-                    expect(createFromPaletteSpy).toHaveBeenCalledWith(
-                        expect.objectContaining({
-                            variable: 'TestContentType',
-                            name: 'Test Content Type'
-                        })
-                    );
-                });
-
-                it('should fall back to legacy dialog when getContentType throws', () => {
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        throwError(() => new Error('network error'))
-                    );
-
-                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
-                    const createFromPaletteSpy = vi.spyOn(
-                        spectator.component.dialog,
-                        'createContentletFromPalette'
-                    );
-
-                    spectator.component.placeItem(EDIT_ACTION_PAYLOAD_MOCK, contentTypeDragItem);
-                    spectator.detectChanges();
-
-                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
-                    expect(createFromPaletteSpy).toHaveBeenCalledWith(
-                        expect.objectContaining({
-                            variable: 'TestContentType',
-                            name: 'Test Content Type'
-                        })
-                    );
-                });
-            });
-
-            describe('handleNgEvent - CREATE_CONTENTLET', () => {
-                const createContentletEvent = new CustomEvent('ng-event', {
-                    detail: {
-                        name: NG_CUSTOM_EVENTS.CREATE_CONTENTLET,
-                        data: {
-                            url: 'test/url',
-                            contentType: 'TestContentType'
-                        }
-                    }
-                });
-
-                afterEach(() => {
-                    vi.restoreAllMocks();
-                });
-
-                it('should open the new edit content dialog when CONTENT_EDITOR2_ENABLED is true', () => {
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of(
-                            createFakeContentType({
-                                variable: 'TestContentType',
-                                name: 'Test Content Type',
-                                metadata: {
-                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: true
-                                }
-                            })
-                        )
-                    );
-
-                    const dialogRefMock = {
-                        onClose: new Subject<void | unknown>(),
-                        close: vi.fn()
-                    };
-                    const dialogServiceOpenSpy = vi
-                        .spyOn(spectator.inject(DialogService), 'open')
-                        .mockReturnValue(dialogRefMock as unknown as DynamicDialogRef);
-                    const createContentletSpy = vi.spyOn(
-                        spectator.component.dialog,
-                        'createContentlet'
-                    );
-
-                    spectator.component['handleNgEvent']({
-                        event: createContentletEvent,
-                        actionPayload: EDIT_ACTION_PAYLOAD_MOCK,
-                        clientAction: DotCMSUVEAction.NOOP,
-                        form: null
-                    })?.();
-                    spectator.detectChanges();
-
-                    expect(createContentletSpy).not.toHaveBeenCalled();
-                    expect(dialogServiceOpenSpy).toHaveBeenCalled();
-                    const [, config] = dialogServiceOpenSpy.mock.calls[0];
-                    expect(config.data).toEqual(
-                        expect.objectContaining({
-                            mode: 'new',
-                            contentTypeId: 'TestContentType'
-                        })
-                    );
-                });
-
-                it('should open the legacy create dialog when CONTENT_EDITOR2_ENABLED is false', () => {
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        of(
-                            createFakeContentType({
-                                variable: 'TestContentType',
-                                name: 'Test Content Type',
-                                metadata: {
-                                    [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
-                                }
-                            })
-                        )
-                    );
-
-                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
-                    const createContentletSpy = vi.spyOn(
-                        spectator.component.dialog,
-                        'createContentlet'
-                    );
-
-                    spectator.component['handleNgEvent']({
-                        event: createContentletEvent,
-                        actionPayload: EDIT_ACTION_PAYLOAD_MOCK,
-                        clientAction: DotCMSUVEAction.NOOP,
-                        form: null
-                    })?.();
-                    spectator.detectChanges();
-
-                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
-                    expect(createContentletSpy).toHaveBeenCalledWith(
-                        expect.objectContaining({
-                            contentType: 'TestContentType',
-                            url: 'test/url',
-                            actionPayload: EDIT_ACTION_PAYLOAD_MOCK
-                        })
-                    );
-                });
-
-                it('should fall back to legacy create dialog when getContentType throws', () => {
-                    const dotContentTypeService =
-                        spectator.debugElement.injector.get(DotContentTypeService);
-                    vi.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
-                        throwError(() => new Error('network error'))
-                    );
-
-                    const dialogServiceOpenSpy = vi.spyOn(spectator.inject(DialogService), 'open');
-                    const createContentletSpy = vi.spyOn(
-                        spectator.component.dialog,
-                        'createContentlet'
-                    );
-
-                    spectator.component['handleNgEvent']({
-                        event: createContentletEvent,
-                        actionPayload: EDIT_ACTION_PAYLOAD_MOCK,
-                        clientAction: DotCMSUVEAction.NOOP,
-                        form: null
-                    })?.();
-                    spectator.detectChanges();
-
-                    expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
-                    expect(createContentletSpy).toHaveBeenCalledWith(
-                        expect.objectContaining({
-                            contentType: 'TestContentType',
-                            url: 'test/url',
-                            actionPayload: EDIT_ACTION_PAYLOAD_MOCK
-                        })
-                    );
+                    expect(getContentType).not.toHaveBeenCalled();
                 });
             });
 

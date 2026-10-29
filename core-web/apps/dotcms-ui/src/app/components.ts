@@ -13,7 +13,6 @@ import { DotWizardComponent } from './view/components/_common/dot-wizard/dot-wiz
 import { IframeComponent } from './view/components/_common/iframe/iframe-component/iframe.component';
 import { IframePortletLegacyComponent } from './view/components/_common/iframe/iframe-porlet-legacy/iframe-porlet-legacy.component';
 import { SearchableDropdownComponent } from './view/components/_common/searchable-dropdown/component/searchable-dropdown.component';
-import { DotEditContentletComponent } from './view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component';
 import { DotCrumbtrailComponent } from './view/components/dot-crumbtrail/dot-crumbtrail.component';
 import { DotLargeMessageDisplayComponent } from './view/components/dot-large-message-display/dot-large-message-display.component';
 import { DotListingDataTableComponent } from './view/components/dot-listing-data-table/dot-listing-data-table.component';
@@ -38,7 +37,6 @@ export const STANDALONE_COMPONENTS = [
     DotLoginPageComponent,
     DotToolbarComponent,
     DotActionButtonComponent,
-    DotEditContentletComponent,
     DotIconComponent,
     DotTextareaContentComponent,
     DotWorkflowTaskDetailComponent,
