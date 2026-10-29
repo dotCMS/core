@@ -121,6 +121,7 @@ import org.junit.runners.Suite;
         Task260615AlterClusterIdLengthTest.class,
         ImportContentletsActionSmokeTest.class,
         TreeFactoryTest.class,
+    com.dotcms.rest.api.v1.user.UserResourcePasswordIntegrationTest.class,
         PublisherQueueJobTest.class,
         ContentToStringUtilTest.class,
         CacheResourceIntegrationTest.class,
