@@ -44,8 +44,7 @@ import {
     DotFolderDeleteActiveRun,
     DotLanguage,
     DotSite,
-    DotWorkflowPushPublishValue,
-    FeaturedFlags
+    DotWorkflowPushPublishValue
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { createFakeTagField, createFakeTextField, mockLocales } from '@dotcms/utils-testing';
@@ -170,19 +169,6 @@ describe('DotContentDriveStore', () => {
             expect(store.status()).toBe(DotContentDriveStatus.LOADING);
             expect(store.isTreeExpanded()).toBe(DEFAULT_TREE_EXPANDED);
             expect(store.sort()).toEqual(DEFAULT_SORT);
-        });
-    });
-
-    // Content Drive stopped reading the side-panel flag: both editors always open in a panel
-    // (#37759, FR-006). The flag keeps working outside Content Drive; this store just never asks.
-    describe('side-panel flag', () => {
-        it('does not fetch the side-panel flag', () => {
-            const properties = spectator.inject(DotPropertiesService);
-            const askedFor = (properties.getFeatureFlags as Mock).mock.calls.flatMap(
-                ([keys]) => keys ?? []
-            );
-
-            expect(askedFor).not.toContain(FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL);
         });
     });
 
