@@ -2,6 +2,8 @@ package com.dotmarketing.db;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.enterprise.PasswordFactoryProxy;
+import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -169,9 +171,11 @@ public class DotCMSInitDb {
 	}
 
     /**
-     * set the initial password to admin user and prints it out
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * Sets the initial password of the admin user, stored as a secure hash, and prints it out
+     * when it was generated rather than configured.
+     *
+     * @throws DotDataException     if the admin user cannot be found, or the password cannot be hashed or saved
+     * @throws DotSecurityException if the admin user cannot be saved
      */
     static void setUpInitialPassword() throws DotDataException, DotSecurityException {
         if(ConfigUtils.isDevMode()){
@@ -193,7 +197,11 @@ public class DotCMSInitDb {
             printNotice(initialPassword._2);
         }
 
-        admin.setPassword(initialPassword._2);
+        try {
+            admin.setPassword(PasswordFactoryProxy.generateHash(initialPassword._2));
+        } catch (final PasswordException e) {
+            throw new DotDataException("Unable to hash the initial admin password", e);
+        }
         userAPI.save(admin, APILocator.systemUser(), false);
 
     }

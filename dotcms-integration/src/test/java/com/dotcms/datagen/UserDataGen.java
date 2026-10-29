@@ -1,11 +1,14 @@
 package com.dotcms.datagen;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.enterprise.PasswordFactoryProxy;
+import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.model.User;
@@ -105,6 +108,13 @@ public class UserDataGen extends AbstractDataGen<User> {
         return user;
     }
 
+    /**
+     * Saves the user in the database. A password given to this generator is stored as a secure
+     * hash, the same way dotCMS stores passwords, so tests can sign in with the clear text.
+     *
+     * @param user the {@link User} to save
+     * @return the saved {@link User}
+     */
     @Override
     @WrapInTransaction
     public User persist(User user) {
@@ -114,7 +124,9 @@ public class UserDataGen extends AbstractDataGen<User> {
                     .createUser(user.getUserId(), user.getEmailAddress());
             newUser.setFirstName(user.getFirstName());
             newUser.setLastName(user.getLastName());
-            newUser.setPassword(user.getPassword());
+            newUser.setPassword(UtilMethods.isSet(user.getPassword())
+                    ? PasswordFactoryProxy.generateHash(user.getPassword())
+                    : user.getPassword());
             newUser.setActive(user.getActive());
             newUser.setSkinId(user.getSkinId());
             newUser.setCompanyId(user.getCompanyId());
@@ -127,7 +139,7 @@ public class UserDataGen extends AbstractDataGen<User> {
 
             return newUser;
 
-        } catch (DotDataException | DotSecurityException e) {
+        } catch (DotDataException | DotSecurityException | PasswordException e) {
             throw new RuntimeException("Unable to persist user.", e);
         }
     }

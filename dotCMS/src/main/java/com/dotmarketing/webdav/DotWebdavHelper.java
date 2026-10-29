@@ -169,24 +169,54 @@ public class DotWebdavHelper {
 		}
 	}
 
+	/**
+	 * Checks the credentials a WebDAV client sent and returns the matching user. When a
+	 * pre-authenticator is configured through {@code auth.pipeline.pre} it runs first and must
+	 * accept the login; any other answer denies access. The password is then checked against
+	 * the one stored in dotCMS, or accepted as an API token.
+	 *
+	 * @param username the login sent by the client: an email address or a user id, depending on
+	 *                 the company's authentication type
+	 * @param passwd   the password or API token sent by the client
+	 * @return the authenticated {@link User}
+	 * @throws DotSecurityException if the credentials are not accepted
+	 */
 	public User authorizePrincipal(final String username, final String passwd) throws DotSecurityException, NoSuchUserException, DotDataException {
 
+		return authorizePrincipal(username, passwd, PRE_AUTHENTICATOR);
+	}
+
+	/**
+	 * Same as {@link #authorizePrincipal(String, String)}, with the pre-authenticator class given
+	 * explicitly instead of read from {@code auth.pipeline.pre}.
+	 *
+	 * @param username         the login sent by the client
+	 * @param passwd           the password or API token sent by the client
+	 * @param preAuthenticator fully qualified class name of the pre-authenticator, or
+	 *                         {@code null}/empty when none is configured
+	 * @return the authenticated {@link User}
+	 * @throws DotSecurityException if the credentials are not accepted
+	 */
+	@VisibleForTesting
+	User authorizePrincipal(final String username, final String passwd, final String preAuthenticator)
+			throws DotSecurityException, NoSuchUserException, DotDataException {
 
 		final Company company         = com.dotmarketing.cms.factories.PublicCompanyFactory.getDefaultCompany();
 		final boolean useEmailAsLogin = !company.getAuthType().equals(Company.AUTH_TYPE_ID);
 
 		try {
 
-			if (PRE_AUTHENTICATOR != null && !PRE_AUTHENTICATOR.equals("")) {
+			if (preAuthenticator != null && !preAuthenticator.equals("")) {
 
 				final Authenticator authenticator = (Authenticator) new com.dotcms.repackage.bsh.
-						Interpreter().eval("new " + PRE_AUTHENTICATOR + "()");
-				if (useEmailAsLogin) {
+						Interpreter().eval("new " + preAuthenticator + "()");
+				final int authResult = useEmailAsLogin
+						? authenticator.authenticateByEmailAddress(company.getCompanyId(), username, passwd)
+						: authenticator.authenticateByUserId(company.getCompanyId(), username, passwd);
 
-					authenticator.authenticateByEmailAddress(company.getCompanyId(), username, passwd);
-				} else {
+				if (authResult != Authenticator.SUCCESS) {
 
-					authenticator.authenticateByUserId      (company.getCompanyId(), username, passwd);
+					throw new AuthException("The pre-authenticator did not accept the login");
 				}
 			}
 		} catch (AuthException ae) {

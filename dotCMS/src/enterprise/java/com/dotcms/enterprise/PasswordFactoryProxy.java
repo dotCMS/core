@@ -17,6 +17,7 @@ import com.dotcms.enterprise.de.qaware.heimdall.algorithm.HashAlgorithm;
 import com.dotcms.enterprise.de.qaware.heimdall.config.HashAlgorithmConfig;
 import com.dotcms.enterprise.de.qaware.heimdall.salt.SecureSaltProvider;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UUIDGenerator;
 
 public class PasswordFactoryProxy {
 
@@ -73,6 +74,18 @@ public class PasswordFactoryProxy {
         try (SecureCharArray cleartext = new SecureCharArray(passwordFromUser.toCharArray())) {
             return password.hash(cleartext, hashAlgorithm, hashAlgorithmConfig);
         }
+    }
+
+    /**
+     * Generates a secure hash of a random secret that is never kept anywhere. Use it as the
+     * local password of accounts that sign in through an external identity provider, so the
+     * stored value is in the same format as every other password and no known text matches it.
+     *
+     * @return the hash
+     * @throws PasswordException if the hash cannot be generated
+     */
+    public static String generateRandomHash() throws PasswordException {
+        return generateHash(UUIDGenerator.generateUuid() + "/" + UUIDGenerator.generateUuid());
     }
 
     /**
