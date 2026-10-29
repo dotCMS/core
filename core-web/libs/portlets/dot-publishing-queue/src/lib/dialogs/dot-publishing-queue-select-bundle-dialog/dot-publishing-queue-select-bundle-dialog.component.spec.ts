@@ -16,6 +16,7 @@ import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
 import {
+    DotContentletEditUrlService,
     DotContentTypeService,
     DotCurrentUserService,
     DotGlobalMessageService,
@@ -26,6 +27,9 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import { DotcmsConfigService } from '@dotcms/dotcms-js';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotEditContentOpenerService, DotEditContentOpenOptions } from '@dotcms/edit-content';
+import { DotSidePanelRef } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotParseHtmlService } from '@services/dot-parse-html/dot-parse-html.service';
 
@@ -40,6 +44,16 @@ const UNSENT_RESPONSE = {
     ],
     numRows: 2
 };
+
+// Only the opener's class is needed, as the token the dialog injects. Loading the real barrel pulls
+// in the block editors and TipTap's collaboration packages, which this project's Vitest config does
+// not inline (`y-protocols/awareness` fails to resolve).
+vi.mock('@dotcms/edit-content', () => ({
+    DotEditContentOpenerService: class DotEditContentOpenerService {}
+}));
+
+/** Whether anything resolved `DotContentletEditUrlService` while the dialog was mounted. */
+let editUrlServiceInjected: boolean;
 
 const MOCK_ASSETS = [
     { asset: 'a1', title: 'Spring Sale Landing', type: 'contentlet' },
@@ -146,7 +160,21 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
                 getEnvironments: vi.fn().mockReturnValue(of([])),
                 pushPublishContent: vi.fn().mockReturnValue(of({}))
             }),
-            { provide: DotMessageService, useValue: new MockDotMessageService({}) }
+            { provide: DotMessageService, useValue: new MockDotMessageService({}) },
+            // Records whether the dialog asked for it at all: it no longer resolves URLs (#38303).
+            {
+                provide: DotContentletEditUrlService,
+                useFactory: () => {
+                    editUrlServiceInjected = true;
+
+                    return {
+                        resolveEditUrl: vi.fn().mockReturnValue(of('/dotAdmin/#/content/i1'))
+                    };
+                }
+            },
+            mockProvider(DotEditContentOpenerService, {
+                open: vi.fn(() => new DotSidePanelRef(() => undefined))
+            })
         ],
         // Swap the embedded push-publish form for a minimal stub. The real
         // component lives in apps/dotcms-ui, injects DotcmsConfigService/
@@ -167,6 +195,7 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
 
     beforeEach(() => {
         mockAnchorClick.mockClear();
+        editUrlServiceInjected = false;
         spectator = createComponent();
         service = spectator.inject(DotPublishingQueueService) as Mocked<DotPublishingQueueService>;
         dialogRef = spectator.inject(DynamicDialogRef) as Mocked<DynamicDialogRef>;
@@ -300,40 +329,111 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
         });
     });
 
+    /**
+     * #38303 (R12) — a contentlet row opens the side panel over this dialog, in whichever editor its
+     * type uses; closing the panel returns to the dialog on the same row. Every save, and the close,
+     * reload the active bundle's assets (FR-017).
+     */
     describe('asset row click → opens content editor', () => {
-        let openSpy: MockInstance;
-
-        beforeEach(() => {
-            openSpy = vi.spyOn(window, 'open').mockImplementation(() => null);
-            spectator.detectChanges();
-        });
-
-        afterEach(() => openSpy.mockRestore());
-
-        it('opens the resolved edit URL in a new tab when the row has one', () => {
-            // Prime the resolved URL map so editUrlFor() returns a non-null URL.
-            spectator.component.$assetEditUrls.set(new Map([['a1', '/edit/contentlet/a1']]));
-            spectator.component.onSelectAssetRow({
+        /** A contentlet row and a template row, as `/api/bundle/{id}/assets` returns them. */
+        const ROW_ASSETS = [
+            {
                 asset: 'a1',
                 title: 'Spring Sale Landing',
-                type: 'contentlet'
-            });
-            expect(openSpy).toHaveBeenCalledWith('/edit/contentlet/a1', '_blank', 'noopener');
+                type: 'contentlet',
+                inode: 'i1',
+                content_type_name: 'Blog'
+            },
+            { asset: 't1', title: 'Main template', type: 'template' }
+        ];
+
+        let windowOpen: MockInstance;
+
+        /** The opener's `open`, as the mock records it. */
+        const opened = () => spectator.inject(DotEditContentOpenerService).open as Mock;
+
+        /** The options the dialog handed the opener, on its only `open`. */
+        const openOptions = (): DotEditContentOpenOptions => {
+            expect(opened().mock.calls.length, 'the row opens one panel').toBe(1);
+
+            return opened().mock.calls[0][1] as DotEditContentOpenOptions;
+        };
+
+        /** Clicks the asset row at `index`, as the author does. */
+        const clickRow = (index: number): void =>
+            spectator.click(spectator.queryAll(byTestId('pq-select-bundle-asset-row'))[index]);
+
+        beforeEach(() => {
+            windowOpen = vi.spyOn(window, 'open').mockImplementation(() => null);
+            // Consumed by the first bundle's load on init; later loads get the default assets.
+            (service.getBundleAssets as Mock).mockReturnValueOnce(of(ROW_ASSETS));
+            spectator.detectChanges();
+            opened().mockClear();
         });
 
-        it('is a no-op when the asset has no resolved edit URL', () => {
-            spectator.component.$assetEditUrls.set(new Map());
-            spectator.component.onSelectAssetRow({
-                asset: 'a1',
-                title: 'x',
-                type: 'template'
+        afterEach(() => windowOpen.mockRestore());
+
+        it('opens a contentlet row in the side panel, naming the Publishing Queue', () => {
+            clickRow(0);
+
+            expect(opened().mock.calls.length, 'the row opens one panel').toBe(1);
+            expect(opened().mock.calls[0][0]).toEqual({
+                mode: 'edit',
+                inode: 'i1',
+                contentType: 'Blog',
+                portletId: 'publishing-queue'
             });
-            expect(openSpy).not.toHaveBeenCalled();
+        });
+
+        // The panel then closes with the dialog, not with the portlet.
+        it("opens it with the dialog's injector", () => {
+            clickRow(0);
+
+            // Compared by identity: printing an injector runs the worker out of memory.
+            expect(
+                openOptions().injector.get(DotPublishingQueueSelectBundleDialogComponent, null) ===
+                    spectator.component
+            ).toBe(true);
+        });
+
+        it("reloads the active bundle's assets on every save", () => {
+            clickRow(0);
+            (service.getBundleAssets as Mock).mockClear();
+
+            openOptions().saved?.({ inode: 'i1-saved' } as DotCMSContentlet);
+
+            expect(service.getBundleAssets).toHaveBeenCalledWith('bundle-1');
+        });
+
+        it("reloads the active bundle's assets when the panel closes", () => {
+            clickRow(0);
+            (service.getBundleAssets as Mock).mockClear();
+
+            openOptions().closed?.();
+
+            expect(service.getBundleAssets).toHaveBeenCalledWith('bundle-1');
+        });
+
+        it('never opens a new tab', () => {
+            clickRow(0);
+
+            expect(windowOpen.mock.calls.length).toBe(0);
+        });
+
+        it('does nothing for a non-contentlet row', () => {
+            clickRow(1);
+
+            expect(opened().mock.calls.length).toBe(0);
+            expect(windowOpen.mock.calls.length).toBe(0);
+        });
+
+        // The opener picks the editor per content type, so no URL is resolved ahead of a click.
+        it('resolves no edit URLs', () => {
+            expect(editUrlServiceInjected).toBe(false);
+            expect('$assetEditUrls' in spectator.component).toBe(false);
         });
 
         it('renders the asset name as plain text, not as an anchor', () => {
-            spectator.component.$assetEditUrls.set(new Map([['a1', '/edit/contentlet/a1']]));
-            spectator.detectChanges();
             const name = spectator.query(byTestId('pq-select-bundle-asset-name'));
             // The element tag must not be <a> — the row, not the name, is the
             // clickable surface now.

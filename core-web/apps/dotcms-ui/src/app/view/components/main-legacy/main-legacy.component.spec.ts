@@ -6,7 +6,7 @@ import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component, DebugElement, Input } from '@angular/core';
+import { Component, DebugElement, Injector, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -111,6 +111,11 @@ class MockDotLargeMessageDisplayComponent {}
     standalone: false
 })
 class MockDotPushPublishDialogComponent {}
+
+/** The handler once it can be told which injector its panels live under (#38303). */
+type HandlerWithInjector = DotCustomEventHandlerService & {
+    setInjector?: (injector: Injector) => void;
+};
 
 const createFeatureFlagResponse = (enabled = 'NOT_FOUND') => ({
     [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: enabled
@@ -228,6 +233,28 @@ describe('MainLegacyComponent', () => {
             expect(de.injector.get(MessageService)).toBeDefined();
             expect(de.query(By.css('p-toast'))).not.toBeNull();
             expect(de.query(By.css('dot-side-panel-outlet'))).not.toBeNull();
+        });
+
+        /**
+         * The legacy portlets' events reach the root `DotCustomEventHandlerService`, whose panels
+         * must live under this component so they find the MessageService above, not the root
+         * injector, where nothing provides one (#38303, T090).
+         */
+        it('should register its own injector with the custom-event handler', () => {
+            const handler = TestBed.inject(DotCustomEventHandlerService) as HandlerWithInjector;
+            expect(typeof handler.setInjector, 'the handler accepts an injector').toBe('function');
+            const setInjector = vi.spyOn(handler as Required<HandlerWithInjector>, 'setInjector');
+
+            const mounted = TestBed.createComponent(MainComponentLegacyComponent);
+            mounted.detectChanges();
+
+            expect(setInjector.mock.calls.length).toBe(1);
+            const [registered] = setInjector.mock.calls[0];
+            // Compared by identity: printing an injector runs the worker out of memory.
+            expect(
+                registered.get(MessageService, null) ===
+                    mounted.debugElement.injector.get(MessageService)
+            ).toBe(true);
         });
     });
 
