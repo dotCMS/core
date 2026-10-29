@@ -43,7 +43,6 @@ import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.CookieUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -483,8 +482,16 @@ public class WebAPI implements ViewTool {
 		return subURI;
 	}
 
+	/**
+	 * Reads a configuration property for templates, under the same rules, and with the same
+	 * warnings, as {@code $config} (see {@link ConfigTool#getStringPropertyForTemplate(String)}).
+	 *
+	 * @param varName the property name
+	 *
+	 * @return the value, or {@code null} if the property is not available to templates
+	 */
 	public String getConfigVar(String varName) {
-		return Config.getStringProperty(varName);
+		return ConfigTool.getStringPropertyForTemplate(varName);
 	}
 
 	public static String formatDate(Date date,String format)
