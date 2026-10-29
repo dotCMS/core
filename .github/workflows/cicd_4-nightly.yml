@@ -155,19 +155,32 @@ jobs:
       contents: read
       packages: write
 
-  # Test job - runs all tests by default
-  test:
-    name: Nightly Test
-    needs: [ initialize,build ]
-    if: always() && !failure() && !cancelled()
-    uses: ./.github/workflows/cicd_comp_test-phase.yml
+  # Test matrix - decides which test jobs run. It needs no build output, so it runs in
+  # parallel with the build instead of sitting between the build and the tests.
+  test-matrix:
+    name: Nightly Test Matrix
+    needs: [ initialize ]
+    uses: ./.github/workflows/cicd_comp_test-matrix.yml
+    permissions:
+      contents: read
     with:
       run-all-tests: ${{ inputs.run-all-tests || true }}
-      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       e2e: false
       # On-demand ES->OS phased run: 'none'/empty (or scheduled) -> off; 1/2/3 -> single phase;
       # all -> sweep phases 1,2,3 across the integration battery.
       opensearch_phase: ${{ inputs.opensearch_phase }}
+
+  # Test job - runs the matrix computed above once the build is done
+  test:
+    name: Nightly Test
+    needs: [ initialize, build, test-matrix ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_test-phase.yml
+    with:
+      matrix: ${{ needs.test-matrix.outputs.matrix }}
+      has-tests: ${{ needs.test-matrix.outputs.has-tests }}
+      opensearch_phase: ${{ needs.test-matrix.outputs.opensearch_phase }}
+      artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       java-version: ${{ github.event.inputs.java-version || '' }}
       maven-compiler-release: ${{ github.event.inputs.maven-compiler-release || '' }}
       artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
@@ -219,7 +232,7 @@ jobs:
   finalize:
     name: Finalize
     if: always()
-    needs: [ setup, initialize, build, build-cli, test, deployment ]
+    needs: [ setup, initialize, build, build-cli, test-matrix, test, deployment ]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}

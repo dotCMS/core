@@ -8129,7 +8129,14 @@ paths:
                 type: object
                 description: Content with relationships in JSON format including contentlets
                   and their related content
-          description: Content with relationships retrieved successfully
+          description: "Content with relationships retrieved successfully. Related\
+            \ content the caller cannot read is not included, and an identifier or\
+            \ inode that matches no content returns an empty array"
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - the content or its related content could not
+            be loaded
         "401":
           content:
             application/json: {}
@@ -10513,6 +10520,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityEndpointsView"
           description: Collection of environments.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenException"
+          description: If the user is not an admin and has no access to the Configuration
+            portlet.
       summary: Returns the endpoints
       tags:
       - Environment
@@ -10562,6 +10576,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityEndpointsView"
           description: Collection of environments.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenException"
+          description: If the user is not an admin and has no access to the Configuration
+            portlet.
       summary: Returns the endpoints
       tags:
       - Environment
@@ -10581,6 +10602,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityEndpointView"
           description: Collection of environments.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenException"
+          description: If the user is not an admin and has no access to the Configuration
+            portlet.
       summary: Returns the endpoint by id
       tags:
       - Environment
@@ -14536,11 +14564,9 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityMulitreeView"
           description: Content tree retrieved successfully
         "401":
-          description: Authentication required
-        "403":
-          description: User does not have required permissions
+          description: "Authentication required, or the user is not a back-end user"
         "404":
-          description: Page not found
+          description: "Page not found, or the user cannot read it"
       summary: Get the multi-tree content structure of a page
       tags:
       - Page
@@ -14680,11 +14706,9 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityListPersonalizationPersonaPageView"
           description: Personas with personalization flags retrieved successfully
         "401":
-          description: Authentication required
-        "403":
-          description: User does not have required permissions
+          description: "Authentication required, or the user is not a back-end user"
         "404":
-          description: Page not found
+          description: "Page not found, or the user cannot read it"
       summary: Get personalized personas for a page
       tags:
       - Page
@@ -18328,50 +18352,6 @@ paths:
           description: default response
       tags:
       - Internationalization
-  /v1/system/request-draining-test/long-request:
-    get:
-      operationId: longRunningRequest
-      parameters:
-      - in: query
-        name: duration
-        schema:
-          type: integer
-          format: int64
-          default: 5000
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringObject"
-          description: default response
-  /v1/system/request-draining-test/simulate-active-requests:
-    get:
-      operationId: simulateActiveRequests
-      parameters:
-      - in: query
-        name: count
-        schema:
-          type: integer
-          format: int32
-          default: 1
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringObject"
-          description: default response
-  /v1/system/request-draining-test/status:
-    get:
-      operationId: getShutdownStatus
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringObject"
-          description: default response
   /v1/system/ruleengine/actionlets:
     get:
       operationId: list_8
@@ -33667,15 +33647,6 @@ components:
       properties:
         address:
           type: string
-        authKey:
-          type: object
-          properties:
-            empty:
-              type: boolean
-            length:
-              type: integer
-              format: int32
-              writeOnly: true
         enabled:
           type: boolean
         groupId:

@@ -2,6 +2,7 @@ package com.dotcms.publisher.pusher;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
+import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotmarketing.business.APILocator;
@@ -10,6 +11,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.jsonwebtoken.*;
+import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.server.ContainerRequest;
 
@@ -105,7 +107,9 @@ public enum AuthCredentialPushPublishUtil {
                     JsonWebTokenAuthCredentialProcessorImpl.getInstance().processJWTAuthHeader(request);
 
             if (jwTokenOptional.isEmpty()){
-                return PushPublishAuthenticationToken.INVALID_TOKEN;
+                return isExpiredJWT(getTokenFromRequest(request), request.getRemoteAddr()) ?
+                        PushPublishAuthenticationToken.EXPIRE_TOKEN :
+                        PushPublishAuthenticationToken.INVALID_TOKEN;
             }
 
             final Optional<User> optionalUser = jwTokenOptional.get().getActiveUser();
@@ -120,6 +124,37 @@ public enum AuthCredentialPushPublishUtil {
             return Claims.EXPIRATION.equals(claimName) ? PushPublishAuthenticationToken.EXPIRE_TOKEN :
                     PushPublishAuthenticationToken.INVALID_TOKEN;
         }
+    }
+
+    /**
+     * Tells an expired token apart from one that is malformed, revoked, signed with another key or
+     * issued to a user that no longer exists.
+     *
+     * <p>{@link JsonWebTokenAuthCredentialProcessorImpl#processJWTAuthHeader(HttpServletRequest)}
+     * reports all of those the same way, an empty {@link Optional}, because
+     * {@link com.dotcms.auth.providers.jwt.factories.ApiTokenAPI#fromJwt(String, String)} turns the
+     * parse failure into one. Without this check the receiver answers "invalid token" for a token
+     * that merely ran out, and the sender cannot tell the user to request a new one.</p>
+     *
+     * @param jwt       the bearer token taken from the request, may be empty
+     * @param ipAddress the address the request came from, used by the IP restriction check
+     * @return {@code true} when the token failed to parse because its expiration date has passed
+     */
+    private boolean isExpiredJWT(final String jwt, final String ipAddress) {
+
+        if (StringUtils.isEmpty(jwt)) {
+            return false;
+        }
+
+        final Throwable cause = Try.of(() -> JsonWebTokenFactory.getInstance()
+                .getJsonWebTokenService().parseToken(jwt, ipAddress)).failed().getOrNull();
+
+        // jjwt rejects the expiration itself while parsing the claims, so that is the case that
+        // actually happens; the IncorrectClaimException below is dotCMS's own check in
+        // JsonWebTokenFactory.validateToken, which only runs for a token jjwt let through.
+        return cause instanceof ExpiredJwtException
+                || (cause instanceof IncorrectClaimException
+                    && Claims.EXPIRATION.equals(((IncorrectClaimException) cause).getClaimName()));
     }
 
     private Optional<PublishingEndPoint> getPublishingEndPointDotCMSToken(final HttpServletRequest request)
