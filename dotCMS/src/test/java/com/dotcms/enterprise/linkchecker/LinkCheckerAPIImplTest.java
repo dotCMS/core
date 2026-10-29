@@ -26,6 +26,9 @@ public class LinkCheckerAPIImplTest extends UnitTestBase {
     /** Only the "localhost" name is allowed; any other host (e.g. 127.0.0.1) is not. */
     private static final Predicate<String> ONLY_LOCALHOST_NAME = "localhost"::equals;
 
+    /** Every resolved address is allowed, so only the host name check applies. */
+    private static final Predicate<InetAddress> ANY_ADDRESS = address -> true;
+
     private HttpServer server;
     private int port;
     private final List<String> requestedPaths = new CopyOnWriteArrayList<>();
@@ -72,7 +75,7 @@ public class LinkCheckerAPIImplTest extends UnitTestBase {
 
     private Optional<Integer> check(final String host, final String path) {
         return LinkCheckerAPIImpl.getExternalLinkStatus(new HttpClient(),
-                "http://" + host + ":" + port + path, null, ONLY_LOCALHOST_NAME);
+                "http://" + host + ":" + port + path, null, ONLY_LOCALHOST_NAME, ANY_ADDRESS);
     }
 
     /**
@@ -152,8 +155,37 @@ public class LinkCheckerAPIImplTest extends UnitTestBase {
     public void unresolvableHost_isBroken() {
         final List<String> checkedHosts = new CopyOnWriteArrayList<>();
         final Optional<Integer> status = LinkCheckerAPIImpl.getExternalLinkStatus(new HttpClient(),
-                "http://does-not-exist.invalid/page", null, host -> checkedHosts.add(host) && false);
+                "http://does-not-exist.invalid/page", null, host -> checkedHosts.add(host) && false,
+                ANY_ADDRESS);
         assertEquals(Optional.of(-1), status);
         assertTrue(checkedHosts.isEmpty());
+    }
+
+    /**
+     * When: the host name is allowed but, when the connection is opened, it resolves to an
+     * address that is not allowed (as when the name's DNS answer changes after the first check)
+     * Should: return empty without connecting, after checking the resolved address
+     */
+    @Test
+    public void allowedHostResolvingToDisallowedAddress_isNotRequested() {
+        final List<InetAddress> checkedAddresses = new CopyOnWriteArrayList<>();
+        final Optional<Integer> status = LinkCheckerAPIImpl.getExternalLinkStatus(new HttpClient(),
+                "http://localhost:" + port + "/ok", null, ONLY_LOCALHOST_NAME,
+                address -> checkedAddresses.add(address) && false);
+
+        assertFalse(status.isPresent());
+        assertFalse(checkedAddresses.isEmpty());
+        assertTrue(requestedPaths.isEmpty());
+    }
+
+    /**
+     * When: the default address check is used
+     * Should: reject loopback and the cloud metadata address, and accept a public address
+     */
+    @Test
+    public void defaultAddressCheck_rejectsPrivateAddresses() throws Exception {
+        assertFalse(LinkCheckerAPIImpl.isAddressAllowed(InetAddress.getLoopbackAddress()));
+        assertFalse(LinkCheckerAPIImpl.isAddressAllowed(InetAddress.getByName("169.254.169.254")));
+        assertTrue(LinkCheckerAPIImpl.isAddressAllowed(InetAddress.getByName("8.8.8.8")));
     }
 }

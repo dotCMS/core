@@ -13,14 +13,22 @@ import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
+import com.dotcms.repackage.org.apache.commons.httpclient.DefaultHttpMethodRetryHandler;
 import com.dotcms.repackage.org.apache.commons.httpclient.Header;
+import com.dotcms.repackage.org.apache.commons.httpclient.HostConfiguration;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpClient;
+import com.dotcms.repackage.org.apache.commons.httpclient.HttpMethodRetryHandler;
 import com.dotcms.repackage.org.apache.commons.httpclient.HttpState;
 import com.dotcms.repackage.org.apache.commons.httpclient.NameValuePair;
 import com.dotcms.repackage.org.apache.commons.httpclient.UsernamePasswordCredentials;
 import com.dotcms.repackage.org.apache.commons.httpclient.methods.GetMethod;
 import com.dotcms.repackage.org.apache.commons.httpclient.params.HttpClientParams;
 import com.dotcms.repackage.org.apache.commons.httpclient.params.HttpConnectionParams;
+import com.dotcms.repackage.org.apache.commons.httpclient.params.HttpMethodParams;
+import com.dotcms.repackage.org.apache.commons.httpclient.protocol.Protocol;
+import com.dotcms.repackage.org.apache.commons.httpclient.protocol.ProtocolSocketFactory;
+import com.dotcms.repackage.org.apache.commons.httpclient.protocol.SSLProtocolSocketFactory;
+import com.dotcms.repackage.org.apache.commons.httpclient.protocol.SecureProtocolSocketFactory;
 import com.dotcms.repackage.org.jsoup.Jsoup;
 import com.dotcms.repackage.org.jsoup.nodes.Document;
 import com.dotcms.repackage.org.jsoup.nodes.Element;
@@ -55,7 +63,11 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
+import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -307,7 +319,7 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
         }
 
         final Optional<Integer> status = getExternalLinkStatus(client, url, queryString,
-                LinkCheckerAPIImpl::isHostAllowed);
+                LinkCheckerAPIImpl::isHostAllowed, LinkCheckerAPIImpl::isAddressAllowed);
         if (status.isEmpty()) {
             Logger.debug(LinkCheckerAPIImpl.class, "Skipping link to a host that is not allowed: " + url);
             return;
@@ -344,20 +356,34 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
     }
 
     /**
+     * Same rule as {@link #isHostAllowed(String)} for an address the host name resolved to when
+     * the connection is opened.
+     */
+    static boolean isAddressAllowed(final InetAddress address) {
+        return Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false)
+                || !IPUtils.isInternalAddress(address);
+    }
+
+    /**
      * Requests the URL and returns its HTTP status. Redirects are followed manually, up to
      * {@link #MAX_REDIRECTS}, so that every location is validated before it is requested.
+     * Unless a proxy is configured, the connection is opened to an address that passed
+     * {@code isAddressAllowed}, resolved when the connection is opened, so a host name that
+     * resolves differently after the first check cannot lead to a disallowed address.
      *
-     * @param client        The HTTP client.
-     * @param url           The URL to check.
-     * @param queryString   Query string of the first request, or {@code null}.
-     * @param isHostAllowed Decides whether a host may be requested.
+     * @param client           The HTTP client.
+     * @param url              The URL to check.
+     * @param queryString      Query string of the first request, or {@code null}.
+     * @param isHostAllowed    Decides whether a host may be requested.
+     * @param isAddressAllowed Decides whether an address the host resolves to may be connected to.
      *
      * @return The status code (-1 if the request failed), or empty if the URL or one of its
      * redirect locations is not allowed.
      */
     static Optional<Integer> getExternalLinkStatus(final HttpClient client, final String url,
                                                    final String queryString,
-                                                   final Predicate<String> isHostAllowed) {
+                                                   final Predicate<String> isHostAllowed,
+                                                   final Predicate<InetAddress> isAddressAllowed) {
 
         String currentUrl = url;
         String currentQueryString = queryString;
@@ -381,21 +407,30 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
                 return Optional.empty();
             }
 
-            final GetMethod method = new GetMethod(currentUrl);
+            // a relative request, so that the host configuration below decides the connection
+            final GetMethod method;
+            try {
+                method = new GetMethod(UtilMethods.isSet(target.getFile()) ? target.getFile() : "/");
+            } catch (final IllegalArgumentException | IllegalStateException e) {
+                return Optional.of(-1);
+            }
             method.setFollowRedirects(false);
+            method.getParams().setParameter(HttpMethodParams.RETRY_HANDLER, NO_RETRY_ON_DISALLOWED_ADDRESS);
             if (null != currentQueryString) {
                 method.setQueryString(currentQueryString);
             }
             try {
-                final int statusCode = client.executeMethod(method);
+                final int statusCode = client.executeMethod(
+                        hostConfiguration(client, target, isAddressAllowed), method);
                 final Header location = method.getResponseHeader(LOCATION_HEADER);
                 if (statusCode < 300 || statusCode >= 400 || null == location
                         || !UtilMethods.isSet(location.getValue())) {
                     return Optional.of(statusCode);
                 }
-                currentUrl = new java.net.URL(new java.net.URL(method.getURI().toString()),
-                        location.getValue().trim()).toString();
+                currentUrl = new java.net.URL(target, location.getValue().trim()).toString();
                 currentQueryString = null;
+            } catch (final AddressNotAllowedException e) {
+                return Optional.empty();
             } catch (final Exception e) {
                 return Optional.of(-1);
             } finally {
@@ -404,6 +439,119 @@ public class LinkCheckerAPIImpl implements LinkCheckerAPI {
         }
         return Optional.of(-1);
     } // getExternalLinkStatus.
+
+    /**
+     * Builds the connection settings for one request: the client's own settings (such as a
+     * proxy) for the target host, with a socket factory that checks the resolved address when no
+     * proxy is used. When a proxy is used, the proxy resolves the host and the factory is not
+     * involved.
+     */
+    private static HostConfiguration hostConfiguration(final HttpClient client,
+                                                       final java.net.URL target,
+                                                       final Predicate<InetAddress> isAddressAllowed) {
+        final HostConfiguration hostConfiguration = new HostConfiguration(client.getHostConfiguration());
+        final boolean secure = HTTPS.equalsIgnoreCase(target.getProtocol());
+        final Protocol protocol;
+        if (null != hostConfiguration.getProxyHost()) {
+            protocol = Protocol.getProtocol(secure ? HTTPS : HTTP);
+        } else if (secure) {
+            protocol = new Protocol(HTTPS, (ProtocolSocketFactory)
+                    new SecureAddressCheckingSocketFactory(isAddressAllowed), 443);
+        } else {
+            protocol = new Protocol(HTTP, new AddressCheckingSocketFactory(isAddressAllowed), 80);
+        }
+        hostConfiguration.setHost(target.getHost(), target.getPort(), protocol);
+        return hostConfiguration;
+    }
+
+    /** Keeps the default retries, except for a connection refused because of its address. */
+    private static final HttpMethodRetryHandler NO_RETRY_ON_DISALLOWED_ADDRESS =
+            (method, exception, executionCount) -> !(exception instanceof AddressNotAllowedException)
+                    && new DefaultHttpMethodRetryHandler().retryMethod(method, exception, executionCount);
+
+    /** Thrown when a host name resolves to an address that may not be connected to. */
+    static final class AddressNotAllowedException extends IOException {
+        private static final long serialVersionUID = 1L;
+
+        AddressNotAllowedException(final String host) {
+            super("Host resolves to an address that is not allowed: " + host);
+        }
+    }
+
+    /**
+     * Opens plain connections to an address of the host only after checking every address the
+     * host resolves to, and connects to the address that was checked.
+     */
+    static class AddressCheckingSocketFactory implements ProtocolSocketFactory {
+
+        private final Predicate<InetAddress> isAddressAllowed;
+
+        AddressCheckingSocketFactory(final Predicate<InetAddress> isAddressAllowed) {
+            this.isAddressAllowed = isAddressAllowed;
+        }
+
+        @Override
+        public Socket createSocket(final String host, final int port) throws IOException {
+            return createSocket(host, port, null, 0, null);
+        }
+
+        @Override
+        public Socket createSocket(final String host, final int port, final InetAddress localAddress,
+                                   final int localPort) throws IOException {
+            return createSocket(host, port, localAddress, localPort, null);
+        }
+
+        @Override
+        public Socket createSocket(final String host, final int port, final InetAddress localAddress,
+                                   final int localPort, final HttpConnectionParams params)
+                throws IOException {
+            final InetAddress[] addresses = InetAddress.getAllByName(host);
+            for (final InetAddress address : addresses) {
+                if (!isAddressAllowed.test(address)) {
+                    throw new AddressNotAllowedException(host);
+                }
+            }
+            final Socket socket = new Socket();
+            try {
+                if (null != localAddress) {
+                    socket.bind(new InetSocketAddress(localAddress, localPort));
+                }
+                socket.connect(new InetSocketAddress(addresses[0], port),
+                        null == params ? 0 : params.getConnectionTimeout());
+                return socket;
+            } catch (final IOException e) {
+                socket.close();
+                throw e;
+            }
+        }
+    }
+
+    /**
+     * Same as {@link AddressCheckingSocketFactory}, with TLS on top of the checked connection.
+     */
+    static final class SecureAddressCheckingSocketFactory extends AddressCheckingSocketFactory
+            implements SecureProtocolSocketFactory {
+
+        private final SecureProtocolSocketFactory tls = new SSLProtocolSocketFactory();
+
+        SecureAddressCheckingSocketFactory(final Predicate<InetAddress> isAddressAllowed) {
+            super(isAddressAllowed);
+        }
+
+        @Override
+        public Socket createSocket(final String host, final int port, final InetAddress localAddress,
+                                   final int localPort, final HttpConnectionParams params)
+                throws IOException {
+            return createSocket(super.createSocket(host, port, localAddress, localPort, params),
+                    host, port, true);
+        }
+
+        @Override
+        public Socket createSocket(final Socket socket, final String host, final int port,
+                                   final boolean autoClose) throws IOException {
+            return tls.createSocket(socket, host, port, autoClose);
+        }
+    }
 
     private static boolean isResolvable(final String host) {
         try {
