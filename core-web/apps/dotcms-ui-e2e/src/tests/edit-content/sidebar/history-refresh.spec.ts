@@ -156,10 +156,9 @@ test.describe('Sidebar History/Comments refresh after save (#36617)', () => {
          * Opens the editor through the relationship field's "New Content" item, saves once
          * so the contentlet gains a version, and returns the editor root.
          *
-         * `FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL` defaults to `true`
-         * (dotmarketing-config.properties), so "New Content" opens the slide-in side panel,
-         * not the centered dialog — hence `side-panel` (the drawer every side panel opens in),
-         * not `edit-content-dialog`. Only this one panel is open here.
+         * "New Content" opens the slide-in side panel, the only container the editor opens in
+         * since #38303 — hence `side-panel` (the drawer every side panel opens in). Only this
+         * one panel is open here.
          */
         async function openDialogWithSavedContent(
             page: Page,
