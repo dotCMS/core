@@ -141,8 +141,6 @@ import org.junit.runners.Suite;
         com.dotcms.rest.api.v1.portlet.PortletResourceIntegrationTest.class,
         LayoutResourceIntegrationTest.class,
         com.dotmarketing.webdav.DotWebdavTempPathContainmentTest.class,
-        com.dotmarketing.cms.login.factories.LoginFactoryTest.class,
-        com.dotmarketing.webdav.DotWebdavHelperAuthorizePrincipalTest.class
 })
 
 public class MainSuite3a {

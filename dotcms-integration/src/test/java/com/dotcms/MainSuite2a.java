@@ -125,7 +125,9 @@ import org.junit.runners.Suite.SuiteClasses;
         CMSUserToolTest.class,
         UserJsViewToolTest.class,
         com.dotcms.rest.BundleResourceDeleteResponseTest.class,
-        ContentRelationshipsResourceIntegrationTest.class
+        ContentRelationshipsResourceIntegrationTest.class,
+        com.dotmarketing.cms.login.factories.LoginFactoryTest.class,
+        com.dotmarketing.webdav.DotWebdavHelperAuthorizePrincipalTest.class
 })
 public class MainSuite2a {
 
