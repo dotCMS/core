@@ -407,7 +407,7 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    Start[Test Phase] --> Matrix[setup-matrix Job<br/>Parse test-matrix.yml]
+    Start[Test Matrix workflow<br/>runs alongside the build] --> Matrix[setup-matrix Job<br/>Parse test-matrix.yml]
     
     Matrix --> Generate{Generate<br/>Test<br/>Combinations}
     

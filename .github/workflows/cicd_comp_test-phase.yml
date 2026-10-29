@@ -4,7 +4,8 @@
 # It includes JVM unit tests, CLI tests, frontend tests, integration tests, and Postman tests.
 #
 # Key features:
-# - Configurable test execution based on input parameters
+# - Test selection is decided by cicd_comp_test-matrix.yml, which callers run in
+#   parallel with the build and hand to this workflow as the matrix input
 # - Parallel execution of different test suites  
 # - Matrix strategy for running multiple test suites concurrently
 # - Reusable Maven job action for consistent test environment setup
@@ -16,36 +17,19 @@ name: Test Phase
 on:
   workflow_call:
     inputs:
-      run-all-tests:
-        type: boolean
-        default: false
       artifact-run-id:
         default: ${{ github.run_id }}
         type: string
-      jvm_unit_test:
-        required: false
-        type: boolean
-        default: false
-      cli:
-        required: false
-        type: boolean
-        default: false
-      frontend:
-        required: false
-        type: boolean
-        default: false
-      postman:
-        required: false
-        type: boolean
-        default: false
-      karate:
-        required: false
-        type: boolean
-        default: false
-      integration:
-        required: false
-        type: boolean
-        default: false
+      # Both come from cicd_comp_test-matrix.yml, which callers run in parallel with the
+      # build. Which tests run is decided there, from the caller's test-selection inputs.
+      matrix:
+        description: "Test matrix JSON ({include: [...]}) from cicd_comp_test-matrix.yml"
+        required: true
+        type: string
+      has-tests:
+        description: "'true' when the matrix has at least one entry (cicd_comp_test-matrix.yml output)"
+        required: true
+        type: string
       opensearch_phase:
         description: >-
           ES->OS migration phase(s) to run the integration suites under. Empty, 'none' or '0'
@@ -58,10 +42,6 @@ on:
         required: false
         type: string
         default: ''
-      e2e:
-        required: false
-        type: boolean
-        default: false
       java-version:
         description: 'Override Java version (SDKMAN format, e.g., 25.0.1-open)'
         required: false
@@ -77,14 +57,6 @@ on:
         required: false
         type: string
         default: ''
-      # test-matrix.yml marks which test types MAY skip the cleanup; only callers
-      # that pass true here (PR, merge queue, trunk) actually do. Nightly, LTS and
-      # the sweep share the matrix and keep cleaning up (#38203).
-      skip-runner-cleanup:
-        description: 'Honor cleanup_runner: false from test-matrix.yml (skip the runner disk cleanup for those test types)'
-        required: false
-        type: boolean
-        default: false
     secrets:
       DOTCMS_LICENSE:
         required: true
@@ -93,156 +65,10 @@ env:
   ARTIFACT_RUN_ID: ${{ inputs.artifact-run-id || github.run_id }}
 
 jobs:
-  # Generate test matrix from external configuration
-  setup-matrix:
-    name: Setup Test Matrix
-    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    outputs:
-      matrix: ${{ steps.generate-matrix.outputs.matrix }}
-      has-tests: ${{ steps.generate-matrix.outputs.has-tests }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          # Shallow checkout: this job only reads .github/test-matrix.yml from HEAD.
-          # fetch-depth: 0 pulled every branch ref (~2k+ branches, ~1.1 GB pack).
-          fetch-depth: 1
-        
-      - name: Parse test configuration
-        id: parse-config
-        uses: mikefarah/yq@v4.47.1
-        with:
-          cmd: yq -o=json .github/test-matrix.yml > config.json
-
-      - name: Generate test matrix
-        id: generate-matrix
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
-        env:
-          # Passed via env (not interpolated into the script) to avoid script injection.
-          OPENSEARCH_PHASE: ${{ inputs.opensearch_phase }}
-        with:
-          # nosemgrep: yaml.github-actions.security.github-script-injection.github-script-injection -- only boolean workflow_call inputs are interpolated; the one string input is passed via env
-          script: |
-            const fs = require('fs');
-            
-            // Read the parsed JSON configuration
-            const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
-            
-            // Build matrix from configuration
-            const matrix = [];
-            const inputs = {
-              'run-all-tests': ${{ inputs.run-all-tests }},
-              'jvm_unit_test': ${{ inputs.jvm_unit_test }},
-              'cli': ${{ inputs.cli }},
-              'frontend': ${{ inputs.frontend }}, 
-              'postman': ${{ inputs.postman }},
-              'karate': ${{ inputs.karate }},
-              'integration': ${{ inputs.integration }},
-              'e2e': ${{ inputs.e2e }},
-              'skip-runner-cleanup': ${{ inputs.skip-runner-cleanup }}
-            };
-
-            // ES->OS migration phases to sweep. The input accepts a single phase ('2'),
-            // a comma list ('1,2,3'), or the alias 'all' (= 1,2,3). Anything else
-            // (empty, 'none', '0') yields an empty list => phase-0/default behavior.
-            const rawPhase = (process.env.OPENSEARCH_PHASE || '').toLowerCase();
-            const phaseList = [...new Set(
-              (rawPhase === 'all' ? '1,2,3' : rawPhase)
-                .split(',').map(s => s.trim()).filter(s => /^[1-3]$/.test(s))
-            )].sort();
-            if (phaseList.length) {
-              console.log(`OpenSearch phase sweep: [${phaseList.join(', ')}]`);
-            }
-
-            // Process each test type
-            for (const [testType, testConfig] of Object.entries(config.test_types)) {
-              // Check if explicitly disabled (false) - this overrides run-all-tests
-              const isExplicitlyDisabled = inputs[testConfig.condition_input] === false;
-              const shouldRun = !isExplicitlyDisabled && (inputs['run-all-tests'] || inputs[testConfig.condition_input]);
-              
-              if (!shouldRun) {
-                console.log(`Skipping ${testType} tests - not enabled`);
-                continue;
-              }
-              
-              // Process each suite in this test type
-              for (const suite of testConfig.suites) {
-                const testEntry = {
-                  // Inherit global defaults
-                  ...config.defaults,
-                  // Inherit test type defaults
-                  ...testConfig.defaults,
-                  // Apply suite-specific config
-                  ...suite,
-                  // Add metadata
-                  test_type: testType,
-                  condition_input: testConfig.condition_input
-                };
-                
-                // Build Maven args
-                if (testEntry.test_class) {
-                  // For integration/karate tests with test_class
-                  testEntry.maven_args = `${testEntry.base_maven_args} -Dit.test=${testEntry.test_class}`;
-                } else if (testEntry.collection) {
-                  // For postman tests with collection
-                  testEntry.maven_args = `${testEntry.base_maven_args} -Dpostman.collections=${testEntry.collection}`;
-                  testEntry.stage_name = `Postman ${testEntry.collection}`;
-                } else if (testEntry.maven_args && testEntry.base_maven_args) {
-                  // Combine base_maven_args first, then suite-specific maven_args
-                  testEntry.maven_args = `${testEntry.base_maven_args} ${testEntry.maven_args}`;
-                } else if (!testEntry.maven_args && testEntry.base_maven_args) {
-                  // Use base_maven_args if no specific maven_args
-                  testEntry.maven_args = testEntry.base_maven_args;
-                }
-
-                // Clean up temporary fields
-                delete testEntry.base_maven_args;
-                delete testEntry.test_class;
-                delete testEntry.collection;
-
-                // Only callers that opted in may skip the cleanup the matrix allows.
-                if (!inputs['skip-runner-cleanup']) {
-                  testEntry.cleanup_runner = true;
-                }
-
-                // ES->OS migration phase fan-out: run the integration battery under each
-                // requested phase. Only for integration suites, and never for the OpenSearch
-                // Upgrade Suite (it already drives OS via -Dopensearch.upgrade.test — activating
-                // -Dopensearch.phase too would collide the two Maven profiles). The mere presence
-                // of -Dopensearch.phase activates the opensearch-phase-suite profile (see
-                // dotcms-integration/pom.xml). name/stage_name are suffixed per phase so job
-                // labels and the resulting build-reports-<stage_name> artifacts stay unique.
-                const phaseable = testEntry.test_type === 'integration'
-                  && !testEntry.maven_args.includes('opensearch.upgrade.test');
-                if (phaseList.length && phaseable) {
-                  for (const p of phaseList) {
-                    matrix.push({
-                      ...testEntry,
-                      maven_args: `${testEntry.maven_args} -Dopensearch.phase=${p}`,
-                      // The phase profile also starts the OpenSearch 3.x container, so its
-                      // image is pre-pulled (with retries) like the others.
-                      docker_images: `${testEntry.docker_images} docker.image.search.upgrade`,
-                      name: `${testEntry.name} [OS Phase ${p}]`,
-                      stage_name: `${testEntry.stage_name} - os-phase-${p}`,
-                    });
-                  }
-                } else {
-                  matrix.push(testEntry);
-                }
-              }
-            }
-            
-            console.log(`Generated matrix with ${matrix.length} test configurations`);
-            
-            // Output the matrix
-            core.setOutput('matrix', JSON.stringify({ include: matrix }));
-            core.setOutput('has-tests', matrix.length > 0 ? 'true' : 'false');
-
   # Run all tests using the generated matrix
   test-matrix:
     name: ${{ matrix.name }}
-    needs: setup-matrix
-    if: needs.setup-matrix.outputs.has-tests == 'true'
+    if: inputs.has-tests == 'true'
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     timeout-minutes: ${{ matrix.timeout_minutes }}
     env:
@@ -263,7 +89,7 @@ jobs:
       fail-fast: >-
         ${{ (inputs.opensearch_phase == '' || inputs.opensearch_phase == 'none' || inputs.opensearch_phase == '0')
             && !contains(github.event.pull_request.labels.*.name, 'CI : No Fail Fast') }}
-      matrix: ${{ fromJSON(needs.setup-matrix.outputs.matrix) }}
+      matrix: ${{ fromJSON(inputs.matrix) }}
 
     steps:          
       - name: Checkout code
