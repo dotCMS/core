@@ -6,6 +6,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -465,6 +466,34 @@ public class UserFactoryImpl implements UserFactory {
         return user;
     }
 
+    /**
+     * Writes only the {@code skinid} column, which holds the user's login token id. A login JWT is
+     * accepted only while its id ({@code jti}) equals this value, so a value no earlier token
+     * carries rejects every login JWT issued before the call. {@link #save(User)} leaves the
+     * column alone, so saving a {@link User} loaded before this call cannot put the old value back.
+     * <p>
+     * The user is evicted from the cache twice, under the same normalized id: right away, and again
+     * once the surrounding transaction commits. Until the commit, other connections still read the
+     * old value and a request on any node can cache it again; the second eviction drops that entry.
+     * With no transaction open, the second eviction runs immediately.
+     *
+     * @throws DotDataException if {@code userId} is blank or the update fails
+     */
+    @Override
+    public void updateRememberMeToken(final String userId, final String rememberMeToken)
+            throws DotDataException {
+        if (!UtilMethods.isSet(userId)) {
+            throw new DotDataException("Can't change the login token id of a user without a userId");
+        }
+        final String id = userId.trim().toLowerCase();
+        new DotConnect().setSQL("update user_ set skinid = ? where userid = ?")
+                .addParam(rememberMeToken)
+                .addParam(id)
+                .loadResult();
+        userCache.remove(id);
+        HibernateUtil.addSyncCommitListener(() -> userCache.remove(id));
+    }
+
     private User createUser(final User user) throws DotDataException {
 
         final DotConnect dotConnect = new DotConnect();
@@ -488,7 +517,7 @@ public class UserFactoryImpl implements UserFactory {
         dotConnect.addParam(user.getUserId().trim().toLowerCase());
 
         try {
-            setDotConnectParamsForSave(dotConnect, user);
+            setDotConnectParamsForSave(dotConnect, user, true);
         } catch (JsonProcessingException e) {
             throw new DotDataException(e.getMessage(), e);
         }
@@ -523,7 +552,7 @@ public class UserFactoryImpl implements UserFactory {
                 .append("middlename=?, lastname=?, nickname=?, male=?, birthday=?, emailaddress=?, ")
                 .append("smsid=?, aimid=?, icqid=?, msnid=?, ymid=?, favoriteactivity=?, ")
                 .append("favoritebibleverse=?, favoritefood=?, favoritemovie=?, favoritemusic=?, ")
-                .append("languageid=?, timezoneid=?, skinid=?, dottedskins=?, roundedskins=?, ")
+                .append("languageid=?, timezoneid=?, dottedskins=?, roundedskins=?, ")
                 .append("greeting=?, resolution=?, refreshrate=?, layoutids=?, comments=?, ")
                 .append("logindate=?, loginip=?, lastlogindate=?, lastloginip=?, ")
                 .append("failedloginattempts=?, agreedtotermsofuse=?, active_=?, ")
@@ -534,7 +563,7 @@ public class UserFactoryImpl implements UserFactory {
         dotConnect.setSQL(query.toString());
 
         try {
-            setDotConnectParamsForSave(dotConnect, user);
+            setDotConnectParamsForSave(dotConnect, user, false);
         } catch (JsonProcessingException e) {
             throw new DotDataException(e.getMessage(), e);
         }
@@ -550,8 +579,17 @@ public class UserFactoryImpl implements UserFactory {
         return user;
     }
 
-    private void setDotConnectParamsForSave(final DotConnect dotConnect, final User user)
-            throws JsonProcessingException {
+    /**
+     * Adds the user's column values, in the column order of the insert and update statements.
+     *
+     * @param dotConnect          the statement to add the values to
+     * @param user                the user whose values are written
+     * @param withRememberMeToken whether to include {@code skinid}, the login token id; only the
+     *                            insert writes it, later changes go through
+     *                            {@link #updateRememberMeToken(String, String)}
+     */
+    private void setDotConnectParamsForSave(final DotConnect dotConnect, final User user,
+            final boolean withRememberMeToken) throws JsonProcessingException {
 
         dotConnect.addParam(user.getCompanyId()).addParam(user.getCreateDate())
                 .addParam(user.getModificationDate()).addParam(user.getPassword()).addParam(user.getPasswordEncrypted())
@@ -562,8 +600,11 @@ public class UserFactoryImpl implements UserFactory {
                 .addParam(user.getIcqId()).addParam(user.getMsnId()).addParam(user.getYmId())
                 .addParam(user.getFavoriteActivity()).addParam(user.getFavoriteBibleVerse())
                 .addParam(user.getFavoriteFood()).addParam(user.getFavoriteMovie())
-                .addParam(user.getFavoriteMusic()).addParam(user.getLanguageId()).addParam(user.getTimeZoneId())
-                .addParam(user.getSkinId()).addParam(user.getDottedSkins()).addParam(user.getRoundedSkins())
+                .addParam(user.getFavoriteMusic()).addParam(user.getLanguageId()).addParam(user.getTimeZoneId());
+        if (withRememberMeToken) {
+            dotConnect.addParam(user.getRememberMeToken());
+        }
+        dotConnect.addParam(user.getDottedSkins()).addParam(user.getRoundedSkins())
                 .addParam(user.getGreeting()).addParam(user.getResolution()).addParam(user.getRefreshRate())
                 .addParam(user.getLayoutIds()).addParam(user.getComments()).addParam(user.getLoginDate())
                 .addParam(user.getLoginIP()).addParam(user.getLastLoginDate()).addParam(user.getLastLoginIP())
