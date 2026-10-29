@@ -14564,11 +14564,9 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityMulitreeView"
           description: Content tree retrieved successfully
         "401":
-          description: Authentication required
-        "403":
-          description: User does not have required permissions
+          description: "Authentication required, or the user is not a back-end user"
         "404":
-          description: Page not found
+          description: "Page not found, or the user cannot read it"
       summary: Get the multi-tree content structure of a page
       tags:
       - Page
@@ -14708,11 +14706,9 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityListPersonalizationPersonaPageView"
           description: Personas with personalization flags retrieved successfully
         "401":
-          description: Authentication required
-        "403":
-          description: User does not have required permissions
+          description: "Authentication required, or the user is not a back-end user"
         "404":
-          description: Page not found
+          description: "Page not found, or the user cannot read it"
       summary: Get personalized personas for a page
       tags:
       - Page

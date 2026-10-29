@@ -22,6 +22,23 @@ public interface UserFactory {
      */
     User save(User user) throws DotDataException, DuplicateUserException;
 
+    /**
+     * Stores a new login token id ({@link User#getRememberMeToken()}) for the user, changing only
+     * that column, and evicts the user from the cache so every node reads the new value.
+     * <p>
+     * A login JWT is accepted only while its {@code jti} equals the stored login token id, so
+     * storing a value no earlier token carries, such as a fresh random UUID, rejects every login JWT
+     * issued before the call, while JWTs issued afterwards carry the new value and work. API tokens
+     * do not use this value and are not affected. {@link #save(User)} does not write this column
+     * for an existing user, so a {@link User} loaded before this call cannot put the old value
+     * back.
+     *
+     * @param userId          the id of the user to update; trimmed and lower-cased like stored ids
+     * @param rememberMeToken the new login token id
+     * @throws DotDataException if {@code userId} is blank or the update fails
+     */
+    void updateRememberMeToken(String userId, String rememberMeToken) throws DotDataException;
+
     List<User> findAllUsers(int begin, int end) throws DotDataException;
 
     long getCountUsersByName(String filter, List<Role> roles);
