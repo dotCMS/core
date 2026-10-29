@@ -45,13 +45,6 @@ const UNSENT_RESPONSE = {
     numRows: 2
 };
 
-// Only the opener's class is needed, as the token the dialog injects. Loading the real barrel pulls
-// in the block editors and TipTap's collaboration packages, which this project's Vitest config does
-// not inline (`y-protocols/awareness` fails to resolve).
-vi.mock('@dotcms/edit-content', () => ({
-    DotEditContentOpenerService: class DotEditContentOpenerService {}
-}));
-
 /** Whether anything resolved `DotContentletEditUrlService` while the dialog was mounted. */
 let editUrlServiceInjected: boolean;
 
@@ -365,8 +358,9 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
 
         beforeEach(() => {
             windowOpen = vi.spyOn(window, 'open').mockImplementation(() => null);
-            // Consumed by the first bundle's load on init; later loads get the default assets.
-            (service.getBundleAssets as Mock).mockReturnValueOnce(of(ROW_ASSETS));
+            // The first bundle loaded on mount; show these rows for it. A once-value on
+            // `getBundleAssets` here would be consumed by the next test's mount instead.
+            spectator.component.$assets.set(ROW_ASSETS);
             spectator.detectChanges();
             opened().mockClear();
         });
