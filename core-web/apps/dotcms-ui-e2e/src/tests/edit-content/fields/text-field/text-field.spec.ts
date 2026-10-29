@@ -28,9 +28,7 @@ test.afterEach(async ({ request }) => {
     }
 });
 
-test('save reloads with content id in URL and persists text field value @critical', async ({
-    page
-}) => {
+test('save creates the content and persists text field value @critical', async ({ page }) => {
     const textFieldValue = faker.lorem.word();
 
     const formPage = new NewEditContentFormPage(page);
@@ -40,13 +38,10 @@ test('save reloads with content id in URL and persists text field value @critica
     await expect(titleLocator).toBeVisible();
 
     await titleLocator.fill(textFieldValue);
-    await formPage.save();
+    const saved = await formPage.save();
+    expect(saved.identifier).toBeTruthy();
 
-    await page.waitForURL(/\/content\/([a-f0-9-]+)/);
-    const [, savedContentIdentifier] = page
-        .url()
-        .match(/\/content\/([a-f0-9-]+)/) as RegExpMatchArray;
-    expect(savedContentIdentifier).toBeTruthy();
-
+    // Read back from a fresh load, not the form that saved it.
+    await formPage.reopen(saved.inode);
     await expect(titleLocator).toHaveValue(textFieldValue);
 });

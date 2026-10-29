@@ -1,5 +1,21 @@
-import { expect, type Locator, Page } from '@playwright/test';
+import { expect, type Locator, Page, type Request } from '@playwright/test';
+import { type Contentlet } from '@requests/contentlets';
 import { clickAddNewContentFromList, goToContentList } from '@utils/contentListingNavigation';
+
+/**
+ * Whether a request fires a workflow action: what Save and Publish send, as
+ * `PUT /api/v1/workflow/actions/{actionId}/fire` (`DotWorkflowActionsFireService.fireTo`) or
+ * `PUT /api/v1/workflow/actions/default/fire/{action}`.
+ */
+function isWorkflowFire(request: Request): boolean {
+    const { pathname } = new URL(request.url());
+
+    return (
+        request.method() === 'PUT' &&
+        pathname.startsWith('/api/v1/workflow/actions/') &&
+        pathname.includes('/fire')
+    );
+}
 
 export class NewEditContentFormPage {
     /**
@@ -57,24 +73,46 @@ export class NewEditContentFormPage {
     }
 
     /**
-     * Clicks the workflow action that persists the content (Save or Publish) and waits for the API response.
+     * Clicks the workflow action that persists the content (Save or Publish) and returns the
+     * contentlet it saved, read from the workflow fire response.
      * Prefer "Save" when both Save and Publish are visible — the new command bar can show multiple
      * workflow buttons at once, so a single regex locator would match 2+ roles and break strict mode.
+     *
+     * The response is the only place a new contentlet's id shows up: content created from the
+     * listing is edited in the side panel over it (#38303), and the address never changes.
      */
-    async save() {
+    async save(): Promise<Contentlet> {
         const saveButton = this.root.getByRole('button', { name: 'Save' });
         const publishButton = this.root.getByRole('button', { name: 'Publish' });
         const actionButton = (await saveButton.isVisible()) ? saveButton : publishButton;
 
         await expect(actionButton).toBeVisible();
 
-        const responsePromise = this.page.waitForResponse((response) => {
-            return (
-                response.status() === 200 && response.url().includes('/api/v1/workflow/actions/')
-            );
-        });
+        const responsePromise = this.page.waitForResponse(
+            (response) => response.status() === 200 && isWorkflowFire(response.request())
+        );
         await actionButton.click();
-        await responsePromise;
+        const { entity } = await (await responsePromise).json();
+
+        expect(entity?.inode, 'the workflow fire response carries no contentlet').toBeTruthy();
+
+        return entity as Contentlet;
+    }
+
+    /**
+     * Records every workflow fire the page sends from now on, for a test that has to prove a save
+     * was refused before it reached the server. The returned array fills as requests go out.
+     */
+    recordWorkflowFires(): string[] {
+        const fires: string[] = [];
+
+        this.page.on('request', (request) => {
+            if (isWorkflowFire(request)) {
+                fires.push(request.url());
+            }
+        });
+
+        return fires;
     }
 
     /**
@@ -84,6 +122,21 @@ export class NewEditContentFormPage {
         await this.page.goto(`/dotAdmin/#/content/${id}`);
         await this.page.waitForLoadState('domcontentloaded');
         // Wait for the Angular content form to render
+        await this.page.getByTestId('title').waitFor({ state: 'visible', timeout: 15000 });
+    }
+
+    /**
+     * Opens saved content afresh on the full-screen route, with a full page load, to read back
+     * what the save stored.
+     *
+     * {@link goToContent} alone is not enough after a save from the side panel: changing the hash
+     * keeps the app, and with it the panel the content was created in, which belongs to the admin
+     * root rather than the route. Two forms would then match every field locator.
+     */
+    async reopen(inode: string) {
+        await this.page.goto(`/dotAdmin/#/content/${inode}`);
+        await this.page.reload();
+        await this.page.waitForLoadState('domcontentloaded');
         await this.page.getByTestId('title').waitFor({ state: 'visible', timeout: 15000 });
     }
 

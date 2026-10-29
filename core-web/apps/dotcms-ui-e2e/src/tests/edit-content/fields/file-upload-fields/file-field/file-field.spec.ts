@@ -68,17 +68,9 @@ test('upload a file, save, reload, and file still shown @critical', async ({ pag
     await field.uploadFile(TEST_FILE);
 
     await formPage.fillTextField(title);
-    await formPage.save();
+    const saved = await formPage.save();
 
-    await page.waitForURL(/\/content\/([a-f0-9-]+)/);
-    const [, savedContentIdentifier] = page
-        .url()
-        .match(/\/content\/([a-f0-9-]+)/) as RegExpMatchArray;
-    expect(savedContentIdentifier).toBeTruthy();
-
-    await page.goto(`/dotAdmin/#/content/${savedContentIdentifier}`);
-    await page.waitForLoadState('domcontentloaded');
-    await page.getByTestId('title').waitFor({ state: 'visible', timeout: 15000 });
+    await formPage.reopen(saved.inode);
 
     await field.expectPreviewVisible();
     await field.expectPreviewShowsContent('dotCMS E2E test file content');
@@ -222,9 +214,12 @@ test.describe('required file field', () => {
         await field.expectVisible();
 
         await formPage.fillTextField(`E2E Required File ${faker.lorem.word()}`);
+        const fires = formPage.recordWorkflowFires();
         await page.getByRole('button', { name: 'Save' }).click();
 
+        // Refused in the form: nothing reached the server and the panel is still editing it.
         await field.expectRequiredErrorVisible();
-        await expect(page).not.toHaveURL(/\/content\/[a-f0-9-]+/);
+        expect(fires, 'the refused save still fired a workflow action').toHaveLength(0);
+        await expect(page.getByTestId('side-panel')).toBeVisible();
     });
 });
