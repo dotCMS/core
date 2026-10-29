@@ -533,5 +533,42 @@ public class SecondaryCategoryPermissionTest {
 
     }
 
+    /**
+     * Given a content type whose category field uses the secondary permission check, when the same
+     * query is counted and searched for the same user, then both agree. The count is what a
+     * paginator shows as the total, so a count that is not narrowed by the category check reports
+     * content the search below it never lists.
+     */
+    @Test
+    public void test_index_count_agrees_with_the_search_for_every_user() throws Exception {
+
+        final String query = "+contentType:" + contentType.variable();
+
+        // The administrator is the control: no permission clause is added for them, so a count
+        // that disagrees here means the count and the search are not reading the same index.
+        final int visibleToAdmin = APILocator.getContentletAPI()
+                .search(query, 100, 0, "modDate", APILocator.systemUser(), false).size();
+        assertEquals("the count and the search disagree for the administrator",
+                visibleToAdmin,
+                APILocator.getContentletAPI().indexCount(query, APILocator.systemUser(), false));
+
+        for (final User user : List.of(snowUser, waterUser, ecoWaterUser)) {
+
+            final int searched = APILocator.getContentletAPI()
+                    .search(query, 100, 0, "modDate", user, false).size();
+
+            // Without this, a fixture that stopped hiding anything from the user would let the
+            // count and the search agree for the wrong reason, and the case would prove nothing.
+            assertTrue("the fixture no longer restricts " + user.getUserId()
+                            + ", so an unnarrowed count would pass this case",
+                    searched < visibleToAdmin);
+
+            final long counted = APILocator.getContentletAPI().indexCount(query, user, false);
+
+            assertEquals("the count and the search disagree for " + user.getUserId(),
+                    searched, counted);
+        }
+    }
+
 
 }
