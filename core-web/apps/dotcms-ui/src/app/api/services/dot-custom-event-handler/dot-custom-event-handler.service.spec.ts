@@ -407,7 +407,10 @@ describe('DotCustomEventHandlerService', () => {
 
         beforeEach(() => {
             opened().mockClear();
-            adminRootInjector = Injector.create({ providers: [], parent: TestBed.inject(Injector) });
+            adminRootInjector = Injector.create({
+                providers: [],
+                parent: TestBed.inject(Injector)
+            });
             (service as WithInjector).setInjector?.(adminRootInjector);
         });
 
@@ -438,7 +441,11 @@ describe('DotCustomEventHandlerService', () => {
                 await send('edit-host', { inode: 'host-inode' });
 
                 const request = openedRequest();
-                expect(request).toEqual({ mode: 'edit', inode: 'host-inode', portletId: PORTLET_ID });
+                expect(request).toEqual({
+                    mode: 'edit',
+                    inode: 'host-inode',
+                    portletId: PORTLET_ID
+                });
                 expect(request.contentType).toBeUndefined();
                 expect((dotRouterService.goToEditContentlet as Mock).mock.calls.length).toBe(0);
             });
@@ -468,7 +475,11 @@ describe('DotCustomEventHandlerService', () => {
                 await send('create-host', { url: '/c/portal/layout?p_l_id=1&p_p_id=sites' });
 
                 const request = openedRequest();
-                expect(request).toEqual({ mode: 'new', contentType: 'Host', portletId: PORTLET_ID });
+                expect(request).toEqual({
+                    mode: 'new',
+                    contentType: 'Host',
+                    portletId: PORTLET_ID
+                });
                 expect(request).not.toHaveProperty('url');
             });
         });
