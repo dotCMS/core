@@ -149,12 +149,9 @@ Feature: Workflow fire with a permission list
     Then status 200
     And match asRows(response.entity) == rowsBefore
 
-    # Cleanup, as admin
-    Given url baseUrl + '/api/v1/contenttype/id/' + contentTypeId
-    And headers commonHeaders
-    When method delete
-    Then status 200
-
+    # Cleanup, as admin. The content type is left for the site delete, which removes the site's
+    # types synchronously. Deleting the type first finishes in the background, and the site delete
+    # then fails on the fk_structure_host foreign key while the type's rows still reference the site.
     Given url baseUrl + '/api/v1/users/' + editorUserId
     And headers commonHeaders
     When method delete
@@ -174,3 +171,8 @@ Feature: Workflow fire with a permission list
     And headers commonHeaders
     When method delete
     Then status 200
+
+    Given url baseUrl + '/api/v1/contenttype/id/' + contentTypeId
+    And headers commonHeaders
+    When method get
+    Then status 404
