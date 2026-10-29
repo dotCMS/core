@@ -1,5 +1,6 @@
 package com.dotmarketing.business.cache.provider.redis;
 
+import com.dotcms.cache.CacheObjectInputFilter;
 import com.dotmarketing.business.cache.provider.CacheProvider;
 import com.dotmarketing.business.cache.provider.CacheProviderStats;
 import com.dotmarketing.business.cache.provider.CacheStats;
@@ -188,6 +189,14 @@ public class RedisProvider extends CacheProvider {
         }
     }
 
+    /**
+     * Reads a value from Redis. Only the classes allowed by {@link CacheObjectInputFilter} are
+     * deserialized; a value of any other class is logged and returned as a miss.
+     *
+     * @param group the cache group
+     * @param key   the key inside the group
+     * @return the cached value, or {@code null} when there is none or it cannot be read
+     */
     @Override
     public Object get ( String group, String key ) {
 
@@ -221,7 +230,7 @@ public class RedisProvider extends CacheProvider {
         try {
             is = new ByteArrayInputStream(data);
             bin = new BufferedInputStream(is, 8192);
-            input = new ObjectInputStream(bin);
+            input = CacheObjectInputFilter.newObjectInputStream(bin);
             return input.readObject();
         } catch ( Exception e ) {
             Logger.error(this, "Error retrieving from Redis: group [" + group + "] - key [" + key + "].", e);
