@@ -82,7 +82,7 @@ import org.junit.platform.suite.api.Suite;
         FolderBulkDuplicateProcessorIT.class,
         FolderBulkDuplicateCancellationIT.class,
         FolderBulkDuplicateNotificationIT.class,
-        FolderBulkDuplicateHeartbeatIT.class
+        FolderBulkDuplicateHeartbeatIT.class,
 })
 public class Junit5Suite1 {
 

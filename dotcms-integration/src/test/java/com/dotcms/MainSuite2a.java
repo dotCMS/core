@@ -117,6 +117,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.workflows.actionlet.SaveContentActionletWithTagsTest.class,
         com.dotmarketing.portlets.workflows.actionlet.CopyActionletTest.class,
         com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletTest.class,
+        com.dotcms.rest.api.v1.page.PageResourceReadAccessTest.class,
         com.dotmarketing.portlets.personas.business.PersonaAPITest.class,
         com.dotmarketing.portlets.personas.business.DeleteMultiTreeUsedPersonaTagJobTest.class,
         com.dotmarketing.portlets.links.business.MenuLinkAPITest.class,
@@ -146,6 +147,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.container.ContainerResourceDependenciesIntegrationTest.class,
         com.dotmarketing.startup.runonce.Task261023RemoveContainersLegacyPortletFromLayoutsTest.class,
         com.dotmarketing.portlets.templates.business.TemplateAPIFindUsingContainerTest.class,
+        com.dotmarketing.startup.runonce.Task261028RemoveSearchLegacyPortletsFromLayoutsTest.class,
         UserDeletionCacheInvalidationTest.class,
         ViewCMSMaintenanceActionTest.class,
         JsModuleImportIntegrationTest.class,
@@ -155,7 +157,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.BundleResourceDeleteResponseTest.class,
         ContentRelationshipsResourceIntegrationTest.class,
         com.dotmarketing.portal.struts.StrutsPathAccessTest.class,
-        com.liferay.portal.struts.PortletRequestProcessorAccessTest.class
+        com.liferay.portal.struts.PortletRequestProcessorAccessTest.class,
 })
 public class MainSuite2a {
 

@@ -51,10 +51,6 @@ public class SerializationHelperTest {
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("categories-legacy")));
             assertTrue("PortletList should contain 'es-search' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("es-search")));
-            assertTrue("PortletList should contain 'es-search-legacy' portlet",
-                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("es-search-legacy")));
-            assertTrue("PortletList should contain 'query-tool-legacy' portlet",
-                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("query-tool-legacy")));
             assertTrue("PortletList should contain 'dotai' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("dotai")));
             assertTrue("PortletList should contain 'analytics-search' portlet",
