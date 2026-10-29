@@ -144,6 +144,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.ClusterResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.cluster.ClusterNodesResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.system.ConfigurationHelperTest.class,
+        com.dotmarketing.startup.runonce.Task261028RemoveSearchLegacyPortletsFromLayoutsTest.class,
         UserDeletionCacheInvalidationTest.class,
         ViewCMSMaintenanceActionTest.class,
         JsModuleImportIntegrationTest.class,
