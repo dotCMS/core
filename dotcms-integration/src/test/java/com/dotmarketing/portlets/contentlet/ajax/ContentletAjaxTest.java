@@ -730,6 +730,57 @@ public class ContentletAjaxTest {
 	}
 
 	/**
+	 * <b>Method to Test:</b> {@link ContentletAjax#saveContent(List, boolean, boolean, boolean)}<p>
+	 * <b>When:</b> new content is saved and the binary field value is the name of a file in the
+	 * user's {@code tmp_binary/<userId>/<binary field column>} folder, where the edit screen leaves
+	 * the binary of the language version it starts from<p>
+	 * <b>Should:</b> store that file as the binary of the new content
+	 */
+	@Test
+	public void test_saveContent_binaryValueNamingAFileInTheUserTmpFolder_isStoredAsTheBinary()
+			throws Exception {
+
+		final User user = new UserDataGen().nextPersisted();
+		final ContentType contentType = createEditableTypeWithBinaryField(user);
+		final String body = "language version body " + System.currentTimeMillis();
+		final File userTmpFolder = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary(),
+				user.getUserId());
+
+		try {
+			final File fieldFolder = new File(userTmpFolder, legacyFormName(contentType, "doc"));
+			assertTrue(fieldFolder.mkdirs());
+			Files.write(new File(fieldFolder, "version.txt").toPath(),
+					body.getBytes(StandardCharsets.UTF_8));
+
+			final Map<String, Object> callbackData = saveThroughLegacyForm(setUpContext(user),
+					contentType, "version.txt");
+
+			final Contentlet saved = contentletAPI.find((String) callbackData.get("contentletInode"),
+					systemUser, false);
+			assertNotNull("The content should be saved: " + callbackData, saved);
+			final File binary = saved.getBinary("doc");
+			assertNotNull("The file in the user's tmp folder should be stored as the binary", binary);
+			assertEquals(body, new String(Files.readAllBytes(binary.toPath()), StandardCharsets.UTF_8));
+		} finally {
+			setUpContext();
+			FileUtil.deltree(userTmpFolder);
+			ContentTypeDataGen.remove(contentType);
+			removeUserAndPermissions(user);
+		}
+	}
+
+	/**
+	 * Returns the name the legacy edit form uses for the field with the given variable.
+	 */
+	private static String legacyFormName(final ContentType contentType, final String variable) {
+		return contentType.fields().stream()
+				.filter(field -> variable.equals(field.variable()))
+				.map(field -> new LegacyFieldTransformer(field).asOldField().getFieldContentlet())
+				.findFirst()
+				.orElseThrow();
+	}
+
+	/**
 	 * Creates a Content Type with a title and a binary field ({@code doc}) on the System Host,
 	 * using the System Workflow, that the given user can create and edit content of with the
 	 * System Workflow Save action.

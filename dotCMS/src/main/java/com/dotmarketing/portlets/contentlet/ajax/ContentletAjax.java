@@ -1914,7 +1914,8 @@ public class ContentletAjax {
 			}
 
 			// A binary value is either a temp file id, resolved later by the field handler, or the
-			// name of a file the user uploaded to their own tmp_binary folder
+			// name of a file the server copied into the user's tmp_binary folder for that binary
+			// column when the content was populated from another language (EditContentletAction)
 			if(elementName.startsWith("binary")){
 				String binaryFileValue = (String) elementValue;
 				File binaryFile = null;
