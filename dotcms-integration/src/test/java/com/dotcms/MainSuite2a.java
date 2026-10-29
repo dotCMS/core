@@ -123,6 +123,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.links.business.MenuLinkAPITest.class,
         com.dotmarketing.portlets.links.factories.LinkFactoryTest.class,
         com.dotmarketing.portlets.categories.business.CategoryAPITest.class,
+        com.dotcms.rendering.js.FileJavascriptReaderTest.class,
         com.dotmarketing.filters.FiltersTest.class,
         InterceptorHandlerTest.class,
         com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcherTest.class,

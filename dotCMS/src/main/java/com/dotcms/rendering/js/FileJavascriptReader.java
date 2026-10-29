@@ -1,6 +1,7 @@
 package com.dotcms.rendering.js;
 
 import com.dotcms.rendering.util.ScriptingReaderParams;
+import com.dotcms.rendering.util.ScriptingUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -37,6 +38,17 @@ import java.io.Reader;
 public class FileJavascriptReader implements JavascriptReader {
     private static final String FILE_EXTENSION = ".js";
 
+    /**
+     * Reads the file named after the request's HTTP method in the requested folder, for example
+     * {@code get.js}, once {@link ScriptingUtil#checkLastModifierCanScript(Contentlet)} confirms its
+     * last modifier may write scripts.
+     *
+     * @param params the folder, HTTP method, request, user and page mode of the call
+     * @return a reader over the file's code
+     * @throws DotSecurityException when the user cannot read the file or its last modifier may not write scripts
+     * @throws IOException          when the file's contents cannot be opened
+     * @throws DotDataException     when the file, its last modifier or the role cannot be loaded
+     */
     @Override
     public Reader getJavaScriptReader(final ScriptingReaderParams params) throws DotSecurityException,
             IOException, DotDataException {
@@ -46,31 +58,55 @@ public class FileJavascriptReader implements JavascriptReader {
         final Host site = APILocator.getHostAPI().resolveHostName(params.getRequest().getServerName(), APILocator.systemUser(), false);
         final String jsFilePath = JsResource.JS_PATH + StringPool.SLASH + params.getFolderName() + StringPool.SLASH
                 + params.getHttpMethod().fileName() + FILE_EXTENSION;
-        return getJavascriptReaderFromPath(jsFilePath,
+        final Contentlet jsFile = findJavascriptFile(jsFilePath,
                 null != site? site: APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false),
                 null != currentLanguage? currentLanguage: APILocator.getLanguageAPI().getDefaultLanguage(),
                 pageMode, params.getUser());
+        ScriptingUtil.getInstance().checkLastModifierCanScript(jsFile);
+        return new InputStreamReader(APILocator.getFileAssetAPI().fromContentlet(jsFile).getInputStream());
     }
 
     /**
-     * Retrieve a javascript reader from a given path
-     * @param jsFilePath
-     * @param site
-     * @param currentLanguage
-     * @param pageMode
-     * @param user
-     * @return
-     * @throws DotSecurityException
-     * @throws IOException
-     * @throws DotDataException
+     * Opens the javascript file at the given path, without checking who last saved it.
+     *
+     * @param jsFilePath      the file's path on the site
+     * @param site            the site the file lives in
+     * @param currentLanguage the language of the version to read
+     * @param pageMode        the page mode to read the file in
+     * @param user            the user reading the file
+     * @return a reader over the file's code
+     * @throws DotSecurityException when the user cannot read the file
+     * @throws IOException          when the file's contents cannot be opened
+     * @throws DotDataException     when the file cannot be loaded
      */
     public static Reader getJavascriptReaderFromPath (final String jsFilePath, final Host site,
                                                       final Language currentLanguage, final PageMode pageMode,
                                                       final User user) throws DotSecurityException,
             IOException, DotDataException {
 
+        final FileAsset getFileAsset = APILocator.getFileAssetAPI()
+                .fromContentlet(findJavascriptFile(jsFilePath, site, currentLanguage, pageMode, user));
+        return new InputStreamReader(getFileAsset.getInputStream());
+    }
+
+    /**
+     * Finds the file at the given path, in the version the page mode asks for.
+     *
+     * @param jsFilePath      the file's path on the site
+     * @param site            the site the file lives in
+     * @param currentLanguage the language of the version to read
+     * @param pageMode        the page mode to read the file in
+     * @param user            the user reading the file
+     * @return the file
+     * @throws DoesNotExistException when there is no file at that path
+     * @throws DotSecurityException  when the user cannot read the file
+     * @throws DotDataException      when the file cannot be loaded
+     */
+    private static Contentlet findJavascriptFile(final String jsFilePath, final Host site,
+                                                 final Language currentLanguage, final PageMode pageMode,
+                                                 final User user) throws DotSecurityException, DotDataException {
+
         final Identifier identifier = APILocator.getIdentifierAPI().find(site, jsFilePath);
-        final Contentlet getFileContent;
 
         if (UtilMethods.isEmpty(identifier::getId)) {
 
@@ -78,15 +114,12 @@ public class FileJavascriptReader implements JavascriptReader {
         }
 
         try {
-            getFileContent = APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), pageMode.showLive,
+            return APILocator.getContentletAPI().findContentletByIdentifier(identifier.getId(), pageMode.showLive,
                     currentLanguage.getId(), user, pageMode.respectAnonPerms);
         } catch (DotContentletStateException e) {
 
             throw new DoesNotExistException (e.getMessage(), e);
         }
-
-        final FileAsset getFileAsset = APILocator.getFileAssetAPI().fromContentlet(getFileContent);
-        return new InputStreamReader(getFileAsset.getInputStream());
     }
 
 }

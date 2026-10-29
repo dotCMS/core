@@ -4,8 +4,15 @@ import com.dotcms.rest.api.v1.HTTPMethod;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
+import com.liferay.portal.model.User;
+import io.vavr.control.Try;
 
 import java.io.StringWriter;
 import java.util.Map;
@@ -96,5 +103,35 @@ public class ScriptingUtil {
     public String unescapeValue(final String escapedValue, final String escapeFrom) {
 
         return escapedValue.replace(ESCAPE_ME_VALUE, escapeFrom);
+    }
+
+    /**
+     * Checks that a file run by the folder endpoints ({@code /api/vtl/{folder}} and
+     * {@code /api/js/{folder}}) was last saved by a user who may write scripts: a holder of the
+     * {@link Role#SCRIPTING_DEVELOPER} role or a CMS Administrator. The system user passes both
+     * checks, so files saved by imports and startup keep running.
+     *
+     * @param scriptFile the file about to be run
+     * @throws DotSecurityException when the last modifier is unknown or may not write scripts
+     * @throws DotDataException     when the role cannot be loaded
+     */
+    public void checkLastModifierCanScript(final Contentlet scriptFile)
+            throws DotSecurityException, DotDataException {
+
+        final String modUserId = scriptFile.getModUser();
+        final User modUser = UtilMethods.isSet(modUserId)
+                ? Try.of(() -> APILocator.getUserAPI()
+                        .loadUserById(modUserId, APILocator.systemUser(), false)).getOrNull()
+                : null;
+        final Role scriptingDeveloper = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);
+        final boolean canScript = null != modUser && (modUser.isAdmin()
+                || APILocator.getRoleAPI().doesUserHaveRole(modUser, scriptingDeveloper));
+
+        if (!canScript) {
+            Logger.warn(this, String.format(
+                    "File %s was not run: its last modifier '%s' does not hold the %s role",
+                    scriptFile.getIdentifier(), modUserId, Role.SCRIPTING_DEVELOPER));
+            throw new DotSecurityException("The file was not saved by a user with the required role");
+        }
     }
 }
