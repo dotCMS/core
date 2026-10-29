@@ -60,7 +60,7 @@
             <ng-template pTemplate="body" let-asset>
                 <tr
                     class="group"
-                    [class.cursor-pointer]="!!editUrlFor(asset)"
+                    [class.cursor-pointer]="isEditableContentlet(asset)"
                     (click)="onAssetRowClick(asset)"
                     data-testid="pq-asset-list-row">
                     <td data-testid="pq-asset-name">{{ asset.title }}</td>

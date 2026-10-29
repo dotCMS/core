@@ -5,6 +5,7 @@ import {
     ChangeDetectionStrategy,
     Component,
     DestroyRef,
+    Injector,
     OnInit,
     computed,
     inject,
@@ -41,7 +42,6 @@ import {
 
 import { DotPushPublishFormComponent } from '@components/_common/forms/dot-push-publish-form/dot-push-publish-form.component';
 import {
-    DotContentletEditUrlService,
     DotCurrentUserService,
     DotGlobalMessageService,
     DotHttpErrorManagerService,
@@ -50,12 +50,12 @@ import {
 } from '@dotcms/data-access';
 import {
     BundleAssetView,
-    DotCMSContentlet,
     DotPushPublishData,
     DotPushPublishDialogData,
     PushBundleForm,
     PushBundleOperation
 } from '@dotcms/dotcms-models';
+import { DotEditContentOpenerService } from '@dotcms/edit-content';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 import { getDownloadLink } from '@dotcms/utils';
 
@@ -63,7 +63,7 @@ import {
     DotDownloadBundleFormComponent,
     DotDownloadBundleFormValue
 } from '../../components/dot-download-bundle-form/dot-download-bundle-form.component';
-import { groupContentletAssetsByType } from '../../util/asset-groups.util';
+import { isEditableContentlet } from '../../util/editable-asset.util';
 
 type LoadStatus = 'init' | 'loading' | 'loaded' | 'error';
 
@@ -146,7 +146,9 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #destroyRef = inject(DestroyRef);
-    readonly #editUrlService = inject(DotContentletEditUrlService);
+    readonly #opener = inject(DotEditContentOpenerService);
+    /** The dialog's injector: a panel a row opens closes with the dialog. */
+    readonly #injector = inject(Injector);
     readonly #globalMessage = inject(DotGlobalMessageService);
     readonly #dialogRef = inject(DynamicDialogRef, { optional: true });
 
@@ -171,11 +173,6 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     readonly $assets = signal<BundleAssetView[]>([]);
     readonly $assetsStatus = signal<LoadStatus>('init');
     readonly $assetsPage = signal(1);
-    /** Per-asset edit URLs resolved by `DotContentletEditUrlService` after each
-     * asset load. Only contentlet rows get an entry — non-contentlet types are
-     * rendered as plain text. Resolution is async (one metadata fetch per
-     * content type, cached app-wide by the service). */
-    readonly $assetEditUrls = signal<Map<string, string>>(new Map());
 
     readonly assetsPerPage = ASSETS_PER_PAGE;
 
@@ -682,7 +679,6 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     #loadAssets(bundleId: string): void {
         this.$assets.set([]);
         this.$assetsStatus.set('loading');
-        this.$assetEditUrls.set(new Map());
         this.#publishingService
             .getBundleAssets(bundleId)
             .pipe(
@@ -701,72 +697,37 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
             .subscribe((assets) => {
                 this.$assets.set(assets);
                 this.$assetsStatus.set('loaded');
-                this.#resolveAssetEditUrls(assets);
             });
     }
 
-    /** Resolves the edit URL for each contentlet asset. Non-contentlet types
-     * (templates, languages, containers, etc.) are skipped — the row renders as
-     * plain text.
+    /** Template helper: only contentlet rows open, so only they get the pointer cursor. */
+    protected readonly isEditableContentlet = isEditableContentlet;
+
+    /**
+     * Opens a contentlet row in the side panel over this dialog, in whichever editor its type uses
+     * (#38303, R12); closing the panel returns to the dialog on the same row. Every save, and the
+     * close, reload the bundle's assets (FR-017). Other rows do nothing.
      *
-     * Assets are grouped by content type so the underlying service is called
-     * once per distinct content type instead of once per asset. The service
-     * caches the editor flag per type, so the first call primes the cache; the
-     * remaining calls in the same group hit the cache and emit synchronously.
-     * A bundle with 200 contentlets of 4 types costs 4 HTTP requests, not 200.
-     *
-     * `baseType` is not available from `/api/bundle/{id}/assets`, so HTML pages
-     * won't get the dedicated page editor route — they get the contentlet
-     * editor URL instead (acceptable; the user can navigate to the visual
-     * editor from there).
+     * @param asset The clicked row.
      */
-    #resolveAssetEditUrls(assets: BundleAssetView[]): void {
-        const groups = groupContentletAssetsByType(assets);
-
-        for (const [contentType, group] of groups) {
-            // Prime the per-type cache with the first asset. Subsequent calls
-            // in the same group hit the cache and emit synchronously — no
-            // additional HTTP. `forkJoin` waits for all group resolutions
-            // before writing back atomically.
-            const perAsset$ = group.map((asset) =>
-                this.#editUrlService
-                    .resolveEditUrl({ inode: asset.inode, contentType } as DotCMSContentlet)
-                    .pipe(
-                        take(1),
-                        catchError(() => of('')),
-                        map((url) => [asset.asset, url] as const)
-                    )
-            );
-
-            forkJoin(perAsset$).subscribe((entries) => {
-                this.$assetEditUrls.update((prev) => {
-                    const next = new Map(prev);
-                    for (const [key, url] of entries) {
-                        if (url) {
-                            next.set(key, url);
-                        }
-                    }
-                    return next;
-                });
-            });
-        }
-    }
-
-    /** Template helper. Returns the edit URL for an asset if it's a linkable type
-     * and the URL has been resolved, otherwise `null` (render as plain text). */
-    editUrlFor(asset: BundleAssetView): string | null {
-        return this.$assetEditUrls().get(asset.asset) ?? null;
-    }
-
-    /** Row click handler for the asset table. Opens the asset's editor in a
-     * new tab when an edit URL is resolved (matches the prior anchor's
-     * `target="_blank"` so the dialog stays in context). No-op for assets
-     * that don't have a resolved URL (e.g. non-contentlet types). */
     onSelectAssetRow(asset: BundleAssetView): void {
-        const url = this.editUrlFor(asset);
-        if (url) {
-            window.open(url, '_blank', 'noopener');
+        const bundleId = this.$activeBundleId();
+
+        if (!isEditableContentlet(asset) || !bundleId) {
+            return;
         }
+
+        const reload = () => this.#loadAssets(bundleId);
+
+        this.#opener.open(
+            {
+                mode: 'edit',
+                inode: asset.inode,
+                contentType: asset.content_type_name,
+                portletId: 'publishing-queue'
+            },
+            { injector: this.#injector, saved: reload, closed: reload }
+        );
     }
 }
 

@@ -302,7 +302,7 @@
                                 } @else {
                                     <tr
                                         class="group"
-                                        [class.cursor-pointer]="!!editUrlFor(asset)"
+                                        [class.cursor-pointer]="isEditableContentlet(asset)"
                                         (click)="onSelectAssetRow(asset)"
                                         data-testid="pq-select-bundle-asset-row">
                                         <td>
