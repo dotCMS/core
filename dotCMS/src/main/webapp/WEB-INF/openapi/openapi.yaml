@@ -3929,46 +3929,6 @@ paths:
       summary: Deletes an API token
       tags:
       - API Token
-  /v1/apitoken/{tokenId}/jwt:
-    get:
-      description: Returns a JSON web token. This overwrites the JWT value associated
-        with the specified token object.
-      operationId: getJwtFromApiTokenV1
-      parameters:
-      - description: Identifier of API token to receive a new JWT.
-        in: path
-        name: tokenId
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              example:
-                entity:
-                  jwt: string
-                errors: []
-                i18nMessagesMap: {}
-                messages: []
-                pagination: null
-                permissions: []
-              schema:
-                $ref: "#/components/schemas/ResponseEntityJwtView"
-          description: JSON web token successfully created
-        "400":
-          description: Bad request
-        "401":
-          description: Invalid user
-        "403":
-          description: Forbidden
-        "404":
-          description: Token not found
-        "500":
-          description: Unexpected server error
-      summary: Generates a new JWT for an existing token
-      tags:
-      - API Token
   /v1/apitoken/{tokenId}/revoke:
     put:
       description: |-
@@ -35767,31 +35727,6 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/Job"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityJwtView:
-      type: object
-      properties:
-        entity:
-          type: object
-          additionalProperties:
-            type: object
         errors:
           type: array
           items:
