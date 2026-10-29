@@ -5,7 +5,7 @@ import {
     Spectator
 } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
-import { Mocked, vi } from 'vitest';
+import { Mock, MockInstance, Mocked, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
@@ -14,12 +14,24 @@ import { Button } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotContentletEditUrlService, DotMessageService } from '@dotcms/data-access';
-import { BundleAssetView } from '@dotcms/dotcms-models';
+import { BundleAssetView, DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotEditContentOpenerService, DotEditContentOpenOptions } from '@dotcms/edit-content';
+import { DotSidePanelRef } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPublishingQueueAssetListDialogComponent } from './dot-publishing-queue-asset-list-dialog.component';
 
 import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
+
+// Only the opener's class is needed, as the token the dialog injects. Loading the real barrel pulls
+// in the block editors and TipTap's collaboration packages, which this project's Vitest config does
+// not inline (`y-protocols/awareness` fails to resolve).
+vi.mock('@dotcms/edit-content', () => ({
+    DotEditContentOpenerService: class DotEditContentOpenerService {}
+}));
+
+/** Whether anything resolved `DotContentletEditUrlService` while the dialog was mounted. */
+let editUrlServiceInjected: boolean;
 
 const ASSETS: BundleAssetView[] = [
     { asset: 'a1', title: 'Asset 1', type: 'contentlet', inode: 'i1', content_type_name: 'Blog' },
@@ -41,7 +53,8 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
             selectedAssets,
             assetListStatus,
             selectedBundleId,
-            removeBundleAsset: vi.fn()
+            removeBundleAsset: vi.fn(),
+            loadAssets: vi.fn()
         };
     }
 
@@ -51,8 +64,19 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
         providers: [
             ConfirmationService,
             mockProvider(DynamicDialogRef, { close: vi.fn() }),
-            mockProvider(DotContentletEditUrlService, {
-                resolveEditUrl: vi.fn().mockReturnValue(of('/dotAdmin/#/edit/inode/i1'))
+            // Records whether the dialog asked for it at all: it no longer resolves URLs (#38303).
+            {
+                provide: DotContentletEditUrlService,
+                useFactory: () => {
+                    editUrlServiceInjected = true;
+
+                    return {
+                        resolveEditUrl: vi.fn().mockReturnValue(of('/dotAdmin/#/edit/inode/i1'))
+                    };
+                }
+            },
+            mockProvider(DotEditContentOpenerService, {
+                open: vi.fn(() => new DotSidePanelRef(() => undefined))
             }),
             {
                 provide: DotMessageService,
@@ -76,6 +100,7 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
     });
 
     beforeEach(() => {
+        editUrlServiceInjected = false;
         selectedAssets.set([]);
         assetListStatus.set('loading');
         selectedBundleId.set(null);
@@ -130,29 +155,96 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
         expect(headers.length).toBe(3);
     });
 
+    /**
+     * #38303 (R12) — a contentlet row opens the side panel over this dialog, in whichever editor its
+     * type uses; closing the panel returns to the dialog on the same row. Every save, and the close,
+     * reload the dialog's asset list (FR-017).
+     */
     describe('row click → open editor', () => {
+        let windowOpen: MockInstance;
+
+        /** The opener's `open`, as the mock records it. */
+        const opened = () => spectator.inject(DotEditContentOpenerService).open as Mock;
+
+        /** The options the dialog handed the opener, on its only `open`. */
+        const openOptions = (): DotEditContentOpenOptions => {
+            expect(opened().mock.calls.length, 'the row opens one panel').toBe(1);
+
+            return opened().mock.calls[0][1] as DotEditContentOpenOptions;
+        };
+
+        /** Clicks the row at `index`, as the author does. */
+        const clickRow = (index: number): void =>
+            spectator.click(spectator.queryAll(byTestId('pq-asset-list-row'))[index]);
+
         beforeEach(() => {
+            windowOpen = vi.spyOn(window, 'open').mockReturnValue(null);
             selectedAssets.set(ASSETS);
             assetListStatus.set('loaded');
             spectator.detectChanges();
         });
 
-        it('opens the resolved contentlet URL in a new tab', () => {
-            const openSpy = vi.spyOn(window, 'open').mockReturnValue(null);
-            // First asset is a contentlet with a resolved URL (see mock in providers).
-            spectator.component.onAssetRowClick(ASSETS[0]);
-            expect(openSpy).toHaveBeenCalledWith('/dotAdmin/#/edit/inode/i1', '_blank', 'noopener');
-            openSpy.mockRestore();
+        afterEach(() => windowOpen.mockRestore());
+
+        it('opens a contentlet row in the side panel, naming the Publishing Queue', () => {
+            clickRow(0);
+
+            expect(opened().mock.calls.length, 'the row opens one panel').toBe(1);
+            expect(opened().mock.calls[0][0]).toEqual({
+                mode: 'edit',
+                inode: 'i1',
+                contentType: 'Blog',
+                portletId: 'publishing-queue'
+            });
         });
 
-        it('is a no-op for non-contentlet assets (no URL resolved)', () => {
-            const openSpy = vi.spyOn(window, 'open').mockReturnValue(null);
-            spectator.component.onAssetRowClick(ASSETS[1]);
-            expect(openSpy).not.toHaveBeenCalled();
-            openSpy.mockRestore();
+        // The panel then closes with the dialog, not with the portlet.
+        it("opens it with the dialog's injector", () => {
+            clickRow(0);
+
+            // Compared by identity: printing an injector runs the worker out of memory.
+            expect(
+                openOptions().injector.get(DotPublishingQueueAssetListDialogComponent, null) ===
+                    spectator.component
+            ).toBe(true);
         });
 
-        it('marks rows with resolved URLs as clickable via cursor-pointer', () => {
+        it('reloads the asset list on every save', () => {
+            clickRow(0);
+
+            openOptions().saved?.({ inode: 'i1-saved' } as DotCMSContentlet);
+
+            expect(store.loadAssets).toHaveBeenCalledTimes(1);
+        });
+
+        it('reloads the asset list when the panel closes', () => {
+            clickRow(0);
+
+            openOptions().closed?.();
+
+            expect(store.loadAssets).toHaveBeenCalledTimes(1);
+        });
+
+        it('never opens a new tab', () => {
+            clickRow(0);
+
+            expect(windowOpen.mock.calls.length).toBe(0);
+        });
+
+        it('does nothing for a non-contentlet row', () => {
+            clickRow(1);
+
+            expect(opened().mock.calls.length).toBe(0);
+            expect(windowOpen.mock.calls.length).toBe(0);
+        });
+
+        // The opener picks the editor per content type, so no URL is resolved ahead of a click.
+        it('resolves no edit URLs', () => {
+            expect(editUrlServiceInjected).toBe(false);
+            expect('$assetEditUrls' in spectator.component).toBe(false);
+        });
+
+        it('marks contentlet rows as clickable via cursor-pointer', () => {
             const rows = spectator.queryAll(byTestId('pq-asset-list-row'));
             // Contentlet row (a1) gets cursor-pointer; template row (a2) does not.
             expect(rows[0].classList.contains('cursor-pointer')).toBe(true);
@@ -303,6 +395,9 @@ describe('DotPublishingQueueAssetListDialogComponent — read-only (allowRemove=
             mockProvider(DynamicDialogRef, { close: vi.fn() }),
             mockProvider(DotContentletEditUrlService, {
                 resolveEditUrl: vi.fn().mockReturnValue(of('/dotAdmin/#/edit/inode/i1'))
+            }),
+            mockProvider(DotEditContentOpenerService, {
+                open: vi.fn(() => new DotSidePanelRef(() => undefined))
             }),
             { provide: DynamicDialogConfig, useValue: { data: { allowRemove: false } } },
             { provide: DotMessageService, useValue: new MockDotMessageService({}) }

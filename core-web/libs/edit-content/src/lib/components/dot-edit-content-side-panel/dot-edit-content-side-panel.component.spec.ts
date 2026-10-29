@@ -23,6 +23,43 @@ import { DotEditContentRequest } from '../../models/dot-edit-content-request.mod
 import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
 import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-edit-content.layout.component';
 
+/**
+ * A stand-in for the form bridge's global stack (#38303, US6). Each push opens a numbered frame and
+ * returns it; a pop removes the frame it names, or the top one when it names none, as the real
+ * LIFO stack does. `frames` is what is still open, the active one last.
+ */
+const formBridge = vi.hoisted(() => {
+    const frames: number[] = [];
+    let last = 0;
+
+    return {
+        frames,
+        reset: () => {
+            frames.length = 0;
+            last = 0;
+        },
+        push: vi.fn(() => {
+            last += 1;
+            frames.push(last);
+
+            return last;
+        }),
+        pop: vi.fn((frame?: number) => {
+            const index = frame === undefined ? frames.length - 1 : frames.indexOf(frame);
+
+            if (index >= 0) {
+                frames.splice(index, 1);
+            }
+        })
+    };
+});
+
+vi.mock('@dotcms/edit-content-bridge', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@dotcms/edit-content-bridge')>()),
+    pushFormBridge: formBridge.push,
+    popFormBridge: formBridge.pop
+}));
+
 /** The panel's ref, reduced to what the content uses. */
 const panelRef = () => ({
     close: vi.fn(),
@@ -366,5 +403,108 @@ describe('DotEditContentSidePanelComponent — image editor host capability', ()
 
     it('should provide the DialogService the launcher opens the editor through', () => {
         expect(spectator.inject(DialogService, true)).toBeTruthy();
+    });
+});
+
+/**
+ * #38303 (US6, plan risk "form bridge LIFO stack") — custom fields reach the form through one global
+ * bridge, kept on a stack: each editor panel pushes a frame when it opens and pops it when it
+ * closes. A panel stacked over another must get its own frame, give the parent's back when it
+ * closes, and keep its own when the parent underneath closes first.
+ */
+describe('DotEditContentSidePanelComponent — form bridge frames when panels stack', () => {
+    const createComponent = createComponentFactory({
+        component: DotEditContentSidePanelComponent,
+        overrideComponents: [
+            [
+                DotEditContentSidePanelComponent,
+                {
+                    set: {
+                        imports: [MockComponent(DotEditContentLayoutComponent)],
+                        providers: [
+                            {
+                                provide: OverlayEditContentHost,
+                                useFactory: () => ({
+                                    saved$: new Subject<DotCMSContentlet>(),
+                                    left$: new Subject<void>(),
+                                    languageChanged$: new Subject<number>()
+                                })
+                            }
+                        ]
+                    }
+                }
+            ]
+        ],
+        providers: [
+            mockProvider(DotMessageService, { get: (key: string) => key }),
+            { provide: DotSidePanelRef, useFactory: panelRef }
+        ],
+        detectChanges: false
+    });
+
+    /** Opens an editor panel, as the outlet does when the opener asks for one. */
+    const openPanel = (): Spectator<DotEditContentSidePanelComponent> => {
+        const panel = createComponent();
+        panel.setInput('request', { mode: 'edit', inode: 'inode-1', contentType: 'Blog' });
+        panel.detectChanges();
+
+        return panel;
+    };
+
+    /** The frame the push at `index` opened (0 for the first panel, 1 for the stacked one). */
+    const frameOf = (index: number): number => formBridge.push.mock.results[index].value as number;
+
+    beforeEach(() => {
+        formBridge.reset();
+        formBridge.push.mockClear();
+        formBridge.pop.mockClear();
+    });
+
+    it('should give a panel its own frame while it is open', () => {
+        openPanel();
+
+        expect(formBridge.push.mock.calls.length).toBe(1);
+        expect(formBridge.frames).toEqual([frameOf(0)]);
+    });
+
+    it('should push a second frame for a panel stacked on top', () => {
+        openPanel();
+        openPanel();
+
+        expect(formBridge.push.mock.calls.length).toBe(2);
+        expect(formBridge.frames).toEqual([frameOf(0), frameOf(1)]);
+    });
+
+    it("should give the parent's frame back when the stacked panel closes", () => {
+        openPanel();
+        const stacked = openPanel();
+
+        stacked.fixture.destroy();
+
+        expect(formBridge.pop.mock.calls.length).toBe(1);
+        expect(formBridge.frames).toEqual([frameOf(0)]);
+    });
+
+    // The out-of-order close: the panel underneath goes first. Popping the top frame here would
+    // take the stacked panel's bridge and leave its custom fields on a destroyed one.
+    it('should keep the stacked panel its own frame when the parent underneath closes first', () => {
+        const parent = openPanel();
+        openPanel();
+
+        parent.fixture.destroy();
+
+        expect(formBridge.pop.mock.calls.length).toBe(1);
+        expect(formBridge.frames).toEqual([frameOf(1)]);
+    });
+
+    it('should leave no frame behind once both panels have closed, in either order', () => {
+        const parent = openPanel();
+        const stacked = openPanel();
+
+        parent.fixture.destroy();
+        stacked.fixture.destroy();
+
+        expect(formBridge.pop.mock.calls.length).toBe(2);
+        expect(formBridge.frames).toEqual([]);
     });
 });

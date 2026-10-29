@@ -170,6 +170,30 @@ describe('DotPublishingQueueShellComponent', () => {
         });
     });
 
+    /**
+     * #38303 (R12) — a contentlet row in either dialog opens the side panel over the dialog. A
+     * PrimeNG dialog traps focus by default, which would keep the panel's editor from taking
+     * keystrokes, so the two dialogs that open content turn the trap off.
+     */
+    describe('dialogs that open content in the side panel', () => {
+        /** The config of the last dialog the shell opened. */
+        const lastConfig = (): DynamicDialogConfig | undefined =>
+            dialogService.open.mock.calls.at(-1)?.[1] as DynamicDialogConfig | undefined;
+
+        it('opens the asset list without a focus trap', () => {
+            store.openAssetList('B-1');
+            spectator.detectChanges();
+
+            expect(lastConfig()?.focusTrap).toBe(false);
+        });
+
+        it('opens the select bundle dialog without a focus trap', () => {
+            spectator.component.openSelectBundle();
+
+            expect(lastConfig()?.focusTrap).toBe(false);
+        });
+    });
+
     describe('detail dialog sync', () => {
         it('opens dialog when detailBundleId becomes set', () => {
             store.openDetail('B-2');
