@@ -21,6 +21,7 @@ import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.exception.WebAssetException;
 import com.dotmarketing.factories.InodeFactory;
 import com.dotmarketing.factories.PublishFactory;
@@ -349,25 +350,28 @@ public class DotPortletAction extends PortletAction {
 	}
 
 	/**
-	 * Generic method to publish a WebAsset
+	 * Publishes the {@link WebAsset} the request carries under the given key, for the given user.
+	 * The user must hold PUBLISH on the asset: a refusal, whether from the legacy check here or
+	 * from {@link PublishFactory#publishAsset(com.dotmarketing.beans.Inode, HttpServletRequest)}, leaves the asset as it
+	 * is and tells the screen through the session messages instead of failing the request.
 	 *
-	 * @param req
-	 * @param res
-	 * @param config
-	 * @param form
-	 * @param user
-	 * @param formWebKey
-	 * @throws Exception
+	 * @param req the portlet request carrying the asset
+	 * @param res the portlet response
+	 * @param config the portlet configuration
+	 * @param form the Struts form
+	 * @param user the {@link User} publishing, whose PUBLISH permission decides the outcome
+	 * @param formWebKey the request attribute holding the asset
+	 * @throws WebAssetException if the asset cannot be published
+	 * @throws Exception if the asset or its permissions cannot be read
 	 */
 	@WrapInTransaction
 	public void _publishWebAsset(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user, String formWebKey)
 	throws WebAssetException, Exception {
+		// wraps request to get session object
+		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 		try
 		{
-			// wraps request to get session object
-			ActionRequestImpl reqImpl = (ActionRequestImpl) req;
-			HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
-
 			WebAsset webAsset = (WebAsset) req.getAttribute(formWebKey);
 			Logger.debug(this, "WEB ASSET " + webAsset.getType() + " TO PUBLISH=" + webAsset.getInode());
 			ActivityLogger.logInfo(this.getClass(), "Publish WebAsset action", "User " + user.getPrimaryKey() + " publishing" + webAsset.getType()+" named "+webAsset.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
@@ -391,6 +395,12 @@ public class DotPortletAction extends PortletAction {
 			{
 				throw ae;
 			}
+		}
+		catch (final DotSecurityException e)
+		{
+			// the publish itself refused the user: report it the way the screen expects
+			Logger.warn(this, "Publish refused: " + e.getMessage());
+			SessionMessages.add(httpReq, "error", "Publish-failed-check-you-have-the-required-permission");
 		}
 
 	}
