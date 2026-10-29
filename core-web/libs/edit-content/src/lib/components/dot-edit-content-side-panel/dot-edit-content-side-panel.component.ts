@@ -19,7 +19,7 @@ import { DialogService, DynamicDialogConfig } from 'primeng/dynamicdialog';
 import { take } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { popFormBridge, pushFormBridge } from '@dotcms/edit-content-bridge';
+import { type FormBridgeFrame, popFormBridge, pushFormBridge } from '@dotcms/edit-content-bridge';
 import {
     ASSET_PICKER_LAUNCHER,
     AngularAssetPickerLauncher,
@@ -161,9 +161,15 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
         return data ? [data] : [];
     });
 
+    /**
+     * This panel's place on the form bridge's stack. Popped by handle, so closing a panel while
+     * another is still stacked over it removes this panel's frame, not the stacked one's (#38303).
+     */
+    readonly #formBridgeFrame: FormBridgeFrame;
+
     constructor() {
         // Give the editor a clean form-bridge slot; restore the previous one on close.
-        pushFormBridge();
+        this.#formBridgeFrame = pushFormBridge();
 
         this.#panel.closed.pipe(take(1), takeUntilDestroyed()).subscribe(() => this.closed.emit());
 
@@ -230,9 +236,9 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
         data?.onCancel?.();
     }
 
+    /** Gives back this panel's form-bridge frame; the drawer releases its own registrations. */
     ngOnDestroy(): void {
-        // The drawer releases its own registrations; only the form bridge is this content's.
-        popFormBridge();
+        popFormBridge(this.#formBridgeFrame);
     }
 }
 
