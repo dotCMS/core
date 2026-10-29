@@ -154,7 +154,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.BundleResourceDeleteResponseTest.class,
         ContentRelationshipsResourceIntegrationTest.class,
         com.dotmarketing.portal.struts.StrutsPathAccessTest.class,
-        com.liferay.portal.struts.PortletRequestProcessorAccessTest.class
+        com.liferay.portal.struts.PortletRequestProcessorAccessTest.class,
 })
 public class MainSuite2a {
 
