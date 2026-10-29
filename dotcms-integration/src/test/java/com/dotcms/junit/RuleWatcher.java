@@ -164,8 +164,11 @@ public class RuleWatcher extends TestWatcher {
 
     /**
      * Deletes every row of {@code dist_reindex_journal} after the queue failed to drain, and logs
-     * how many rows were removed per priority and action, a sample identifier and the last
-     * recorded failure cause, so a run shows what was stuck. All rows are removed, not only those at REINDEX priority or above
+     * how many rows were removed per priority and action, a sample identifier, the row id range,
+     * the last recorded failure cause and the reindex worker's state, so a run shows what was
+     * stuck and why. A worker state of RUNNING with a cursor at or above the rows' ids means rows
+     * were handed out and never finished; PAUSED means nothing woke the worker; a worker that is
+     * not alive means it died. All rows are removed, not only those at REINDEX priority or above
      * ({@code deleteReindexAndFailedRecords}): rows at NORMAL priority that the worker cannot take
      * would otherwise survive and stall every later test as well.
      *
@@ -175,12 +178,38 @@ public class RuleWatcher extends TestWatcher {
         final DotConnect dotConnect = new DotConnect();
         final List<Map<String, Object>> byPriority = dotConnect.setSQL(
                 "select priority, dist_action, count(*) as total, min(ident_to_index) as sample,"
-                        + " max(index_val) as last_error"
+                        + " min(id) as min_id, max(id) as max_id, max(index_val) as last_error"
                         + " from dist_reindex_journal group by priority, dist_action order by priority")
                 .loadObjectResults();
         dotConnect.setSQL("delete from dist_reindex_journal").loadResult();
         Logger.info(MainBaseSuite.class, "Cleaned stuck reindex journal, rows removed by "
-                + "priority and action: " + byPriority);
+                + "priority and action: " + byPriority + "; " + reindexWorkerState());
+    }
+
+    /**
+     * Describes the reindex worker for the stuck-journal log line: its state, whether a worker is
+     * alive, and the journal cursor ({@code ReindexQueueFactory.lastIdIndexed}). These are
+     * package-private in core, so they are read by reflection, and only on this failure path.
+     *
+     * @return a one-line description, or the reason it could not be read
+     */
+    private static String reindexWorkerState() {
+        try {
+            final ReindexThread thread = ReindexThread.getInstance();
+            final java.lang.reflect.Method state =
+                    ReindexThread.class.getDeclaredMethod("currentStateName");
+            final java.lang.reflect.Method alive =
+                    ReindexThread.class.getDeclaredMethod("isWorkerAlive");
+            final java.lang.reflect.Field cursor =
+                    ReindexQueueFactory.class.getDeclaredField("lastIdIndexed");
+            state.setAccessible(true);
+            alive.setAccessible(true);
+            cursor.setAccessible(true);
+            return "reindex worker state=" + state.invoke(thread) + ", alive=" + alive.invoke(thread)
+                    + ", journal cursor=" + cursor.getLong(null);
+        } catch (final ReflectiveOperationException | RuntimeException e) {
+            return "reindex worker state unavailable: " + e;
+        }
     }
 
     private void configOverrideTrackerBefore(Description description) {
