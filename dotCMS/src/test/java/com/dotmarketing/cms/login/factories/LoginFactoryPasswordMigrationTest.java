@@ -207,6 +207,11 @@ public class LoginFactoryPasswordMigrationTest {
                 reference.replace("1:1:", "1:7f:"),
                 reference.replace("1:1:", "7f:1:"),
                 reference.replace("1:1:", "1:zz:"),
+                reference.replace("i=927c0", "i=927c0=not-hex"),
+                reference.replace("i=927c0", "i=927c0;i=927c0"),
+                reference.replace("i=927c0", "i=927c0;"),
+                reference.replace("i=927c0", "=927c0;i=927c0"),
+                reference.replace("i=927c0", "i="),
                 reference.replace("i=927c0", "i=not-hex"),
                 "1:1:incomplete")) {
             user.setPassword(record);

@@ -129,6 +129,11 @@ public class PasswordHashMigrationTest {
         final String reference = FIXTURES.getProperty("legacy-current-cost");
         for (final String record : new String[]{"1:1:incomplete",
                 reference.replace("1:1:", "1:zz:"),
+                reference.replace("i=927c0", "i=927c0=not-hex"),
+                reference.replace("i=927c0", "i=927c0;i=927c0"),
+                reference.replace("i=927c0", "i=927c0;"),
+                reference.replace("i=927c0", "=927c0;i=927c0"),
+                reference.replace("i=927c0", "i="),
                 reference.replace("i=927c0", "i=not-hex")}) {
             assertThrows(PasswordException.class,
                     () -> PasswordFactoryProxy.authPassword(password(), record));
