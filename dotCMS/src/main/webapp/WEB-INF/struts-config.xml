@@ -90,13 +90,6 @@
 
 
 
-      <!-- Category Admin -->
-      <action path="/ext/categories/view_categories" type="com.dotmarketing.portlets.categories.action.ViewCategoriesAction">
-         <forward name="portlet.ext.categories.view" path="portlet.ext.categories.view" />
-         <forward name="portlet.ext.categories.view_categories" path="portlet.ext.categories.view_categories" />
-      </action>
-      <!-- Category Admin -->
-
       <!-- Contentlet Management -->
        <action path="/ext/contentlet/view_contentlets" type="com.dotmarketing.portlets.contentlet.action.ViewContentletAction">
          <forward name="portlet.ext.contentlet.view_contentlets" path="portlet.ext.contentlet.view_contentlets" />

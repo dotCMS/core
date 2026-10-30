@@ -47,7 +47,7 @@
 	dojo.require("dojox.grid.enhanced.plugins.Pagination");
 	dojo.require('dijit.layout.ContentPane');
 	dojo.require("dojo.data.ItemFileWriteStore");
-	dojo.require("dojox.data.QueryReadStore");
+	dojo.require("dotcms.dojo.data.CategoryReadStore");
 
 	var grid<%=counter%>;
 	var myStore<%=counter%>;
@@ -173,11 +173,10 @@
 		return "<div style='width:100%;cursor:pointer;' onclick=\"addCat<%=counter%>("+index+")\" >"+value+"</div>";
 	};
 
-	function createStore<%=counter%>(params) {
-		if(params==null) params = '';
-
-		myStore<%=counter%> = new dojox.data.QueryReadStore({
-			url : '/categoriesServlet'+params
+	function createStore<%=counter%>(inode, filter) {
+		myStore<%=counter%> = new dotcms.dojo.data.CategoryReadStore({
+			inode : inode,
+			filter : filter
 		});
 	}
 
@@ -252,11 +251,10 @@
 	function doSearch<%=counter%>() {
 
 		if(currentInodeOrIdentifier<%=counter%>) {
-			var params = dojo.byId("catFilter<%=counter%>").value;
-			params = "?inode="+currentInodeOrIdentifier<%=counter%>+"&q="+params;
+			var filter = dojo.byId("catFilter<%=counter%>").value;
 
 			grid<%=counter%>.destroy(true);
-			createStore<%=counter%>(params);
+			createStore<%=counter%>(currentInodeOrIdentifier<%=counter%>, filter);
 			createGrid<%=counter%>();
 			grid<%=counter%>.startup();
 		}
