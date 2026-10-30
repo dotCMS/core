@@ -63,15 +63,17 @@ import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Unit tests for how {@link ClusterLogCollector} reaches peer servers: which scheme each value of
- * {@code CLUSTER_LOG_DOWNLOAD_SCHEME} selects, and how the HTTPS peer certificate is checked.
- * Peers are local in-process HTTP and HTTPS servers bound to {@code 127.0.0.1}; certificates are
- * generated for each run.
+ * {@code CLUSTER_LOG_DOWNLOAD_SCHEME} selects, which port each peer is requested on, and how the
+ * HTTPS peer certificate is checked. Peers are local in-process HTTP and HTTPS servers bound to
+ * {@code 127.0.0.1}; certificates are generated for each run.
  */
 class ClusterLogCollectorPeerRequestTest {
 
     private static final String SCHEME_KEY = "CLUSTER_LOG_DOWNLOAD_SCHEME";
     private static final String CONNECT_TIMEOUT_KEY = "CLUSTER_LOG_DOWNLOAD_CONNECT_TIMEOUT_SECONDS";
     private static final String TIMEOUT_KEY = "CLUSTER_LOG_DOWNLOAD_TIMEOUT_SECONDS";
+    private static final String PORT_KEY = "CLUSTER_LOG_DOWNLOAD_PORT";
+    private static final String VERIFY_KEY = "CLUSTER_LOG_DOWNLOAD_VERIFY_PEER_CERTS";
     private static final String HOSTNAME_PROPERTY = "jdk.internal.httpclient.disableHostnameVerification";
 
     private static final String LOOPBACK = "127.0.0.1";
@@ -139,17 +141,20 @@ class ClusterLogCollectorPeerRequestTest {
     }
 
     /**
-     * Saves the global state the tests change and sets short timeouts with no scheme configured.
+     * Saves the global state the tests change and sets short timeouts with no scheme, port or
+     * certificate verification configured.
      */
     @BeforeEach
     void setUp() throws Exception {
-        for (final String key : List.of(SCHEME_KEY, CONNECT_TIMEOUT_KEY, TIMEOUT_KEY)) {
+        for (final String key : List.of(SCHEME_KEY, CONNECT_TIMEOUT_KEY, TIMEOUT_KEY, PORT_KEY, VERIFY_KEY)) {
             savedConfig.put(key, Config.getStringProperty(key, null));
         }
         savedDefaultContext = SSLContext.getDefault();
         savedHostnameProperty = System.getProperty(HOSTNAME_PROPERTY);
 
         Config.setProperty(SCHEME_KEY, null);
+        Config.setProperty(PORT_KEY, null);
+        Config.setProperty(VERIFY_KEY, null);
         Config.setProperty(CONNECT_TIMEOUT_KEY, 2);
         Config.setProperty(TIMEOUT_KEY, 3);
 
@@ -229,11 +234,81 @@ class ClusterLogCollectorPeerRequestTest {
     }
 
     /**
-     * With no scheme configured, a peer whose certificate is issued by a trusted CA for its
-     * address is fetched over HTTPS.
+     * Peers are requested on the port given by {@code CLUSTER_LOG_DOWNLOAD_PORT}, not on the port
+     * the local server listens on.
      */
     @Test
-    void defaultScheme_trustedPeerCertificate_fetchesPeerLog() throws Exception {
+    void configuredPeerPort_overridesRequestLocalPort() throws Exception {
+        Config.setProperty(SCHEME_KEY, "http");
+        final int peerPort = startHttpPeer();
+
+        final Map<String, String> zip = collectFrom(peerPort, 65534);
+
+        assertPeerLogFetched(zip);
+    }
+
+    /**
+     * Without {@code CLUSTER_LOG_DOWNLOAD_PORT}, HTTPS peers are requested on dotCMS's default
+     * secure port, 8443.
+     */
+    @Test
+    void resolvePeerPort_https_defaultsTo8443() {
+        assertEquals(8443, ClusterLogCollector.resolvePeerPort("https", 1234),
+                "Default HTTPS peer port");
+    }
+
+    /**
+     * Without {@code CLUSTER_LOG_DOWNLOAD_PORT}, plain HTTP peers are requested on the local
+     * server's own port.
+     */
+    @Test
+    void resolvePeerPort_http_usesRequestPort() {
+        assertEquals(1234, ClusterLogCollector.resolvePeerPort("http", 1234),
+                "Default HTTP peer port");
+    }
+
+    /**
+     * {@code CLUSTER_LOG_DOWNLOAD_PORT} wins over the scheme defaults for both schemes.
+     */
+    @Test
+    void resolvePeerPort_configured_overridesSchemeDefaults() {
+        Config.setProperty(PORT_KEY, "9443");
+
+        assertEquals(9443, ClusterLogCollector.resolvePeerPort("https", 1234),
+                "Configured HTTPS peer port");
+        assertEquals(9443, ClusterLogCollector.resolvePeerPort("http", 1234),
+                "Configured HTTP peer port");
+    }
+
+    /**
+     * With nothing configured, a peer presenting a self-signed certificate is fetched over HTTPS:
+     * peer certificates are accepted without verification by default.
+     */
+    @Test
+    void defaultScheme_selfSignedPeerCertificate_fetchesPeerLog() throws Exception {
+        final Map<String, String> zip = collectFrom(startHttpsPeer(selfSignedForLoopback));
+
+        assertPeerLogFetched(zip);
+    }
+
+    /**
+     * With nothing configured, a peer whose certificate names another host is still fetched:
+     * host name checking is off unless {@code CLUSTER_LOG_DOWNLOAD_VERIFY_PEER_CERTS} is set.
+     */
+    @Test
+    void defaultScheme_certificateForAnotherHost_fetchesPeerLog() throws Exception {
+        final Map<String, String> zip = collectFrom(startHttpsPeer(caIssuedForOtherHost));
+
+        assertPeerLogFetched(zip);
+    }
+
+    /**
+     * With certificate verification on, a peer whose certificate is issued by a trusted CA for
+     * its address is fetched over HTTPS.
+     */
+    @Test
+    void verifyPeerCerts_trustedPeerCertificate_fetchesPeerLog() throws Exception {
+        Config.setProperty(VERIFY_KEY, "true");
         SSLContext.setDefault(contextTrustingTestCa);
 
         final Map<String, String> zip = collectFrom(startHttpsPeer(caIssuedForLoopback));
@@ -242,12 +317,13 @@ class ClusterLogCollectorPeerRequestTest {
     }
 
     /**
-     * A peer whose certificate is not trusted by the JVM is not sent the request, and its error
-     * entry reports the TLS handshake with the scheme setting hint.
+     * With certificate verification on, a peer whose certificate is not trusted by the JVM is
+     * not sent the request, and its error entry reports the TLS handshake with the scheme
+     * setting hint.
      */
     @Test
-    void httpsScheme_untrustedPeerCertificate_isRejected() throws Exception {
-        Config.setProperty(SCHEME_KEY, "https");
+    void verifyPeerCerts_untrustedPeerCertificate_isRejected() throws Exception {
+        Config.setProperty(VERIFY_KEY, "true");
 
         final Map<String, String> zip = collectFrom(startHttpsPeer(selfSignedForLoopback));
 
@@ -256,12 +332,13 @@ class ClusterLogCollectorPeerRequestTest {
     }
 
     /**
-     * A peer whose trusted certificate names another host is not sent the request, and its error
-     * entry reports the TLS handshake with the scheme setting hint.
+     * With certificate verification on, a peer whose trusted certificate names another host is
+     * not sent the request, and its error entry reports the TLS handshake with the scheme
+     * setting hint.
      */
     @Test
-    void httpsScheme_certificateForAnotherHost_isRejected() throws Exception {
-        Config.setProperty(SCHEME_KEY, "https");
+    void verifyPeerCerts_certificateForAnotherHost_isRejected() throws Exception {
+        Config.setProperty(VERIFY_KEY, "true");
         SSLContext.setDefault(contextTrustingTestCa);
 
         final Map<String, String> zip = collectFrom(startHttpsPeer(caIssuedForOtherHost));
@@ -306,15 +383,16 @@ class ClusterLogCollectorPeerRequestTest {
     }
 
     /**
-     * Collecting logs leaves the JVM-wide HTTP client system properties as they were.
+     * Collecting from a self-signed peer leaves the JVM-wide HTTP client system properties as
+     * they were: certificate acceptance is scoped to the collector's own client.
      */
     @Test
     void collect_doesNotSetJvmWideHttpClientProperties() throws Exception {
         System.clearProperty(HOSTNAME_PROPERTY);
-        SSLContext.setDefault(contextTrustingTestCa);
 
-        collectFrom(startHttpsPeer(caIssuedForLoopback));
+        final Map<String, String> zip = collectFrom(startHttpsPeer(selfSignedForLoopback));
 
+        assertPeerLogFetched(zip);
         assertNull(System.getProperty(HOSTNAME_PROPERTY),
                 HOSTNAME_PROPERTY + " must not be set by the collector");
     }
@@ -445,10 +523,20 @@ class ClusterLogCollectorPeerRequestTest {
     // ---- collector and peers ----
 
     private Map<String, String> collectFrom(final int peerPort) throws IOException {
+        return collectFrom(peerPort, peerPort);
+    }
+
+    /**
+     * Runs a collection whose peers are expected on {@code peerPort}, set as
+     * {@code CLUSTER_LOG_DOWNLOAD_PORT}, while the collector is told the local server listens on
+     * {@code localPort}.
+     */
+    private Map<String, String> collectFrom(final int peerPort, final int localPort) throws IOException {
+        Config.setProperty(PORT_KEY, String.valueOf(peerPort));
         final Server peerServer = Server.builder().withServerId("peer-node").withIpAddress(LOOPBACK).build();
         final Server localServer = Server.builder().withServerId("local-node").withIpAddress(LOOPBACK).build();
         final ClusterLogCollector collector = new ClusterLogCollector(
-                List.of(peerServer), LOG_FILE_NAME, BEARER_TOKEN, peerPort, localLog, localServer);
+                List.of(peerServer), LOG_FILE_NAME, BEARER_TOKEN, localPort, localLog, localServer);
         return readZip(collector.collect());
     }
 
