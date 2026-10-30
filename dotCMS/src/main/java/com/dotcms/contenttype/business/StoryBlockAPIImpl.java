@@ -507,7 +507,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                 if (!UtilMethods.isSet(contentsMap) || !(contentsMap instanceof List)) {
                     return new StoryBlockReferenceResult(true, storyBlockValue);
                 }
-                refreshed = this.processReferences(parentContentletIdentifier, (List<Map<String, Object>>) contentsMap,
+                refreshed = this.processReferences(parentContentletIdentifier, (List<Object>) contentsMap,
                         user, respectFrontendRoles, refresh);
                 if (refreshed) {
                     return new StoryBlockReferenceResult(true, this.toJson(blockEditorMap));
@@ -523,15 +523,22 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
         return new StoryBlockReferenceResult(false, storyBlockValue);
     }
 
+    /**
+     * Processes the Contentlet references found in a list of Story Block nodes, at any level. A
+     * node that is not a JSON object holds no reference and is skipped.
+     *
+     * @return {@code true} if any reference was found, so the document must be written back.
+     */
     @SuppressWarnings("unchecked")
     private boolean processReferences(final String parentContentletIdentifier,
-                                      final List<Map<String, Object>> contentsMap,
+                                      final List<Object> contentsMap,
                                       final User user, final boolean respectFrontendRoles,
                                       final boolean refresh) {
 
         boolean refreshed = false;
-        for (final Map<String, Object> contentMap : contentsMap) {
-            if (UtilMethods.isSet(contentMap)) {
+        for (final Object content : contentsMap) {
+            if (content instanceof Map && UtilMethods.isSet((Map<String, Object>) content)) {
+                final Map<String, Object> contentMap = (Map<String, Object>) content;
                 // Isolate per-block failures so that one bad nested reference
                 // does not prevent the rest of the Story Block from refreshing.
                 try {
@@ -542,7 +549,7 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                         final Object nestedContent = contentMap.get(CONTENT_KEY);
                         if (nestedContent instanceof List) {
                             refreshed |= this.processReferences(parentContentletIdentifier,
-                                    (List<Map<String, Object>>) nestedContent, user, respectFrontendRoles, refresh);
+                                    (List<Object>) nestedContent, user, respectFrontendRoles, refresh);
                         }
                     }
                 } catch (final Exception e) {
@@ -1411,8 +1418,9 @@ public class StoryBlockAPIImpl implements StoryBlockAPI {
                             "Skipping field '%s' while hydrating contentlet '%s': %s",
                             field.variable(), contentlet.getIdentifier(),
                             ExceptionUtil.getErrorMessage(e)), e);
-                    // Fall back to the raw value so the field still appears in the response.
-                    dataMap.putIfAbsent(field.variable(), value);
+                    // The field still appears in the response, with any Story Block reference in
+                    // it reduced to its keys
+                    dataMap.putIfAbsent(field.variable(), this.reduceStoryBlocksAtAnyLevel(value));
                 }
             }
         }

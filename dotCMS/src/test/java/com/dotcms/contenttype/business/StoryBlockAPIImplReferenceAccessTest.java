@@ -572,6 +572,35 @@ public class StoryBlockAPIImplReferenceAccessTest {
     }
 
     /**
+     * Given scenario: a readable referenced contentlet has a Story Block whose content list holds
+     * a node that is not a JSON object, next to a reference the reader cannot read.
+     * Expected result: the node is skipped and the reference keeps only the keys that identify it.
+     */
+    @Test
+    @SuppressWarnings("unchecked")
+    public void refreshStoryBlockValueReferences_nestedNodeThatIsNotAnObject_otherReferencesKeepOnlyTheirKeys()
+            throws Exception {
+        requestFor(null, null);
+        final StoryBlockField nestedField = mock(StoryBlockField.class);
+        when(nestedField.variable()).thenReturn("nested");
+        final String nestedJson = "{\"type\":\"doc\",\"content\":[\"text\",{\"type\":\"dotContent\",\"attrs\":{\"data\":"
+                + "{\"identifier\":\"deep-id\",\"languageId\":1,\"title\":\"deep title\"}}}]}";
+        final Contentlet referenced = readableContentlet(Map.of("nested", nestedJson, "nested_raw", nestedJson));
+        when(referenced.getContentType().fields()).thenReturn(List.of(nestedField));
+        when(contentletAPI.find(REF_INODE, anonymousUser, true, true)).thenReturn(referenced);
+        final Contentlet deep = storedVersionOf("deep-id", "deep-inode");
+        when(permissionAPI.doesUserHavePermission(deep, PermissionAPI.PERMISSION_READ, anonymousUser, true))
+                .thenReturn(false);
+
+        final StoryBlockReferenceResult result = storyBlockAPI
+                .refreshStoryBlockValueReferences(STORY_BLOCK_JSON, PARENT_ID, anonymousUser, true);
+
+        final Map<String, Object> nested = (Map<String, Object>) referenceDataIn(result.getValue()).get("nested");
+        final List<Object> nestedContent = (List<Object>) nested.get(StoryBlockAPI.CONTENT_KEY);
+        assertEquals(referenceKeysOf("deep-id"), dataOf((Map<String, Object>) nestedContent.get(1)));
+    }
+
+    /**
      * Given scenario: a readable referenced contentlet has a non Story Block field (like a loaded
      * relationship) whose value holds a Story Block three maps deep, the deepest level that is
      * still read for the reader.

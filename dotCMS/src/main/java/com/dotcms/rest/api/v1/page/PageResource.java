@@ -1612,6 +1612,8 @@ public class PageResource {
     /**
      * Copy the contentlet sent over the CopyContentletForm
      * The contentlet should be part of the multitree on the page sent in the form, also the content should exists to be copied.
+     * In the returned copy, Story Block references to contentlets the user cannot read keep only
+     * the keys that identify them.
      * @param request {@link HttpServletRequest}
      * @param response {@link HttpServletResponse}
      * @param copyContentletForm {@link CopyContentletForm}
@@ -1659,7 +1661,11 @@ public class PageResource {
         final User user               = initData.getUser();
         final Language language       = WebAPILocator.getLanguageWebAPI().getLanguage(request); // todo: not sure if this should be received on the form.
         final Contentlet copiedContentlet = this.pageResourceHelper.copyContentlet(copyContentletForm, user, pageMode, language);
-        final Map<String, Object> entity = (Map<String, Object>)new DotTransformerBuilder().defaultOptions().content(copiedContentlet).build()
+        // The copy holds the Story Block references as stored; the caller only gets the ones they
+        // can read
+        final Contentlet readerCopy = (Contentlet) APILocator.getStoryBlockAPI()
+                .limitReferencesToReader(new Contentlet(copiedContentlet), user, pageMode.respectAnonPerms).getValue();
+        final Map<String, Object> entity = (Map<String, Object>)new DotTransformerBuilder().defaultOptions().content(readerCopy).build()
                 .toMaps().stream().findFirst().orElse(Collections.emptyMap());
         return new ResponseEntityView<>(entity);
     }

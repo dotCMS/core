@@ -17,11 +17,16 @@ import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.MultiTreeDataGen;
 import com.dotcms.datagen.PermissionUtilTest;
 import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.mock.request.MockAttributeRequest;
@@ -35,21 +40,29 @@ import com.dotcms.rendering.velocity.viewtools.JSONTool;
 import com.dotcms.rendering.velocity.viewtools.content.ContentMap;
 import com.dotcms.rest.EmptyHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.api.v1.page.CopyContentletForm;
+import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.rest.api.v1.workflow.WorkflowResource;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotcms.variant.model.Variant;
 import com.dotcms.workflow.form.FireActionForm;
 import com.dotmarketing.beans.Permission;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.templates.design.bean.ContainerUUID;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PageMode;
@@ -742,6 +755,80 @@ public class StoryBlockReferenceAccessTest extends IntegrationTestBase {
         } finally {
             HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
             ContentletDataGen.destroy(editedCarrier);
+            UserDataGen.remove(editor);
+        }
+    }
+
+    /**
+     * Method to test: {@link PageResource#copyContent}.
+     * Given scenario: a back-end user who can edit a carrier placed on a page, but cannot read the
+     * restricted contentlet, copies the carrier on that page.
+     * Expected result: the copy is saved with the restricted reference's stored data, and the copy
+     * returned to the user carries that reference with only its keys.
+     */
+    @Test
+    public void copyingTheCarrierOnAPage_returnsToTheEditorOnlyTheReferencesTheyCanRead() throws Exception {
+        final String password = "editor-" + System.currentTimeMillis();
+        final User editor = new UserDataGen().active(true).password(password)
+                .roles(TestUserUtils.getBackendRole()).nextPersisted();
+        final Host site = new SiteDataGen().nextPersisted();
+        final int edit = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT
+                | PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN;
+        final String editorRole = APILocator.getRoleAPI().getUserRole(editor).getId();
+        APILocator.getPermissionAPI().save(List.of(new Permission(carrierType.getPermissionId(), editorRole, edit, true)),
+                carrierType, APILocator.systemUser(), false);
+        PermissionUtilTest.addPermission(site, editor, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, edit);
+        PermissionUtilTest.addPermission(publicTarget, editor,
+                PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+        final Contentlet pagedCarrier = ContentletDataGen.publish(new ContentletDataGen(carrierType.id())
+                .host(site)
+                .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                .setProperty(storyBlockField.variable(), carrier.get(storyBlockField.variable()))
+                .nextPersisted());
+        PermissionUtilTest.addPermission(pagedCarrier, editor, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, edit);
+        final Container container = new ContainerDataGen().site(site).nextPersisted();
+        final Template template = new TemplateDataGen().host(site)
+                .withContainer(container, ContainerUUID.UUID_LEGACY_VALUE).nextPersisted();
+        final HTMLPageAsset page = new HTMLPageDataGen(site, template).nextPersisted();
+        new MultiTreeDataGen().setContentlet(pagedCarrier).setPage(page).setContainer(container)
+                .setPersonalization(MultiTree.DOT_PERSONALIZATION_DEFAULT)
+                .setInstanceID(ContainerUUID.UUID_LEGACY_VALUE).nextPersisted();
+        final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        Contentlet copy = null;
+        try {
+            final HttpServletRequest request = new MockHeaderRequest(new MockSessionRequest(
+                    new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
+                            .request()).request());
+            ((MockHeaderRequest) request).setHeader("Authorization", "Basic " + Base64.getEncoder()
+                    .encodeToString((editor.getEmailAddress() + ":" + password).getBytes(StandardCharsets.UTF_8)));
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+            final CopyContentletForm form = new CopyContentletForm.Builder()
+                    .pageId(page.getIdentifier())
+                    .containerId(container.getIdentifier())
+                    .relationType(ContainerUUID.UUID_LEGACY_VALUE)
+                    .contentId(pagedCarrier.getIdentifier())
+                    .build();
+
+            final Map<String, Object> returned = new PageResource().copyContent(request,
+                    new EmptyHttpResponse(), form).getEntity();
+
+            final Map<String, Map<String, Object>> returnedReferences = referencesIn(returned.get(storyBlockField.variable()));
+            assertOnlyReferenceKeys(returnedReferences.get(restrictedTarget.getIdentifier()));
+            assertEquals(publicTarget.getTitle(), returnedReferences.get(publicTarget.getIdentifier()).get("title"));
+
+            copy = FactoryLocator.getContentletFactory().findInDb(String.valueOf(returned.get("inode")), true)
+                    .orElseThrow(() -> new AssertionError("the copy must be in the database"));
+            assertEquals(restrictedTarget.getTitle(), referencesIn(copy.get(storyBlockField.variable()))
+                    .get(restrictedTarget.getIdentifier()).get("title"));
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
+            for (final Contentlet contentlet : Arrays.asList(copy, page, pagedCarrier)) {
+                if (null != contentlet) {
+                    ContentletDataGen.destroy(contentlet);
+                }
+            }
+            TemplateDataGen.remove(template);
+            ContainerDataGen.remove(container);
             UserDataGen.remove(editor);
         }
     }
