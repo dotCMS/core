@@ -497,11 +497,15 @@ public class SAMLHelperTest extends IntegrationTestBase {
 
         final User user = samlHelper.createNewUser(APILocator.systemUser(), attrs, identityProviderConfiguration);
 
-        final String storedPassword = new DotConnect()
-                .setSQL("select password_ from user_ where userId = ?")
-                .addParam(user.getUserId())
-                .getString("password_");
-        Assert.assertFalse(PasswordFactoryProxy.isUnsecurePasswordHash(storedPassword));
+        try {
+            final String storedPassword = new DotConnect()
+                    .setSQL("select password_ from user_ where userId = ?")
+                    .addParam(user.getUserId())
+                    .getString("password_");
+            Assert.assertFalse(PasswordFactoryProxy.isUnsecurePasswordHash(storedPassword));
+        } finally {
+            UserDataGen.remove(user);
+        }
     }
 
     /**

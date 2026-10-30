@@ -3,6 +3,7 @@ package com.dotmarketing.webdav;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 
+import com.dotcms.IntegrationTestBase;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -18,7 +19,7 @@ import org.junit.Test;
  * Integration tests for how {@link DotWebdavHelper#authorizePrincipal(String, String)} treats the
  * answer of the configured pre-authenticator ({@code auth.pipeline.pre}).
  */
-public class DotWebdavHelperAuthorizePrincipalTest {
+public class DotWebdavHelperAuthorizePrincipalTest extends IntegrationTestBase {
 
     private static final String PASSWORD = "Str0ng-Test-Passw0rd!";
 
