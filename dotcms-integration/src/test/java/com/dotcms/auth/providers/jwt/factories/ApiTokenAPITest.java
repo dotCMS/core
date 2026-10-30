@@ -12,6 +12,8 @@ import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.cms.login.LoginServiceAPI;
 import com.dotcms.datagen.CompanyDataGen;
+import com.dotcms.datagen.LayoutDataGen;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.enterprise.cluster.ClusterFactory;
 import com.dotcms.repackage.org.apache.commons.net.util.SubnetUtils;
@@ -19,6 +21,8 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.Layout;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
@@ -574,6 +578,97 @@ public class ApiTokenAPITest extends IntegrationTestBase {
         jwt = apiTokenAPI.getJWT(apiToken, user2);
         assertTrue("should have errored out already: ", false);
 
+    }
+
+    /**
+     * Method to test: {@link ApiTokenAPI#getJWT(ApiToken, User)}
+     * Given scenario: a token is issued to a user, who then asks for a JWT
+     * Expected result: the JWT is returned
+     */
+    @Test
+    public void test_getJWT_tokenOwner_getsJwt() {
+
+        final User owner = new UserDataGen().nextPersisted();
+        final ApiToken apiToken = apiTokenAPI.persistApiToken(owner.getUserId(),
+                futureDate(Duration.ofDays(1)), owner.getUserId(), REQUESTING_IP);
+
+        final String jwt = apiTokenAPI.getJWT(apiToken, owner);
+        assertNotNull(jwt);
+        assertEquals(apiToken.id, apiTokenAPI.fromJwt(jwt).get().getId());
+    }
+
+    /**
+     * Method to test: {@link ApiTokenAPI#getJWT(ApiToken, User)}
+     * Given scenario: user A requests a token for user B, then user A asks for a JWT
+     * Expected result: the JWT is returned to the requesting user
+     */
+    @Test
+    public void test_getJWT_requestingUser_getsJwt() {
+
+        final User owner = new UserDataGen().nextPersisted();
+        final User requester = new UserDataGen().nextPersisted();
+        final ApiToken apiToken = apiTokenAPI.persistApiToken(owner.getUserId(),
+                futureDate(Duration.ofDays(1)), requester.getUserId(), REQUESTING_IP);
+        assertEquals(requester.getUserId(), apiToken.requestingUserId);
+
+        final String jwt = apiTokenAPI.getJWT(apiToken, requester);
+        assertNotNull(jwt);
+        assertEquals(apiToken.id, apiTokenAPI.fromJwt(jwt).get().getId());
+    }
+
+    /**
+     * Method to test: {@link ApiTokenAPI#getJWT(ApiToken, User)}
+     * Given scenario: a CMS administrator, who neither owns nor requested a token, asks for a JWT
+     * Expected result: the request is refused, while listing and revoking the token still work
+     */
+    @Test
+    public void test_getJWT_cmsAdminNotOwner_isRefused() throws DotDataException {
+
+        final User owner = new UserDataGen().nextPersisted();
+        final User admin = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadCMSAdminRole()).nextPersisted();
+        final ApiToken apiToken = apiTokenAPI.persistApiToken(owner.getUserId(),
+                futureDate(Duration.ofDays(1)), owner.getUserId(), REQUESTING_IP);
+
+        try {
+            apiTokenAPI.getJWT(apiToken, admin);
+            fail("A CMS admin should not get a JWT for another user's token");
+        } catch (DotStateException e) {
+            // expected
+        }
+
+        assertTrue(apiTokenAPI.findApiTokensByUserId(owner.getUserId(), false, admin).stream()
+                .anyMatch(token -> token.id.equals(apiToken.id)));
+        assertTrue(apiTokenAPI.revokeToken(apiToken, admin));
+    }
+
+    /**
+     * Method to test: {@link ApiTokenAPI#getJWT(ApiToken, User)}
+     * Given scenario: a user with access to the Users portlet, who neither owns nor requested a
+     * token, asks for a JWT
+     * Expected result: the request is refused, while revoking the token still works
+     */
+    @Test
+    public void test_getJWT_userManagerNotOwner_isRefused() throws DotDataException {
+
+        final Layout usersLayout = new LayoutDataGen().portletIds("users").nextPersisted();
+        final Role userManagerRole = new RoleDataGen().layout(usersLayout).nextPersisted();
+        final User userManager = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole(), userManagerRole).nextPersisted();
+        assertTrue(APILocator.getPortletAPI().hasUserAdminRights(userManager));
+
+        final User owner = new UserDataGen().nextPersisted();
+        final ApiToken apiToken = apiTokenAPI.persistApiToken(owner.getUserId(),
+                futureDate(Duration.ofDays(1)), owner.getUserId(), REQUESTING_IP);
+
+        try {
+            apiTokenAPI.getJWT(apiToken, userManager);
+            fail("A user manager should not get a JWT for another user's token");
+        } catch (DotStateException e) {
+            // expected
+        }
+
+        assertTrue(apiTokenAPI.revokeToken(apiToken, userManager));
     }
 
     @Test
