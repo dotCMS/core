@@ -66,9 +66,9 @@ jobs:
             for rid in $(gh api "repos/${REPO}/actions/runs?head_sha=${SHA}&per_page=50" \
                           --jq '.workflow_runs[].id'); do
               [ "${rid}" = "${GITHUB_RUN_ID}" ] && continue
-              if gh api "repos/${REPO}/actions/runs/${rid}/artifacts" \
+              if gh api --paginate "repos/${REPO}/actions/runs/${rid}/artifacts" \
                    --jq '.artifacts[] | select(.expired==false) | .name' \
-                 | grep -qx 'docker-build-context'; then
+                 | grep -x 'docker-build-context' >/dev/null; then
                 run_id="${rid}"; break
               fi
             done
