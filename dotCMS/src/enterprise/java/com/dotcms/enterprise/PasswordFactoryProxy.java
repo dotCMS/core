@@ -16,9 +16,12 @@ import com.dotcms.enterprise.de.qaware.heimdall.SecureCharArray;
 import com.dotcms.enterprise.de.qaware.heimdall.algorithm.HashAlgorithm;
 import com.dotcms.enterprise.de.qaware.heimdall.config.HashAlgorithmConfig;
 import com.dotcms.enterprise.de.qaware.heimdall.salt.SecureSaltProvider;
-import com.dotmarketing.util.Logger;
+import java.util.regex.Pattern;
 
 public class PasswordFactoryProxy {
+
+    /** Hexadecimal version prefixes reserve structured records from legacy plaintext fallback. */
+    private static final Pattern HASH_RECORD_PREFIX = Pattern.compile("^[0-9a-fA-F]+:");
 
     public static enum AuthenticationStatus {
         AUTHENTICATED, NOT_AUTHENTICATED, NEEDS_REHASH;
@@ -102,28 +105,23 @@ public class PasswordFactoryProxy {
                     return AuthenticationStatus.AUTHENTICATED;
                 }
             }
+        } catch (IllegalArgumentException e) {
+            throw new PasswordException(e);
         }
 
         return AuthenticationStatus.NOT_AUTHENTICATED;
     }
 
     /**
-     * Verify is hashedPassword needs a stronger hash or is a plain password.
-     * 
-     * @param hashedPassword
-     * @return true if needs rehash otherwise false
-     * @throws PasswordException
+     * Identifies pre-Heimdall plaintext or digest records eligible for legacy migration.
+     * Structured records retain that identity even when their version, profile, or fields
+     * cannot be verified, so a stored hash can never become a plaintext credential.
+     *
+     * @param hashedPassword the stored password record
+     * @return {@code true} only when the record has no reserved hexadecimal version prefix
      */
     public static boolean isUnsecurePasswordHash(final String hashedPassword) {
-        Password password = PasswordFactory.create();
-
-        try {
-            password.needsRehash(hashedPassword);
-        } catch (PasswordException e) {
-            return true;
-        }
-
-        return false;
+        return !HASH_RECORD_PREFIX.matcher(hashedPassword).find();
     }
 
     /**

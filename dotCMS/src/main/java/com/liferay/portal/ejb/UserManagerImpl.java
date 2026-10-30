@@ -121,6 +121,16 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         return this.authenticate(companyId, userId, password, false);
     }
 
+    /**
+     * Resolves an encrypted user ID and verifies its password, including valid hashes due for upgrade.
+     *
+     * @param companyId the company used to decrypt the user ID
+     * @param userId the encrypted user ID
+     * @param password the password to verify
+     * @return the resolved user ID and verified password
+     * @throws PortalException if the user cannot be found or the password does not authenticate
+     * @throws SystemException if password verification cannot be completed
+     */
     @Override
     public KeyValuePair decryptUserId(String companyId, String userId, String password) throws PortalException, SystemException {
 
@@ -151,7 +161,8 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             throw new SystemException("An error occurred generating the hashed password.");
         }
 
-        if (authenticationStatus.equals(PasswordFactoryProxy.AuthenticationStatus.AUTHENTICATED)) {
+        if (authenticationStatus.equals(PasswordFactoryProxy.AuthenticationStatus.AUTHENTICATED)
+                || authenticationStatus.equals(PasswordFactoryProxy.AuthenticationStatus.NEEDS_REHASH)) {
             if (user.isPasswordExpired()) {
                 user.setPasswordReset(true);
 

@@ -75,6 +75,11 @@ public class PBKDF2 implements HashAlgorithm {
         return ID;
     }
 
+    /**
+     * Keeps the 192-bit profile current during the reader-capability release.
+     *
+     * @return {@code false}; only outdated iteration settings request rehash
+     */
     @Override
     public boolean isAlgorithmDeprecated() {
         return false;
@@ -102,6 +107,15 @@ public class PBKDF2 implements HashAlgorithm {
         return OUTPUT_SIZE_IN_BITS;
     }
 
+    /**
+     * Derives a password hash using this profile's output length and the stored iteration count.
+     *
+     * @param password the password to derive
+     * @param salt the salt belonging to this password record
+     * @param config the {@link HashAlgorithmConfig} containing the iteration count
+     * @return the derived password hash
+     * @throws AlgorithmException if the configuration or key derivation cannot be used
+     */
     @Override
     public byte[] hash(char[] password, byte[] salt, HashAlgorithmConfig config) throws AlgorithmException {
         Preconditions.checkNotNull(password, "password");
@@ -110,7 +124,7 @@ public class PBKDF2 implements HashAlgorithm {
 
         int iterations = getIterationsFromConfig(config);
 
-        PBEKeySpec spec = new PBEKeySpec(password, salt, iterations, OUTPUT_SIZE_IN_BITS);
+        PBEKeySpec spec = new PBEKeySpec(password, salt, iterations, getOutputSizeInBits());
         try {
             SecretKeyFactory skf = SecretKeyFactory.getInstance(PBKDF2_ALGORITHM);
             return skf.generateSecret(spec).getEncoded();

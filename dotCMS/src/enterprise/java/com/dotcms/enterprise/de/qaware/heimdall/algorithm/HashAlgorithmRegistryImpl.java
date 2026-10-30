@@ -38,15 +38,18 @@ public class HashAlgorithmRegistryImpl implements HashAlgorithmRegistry {
     private final Map<Integer, HashAlgorithm> algorithms = new HashMap<>();
 
     /**
-     * Constructor.
+     * Registers verifiers without allowing one profile identity to replace another.
      *
-     * @param hashAlgorithms Hash algorithms known to the registry.
+     * @param hashAlgorithms hash algorithms known to the registry
+     * @throws IllegalArgumentException if the array is null or profile IDs are duplicated
      */
     public HashAlgorithmRegistryImpl(HashAlgorithm... hashAlgorithms) {
         Preconditions.checkNotNull(hashAlgorithms, "hashAlgorithms");
 
         for (HashAlgorithm hashAlgorithm : hashAlgorithms) {
-            algorithms.put(hashAlgorithm.getId(), hashAlgorithm);
+            if (algorithms.putIfAbsent(hashAlgorithm.getId(), hashAlgorithm) != null) {
+                throw new IllegalArgumentException("Duplicate hash profile ID: " + hashAlgorithm.getId());
+            }
         }
     }
 
