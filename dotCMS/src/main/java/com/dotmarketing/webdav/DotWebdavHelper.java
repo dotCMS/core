@@ -221,11 +221,11 @@ public class DotWebdavHelper {
 			}
 		} catch (AuthException ae) {
 
-			Logger.debug(this, "Username : " + username + " failed to login", ae);
+			Logger.debug(this, "Username : " + stripLogControls(username) + " failed to login", ae);
 			throw new DotSecurityException(ae.getMessage(),ae);
 		} catch (Exception e) {
 
-			Logger.error(this, e.getMessage(), e);
+			Logger.error(this, stripLogControls(e.getMessage()), e);
 			throw new DotSecurityException(e.getMessage(),e);
 		}
 
