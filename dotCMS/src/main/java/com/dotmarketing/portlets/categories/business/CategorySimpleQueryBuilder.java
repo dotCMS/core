@@ -18,8 +18,11 @@ import java.util.Map;
  * <code>
  *     SELECT *, [count children]
  *     FROM category as c LEFT JOIN tree ON c.inode = tree.child [root filter] [ Name, Key, Variable Filter]
- *     ORDER BY :orderBy :direction"
+ *     ORDER BY :orderBy :direction, c.category_name"
  * </code>
+ *
+ * Rows that tie on the requested order come back by category name, so pages of the same query
+ * neither repeat nor skip rows.
  *
  * Where:
  *
@@ -42,7 +45,7 @@ import java.util.Map;
 public class CategorySimpleQueryBuilder extends CategoryQueryBuilder{
 
     private static final String QUERY_TEMPLATE = "SELECT c.* :countChildren  FROM category as c :treeJoin " +
-            ":rootFilter :filterCategories ORDER BY :orderBy :direction";
+            ":rootFilter :filterCategories ORDER BY :orderBy :direction, c.category_name";
 
     public CategorySimpleQueryBuilder(final CategorySearchCriteria searchCriteria) {
         super(searchCriteria);
