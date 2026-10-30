@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ReactiveFormsModule } from '@angular/forms';
 
 import { DotExternalAssetComponent } from './dot-external-asset.component';
 
@@ -8,7 +9,8 @@ describe('DotExternalAssetComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [DotExternalAssetComponent]
+            declarations: [DotExternalAssetComponent],
+            imports: [ReactiveFormsModule]
         }).compileComponents();
 
         fixture = TestBed.createComponent(DotExternalAssetComponent);

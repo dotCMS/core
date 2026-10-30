@@ -12,7 +12,8 @@ import { CoreWebServiceMock } from '@dotcms/utils-testing';
 import { DotContainerCreateComponent } from './dot-container-create.component';
 
 @Pipe({
-    name: 'dm'
+    name: 'dm',
+    standalone: false
 })
 class DotMessageMockPipe implements PipeTransform {
     transform(): string {

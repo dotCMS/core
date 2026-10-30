@@ -18,7 +18,6 @@ import { ANALYTICS_MONACO_EDITOR_OPTIONS, ANALYTICS_RESULTS_MONACO_EDITOR_OPTION
 
 @Component({
     selector: 'lib-dot-analytics-search',
-    standalone: true,
     imports: [
         CommonModule,
         DotMessagePipe,

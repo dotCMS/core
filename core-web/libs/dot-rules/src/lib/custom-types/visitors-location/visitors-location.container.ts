@@ -39,7 +39,8 @@ const I8N_BASE = 'api.sites.ruleengine';
             [comparisonControl]="comparisonControl"
             [comparisonOptions]="comparisonOptions"
             [fromLabel]="fromLabel"></cw-visitors-location-component>
-    `
+    `,
+    standalone: false
 })
 export class VisitorsLocationContainer {
     @Input() componentInstance: ServerSideFieldModel;

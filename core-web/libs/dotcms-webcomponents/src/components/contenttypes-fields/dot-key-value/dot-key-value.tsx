@@ -294,7 +294,7 @@ export class DotKeyValueComponent {
         );
     }
 
-    private getKeyValueForm(): JSX.Element {
+    private getKeyValueForm() {
         return (
             <key-value-form
                 onLostFocus={this.blurHandler.bind(this)}

@@ -38,7 +38,6 @@ import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edi
     selector: 'dot-edit-content-text-area',
     templateUrl: './dot-edit-content-text-area.component.html',
     styleUrls: ['./dot-edit-content-text-area.component.scss'],
-    standalone: true,
     imports: [
         InputTextareaModule,
         ReactiveFormsModule,

@@ -13,7 +13,6 @@ import { DotClipboardUtil } from '../../services/clipboard/ClipboardUtil';
  */
 @Component({
     selector: 'dot-copy-button',
-    standalone: true,
     providers: [DotClipboardUtil],
     templateUrl: './dot-copy-button.component.html',
     styleUrls: ['./dot-copy-button.component.scss'],

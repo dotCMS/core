@@ -1,9 +1,6 @@
-globalThis.ngJest = {
-    testEnvironmentOptions: {
-        errorOnUnknownElements: true,
-        errorOnUnknownProperties: true
-    }
-};
-import 'jest-preset-angular/setup-jest';
+import { setupZoneTestEnv } from 'jest-preset-angular/setup-env/zone';
 
-import 'zone.js/testing';
+setupZoneTestEnv({
+    errorOnUnknownElements: true,
+    errorOnUnknownProperties: true
+});

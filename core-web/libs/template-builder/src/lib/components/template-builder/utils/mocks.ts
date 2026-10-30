@@ -876,7 +876,8 @@ export const BOX_MOCK = {
  */
 @Component({
     selector: 'dotcms-grid-stack-element',
-    template: '<div>Element</div>'
+    template: '<div>Element</div>',
+    standalone: false
 })
 export class MockGridStackElementComponent {
     constructor(public el: ElementRef) {

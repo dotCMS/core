@@ -11,9 +11,10 @@ import {
 
 import { filter, takeUntil } from 'rxjs/operators';
 
-import { DotParseHtmlService } from '@dotcms/app/api/services/dot-parse-html/dot-parse-html.service';
 import { DotcmsEventsService } from '@dotcms/dotcms-js';
 import { DotDialogComponent } from '@dotcms/ui';
+
+import { DotParseHtmlService } from '../../../api/services/dot-parse-html/dot-parse-html.service';
 
 interface DotLargeMessageDisplayParams {
     title: string;
@@ -30,7 +31,8 @@ interface DotLargeMessageDisplayParams {
 @Component({
     selector: 'dot-large-message-display',
     templateUrl: './dot-large-message-display.component.html',
-    styleUrls: ['./dot-large-message-display.component.scss']
+    styleUrls: ['./dot-large-message-display.component.scss'],
+    standalone: false
 })
 export class DotLargeMessageDisplayComponent implements OnInit, OnDestroy, AfterViewInit {
     @ViewChildren(DotDialogComponent) dialogs: QueryList<DotDialogComponent>;

@@ -23,7 +23,6 @@ const POINTER_INITIAL_POSITION = {
 
 @Component({
     selector: 'dot-ema-page-dropzone',
-    standalone: true,
     imports: [DotPositionPipe, DotErrorPipe, DotMessagePipe, NgStyle, NgTemplateOutlet],
     templateUrl: './ema-page-dropzone.component.html',
     styleUrls: ['./ema-page-dropzone.component.scss'],

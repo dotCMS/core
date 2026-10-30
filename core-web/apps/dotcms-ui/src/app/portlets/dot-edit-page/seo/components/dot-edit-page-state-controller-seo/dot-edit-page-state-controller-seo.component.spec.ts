@@ -18,7 +18,6 @@ import { OverlayPanelModule } from 'primeng/overlaypanel';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import {
     DotAlertConfirmService,
     DotCurrentUserService,
@@ -55,6 +54,8 @@ import {
 
 import { DotEditPageLockInfoSeoComponent } from './components/dot-edit-page-lock-info-seo/dot-edit-page-lock-info-seo.component';
 import { DotEditPageStateControllerSeoComponent } from './dot-edit-page-state-controller-seo.component';
+
+import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 const mockDotMessageService = new MockDotMessageService({
     'editpage.toolbar.edit.page': 'Edit',
@@ -95,7 +96,8 @@ const getPageRenderStateMock = () =>
         <dot-edit-page-state-controller-seo
             [pageState]="pageState"
             [variant]="variant"></dot-edit-page-state-controller-seo>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     pageState: DotPageRenderState = getPageRenderStateMock();

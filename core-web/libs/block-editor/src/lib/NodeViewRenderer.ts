@@ -18,7 +18,10 @@ import { DecorationSet } from 'prosemirror-view';
 
 export type toJSONFn = (this: { node: ProseMirrorNode }) => Record<string, unknown>;
 
-@Component({ template: '' })
+@Component({
+    template: '',
+    standalone: false
+})
 export class AngularNodeViewComponent implements NodeViewProps {
     @Input() editor!: NodeViewProps['editor'];
     @Input() node!: NodeViewProps['node'];

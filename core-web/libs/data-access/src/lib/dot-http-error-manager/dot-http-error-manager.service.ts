@@ -15,7 +15,6 @@ export interface DotHttpErrorHandled {
     redirected: boolean;
     status: HttpCode;
 }
-
 /**
  * Handle the UI for http errors messages
  *

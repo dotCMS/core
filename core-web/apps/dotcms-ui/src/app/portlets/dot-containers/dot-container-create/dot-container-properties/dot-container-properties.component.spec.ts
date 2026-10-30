@@ -30,7 +30,6 @@ import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
 import { InplaceModule } from 'primeng/inplace';
 import { MenuModule } from 'primeng/menu';
 
-import { DotActionButtonModule } from '@components/_common/dot-action-button/dot-action-button.module';
 import {
     DotAlertConfirmService,
     DotContentTypeService,
@@ -66,14 +65,17 @@ import {
     DotMessageDisplayServiceMock,
     MockDotMessageService
 } from '@dotcms/utils-testing';
-import { DotContainersService } from '@services/dot-containers/dot-containers.service';
-import { dotEventSocketURLFactory } from '@tests/dot-test-bed';
 
 import { DotContainerPropertiesComponent } from './dot-container-properties.component';
 
+import { DotContainersService } from '../../../../api/services/dot-containers/dot-containers.service';
+import { dotEventSocketURLFactory } from '../../../../test/dot-test-bed';
+import { DotActionButtonModule } from '../../../../view/components/_common/dot-action-button/dot-action-button.module';
+
 @Component({
     selector: 'dot-container-code',
-    template: '<div></div>'
+    template: '<div></div>',
+    standalone: false
 })
 export class DotContentEditorComponent {}
 
@@ -86,7 +88,8 @@ export class DotContentEditorComponent {}
             useExisting: forwardRef(() => DotLoopEditorComponent),
             multi: true
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotLoopEditorComponent {
     writeValue() {
@@ -111,7 +114,8 @@ export class DotLoopEditorComponent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTextareaContentMockComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
     @Input()

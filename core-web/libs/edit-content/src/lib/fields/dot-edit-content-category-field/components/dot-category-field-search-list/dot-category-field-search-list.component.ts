@@ -39,7 +39,6 @@ import { DotTableSkeletonComponent } from '../dot-table-skeleton/dot-table-skele
  */
 @Component({
     selector: 'dot-category-field-search-list',
-    standalone: true,
     imports: [
         TableModule,
         SkeletonModule,

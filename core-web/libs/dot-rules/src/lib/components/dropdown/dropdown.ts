@@ -49,7 +49,8 @@ import { isEmpty } from '@dotcms/utils';
             [value]="modelValue"
             [options]="dropdownOptions | async"
             [placeholder]="placeholder"></dot-autocomplete-tags>
-    `
+    `,
+    standalone: false
 })
 export class Dropdown implements ControlValueAccessor, OnChanges {
     @Input()

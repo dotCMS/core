@@ -54,7 +54,8 @@ import { IBundle } from '../services/bundle-service';
                     label="Add"></button>
             </p-footer>
         </p-dialog>
-    `
+    `,
+    standalone: false
 })
 export class AddToBundleDialogComponent implements OnChanges {
     @Input() hidden = false;

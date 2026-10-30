@@ -45,7 +45,6 @@ import { DotMessagePipe, DotSiteSelectorDirective } from '@dotcms/ui';
         DotMessagePipe,
         InputTextModule
     ],
-    standalone: true,
     templateUrl: './template-builder-theme-selector.component.html',
     styleUrls: ['./template-builder-theme-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

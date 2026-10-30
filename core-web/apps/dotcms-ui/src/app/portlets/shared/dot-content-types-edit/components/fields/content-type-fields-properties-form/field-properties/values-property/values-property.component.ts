@@ -1,14 +1,14 @@
 import { Component, ViewChild } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
 
-import { DotTextareaContentComponent } from '@components/_common/dot-textarea-content/dot-textarea-content.component';
-
+import { DotTextareaContentComponent } from '../../../../../../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
 import { FieldProperty } from '../field-properties.model';
 
 @Component({
     selector: 'dot-values-property',
     templateUrl: './values-property.component.html',
-    styleUrls: ['./values-property.component.scss']
+    styleUrls: ['./values-property.component.scss'],
+    standalone: false
 })
 export class ValuesPropertyComponent {
     @ViewChild('value') value: DotTextareaContentComponent;

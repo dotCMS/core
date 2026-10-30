@@ -16,9 +16,6 @@ import { RouterTestingModule } from '@angular/router/testing';
 import { PrimeTemplate } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 
-import { DotGlobalMessageComponent } from '@components/_common/dot-global-message/dot-global-message.component';
-import { DotPortletBoxModule } from '@components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
-import { DotShowHideFeatureDirective } from '@dotcms/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
 import { DotEventsService, DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotLayout, DotTemplate, DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { DotIconModule, DotMessagePipe } from '@dotcms/ui';
@@ -26,6 +23,9 @@ import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testi
 
 import { DotTemplateBuilderComponent } from './dot-template-builder.component';
 
+import { DotShowHideFeatureDirective } from '../../../../shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive';
+import { DotGlobalMessageComponent } from '../../../../view/components/_common/dot-global-message/dot-global-message.component';
+import { DotPortletBoxModule } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.module';
 import {
     DotTemplateItem,
     EMPTY_TEMPLATE_ADVANCED,
@@ -38,7 +38,8 @@ import {
     template: `
         <ng-content select="[toolbar-left]"></ng-content>
         <ng-content select="[toolbar-actions-right]"></ng-content>
-    `
+    `,
+    standalone: false
 })
 class TemplateBuilderMockComponent {
     @Input() layout: DotLayout;
@@ -48,7 +49,8 @@ class TemplateBuilderMockComponent {
 
 @Component({
     selector: 'dot-template-advanced',
-    template: ``
+    template: ``,
+    standalone: false
 })
 class DotTemplateAdvancedMockComponent {
     @Input() url;
@@ -66,7 +68,8 @@ class DotTemplateAdvancedMockComponent {
 
 @Component({
     selector: 'dot-iframe',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class IframeMockComponent {
     @Input() src: string;
@@ -77,7 +80,8 @@ export class IframeMockComponent {
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'p-tabView',
-    template: '<ng-content></ng-content>'
+    template: '<ng-content></ng-content>',
+    standalone: false
 })
 export class TabViewMockComponent {
     @Input() styleClass: string;
@@ -87,7 +91,8 @@ export class TabViewMockComponent {
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'p-tabPanel',
     template:
-        '<ng-content></ng-content><ng-container *ngTemplateOutlet="contentTemplate"></ng-container>'
+        '<ng-content></ng-content><ng-container *ngTemplateOutlet="contentTemplate"></ng-container>',
+    standalone: false
 })
 export class TabPanelMockComponent implements AfterContentInit {
     @Input() header: string;
@@ -103,7 +108,8 @@ export class TabPanelMockComponent implements AfterContentInit {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: '<dot-template-builder #builder [item]="item"></dot-template-builder> '
+    template: '<dot-template-builder #builder [item]="item"></dot-template-builder> ',
+    standalone: false
 })
 class DotTestHostComponent {
     @ViewChild('builder') builder: DotTemplateBuilderComponent;

@@ -9,7 +9,6 @@ import { DotSpinnerModule } from '@dotcms/ui';
     templateUrl: './upload-placeholder.component.html',
     styleUrls: ['./upload-placeholder.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [ButtonModule, DotSpinnerModule]
 })
 export class UploadPlaceholderComponent {

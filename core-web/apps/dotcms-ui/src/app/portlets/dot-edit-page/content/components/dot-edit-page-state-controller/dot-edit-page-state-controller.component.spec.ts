@@ -15,7 +15,6 @@ import { MenuModule } from 'primeng/menu';
 import { SelectButtonModule } from 'primeng/selectbutton';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotContentletEditorService } from '@components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import {
     DotAlertConfirmService,
     DotHttpErrorManagerService,
@@ -48,6 +47,8 @@ import {
 
 import { DotEditPageLockInfoComponent } from './components/dot-edit-page-lock-info/dot-edit-page-lock-info.component';
 import { DotEditPageStateControllerComponent } from './dot-edit-page-state-controller.component';
+
+import { DotContentletEditorService } from '../../../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 const mockDotMessageService = new MockDotMessageService({
     'editpage.toolbar.edit.page': 'Edit',
@@ -86,7 +87,8 @@ const getPageRenderStateMock = () =>
         <dot-edit-page-state-controller
             [pageState]="pageState"
             [variant]="variant"></dot-edit-page-state-controller>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     pageState: DotPageRenderState = getPageRenderStateMock();

@@ -9,7 +9,8 @@ import { take, takeUntil } from 'rxjs/operators';
 
 import { DotRolesService } from '@dotcms/data-access';
 import { DotRole } from '@dotcms/dotcms-models';
-import { DotFormModel } from '@models/dot-form/dot-form.model';
+
+import { DotFormModel } from '../../../../../shared/models/dot-form/dot-form.model';
 
 enum DotActionInputs {
     ASSIGNABLE = 'assignable',
@@ -33,7 +34,8 @@ interface DotCommentAndAssignValue {
 @Component({
     selector: 'dot-comment-and-assign-form',
     templateUrl: './dot-comment-and-assign-form.component.html',
-    styleUrls: ['./dot-comment-and-assign-form.component.scss']
+    styleUrls: ['./dot-comment-and-assign-form.component.scss'],
+    standalone: false
 })
 export class DotCommentAndAssignFormComponent
     implements OnInit, DotFormModel<DotCommentAndAssignData, DotCommentAndAssignValue>

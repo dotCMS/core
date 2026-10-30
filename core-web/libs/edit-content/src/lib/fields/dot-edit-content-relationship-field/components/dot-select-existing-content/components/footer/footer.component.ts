@@ -10,7 +10,6 @@ import { ExistingContentStore } from '../../store/existing-content.store';
 
 @Component({
     selector: 'dot-select-existing-content-footer',
-    standalone: true,
     imports: [ButtonModule, DotMessagePipe],
     templateUrl: './footer.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush

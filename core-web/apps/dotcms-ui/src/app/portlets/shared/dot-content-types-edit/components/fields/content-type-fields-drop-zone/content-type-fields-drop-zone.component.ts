@@ -43,7 +43,8 @@ import { FieldPropertyService } from '../service/field-properties.service';
 @Component({
     selector: 'dot-content-type-fields-drop-zone',
     styleUrls: ['./content-type-fields-drop-zone.component.scss'],
-    templateUrl: './content-type-fields-drop-zone.component.html'
+    templateUrl: './content-type-fields-drop-zone.component.html',
+    standalone: false
 })
 export class ContentTypeFieldsDropZoneComponent implements OnInit, OnChanges, OnDestroy {
     readonly OVERVIEW_TAB_INDEX = 0;

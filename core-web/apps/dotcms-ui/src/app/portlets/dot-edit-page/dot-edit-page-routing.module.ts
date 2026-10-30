@@ -4,9 +4,10 @@ import { RouterModule, Routes } from '@angular/router';
 import { CanDeactivateGuardService, DotEditPageResolver } from '@dotcms/data-access';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 import { DotExperimentExperimentResolver } from '@dotcms/portlets/dot-experiments/data-access';
-import { DotFeatureFlagResolver } from '@portlets/shared/resolvers/dot-feature-flag-resolver.service';
 
 import { DotEditPageMainComponent } from './main/dot-edit-page-main/dot-edit-page-main.component';
+
+import { DotFeatureFlagResolver } from '../shared/resolvers/dot-feature-flag-resolver.service';
 
 const dotEditPage: Routes = [
     {
@@ -34,16 +35,12 @@ const dotEditPage: Routes = [
             {
                 path: 'content',
                 loadChildren: () =>
-                    import('@portlets/dot-edit-page/content/dot-edit-content.module').then(
-                        (m) => m.DotEditContentModule
-                    )
+                    import('./content/dot-edit-content.module').then((m) => m.DotEditContentModule)
             },
             {
                 path: 'layout',
                 loadChildren: () =>
-                    import('@portlets/dot-edit-page/layout/dot-edit-layout.module').then(
-                        (m) => m.DotEditLayoutModule
-                    ),
+                    import('./layout/dot-edit-layout.module').then((m) => m.DotEditLayoutModule),
                 canDeactivate: [CanDeactivateGuardService]
             },
             {
@@ -62,7 +59,7 @@ const dotEditPage: Routes = [
         path: 'layout/template/:id/:tabName',
         loadChildren: () =>
             import(
-                '@portlets/dot-edit-page/layout/components/dot-template-additional-actions/dot-template-additional-actions.module'
+                './layout/components/dot-template-additional-actions/dot-template-additional-actions.module'
             ).then((m) => m.DotTemplateAdditionalActionsModule)
     }
 ];

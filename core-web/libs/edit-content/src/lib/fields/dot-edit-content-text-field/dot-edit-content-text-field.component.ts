@@ -11,7 +11,6 @@ import { INPUT_TEXT_OPTIONS } from './utils';
     selector: 'dot-edit-content-text-field',
     templateUrl: './dot-edit-content-text-field.component.html',
     styleUrls: ['./dot-edit-content-text-field.component.scss'],
-    standalone: true,
     imports: [ReactiveFormsModule, InputTextModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [

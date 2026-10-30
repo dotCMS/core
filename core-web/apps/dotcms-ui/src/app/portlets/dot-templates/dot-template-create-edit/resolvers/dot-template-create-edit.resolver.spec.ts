@@ -4,12 +4,13 @@ import { of } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
 
-import { DotTemplatesService } from '@dotcms/app/api/services/dot-templates/dot-templates.service';
 import { DotRouterService } from '@dotcms/data-access';
 import { DotTemplate } from '@dotcms/dotcms-models';
 import { MockDotRouterService, setupResizeObserverMock } from '@dotcms/utils-testing';
 
 import { DotTemplateCreateEditResolver } from './dot-template-create-edit.resolver';
+
+import { DotTemplatesService } from '../../../../api/services/dot-templates/dot-templates.service';
 
 // Setup ResizeObserver mock
 setupResizeObserverMock();

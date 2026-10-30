@@ -19,15 +19,16 @@ import { DropdownModule } from 'primeng/dropdown';
 import { InputTextModule } from 'primeng/inputtext';
 import { PasswordModule } from 'primeng/password';
 
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
-import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { DotEventsService, DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { LoginService, User } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import { LoginServiceMock, MockDotMessageService, mockUser } from '@dotcms/utils-testing';
 
 import { DotLoginAsComponent } from './dot-login-as.component';
+
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { LOCATION_TOKEN } from '../../../../../providers';
+import { DotNavigationService } from '../../../dot-navigation/services/dot-navigation.service';
 
 describe('DotLoginAsComponent', () => {
     let spectator: Spectator<DotLoginAsComponent>;

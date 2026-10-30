@@ -56,7 +56,6 @@ const BUBBLE_MENU_HIDDEN_NODES = {
         DotImageEditorPopoverComponent,
         OverlayPanelModule
     ],
-    standalone: true,
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotBubbleMenuComponent {

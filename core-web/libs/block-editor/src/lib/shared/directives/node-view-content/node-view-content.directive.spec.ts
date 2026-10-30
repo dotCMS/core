@@ -7,7 +7,8 @@ import { NodeViewContentDirective } from './node-view-content.directive';
 @Component({
     template: `
         <div tiptapNodeViewContent>Hello Tiptap!</div>
-    `
+    `,
+    standalone: false
 })
 class TestComponent {}
 

@@ -10,16 +10,16 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotAppsSaveData, DotAppsSecret } from '@dotcms/dotcms-models';
 import { DotCopyButtonComponent, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
 import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testing';
-import { DotKeyValue } from '@shared/models/dot-key-value-ng/dot-key-value-ng.model';
 
 import { DotAppsConfigurationDetailResolver } from './dot-apps-configuration-detail-resolver.service';
 import { DotAppsConfigurationDetailComponent } from './dot-apps-configuration-detail.component';
 
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
+import { DotKeyValue } from '../../../shared/models/dot-key-value-ng/dot-key-value-ng.model';
 import { DotAppsConfigurationHeaderModule } from '../dot-apps-configuration-header/dot-apps-configuration-header.module';
 
 const messages = {
@@ -114,7 +114,8 @@ class MockDotAppsService {
 
 @Component({
     selector: 'dot-key-value-ng',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotKeyValueComponent {
     @Input() autoFocus: boolean;
@@ -125,7 +126,8 @@ class MockDotKeyValueComponent {
 
 @Component({
     selector: 'dot-apps-configuration-detail-form',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotAppsConfigurationDetailFormComponent {
     @Input() appConfigured: boolean;

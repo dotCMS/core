@@ -34,7 +34,6 @@ interface AIContentForm {
 
 @Component({
     selector: 'dot-ai-content-prompt',
-    standalone: true,
     templateUrl: './ai-content-prompt.component.html',
     imports: [
         DialogModule,

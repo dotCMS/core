@@ -6,7 +6,8 @@ import { DotAppsSite } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-apps-configuration-item',
     templateUrl: './dot-apps-configuration-item.component.html',
-    styleUrls: ['./dot-apps-configuration-item.component.scss']
+    styleUrls: ['./dot-apps-configuration-item.component.scss'],
+    standalone: false
 })
 export class DotAppsConfigurationItemComponent {
     @Input() site: DotAppsSite;

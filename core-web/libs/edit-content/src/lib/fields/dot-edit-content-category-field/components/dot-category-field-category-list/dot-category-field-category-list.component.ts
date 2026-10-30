@@ -44,7 +44,6 @@ const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
  */
 @Component({
     selector: 'dot-category-field-category-list',
-    standalone: true,
     imports: [
         CommonModule,
         TreeModule,

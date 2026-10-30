@@ -11,15 +11,15 @@ import { ButtonModule } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { Column } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/column.model';
-import {
-    RelationshipFieldSearchResponse,
-    RelationshipFieldService
-} from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
 import { createFakeContentlet, MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
 
 import { FooterComponent } from './footer.component';
 
+import { Column } from '../../../../models/column.model';
+import {
+    RelationshipFieldSearchResponse,
+    RelationshipFieldService
+} from '../../../../services/relationship-field.service';
 import { ExistingContentStore } from '../../store/existing-content.store';
 
 const mockColumns: Column[] = [

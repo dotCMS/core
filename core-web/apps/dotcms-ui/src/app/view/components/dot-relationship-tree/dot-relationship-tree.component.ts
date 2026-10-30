@@ -5,7 +5,8 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-relationship-tree',
     templateUrl: './dot-relationship-tree.component.html',
-    styleUrls: ['./dot-relationship-tree.component.scss']
+    styleUrls: ['./dot-relationship-tree.component.scss'],
+    standalone: false
 })
 export class DotRelationshipTreeComponent implements OnChanges {
     @Input() velocityVar: string;

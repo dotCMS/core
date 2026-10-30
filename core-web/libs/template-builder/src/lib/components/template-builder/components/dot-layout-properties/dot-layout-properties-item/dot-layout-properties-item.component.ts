@@ -12,7 +12,8 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotLayoutPropertiesItemComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
     @Input()
@@ -67,6 +68,7 @@ export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
      * @memberof DotLayoutPropertiesItemComponent
      */
     registerOnChange(
+        // eslint-disable-next-line @typescript-eslint/no-empty-object-type
         fn: () => {
             /**/
         }

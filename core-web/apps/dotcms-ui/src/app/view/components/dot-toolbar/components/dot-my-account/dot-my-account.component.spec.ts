@@ -7,8 +7,6 @@ import { fakeAsync, tick } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotAccountService } from '@dotcms/app/api/services/dot-account-service';
-import { DotMenuService } from '@dotcms/app/api/services/dot-menu.service';
 import {
     DotAlertConfirmService,
     DotHttpErrorManagerService,
@@ -18,6 +16,9 @@ import {
 import { Auth, DotcmsConfigService, LoginService, User } from '@dotcms/dotcms-js';
 
 import { DotMyAccountComponent } from './dot-my-account.component';
+
+import { DotAccountService } from '../../../../../api/services/dot-account-service';
+import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 
 describe('DotMyAccountComponent', () => {
     let spectator: Spectator<DotMyAccountComponent>;

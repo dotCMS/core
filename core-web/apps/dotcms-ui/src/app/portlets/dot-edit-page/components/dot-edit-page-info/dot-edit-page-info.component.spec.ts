@@ -10,7 +10,8 @@ import { DotEditPageInfoComponent } from './dot-edit-page-info.component';
 @Component({
     template: `
         <dot-edit-page-info [title]="title" [url]="url" [apiLink]="apiLink"></dot-edit-page-info>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     title = 'A title';

@@ -44,16 +44,13 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
 
 @Component({
     selector: 'dot-experiments-configuration-variants',
-    standalone: true,
     imports: [
         CommonModule,
         DotMessagePipe,
         DotIconModule,
-        DotExperimentsConfigurationVariantsAddComponent,
         DotCopyButtonComponent,
         DotExperimentsConfigurationItemsCountComponent,
         DotDynamicDirective,
-
         //PrimeNg
         CardModule,
         InplaceModule,

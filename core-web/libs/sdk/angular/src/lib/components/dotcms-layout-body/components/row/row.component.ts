@@ -15,7 +15,6 @@ import { ColumnComponent } from '../column/column.component';
  */
 @Component({
     selector: 'dotcms-row',
-    standalone: true,
     imports: [ColumnComponent],
     template: `
         <div class="dot-row-container">

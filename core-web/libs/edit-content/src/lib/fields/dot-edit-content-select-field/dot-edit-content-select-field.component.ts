@@ -10,7 +10,6 @@ import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
 
 @Component({
     selector: 'dot-edit-content-select-field',
-    standalone: true,
     imports: [DropdownModule, ReactiveFormsModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [

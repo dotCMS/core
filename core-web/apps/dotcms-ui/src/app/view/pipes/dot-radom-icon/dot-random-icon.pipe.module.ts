@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
 
-import { DotRandomIconPipe } from '@pipes/dot-radom-icon/dot-random-icon.pipe';
+import { DotRandomIconPipe } from './dot-random-icon.pipe';
 
 @NgModule({
     imports: [CommonModule],

@@ -2,7 +2,8 @@ import { Directive, HostBinding } from '@angular/core';
 
 @Directive({
     // eslint-disable-next-line @angular-eslint/directive-selector
-    selector: '[tiptapDraggable]'
+    selector: '[tiptapDraggable]',
+    standalone: false
 })
 export class DraggableDirective {
     @HostBinding('attr.draggable') draggable = true;

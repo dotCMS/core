@@ -1,12 +1,13 @@
 import { Component, input, inject, output } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 
-import { DotNavLogoService } from '@dotcms/app/api/services/dot-nav-logo/dot-nav-logo.service';
+import { DotNavLogoService } from '../../../../../api/services/dot-nav-logo/dot-nav-logo.service';
 
 @Component({
     selector: 'dot-nav-header',
     styleUrls: ['./dot-nav-header.component.scss'],
-    templateUrl: 'dot-nav-header.component.html'
+    templateUrl: 'dot-nav-header.component.html',
+    standalone: false
 })
 export class DotNavHeaderComponent {
     /**

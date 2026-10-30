@@ -4,7 +4,8 @@ import { Inplace } from 'primeng/inplace';
 
 @Component({
     selector: 'dot-inline-edit',
-    templateUrl: './dot-inline-edit.component.html'
+    templateUrl: './dot-inline-edit.component.html',
+    standalone: false
 })
 export class DotInlineEditComponent {
     @Input()

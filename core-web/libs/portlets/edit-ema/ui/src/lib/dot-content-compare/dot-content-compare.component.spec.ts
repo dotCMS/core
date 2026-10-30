@@ -31,6 +31,7 @@ const DotContentCompareEventMOCK = {
 };
 
 @Component({
+    standalone: false,
     selector: 'dot-test-host-component',
     template:
         '<dot-content-compare [data]="data"  (shutdown)="shutdown.emit(true)" ></dot-content-compare>'

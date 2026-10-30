@@ -27,7 +27,6 @@ import { DotExperimentsOptionContentBaseComponent } from '../dot-experiment-opti
 const PARAMETER_QUERY_PARAMETER = 'queryParameter';
 
 @Component({
-    standalone: true,
     selector: 'dot-experiments-goal-configuration-url-parameter-component',
     templateUrl: './dot-experiments-goal-configuration-url-parameter-component.component.html',
     styleUrls: ['./dot-experiments-goal-configuration-url-parameter-component.component.scss'],

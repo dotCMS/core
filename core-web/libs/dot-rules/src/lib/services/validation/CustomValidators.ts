@@ -16,7 +16,7 @@ export class CustomValidators {
         return (control: NgControl): { [key: string]: any } => {
             const v: string = control.value;
 
-            return !Verify.isString(v, allowEmpty)
+            return !Verify.isStringWithEmpty(v, allowEmpty)
                 ? { isString: { emptyAllowed: allowEmpty } }
                 : null;
         };

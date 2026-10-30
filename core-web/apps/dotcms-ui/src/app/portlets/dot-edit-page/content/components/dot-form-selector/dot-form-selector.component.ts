@@ -22,7 +22,8 @@ import { DotDialogComponent } from '@dotcms/ui';
     selector: 'dot-form-selector',
     templateUrl: './dot-form-selector.component.html',
     styleUrls: ['./dot-form-selector.component.scss'],
-    providers: [PaginatorService]
+    providers: [PaginatorService],
+    standalone: false
 })
 export class DotFormSelectorComponent implements OnInit, OnChanges {
     @Input() show = false;

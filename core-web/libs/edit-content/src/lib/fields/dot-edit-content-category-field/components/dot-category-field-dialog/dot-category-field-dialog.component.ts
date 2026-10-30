@@ -31,7 +31,6 @@ import { DotCategoryFieldSelectedComponent } from '../dot-category-field-selecte
  */
 @Component({
     selector: 'dot-category-field-dialog',
-    standalone: true,
     imports: [
         DialogModule,
         ButtonModule,

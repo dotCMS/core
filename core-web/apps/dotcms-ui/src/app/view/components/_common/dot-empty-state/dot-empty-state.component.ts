@@ -3,7 +3,8 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 @Component({
     selector: 'dot-empty-state',
     templateUrl: './dot-empty-state.component.html',
-    styleUrls: ['./dot-empty-state.component.scss']
+    styleUrls: ['./dot-empty-state.component.scss'],
+    standalone: false
 })
 export class DotEmptyStateComponent implements OnInit {
     @Input() rows: number;

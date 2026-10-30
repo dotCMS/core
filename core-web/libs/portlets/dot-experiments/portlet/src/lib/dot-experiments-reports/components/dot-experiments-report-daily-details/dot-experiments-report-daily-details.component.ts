@@ -15,7 +15,6 @@ import { DotExperimentsReportsStore } from '../../store/dot-experiments-reports-
 
 @Component({
     selector: 'dot-experiments-report-daily-details',
-    standalone: true,
     imports: [
         NgIf,
         NgClass,

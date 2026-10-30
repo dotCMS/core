@@ -36,7 +36,8 @@ import { DotPageStore } from '../dot-pages-store/dot-pages.store';
 @Component({
     selector: 'dot-pages-card',
     template: '<ng-content></ng-content>',
-    styleUrls: []
+    styleUrls: [],
+    standalone: false
 })
 export class DotPagesCardMockComponent {
     @Input() ownerPage: boolean;
@@ -47,7 +48,8 @@ export class DotPagesCardMockComponent {
 
 @Component({
     selector: 'dot-icon',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotIconComponent {
     @Input() name: string;

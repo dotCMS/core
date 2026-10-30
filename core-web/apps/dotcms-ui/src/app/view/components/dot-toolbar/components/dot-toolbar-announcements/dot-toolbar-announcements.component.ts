@@ -2,13 +2,10 @@ import { DatePipe, LowerCasePipe } from '@angular/common';
 import { Component, OnInit, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import {
-    TypesIcons,
-    AnnouncementsStore,
-    AnnouncementLink
-} from '@components/dot-toolbar/components/dot-toolbar-announcements/store/dot-announcements.store';
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
+
+import { TypesIcons, AnnouncementsStore, AnnouncementLink } from './store/dot-announcements.store';
 
 import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolbar-btn-overlay.component';
 
@@ -16,7 +13,6 @@ import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolba
     selector: 'dot-toolbar-announcements',
     templateUrl: './dot-toolbar-announcements.component.html',
     styleUrls: ['./dot-toolbar-announcements.component.scss'],
-    standalone: true,
     imports: [DotMessagePipe, LowerCasePipe, DatePipe, DotToolbarBtnOverlayComponent],
     providers: [AnnouncementsStore]
 })

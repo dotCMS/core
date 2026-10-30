@@ -19,7 +19,6 @@ import { DotPaletteStore, PALETTE_TYPES } from './store/edit-ema-palette.store';
 
 @Component({
     selector: 'dot-edit-ema-palette',
-    standalone: true,
     templateUrl: './edit-ema-palette.component.html',
     styleUrls: ['./edit-ema-palette.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,

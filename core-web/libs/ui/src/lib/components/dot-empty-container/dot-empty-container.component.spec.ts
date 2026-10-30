@@ -1,7 +1,11 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotEmptyContainerComponent, PrincipalConfiguration } from '@dotcms/ui';
+
+import {
+    DotEmptyContainerComponent,
+    PrincipalConfiguration
+} from './dot-empty-container.component';
 
 const BUTTON_LABEL = 'Amazing Label';
 

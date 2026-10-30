@@ -1,7 +1,8 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
 
-import { DotAnalyticsSearchService } from '@dotcms/data-access';
 import { AnalyticsQueryType } from '@dotcms/dotcms-models';
+
+import { DotAnalyticsSearchService } from './dot-analytics-search.service';
 
 describe('DotAnalyticsSearchService', () => {
     let spectator: SpectatorHttp<DotAnalyticsSearchService>;

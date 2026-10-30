@@ -13,7 +13,6 @@ import { filter, map, startWith, takeUntil } from 'rxjs/operators';
 import { DotTempFileUploadService, DotWorkflowActionsFireService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
-    DotAutofocusDirective,
     DotFormDialogComponent,
     DotFieldValidationMessageComponent,
     DotPagesFavoritePageEmptySkeletonComponent,
@@ -45,11 +44,9 @@ export interface DotFavoritePageFormData {
     selector: 'dot-favorite-page',
     templateUrl: 'dot-favorite-page.component.html',
     styleUrls: ['./dot-favorite-page.component.scss'],
-    standalone: true,
     imports: [
         CommonModule,
         ButtonModule,
-        DotAutofocusDirective,
         DotFormDialogComponent,
         DotFieldValidationMessageComponent,
         DotPagesFavoritePageEmptySkeletonComponent,
