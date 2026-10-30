@@ -182,7 +182,8 @@ public class PasswordGenerator {
          * <p>Falls back to {@link #withDefaultValues()} when:</p>
          * <ul>
          *   <li>The active toolkit is not {@code RegExpToolkit}.</li>
-         *   <li>The pattern uses complex lookaheads with no extractable character class.</li>
+         *   <li>The pattern does not have a readable shape: optional leading lookaheads, then a
+         *   single character class with a {@code {n}}, {@code {n,}} or {@code {n,m}} quantifier.</li>
          * </ul>
          *
          * @return this builder
@@ -224,8 +225,9 @@ public class PasswordGenerator {
                         "Could not extract a character class from passwords.regexptoolkit.pattern"
                         + " (value: \"" + rawPattern + "\"). "
                         + "Pattern must follow the /^[CharClass]{n}$/, /^[CharClass]{n,}$/ or "
-                        + "/^[CharClass]{n,m}$/ shape. "
-                        + "Complex lookahead patterns are not supported. "
+                        + "/^[CharClass]{n,m}$/ shape, optionally preceded by lookaheads such as "
+                        + "(?=...) or (?!...). "
+                        + "Other patterns are not supported. "
                         + "Falling back to default password generator charsets.");
             }
             return withDefaultValues();
@@ -237,7 +239,8 @@ public class PasswordGenerator {
          * "at least two" per-group minimum as {@link #withDefaultValues()}, capped at the
          * number of characters that survive filtering.  Any characters in {@code allowedChars}
          * that fall outside the four default groups are appended as an optional supplementary
-         * charset (min=0).
+         * charset (min=0), except the space: a generated password never contains one, even when
+         * the pattern allows it, so it cannot start or end with a space by accident.
          *
          * <p>Package-private to allow direct unit-testing without a live PropsUtil context.</p>
          *
@@ -255,7 +258,7 @@ public class PasswordGenerator {
             final String allDefaults =
                     SPECIAL_CHARS + UPPER_CASE_LETTERS_CHARS + LOWER_CASE_LETTERS_CHARS + NUMBER_CHARS;
             final String remainder = allowedChars.chars()
-                    .filter(c -> allDefaults.indexOf(c) < 0)
+                    .filter(c -> allDefaults.indexOf(c) < 0 && c != ' ')
                     .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
                     .toString();
             if (!remainder.isEmpty()) {
@@ -376,11 +379,15 @@ public class PasswordGenerator {
         /**
          * Extracts just the {@code [CharClass]} token from a pattern of the shape
          * {@code /^[CharClass]{n}$/}, {@code /^[CharClass]{n,}$/}, or
-         * {@code /^[CharClass]{n,m}$/}.  Returns {@code null} when the pattern is
-         * {@code null}, empty, or does not follow one of those three shapes.
+         * {@code /^[CharClass]{n,m}$/}, optionally preceded by a run of lookaheads
+         * ({@code (?=...)} or {@code (?!...)}) right after the {@code ^}, such as
+         * {@code /^(?=.*[a-z])(?!.*\n)[ -~]{15,64}$/}.  The lookaheads are skipped, not
+         * interpreted.  Returns {@code null} when the pattern is {@code null}, empty, or does not
+         * follow one of those shapes.
          *
          * <p>The inner {@code (?:[^\]\\]|\\.)*} handles escaped characters such as {@code \[}
-         * and {@code \]} inside the class.</p>
+         * and {@code \]} inside the class.  A lookahead may not contain parentheses of its own;
+         * such a pattern is not extractable.</p>
          *
          * @param rawPattern the raw Perl5 pattern string as stored in {@code portal.properties}
          * @return the {@code [...]} character-class string, or {@code null} if not extractable
@@ -389,9 +396,10 @@ public class PasswordGenerator {
             if (rawPattern == null || rawPattern.trim().isEmpty()) {
                 return null;
             }
+            // (?:\\(\\?[=!](?:[^()\\\\]|\\\\.)*\\))* skips the optional leading lookaheads;
             // \\{\\d+(?:,\\d*)?\\} matches {n} (exact), {n,} (open) and {n,m} (bounded) quantifiers
             final java.util.regex.Matcher m = Pattern.compile(
-                    "^/\\^(\\[(?:[^\\]\\\\]|\\\\.)*\\])\\{\\d+(?:,\\d*)?\\}\\$/$"
+                    "^/\\^(?:\\(\\?[=!](?:[^()\\\\]|\\\\.)*\\))*(\\[(?:[^\\]\\\\]|\\\\.)*\\])\\{\\d+(?:,\\d*)?\\}\\$/$"
             ).matcher(rawPattern.trim());
             return m.matches() ? m.group(1) : null;
         }

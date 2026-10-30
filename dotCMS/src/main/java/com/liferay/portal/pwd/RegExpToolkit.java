@@ -25,13 +25,13 @@ package com.liferay.portal.pwd;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.PasswordGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.LocaleUtil;
-import com.liferay.util.PwdGenerator;
 import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.oro.text.perl.Perl5Util;
@@ -54,8 +54,15 @@ public class RegExpToolkit extends BasicToolkit {
         _pattern = pattern;
     }
 
+    /**
+     * Generates a random password that satisfies the password pattern configured in
+     * {@code passwords.regexptoolkit.pattern}. The pattern is read from the configuration, not from
+     * the pattern this instance was built with.
+     *
+     * @return a random password
+     */
     public String generate () {
-        return PwdGenerator.getPassword();
+        return new PasswordGenerator.Builder().withRegExpToolkitValues().build().nextPassword();
     }
 
     public boolean validate(String password) {
