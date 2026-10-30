@@ -47,11 +47,10 @@ public interface LanguageWebAPI {
 	Language getBackendLanguage(HttpServletRequest req);
 
 	/**
-	 * Return the back end session language, taking the {@link com.dotcms.repackage.org.apache.http.HttpRequest} object
+	 * Return the back end session language, taking the {@link javax.servlet.http.HttpServletRequest} object
 	 * from {@link HttpServletRequestThreadLocal#getRequest()}
 	 *
-	 * @param req
-	 * @return
+	 * @return the back end language for the request held by the current thread
 	 */
 	Language getBackendLanguage();
 
