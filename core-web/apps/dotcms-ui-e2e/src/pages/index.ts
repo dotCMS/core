@@ -1,5 +1,6 @@
 export { ContentDrivePage } from './contentDrive.page';
 export { ContentTypeBuilderPage } from './contentTypeBuilder.page';
+export { DotNavigationPage } from './dotNavigation.page';
 export { LegacyEditContentFormPage } from './legacyEditContentForm.page';
 export { ListingContentPage } from './listingContent.page';
 export { ListingContentTypesPage } from './listingContentTypes.page';

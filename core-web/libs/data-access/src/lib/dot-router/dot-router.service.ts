@@ -369,24 +369,14 @@ export class DotRouterService {
         this.router.navigate(['/public/forgotPassword']);
     }
 
+    /**
+     * The id of the portlet a route belongs to.
+     *
+     * @param url a route such as `/c/content?x=1`, `#/analytics/dashboard` or `/c/add/content`
+     * @returns the portlet id, or an empty string when the url names none
+     */
     getPortletId(url: string): string {
-        url = decodeURIComponent(url);
-
-        if (url.indexOf('?') > 0) {
-            url = url.substring(0, url.indexOf('?'));
-        }
-
-        const urlSegments = url
-            .split('/')
-            .filter((item) => item !== '' && item !== '#' && item !== 'c');
-
-        const key = urlSegments[0];
-
-        if (key && PORTLET_ID_RESOLVERS[key]) {
-            return PORTLET_ID_RESOLVERS[key](urlSegments);
-        }
-
-        return urlSegments.indexOf('add') > -1 ? urlSegments.splice(-1)[0] : key || '';
+        return getPortletIdFromUrl(url);
     }
 
     isPublicPage(): boolean {
@@ -492,3 +482,30 @@ const PORTLET_ID_RESOLVERS: Record<string, (urlSegments: string[]) => string> = 
         return 'velocity_playground';
     }
 };
+
+/**
+ * Reads the portlet id out of a route, without touching the router. It is the rule behind
+ * {@link DotRouterService.getPortletId}, exposed so the menu can resolve an item from a plain URL.
+ *
+ * @param url a route such as `/c/content?x=1`, `#/analytics/dashboard` or `/c/add/content`
+ * @returns the portlet id, or an empty string when the url names none
+ */
+export function getPortletIdFromUrl(url: string): string {
+    url = decodeURIComponent(url);
+
+    if (url.indexOf('?') > 0) {
+        url = url.substring(0, url.indexOf('?'));
+    }
+
+    const urlSegments = url
+        .split('/')
+        .filter((item) => item !== '' && item !== '#' && item !== 'c');
+
+    const key = urlSegments[0];
+
+    if (key && PORTLET_ID_RESOLVERS[key]) {
+        return PORTLET_ID_RESOLVERS[key](urlSegments);
+    }
+
+    return urlSegments.indexOf('add') > -1 ? urlSegments.splice(-1)[0] : key || '';
+}

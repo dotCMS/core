@@ -1,6 +1,3 @@
-import { of as observableOf } from 'rxjs';
-import { vi } from 'vitest';
-
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
@@ -11,11 +8,8 @@ import { MockDotHttpErrorManagerService, MockDotRouterService } from '@dotcms/ut
 
 import { DotContentletEditorService } from './dot-contentlet-editor.service';
 
-import { DotMenuService } from '../../../../api/services/dot-menu.service';
-
 describe('DotContentletEditorService', () => {
     let service: DotContentletEditorService;
-    let dotMenuService: DotMenuService;
     let dotRouterService: DotRouterService;
     let httpTesting: HttpTestingController;
 
@@ -25,17 +19,14 @@ describe('DotContentletEditorService', () => {
                 provideHttpClient(),
                 provideHttpClientTesting(),
                 DotContentletEditorService,
-                DotMenuService,
                 { provide: DotHttpErrorManagerService, useClass: MockDotHttpErrorManagerService },
                 { provide: DotRouterService, useClass: MockDotRouterService }
             ]
         });
 
         service = TestBed.inject(DotContentletEditorService);
-        dotMenuService = TestBed.inject(DotMenuService);
         dotRouterService = TestBed.inject(DotRouterService);
         httpTesting = TestBed.inject(HttpTestingController);
-        vi.spyOn(dotMenuService, 'getDotMenuId').mockReturnValue(observableOf('456'));
     });
 
     afterEach(() => {

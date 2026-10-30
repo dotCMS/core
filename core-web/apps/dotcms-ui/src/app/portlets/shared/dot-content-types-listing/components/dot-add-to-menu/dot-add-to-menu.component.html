@@ -25,12 +25,12 @@
                 {{ 'contenttypes.content.add_to_menu.show_under' | dm }}
             </label>
             <p-select
-                [options]="menu$ | async"
+                [options]="$menuOptions()"
                 id="menu"
                 data-testId="menuOption"
                 appendTo="body"
                 formControlName="menuOption"
-                optionLabel="name"
+                optionLabel="label"
                 optionValue="id" />
         </div>
         <div class="field">

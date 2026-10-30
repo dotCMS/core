@@ -4,22 +4,17 @@ import { inject, Injectable } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { Event, NavigationEnd, Router } from '@angular/router';
 
-import { filter, map, switchMap, take, tap } from 'rxjs/operators';
+import { filter, map, switchMap } from 'rxjs/operators';
 
 import { DotIframeService, DotRouterService } from '@dotcms/data-access';
 import { Auth, LoginService } from '@dotcms/dotcms-js';
-import { DotMenu } from '@dotcms/dotcms-models';
+import { MenuStatus } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-
-import { DotMenuService } from '../../../../api/services/dot-menu.service';
-import { DynamicRouteService } from '../../../../api/services/dynamic-route.service';
 
 @Injectable()
 export class DotNavigationService {
     private dotIframeService = inject(DotIframeService);
-    private dotMenuService = inject(DotMenuService);
     private dotRouterService = inject(DotRouterService);
-    private dynamicRouteService = inject(DynamicRouteService);
     private loginService = inject(LoginService);
     private router = inject(Router);
     private titleService = inject(Title);
@@ -29,87 +24,43 @@ export class DotNavigationService {
     constructor() {
         this._appMainTitle = this.titleService.getTitle();
 
-        // Load initial menu - store handles menu link processing and entity transformation
-        this.dotMenuService.loadMenu().subscribe((menus: DotMenu[]) => {
-            this.registerDynamicRoutes(menus);
-            this.#globalStore.loadMenu(menus);
+        // First load: the store asks the backend once and never again while it is `ready`.
+        this.#globalStore.ensureLoaded().subscribe();
 
-            if (this.dotRouterService.currentPortlet.id) {
-                this.#globalStore.setActiveMenu({
-                    portletId: this.dotRouterService.currentPortlet.id,
-                    shortParentMenuId: this.dotRouterService.queryParams['mId'],
-                    bookmark: true,
-                    breadcrumbs: this.#globalStore.breadcrumbs()
-                });
-            }
-        });
-
-        // Handle navigation end events
+        // Navigating between portlets only moves the title and the highlight; it never asks for the menu.
         this.onNavigationEnd()
             .pipe(
-                switchMap((event: NavigationEnd) => {
-                    return this.dotMenuService.loadMenu().pipe(
-                        tap(() => {
-                            const pageTitle = this.#globalStore.getPageTitleByUrl(
-                                event.urlAfterRedirects
-                            );
-                            if (pageTitle) {
-                                this.titleService.setTitle(`${pageTitle} - ${this._appMainTitle}`);
-                            }
-
-                            // validation for bookmark links with missing or invalid mId query param SHOULD MBE REMOVED SOON
-                            const queryParamsValid =
-                                !this.dotRouterService.queryParams['mId'] &&
-                                Object.keys(this.dotRouterService.queryParams).length === 0;
-
-                            if (this.dotRouterService.currentPortlet.id) {
-                                this.#globalStore.setActiveMenu({
-                                    portletId: this.dotRouterService.currentPortlet.id,
-                                    shortParentMenuId: this.dotRouterService.queryParams['mId'],
-                                    bookmark: queryParamsValid,
-                                    breadcrumbs: this.#globalStore.breadcrumbs()
-                                });
-                            }
-                        }),
-                        map(() => true)
-                    );
-                }),
-                filter((menu) => !!menu)
+                switchMap((event: NavigationEnd) =>
+                    this.#globalStore.ensureLoaded().pipe(map(() => event))
+                )
             )
-            .subscribe();
-
-        // Handle portlet layout updates from the global store WebSocket feature
-        this.#globalStore
-            .portletLayoutUpdated$()
-            .pipe(switchMap(() => this.dotMenuService.reloadMenu().pipe(take(1))))
-            .subscribe((menus: DotMenu[]) => {
-                this.registerDynamicRoutes(menus);
-                this.#globalStore.loadMenu(menus);
-
-                if (this.dotRouterService.currentPortlet.id) {
-                    this.#globalStore.setActiveMenu({
-                        portletId: this.dotRouterService.currentPortlet.id,
-                        shortParentMenuId: this.dotRouterService.queryParams['mId'],
-                        breadcrumbs: this.#globalStore.breadcrumbs()
-                    });
+            .subscribe((event: NavigationEnd) => {
+                const pageTitle = this.#globalStore.getPageTitleByUrl(event.urlAfterRedirects);
+                if (pageTitle) {
+                    this.titleService.setTitle(`${pageTitle} - ${this._appMainTitle}`);
                 }
             });
 
-        // Handle login/auth changes
+        // The backend changed the tool groups: replace the menu once. The store keeps the user's place.
+        this.#globalStore
+            .portletLayoutUpdated$()
+            .pipe(switchMap(() => this.#reloadMenu()))
+            .subscribe();
+
+        // Login and login-as: reload the menu for that user and land on its first portlet.
         this.loginService.auth$
             .pipe(
                 filter((auth: Auth) => !!(auth.loginAsUser || auth.user)),
-                switchMap(() => this.dotMenuService.reloadMenu())
+                switchMap(() => this.#reloadMenu()),
+                filter((status) => status === 'ready')
             )
-            .subscribe((menus: DotMenu[]) => {
-                this.registerDynamicRoutes(menus);
-                this.#globalStore.loadMenu(menus);
-                this.goToFirstPortlet();
-            });
+            .subscribe(() => this.goToFirstPortlet());
     }
 
-    onNavigationEnd(): Observable<Event> {
-        return this.router.events.pipe(filter((event: Event) => event instanceof NavigationEnd));
+    onNavigationEnd(): Observable<NavigationEnd> {
+        return this.router.events.pipe(
+            filter((event: Event): event is NavigationEnd => event instanceof NavigationEnd)
+        );
     }
 
     /**
@@ -143,8 +94,16 @@ export class DotNavigationService {
         }
     }
 
-    private registerDynamicRoutes(menus: DotMenu[]): void {
-        const allMenuItems = menus.flatMap((menu) => menu.menuItems);
-        this.dynamicRouteService.registerRoutesFromMenuItems(allMenuItems);
+    /**
+     * Starts a menu request and emits how it ended (`ready` or `error`). The wait is attached before
+     * the request starts so an answer that arrives at once is not missed.
+     */
+    #reloadMenu(): Observable<MenuStatus> {
+        return new Observable<MenuStatus>((subscriber) => {
+            const subscription = this.#globalStore.whenSettled().subscribe(subscriber);
+            this.#globalStore.reload();
+
+            return subscription;
+        });
     }
 }

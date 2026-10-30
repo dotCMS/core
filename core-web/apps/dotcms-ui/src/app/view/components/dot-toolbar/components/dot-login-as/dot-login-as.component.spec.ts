@@ -27,7 +27,6 @@ import { LoginServiceMock, MockDotMessageService, mockUser } from '@dotcms/utils
 
 import { DotLoginAsComponent } from './dot-login-as.component';
 
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { LOCATION_TOKEN } from '../../../../../providers';
 import { DotNavigationService } from '../../../dot-navigation/services/dot-navigation.service';
 
@@ -75,7 +74,6 @@ describe('DotLoginAsComponent', () => {
                 }
             },
             mockProvider(DotNavigationService),
-            mockProvider(DotMenuService),
             mockProvider(DotEventsService),
             // Provide a complete mock for PaginatorService
             {

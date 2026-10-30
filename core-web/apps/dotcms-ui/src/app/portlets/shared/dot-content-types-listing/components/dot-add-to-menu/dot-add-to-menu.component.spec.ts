@@ -2,15 +2,25 @@ import { of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
-import { DotMessageService, DotSystemConfigService } from '@dotcms/data-access';
+import {
+    DotCurrentUserService,
+    DotMessageService,
+    DotSystemConfigService
+} from '@dotcms/data-access';
+import { LoginService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
-import { dotcmsContentTypeBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
+import {
+    DotCurrentUserServiceMock,
+    dotcmsContentTypeBasicMock,
+    LoginServiceMock,
+    MockDotMessageService
+} from '@dotcms/utils-testing';
 
 import { DotAddToMenuComponent } from './dot-add-to-menu.component';
 
@@ -18,8 +28,6 @@ import {
     DotAddToMenuService,
     DotCreateCustomTool
 } from '../../../../../api/services/add-to-menu/add-to-menu.service';
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
-import { DotNavigationService } from '../../../../../view/components/dot-navigation/services/dot-navigation.service';
 
 const contentTypeVar = {
     ...dotcmsContentTypeBasicMock,
@@ -60,40 +68,26 @@ class DotAddToMenuServiceMock {
     }
 }
 
-class DotMenuServiceMock {
-    loadMenu(_force?: boolean) {
-        return of([
-            {
-                id: '123',
-                name: 'Menu 1',
-                label: 'Menu 1',
-                tabName: 'Name',
-                tabDescription: 'Description',
-                tabIcon: 'icon',
-                url: '/url/index',
-                active: false,
-                isOpen: false,
-                menuItems: []
-            },
-            {
-                id: '456',
-                name: 'Menu 2',
-                label: 'Menu 2',
-                tabName: 'Name 2',
-                tabDescription: 'Description 2',
-                tabIcon: 'icon2',
-                url: '/url/456',
-                active: false,
-                isOpen: false,
-                menuItems: []
-            }
-        ]);
-    }
-
-    getDotMenuId(_portletId: string) {
-        return of('123');
-    }
-}
+const menuResponse = {
+    entity: [
+        {
+            id: '123',
+            name: 'Menu 1',
+            tabName: 'Name',
+            tabIcon: 'icon',
+            url: '/url/index',
+            menuItems: [{ id: 'one', label: 'One', url: '/one', angular: true, ajax: false }]
+        },
+        {
+            id: '456',
+            name: 'Menu 2',
+            tabName: 'Name 2',
+            tabIcon: 'icon2',
+            url: '/url/456',
+            menuItems: [{ id: 'two', label: 'Two', url: '/two', angular: true, ajax: false }]
+        }
+    ]
+};
 
 describe('DotAddToMenuComponent', () => {
     let component: DotAddToMenuComponent;
@@ -101,7 +95,8 @@ describe('DotAddToMenuComponent', () => {
     let de: DebugElement;
     let dotdialog: DebugElement;
     let dotAddToMenuService: DotAddToMenuService;
-    let dotMenuService: DotMenuService;
+    let httpMock: HttpTestingController;
+    let globalStore: InstanceType<typeof GlobalStore>;
 
     const messageServiceMock = new MockDotMessageService({
         'contenttypes.content.add_to_menu.header': 'Add to Menu',
@@ -121,15 +116,15 @@ describe('DotAddToMenuComponent', () => {
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: DotAddToMenuService, useClass: DotAddToMenuServiceMock },
-                { provide: DotMenuService, useClass: DotMenuServiceMock },
                 {
                     provide: DotSystemConfigService,
                     useValue: { getSystemConfig: () => of({}) }
                 },
+                { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
+                { provide: LoginService, useClass: LoginServiceMock },
                 GlobalStore,
                 provideHttpClient(),
-                provideHttpClientTesting(),
-                DotNavigationService
+                provideHttpClientTesting()
             ]
         }).compileComponents();
 
@@ -137,36 +132,12 @@ describe('DotAddToMenuComponent', () => {
         de = fixture.debugElement.query(By.css('dot-add-to-menu'));
         component = de.componentInstance;
         dotAddToMenuService = TestBed.inject(DotAddToMenuService);
-        dotMenuService = TestBed.inject(DotMenuService);
+        httpMock = TestBed.inject(HttpTestingController);
+        globalStore = TestBed.inject(GlobalStore);
 
-        vi.spyOn(dotMenuService, 'loadMenu').mockReturnValue(
-            of([
-                {
-                    id: '123',
-                    name: 'Menu 1',
-                    label: 'Menu 1',
-                    tabName: 'Name',
-                    tabDescription: 'Description',
-                    tabIcon: 'icon',
-                    url: '/url/index',
-                    active: false,
-                    isOpen: false,
-                    menuItems: []
-                },
-                {
-                    id: '456',
-                    name: 'Menu 2',
-                    label: 'Menu 2',
-                    tabName: 'Name 2',
-                    tabDescription: 'Description 2',
-                    tabIcon: 'icon2',
-                    url: '/url/456',
-                    active: false,
-                    isOpen: false,
-                    menuItems: []
-                }
-            ])
-        );
+        // The shell has already loaded the menu: the dropdown reads that snapshot.
+        globalStore.reload();
+        httpMock.expectOne('/api/v1/menu').flush(menuResponse);
 
         fixture.detectChanges();
         dotdialog = de.query(By.css('p-dialog'));
@@ -220,8 +191,38 @@ describe('DotAddToMenuComponent', () => {
         expect(component.form.get('menuOption').value).toEqual('123');
         expect(component.form.get('title').value).toEqual(contentTypeVar.name);
         expect(component.form.valid).toEqual(true);
-        expect(dotMenuService.loadMenu).toHaveBeenCalledWith(true);
-        expect(dotMenuService.loadMenu).toHaveBeenCalledTimes(1);
+    });
+
+    describe('layouts dropdown', () => {
+        it('lists the groups of the navigation, the same ones the bar shows', () => {
+            expect(component.$menuOptions()).toEqual([
+                { id: '123', label: 'Name' },
+                { id: '456', label: 'Name 2' }
+            ]);
+            expect(component.$menuOptions().map((option) => option.label)).toEqual(
+                globalStore.menuGroup().map((group) => group.label)
+            );
+        });
+
+        it('makes no menu request of its own when the menu is already loaded', () => {
+            httpMock.expectNone('/api/v1/menu');
+        });
+
+        it('follows a later layout update without asking again', () => {
+            globalStore.reload();
+            httpMock.expectOne('/api/v1/menu').flush({ entity: [menuResponse.entity[1]] });
+
+            expect(component.$menuOptions()).toEqual([{ id: '456', label: 'Name 2' }]);
+        });
+
+        it('does not refetch the menu after a tool is added', () => {
+            vi.spyOn(dotAddToMenuService, 'createCustomTool').mockReturnValue(of(''));
+            vi.spyOn(dotAddToMenuService, 'addToLayout').mockReturnValue(of(''));
+
+            dotdialog.query(By.css('[data-testId="dotDialogAcceptAction"]')).nativeElement.click();
+
+            httpMock.expectNone('/api/v1/menu');
+        });
     });
 
     it('should invalidate form and set Add button disabled, when name empty', () => {

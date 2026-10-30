@@ -24,7 +24,6 @@ import {
 import { GlobalStore } from '@dotcms/store';
 
 import { DotNavigationService } from '../../../view/components/dot-navigation/services/dot-navigation.service';
-import { DotMenuService } from '../dot-menu.service';
 
 const CONTENT_DRIVE_PORTLET_ID = 'content-drive';
 const CONTENT_DRIVE_URL = `/${CONTENT_DRIVE_PORTLET_ID}`;
@@ -51,7 +50,6 @@ type ReplacedUrl =
  */
 @Injectable()
 export class MenuGuardService implements CanActivate {
-    private dotMenuService = inject(DotMenuService);
     private dotRouterService = inject(DotRouterService);
     private dotNavigationService = inject(DotNavigationService);
     private dotSessionStorageService = inject(DotSessionStorageService);
@@ -91,7 +89,8 @@ export class MenuGuardService implements CanActivate {
         const id = this.dotRouterService.getPortletId(url);
         const checkJSPPortlet = this.dotRouterService.isJSPPortletURL(url);
 
-        return this.dotMenuService.isPortletInMenu(id, checkJSPPortlet).pipe(
+        return this.globalStore.ensureLoaded().pipe(
+            map(() => this.globalStore.hasPortlet(id, { jspOnly: checkJSPPortlet })),
             switchMap(
                 (isValidPortlet): Observable<boolean | UrlTree | null> =>
                     isValidPortlet ? of(true) : this.getContentDriveRedirect(url)
@@ -134,16 +133,9 @@ export class MenuGuardService implements CanActivate {
             return of(null);
         }
 
-        return this.dotMenuService
-            .isPortletInMenu(CONTENT_DRIVE_PORTLET_ID)
-            .pipe(
-                switchMap(
-                    (hasContentDrive): Observable<UrlTree | false | null> =>
-                        hasContentDrive
-                            ? this.getContentDriveUrl(replaced, urlTree.queryParams)
-                            : of(null)
-                )
-            );
+        return this.globalStore.hasPortlet(CONTENT_DRIVE_PORTLET_ID)
+            ? this.getContentDriveUrl(replaced, urlTree.queryParams)
+            : of(null);
     }
 
     /**

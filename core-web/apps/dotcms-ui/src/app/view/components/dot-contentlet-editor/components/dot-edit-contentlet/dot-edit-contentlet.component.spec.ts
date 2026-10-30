@@ -15,7 +15,6 @@ import { DotMessageDisplayServiceMock, LoginServiceMock } from '@dotcms/utils-te
 import { DotEditContentletComponent } from './dot-edit-contentlet.component';
 
 import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
-import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { DOTTestBed } from '../../../../../test/dot-test-bed';
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
 import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
@@ -46,14 +45,6 @@ describe('DotEditContentletComponent', () => {
                 {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
-                },
-                {
-                    provide: DotMenuService,
-                    useValue: {
-                        getDotMenuId() {
-                            return observableOf('999');
-                        }
-                    }
                 },
                 {
                     provide: LoginService,
