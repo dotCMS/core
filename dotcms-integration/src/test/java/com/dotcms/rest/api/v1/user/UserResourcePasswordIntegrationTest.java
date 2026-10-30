@@ -51,9 +51,9 @@ import org.junit.Test;
  */
 public class UserResourcePasswordIntegrationTest {
 
-    /** Meets the default policy in portal.properties: 8+ characters from the allowed set. */
+    /** Meets the default policy in portal.properties: 15 to 64 characters with all four classes. */
     private static final String VALID_PASSWORD = "Changed-Pass-2026!";
-    /** Too short for the default policy, which requires at least 8 characters. */
+    /** Too short for the default policy, which requires at least 15 characters. */
     private static final String SHORT_PASSWORD = "abcdef";
 
     private static UserResource resource;

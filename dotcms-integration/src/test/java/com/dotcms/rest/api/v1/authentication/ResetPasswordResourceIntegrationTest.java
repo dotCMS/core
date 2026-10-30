@@ -27,7 +27,7 @@ import javax.ws.rs.core.Response;
 public class ResetPasswordResourceIntegrationTest{
 
     static ResetPasswordResource resource;
-    private final String newPassword = "n3wP@ssworD";
+    private final String newPassword = "n3wP@ssworD-2026";
 
     @BeforeClass
 	public static void prepare() throws Exception{

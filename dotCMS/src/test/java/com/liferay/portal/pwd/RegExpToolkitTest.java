@@ -12,7 +12,8 @@ public class RegExpToolkitTest extends UnitTestBase {
     RegExpToolkit toolkit = new RegExpToolkit("/((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{6,})/");
 
     // Default pattern from portal.properties (passwords.regexptoolkit.pattern)
-    RegExpToolkit defaultToolkit = new RegExpToolkit("/^[A-Za-z0-9!@#$%^&*()_\\-=+.,';:`~<>\\[\\]?]{8,}$/");
+    RegExpToolkit defaultToolkit = new RegExpToolkit(
+            "/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9 ])(?!.*\\n)[ -~]{15,64}$/");
 
     @Test
     public void testInvalidPasswordFormat() {
@@ -54,23 +55,23 @@ public class RegExpToolkitTest extends UnitTestBase {
     @Test
     public void testDefaultPatternRejectsInvalidPasswords() {
         // Too short
-        assertFalse(defaultToolkit.validate("Abc1234"));
-        // Contains disallowed whitespace
-        assertFalse(defaultToolkit.validate("Abc 12345"));
+        assertFalse(defaultToolkit.validate("Abc1234!Abc123"));
+        // Missing a class (no special character; a space does not count)
+        assertFalse(defaultToolkit.validate("Abc 12345Abc1234"));
         // null
         assertFalse(defaultToolkit.validate(null));
     }
 
     @Test
     public void testDefaultPatternAcceptsValidPasswords() {
-        // Basic alphanumeric (8+ chars)
-        assertTrue(defaultToolkit.validate("Abcde123"));
+        // Minimum length with all four classes
+        assertTrue(defaultToolkit.validate("Abcdefghijkl12!"));
         // With special chars from the allowed set
-        assertTrue(defaultToolkit.validate("Abcde1!@"));
+        assertTrue(defaultToolkit.validate("Abcdefghijk1!@#"));
         // With '?' — previously rejected, now allowed (issue #34616)
-        assertTrue(defaultToolkit.validate("Abcde12?"));
-        assertTrue(defaultToolkit.validate("Ab?de12#"));
+        assertTrue(defaultToolkit.validate("Abcdefghijkl12?"));
+        assertTrue(defaultToolkit.validate("Ab?defghijkl12#"));
         // Mixed special chars including '?'
-        assertTrue(defaultToolkit.validate("P@ssw0rd?"));
+        assertTrue(defaultToolkit.validate("P@ssw0rd?P@ssw0rd?"));
     }
 }
