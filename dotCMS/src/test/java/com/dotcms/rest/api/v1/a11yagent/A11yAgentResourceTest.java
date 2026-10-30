@@ -13,8 +13,11 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
+import com.dotcms.rest.ErrorEntity;
 import com.dotcms.rest.InitDataObject;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
@@ -22,17 +25,27 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.HostWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.business.HTMLPageAssetAPI;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.liferay.portal.model.User;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.ArgumentMatchers;
 import org.mockito.MockedStatic;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
+import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.Optional;
 
 /**
@@ -159,7 +172,7 @@ public class A11yAgentResourceTest {
      */
     @Test
     void fix_missingApiAuthToken_returns503() throws Exception {
-        configureApp("https://agent.example.com", null);
+        configureApp("https://203.0.113.10", null);
 
         final Response resp = resource.fix(request, response, fixForm("page-id"));
 
@@ -205,7 +218,7 @@ public class A11yAgentResourceTest {
      */
     @Test
     void fix_missingIdentifier_returns400() throws Exception {
-        configureApp("https://agent.example.com", "secret-token");
+        configureApp("https://203.0.113.10", "secret-token");
 
         final Response resp = resource.fix(request, response, fixForm(null));
 
@@ -219,7 +232,7 @@ public class A11yAgentResourceTest {
      */
     @Test
     void fix_nullBody_returns400() throws Exception {
-        configureApp("https://agent.example.com", "secret-token");
+        configureApp("https://203.0.113.10", "secret-token");
 
         final Response resp = resource.fix(request, response, null);
 
@@ -234,7 +247,7 @@ public class A11yAgentResourceTest {
      */
     @Test
     void stop_missingRunId_returns400WithoutMintingAToken() throws Exception {
-        configureApp("https://agent.example.com", "secret-token");
+        configureApp("https://203.0.113.10", "secret-token");
 
         final Response resp = resource.stop(request, response,
                 A11yAgentStopForm.builder().build());
@@ -251,7 +264,7 @@ public class A11yAgentResourceTest {
      */
     @Test
     void stop_nullBody_returns400() throws Exception {
-        configureApp("https://agent.example.com", "secret-token");
+        configureApp("https://203.0.113.10", "secret-token");
 
         final Response resp = resource.stop(request, response, null);
 
@@ -286,7 +299,7 @@ public class A11yAgentResourceTest {
      */
     @Test
     void fixStream_pageNotFound_returnsClosedErrorStream() throws Exception {
-        configureApp("https://agent.example.com", "secret-token");
+        configureApp("https://203.0.113.10", "secret-token");
 
         final var output = resource.fixStream(request, response, fixForm("no-such-page"));
 
@@ -307,12 +320,145 @@ public class A11yAgentResourceTest {
      */
     @Test
     void fix_errorResponse_neverCarriesTheAuthToken() throws Exception {
-        configureApp("https://agent.example.com", "super-secret-token-value");
+        configureApp("https://203.0.113.10", "super-secret-token-value");
 
         final Response resp = resource.fix(request, response, fixForm(null));
 
         final String body = String.valueOf(resp.getEntity());
         assertFalse(body.contains("super-secret-token-value"),
                 "the App auth token must never reach the client");
+    }
+
+    // -----------------------------------------------------------------------
+    // Service URL check — runs before any token is created
+    // -----------------------------------------------------------------------
+
+    /**
+     * Method to test: {@link A11yAgentResource#fix}
+     * Given scenario: The App's {@code apiUrl} is a plain {@code http} URL, and the page
+     *   resolves.
+     * Expected result: 503 A11Y_AGENT_NOT_CONFIGURED, the same answer as an unconfigured
+     *   App; no token is created and nothing is sent.
+     */
+    @Test
+    void fix_refusedApiUrl_returns503WithoutTokenOrRequest() throws Exception {
+        configureApp("http://203.0.113.10", "secret-token");
+        configurePage("page-id");
+        configureTokenGeneration();
+        configureHttpClient(200, "{}");
+
+        final Response resp = resource.fix(request, response, fixForm("page-id"));
+
+        assertEquals(Response.Status.SERVICE_UNAVAILABLE.getStatusCode(), resp.getStatus());
+        assertEquals("A11Y_AGENT_NOT_CONFIGURED", errorCode(resp));
+        verify(apiTokenAPI, never())
+                .persistApiToken(anyString(), any(), anyString(), anyString(), anyString());
+        verify(httpClient, never()).send(any(), any());
+    }
+
+    /**
+     * Method to test: {@link A11yAgentResource#fixStream}
+     * Given scenario: The App's {@code apiUrl} is a plain {@code http} URL, and the page
+     *   resolves.
+     * Expected result: a closed stream carrying the error frame, and no token is created.
+     */
+    @Test
+    void fixStream_refusedApiUrl_returnsClosedStreamWithoutTokenOrRequest() throws Exception {
+        configureApp("http://203.0.113.10", "secret-token");
+        configurePage("page-id");
+        configureTokenGeneration();
+
+        final var output = resource.fixStream(request, response, fixForm("page-id"));
+
+        assertNotNull(output);
+        assertTrue(output.isClosed());
+        verify(apiTokenAPI, never())
+                .persistApiToken(anyString(), any(), anyString(), anyString(), anyString());
+    }
+
+    /**
+     * Method to test: {@link A11yAgentResource#stop}
+     * Given scenario: The App's {@code apiUrl} is a plain {@code http} URL, and a runId is set.
+     * Expected result: 503 A11Y_AGENT_NOT_CONFIGURED; no token is created and nothing is sent.
+     */
+    @Test
+    void stop_refusedApiUrl_returns503WithoutTokenOrRequest() throws Exception {
+        configureApp("http://203.0.113.10", "secret-token");
+        configureTokenGeneration();
+        configureHttpClient(202, "{}");
+
+        final Response resp = resource.stop(request, response,
+                A11yAgentStopForm.builder().runId("run-1").build());
+
+        assertEquals(Response.Status.SERVICE_UNAVAILABLE.getStatusCode(), resp.getStatus());
+        assertEquals("A11Y_AGENT_NOT_CONFIGURED", errorCode(resp));
+        verify(apiTokenAPI, never())
+                .persistApiToken(anyString(), any(), anyString(), anyString(), anyString());
+        verify(httpClient, never()).send(any(), any());
+    }
+
+    /**
+     * Method to test: {@link A11yAgentResource#stop}
+     * Given scenario: The App's {@code apiUrl} is an accepted https URL with a trailing slash.
+     * Expected result: the request goes to that base URL plus the agent's stop path.
+     */
+    @Test
+    void stop_acceptedApiUrl_sendsToTheConfiguredBase() throws Exception {
+        configureApp("https://203.0.113.10/", "secret-token");
+        configureTokenGeneration();
+        configureHttpClient(202, "{}");
+
+        resource.stop(request, response, A11yAgentStopForm.builder().runId("run-1").build());
+
+        final ArgumentCaptor<HttpRequest> sent = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(httpClient).send(sent.capture(),
+                ArgumentMatchers.<HttpResponse.BodyHandler<String>>any());
+        assertEquals(URI.create("https://203.0.113.10/agents/a11y/stop"), sent.getValue().uri());
+    }
+
+    /** Stubs the lookups that turn a page identifier into the page sent to the agent. */
+    private void configurePage(final String identifier) throws Exception {
+        final Contentlet contentlet = mock(Contentlet.class);
+        final ContentletAPI contentletAPI = mock(ContentletAPI.class);
+        when(contentletAPI.findContentletByIdentifierAnyLanguage(identifier, false))
+                .thenReturn(contentlet);
+        mockedApiLocator.when(APILocator::getContentletAPI).thenReturn(contentletAPI);
+
+        final HTMLPageAsset page = mock(HTMLPageAsset.class);
+        when(page.getHost()).thenReturn("site-id");
+        when(page.getURI()).thenReturn("/about-us");
+        final HTMLPageAssetAPI pageAPI = mock(HTMLPageAssetAPI.class);
+        when(pageAPI.fromContentlet(contentlet)).thenReturn(page);
+        mockedApiLocator.when(APILocator::getHTMLPageAssetAPI).thenReturn(pageAPI);
+
+        final Host site = mock(Host.class);
+        when(site.getHostname()).thenReturn("demo.dotcms.com");
+        final HostAPI hostAPI = mock(HostAPI.class);
+        when(hostAPI.find(anyString(), any(User.class), anyBoolean())).thenReturn(site);
+        mockedApiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
+    }
+
+    /** Stubs apiTokenAPI so the short-lived token can be created. */
+    private void configureTokenGeneration() throws Exception {
+        final ApiToken apiToken = mock(ApiToken.class);
+        when(apiTokenAPI.persistApiToken(anyString(), any(), anyString(), anyString(), anyString()))
+                .thenReturn(apiToken);
+        when(apiTokenAPI.getJWT(any(ApiToken.class), any(User.class)))
+                .thenReturn("mock.jwt.token");
+    }
+
+    /** Stubs {@link HttpClient#send} to return the given status code and body. */
+    @SuppressWarnings("unchecked")
+    private void configureHttpClient(final int statusCode, final String body) throws Exception {
+        final HttpResponse<String> httpResponse = mock(HttpResponse.class);
+        when(httpResponse.statusCode()).thenReturn(statusCode);
+        when(httpResponse.body()).thenReturn(body);
+        when(httpClient.send(any(), ArgumentMatchers.<HttpResponse.BodyHandler<String>>any()))
+                .thenReturn(httpResponse);
+    }
+
+    /** Reads the error code of an error response built by the resource. */
+    private static String errorCode(final Response resp) {
+        return ((ErrorEntity) ((ResponseEntityView<?>) resp.getEntity()).getEntity()).getErrorCode();
     }
 }
