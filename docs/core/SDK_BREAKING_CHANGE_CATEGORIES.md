@@ -250,7 +250,10 @@ correctly with no visible error.
 ### Context
 
 `SdkVersionWebInterceptor` sets `X-DotCMS-Version` (from `ReleaseInfo.getVersion()`) and
-`X-DotCMS-Min-SDK` (from `MinSdkVersion.VALUE`) on every response. `sdk-compatibility.ts`'s
+`X-DotCMS-Min-SDK` (from `MinSdkVersion.VALUE`) on every response to a request that carries valid
+credentials (a logged-in session or a bearer token, which is every SDK request); requests without
+credentials get neither header unless `FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS` is on.
+`sdk-compatibility.ts`'s
 `checkSdkCompatibility()` reads them case-insensitively via `Headers.get()`, and `compareVersions()`
 parses both as numeric, dot/dash-separated segments (`parseVersionSegments`), returning `null` (fail
 open, no warning) for anything that doesn't parse as plain integers — including LTS-shaped strings

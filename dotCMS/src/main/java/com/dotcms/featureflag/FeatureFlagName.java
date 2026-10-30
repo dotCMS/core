@@ -177,4 +177,21 @@ public interface FeatureFlagName {
      * the credential fields cleared.
      */
     String FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES = "FEATURE_FLAG_CMSUSER_READ_ONLY_PROFILES";
+
+    /**
+     * Also sends the dotCMS version headers ({@code X-DotCMS-Version}, {@code X-DotCMS-Min-SDK})
+     * and the {@code x-dot-server} node header on requests that carry no valid credentials. Off by
+     * default: those headers go only to requests with a logged-in session or a valid bearer token,
+     * which is what the {@code @dotcms/client} SDK sends. Turn it on to restore the earlier
+     * behavior of sending them on every response.
+     *
+     * <p>Does not override {@code RESPONSE_HEADER_ADD_NODE_ID=false}, which still removes
+     * {@code x-dot-server} from every response, nor the {@code ?nodeid=true} request parameter,
+     * which still requests it on a single response.
+     *
+     * @see com.dotcms.filters.interceptor.meta.SdkVersionWebInterceptor
+     * @see com.dotcms.filters.interceptor.meta.ResponseMetaDataWebInterceptor
+     */
+    String FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS =
+            "FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS";
 }
