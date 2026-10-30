@@ -118,6 +118,48 @@ public class PasswordGeneratorPolicyShapeTest {
     }
 
     /**
+     * Method to test: {@link PasswordGenerator.Builder#extractMinLength(String)},
+     * {@code extractMaxLength} and {@code withRegExpToolkitValues}
+     * Given Scenario: An override whose lookahead has a quantifier of its own ({@code {1}}) before
+     * the class and its bounds ({@code {18,24}}).
+     * Expected Result: the bounds are the ones that follow the class, and the generated passwords
+     * are 18 characters long, so they satisfy the override.
+     */
+    @Test
+    public void test_quantifierInsideLookahead_isNotTakenAsTheLength() {
+        final String override = "/^(?=.*[a-z]{1})[A-Za-z0-9]{18,24}$/";
+        assertEquals(18, PasswordGenerator.Builder.extractMinLength(override));
+        assertEquals(24, PasswordGenerator.Builder.extractMaxLength(override));
+
+        final RegExpToolkit overrideValidator = new RegExpToolkit(override);
+        final PasswordGenerator generator = new PasswordGenerator.Builder()
+                .withRegExpToolkitValues(TOOLKIT, override).build();
+        for (int i = 0; i < 200; i++) {
+            final String password = generator.nextPassword();
+            assertEquals(18, password.length());
+            assertTrue("must satisfy the override: " + password, overrideValidator.validate(password));
+        }
+    }
+
+    /**
+     * Method to test: {@link PasswordGenerator.Builder#extractMinLength(String)} and
+     * {@code extractMaxLength}
+     * Given Scenario: Patterns of the shapes the extractor read before: exact, open and bounded
+     * quantifiers after the class, and a pattern with no class at all.
+     * Expected Result: the same bounds as before.
+     */
+    @Test
+    public void test_boundsOfOlderShapes_areUnchanged() {
+        assertEquals(8, PasswordGenerator.Builder.extractMinLength("/^[A-Z]{8}$/"));
+        assertEquals(8, PasswordGenerator.Builder.extractMaxLength("/^[A-Z]{8}$/"));
+        assertEquals(8, PasswordGenerator.Builder.extractMinLength("/^[A-Z]{8,}$/"));
+        assertEquals(Integer.MAX_VALUE, PasswordGenerator.Builder.extractMaxLength("/^[A-Z]{8,}$/"));
+        assertEquals(10, PasswordGenerator.Builder.extractMinLength("/^[A-Z]{10,20}$/"));
+        assertEquals(20, PasswordGenerator.Builder.extractMaxLength("/^[A-Z]{10,20}$/"));
+        assertEquals(6, PasswordGenerator.Builder.extractMinLength("/((?=.*\\d).{6,})/"));
+    }
+
+    /**
      * Method to test: {@link PasswordGenerator.Builder#withRegExpToolkitValues(String, String)}
      * Given Scenario: An override whose shape cannot be read (no leading anchor).
      * Expected Result: the generator falls back to its built-in alphabet and 16 characters.

@@ -209,6 +209,29 @@ describe('DotUsersCreateComponent', () => {
             );
         });
 
+        it('should send the password exactly as typed, spaces included', () => {
+            const typed = ' Xy7#abcdefghijk ';
+            spectator.component.form.patchValue({
+                account: {
+                    firstName: 'Ada',
+                    lastName: 'Lovelace',
+                    email: 'ada@dotcms.com',
+                    password: typed,
+                    confirmPassword: typed
+                }
+            });
+            spectator.detectChanges();
+
+            spectator.click(saveButton(spectator));
+
+            expect(dialogRef.close).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    action: 'save',
+                    payload: expect.objectContaining({ password: typed })
+                })
+            );
+        });
+
         it('should surface passwordMismatch when passwords do not match', () => {
             spectator.component.form.patchValue({
                 account: {
