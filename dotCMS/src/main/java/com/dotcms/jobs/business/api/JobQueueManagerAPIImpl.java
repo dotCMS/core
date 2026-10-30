@@ -458,15 +458,19 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     /**
      * Tells whether a user may read and cancel a job: CMS Administrators can, and so can the user
-     * who created it, recorded as the job's {@code userId} parameter.
+     * who created it, recorded as the job's {@code userId} parameter. A job with no recorded
+     * creator is for CMS Administrators only.
      *
      * @param job  the job
      * @param user the {@link User} asking; {@code null} may not
      * @return true when the user may read and cancel the job
      */
     private static boolean canAccess(final Job job, final User user) {
-        return user != null && (user.isAdmin()
-                || Objects.equals(user.getUserId(), job.parameters().get("userId")));
+        if (user == null) {
+            return false;
+        }
+        final Object creator = job.parameters().get("userId");
+        return user.isAdmin() || (creator != null && creator.equals(user.getUserId()));
     }
 
     @CloseDBIfOpened

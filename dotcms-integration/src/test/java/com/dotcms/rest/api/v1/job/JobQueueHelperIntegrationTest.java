@@ -437,6 +437,66 @@ public class JobQueueHelperIntegrationTest  extends com.dotcms.Junit5WeldBaseTes
     }
 
     /**
+     * Given scenario: an administrator cancels a job a back-end user created
+     * Expected result: the request is accepted and the job's cancellation is under way
+     */
+    @Test
+    void cancelJob_acceptsRequestFromAdministrator() throws DotDataException {
+        final User owner = user("owner-" + UUIDGenerator.shorty(), false);
+        final User admin = user("admin-" + UUIDGenerator.shorty(), true);
+        final String jobId = createJobAs(newQueue(), owner);
+
+        Assertions.assertDoesNotThrow(() -> jobQueueHelper.cancelJob(jobId, admin));
+
+        final JobState state = jobQueueManagerAPI.getJob(jobId).state();
+        Assertions.assertTrue(state == JobState.CANCEL_REQUESTED || state == JobState.CANCELLING
+                || state == JobState.CANCELED, "unexpected state " + state);
+    }
+
+    /**
+     * Given scenario: a job is created without a recorded creator, as internal jobs may be, and is
+     * read and listed by a back-end user and by an administrator
+     * Expected result: the back-end user gets "not found" and an empty listing; the administrator
+     * reads and lists it
+     */
+    @Test
+    void jobWithoutCreator_isAvailableToAdministratorsOnly() throws DotDataException {
+        final String queueName = newQueue();
+        final String jobId = jobQueueManagerAPI.createJob(queueName, Map.of("key", "value"));
+        final User backendUser = user("other-" + UUIDGenerator.shorty(), false);
+        final User admin = user("admin-" + UUIDGenerator.shorty(), true);
+
+        assertThrows(DoesNotExistException.class, () -> jobQueueHelper.getJob(jobId, backendUser));
+        Assertions.assertEquals(0,
+                jobQueueHelper.getJobs(JobListView.ALL, queueName, backendUser, 1, 50).total());
+
+        Assertions.assertEquals(jobId, jobQueueHelper.getJob(jobId, admin).id());
+        Assertions.assertEquals(Set.of(jobId),
+                ids(jobQueueHelper.getJobs(JobListView.ALL, queueName, admin, 1, 50)));
+    }
+
+    /**
+     * Given scenario: a job is requested with a userId parameter naming another user
+     * Expected result: the job records the requesting user as its creator, so the named user
+     * cannot read it and the requesting user can
+     */
+    @Test
+    void createJob_recordsTheRequestingUserAsCreator() throws DotDataException {
+        final String queueName = newQueue();
+        final User requester = user("owner-" + UUIDGenerator.shorty(), false);
+        final User named = user("other-" + UUIDGenerator.shorty(), false);
+
+        final String jobId = jobQueueHelper.createJob(queueName,
+                Map.<String, Object>of("userId", named.getUserId()), requester,
+                mock(HttpServletRequest.class));
+
+        Assertions.assertEquals(requester.getUserId(),
+                jobQueueManagerAPI.getJob(jobId).parameters().get("userId"));
+        Assertions.assertEquals(jobId, jobQueueHelper.getJob(jobId, requester).id());
+        assertThrows(DoesNotExistException.class, () -> jobQueueHelper.getJob(jobId, named));
+    }
+
+    /**
      * Given scenario: the job to monitor is looked up for its creator and for another back-end user
      * Expected result: the creator gets the job, the other user gets none
      */
@@ -539,7 +599,7 @@ public class JobQueueHelperIntegrationTest  extends com.dotcms.Junit5WeldBaseTes
         final String queueName = newQueue();
         final User owner = user("owner-" + UUIDGenerator.shorty(), false);
 
-        for (final String key : List.of("tempFileId", "requestFingerPrint")) {
+        for (final String key : List.of("tempFileId", "requestFingerPrint", "requestFingerprint")) {
             final JobParams jobParams = new JobParams();
             jobParams.setJsonParams("{\"" + key + "\":\"value\"}");
             Assertions.assertThrows(BadRequestException.class, () -> jobQueueHelper.createJob(

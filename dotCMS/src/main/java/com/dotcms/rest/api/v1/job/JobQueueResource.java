@@ -849,7 +849,7 @@ public class JobQueueResource {
                     ),
                     @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
                     @ApiResponse(responseCode = "403", description = "Forbidden: User does not have permissions to monitor the specified job."),
-                                        @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while establishing the monitoring connection.")
+                    @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while establishing the monitoring connection.")
             }
     )
     public EventOutput monitorJob(
