@@ -436,8 +436,9 @@ public interface RoleAPI {
 	 * @param roleIds        the ids of the roles to look for
 	 * @param requestingUser the {@link User} asking
 	 * @return {@code true} if the user holds at least one of the roles
-	 * @throws DotSecurityException if {@code userId} is not the requesting user's id and the
-	 *                              requesting user does not have the role membership privilege
+	 * @throws DotSecurityException if there is no requesting user, or if {@code userId} is not the
+	 *                              requesting user's id and the requesting user does not have the
+	 *                              role membership privilege
 	 * @throws DotDataException     if the requesting user's portlet access cannot be resolved
 	 */
 	boolean doesUserHaveRoles(String userId, List<String> roleIds, User requestingUser)

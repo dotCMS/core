@@ -188,6 +188,19 @@ public class RoleAPIImplTest {
 
     /**
      * Method to test: {@link RoleAPIImpl#doesUserHaveRoles(String, List, User)}
+     * Given scenario: There is no requesting user.
+     * Expected result: {@link DotSecurityException}, and no role lookup runs.
+     */
+    @Test
+    public void testDoesUserHaveRoles_WhenNoRequestingUser_ShouldReject() throws Exception {
+        final RoleAPIImpl api = spyAnswering(true);
+
+        assertThrows(DotSecurityException.class, () -> api.doesUserHaveRoles(OTHER_USER_ID, ROLE_IDS, null));
+        verify(api, never()).doesUserHaveRoles(anyString(), anyList());
+    }
+
+    /**
+     * Method to test: {@link RoleAPIImpl#doesUserHaveRoles(String, List, User)}
      * Given scenario: A requesting user without the role membership privilege checks its own roles.
      * Expected result: The answer of the role lookup.
      */
