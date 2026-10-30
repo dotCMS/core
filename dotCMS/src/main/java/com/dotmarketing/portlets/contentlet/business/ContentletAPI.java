@@ -713,14 +713,20 @@ public interface ContentletAPI {
 			DotSecurityException;
 
 	/**
-	 * Adds the permissions query fragment to the given query based on the given user and roles
+	 * Adds the permissions query fragment to the given query based on the given user and roles.
+	 * <p>
+	 * The fragment is appended as text and only a single space separates it from what the query
+	 * already holds, so the query is normalized first: a trailing run of backslashes of odd length
+	 * is completed with one more, which stops it from consuming that separator. Implementations
+	 * that override this method have to keep that normalization, or the fragment they append may
+	 * not parse as a clause of its own.
 	 *
-	 * @param buffy
-	 * @param user
-	 * @param roles
-	 * @param respectFrontendRoles
-	 * @throws DotSecurityException
-	 * @throws DotDataException
+	 * @param buffy the query to append to, normalized in place before the fragment is added
+	 * @param user the {@link User} the query is run for, or {@code null} for an anonymous caller
+	 * @param roles the {@link Role}s held by that user; empty for an anonymous caller
+	 * @param respectFrontendRoles whether the anonymous and logged-in-site roles grant read as well
+	 * @throws DotSecurityException if the caller's roles cannot be resolved
+	 * @throws DotDataException if the role data cannot be read
 	 */
 	public void addPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
 
@@ -731,8 +737,15 @@ public interface ContentletAPI {
 	 * {@code secondaryPermissionCheck=true}. Self-guards on {@code PERMISSION_SECONDARY_CATEGORY_CHECK}
 	 * and on admin users. Must be applied alongside {@link #addPermissionsToQuery} by every search
 	 * backend (ES and OS) to keep permission filtering consistent across the migration phases.
+	 * <p>
+	 * The fragment is appended as text and only a single space separates it from what the query
+	 * already holds, so the query is normalized first, the same way {@link #addPermissionsToQuery}
+	 * normalizes it: a trailing run of backslashes of odd length is completed with one more, which
+	 * stops it from consuming that separator. Implementations that override this method have to
+	 * keep that normalization, and must not touch the query on the paths where they append
+	 * nothing.
 	 *
-	 * @param buffy the query buffer to append to
+	 * @param buffy the query buffer to append to, normalized in place before the fragment is added
 	 * @param user the user performing the search
 	 * @param roles the user's roles
 	 * @param respectFrontendRoles whether to include the anonymous/frontend role

@@ -1854,7 +1854,13 @@ public class ContentResourceTest extends IntegrationTestBase {
                 .setProperty("code", code)
                 .setProperty("url", "somevalue");
 
-        final Contentlet contentlet = contentletDataGen.nextPersisted();
+        // A widget's field values are only evaluated as Velocity when its last modifier holds the
+        // Scripting Developer role, so the content is checked in by a user who has it.
+        final Contentlet toCheckin = contentletDataGen.next();
+        toCheckin.setIndexPolicy(IndexPolicy.FORCE);
+        toCheckin.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+        final Contentlet contentlet = contentletAPI.checkin(toCheckin, getScriptingDeveloperUser(),
+                false);
         ContentletDataGen.publish(contentlet);
 
         // Build request and response
@@ -1879,6 +1885,28 @@ public class ContentResourceTest extends IntegrationTestBase {
         Assert.assertEquals(15,Integer.parseInt(parsedCode));
         Assert.assertEquals(15,Integer.parseInt(parsedWidgetCode));
 
+    }
+
+    /**
+     * Returns a reusable back-end user holding the Scripting Developer role, which is what allows a
+     * widget's field values to be evaluated as Velocity, plus the CMS Administrator role so the
+     * user can check content in.
+     *
+     * @return the user, created on the first call and reused afterwards
+     * @throws DotDataException if the role or the user cannot be read or created
+     */
+    private static User getScriptingDeveloperUser() throws DotDataException {
+        Role scriptingRole = roleAPI.loadRoleByKey(Role.SCRIPTING_DEVELOPER);
+        if (scriptingRole == null) {
+            scriptingRole = new RoleDataGen().key(Role.SCRIPTING_DEVELOPER)
+                    .name(Role.SCRIPTING_DEVELOPER).nextPersisted();
+        }
+        final User scriptingDeveloper = TestUserUtils.getUser(scriptingRole,
+                "scripting.developer@dotcms.com", "Scripting", "Developer", "scripting");
+        // The CMS Administrator role, not the deprecated "Administrator" one, is what grants the
+        // write permission the checkin needs.
+        roleAPI.addRoleToUser(roleAPI.loadCMSAdminRole(), scriptingDeveloper);
+        return scriptingDeveloper;
     }
 
     public static String removeSpecialCharacters(String input) {

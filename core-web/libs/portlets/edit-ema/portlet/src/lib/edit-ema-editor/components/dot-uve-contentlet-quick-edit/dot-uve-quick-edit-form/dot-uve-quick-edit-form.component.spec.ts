@@ -20,8 +20,9 @@ import { DotUveQuickEditFormComponent } from './dot-uve-quick-edit-form.componen
 import { UveOptimisticSaveService } from '../../../../services/uve-optimistic-save/uve-optimistic-save.service';
 import { UVE_STATUS } from '../../../../shared/enums';
 import { UVEStore } from '../../../../store/dot-uve.store';
+import { ContentletEditData } from '../../../../store/features/editor/models';
 import { PageType } from '../../../../store/models';
-import { ContentletEditData, ContentletField } from '../types';
+import { ContentletField } from '../types';
 
 const flushMicrotasks = () => new Promise<void>((resolve) => queueMicrotask(resolve));
 
