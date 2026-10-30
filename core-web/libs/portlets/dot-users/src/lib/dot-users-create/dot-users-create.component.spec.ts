@@ -10,6 +10,7 @@ import { Mock, vi } from 'vitest';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { Password } from 'primeng/password';
 
 import {
     DotHttpErrorManagerService,
@@ -114,6 +115,44 @@ describe('DotUsersCreateComponent', () => {
             expect(password.hasError('required')).toBe(true);
         });
 
+        it('should refuse a password shorter than 15 characters', () => {
+            const password = spectator.component.form.controls.account.controls.password;
+            password.setValue('Aa1!bcdefghijk');
+
+            expect(password.hasError('minlength')).toBe(true);
+        });
+
+        it('should refuse a password longer than 64 characters', () => {
+            const password = spectator.component.form.controls.account.controls.password;
+            password.setValue('Aa1!' + 'x'.repeat(61));
+
+            expect(password.hasError('maxlength')).toBe(true);
+        });
+
+        it('should refuse a 15-character password that lacks a character class', () => {
+            const password = spectator.component.form.controls.account.controls.password;
+            password.setValue('Aa1bcdefghijklm');
+
+            expect(password.hasError('passwordComplexity')).toBe(true);
+        });
+
+        it('should accept a password of 15 and of 64 characters with all four classes', () => {
+            const password = spectator.component.form.controls.account.controls.password;
+
+            password.setValue('Aa1!bcdefghijkl');
+            expect(password.errors).toBeNull();
+
+            password.setValue('Aa1!' + 'x'.repeat(60));
+            expect(password.errors).toBeNull();
+        });
+
+        it('should not show a password strength meter on any password field', () => {
+            const passwords = spectator.queryAll(Password);
+
+            expect(passwords.length).toBeGreaterThan(0);
+            passwords.forEach((field) => expect(field.feedback).toBe(false));
+        });
+
         it('should not close on save when the form is invalid', () => {
             spectator.click(saveButton(spectator));
 
@@ -141,8 +180,8 @@ describe('DotUsersCreateComponent', () => {
                     firstName: 'Ada',
                     lastName: 'Lovelace',
                     email: 'ada@dotcms.com',
-                    password: 'Xy7#abcdef',
-                    confirmPassword: 'Xy7#abcdef'
+                    password: 'Xy7#abcdefghijklm',
+                    confirmPassword: 'Xy7#abcdefghijklm'
                 }
             });
             spectator.detectChanges();
@@ -157,8 +196,8 @@ describe('DotUsersCreateComponent', () => {
                     firstName: 'Ada',
                     lastName: 'Lovelace',
                     email: 'ada@dotcms.com',
-                    password: 'Xy7#abcdef',
-                    confirmPassword: 'Xy7#abcdef'
+                    password: 'Xy7#abcdefghijklm',
+                    confirmPassword: 'Xy7#abcdefghijklm'
                 }
             });
             spectator.detectChanges();
