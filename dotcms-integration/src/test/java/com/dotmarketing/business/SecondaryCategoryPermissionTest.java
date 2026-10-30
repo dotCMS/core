@@ -534,6 +534,12 @@ public class SecondaryCategoryPermissionTest {
     }
 
     /**
+     * The search is paged while the count is not, so every comparison below is only meaningful
+     * while the fixture stays well under this limit.
+     */
+    private static final int SEARCH_LIMIT = 100;
+
+    /**
      * Given a content type whose category field uses the secondary permission check, when the same
      * query is counted and searched for the same user, then both agree. The count is what a
      * paginator shows as the total, so a count that is not narrowed by the category check reports
@@ -541,21 +547,51 @@ public class SecondaryCategoryPermissionTest {
      */
     @Test
     public void test_index_count_agrees_with_the_search_for_every_user() throws Exception {
+        assertTheCountAgreesWithTheSearch(false);
+    }
+
+    /**
+     * The same agreement, asked the way {@code /api/content/indexcount/\{query\}} asks for it:
+     * with the front-end roles respected, which widens both the read clause and the category
+     * clause. A count that only agreed with the search for a back-end caller would still report a
+     * wrong total on that endpoint.
+     */
+    @Test
+    public void test_index_count_agrees_with_the_search_respecting_front_end_roles()
+            throws Exception {
+        assertTheCountAgreesWithTheSearch(true);
+    }
+
+    /**
+     * Counts and searches the same query, for the administrator and then for each restricted user,
+     * and asserts the two agree every time.
+     *
+     * @param respectFrontendRoles passed to both calls, so the two are compared on the same terms
+     */
+    private void assertTheCountAgreesWithTheSearch(final boolean respectFrontendRoles)
+            throws Exception {
 
         final String query = "+contentType:" + contentType.variable();
 
         // The administrator is the control: no permission clause is added for them, so a count
         // that disagrees here means the count and the search are not reading the same index.
         final int visibleToAdmin = APILocator.getContentletAPI()
-                .search(query, 100, 0, "modDate", APILocator.systemUser(), false).size();
+                .search(query, SEARCH_LIMIT, 0, "modDate", APILocator.systemUser(),
+                        respectFrontendRoles).size();
         assertEquals("the count and the search disagree for the administrator",
                 visibleToAdmin,
-                APILocator.getContentletAPI().indexCount(query, APILocator.systemUser(), false));
+                APILocator.getContentletAPI()
+                        .indexCount(query, APILocator.systemUser(), respectFrontendRoles));
+
+        // Past the limit the search stops reporting what the count reports, and a disagreement
+        // would be read here as a permission defect that is not there.
+        assertTrue("the fixture outgrew the page the search is compared against",
+                visibleToAdmin < SEARCH_LIMIT);
 
         for (final User user : List.of(snowUser, waterUser, ecoWaterUser)) {
 
             final int searched = APILocator.getContentletAPI()
-                    .search(query, 100, 0, "modDate", user, false).size();
+                    .search(query, SEARCH_LIMIT, 0, "modDate", user, respectFrontendRoles).size();
 
             // Without this, a fixture that stopped hiding anything from the user would let the
             // count and the search agree for the wrong reason, and the case would prove nothing.
@@ -563,7 +599,8 @@ public class SecondaryCategoryPermissionTest {
                             + ", so an unnarrowed count would pass this case",
                     searched < visibleToAdmin);
 
-            final long counted = APILocator.getContentletAPI().indexCount(query, user, false);
+            final long counted = APILocator.getContentletAPI()
+                    .indexCount(query, user, respectFrontendRoles);
 
             assertEquals("the count and the search disagree for " + user.getUserId(),
                     searched, counted);
