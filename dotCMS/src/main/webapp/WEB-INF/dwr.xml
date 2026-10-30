@@ -72,12 +72,6 @@
     <create creator="new" javascript="FileAssetAjax" scope="application">
       <param name="class" value="com.dotmarketing.portlets.fileassets.ajax.FileAssetAjax"/>
     </create>
-    <create creator="new" javascript="ThreadMonitorTool" scope="application">
-      <param name="class" value="com.dotcms.cmsmaintenance.ajax.ThreadMonitorTool"/>
-    </create>
-    <create creator="new" javascript="UserSessionAjax"  scope="application">
-      <param name="class" value="com.dotcms.cmsmaintenance.ajax.UserSessionAjax"/>
-    </create>
     <create creator="new" javascript="ACheckerDWR">
       <param name="class" value="com.dotcms.enterprise.achecker.tinymce.ACheckerDWR" />
     </create>

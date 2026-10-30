@@ -1138,13 +1138,16 @@ public class UserResource implements Serializable {
 	 * Creates a user from the payload and grants the requested roles, or the Front-end User role when
 	 * none are sent. Only a CMS Administrator can create users; {@link #create} checks this before
 	 * calling this method, so nothing is written for any other caller.
+	 * <p>
+	 * The password must meet the configured password policy and is stored hashed.
 	 *
 	 * @param modUser        The user performing the request.
 	 * @param createUserForm The payload.
 	 *
 	 * @return The created user.
 	 *
-	 * @throws DotDataException     An error occurred when saving the user or its roles.
+	 * @throws DotDataException     An error occurred when saving the user or its roles, or the
+	 *                              password does not meet the password policy.
 	 * @throws DotSecurityException The caller may not create the user or grant the requested roles.
 	 * @throws ParseException       The birthday is not a valid ISO date.
 	 */
@@ -1206,7 +1209,8 @@ public class UserResource implements Serializable {
 			user.setAdditionalInfo(createUserForm.getAdditionalInfo());
 		}
 
-		this.userAPI.save(user, modUser, false);
+		// validatePassword=true: applies the password policy and stores the password hashed
+		this.userAPI.save(user, modUser, true, false);
 		Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 				createUserForm.getEmail() + "' has been created.");
 
@@ -1481,14 +1485,21 @@ public class UserResource implements Serializable {
 	 * Updates a user from the payload and, when the payload has a {@code roles} field, reconciles the
 	 * user's roles with it. Changing roles requires a CMS Administrator; the role change is checked
 	 * before anything is saved, so a refused request changes nothing. Sending the roles the user
-	 * already holds is not a change. A new password also invalidates the login tokens issued to the
-	 * user before the change.
+	 * already holds is not a change.
+	 * <p>
+	 * When the payload has a password, it must meet the configured password policy and is stored
+	 * hashed, and the login tokens issued to the user before the change are invalidated (both done by
+	 * {@link UserAPI#save(User, User, boolean, boolean)}). Without a password, the stored one is left
+	 * as it is.
 	 *
 	 * @param modUser        The user performing the request.
 	 * @param request        The current request.
 	 * @param updateUserForm The payload.
 	 *
 	 * @return The updated user.
+	 *
+	 * @throws DotDataException The user could not be saved, or the new password does not meet the
+	 *                          password policy.
 	 */
 	@WrapInTransaction
 	private User updateUser(final User modUser, final HttpServletRequest request,
@@ -1557,6 +1568,7 @@ public class UserResource implements Serializable {
         if(UtilMethods.isSet(updateUserForm.getPassword())){
 
             userToSave.setPassword(new String(updateUserForm.getPassword()));
+            validatePassword = true;
         }
 
 
@@ -1570,12 +1582,9 @@ public class UserResource implements Serializable {
 				this.roleAPI.checkUserRolesChange(modUser, userToSave, roleChanges.toAdd(), roleChanges.toRemove());
 			}
 
+			// with validatePassword=true, save also invalidates the login tokens issued before the change
 			this.userAPI.save(userToSave, modUser, validatePassword,
 					!WebAPILocator.getUserWebAPI().isLoggedToBackend(request));
-			if (UtilMethods.isSet(updateUserForm.getPassword())) {
-				// login tokens issued before the password change stop working
-				userToSave.setRememberMeToken(this.userAPI.invalidateLoginTokens(userToSave.getUserId()));
-			}
 			Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 					updateUserForm.getEmail() + "' has been updated.");
 
