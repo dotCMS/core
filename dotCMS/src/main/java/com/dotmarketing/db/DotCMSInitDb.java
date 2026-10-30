@@ -77,7 +77,10 @@ public class DotCMSInitDb {
 
             Try.run(DotCMSInitDb::loadStarterSite).getOrElseThrow(DotRuntimeException::new);
 
-            Try.run(DotCMSInitDb::setUpInitialPassword).onFailure(DotRuntimeException::new);
+            Try.run(DotCMSInitDb::setUpInitialPassword)
+                    .onFailure(e -> Logger.error(DotCMSInitDb.class,
+                            "Unable to set up the initial admin password. The admin account keeps "
+                                    + "the password it was created with.", e));
 
         } else {
             Logger.info(DotCMSInitDb.class, "inodes exist, skipping initialization of db");
@@ -199,6 +202,9 @@ public class DotCMSInitDb {
 
         try {
             admin.setPassword(PasswordFactoryProxy.generateHash(initialPassword._2));
+            // Flag the account as holding a hash rather than a plaintext password, the same way
+            // the SAML and OAuth account-creation paths do when they store a generated hash.
+            admin.setPasswordEncrypted(true);
         } catch (final PasswordException e) {
             throw new DotDataException("Unable to hash the initial admin password", e);
         }

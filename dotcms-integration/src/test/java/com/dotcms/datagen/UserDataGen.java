@@ -127,6 +127,9 @@ public class UserDataGen extends AbstractDataGen<User> {
             newUser.setPassword(UtilMethods.isSet(user.getPassword())
                     ? PasswordFactoryProxy.generateHash(user.getPassword())
                     : user.getPassword());
+            // Flag the account as holding a hash rather than a plaintext password, the same way
+            // production does when it stores a generated hash.
+            newUser.setPasswordEncrypted(true);
             newUser.setActive(user.getActive());
             newUser.setSkinId(user.getSkinId());
             newUser.setCompanyId(user.getCompanyId());

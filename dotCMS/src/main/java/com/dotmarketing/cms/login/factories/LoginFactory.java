@@ -452,6 +452,13 @@ public class LoginFactory {
             return false;
         }
 
+        if (!UtilMethods.isSet(user.getPassword())) {
+            // Nothing to verify against. The hash verifier rejects a null or empty stored
+            // value with an unchecked exception, which would surface as a server error
+            // rather than as failed credentials.
+            return false;
+        }
+
         boolean needsToRehashPassword = false;
 
         try {
