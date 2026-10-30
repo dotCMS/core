@@ -82,15 +82,9 @@ jobs:
             | tr -c 'a-z0-9._-' '-' \
             | sed -E 's/-+/-/g; s/^[-.]+//; s/[-.]+$//' \
             | cut -c1-100)
-          # Read the PR's Java version as data without checking out PR code.
-          java_version=$(gh api "repos/${REPO}/contents/.sdkmanrc?ref=${SHA}" \
-            -H 'Accept: application/vnd.github.raw+json' \
-            | awk -F= '/^java=/ {print $2; exit}')
-          java_version="${java_version//+/-}"
           {
             echo "found=true"
             echo "run_id=${run_id}"
-            echo "java_version=${java_version}"
             echo "tags<<EOF"
             echo "dotcms/dotcms-test:pr-${PR}-${norm}"
             echo "dotcms/dotcms-test:pr-${PR}-${norm}_${SHA:0:7}"
@@ -109,20 +103,23 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract Docker build context
+        id: context
         if: steps.resolve.outputs.found == 'true'
         run: |
           mkdir -p /tmp/docker-context
           tar -xf /tmp/prebuilt/docker-build.tar -C /tmp/docker-context
+          java_version=$(< /tmp/prebuilt/docker-java-version)
+          echo "java_version=${java_version}" >> "$GITHUB_OUTPUT"
 
       - name: Set up QEMU
         if: steps.resolve.outputs.found == 'true'
-        uses: docker/setup-qemu-action@v3.6.0
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
         with:
           platforms: arm64
 
       - name: Set up Buildx
         if: steps.resolve.outputs.found == 'true'
-        uses: docker/setup-buildx-action@v3.10.0
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
 
       - name: Docker Hub login
         if: steps.resolve.outputs.found == 'true'
@@ -134,14 +131,14 @@ jobs:
       - name: Build and push multi-arch image
         id: push
         if: steps.resolve.outputs.found == 'true'
-        uses: docker/build-push-action@v6.15.0
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
         with:
           context: /tmp/docker-context
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.resolve.outputs.tags }}
           build-args: |
-            SDKMAN_JAVA_VERSION=${{ steps.resolve.outputs.java_version }}
+            SDKMAN_JAVA_VERSION=${{ steps.context.outputs.java_version }}
 
       - name: Sticky comment with image tags
         if: steps.resolve.outputs.found == 'true' && steps.push.outcome == 'success'
