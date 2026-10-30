@@ -7,16 +7,22 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLEngine;
 import javax.net.ssl.TrustManager;
-import javax.net.ssl.X509TrustManager;
+import javax.net.ssl.X509ExtendedTrustManager;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.Socket;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.X509Certificate;
@@ -42,10 +48,18 @@ public class ClusterLogCollector {
     private static final String CONFIG_TIMEOUT_SECONDS = "CLUSTER_LOG_DOWNLOAD_TIMEOUT_SECONDS";
     private static final String CONFIG_CONNECT_TIMEOUT_SECONDS = "CLUSTER_LOG_DOWNLOAD_CONNECT_TIMEOUT_SECONDS";
     private static final String CONFIG_SCHEME = "CLUSTER_LOG_DOWNLOAD_SCHEME";
+    private static final String CONFIG_PORT = "CLUSTER_LOG_DOWNLOAD_PORT";
+    private static final String CONFIG_VERIFY_PEER_CERTS = "CLUSTER_LOG_DOWNLOAD_VERIFY_PEER_CERTS";
 
     private static final int DEFAULT_TIMEOUT_SECONDS = 300;
     private static final int DEFAULT_CONNECT_TIMEOUT_SECONDS = 10;
-    private static final String DEFAULT_SCHEME = "auto";
+    private static final int DEFAULT_HTTPS_PORT = 8443;
+    private static final String HTTP_SCHEME = "http";
+    private static final String HTTPS_SCHEME = "https";
+    private static final String HTTPS_FAILURE_HINT = " (peers are reached over HTTPS on the port"
+            + " given by " + CONFIG_PORT + " — 8443 by default; set " + CONFIG_PORT + " to the port"
+            + " each peer serves HTTPS on, or " + CONFIG_SCHEME + "=http to reach them over plain"
+            + " HTTP instead)";
 
     private final List<Server> peerServers;
     private final String fileName;
@@ -60,7 +74,9 @@ public class ClusterLogCollector {
      * @param peerServers  alive servers excluding the local one
      * @param fileName     the log file name requested
      * @param jwt          short-lived JWT for authenticating against peers
-     * @param localPort    the HTTP port of the local server (assumed same on peers)
+     * @param localPort    the HTTP port of the local server, used as the peer
+     *                     port over plain HTTP when
+     *                     {@code CLUSTER_LOG_DOWNLOAD_PORT} is not set
      * @param localLogFile the local log file to include in the ZIP
      * @param localServer  the local server
      */
@@ -86,13 +102,23 @@ public class ClusterLogCollector {
      * <p>The scheme used for peer requests is controlled by the
      * {@code CLUSTER_LOG_DOWNLOAD_SCHEME} configuration property:
      * <ul>
-     *   <li>{@code "auto"} (default) — tries HTTPS first, falls back to HTTP</li>
-     *   <li>{@code "https"} — HTTPS only</li>
-     *   <li>{@code "http"} — HTTP only</li>
+     *   <li>{@code "http"}: plain HTTP</li>
+     *   <li>any other value, or none (default): HTTPS</li>
      * </ul>
      *
-     * <p>When HTTPS is used, self-signed certificates are accepted because
-     * cluster-internal communication is trusted.
+     * <p>Peer requests go to the port given by {@code CLUSTER_LOG_DOWNLOAD_PORT}
+     * when set; otherwise to dotCMS's default secure port, 8443, under HTTPS, or
+     * to the local server's own port under plain HTTP.
+     *
+     * <p>Over HTTPS, each peer's certificate is accepted without verification:
+     * cluster nodes commonly run with self-signed certificates, and unverified
+     * TLS still encrypts the log content and the peer token in transit. Setting
+     * {@code CLUSTER_LOG_DOWNLOAD_VERIFY_PEER_CERTS} to {@code true} verifies
+     * every peer certificate and host name against the JVM's default trust
+     * store. The acceptance is scoped to this collector's client and touches no
+     * JVM-wide state. A peer request that fails is reported in
+     * {@code _errors.txt} with its reason and is not retried with another
+     * scheme.
      *
      * @return a {@link StreamingOutput} streaming the assembled ZIP
      */
@@ -102,13 +128,15 @@ public class ClusterLogCollector {
                 CONFIG_CONNECT_TIMEOUT_SECONDS, DEFAULT_CONNECT_TIMEOUT_SECONDS);
         final int readTimeout = Config.getIntProperty(
                 CONFIG_TIMEOUT_SECONDS, DEFAULT_TIMEOUT_SECONDS);
-        final String scheme = Config.getStringProperty(CONFIG_SCHEME, DEFAULT_SCHEME);
+        final String scheme = resolveScheme();
+        final boolean httpsScheme = HTTPS_SCHEME.equals(scheme);
+        final int peerPort = resolvePeerPort(scheme, localPort);
+        final boolean verifyPeerCerts = Config.getBooleanProperty(CONFIG_VERIFY_PEER_CERTS, false);
 
-        final HttpClient httpsClient = buildHttpClient(connectTimeout, true);
-        final HttpClient httpClient = buildHttpClient(connectTimeout, false);
+        final HttpClient httpClient = buildHttpClient(connectTimeout, verifyPeerCerts);
 
         // Fire off all peer requests in parallel
-        final Map<String, CompletableFuture<byte[]>> futures = new LinkedHashMap<>();
+        final Map<String, CompletableFuture<PeerResponse>> futures = new LinkedHashMap<>();
 
         for (final Server peer : peerServers) {
             final String host = resolvePeerHost(peer);
@@ -118,45 +146,28 @@ public class ClusterLogCollector {
                 continue;
             }
 
-            final String basePath = host + ":" + localPort
+            final String url = scheme + "://" + host + ":" + peerPort
                     + "/api/v1/maintenance/_downloadLog/" + fileName;
 
-            final CompletableFuture<byte[]> future;
-
-            if ("auto".equalsIgnoreCase(scheme)) {
-                // Try HTTPS first, fall back to HTTP on connection failure
-                future = fetchLog(httpsClient, "https://" + basePath, readTimeout, peer)
-                        .thenCompose(resp -> {
-                            if (resp != null) {
-                                return CompletableFuture.completedFuture(resp);
-                            }
-                            Logger.info(this, "HTTPS failed for peer " + peer.serverId
-                                    + ", falling back to HTTP");
-                            return fetchLog(httpClient, "http://" + basePath, readTimeout, peer);
-                        });
-            } else if ("https".equalsIgnoreCase(scheme)) {
-                future = fetchLog(httpsClient, "https://" + basePath, readTimeout, peer);
-            } else {
-                future = fetchLog(httpClient, "http://" + basePath, readTimeout, peer);
-            }
-
-            futures.put(labelForServer(peer), future);
+            futures.put(labelForServer(peer), fetchLog(httpClient, url, readTimeout, peer));
         }
 
         // Wait for all responses
         final Map<String, byte[]> peerLogs = new LinkedHashMap<>();
         final List<String> errors = new ArrayList<>();
 
-        for (final Map.Entry<String, CompletableFuture<byte[]>> entry : futures.entrySet()) {
+        for (final Map.Entry<String, CompletableFuture<PeerResponse>> entry : futures.entrySet()) {
             final String label = entry.getKey();
             try {
-                final byte[] body = entry.getValue().join();
-                if (body != null) {
-                    peerLogs.put(label, body);
+                final PeerResponse response = entry.getValue().join();
+                if (response.body != null) {
+                    peerLogs.put(label, response.body);
                     Logger.info(this, "Received log from " + label
-                            + " (" + body.length + " bytes)");
+                            + " (" + response.body.length + " bytes)");
                 } else {
-                    final String msg = "Server " + label + " — no successful response";
+                    final String hint = httpsScheme && response.possiblyTls
+                            ? HTTPS_FAILURE_HINT : "";
+                    final String msg = "Server " + label + " — " + response.failure + hint;
                     Logger.warn(this, msg);
                     errors.add(msg);
                 }
@@ -194,15 +205,52 @@ public class ClusterLogCollector {
     }
 
     /**
-     * Attempts to fetch a log file from the given URL. Returns the response
-     * body bytes on success (HTTP 200), or {@code null} on failure. Connection
-     * errors (e.g. HTTPS not available) return null without logging an error
-     * so the caller can fall back to another scheme.
+     * Returns the scheme for peer requests: {@code http} when
+     * {@code CLUSTER_LOG_DOWNLOAD_SCHEME} is {@code http} (case and surrounding
+     * spaces ignored), otherwise {@code https}.
+     *
+     * @return {@code "http"} or {@code "https"}
      */
-    private CompletableFuture<byte[]> fetchLog(final HttpClient client,
-                                                final String url,
-                                                final int readTimeout,
-                                                final Server peer) {
+    private static String resolveScheme() {
+        final String configured = Config.getStringProperty(CONFIG_SCHEME, HTTPS_SCHEME);
+        return configured != null && HTTP_SCHEME.equalsIgnoreCase(configured.trim())
+                ? HTTP_SCHEME
+                : HTTPS_SCHEME;
+    }
+
+    /**
+     * Returns the port peer requests go to: the {@code CLUSTER_LOG_DOWNLOAD_PORT}
+     * configuration property when set, otherwise dotCMS's default secure port,
+     * 8443, under HTTPS — or the local server's own port under plain HTTP.
+     *
+     * @param scheme    the scheme of the peer requests, {@code http} or {@code https}
+     * @param localPort the port the local server listens on
+     * @return the peer port
+     */
+    static int resolvePeerPort(final String scheme, final int localPort) {
+        final int configuredPort = Config.getIntProperty(CONFIG_PORT, 0);
+        return configuredPort > 0
+                ? configuredPort
+                : HTTPS_SCHEME.equals(scheme) ? DEFAULT_HTTPS_PORT : localPort;
+    }
+
+    /**
+     * Attempts to fetch a log file from the given URL. The returned response holds
+     * the body on success (HTTP 200); otherwise it holds a short reason: the HTTP
+     * status the peer answered with, or the kind of I/O failure ({@code could not
+     * connect}, {@code TLS handshake failed}, {@code connect timed out}, {@code timed
+     * out}, {@code connection failed}) whose details are logged at INFO.
+     *
+     * @param client      the HTTP client shared by all peer requests
+     * @param url         the peer's {@code _downloadLog} URL
+     * @param readTimeout the request timeout, in seconds
+     * @param peer        the peer server, for logging
+     * @return a future that always completes normally with the peer's response
+     */
+    private CompletableFuture<PeerResponse> fetchLog(final HttpClient client,
+                                                      final String url,
+                                                      final int readTimeout,
+                                                      final Server peer) {
 
         Logger.info(this, "Requesting log from peer server " + peer.serverId + ": " + url);
 
@@ -216,52 +264,65 @@ public class ClusterLogCollector {
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofByteArray())
                 .thenApply(resp -> {
                     if (resp.statusCode() == 200) {
-                        return resp.body();
+                        return PeerResponse.success(resp.body());
                     }
                     Logger.warn(this, "Server " + peer.serverId + " returned HTTP "
                             + resp.statusCode() + " for " + url);
-                    return null;
+                    return PeerResponse.failure("HTTP " + resp.statusCode(), false);
                 })
                 .exceptionally(ex -> {
                     // Unwrap CompletionException to get the real cause
                     final Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
-                    if (cause instanceof IOException) {
-                        // Connection refused, SSL handshake failure, timeouts, etc.
-                        Logger.info(this, "Connection to " + url + " failed: " + cause.getMessage());
-                    } else {
+                    if (!(cause instanceof IOException)) {
                         Logger.warn(this, "Error fetching " + url + ": " + cause.getMessage(), cause);
+                        return PeerResponse.failure("request failed", false);
                     }
-                    return null;
+                    Logger.info(this, "Connection to " + url + " failed: " + cause.getMessage());
+                    if (cause instanceof SSLException) {
+                        return PeerResponse.failure("TLS handshake failed", true);
+                    }
+                    if (cause instanceof HttpConnectTimeoutException) {
+                        // Covers the TLS handshake too, so a peer that does not complete it ends here
+                        return PeerResponse.failure("connect timed out", true);
+                    }
+                    if (cause instanceof HttpTimeoutException) {
+                        // Raised only once the connection, TLS included, was established
+                        return PeerResponse.failure("timed out", false);
+                    }
+                    if (cause instanceof ConnectException) {
+                        // No connection was made, so the scheme makes no difference
+                        return PeerResponse.failure("could not connect", false);
+                    }
+                    return PeerResponse.failure("connection failed", true);
                 });
     }
 
     /**
-     * Builds an {@link HttpClient} with the given connect timeout. When
-     * {@code trustAllCerts} is {@code true}, the client accepts any TLS
-     * certificate — this is appropriate for cluster-internal communication
-     * where peers may use self-signed certificates.
+     * Builds the {@link HttpClient} used for the peer requests. Unless
+     * {@code CLUSTER_LOG_DOWNLOAD_VERIFY_PEER_CERTS} is on, the client accepts
+     * every peer certificate, self-signed or issued for another host name
+     * included, so that cluster nodes with self-signed certificates can be
+     * reached over TLS. With verification on, the JVM's default trust store and
+     * host name check apply.
+     *
+     * @param connectTimeoutSeconds the connect timeout, in seconds
+     * @param verifyPeerCerts        whether peer certificates are verified
+     * @return the client
      */
-    private HttpClient buildHttpClient(final int connectTimeoutSeconds,
-                                        final boolean trustAllCerts) {
+    private static HttpClient buildHttpClient(final int connectTimeoutSeconds,
+                                              final boolean verifyPeerCerts) {
         final HttpClient.Builder builder = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(connectTimeoutSeconds));
 
-        if (trustAllCerts) {
+        if (!verifyPeerCerts) {
             try {
                 final SSLContext sslContext = SSLContext.getInstance("TLS");
                 sslContext.init(null, new TrustManager[]{TRUST_ALL_MANAGER}, null);
                 builder.sslContext(sslContext);
-
-                // Java's HttpClient internally forces the endpoint identification
-                // algorithm to "HTTPS", ignoring any SSLParameters we set.
-                // The only way to disable hostname/SAN verification is this
-                // system property. Cluster peers often use self-signed certs
-                // without SAN entries for every possible container IP address.
-                System.setProperty(
-                        "jdk.internal.httpclient.disableHostnameVerification", "true");
-            } catch (NoSuchAlgorithmException | KeyManagementException e) {
-                Logger.error(this, "Failed to create trust-all SSL context, "
-                        + "HTTPS with self-signed certs will not work: " + e.getMessage(), e);
+            } catch (final NoSuchAlgorithmException | KeyManagementException e) {
+                Logger.error(ClusterLogCollector.class, "Failed to create the SSL context that "
+                        + "accepts self-signed peer certificates; peer certificates will be "
+                        + "verified against the JVM trust store instead: " + e.getMessage(), e);
             }
         }
 
@@ -269,10 +330,15 @@ public class ClusterLogCollector {
     }
 
     /**
-     * A trust manager that accepts all certificates. Used only for
-     * cluster-internal peer communication where self-signed certs are expected.
+     * Trusts every peer certificate and host name, so that cluster nodes with
+     * self-signed certificates can be reached over TLS. An
+     * {@link X509ExtendedTrustManager} is required: the JDK runs its host name
+     * check only through the extended methods, so a plain
+     * {@code X509TrustManager} would leave it on. Scoped to this collector's
+     * client alone, it changes no JVM-wide state.
      */
-    private static final X509TrustManager TRUST_ALL_MANAGER = new X509TrustManager() {
+    private static final X509ExtendedTrustManager TRUST_ALL_MANAGER = new X509ExtendedTrustManager() {
+
         @Override
         public void checkClientTrusted(final X509Certificate[] chain, final String authType) {
             // Trust all — cluster-internal
@@ -284,10 +350,73 @@ public class ClusterLogCollector {
         }
 
         @Override
+        public void checkClientTrusted(final X509Certificate[] chain, final String authType,
+                                       final Socket socket) {
+            // Trust all — cluster-internal
+        }
+
+        @Override
+        public void checkServerTrusted(final X509Certificate[] chain, final String authType,
+                                        final Socket socket) {
+            // Trust all — cluster-internal
+        }
+
+        @Override
+        public void checkClientTrusted(final X509Certificate[] chain, final String authType,
+                                       final SSLEngine engine) {
+            // Trust all — cluster-internal
+        }
+
+        @Override
+        public void checkServerTrusted(final X509Certificate[] chain, final String authType,
+                                        final SSLEngine engine) {
+            // Trust all — cluster-internal
+        }
+
+        @Override
         public X509Certificate[] getAcceptedIssuers() {
             return new X509Certificate[0];
         }
     };
+
+    /**
+     * Result of one peer request: the log content, or a short reason why there is none.
+     */
+    private static final class PeerResponse {
+
+        private final byte[] body;
+        private final String failure;
+        private final boolean possiblyTls;
+
+        private PeerResponse(final byte[] body, final String failure, final boolean possiblyTls) {
+            this.body = body;
+            this.failure = failure;
+            this.possiblyTls = possiblyTls;
+        }
+
+        /**
+         * A successful response.
+         *
+         * @param body the log file content
+         * @return the response
+         */
+        private static PeerResponse success(final byte[] body) {
+            return new PeerResponse(body, null, false);
+        }
+
+        /**
+         * A failed request.
+         *
+         * @param reason      a short reason, written to {@code _errors.txt}
+         * @param possiblyTls {@code true} when the failure may come from TLS (a handshake
+         *                    error, a connect timeout, or a peer that does not speak TLS
+         *                    on the port), so the scheme setting hint applies under HTTPS
+         * @return the response
+         */
+        private static PeerResponse failure(final String reason, final boolean possiblyTls) {
+            return new PeerResponse(null, reason, possiblyTls);
+        }
+    }
 
     /**
      * Resolves the best address for a peer server. Prefers the
