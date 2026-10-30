@@ -764,8 +764,9 @@ paths:
       - Content Delivery
   /content/indexcount/{query}:
     get:
-      description: Performs an index count using the specified Lucene query and returns
-        the total number of matching contentlets as a plain text string.
+      description: "Performs an index count using the specified Lucene query and returns,\
+        \ as a plain text string, the total number of matching contentlets that the\
+        \ calling user is allowed to read."
       operationId: indexCountContent
       parameters:
       - description: Lucene query string to count matching content
@@ -790,7 +791,8 @@ paths:
             text/plain:
               schema:
                 type: string
-                description: The count of contentlets matching the query
+                description: The count of contentlets matching the query that the
+                  calling user is allowed to read
           description: Count of matching contentlets returned successfully
         "400":
           content:
