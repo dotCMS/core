@@ -63,6 +63,9 @@ public class FilterDescriptor implements Comparable<FilterDescriptor> {
     public static final String EXCLUDE_DEPENDENCY_QUERY_KEY = "excludeDependencyQuery";
     public static final String FORCE_PUSH_KEY = "forcePush";
     public static final String RELATIONSHIPS_SECOND_LEVEL_KEY = "relationshipsSecondLevel";
+    // With relationships set to false, makes the receiver replace the relationships of the pushed
+    // content with the ones in the sender, to content that exists in the receiver
+    public static final String SYNC_RELATIONSHIPS_KEY = "syncRelationships";
     public static final String DEFAULT_SORT_VALUE = "1000";
 
     /**
@@ -177,6 +180,7 @@ public class FilterDescriptor implements Comparable<FilterDescriptor> {
         listOfPossibleFilters.add(EXCLUDE_DEPENDENCY_QUERY_KEY);
         listOfPossibleFilters.add(FORCE_PUSH_KEY);
         listOfPossibleFilters.add(RELATIONSHIPS_SECOND_LEVEL_KEY);
+        listOfPossibleFilters.add(SYNC_RELATIONSHIPS_KEY);
 
         if(!getFilters().keySet().stream().allMatch(element -> listOfPossibleFilters.contains(element))){
             errors.add("The field `Filters` has a property that is not expected. Possible Properties: " + listOfPossibleFilters.toString());
@@ -215,6 +219,15 @@ public class FilterDescriptor implements Comparable<FilterDescriptor> {
                         .get(FilterDescriptor.RELATIONSHIPS_SECOND_LEVEL_KEY));
             } catch (final ClassCastException e){
                 errors.add("The value of the field `relationshipsSecondLevel` cannot be cast to Boolean");
+            }
+        }
+
+        if(getFilters().containsKey(SYNC_RELATIONSHIPS_KEY)) {
+            try {
+                Boolean.class.cast(getFilters()
+                        .get(FilterDescriptor.SYNC_RELATIONSHIPS_KEY));
+            } catch (final ClassCastException e){
+                errors.add("The value of the field `syncRelationships` cannot be cast to Boolean");
             }
         }
 

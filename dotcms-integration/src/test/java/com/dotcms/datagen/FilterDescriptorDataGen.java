@@ -23,6 +23,7 @@ public class FilterDescriptorDataGen extends AbstractDataGen<FilterDescriptor> {
     private boolean relationships = true;
     private boolean relationshipsSecondLevel = false;
     private boolean forcePush = false;
+    private boolean syncRelationships = false;
     private boolean defaultFilter = true;
     private boolean clearFilterList = Boolean.TRUE;
     private String title;
@@ -54,6 +55,18 @@ public class FilterDescriptorDataGen extends AbstractDataGen<FilterDescriptor> {
 
     public FilterDescriptorDataGen forcePush(boolean forcePush) {
         this.forcePush = forcePush;
+        return this;
+    }
+
+    /**
+     * Sets whether the receiver replaces the relationships of the pushed content with the ones in
+     * the sender when {@code relationships} is {@code false}.
+     *
+     * @param syncRelationships {@code true} to replace the receiver's relationships.
+     * @return The {@link FilterDescriptorDataGen} object.
+     */
+    public FilterDescriptorDataGen syncRelationships(final boolean syncRelationships) {
+        this.syncRelationships = syncRelationships;
         return this;
     }
 
@@ -94,13 +107,14 @@ public class FilterDescriptorDataGen extends AbstractDataGen<FilterDescriptor> {
     @Override
     public FilterDescriptor next() {
 
-        final Map<String,Object> filtersMap = ImmutableMap.of(
-                FilterDescriptor.DEPENDENCIES_KEY,dependencies,
-                FilterDescriptor.RELATIONSHIPS_KEY,relationships,
-                FilterDescriptor.FORCE_PUSH_KEY,forcePush,
-                FilterDescriptor.EXCLUDE_DEPENDENCY_CLASSES_KEY, excludeDependencyClasses,
-                "relationshipsSecondLevel", relationshipsSecondLevel
-        );
+        final Map<String,Object> filtersMap = ImmutableMap.<String, Object>builder()
+                .put(FilterDescriptor.DEPENDENCIES_KEY,dependencies)
+                .put(FilterDescriptor.RELATIONSHIPS_KEY,relationships)
+                .put(FilterDescriptor.FORCE_PUSH_KEY,forcePush)
+                .put(FilterDescriptor.EXCLUDE_DEPENDENCY_CLASSES_KEY, excludeDependencyClasses)
+                .put("relationshipsSecondLevel", relationshipsSecondLevel)
+                .put(FilterDescriptor.SYNC_RELATIONSHIPS_KEY, syncRelationships)
+                .build();
 
         try {
             return new FilterDescriptor(
