@@ -199,6 +199,27 @@ public class LoginFactoryPasswordMigrationTest {
         assertEquals(legacy, storedPassword.get());
     }
 
+    /** Unsupported or broken structured records must not authenticate as their own password. */
+    @Test
+    public void unsupportedStructuredRecordsCannotBeUsedAsPlaintextPasswords() throws Exception {
+        final String reference = FIXTURES.getProperty("legacy-current-cost");
+        for (final String record : Arrays.asList(
+                reference.replace("1:1:", "1:7f:"),
+                reference.replace("1:1:", "7f:1:"),
+                "1:1:incomplete")) {
+            user.setPassword(record);
+            storedPassword.set(record);
+            user.setFailedLoginAttempts(0);
+
+            assertFalse(LoginFactory.doLogin(loginIdentifier(), record));
+            user.setFailedLoginAttempts(0);
+            assertFalse(LoginFactory.doLogin(loginIdentifier(), password()));
+            assertEquals(record, storedPassword.get());
+            assertEquals(record, user.getPassword());
+        }
+        verifyLoginSelector();
+    }
+
     /** Selects a frozen record as both the loaded and persisted account password. */
     private void useFixture(final String key) {
         user.setPassword(FIXTURES.getProperty(key));

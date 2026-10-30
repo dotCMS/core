@@ -13,8 +13,10 @@ import static org.junit.Assert.assertTrue;
 import com.dotcms.enterprise.de.qaware.heimdall.Password;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordImpl;
+import com.dotcms.enterprise.de.qaware.heimdall.algorithm.HashAlgorithm;
 import com.dotcms.enterprise.de.qaware.heimdall.algorithm.HashAlgorithmRegistryImpl;
 import com.dotcms.enterprise.de.qaware.heimdall.algorithm.PBKDF2;
+import com.dotcms.enterprise.de.qaware.heimdall.algorithm.PBKDF2_256;
 import com.dotcms.enterprise.de.qaware.heimdall.config.ConfigCoderImpl;
 import com.dotcms.enterprise.de.qaware.heimdall.salt.SecureSaltProvider;
 import com.dotmarketing.util.Config;
@@ -149,6 +151,65 @@ public class PasswordHashMigrationTest {
         final String hash = FIXTURES.getProperty("current-current-cost");
 
         assertThrows(PasswordException.class, () -> oldReader.verify(password(), hash));
+    }
+
+    /** Adding a future reader and later changing the writer must retain every older verifier. */
+    @Test
+    public void futureProfileRegistrationAndWriterSelectionPreserveOlderRecords() throws Exception {
+        final HashAlgorithm[] profiles = {new PBKDF2(), new PBKDF2_256(), new FutureProfile()};
+        final String[] records = {
+                FIXTURES.getProperty("legacy-current-cost"),
+                FIXTURES.getProperty("current-current-cost"),
+                FIXTURES.getProperty("current-current-cost").replace("1:2:", "1:3:")
+        };
+
+        for (final HashAlgorithm writer : profiles) {
+            final Password passwords = new PasswordImpl(new SecureSaltProvider(),
+                    new ConfigCoderImpl(), new HashAlgorithmRegistryImpl(profiles), writer);
+
+            assertEquals(Integer.toHexString(writer.getId()), passwords.hash(password()).split(":")[1]);
+            for (final String record : records) {
+                assertTrue(passwords.verify(password(), record));
+                assertFalse(passwords.verify("incorrect", record));
+                assertFalse(passwords.needsRehash(record));
+            }
+        }
+    }
+
+    /** Duplicate identities must not silently replace an older verifier. */
+    @Test
+    public void duplicateProfileIdsAreRejected() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new HashAlgorithmRegistryImpl(new PBKDF2(), new PBKDF2()));
+    }
+
+    /** Unsupported structured records must never enter the legacy plaintext fallback. */
+    @Test
+    public void unknownAndMalformedStructuredRecordsAreNotLegacyPasswords() {
+        final String record = FIXTURES.getProperty("legacy-current-cost");
+
+        assertFalse(PasswordFactoryProxy.isUnsecurePasswordHash(
+                record.replace("1:1:", "1:7f:")));
+        assertFalse(PasswordFactoryProxy.isUnsecurePasswordHash(
+                record.replace("1:1:", "7f:1:")));
+        assertFalse(PasswordFactoryProxy.isUnsecurePasswordHash("1:1:incomplete"));
+    }
+
+    /** Actual pre-Heimdall plaintext and digest records retain their migration path. */
+    @Test
+    public void legacyPlaintextAndDigestRemainEligibleForMigration() {
+        assertTrue(PasswordFactoryProxy.isUnsecurePasswordHash("legacy-test-password"));
+        assertTrue(PasswordFactoryProxy.isUnsecurePasswordHash("5f4dcc3b5aa765d61d8327deb882cf99"));
+    }
+
+    /** Test-only third identity proves the registry contract is not hardcoded to two profiles. */
+    private static final class FutureProfile extends PBKDF2_256 {
+
+        /** Uses the next identity without introducing a real production algorithm. */
+        @Override
+        public int getId() {
+            return 3;
+        }
     }
 
     /** Returns the known test password associated with the frozen reference records. */
