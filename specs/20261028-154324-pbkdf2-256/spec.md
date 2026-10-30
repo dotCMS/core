@@ -39,6 +39,19 @@ These requirements supersede the immediate activation obligations in original US
 
 The original edge-case assertion that conversion is mathematically impossible is corrected: PBKDF2 output is prefix-preserving for identical algorithm, salt, and cost. Neither phase provides a supported automatic downgrade.
 
+## Reusable compatibility contract (developer-approved 2026-10-30)
+
+The developer requested a system that also protects later hash changes, rather than a profile-2-only fix. Reuse Heimdall's versioned records and registry; no new framework, dependency, or runtime activation flag is needed.
+
+- **BC-001**: Reader registration and write-profile selection MUST remain independent. Adding a future profile reader MUST NOT activate its writes or profile-driven migration.
+- **BC-002**: Every future write-default change MUST retain all previously supported verifiers and their original identity/derivation semantics. Duplicate profile registration MUST fail rather than silently replace an existing verifier.
+- **BC-003**: Unknown-profile, unsupported-format-version, and malformed structured hash records MUST fail authentication, including when the caller submits the stored record itself. They MUST NOT be classified as legacy plaintext/digests, rewritten, or used to bypass verification.
+- **BC-004**: Genuine pre-Heimdall plaintext and digest records outside the reserved hexadecimal-version-and-colon prefix MUST retain their existing password-migration path. Values with that prefix MUST be treated as structured records; document the legacy-plaintext ambiguity and recovery/migration caveat rather than reopening the fallback.
+- **BC-005**: Regression tests MUST simulate an additional future profile and a writer change, proving all older records still verify and adding readers alone does not request rehash. This test profile is not a new production hashing algorithm.
+- **BC-006**: Document the repeatable release rule for every new profile: reserve a new ID and immutable reference vectors, ship its reader without new writes, wait until every allowed rollback target includes that reader, then activate writes in a separately reviewed release. General compatibility does not mean an old binary can verify an algorithm it has never shipped.
+
+These extend the approved reader-capability scope. The developer explicitly approved the contract and tests before production hardening. A 29-test Red run exposed duplicate-ID replacement, the plaintext fallback, and unchecked malformed-field errors; production changes followed that run. The earlier decision to defer generalized unknown-profile hardening is superseded. The operator guide records that reserving the structured prefix excludes ambiguous old plaintext values from login fallback.
+
 ## Deferred activation-release design
 
 The following original design describes phase 2. It MUST NOT be activated by the reader-capability release.

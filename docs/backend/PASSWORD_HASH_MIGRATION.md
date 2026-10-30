@@ -17,6 +17,19 @@ Account creation, password reset/change, system-generated passwords, and the exi
 
 The encrypted-user-ID helper accepts correctly verified passwords from either profile, including records with outdated costs. It only returns credentials and does not persist a rehash; that remains the normal password-login flow's responsibility.
 
+## Compatibility contract for every future hash change
+
+The existing Heimdall registry is the compatibility mechanism, not a profile-2-specific switch:
+
+1. **Keep identities permanent.** A new derivation gets a new profile ID. Never reinterpret an old ID by changing its algorithm or output length. Keep its verifier and immutable reference vectors. Duplicate registrations fail immediately rather than replacing an existing reader.
+2. **Add readers independently of writers.** Register the new profile alongside every supported older profile in `PasswordFactory`. Its separate `WRITE_PROFILE` selection stays unchanged. Do not deprecate the old write profile during this reader-only release; retain existing cost upgrades.
+3. **Warm every rollback target.** Ship the reader-capable release and wait until no allowed rollback target lacks the new reader. A new binary reading old hashes is backward compatibility; it does not let an old binary understand a never-shipped algorithm.
+4. **Activate separately.** In a later reviewed release, change `WRITE_PROFILE` and explicitly decide which old profiles request migration. Retain all old readers, salts, and stored costs. Test activation and rollback against the reader-capable release.
+5. **Fail closed on structured records.** A stored value beginning with a hexadecimal version and colon is reserved for hash records, regardless of whether its profile/version/fields are supported. It must pass hash verification, never plaintext/digest comparison. Invalid field values follow the checked authentication-error path. Genuine pre-Heimdall plaintext/digests outside that reserved prefix keep their existing migration path.
+6. **Keep the contract tests.** Extend independent fixtures for each real new profile. `futureProfileRegistrationAndWriterSelectionPreserveOlderRecords` exercises a test-only third identity and each writer choice, proving registration and writing are independent and older verifiers survive. Duplicate-ID and unsupported/malformed-record login tests guard the failure cases in both login modes. The test-only identity is not a production algorithm.
+
+**Legacy plaintext caveat:** An actual old plaintext value that begins with the reserved hexadecimal-version-and-colon prefix can no longer use the plaintext login fallback. Audit such legacy accounts and complete their established plaintext migration or account recovery before relying on login; do not weaken structured-record rejection. This does not affect valid profile-1 hashes or legacy digests.
+
 ## Phase 1: deploy compatible readers, retain legacy writes
 
 1. Confirm this release's shared default generates profile `1`, not `2`. Check custom plugins and other password writers too: explicitly selecting profile `2` is not part of this rollout.
@@ -36,7 +49,7 @@ Do not mix profile-`2` writers with old-only readers. After the first profile-`2
 
 The old-only binary's problem is not just lockout. Its `PasswordFactoryProxy.isUnsecurePasswordHash` catches the unknown-profile exception and classifies the record as a legacy password. `LoginFactory.passwordMatch` then permits a plaintext comparison against the stored record. Consequently, someone possessing the complete stored profile-`2` record can submit that record as the password on an old-only node. This is a security reason never to route profile-`2` accounts to old-only nodes or roll them back to such a binary.
 
-This is pre-existing unknown-profile fallback behavior. Fail-closed hardening for unsupported structured records is separate work; registering profile `2` here prevents that particular fallback for profile-`2` records on this release, but does not harden other unknown IDs.
+This release closes the fallback for reserved structured records, including unknown future profile IDs, unsupported versions, and malformed records. It does not patch older binaries: rolling back to an unhardened old-only release still restores that vulnerability. Unknown future profiles are rejected safely here, not magically verified; reader-first rollout remains required.
 
 There is **no supported automatic downgrade**. PBKDF2 output is prefix-preserving with identical algorithm, salt, and iteration count, but this release implements no operator conversion procedure. Do not rely on manual truncation/relabeling, database restoration as a routine downgrade, or mass password resets.
 
@@ -51,6 +64,6 @@ Focused real-cryptography and mocked-persistence checks:
   -Dmaven.build.cache.enabled=false
 ```
 
-Confirm positive counts and zero failures in `dotCMS/target/surefire-reports/*.txt`. The checks cover independent records from both profiles, legacy-only default generation, old-only reader compatibility for generated records, no profile-driven login rewrite, and preserved cost upgrades in both login modes. They do not validate a live database, SSO configuration, or production deployment rehearsal.
+Confirm positive counts and zero failures in `dotCMS/target/surefire-reports/*.txt`. The 29 cases cover independent records from both real profiles, legacy-only default generation, old-only reader compatibility for generated records, no profile-driven login rewrite, and preserved cost upgrades in both login modes. They also exercise a simulated future profile, independent writer selection, duplicate-ID rejection, legacy-format classification, and rejection of unsupported/malformed structured records even when submitted as their own passwords. They do not validate a live database, SSO configuration, or production deployment rehearsal.
 
 Related: [password-storage security patterns](SECURITY_BACKEND.md), [staged migration specification](../../specs/20261028-154324-pbkdf2-256/spec.md), and [OWASP password-storage guidance](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html#pbkdf2).

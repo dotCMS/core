@@ -61,16 +61,28 @@ public class ConfigCoderImpl implements ConfigCoder {
         return encoded.toString();
     }
 
+    /**
+     * Decodes complete, unique key/value entries without discarding malformed input.
+     *
+     * @param encoded the semicolon-separated hash configuration
+     * @return the decoded {@link HashAlgorithmConfig}
+     * @throws IllegalArgumentException if an entry is incomplete, empty, or duplicated
+     */
     @Override
     public HashAlgorithmConfig decode(String encoded) {
         Preconditions.checkNotNull(encoded, "encoded");
 
-        String[] parts = encoded.split(CONFIG_DELIMITER);
+        String[] parts = encoded.split(CONFIG_DELIMITER, -1);
         HashAlgorithmConfig config = new HashAlgorithmConfig();
 
         for (String part : parts) {
-            String[] keyAndValue = part.split(CONFIG_VALUE_DELIMITER);
-            config.put(keyAndValue[0], keyAndValue[1]);
+            String[] keyAndValue = part.split(CONFIG_VALUE_DELIMITER, -1);
+            if (keyAndValue.length != 2 || keyAndValue[0].isEmpty() || keyAndValue[1].isEmpty()) {
+                throw new IllegalArgumentException("Invalid hash configuration entry");
+            }
+            if (config.putIfAbsent(keyAndValue[0], keyAndValue[1]) != null) {
+                throw new IllegalArgumentException("Duplicate hash configuration entry");
+            }
         }
 
         return config;

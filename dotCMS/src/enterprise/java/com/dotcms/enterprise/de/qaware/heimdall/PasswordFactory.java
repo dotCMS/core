@@ -40,10 +40,13 @@ public final class PasswordFactory {
     /** Future write profile registered now for 256-bit verification only. */
     private static final HashAlgorithm CURRENT_PBKDF2 = new PBKDF2_256();
 
-    /** Singleton instance that reads both profiles while continuing legacy writes. */
+    /** Activate a newer writer only after its reader is present in every rollback target. */
+    private static final HashAlgorithm WRITE_PROFILE = LEGACY_PBKDF2;
+
+    /** Singleton instance with additive readers and an independently selected writer. */
     private static final Password password = new PasswordImpl(new SecureSaltProvider(),
             new ConfigCoderImpl(),
-            new HashAlgorithmRegistryImpl(LEGACY_PBKDF2, CURRENT_PBKDF2), LEGACY_PBKDF2);
+            new HashAlgorithmRegistryImpl(LEGACY_PBKDF2, CURRENT_PBKDF2), WRITE_PROFILE);
 
     /**
      * Static class - no instances allowed.
