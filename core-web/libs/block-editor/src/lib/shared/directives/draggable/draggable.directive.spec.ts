@@ -7,7 +7,8 @@ import { DraggableDirective } from './draggable.directive';
 @Component({
     template: `
         <div tiptapDraggable>Hello Tiptap!</div>
-    `
+    `,
+    standalone: false
 })
 class TestComponent {}
 

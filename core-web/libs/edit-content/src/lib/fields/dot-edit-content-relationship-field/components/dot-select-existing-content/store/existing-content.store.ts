@@ -11,13 +11,14 @@ import { TablePageEvent } from 'primeng/table';
 import { tap, switchMap, filter } from 'rxjs/operators';
 
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
-import { Column } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/column.model';
-import { SelectionMode } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/relationship.models';
-import { SearchParams } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/models/search.model';
+
+import { Column } from '../../../models/column.model';
+import { SelectionMode } from '../../../models/relationship.models';
+import { SearchParams } from '../../../models/search.model';
 import {
     RelationshipFieldService,
     RelationshipFieldQueryParams
-} from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
+} from '../../../services/relationship-field.service';
 
 const ViewMode = {
     all: 'all',

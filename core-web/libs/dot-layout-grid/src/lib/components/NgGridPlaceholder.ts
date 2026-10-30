@@ -5,7 +5,8 @@ import { NgGridItemPosition, NgGridItemSize } from '../interfaces/INgGrid';
 
 @Component({
     selector: 'ng-grid-placeholder',
-    template: ''
+    template: '',
+    standalone: false
 })
 export class NgGridPlaceholder implements OnInit {
     private _size: NgGridItemSize;

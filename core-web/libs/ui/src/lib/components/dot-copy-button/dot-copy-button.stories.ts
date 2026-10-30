@@ -4,7 +4,8 @@ import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotClipboardUtil, DotCopyButtonComponent } from '@dotcms/ui';
+
+import { DotClipboardUtil, DotCopyButtonComponent } from './dot-copy-button.component';
 
 const meta: Meta<DotCopyButtonComponent> = {
     title: 'DotCMS/Copy Button',

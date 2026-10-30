@@ -209,7 +209,8 @@ const I8N_BASE = 'api.sites.ruleengine';
                 </div>
             </div>
         </form>
-    `
+    `,
+    standalone: false
 })
 class RuleComponent {
     @Input() rule: RuleModel;

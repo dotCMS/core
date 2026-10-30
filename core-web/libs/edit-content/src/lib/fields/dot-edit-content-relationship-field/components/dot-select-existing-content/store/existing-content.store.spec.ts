@@ -8,15 +8,15 @@ import { InputSwitchChangeEvent } from 'primeng/inputswitch';
 import { delay } from 'rxjs/operators';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
-import {
-    RelationshipFieldSearchResponse,
-    RelationshipFieldService
-} from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/services/relationship-field.service';
 import { createFakeContentlet, mockLocales } from '@dotcms/utils-testing';
 
 import { ExistingContentStore } from './existing-content.store';
 
 import { Column } from '../../../models/column.model';
+import {
+    RelationshipFieldSearchResponse,
+    RelationshipFieldService
+} from '../../../services/relationship-field.service';
 
 describe('ExistingContentStore', () => {
     let store: InstanceType<typeof ExistingContentStore>;

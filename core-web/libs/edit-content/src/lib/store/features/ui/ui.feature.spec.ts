@@ -2,7 +2,7 @@
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
 import { signalStore, signalStoreFeature, withState } from '@ngrx/signals';
 
-import { fakeAsync, tick } from '@angular/core/testing';
+import { fakeAsync } from '@angular/core/testing';
 
 import { withUI } from './ui.feature';
 
@@ -19,7 +19,7 @@ jest.mock('../../../utils/functions.util', () => ({
     saveStoreUIState: jest.fn()
 }));
 
-describe('UI Feature', () => {
+describe('UIFeature', () => {
     let spectator: SpectatorService<any>;
     let store: any;
 
@@ -53,7 +53,7 @@ describe('UI Feature', () => {
 
         it('should save state changes to localStorage via effect', fakeAsync(() => {
             // Initial save from initialization
-            tick();
+            spectator.flushEffects();
             expect(saveStoreUIState).toHaveBeenCalledWith(store.uiState());
 
             // Clear mock to test next state change
@@ -61,7 +61,7 @@ describe('UI Feature', () => {
 
             // Make a state change
             store.setActiveTab(2);
-            tick();
+            spectator.flushEffects();
 
             // Verify effect triggered save
             expect(saveStoreUIState).toHaveBeenCalledWith({

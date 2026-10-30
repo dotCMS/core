@@ -18,7 +18,8 @@ import { DotAppsCardComponent } from './dot-apps-card.component';
     selector: 'markdown',
     template: `
         <ng-content></ng-content>
-    `
+    `,
+    standalone: false
 })
 class MockMarkdownComponent {}
 

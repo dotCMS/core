@@ -4,16 +4,18 @@ import { Component, DebugElement, ElementRef, ViewChild } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { IframeComponent } from '@components/_common/iframe/iframe-component';
 import { DotEditPageService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
-import { DotDOMHtmlUtilService } from '@portlets/dot-edit-page/content/services/html/dot-dom-html-util.service';
 
 import { DotWhatsChangedComponent, SHOW_DIFF_STYLES } from './dot-whats-changed.component';
 
+import { IframeComponent } from '../../../../../view/components/_common/iframe/iframe-component/iframe.component';
+import { DotDOMHtmlUtilService } from '../../services/html/dot-dom-html-util.service';
+
 @Component({
     selector: 'dot-test',
-    template: '<dot-whats-changed [pageId]="pageId" [languageId]="languageId"></dot-whats-changed>'
+    template: '<dot-whats-changed [pageId]="pageId" [languageId]="languageId"></dot-whats-changed>',
+    standalone: false
 })
 class TestHostComponent {
     languageId: string;
@@ -22,7 +24,8 @@ class TestHostComponent {
 
 @Component({
     selector: 'dot-iframe',
-    template: '<iframe #iframeElement></iframe>'
+    template: '<iframe #iframeElement></iframe>',
+    standalone: false
 })
 class TestDotIframeComponent {
     @ViewChild('iframeElement') iframeElement: ElementRef;

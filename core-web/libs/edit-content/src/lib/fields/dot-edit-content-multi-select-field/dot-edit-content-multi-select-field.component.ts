@@ -8,7 +8,6 @@ import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { getSingleSelectableFieldOptions } from '../../utils/functions.util';
 @Component({
     selector: 'dot-edit-content-multi-select-field',
-    standalone: true,
     imports: [MultiSelectModule, ReactiveFormsModule],
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [

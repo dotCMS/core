@@ -19,11 +19,9 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
 
 @Component({
     selector: 'dot-dot-experiments-configuration-scheduling-add',
-    standalone: true,
     imports: [
         CommonModule,
         ReactiveFormsModule,
-
         DotMessagePipe,
         DotSidebarHeaderComponent,
         DotSidebarDirective,

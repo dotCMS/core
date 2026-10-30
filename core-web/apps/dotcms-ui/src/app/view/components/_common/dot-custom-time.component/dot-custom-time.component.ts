@@ -5,7 +5,8 @@ import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@a
     selector: 'dot-custom-time',
     styleUrls: ['./dot-custom-time.component.scss'],
     templateUrl: 'dot-custom-time.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class CustomTimeComponent {
     @Input() time: string;

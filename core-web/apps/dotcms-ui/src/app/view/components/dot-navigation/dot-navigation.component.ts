@@ -1,15 +1,17 @@
 import { Component, HostBinding, HostListener, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 
-import { IframeOverlayService } from '@components/_common/iframe/service/iframe-overlay.service';
 import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
 import { DotNavigationService } from './services/dot-navigation.service';
 
+import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
+
 @Component({
     selector: 'dot-main-nav',
     styleUrls: ['./dot-navigation.component.scss'],
-    templateUrl: 'dot-navigation.component.html'
+    templateUrl: 'dot-navigation.component.html',
+    standalone: false
 })
 export class DotNavigationComponent {
     /**

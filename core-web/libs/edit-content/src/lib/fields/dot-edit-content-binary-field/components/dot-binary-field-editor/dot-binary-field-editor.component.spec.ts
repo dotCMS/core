@@ -8,11 +8,11 @@ import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
 
 import { DotMessageService, DotUploadService } from '@dotcms/data-access';
-import { DEFAULT_BINARY_FIELD_MONACO_CONFIG } from '@dotcms/edit-content';
 import { DotFieldValidationMessageComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotBinaryFieldEditorComponent } from './dot-binary-field-editor.component';
 
+import { DEFAULT_BINARY_FIELD_MONACO_CONFIG } from '../../dot-edit-content-binary-field.component';
 import { DotBinaryFieldValidatorService } from '../../service/dot-binary-field-validator/dot-binary-field-validator.service';
 import { TEMP_FILE_MOCK } from '../../store/binary-field.store.spec';
 import { CONTENTTYPE_FIELDS_MESSAGE_MOCK } from '../../utils/mock';

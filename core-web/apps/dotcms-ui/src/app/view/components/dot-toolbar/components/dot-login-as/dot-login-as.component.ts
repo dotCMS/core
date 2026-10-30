@@ -27,18 +27,18 @@ import { PasswordModule } from 'primeng/password';
 
 import { take } from 'rxjs/operators';
 
-import { DotNavigationService } from '@components/dot-navigation/services/dot-navigation.service';
-import { LOCATION_TOKEN } from '@dotcms/app/providers';
 import { DotMessageService, PaginatorService } from '@dotcms/data-access';
 import { LoginService, User } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
+
+import { LOCATION_TOKEN } from '../../../../../providers';
+import { DotNavigationService } from '../../../dot-navigation/services/dot-navigation.service';
 
 @Component({
     selector: 'dot-login-as',
     styleUrls: ['./dot-login-as.component.scss'],
     templateUrl: 'dot-login-as.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    standalone: true,
     imports: [
         ReactiveFormsModule,
         DialogModule,

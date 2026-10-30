@@ -60,7 +60,6 @@ interface GeneratedStringField {
  */
 @Component({
     selector: 'dot-apps-configuration-detail-generated-string-field',
-    standalone: true,
     imports: [
         CommonModule,
         FormsModule,

@@ -11,7 +11,8 @@ import { DotPaletteInputFilterComponent } from './dot-palette-input-filter.compo
 
 @Component({
     selector: 'dot-icon',
-    template: ''
+    template: '',
+    standalone: false
 })
 class MockDotIconComponent {
     @Input() name: string;

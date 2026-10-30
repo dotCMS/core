@@ -10,7 +10,6 @@ import { DotIsoCodePipe, DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-edit-content-sidebar-untranslated-locale',
-    standalone: true,
     imports: [
         CommonModule,
         RadioButtonModule,

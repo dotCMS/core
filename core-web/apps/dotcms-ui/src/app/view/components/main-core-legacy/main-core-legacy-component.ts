@@ -4,6 +4,7 @@ import { Component, ViewEncapsulation } from '@angular/core';
     encapsulation: ViewEncapsulation.None,
     providers: [],
     selector: 'dot-main-core-component',
-    template: '<router-outlet></router-outlet>'
+    template: '<router-outlet></router-outlet>',
+    standalone: false
 })
 export class MainCoreLegacyComponent {}

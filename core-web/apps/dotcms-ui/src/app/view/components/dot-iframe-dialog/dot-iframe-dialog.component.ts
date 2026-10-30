@@ -16,7 +16,8 @@ import { DotDialogComponent } from '@dotcms/ui';
 @Component({
     selector: 'dot-iframe-dialog',
     templateUrl: './dot-iframe-dialog.component.html',
-    styleUrls: ['./dot-iframe-dialog.component.scss']
+    styleUrls: ['./dot-iframe-dialog.component.scss'],
+    standalone: false
 })
 export class DotIframeDialogComponent implements OnChanges, OnInit {
     @ViewChild('dialog', { static: true })

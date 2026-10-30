@@ -24,6 +24,7 @@ import {
 import { DotDeviceSelectorSeoComponent } from './dot-device-selector-seo.component';
 
 @Component({
+    standalone: false,
     selector: 'dot-test-host-component',
     template: `
         <button (click)="op.openMenu($event)" type="text">Open</button>

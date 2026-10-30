@@ -24,7 +24,8 @@ import { DotDeviceSelectorComponent } from './dot-device-selector.component';
     selector: 'dot-test-host-component',
     template: `
         <dot-device-selector [value]="value"></dot-device-selector>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     value: DotDevice = mockDotDevices[0];

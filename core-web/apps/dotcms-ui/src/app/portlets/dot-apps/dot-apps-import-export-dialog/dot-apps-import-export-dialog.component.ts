@@ -20,7 +20,6 @@ import {
 
 import { take, takeUntil } from 'rxjs/operators';
 
-import { DotAppsService } from '@dotcms/app/api/services/dot-apps/dot-apps.service';
 import { DotMessageService } from '@dotcms/data-access';
 import {
     dialogAction,
@@ -31,10 +30,13 @@ import {
     DotDialogActions
 } from '@dotcms/dotcms-models';
 
+import { DotAppsService } from '../../../api/services/dot-apps/dot-apps.service';
+
 @Component({
     selector: 'dot-apps-import-export-dialog',
     templateUrl: './dot-apps-import-export-dialog.component.html',
-    styleUrls: ['./dot-apps-import-export-dialog.component.scss']
+    styleUrls: ['./dot-apps-import-export-dialog.component.scss'],
+    standalone: false
 })
 export class DotAppsImportExportDialogComponent implements OnChanges, OnDestroy {
     @ViewChild('importFile') importFile: ElementRef;

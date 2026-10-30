@@ -21,7 +21,9 @@
                         "style": "kebab-case"
                     }
                 ],
-                "@nx/enforce-module-boundaries": ["off"]
+                "@nx/enforce-module-boundaries": ["off"],
+                "@angular-eslint/prefer-standalone": "off",
+                "@angular-eslint/prefer-inject": "off"
             },
             "extends": [
                 "plugin:@nx/angular",

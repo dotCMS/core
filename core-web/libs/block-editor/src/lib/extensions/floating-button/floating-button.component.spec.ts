@@ -1,5 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
+import { ButtonModule } from 'primeng/button';
+
 import { FloatingButtonComponent } from './floating-button.component';
 
 describe('FloatingButtonComponent', () => {
@@ -8,7 +10,8 @@ describe('FloatingButtonComponent', () => {
 
     beforeEach(async () => {
         await TestBed.configureTestingModule({
-            declarations: [FloatingButtonComponent]
+            declarations: [FloatingButtonComponent],
+            imports: [ButtonModule]
         }).compileComponents();
 
         fixture = TestBed.createComponent(FloatingButtonComponent);

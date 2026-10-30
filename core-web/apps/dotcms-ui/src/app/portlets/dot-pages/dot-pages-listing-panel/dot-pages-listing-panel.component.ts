@@ -26,7 +26,8 @@ import { DotActionsMenuEventParams } from '../dot-pages.component';
 @Component({
     selector: 'dot-pages-listing-panel',
     templateUrl: './dot-pages-listing-panel.component.html',
-    styleUrls: ['./dot-pages-listing-panel.component.scss']
+    styleUrls: ['./dot-pages-listing-panel.component.scss'],
+    standalone: false
 })
 export class DotPagesListingPanelComponent implements OnDestroy, AfterViewInit {
     readonly store = inject(DotPageStore);

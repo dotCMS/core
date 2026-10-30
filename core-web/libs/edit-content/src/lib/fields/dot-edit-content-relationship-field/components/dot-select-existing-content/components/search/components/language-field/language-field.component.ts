@@ -16,10 +16,11 @@ import {
 import { DropdownModule } from 'primeng/dropdown';
 
 import { DotLanguage } from '@dotcms/dotcms-models';
-import { LanguagePipe } from '@dotcms/edit-content/pipes/language.pipe';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { LanguageFieldStore } from './language-field.store';
+
+import { LanguagePipe } from '../../../../../../../../pipes/language.pipe';
 
 /**
  * Language field component that provides a dropdown for language selection.
@@ -30,7 +31,6 @@ import { LanguageFieldStore } from './language-field.store';
  */
 @Component({
     selector: 'dot-language-field',
-    standalone: true,
     imports: [DropdownModule, ReactiveFormsModule, LanguagePipe, DotMessagePipe],
     providers: [
         LanguageFieldStore,

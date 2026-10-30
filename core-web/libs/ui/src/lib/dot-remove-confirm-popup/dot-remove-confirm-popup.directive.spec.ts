@@ -5,14 +5,14 @@ import { Component } from '@angular/core';
 import { ConfirmationService } from 'primeng/api';
 import { ConfirmPopupModule } from 'primeng/confirmpopup';
 
-import { DotRemoveConfirmPopupWithEscapeDirective } from '@dotcms/ui';
+import { DotRemoveConfirmPopupWithEscapeDirective } from './dot-remove-confirm-popup.directive';
 
 @Component({
     selector: 'dot-escape-confirm-popup-host',
     template: `
         <p-confirmPopup dotRemoveConfirmPopupWithEscape></p-confirmPopup>
     `,
-    imports: [ConfirmPopupModule]
+    imports: [ConfirmPopupModule, DotRemoveConfirmPopupWithEscapeDirective]
 })
 class CustomHostComponent {}
 
@@ -22,7 +22,6 @@ describe('DotRemoveConfirmPopupWithEscape', () => {
 
     const createHost = createHostFactory({
         component: CustomHostComponent,
-        imports: [ConfirmPopupModule, DotRemoveConfirmPopupWithEscapeDirective],
         providers: [ConfirmationService]
     });
 

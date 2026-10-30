@@ -85,3 +85,4 @@ Release-25.07.10 LTS
 79. https://github.com/dotCMS/core/pull/38083 : chore(saml): bump com.dotcms.samlbundle to 26.10.17 #38083 #725
 80. https://github.com/dotCMS/core/pull/36591 : fix(saml): return front-end users to the requested page after login (validate the post-login destination) #36591 #879
 81. https://github.com/dotCMS/core/pull/38296 : fix(docker): block the compromised eMudhra intermediate CAs in the JDK #38296 #999
+83. https://github.com/dotCMS/private-issues/issues/1037 : chore(deps): upgrade Angular to 19.2 and Nx to 20 in core-web #1037

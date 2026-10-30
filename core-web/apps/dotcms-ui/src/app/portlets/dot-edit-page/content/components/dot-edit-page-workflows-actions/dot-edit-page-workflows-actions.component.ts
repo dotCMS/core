@@ -35,7 +35,8 @@ import {
     selector: 'dot-edit-page-workflows-actions',
     templateUrl: './dot-edit-page-workflows-actions.component.html',
     styleUrls: ['./dot-edit-page-workflows-actions.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class DotEditPageWorkflowsActionsComponent implements OnChanges {
     @Input() page: DotPage;

@@ -25,7 +25,8 @@ import { DotTemplatePropsComponent } from './dot-template-props.component';
 @Component({
     selector: 'dot-form-dialog',
     template: '<ng-content></ng-content>',
-    styleUrls: []
+    styleUrls: [],
+    standalone: false
 })
 export class DotFormDialogMockComponent {
     @Input() saveButtonDisabled: boolean;
@@ -44,7 +45,8 @@ export class DotFormDialogMockComponent {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotTemplateThumbnailFieldMockComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotTemplateThumbnailFieldMockComponent implements ControlValueAccessor {
     propagateChange = (_: any) => {
@@ -73,7 +75,8 @@ export class DotTemplateThumbnailFieldMockComponent implements ControlValueAcces
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotThemeSelectorDropdownMockComponent)
         }
-    ]
+    ],
+    standalone: false
 })
 export class DotThemeSelectorDropdownMockComponent implements ControlValueAccessor {
     propagateChange = (_: any) => {

@@ -16,7 +16,8 @@ import { debounceTime, takeUntil } from 'rxjs/operators';
 @Component({
     selector: 'dot-palette-input-filter',
     templateUrl: './dot-palette-input-filter.component.html',
-    styleUrls: ['./dot-palette-input-filter.component.scss']
+    styleUrls: ['./dot-palette-input-filter.component.scss'],
+    standalone: false
 })
 export class DotPaletteInputFilterComponent implements OnInit, OnDestroy {
     @Input() goBackBtn: boolean;

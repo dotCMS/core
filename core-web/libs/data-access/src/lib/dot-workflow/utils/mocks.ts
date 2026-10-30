@@ -14,7 +14,6 @@ export const DotCMSWorkflowMock: DotCMSWorkflow[] = [
         system: true
     }
 ];
-
 export const mockWorkflowstatus: DotCMSWorkflowStatus = {
     scheme: {
         archived: false,

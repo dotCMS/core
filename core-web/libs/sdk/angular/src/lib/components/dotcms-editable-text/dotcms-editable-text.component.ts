@@ -33,7 +33,6 @@ import { TINYMCE_CONFIG, DOT_EDITABLE_TEXT_FORMAT, DOT_EDITABLE_TEXT_MODE } from
  */
 @Component({
     selector: 'dotcms-editable-text',
-    standalone: true,
     templateUrl: './dotcms-editable-text.component.html',
     styleUrl: './dotcms-editable-text.component.css',
     imports: [EditorComponent],

@@ -44,7 +44,6 @@ import { DotValidators } from './../../../../validators/dotValidators';
 
 @Component({
     selector: 'dot-ai-image-prompt-form',
-    standalone: true,
     templateUrl: './ai-image-prompt-form.component.html',
     imports: [
         ButtonModule,

@@ -32,7 +32,6 @@ import { DotBinaryFieldValidatorService } from '../../service/dot-binary-field-v
 
 @Component({
     selector: 'dot-binary-field-url-mode',
-    standalone: true,
     imports: [
         FormsModule,
         ReactiveFormsModule,

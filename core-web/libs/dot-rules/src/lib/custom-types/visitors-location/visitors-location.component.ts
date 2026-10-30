@@ -71,7 +71,8 @@ const UNITS = {
             [headerText]="'Select an area'"
             [hidden]="!showingMap"
             [circle]="circle"></cw-area-picker-dialog-component>
-    `
+    `,
+    standalone: false
 })
 export class VisitorsLocationComponent {
     @Input() circle: GCircle = { center: { lat: 38.89, lng: -77.04 }, radius: 10000 };

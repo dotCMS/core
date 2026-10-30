@@ -47,7 +47,8 @@ import { FieldUtil } from '@dotcms/utils-testing';
     providers: [],
     selector: 'dot-content-types-form',
     styleUrls: ['./content-types-form.component.scss'],
-    templateUrl: 'content-types-form.component.html'
+    templateUrl: 'content-types-form.component.html',
+    standalone: false
 })
 export class ContentTypesFormComponent implements OnInit, OnDestroy {
     @ViewChild('name', { static: true }) name: ElementRef;

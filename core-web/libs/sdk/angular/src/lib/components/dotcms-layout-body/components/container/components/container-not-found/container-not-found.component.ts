@@ -14,7 +14,6 @@ import { DotCMSStore } from '../../../../../../store/dotcms.store';
  */
 @Component({
     selector: 'dotcms-container-not-found',
-    standalone: true,
     imports: [NgStyle],
     template: `
         @if ($isDevMode()) {

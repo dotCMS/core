@@ -38,7 +38,8 @@ import { SEARCHABLE_NGFACES_MODULES } from '../searchable-dropdown.module';
             [overlayWidth]="overlayWidth"
             [width]="width"
             [disabled]="disabled" />
-    `
+    `,
+    standalone: false
 })
 class HostTestComponent {
     @Input()
@@ -416,7 +417,8 @@ describe('SearchableDropdownComponent', () => {
                 </div>
             </ng-template>
         </dot-searchable-dropdown>
-    `
+    `,
+    standalone: false
 })
 class HostTestExternalTemplateComponent {
     @Input() data: any[];

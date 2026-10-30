@@ -21,7 +21,6 @@ export interface BINARY_OPTION {
 
 @Component({
     selector: 'dot-binary-selector',
-    standalone: true,
     imports: [FormsModule, DotMessagePipe, ButtonModule, DynamicDialogModule],
     templateUrl: './dot-binary-option-selector.component.html',
     styleUrls: ['./dot-binary-option-selector.component.scss'],

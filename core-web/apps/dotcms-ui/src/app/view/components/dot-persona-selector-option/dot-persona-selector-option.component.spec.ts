@@ -16,7 +16,8 @@ import { DotPersonaSelectorOptionComponent } from './dot-persona-selector-option
 @Component({
     template: `
         <dot-persona-selector-option [persona]="persona"></dot-persona-selector-option>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     persona = mockDotPersona;

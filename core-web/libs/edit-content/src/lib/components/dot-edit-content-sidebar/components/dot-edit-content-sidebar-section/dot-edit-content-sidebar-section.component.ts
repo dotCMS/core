@@ -12,7 +12,6 @@ import {
  */
 @Component({
     selector: 'dot-edit-content-sidebar-section',
-    standalone: true,
     imports: [CommonModule],
     templateUrl: './dot-edit-content-sidebar-section.component.html',
     styleUrl: './dot-edit-content-sidebar-section.component.scss',

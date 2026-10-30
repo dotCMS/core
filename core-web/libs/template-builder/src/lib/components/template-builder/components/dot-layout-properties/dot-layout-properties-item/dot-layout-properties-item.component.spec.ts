@@ -18,6 +18,7 @@ import { DotLayoutPropertiesItemComponent } from './dot-layout-properties-item.c
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'dot-test-host-component',
+    standalone: false,
     template: `
         <form [formGroup]="group">
             <dot-layout-properties-item formControlName="header"></dot-layout-properties-item>

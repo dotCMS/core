@@ -12,6 +12,7 @@ import { By } from '@angular/platform-browser';
 import { DotFieldRequiredDirective } from './dot-field-required.directive';
 
 @Component({
+    standalone: false,
     template: `
         <form [formGroup]="form">
             <label data-testid="nameLabel" dotFieldRequired for="name">Name</label>

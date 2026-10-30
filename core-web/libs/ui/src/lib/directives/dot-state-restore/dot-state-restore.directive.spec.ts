@@ -2,7 +2,7 @@ import { SpectatorDirective, createDirectiveFactory } from '@ngneat/spectator/je
 
 import { Table, TableModule } from 'primeng/table';
 
-import { DotStateRestoreDirective } from '@dotcms/ui';
+import { DotStateRestoreDirective } from './dot-state-restore.directive';
 
 describe('DotStateRestoreDirective', () => {
     let spectator: SpectatorDirective<DotStateRestoreDirective>;

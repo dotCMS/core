@@ -118,7 +118,8 @@ import { Verify } from '../../services/validation/Verify';
                 </ng-template>
             </div>
         </form>
-    `
+    `,
+    standalone: false
 })
 export class ServersideCondition {
     @Input() componentInstance: ServerSideFieldModel;

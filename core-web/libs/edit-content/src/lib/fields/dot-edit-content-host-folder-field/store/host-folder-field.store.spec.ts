@@ -4,10 +4,9 @@ import { of } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
 
-import { DotEditContentService } from '@dotcms/edit-content/services/dot-edit-content.service';
-
 import { SYSTEM_HOST_NAME, HostFolderFiledStore } from './host-folder-field.store';
 
+import { DotEditContentService } from '../../../services/dot-edit-content.service';
 import { TREE_SELECT_SITES_MOCK, TREE_SELECT_MOCK } from '../../../utils/mocks';
 
 describe('HostFolderFiledStore', () => {

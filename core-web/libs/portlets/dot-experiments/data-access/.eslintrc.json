@@ -20,7 +20,8 @@
                         "prefix": "dot",
                         "style": "kebab-case"
                     }
-                ]
+                ],
+                "@angular-eslint/no-input-rename": "off"
             },
             "extends": [
                 "plugin:@nx/angular",

@@ -14,6 +14,7 @@ import { DotContentCompareDialogComponent } from './dot-content-compare-dialog.c
 const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
 
 @Component({
+    standalone: false,
     selector: 'dot-content-compare',
     template: ''
 })

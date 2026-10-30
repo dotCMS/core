@@ -22,7 +22,8 @@ import {
     DotContainerStructure
 } from '@dotcms/dotcms-models';
 import { isEqual } from '@dotcms/utils';
-import { DotContainersService } from '@services/dot-containers/dot-containers.service';
+
+import { DotContainersService } from '../../../../../api/services/dot-containers/dot-containers.service';
 
 export interface DotContainerPropertiesState {
     showPrePostLoopInput: boolean;

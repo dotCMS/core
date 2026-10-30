@@ -2,8 +2,12 @@ import { HttpClient } from '@angular/common/http';
 import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
 import { TestBed, getTestBed } from '@angular/core/testing';
 
-import { DotCMSPageWorkflowState, DotPageWorkflowsActionsService } from '@dotcms/data-access';
 import { mockWorkflowsActions, dotcmsContentletMock } from '@dotcms/utils-testing';
+
+import {
+    DotCMSPageWorkflowState,
+    DotPageWorkflowsActionsService
+} from './dot-page-workflows-actions.service';
 
 describe('DotPageWorkflowsActionsService', () => {
     let injector: TestBed;

@@ -15,11 +15,11 @@
  *
  */
 export class LazyVerify {
-    static exists(value) {
+    static exists(value: unknown): value is NonNullable<unknown> {
         return !(value === null || value === undefined);
     }
 
-    static empty(value) {
+    static empty(value: unknown): boolean {
         let empty = !LazyVerify.exists(value);
         if (!empty) {
             if (LazyVerify.isString(value)) {
@@ -32,23 +32,23 @@ export class LazyVerify {
         return empty;
     }
 
-    static isObject(value) {
-        return typeof value === 'object' || value.constructor === Object;
+    static isObject(value: unknown): value is Record<string, unknown> {
+        return typeof value === 'object' && value !== null && value.constructor === Object;
     }
 
-    static isString(value) {
+    static isString(value: unknown): value is string {
         return typeof value === 'string' || value instanceof String;
     }
 
-    static isFunction(value) {
+    static isFunction(value: unknown): value is (...args: unknown[]) => unknown {
         return typeof value === 'function' || value instanceof Function;
     }
 
-    static isArray(value) {
+    static isArray(value: unknown): value is unknown[] {
         return Array.isArray(value) || value instanceof Array;
     }
 
-    static emptyObject(value) {
+    static emptyObject(value: Record<string, unknown>): boolean {
         return Object.getOwnPropertyNames(value).length === 0;
     }
 
@@ -61,9 +61,13 @@ export class LazyVerify {
      * but will not fail if a key is not present on the object.
      *
      */
-    static hasOnly(object, properties = [], allowMissing = false) {
+    static hasOnly(
+        object: Record<string, unknown>,
+        properties: string[] = [],
+        allowMissing = false
+    ): boolean {
         const keys = Object.keys(object);
-        const has = {};
+        const has: Record<string, boolean> = {};
         let count = 0;
         keys.forEach((key) => {
             has[key] = true;
@@ -85,9 +89,9 @@ export class LazyVerify {
      * @param properties Array of strings that represent keys to check for
      *
      */
-    static hasAll(object, properties = []) {
+    static hasAll(object: Record<string, unknown>, properties: string[] = []): boolean {
         const keys = Object.keys(object);
-        const has = {};
+        const has: Record<string, boolean> = {};
         keys.forEach((key) => {
             has[key] = true;
         });
@@ -98,69 +102,73 @@ export class LazyVerify {
         return hasAllOfDems;
     }
 
-    static maxLength(value, max) {
+    static maxLength(value: string, max: number): boolean {
         return value.length <= max;
     }
 
-    static minLength(value, min) {
+    static minLength(value: string, min: number): boolean {
         return value.length >= min;
     }
 
-    static isNumber(value) {
+    static isNumber(value: unknown): value is number {
         return typeof value === 'number' || value instanceof Number;
     }
 
-    static isInteger(value) {
+    static isInteger(value: number): boolean {
         return value % 1 === 0;
     }
 
-    static min(value, min) {
+    static min(value: number, min: number): boolean {
         return value >= min;
     }
 
-    static max(value, max) {
+    static max(value: number, max: number): boolean {
         return value <= max;
     }
 
-    static isBoolean(value) {
+    static isBoolean(value: unknown): value is boolean {
         return value === true || value === false;
     }
 }
 
 export class Verify extends LazyVerify {
-    static isString(value, allowEmpty = false) {
-        return !LazyVerify.exists(value) ? allowEmpty === true : LazyVerify.isString(value);
+    static isString(value: unknown): value is string {
+        return LazyVerify.isString(value);
     }
 
-    static maxLength(value, max) {
+    static isStringWithEmpty(value: unknown, allowEmpty = false): boolean {
+        return !LazyVerify.exists(value) ? allowEmpty === true : Verify.isString(value);
+    }
+
+    static maxLength(value: unknown, max: number): boolean {
         return Verify.isString(value) && LazyVerify.maxLength(value, max);
     }
 
-    static minLength(value, min) {
+    static minLength(value: unknown, min: number): boolean {
         return Verify.isString(value) && LazyVerify.minLength(value, min);
     }
 
-    static isNumber(value) {
+    static isNumber(value: unknown): value is number {
         return LazyVerify.exists(value) && LazyVerify.isNumber(value);
     }
 
-    static isInteger(value) {
+    static isInteger(value: unknown): boolean {
         return Verify.isNumber(value) && LazyVerify.isInteger(value);
     }
 
-    static min(value, min) {
+    static min(value: unknown, min: number): boolean {
         return Verify.isNumber(value) && LazyVerify.min(value, min);
     }
 
-    static max(value, max) {
+    static max(value: unknown, max: number): boolean {
         return Verify.isNumber(value) && LazyVerify.max(value, max);
     }
 
-    static isFunction(value) {
+    static isFunction(value: unknown): value is (...args: unknown[]) => unknown {
         return LazyVerify.exists(value) && LazyVerify.isFunction(value);
     }
 
-    static isArray(value) {
+    static isArray(value: unknown): value is unknown[] {
         return LazyVerify.exists(value) && LazyVerify.isArray(value);
     }
 }

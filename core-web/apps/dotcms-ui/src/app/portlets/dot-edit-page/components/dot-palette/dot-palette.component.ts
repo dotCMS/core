@@ -30,7 +30,8 @@ import { DotPaletteState, DotPaletteStore } from './store/dot-palette.store';
             ),
             transition('* => *', animate('200ms ease-in'))
         ])
-    ]
+    ],
+    standalone: false
 })
 export class DotPaletteComponent {
     readonly #store = inject(DotPaletteStore);

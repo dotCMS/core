@@ -1,6 +1,6 @@
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { getRelationshipFromContentlet } from '@dotcms/edit-content/fields/dot-edit-content-relationship-field/utils';
 
+import { getRelationshipFromContentlet } from '../../fields/dot-edit-content-relationship-field/utils/index';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 
 /**

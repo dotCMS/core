@@ -3,11 +3,12 @@ import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/j
 import { Component } from '@angular/core';
 import { FormsModule, NgControl } from '@angular/forms';
 
-import { DotTrimInputDirective } from '@dotcms/ui';
+import { DotTrimInputDirective } from './dot-trim-input.directive';
 
 const STRING_WITH_SPACES = '   Test Value   ';
 
 @Component({
+    standalone: false,
     template: `
         <input [(ngModel)]="name" dotTrimInput data-testId="input-to-trim" />
     `

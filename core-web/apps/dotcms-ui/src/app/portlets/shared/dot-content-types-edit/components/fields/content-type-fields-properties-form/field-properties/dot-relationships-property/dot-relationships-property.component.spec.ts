@@ -5,16 +5,18 @@ import { ComponentFixture, waitForAsync } from '@angular/core/testing';
 import { NgControl, UntypedFormControl, UntypedFormGroup } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 
-import { DOTTestBed } from '@dotcms/app/test/dot-test-bed';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotRelationshipsPropertyComponent } from './dot-relationships-property.component';
 
+import { DOTTestBed } from '../../../../../../../../test/dot-test-bed';
+
 @Component({
     selector: 'dot-field-validation-message',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestFieldValidationMessageComponent {
     @Input()
@@ -25,7 +27,8 @@ class TestFieldValidationMessageComponent {
 
 @Component({
     selector: 'dot-new-relationships',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestNewRelationshipsComponent {
     @Input()
@@ -43,7 +46,8 @@ class TestNewRelationshipsComponent {
 
 @Component({
     selector: 'dot-edit-relationships',
-    template: ''
+    template: '',
+    standalone: false
 })
 class TestEditRelationshipsComponent {
     @Output()

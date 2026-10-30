@@ -29,7 +29,6 @@ import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
  */
 @Component({
     selector: 'dot-toolbar-btn-overlay',
-    standalone: true,
     imports: [ButtonModule, OverlayPanelModule],
     styleUrls: ['./dot-toolbar-btn-overlay.component.scss'],
     templateUrl: 'dot-toolbar-btn-overlay.component.html',

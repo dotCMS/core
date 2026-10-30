@@ -23,8 +23,8 @@ import { ControlContainer, FormControl, ReactiveFormsModule } from '@angular/for
 import { PaginatorModule } from 'primeng/paginator';
 
 import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { dotVelocityLanguageDefinition } from '@dotcms/edit-content/custom-languages/velocity-monaco-language';
 
+import { dotVelocityLanguageDefinition } from '../../custom-languages/velocity-monaco-language';
 import { COMMENT_TINYMCE } from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.constant';
 import {
     isHtml,
@@ -55,7 +55,6 @@ interface WindowWithMonaco extends Window {
  */
 @Component({
     selector: 'dot-edit-content-monaco-editor-control',
-    standalone: true,
     imports: [MonacoEditorModule, PaginatorModule, ReactiveFormsModule],
     templateUrl: './dot-edit-content-monaco-editor-control.component.html',
     styleUrl: './dot-edit-content-monaco-editor-control.component.scss',

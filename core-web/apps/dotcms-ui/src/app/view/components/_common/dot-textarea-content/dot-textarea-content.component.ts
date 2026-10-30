@@ -26,7 +26,8 @@ import { SelectItem } from 'primeng/api';
             useExisting: forwardRef(() => DotTextareaContentComponent)
         }
     ],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    standalone: false
 })
 export class DotTextareaContentComponent implements OnInit, ControlValueAccessor {
     @Input()

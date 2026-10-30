@@ -11,12 +11,6 @@ import {
     PaginatorService
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType, ESContent } from '@dotcms/dotcms-models';
-import {
-    ContentletWithDuplicatedMock,
-    NewVariantContentletMock,
-    NotDuplicatedContentletMock,
-    VARIANT_ID_MOCK
-} from '@portlets/dot-edit-page/components/dot-palette/mocks/contentlets.mock';
 
 import { DotPaletteStore } from './dot-palette.store';
 
@@ -25,6 +19,12 @@ import {
     contentletFormDataMock,
     contentletProductDataMock
 } from '../dot-palette-contentlets/dot-palette-contentlets.component.spec';
+import {
+    ContentletWithDuplicatedMock,
+    NewVariantContentletMock,
+    NotDuplicatedContentletMock,
+    VARIANT_ID_MOCK
+} from '../mocks/contentlets.mock';
 
 const responseData: DotCMSContentType[] = [
     {

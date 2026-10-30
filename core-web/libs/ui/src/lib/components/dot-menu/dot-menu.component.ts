@@ -18,8 +18,7 @@ import { skip, take } from 'rxjs/operators';
     selector: 'dot-menu',
     templateUrl: './dot-menu.component.html',
     styleUrls: ['./dot-menu.component.scss'],
-    imports: [ButtonModule, MenuModule],
-    standalone: true
+    imports: [ButtonModule, MenuModule]
 })
 export class DotMenuComponent {
     @Input()

@@ -24,7 +24,8 @@ import {
 @Component({
     selector: 'dot-edit-page-toolbar',
     templateUrl: './dot-edit-page-toolbar.component.html',
-    styleUrls: ['./dot-edit-page-toolbar.component.scss']
+    styleUrls: ['./dot-edit-page-toolbar.component.scss'],
+    standalone: false
 })
 export class DotEditPageToolbarComponent implements OnInit, OnChanges, OnDestroy {
     @Input() pageState: DotPageRenderState;

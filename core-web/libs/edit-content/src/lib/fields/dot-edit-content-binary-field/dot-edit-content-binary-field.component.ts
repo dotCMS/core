@@ -76,7 +76,6 @@ type SystemOptionsType = {
 
 @Component({
     selector: 'dot-edit-content-binary-field',
-    standalone: true,
     imports: [
         CommonModule,
         ButtonModule,

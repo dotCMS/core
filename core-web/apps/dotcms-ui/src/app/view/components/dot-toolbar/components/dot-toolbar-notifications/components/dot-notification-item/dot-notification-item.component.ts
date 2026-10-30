@@ -3,9 +3,13 @@ import { Component, computed, input, output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
-import { DotCustomTimeModule } from '@components/_common/dot-custom-time.component/dot-custom-time.module';
 import { DotMessagePipe } from '@dotcms/ui';
-import { INotification, NotificationIcons } from '@models/notifications';
+
+import {
+    INotification,
+    NotificationIcons
+} from '../../../../../../../shared/models/notifications/notification.model';
+import { DotCustomTimeModule } from '../../../../../_common/dot-custom-time.component/dot-custom-time.module';
 
 /** Map of notification types to their corresponding PrimeNG icon classes */
 const notificationIcons: NotificationIcons = {
@@ -28,7 +32,6 @@ const notificationIcons: NotificationIcons = {
  */
 @Component({
     selector: 'dot-notification-item',
-    standalone: true,
     imports: [ButtonModule, DotCustomTimeModule, LowerCasePipe, DotMessagePipe],
     styleUrls: ['./dot-notification-item.component.scss'],
     templateUrl: 'dot-notification-item.component.html'

@@ -5,7 +5,8 @@ import { AngularNodeViewComponent } from '../../NodeViewRenderer';
 @Component({
     selector: 'dot-contentlet-block',
     templateUrl: './contentlet-block.component.html',
-    styleUrls: ['./contentlet-block.component.scss']
+    styleUrls: ['./contentlet-block.component.scss'],
+    standalone: false
 })
 export class ContentletBlockComponent extends AngularNodeViewComponent implements OnInit {
     protected readonly data = signal(null);

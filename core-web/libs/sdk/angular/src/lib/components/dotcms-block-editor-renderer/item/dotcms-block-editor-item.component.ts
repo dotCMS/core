@@ -16,7 +16,6 @@ import { CustomRenderer } from '../dotcms-block-editor-renderer.component';
 
 @Component({
     selector: 'dotcms-block-editor-renderer-block',
-    standalone: true,
     templateUrl: './dotcms-block-editor-item.component.html',
     styleUrls: ['./dotcms-block-editor-item.component.scss'],
     imports: [

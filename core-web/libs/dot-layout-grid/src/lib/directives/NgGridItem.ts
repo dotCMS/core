@@ -26,7 +26,8 @@ import {
 
 @Directive({
     inputs: ['config: ngGridItem'],
-    selector: '[ngGridItem]'
+    selector: '[ngGridItem]',
+    standalone: false
 })
 export class NgGridItem implements OnInit, OnDestroy, DoCheck {
     // 	Event Emitters

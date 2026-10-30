@@ -7,7 +7,6 @@ import { By } from '@angular/platform-browser';
 
 import { AvatarModule } from 'primeng/avatar';
 
-import { DotCopyLinkModule } from '@components/dot-copy-link/dot-copy-link.module';
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotApp } from '@dotcms/dotcms-models';
 import { DotAvatarDirective, DotMessagePipe, DotSafeHtmlPipe } from '@dotcms/ui';
@@ -15,10 +14,13 @@ import { MockDotMessageService, MockDotRouterService } from '@dotcms/utils-testi
 
 import { DotAppsConfigurationHeaderComponent } from './dot-apps-configuration-header.component';
 
+import { DotCopyLinkModule } from '../../../view/components/dot-copy-link/dot-copy-link.module';
+
 @Component({
     template: `
         <dot-apps-configuration-header [app]="app"></dot-apps-configuration-header>
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     app: DotApp;

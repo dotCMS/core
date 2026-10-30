@@ -34,7 +34,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 
 @Component({
-    standalone: true,
     imports: [
         CommonModule,
         DropdownModule,

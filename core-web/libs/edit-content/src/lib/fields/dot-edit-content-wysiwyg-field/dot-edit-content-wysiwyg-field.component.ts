@@ -37,7 +37,6 @@ import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edi
  */
 @Component({
     selector: 'dot-edit-content-wysiwyg-field',
-    standalone: true,
     imports: [
         FormsModule,
         DropdownModule,

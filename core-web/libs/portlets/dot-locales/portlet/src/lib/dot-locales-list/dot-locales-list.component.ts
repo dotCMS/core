@@ -24,7 +24,6 @@ import {
 
 @Component({
     selector: 'dot-locales-list',
-    standalone: true,
     imports: [
         CommonModule,
         InputTextModule,

@@ -65,7 +65,8 @@ import { I18nService } from './services/system/locale/I18n';
                 </div>
             </div>
         </div>
-    `
+    `,
+    standalone: false
 })
 export class ConditionGroupComponent implements OnChanges {
     private static I8N_BASE = 'api.sites.ruleengine.rules';

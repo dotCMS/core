@@ -5,7 +5,6 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { InputTextModule } from 'primeng/inputtext';
 import { InputTextareaModule } from 'primeng/inputtextarea';
 
-import { DotThemeSelectorDropdownModule } from '@components/dot-theme-selector-dropdown/dot-theme-selector-dropdown.module';
 import {
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
@@ -15,6 +14,8 @@ import {
 
 import { DotTemplatePropsComponent } from './dot-template-props.component';
 import { DotTemplateThumbnailFieldModule } from './dot-template-thumbnail-field/dot-template-thumbnail-field.module';
+
+import { DotThemeSelectorDropdownModule } from '../../../../view/components/dot-theme-selector-dropdown/dot-theme-selector-dropdown.module';
 
 @NgModule({
     declarations: [DotTemplatePropsComponent],

@@ -18,7 +18,6 @@ import { NavigationBarItem } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 @Component({
     selector: 'dot-edit-ema-navigation-bar',
-    standalone: true,
     templateUrl: './edit-ema-navigation-bar.component.html',
     styleUrls: ['./edit-ema-navigation-bar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,

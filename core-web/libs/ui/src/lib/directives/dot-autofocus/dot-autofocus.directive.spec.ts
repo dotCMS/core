@@ -4,7 +4,7 @@ import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotAutofocusDirective } from '@dotcms/ui';
+import { DotAutofocusDirective } from './dot-autofocus.directive';
 
 @Component({
     template: `
@@ -13,7 +13,8 @@ import { DotAutofocusDirective } from '@dotcms/ui';
         } @else {
             <input type="text" dotAutofocus />
         }
-    `
+    `,
+    standalone: false
 })
 class TestHostComponent {
     disabled = false;

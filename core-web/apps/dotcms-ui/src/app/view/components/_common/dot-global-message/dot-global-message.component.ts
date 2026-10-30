@@ -16,7 +16,8 @@ import { DotEvent, DotGlobalMessage } from '@dotcms/dotcms-models';
 @Component({
     selector: 'dot-global-message',
     templateUrl: './dot-global-message.component.html',
-    styleUrls: ['./dot-global-message.component.scss']
+    styleUrls: ['./dot-global-message.component.scss'],
+    standalone: false
 })
 export class DotGlobalMessageComponent implements OnInit, OnDestroy {
     @HostBinding('class')
