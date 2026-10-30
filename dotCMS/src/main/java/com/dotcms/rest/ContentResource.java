@@ -357,20 +357,22 @@ public class ContentResource {
      *
      * @param request request obejct
      * @param query lucene query to count on
-     * @return a string with the count
+     * @return a string with the count of contentlets the calling user is allowed to read
      */
     @Operation(
             operationId = "indexCountContent",
             summary = "Count content matching a Lucene query",
-            description = "Performs an index count using the specified Lucene query and returns " +
-                    "the total number of matching contentlets as a plain text string."
+            description = "Performs an index count using the specified Lucene query and " +
+                    "returns, as a plain text string, the total number of matching contentlets " +
+                    "that the calling user is allowed to read."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
                     description = "Count of matching contentlets returned successfully",
                     content = @Content(mediaType = "text/plain",
                             schema = @Schema(type = "string",
-                                    description = "The count of contentlets matching the query"))),
+                                    description = "The count of contentlets matching the query " +
+                                            "that the calling user is allowed to read"))),
             @ApiResponse(responseCode = "400",
                     description = "Invalid query syntax",
                     content = @Content(mediaType = "application/json")),

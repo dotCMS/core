@@ -2504,7 +2504,9 @@ public interface ContentletAPI {
      * <p>
      * The count is narrowed by the same permission clauses a search is narrowed by, the content
      * read permissions and the secondary category check alike, so a caller never gets a total
-     * that counts content the matching search would hide from them.
+     * that counts content the matching search would hide from them. The category clause is
+     * governed by the {@code PERMISSION_SECONDARY_CATEGORY_CHECK} property, on by default, and a
+     * search drops it on the same terms, so the two agree either way.
      *
      * @param luceneQuery the query written by the caller
      * @param user the {@link User} the count is run for, or {@code null} for an anonymous caller
