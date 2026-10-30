@@ -45,6 +45,8 @@ import org.apache.oro.text.perl.Perl5Util;
  */
 public class RegExpToolkit extends BasicToolkit {
 
+	private static final int MAX_GENERATE_ATTEMPTS = 20;
+
 	private String _pattern;
 	
     public RegExpToolkit () {
@@ -60,14 +62,26 @@ public class RegExpToolkit extends BasicToolkit {
      * {@code passwords.regexptoolkit.pattern}. The pattern is read from the configuration, not from
      * the pattern this instance was built with.
      *
-     * If the pattern has a length the generator cannot fill, a warning is logged and a password from
-     * the default generator is returned instead.
+     * The generator does not interpret the lookaheads of the pattern, so each candidate is validated
+     * against the configured pattern and regenerated up to {@link #MAX_GENERATE_ATTEMPTS} times. If no
+     * candidate is accepted, or the pattern has a length the generator cannot fill, a warning is
+     * logged and a password from the default generator is returned instead.
      *
      * @return a random password
      */
     public String generate () {
         try {
-            return new PasswordGenerator.Builder().withRegExpToolkitValues().build().nextPassword();
+            final RegExpToolkit configured = new RegExpToolkit();
+            for (int attempt = 0; attempt < MAX_GENERATE_ATTEMPTS; attempt++) {
+                final String candidate =
+                        new PasswordGenerator.Builder().withRegExpToolkitValues().build().nextPassword();
+                if (configured.validate(candidate)) {
+                    return candidate;
+                }
+            }
+            Logger.warn(RegExpToolkit.class, "No generated password satisfied the configured pattern after "
+                    + MAX_GENERATE_ATTEMPTS + " attempts. Using the default password generator.");
+            return new PasswordGenerator.Builder().withDefaultValues().build().nextPassword();
         } catch (final IllegalArgumentException e) {
             // a pattern whose length the generator cannot fill with its per-group minimums
             Logger.warn(RegExpToolkit.class, "Could not generate a password for the configured pattern ("

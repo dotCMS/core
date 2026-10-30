@@ -718,7 +718,7 @@ public class UserAPIImpl implements UserAPI {
     @Override
     public void updatePassword(User user, String newpass, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotInvalidPasswordException, DotSecurityException {
         if(!PwdToolkitUtil.validate(newpass)) {
-            logPasswordRejection(user.getUserId(), currentUser, newpass);
+            logPasswordRejection(null != user ? user.getUserId() : null, currentUser, newpass);
             throw new DotInvalidPasswordException("Invalid password");
         }
 
