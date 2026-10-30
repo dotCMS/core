@@ -475,6 +475,7 @@ jobs:
           for s in subs:
               add_prs(pr_refs(s))
 
+          pr_list = ', '.join(f'{p[0]}#{p[1]}' + (PRIVATE if p[3] else '') for p in prs)
           lines = [
               '# Evaluation Context', '',
               f'## Issue: {repo}#{issue["number"]}',
@@ -484,7 +485,7 @@ jobs:
               f'**State:** {issue.get("state", "?")}',
               f'**Labels:** {labels or "(none)"}',
               f'**Sub-issues:** {", ".join(sub_ref(s) for s in subs) or "(none)"}',
-              f'**Related PRs:** {", ".join(f"{p[0]}#{p[1]}{PRIVATE if p[3] else ''}" for p in prs) or "(none)"}',
+              f'**Related PRs:** {pr_list or "(none)"}',
               '', '### Issue Body', '', clip(issue.get('body'), MAX_BODY_CHARS),
           ]
           ct = render_comments(issue['comments']['nodes'])
@@ -705,6 +706,14 @@ jobs:
             exit 0
           fi
 
+          # The draft is the complete page body. Without it, EDIT would blank the
+          # working version and NEW would create an empty page.
+          DRAFT_LEN=$(python3 -c "import os; r = open(os.environ['REPORT']).read(); m = '<!-- BEGIN_DOC_DRAFT -->'; print(len(r.split(m, 1)[1].strip()) if m in r else 0)")
+          if [ "$DRAFT_LEN" -eq 0 ]; then
+            echo "::error::The report's action is '$ACTION' but it has no documentation draft after the BEGIN_DOC_DRAFT marker. Not applying."
+            exit 1
+          fi
+
           SERVICE_ACCOUNT='user-3244a6be-d28b-4d80-a3fc-9f66a1d832ae'
 
           # Confirm the token authenticates as the service account. dotCMS serves the
@@ -773,6 +782,14 @@ jobs:
               echo "ACTION=none" >> "$GITHUB_ENV"
               exit 0
             fi
+
+            # A draft under half the current page's length is more likely a
+            # truncated or partial page than a real rewrite.
+            CURRENT_LEN=$(echo "$CONTENT_CHECK" | jq -r '.entity.documentation // "" | if type == "string" then length else 0 end')
+            if [ $((DRAFT_LEN * 2)) -lt "$CURRENT_LEN" ]; then
+              echo "::error::The draft for '${URL_TITLE}' is $DRAFT_LEN characters, under half the current page's $CURRENT_LEN. It may be truncated or partial. Not applying; review the report and apply it manually if it is intended."
+              exit 1
+            fi
           fi
 
       - name: Dry run — planned dotCMS change
@@ -794,6 +811,8 @@ jobs:
           report = open(os.environ['REPORT']).read()
           marker = '<!-- BEGIN_DOC_DRAFT -->'
           draft = report.split(marker, 1)[1].lstrip('\n') if marker in report else ''
+          if not draft.strip():
+              raise SystemExit('::error::No documentation draft in the report. Not applying.')
           payload = {'contentlet': {
               'identifier': os.environ['IDENTIFIER'],
               'languageId': 1, 'documentation': draft,
@@ -819,6 +838,8 @@ jobs:
           report = open(os.environ['REPORT']).read()
           marker = '<!-- BEGIN_DOC_DRAFT -->'
           draft = report.split(marker, 1)[1].lstrip('\n') if marker in report else ''
+          if not draft.strip():
+              raise SystemExit('::error::No documentation draft in the report. Not applying.')
           sf = os.environ.get('AUTODOC_DOTCMS_SITE_FOLDER', '').strip()
           payload = {'contentlet': {
               'contentType': 'DotcmsDocumentation',
