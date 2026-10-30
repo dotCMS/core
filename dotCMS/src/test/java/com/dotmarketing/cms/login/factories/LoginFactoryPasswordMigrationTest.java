@@ -13,7 +13,6 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -132,26 +131,30 @@ public class LoginFactoryPasswordMigrationTest {
         }
     }
 
-    /** Successful legacy login must save a current hash once, then stop rewriting it. */
+    /** Repeated legacy logins must not rewrite passwords merely to change their profile. */
     @Test
-    public void successfulLegacyLoginPersists256BitHashOnce() throws Exception {
+    public void successfulLegacyLoginDoesNotRewritePassword() throws Exception {
         final String legacy = storedPassword.get();
 
         assertTrue(LoginFactory.doLogin(loginIdentifier(), password()));
-        assertNotEquals(legacy, storedPassword.get());
-        assertCurrentStoredPassword();
+        assertEquals(legacy, storedPassword.get());
+        assertEquals(legacy, user.getPassword());
         assertTrue(LoginFactory.doLogin(loginIdentifier(), password()));
-        verify(userAPI, times(1)).save(same(user), same(systemUser), eq(false));
+        assertEquals(legacy, storedPassword.get());
+        assertEquals(legacy, user.getPassword());
+        verify(userAPI, never()).save(same(user), same(systemUser), eq(false));
         verifyLoginSelector();
     }
 
-    /** Old iteration costs must authenticate and migrate with the same password. */
+    /** Existing cost upgrades must still work without introducing profile-2 writes. */
     @Test
-    public void successfulLowCostLegacyLoginPersistsCurrentHash() throws Exception {
+    public void successfulLowCostLegacyLoginPersistsLegacyHash() throws Exception {
         useFixture("legacy-low-cost");
+        final String original = storedPassword.get();
 
         assertTrue(LoginFactory.doLogin(loginIdentifier(), password()));
-        assertCurrentStoredPassword();
+        assertNotEquals(original, storedPassword.get());
+        assertLegacyStoredPassword();
         verifyLoginSelector();
     }
 
@@ -187,6 +190,7 @@ public class LoginFactoryPasswordMigrationTest {
     /** A save failure must not be reported as a successful persisted migration. */
     @Test
     public void rehashSaveFailureFailsAuthenticationWithoutPersistingNewHash() throws Exception {
+        useFixture("legacy-low-cost");
         final String legacy = storedPassword.get();
         doThrow(new DotDataException("Test rehash persistence failure"))
                 .when(userAPI).save(same(user), same(systemUser), eq(false));
@@ -203,11 +207,11 @@ public class LoginFactoryPasswordMigrationTest {
     }
 
     /** Checks saved output length, hashed marker, password verification, and upgrade status. */
-    private void assertCurrentStoredPassword() throws Exception {
+    private void assertLegacyStoredPassword() throws Exception {
         final String hash = storedPassword.get();
 
-        assertEquals("2", hash.split(":")[1]);
-        assertEquals(32, Base64.getDecoder().decode(hash.split(":")[4]).length);
+        assertEquals("1", hash.split(":")[1]);
+        assertEquals(24, Base64.getDecoder().decode(hash.split(":")[4]).length);
         assertNotEquals(password(), hash);
         assertTrue(storedEncrypted);
         assertEquals(AUTHENTICATED, PasswordFactoryProxy.authPassword(password(), hash));

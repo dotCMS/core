@@ -40,12 +40,12 @@ public class PasswordHashMigrationTest {
         }
     }
 
-    /** A legacy record at today's cost must still verify and request the length upgrade. */
+    /** Warming the reader must not request a profile upgrade for existing passwords. */
     @Test
-    public void legacyCurrentCostVerifiesAndRequestsRehash() throws Exception {
+    public void legacyCurrentCostVerifiesWithoutRehash() throws Exception {
         final String hash = FIXTURES.getProperty("legacy-current-cost");
 
-        assertEquals(NEEDS_REHASH, PasswordFactoryProxy.authPassword(password(), hash));
+        assertEquals(AUTHENTICATED, PasswordFactoryProxy.authPassword(password(), hash));
         assertEquals(NOT_AUTHENTICATED, PasswordFactoryProxy.authPassword("incorrect", hash));
     }
 
@@ -76,16 +76,16 @@ public class PasswordHashMigrationTest {
         assertEquals(NOT_AUTHENTICATED, PasswordFactoryProxy.authPassword("incorrect", hash));
     }
 
-    /** Shared generation must write the distinct 256-bit profile, not reinterpret ID 1. */
+    /** Shared generation must keep legacy writes until a later release activates profile 2. */
     @Test
-    public void generatedHashUses256BitsAndCurrentProfile() throws Exception {
+    public void generatedHashKeeps192BitsAndLegacyProfile() throws Exception {
         final String hash = PasswordFactoryProxy.generateHash(password());
         final String[] parts = hash.split(":");
 
         assertEquals(5, parts.length);
         assertEquals("1", parts[0]);
-        assertEquals("2", parts[1]);
-        assertEquals(32, Base64.getDecoder().decode(parts[4]).length);
+        assertEquals("1", parts[1]);
+        assertEquals(24, Base64.getDecoder().decode(parts[4]).length);
         assertEquals(AUTHENTICATED, PasswordFactoryProxy.authPassword(password(), hash));
         assertFalse(PasswordFactoryProxy.passwordFactoryCreate().needsRehash(hash));
     }
@@ -128,13 +128,25 @@ public class PasswordHashMigrationTest {
                 () -> PasswordFactoryProxy.authPassword(password(), "1:1:incomplete"));
     }
 
-    /** Demonstrates why deployment must upgrade readers before allowing new-profile writes. */
+    /** This release must keep generated records readable by old-only binaries. */
+    @Test
+    public void oldOnlyRegistryCanReadGeneratedHash() throws Exception {
+        final PBKDF2 legacy = new PBKDF2();
+        final Password oldReader = new PasswordImpl(new SecureSaltProvider(),
+                new ConfigCoderImpl(), new HashAlgorithmRegistryImpl(legacy), legacy);
+        final String hash = PasswordFactoryProxy.generateHash(password());
+
+        assertTrue(oldReader.verify(password(), hash));
+        assertFalse(oldReader.verify("incorrect", hash));
+    }
+
+    /** Future profile-2 writers require this reader-capable release as their rollback floor. */
     @Test
     public void oldOnlyRegistryCannotReadNewProfile() throws Exception {
         final PBKDF2 legacy = new PBKDF2();
         final Password oldReader = new PasswordImpl(new SecureSaltProvider(),
                 new ConfigCoderImpl(), new HashAlgorithmRegistryImpl(legacy), legacy);
-        final String hash = PasswordFactoryProxy.generateHash(password());
+        final String hash = FIXTURES.getProperty("current-current-cost");
 
         assertThrows(PasswordException.class, () -> oldReader.verify(password(), hash));
     }

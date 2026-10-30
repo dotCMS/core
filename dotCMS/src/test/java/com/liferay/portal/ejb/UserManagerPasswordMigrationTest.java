@@ -41,10 +41,11 @@ public class UserManagerPasswordMigrationTest {
         }
     }
 
-    /** A correct password remains authenticated even when its profile requests rehash. */
+    /** Correct passwords remain authenticated for both profiles and outdated iteration costs. */
     @Test
     public void correctLegacyAndCurrentPasswordsReturnCredentials() throws Exception {
-        for (final String key : Arrays.asList("legacy-current-cost", "current-current-cost")) {
+        for (final String key : Arrays.asList("legacy-current-cost", "current-current-cost",
+                "legacy-low-cost", "current-low-cost")) {
             checkCredentials(key, true);
         }
     }
@@ -52,7 +53,8 @@ public class UserManagerPasswordMigrationTest {
     /** A request for rehash must never turn an incorrect password into successful login. */
     @Test
     public void incorrectLegacyAndCurrentPasswordsAreRejected() throws Exception {
-        for (final String key : Arrays.asList("legacy-current-cost", "current-current-cost")) {
+        for (final String key : Arrays.asList("legacy-current-cost", "current-current-cost",
+                "legacy-low-cost", "current-low-cost")) {
             checkCredentials(key, false);
         }
     }
