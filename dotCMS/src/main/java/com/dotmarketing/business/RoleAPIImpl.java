@@ -641,6 +641,31 @@ public class RoleAPIImpl implements RoleAPI {
 		return false;
 	}
 
+	@Override
+	public boolean doesUserHaveRoles(final String userId, final List<String> roleIds,
+			final User requestingUser) throws DotDataException, DotSecurityException {
+
+		if (null == requestingUser) {
+			throw new DotSecurityException("A requesting user is required to check the roles of a user");
+		}
+		if (!requestingUser.getUserId().equals(userId) && !this.canReadRoleMembership(requestingUser)) {
+			SecurityLogger.logInfo(this.getClass(), "User " + requestingUser.getUserId()
+					+ " is not allowed to check the roles of another user");
+			throw new DotSecurityException("User " + requestingUser.getUserId()
+					+ " does not have permissions to check the roles of another user");
+		}
+		return this.doesUserHaveRoles(userId, roleIds);
+	}
+
+	@Override
+	public boolean canReadRoleMembership(final User user) throws DotDataException {
+
+		final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
+		return user.isAdmin() ||
+				(layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user) &&
+						layoutAPI.doesUserHaveAccessToUsersPortlet(user));
+	}
+
 	@CloseDBIfOpened
     @Override
     public boolean isParentRole(Role parent, Role child)
