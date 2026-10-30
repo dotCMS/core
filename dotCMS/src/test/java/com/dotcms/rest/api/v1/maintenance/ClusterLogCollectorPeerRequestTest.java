@@ -19,6 +19,7 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.security.KeyPair;
@@ -94,6 +95,7 @@ class ClusterLogCollectorPeerRequestTest {
     private SSLContext savedDefaultContext;
     private String savedHostnameProperty;
     private HttpServer peer;
+    private ServerSocket silentPeer;
     private int peerStatus = 200;
     private File localLog;
 
@@ -162,6 +164,9 @@ class ClusterLogCollectorPeerRequestTest {
     void tearDown() throws Exception {
         if (peer != null) {
             peer.stop(0);
+        }
+        if (silentPeer != null) {
+            silentPeer.close();
         }
         savedConfig.forEach(Config::setProperty);
         SSLContext.setDefault(savedDefaultContext);
@@ -281,6 +286,22 @@ class ClusterLogCollectorPeerRequestTest {
         assertTrue(errors.contains("peer-node"), "Error entry should name the peer: " + errors);
         assertTrue(errors.contains("could not connect"), "Error entry should give the reason: " + errors);
         assertFalse(errors.contains(SCHEME_KEY), "Error entry should not name " + SCHEME_KEY + ": " + errors);
+    }
+
+    /**
+     * With no scheme configured, a peer that accepts the connection but never answers is reported
+     * as a connect timeout, with the scheme setting hint.
+     */
+    @Test
+    void defaultScheme_peerNeverAnswers_errorEntryReportsConnectTimeoutWithSchemeHint() throws Exception {
+        silentPeer = new ServerSocket(0, 1, InetAddress.getByName(LOOPBACK));
+
+        final Map<String, String> zip = collectFrom(silentPeer.getLocalPort());
+
+        assertTrue(zip.containsKey(ERRORS_ENTRY), "Expected " + ERRORS_ENTRY + " in " + zip.keySet());
+        final String errors = zip.get(ERRORS_ENTRY);
+        assertTrue(errors.contains("connect timed out"), "Error entry should give the reason: " + errors);
+        assertTrue(errors.contains(SCHEME_KEY), "Error entry should name " + SCHEME_KEY + ": " + errors);
     }
 
     /**

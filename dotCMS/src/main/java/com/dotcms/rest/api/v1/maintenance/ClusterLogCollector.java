@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
+import java.net.http.HttpConnectTimeoutException;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.net.http.HttpTimeoutException;
@@ -199,8 +200,8 @@ public class ClusterLogCollector {
      * Attempts to fetch a log file from the given URL. The returned response holds
      * the body on success (HTTP 200); otherwise it holds a short reason: the HTTP
      * status the peer answered with, or the kind of I/O failure ({@code could not
-     * connect}, {@code TLS handshake failed}, {@code timed out}, {@code connection
-     * failed}) whose details are logged at INFO.
+     * connect}, {@code TLS handshake failed}, {@code connect timed out}, {@code timed
+     * out}, {@code connection failed}) whose details are logged at INFO.
      *
      * @param client      the HTTP client shared by all peer requests
      * @param url         the peer's {@code _downloadLog} URL
@@ -242,9 +243,13 @@ public class ClusterLogCollector {
                     if (cause instanceof SSLException) {
                         return PeerResponse.failure("TLS handshake failed", true);
                     }
+                    if (cause instanceof HttpConnectTimeoutException) {
+                        // Covers the TLS handshake too, so a peer that does not complete it ends here
+                        return PeerResponse.failure("connect timed out", true);
+                    }
                     if (cause instanceof HttpTimeoutException) {
-                        // A TLS handshake that never completes also ends as a timeout
-                        return PeerResponse.failure("timed out", true);
+                        // Raised only once the connection, TLS included, was established
+                        return PeerResponse.failure("timed out", false);
                     }
                     if (cause instanceof ConnectException) {
                         // No connection was made, so the scheme makes no difference
@@ -284,8 +289,8 @@ public class ClusterLogCollector {
          *
          * @param reason      a short reason, written to {@code _errors.txt}
          * @param possiblyTls {@code true} when the failure may come from TLS (a handshake
-         *                    error, a timeout, or a peer that does not speak TLS on the
-         *                    port), so the scheme setting hint applies under HTTPS
+         *                    error, a connect timeout, or a peer that does not speak TLS
+         *                    on the port), so the scheme setting hint applies under HTTPS
          * @return the response
          */
         private static PeerResponse failure(final String reason, final boolean possiblyTls) {
