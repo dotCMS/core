@@ -190,6 +190,8 @@ core/
 
 **⚠️ CRITICAL RULE: Add dependency versions ONLY to `bom/application/pom.xml`**
 
+**Before adding, upgrading or removing any third-party library**, follow the [Third-Party Library Policy](../docs/backend/MAVEN_BUILD_SYSTEM.md#third-party-library-policy): verify the package and version live (never from memory), inspect the transitive tree, check advisories, and treat every core library as potential OSGi plugin API.
+
 ```xml
 <!-- ❌ WRONG - Adding version to module POM -->
 <!-- In dotCMS/pom.xml -->
