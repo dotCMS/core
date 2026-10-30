@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.user;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -28,6 +29,7 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.SecurityLogger;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
@@ -38,11 +40,16 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response.Status;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.Logger;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.function.ThrowingRunnable;
 
 /**
  * Covers the default password requirements (15 to 64 printable ASCII characters with an uppercase
@@ -270,6 +277,143 @@ public class PasswordPolicyIntegrationTest {
         final DotDataException rejected = assertThrows(DotDataException.class,
                 () -> userAPI.save(target, APILocator.systemUser(), true, false));
         assertEquals(ERROR_KEY, rejected.getMessageKey());
+    }
+
+    /**
+     * Method to test: {@link UserAPI#save(User, User, boolean, boolean)}
+     * Given Scenario: A validating save with a 14-character password.
+     * Expected Result: exactly one security log entry, with the target user, the acting user, the
+     * entry point of the request, the rule, and the client address that the logger appends; it never
+     * contains the password or the start of it.
+     */
+    @Test
+    public void test_rejectionLog_validatingSave_oneEntryWithoutThePassword() throws Exception {
+        final HttpServletRequest request = adminRequest();
+        final User target = newUser();
+        target.setPassword(FOURTEEN);
+
+        final List<String> entries = captureRejectionEntries(() -> assertThrows(DotDataException.class,
+                () -> userAPI.save(target, APILocator.systemUser(), true, false)));
+
+        assertEquals("one entry per rejection: " + entries, 1, entries.size());
+        final String entry = entries.get(0);
+        assertTrue(entry, entry.contains(target.getUserId()));
+        assertTrue(entry, entry.contains(APILocator.systemUser().getUserId()));
+        assertTrue(entry, entry.contains(request.getMethod() + " " + request.getRequestURI()));
+        assertTrue(entry, entry.contains("TOO_SHORT"));
+        assertTrue("the logger appends the client address: " + entry, entry.contains("ip:"));
+        assertFalse(entry, entry.contains(FOURTEEN));
+        assertFalse(entry, entry.contains("Abcdef"));
+    }
+
+    /**
+     * Method to test: {@link UserAPI#updatePassword(User, String, User, boolean)}
+     * Given Scenario: Passwords rejected for different reasons: too short, too long, and a missing
+     * uppercase letter.
+     * Expected Result: one entry each, with the rule that failed.
+     */
+    @Test
+    public void test_rejectionLog_updatePassword_ruleIsReported() throws Exception {
+        final User target = newUser();
+        final String[][] cases = {
+                {FOURTEEN, "TOO_SHORT"},
+                {FIFTEEN + "x".repeat(50), "TOO_LONG"},
+                {"abcdefgh12!xyzk", "MISSING_CLASS"}};
+        for (final String[] testCase : cases) {
+            final List<String> entries = captureRejectionEntries(() -> assertThrows(DotInvalidPasswordException.class,
+                    () -> userAPI.updatePassword(target, testCase[0], APILocator.systemUser(), false)));
+            assertEquals("one entry for " + testCase[1] + ": " + entries, 1, entries.size());
+            assertTrue(entries.get(0), entries.get(0).contains(testCase[1]));
+            assertTrue(entries.get(0), entries.get(0).contains(target.getUserId()));
+        }
+    }
+
+    /**
+     * Method to test: {@link UserResource#create}
+     * Given Scenario: An admin creates a user with a 14-character password.
+     * Expected Result: exactly one entry for the rejection, not one per layer it passes through.
+     */
+    @Test
+    public void test_rejectionLog_restCreate_oneEntry() throws Exception {
+        final String userId = "pwdlog-" + uniq();
+
+        final List<String> entries = captureRejectionEntries(() -> assertThrows(DotDataException.class,
+                () -> resource.create(adminRequest(), response,
+                        createFormFor(userId).password(FOURTEEN.toCharArray()).build())));
+
+        assertEquals("one entry per rejection: " + entries, 1, entries.size());
+        assertTrue(entries.get(0), entries.get(0).contains(userId));
+    }
+
+    /**
+     * Method to test: {@link UserAPI#updatePassword(User, String, User, boolean)}
+     * Given Scenario: A rejection with no request in the thread-local (a call that is not an HTTP
+     * request).
+     * Expected Result: one entry whose entry point is {@code internal}.
+     */
+    @Test
+    public void test_rejectionLog_withoutRequest_entryPointIsInternal() throws Exception {
+        final User target = newUser();
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+
+        final List<String> entries = captureRejectionEntries(() -> assertThrows(DotInvalidPasswordException.class,
+                () -> userAPI.updatePassword(target, FOURTEEN, APILocator.systemUser(), false)));
+
+        assertEquals("one entry per rejection: " + entries, 1, entries.size());
+        assertTrue(entries.get(0), entries.get(0).contains("internal"));
+    }
+
+    /**
+     * Method to test: {@link UserAPI#save(User, User, boolean, boolean)}
+     * Given Scenario: The pattern is overridden and a password is rejected by it.
+     * Expected Result: the rule is {@code NOT_MET}: the classifier does not describe a customer's
+     * own pattern.
+     */
+    @Test
+    public void test_rejectionLog_patternOverride_ruleIsNotMet() throws Exception {
+        final String original = PropsUtil.get(PATTERN_KEY);
+        final User target = newUser();
+        try {
+            Config.setProperty(PATTERN_KEY, "/^[a-z]{20,}$/");
+            target.setPassword(FIFTEEN);
+            final List<String> entries = captureRejectionEntries(() -> assertThrows(DotDataException.class,
+                    () -> userAPI.save(target, APILocator.systemUser(), true, false)));
+            assertEquals("one entry per rejection: " + entries, 1, entries.size());
+            assertTrue(entries.get(0), entries.get(0).contains("NOT_MET"));
+        } finally {
+            Config.setProperty(PATTERN_KEY, original);
+        }
+    }
+
+    /**
+     * Runs the action and returns the security log entries about rejected passwords written while
+     * it ran.
+     */
+    private static List<String> captureRejectionEntries(final ThrowingRunnable action) throws Exception {
+        final List<String> entries = new ArrayList<>();
+        final AbstractAppender appender = new AbstractAppender("PasswordRejectionCapture", null, null, true, null) {
+            @Override
+            public void append(final LogEvent event) {
+                final String message = event.getMessage().getFormattedMessage();
+                if (message.contains("Password rejected")) {
+                    entries.add(message);
+                }
+            }
+        };
+        appender.start();
+        final Logger logger = (Logger) LogManager.getLogger(SecurityLogger.class);
+        logger.addAppender(appender);
+        try {
+            action.run();
+        } catch (Exception | Error e) {
+            throw e;
+        } catch (Throwable t) {
+            throw new IllegalStateException(t);
+        } finally {
+            logger.removeAppender(appender);
+            appender.stop();
+        }
+        return entries;
     }
 
     /**
