@@ -393,15 +393,28 @@ public class PasswordGenerator {
          * @return the {@code [...]} character-class string, or {@code null} if not extractable
          */
         static String extractCharClass(final String rawPattern) {
+            final java.util.regex.Matcher m = matchReadableShape(rawPattern);
+            return null != m ? m.group(1) : null;
+        }
+
+        /**
+         * Matches the readable pattern shape: optional leading lookaheads, a single character
+         * class and a quantifier, all anchored. Groups: 1 is the character class, 2 the minimum
+         * (or exact) length, 3 the comma part of a {@code {n,}} or {@code {n,m}} quantifier, and 4
+         * the maximum of {@code {n,m}}.
+         *
+         * @param rawPattern the raw Perl5 pattern string, may be {@code null}
+         * @return the matcher, already matched, or {@code null} when the pattern does not have the
+         * readable shape
+         */
+        private static java.util.regex.Matcher matchReadableShape(final String rawPattern) {
             if (rawPattern == null || rawPattern.trim().isEmpty()) {
                 return null;
             }
             // (?:\\(\\?[=!](?:[^()\\\\]|\\\\.)*\\))* skips the optional leading lookaheads;
-            // \\{\\d+(?:,\\d*)?\\} matches {n} (exact), {n,} (open) and {n,m} (bounded) quantifiers
-            final java.util.regex.Matcher m = Pattern.compile(
-                    "^/\\^(?:\\(\\?[=!](?:[^()\\\\]|\\\\.)*\\))*(\\[(?:[^\\]\\\\]|\\\\.)*\\])\\{\\d+(?:,\\d*)?\\}\\$/$"
-            ).matcher(rawPattern.trim());
-            return m.matches() ? m.group(1) : null;
+            // \\{(\\d+)(,(\\d*))?\\} matches {n} (exact), {n,} (open) and {n,m} (bounded) quantifiers
+            final java.util.regex.Matcher m = READABLE_SHAPE.matcher(rawPattern.trim());
+            return m.matches() ? m : null;
         }
 
         /**
@@ -418,6 +431,12 @@ public class PasswordGenerator {
         static int extractMinLength(final String rawPattern) {
             if (rawPattern == null || rawPattern.trim().isEmpty()) {
                 return 0;
+            }
+            // The quantifier that follows the character class, so a quantifier inside a lookahead
+            // is never taken as the length.
+            final java.util.regex.Matcher shape = matchReadableShape(rawPattern);
+            if (null != shape) {
+                return Integer.parseInt(shape.group(2));
             }
             // Matches {n}, {n,} or {n,m} — group 1 is the minimum (or exact) length
             final java.util.regex.Matcher m = Pattern.compile("\\{(\\d+)(?:,\\d*)?}")
@@ -442,6 +461,16 @@ public class PasswordGenerator {
         static int extractMaxLength(final String rawPattern) {
             if (rawPattern == null || rawPattern.trim().isEmpty()) {
                 return Integer.MAX_VALUE;
+            }
+            // The quantifier that follows the character class, so a quantifier inside a lookahead
+            // is never taken as the length.
+            final java.util.regex.Matcher shape = matchReadableShape(rawPattern);
+            if (null != shape) {
+                if (null == shape.group(3)) {
+                    return Integer.parseInt(shape.group(2));
+                }
+                final String max = shape.group(4);
+                return null != max && !max.isEmpty() ? Integer.parseInt(max) : Integer.MAX_VALUE;
             }
             // Match bounded {n,m} — group 1 is the maximum
             final java.util.regex.Matcher bounded = Pattern.compile("\\{\\d+,(\\d+)}")
@@ -547,6 +576,10 @@ public class PasswordGenerator {
                     .replace("\r", "\\r")
                     .replace("\n", "\\n");
         }
+
+        /** The readable pattern shape, see {@link #matchReadableShape(String)}. */
+        private static final Pattern READABLE_SHAPE = Pattern.compile(
+                "^/\\^(?:\\(\\?[=!](?:[^()\\\\]|\\\\.)*\\))*(\\[(?:[^\\]\\\\]|\\\\.)*\\])\\{(\\d+)(,(\\d*))?\\}\\$/$");
 
         /** Special characters included by the default password generator. */
         static final String SPECIAL_CHARS = "!#$%&'()*+,.:;<=>?@^_`~-[]";

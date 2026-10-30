@@ -589,7 +589,8 @@ export class DotUsersCreateComponent {
             payload.userId = this.user.userId;
         }
 
-        const password = (account.password ?? '').trim();
+        // Not trimmed: spaces are part of a valid password and are kept as typed.
+        const password = account.password ?? '';
         if (password) {
             payload.password = password;
         }

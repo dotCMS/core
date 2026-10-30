@@ -25,6 +25,7 @@ package com.liferay.portal.pwd;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PasswordGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
@@ -59,10 +60,20 @@ public class RegExpToolkit extends BasicToolkit {
      * {@code passwords.regexptoolkit.pattern}. The pattern is read from the configuration, not from
      * the pattern this instance was built with.
      *
+     * If the pattern has a length the generator cannot fill, a warning is logged and a password from
+     * the default generator is returned instead.
+     *
      * @return a random password
      */
     public String generate () {
-        return new PasswordGenerator.Builder().withRegExpToolkitValues().build().nextPassword();
+        try {
+            return new PasswordGenerator.Builder().withRegExpToolkitValues().build().nextPassword();
+        } catch (final IllegalArgumentException e) {
+            // a pattern whose length the generator cannot fill with its per-group minimums
+            Logger.warn(RegExpToolkit.class, "Could not generate a password for the configured pattern ("
+                    + e.getMessage() + "). Using the default password generator.");
+            return new PasswordGenerator.Builder().withDefaultValues().build().nextPassword();
+        }
     }
 
     public boolean validate(String password) {
