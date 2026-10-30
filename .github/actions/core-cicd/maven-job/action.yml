@@ -45,8 +45,12 @@ inputs:
     description: 'Build, save and upload the throwaway test image. Only test phases consume it.'
     required: false
     default: 'true'
+  upload-docker-context:
+    description: 'Upload the docker-build-context artifact. Only the deployment phase downloads it; pull request builds turn it off. Needs generate-docker.'
+    required: false
+    default: 'true'
   generate-build-classes:
-    description: 'Upload per-module build classes (build-classes artifact). Only test phases consume them.'
+    description: 'Upload per-module build classes (build-classes artifact). Only the deploy-javadoc action reads it, and no workflow calls that action.'
     required: false
     default: 'true'
   needs-history:
@@ -140,6 +144,13 @@ inputs:
       Fails if .mvn/maven.config has no -Drevision=: the CI-friendly version
       would collapse to the parent default (1.0.0) and the build would install
       and upload release-looking 1.0.0 coordinates.
+    required: false
+    default: 'false'
+  save-nx-cache:
+    description: |
+      Save the Nx cache this build used and built (see Restore Nx Cache). Only for builds of
+      main's own code on main: the saved entry lands in main's cache scope, which every pull
+      request and merge-queue run restores from. Never set it for a run that builds another ref.
     required: false
     default: 'false'
   artifact-suffix:
@@ -370,6 +381,71 @@ runs:
         working-directory: core-web
         install: false
         cache: true
+
+    # Nx task cache for the build job, so core-web only rebuilds the Nx projects whose inputs
+    # changed. Nx cannot use a restored .nx/cache (see nx-cache-server.mjs for why), so the
+    # entries travel as files that a local server hands to Nx through its remote cache protocol.
+    # Only jobs that generate artifacts (the build phase) take part, since they run the full Nx
+    # build. Of those, only release-build: true skips the cache. Everything else uses it, so
+    # images that trunk, the nightly and manual deploys publish can contain outputs Nx restored
+    # from the cache rather than rebuilt.
+    #
+    # Only callers that pass save-nx-cache save, and the build phase sets it only for trunk on a
+    # push to main and the scheduled nightly, the two builds of main's own code. A run that builds
+    # some other ref (manual deploy, CLI release) never saves into main's scope, whatever ref it
+    # was dispatched from. restore-keys gives every run the newest saved entry: pull requests and
+    # the merge queue can read main's caches, while nothing else can read the ones they would
+    # save. The key only decides when
+    # main stores a new entry (about 37 MB): when core-web has changed since the last one. Which
+    # artifacts Nx may reuse is decided by Nx's own task hashes, not by this key, so every file a
+    # shipped build reads must be one of its Nx inputs. Nx's graph alone misses some (Tailwind
+    # scans the whole workspace, styles come from libs/dotcms-scss by path, npm files are read by
+    # path); the warBuild, dotcmsScss and tailwindSources inputs in core-web/nx.json cover them.
+    - id: restore-cache-nx
+      name: Restore Nx Cache
+      if: ${{ inputs.requires-node == 'true' && inputs.generate-artifacts == 'true' && inputs.release-build != 'true' }}
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/nx-cache
+        key: ${{ runner.os }}-nx-v1-${{ hashFiles('core-web/**') }}
+        restore-keys: |
+          ${{ runner.os }}-nx-v1-
+
+    # The restored entries are moved aside and the server links each one into the fresh
+    # directory when Nx asks for it, so the directory saved later holds this run's entries only
+    # and the cache does not grow from run to run. Nx is pointed at the server only once the
+    # server has written its ready file, which it does after it is listening; if the port is
+    # taken, the server exits instead and the build runs without the cache rather than talking
+    # to whatever holds the port. If the server stops during the build, Nx fails the build with
+    # "Failed to send request ... 127.0.0.1:47321" (Show Nx Cache Server Log below prints why);
+    # that is accepted, since it never builds a war from partial output.
+    - id: start-nx-cache
+      name: Start Nx Cache Server
+      if: ${{ steps.restore-cache-nx.outcome == 'success' }}
+      shell: bash
+      env:
+        NX_CACHE_DIR: ${{ runner.temp }}/nx-cache
+        NX_CACHE_PORT: '47321'
+      run: |
+        if [[ -d "$NX_CACHE_DIR" ]]; then
+          mv "$NX_CACHE_DIR" "$NX_CACHE_DIR-restored"
+          echo "Restored $(ls "$NX_CACHE_DIR-restored" | wc -l) Nx cache entries"
+        fi
+        ready="$RUNNER_TEMP/nx-cache-server.ready"
+        rm -f "$ready"
+        nohup node "$GITHUB_ACTION_PATH/nx-cache-server.mjs" "$NX_CACHE_PORT" "$NX_CACHE_DIR" "$NX_CACHE_DIR-restored" "$ready" \
+          > "$RUNNER_TEMP/nx-cache-server.log" 2>&1 &
+        server=$!
+        for _ in $(seq 1 50); do
+          if [[ -s "$ready" ]]; then
+            echo "NX_SELF_HOSTED_REMOTE_CACHE_SERVER=http://127.0.0.1:$NX_CACHE_PORT" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          kill -0 "$server" 2>/dev/null || break
+          sleep 0.2
+        done
+        echo "::warning::Nx cache server did not start; building core-web without the Nx cache"
+        cat "$RUNNER_TEMP/nx-cache-server.log"
 
 
     - id: cache-sonar
@@ -617,22 +693,6 @@ runs:
         tar --null -cf - -T "${LIST}" | tar -xf - -C "${STAGE}"
         du -sh "${STAGE}"
 
-    - id: persist-maven-repo
-      name: Persist Maven Repo
-      if: ${{ inputs.generate-artifacts == 'true' }}
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-      with:
-        name: maven-repo${{ steps.artifact-suffix.outputs.suffix }}
-        path: ${{ runner.temp }}/built-artifacts
-
-    - id: persist-docker-build-context
-      name: Persist Docker Build Context
-      if: ${{ inputs.generate-docker == 'true' }}
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-      with:
-        name: docker-build-context${{ steps.artifact-suffix.outputs.suffix }}
-        path: dotCMS/target/docker-build.tar
-
     - id: get-sdkman-version
       name: Get SDKMAN Java Version
       if: ${{ inputs.generate-docker == 'true' && inputs.generate-test-image == 'true' }}
@@ -654,27 +714,96 @@ runs:
         SDKMAN_JAVA_VERSION="${SDKMAN_JAVA_VERSION//+/-}"
         echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> $GITHUB_ENV
 
+    # The test image is built and saved in the background while the artifacts below
+    # upload: the build and `docker save` are CPU and disk work, the uploads are
+    # network work, and they used to run one after another. The Wait step reports
+    # the build output and fails the job if the build or save failed.
     - id: build-docker-image-from-archive
       name: Build Docker Image from Archive
       if: ${{ inputs.generate-docker == 'true' && inputs.generate-test-image == 'true' }}
       shell: bash
       run: |
-        # Extract the build context from the tar archive
-        mkdir -p /tmp/docker-context
-        tar -xf dotCMS/target/docker-build.tar -C /tmp/docker-context
+        LOG="${RUNNER_TEMP}/test-image-build.log"
+        STATUS="${RUNNER_TEMP}/test-image-build.status"
+        PIDFILE="${RUNNER_TEMP}/test-image-build.pid"
+        rm -f "${STATUS}" "${PIDFILE}"
+        # Steps run under `bash -e`, which the background subshell inherits, so the
+        # exit code is captured with `|| rc=$?` to make sure the status file is
+        # always written. The commands are chained with && rather than `set -e`,
+        # because errexit is ignored inside a command that is tested with ||.
+        (
+          rc=0
+          (
+            # Extract the build context from the tar archive
+            mkdir -p /tmp/docker-context &&
+            tar -xf dotCMS/target/docker-build.tar -C /tmp/docker-context &&
+            # Build the Docker image from the extracted context
+            docker build --build-arg SDKMAN_JAVA_VERSION="${SDKMAN_JAVA_VERSION}" -t dotcms/dotcms-test:${{ inputs.version }} /tmp/docker-context &&
+            # Verify the image was created
+            docker images dotcms/dotcms-test:${{ inputs.version }} &&
+            docker save dotcms/dotcms-test:${{ inputs.version }} > /tmp/image.tar
+          ) > "${LOG}" 2>&1 < /dev/null || rc=$?
+          echo "${rc}" > "${STATUS}"
+        ) > /dev/null 2>&1 < /dev/null &
+        echo $! > "${PIDFILE}"
 
-        # Build the Docker image from the extracted context
-        docker build --build-arg SDKMAN_JAVA_VERSION="${SDKMAN_JAVA_VERSION}" -t dotcms/dotcms-test:${{ inputs.version }} /tmp/docker-context
+    # The jars are already deflated, so compressing them again only burns CPU: the
+    # zip is single-threaded and was what paced the upload (about 19 MB/s).
+    - id: persist-maven-repo
+      name: Persist Maven Repo
+      if: ${{ inputs.generate-artifacts == 'true' }}
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: maven-repo${{ steps.artifact-suffix.outputs.suffix }}
+        path: ${{ runner.temp }}/built-artifacts
+        compression-level: 0
 
-        # Verify the image was created
-        docker images dotcms/dotcms-test:${{ inputs.version }}
+    # Only the deployment phase downloads this (trunk, nightly, release and manual
+    # deploy, which reuse the merge-queue build). A pull request build is never
+    # deployed, so it passes upload-docker-context: false.
+    - id: persist-docker-build-context
+      name: Persist Docker Build Context
+      if: ${{ inputs.generate-docker == 'true' && inputs.upload-docker-context == 'true' }}
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: docker-build-context${{ steps.artifact-suffix.outputs.suffix }}
+        path: dotCMS/target/docker-build.tar
+        compression-level: 0
 
-    - id: save-docker-image
-      name: Save Docker Image to Tar File
+    - id: wait-docker-image-build
+      name: Wait for Docker Image Build
       if: ${{ inputs.generate-docker == 'true' && inputs.generate-test-image == 'true' }}
       shell: bash
-      run: docker save dotcms/dotcms-test:${{ inputs.version }} > /tmp/image.tar
+      run: |
+        LOG="${RUNNER_TEMP}/test-image-build.log"
+        STATUS="${RUNNER_TEMP}/test-image-build.status"
+        PIDFILE="${RUNNER_TEMP}/test-image-build.pid"
+        # The build writes the status file as its last act. If the process is gone
+        # without one (killed, or the runner cancelled it), stop waiting at once
+        # instead of polling to the limit. 20 minutes is far beyond the 2 minutes
+        # the build and save take.
+        state="timed out waiting for the build to finish"
+        for _ in $(seq 600); do
+          if [ -s "${STATUS}" ]; then state="finished"; break; fi
+          if ! kill -0 "$(cat "${PIDFILE}" 2>/dev/null)" 2>/dev/null; then
+            if [ -s "${STATUS}" ]; then state="finished"; else state="the build process vanished without recording a status"; fi
+            break
+          fi
+          sleep 2
+        done
+        echo "::group::Docker image build and save output"
+        cat "${LOG}" 2>/dev/null || true
+        echo "::endgroup::"
+        if [ "${state}" != "finished" ] || [ "$(cat "${STATUS}")" != "0" ]; then
+          echo "::error::Building or saving the test image failed (${state}; status: $(cat "${STATUS}" 2>/dev/null || echo 'none'))"
+          exit 1
+        fi
+        ls -lh /tmp/image.tar
 
+    # level 1: measured on a 1.32 GB `docker save` tar of a dotcms/dotcms image, the
+    # zip is 0.76 GB at level 1 and 0.73 GB at level 6 (level 0 stays 1.32 GB), but
+    # level 1 compresses in about 15 s against 35 s. The single-threaded zip paced
+    # the level 6 upload; 4% more bytes to download costs little next to that.
     - id: upload-docker-image
       name: Upload Docker Image as Artifact
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -682,6 +811,7 @@ runs:
       with:
         name: docker-image${{ steps.artifact-suffix.outputs.suffix }}
         path: /tmp/image.tar
+        compression-level: 1
 
     - id: persist-build-classes
       name: Persist Build Classes
@@ -699,9 +829,17 @@ runs:
     # coordinates would break the caller's check that they were installed, and a
     # cache entry written from a release build is how release coordinates got into
     # the shared cache in the first place.
+    #
+    # Pull request and merge-queue runs save only when they restored nothing at all.
+    # Their entries are scoped to their own ref, so no other PR can read them, and at
+    # ~690 MB each they filled the 10 GB repository cache within the hour and evicted
+    # the main-branch entry that every run does read (2026-10-28: builds restoring it
+    # scanned projects in 1-2 s and ran Maven in 5-8 min; cold ones took 76-127 s and
+    # ~18 min). A run that restored main's entry under an older pom hash just downloads
+    # the difference; main's next build (nightly) writes the new key.
     - id: delete-built-artifacts-from-cache
       name: Delete Built Artifacts From Cache
-      if: ${{ inputs.generate-artifacts == 'true' && inputs.release-build != 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' }}
+      if: ${{ inputs.generate-artifacts == 'true' && inputs.release-build != 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' && (steps.restore-cache-maven.outputs.cache-matched-key == '' || (github.event_name != 'pull_request' && github.event_name != 'merge_group')) }}
       shell: bash
       run: |
         # Whatever this build installed, under any version (see Stage Built Artifacts for
@@ -721,17 +859,19 @@ runs:
 
     - id: save-cache-maven
       name: Save Maven Repository Cache
-      if: ${{ inputs.generate-artifacts == 'true' && inputs.release-build != 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' }}
+      if: ${{ inputs.generate-artifacts == 'true' && inputs.release-build != 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' && (steps.restore-cache-maven.outputs.cache-matched-key == '' || (github.event_name != 'pull_request' && github.event_name != 'merge_group')) }}
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.m2/repository
         key: ${{ steps.restore-cache-maven.outputs.cache-primary-key }}
 
     # Jobs that start together on a miss all reach this step; the first reserves the key and
-    # the rest log a warning and carry on, so a lost race does not fail a job.
+    # the rest log a warning and carry on, so a lost race does not fail a job. Pull request
+    # and merge-queue runs that restored an older entry skip the save, for the same reason
+    # as Save Maven Repository Cache.
     - id: save-cache-maven-plugins
       name: Save Maven Plugin Cache
-      if: ${{ inputs.needs-maven-repo != 'true' && steps.restore-cache-maven-plugins.outputs.cache-hit != 'true' }}
+      if: ${{ inputs.needs-maven-repo != 'true' && steps.restore-cache-maven-plugins.outputs.cache-hit != 'true' && (steps.restore-cache-maven-plugins.outputs.cache-matched-key == '' || (github.event_name != 'pull_request' && github.event_name != 'merge_group')) }}
       uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.m2/repository
@@ -744,6 +884,34 @@ runs:
       with:
         path: installs
         key: ${{ steps.restore-cache-node.outputs.cache-primary-key }}
+
+    # See Restore Nx Cache. An empty directory means Nx asked for nothing and stored nothing, for
+    # example because Maven restored core-web from its own build cache and Nx never ran; saving
+    # it would give every later run an empty entry as the newest one.
+    - id: count-nx-cache
+      name: Count Nx Cache Entries
+      if: ${{ inputs.save-nx-cache == 'true' && env.NX_SELF_HOSTED_REMOTE_CACHE_SERVER != '' }}
+      shell: bash
+      env:
+        NX_CACHE_DIR: ${{ runner.temp }}/nx-cache
+      run: |
+        entries=$(find "$NX_CACHE_DIR" -maxdepth 1 -type f ! -name '*.tmp' 2>/dev/null | wc -l | tr -d ' ')
+        echo "Nx cache entries used or built by this run: $entries"
+        echo "entries=$entries" >> "$GITHUB_OUTPUT"
+
+    # Main's builds only (save-nx-cache), after a successful build with the server up.
+    - id: save-cache-nx
+      name: Save Nx Cache
+      if: ${{ inputs.save-nx-cache == 'true' && github.ref == 'refs/heads/main' && steps.count-nx-cache.outputs.entries != '' && steps.count-nx-cache.outputs.entries != '0' && steps.restore-cache-nx.outputs.cache-hit != 'true' }}
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ${{ runner.temp }}/nx-cache
+        key: ${{ steps.restore-cache-nx.outputs.cache-primary-key }}
+
+    - name: Show Nx Cache Server Log
+      if: ${{ failure() && env.NX_SELF_HOSTED_REMOTE_CACHE_SERVER != '' }}
+      shell: bash
+      run: cat "$RUNNER_TEMP/nx-cache-server.log"
 
     - id: save-cache-sonar
       name: Save SonarQube Cache

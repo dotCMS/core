@@ -3,7 +3,7 @@
     "$schema": "../../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/sdk/vue/src",
     "projectType": "library",
-    "tags": [],
+    "tags": ["skip:build"],
     "targets": {
         "test": {
             "executor": "nx:run-commands",

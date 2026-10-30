@@ -213,8 +213,8 @@ fi
 
 block_has_if "$MAVEN_JOB" build-docker-image-from-archive "generate-test-image == 'true'" \
   "test-image build is gated on generate-test-image"
-block_has_if "$MAVEN_JOB" save-docker-image "generate-test-image == 'true'" \
-  "test-image save is gated on generate-test-image"
+block_has_if "$MAVEN_JOB" wait-docker-image-build "generate-test-image == 'true'" \
+  "test-image build wait (which follows the background build and save) is gated on generate-test-image"
 block_has_if "$MAVEN_JOB" upload-docker-image "generate-test-image == 'true'" \
   "test-image upload is gated on generate-test-image"
 block_has_if "$MAVEN_JOB" persist-build-classes "generate-build-classes == 'true'" \
@@ -800,6 +800,28 @@ block_has_if "$BUILD_PHASE" "Verify release coordinates were installed" 'release
   "the coordinate tripwire is in the build job, gated on release-build"
 block_has "$BUILD_PHASE" "Verify release coordinates were installed" 'dotcms-core-\$version\.jar' \
   "the tripwire asserts the exact expected primary artifact"
+# Trunk reuses the merge queue's maven-repo for the CLI native build and deploy, so only
+# pull requests may leave modules out of the build.
+block_has "$BUILD_PHASE" maven-build "github.event_name == 'pull_request' && '-pl !:" \
+  "only pull request builds exclude modules from the reactor"
+INIT_PHASE="$REPO_ROOT/.github/workflows/cicd_comp_initialize-phase.yml"
+block_has "$INIT_PHASE" data-download 'workflow: cicd_2-merge-queue\.yml' \
+  "trunk and nightly reuse only merge-queue builds, never a slimmed PR build"
+block_has "$INIT_PHASE" data-download 'workflow_search: false' \
+  "the previous-build search does not fall back to every workflow"
+block_has "$INIT_PHASE" data-download-trunk 'workflow: cicd_3-trunk\.yml' \
+  "a commit that bypassed the queue can reuse trunk's own complete build"
+block_has "$INIT_PHASE" data-download-trunk 'workflow_search: false' \
+  "the trunk fallback does not search every workflow"
+block_has_if "$INIT_PHASE" data-download-trunk "data-download.outputs.found_artifact != 'true'" \
+  "the trunk fallback runs only when no merge-queue build was found"
+for wf in cicd_1-pr cicd_4-nightly; do
+  if grep -Eq "workflow: ${wf}\.yml" "$INIT_PHASE"; then
+    bad "previous-build reuse never searches ${wf}.yml" "found 'workflow: ${wf}.yml' in $(rel "$INIT_PHASE")"
+  else
+    ok "previous-build reuse never searches ${wf}.yml"
+  fi
+done
 
 # ================================================= 12. SAML ships with core ==
 # Issue #38104. SAML used to be released separately, so a core release could
@@ -1101,6 +1123,10 @@ block_has_if "$MAVEN_JOB" delete-built-artifacts-from-cache "release-build != 't
   "a release build does not delete its release coordinates (the caller verifies them afterwards)"
 block_has_if "$MAVEN_JOB" save-cache-maven "release-build != 'true'" \
   "a release build does not write the shared dependency cache"
+for step in delete-built-artifacts-from-cache save-cache-maven save-cache-maven-plugins; do
+  block_has_if "$MAVEN_JOB" "$step" "cache-matched-key == '' \|\| \(github.event_name != 'pull_request' && github.event_name != 'merge_group'\)" \
+    "$step: PR and merge-queue runs save only when they restored nothing (ref-scoped copies evict main's entry)"
+done
 if [[ "$(input_default "$MAVEN_JOB" needs-maven-repo)" == "true" ]]; then
   ok "needs-maven-repo defaults to true (shared callers keep their dependencies)"
 else
@@ -1225,6 +1251,88 @@ if [[ -s "$SLIM/delete.sh" ]] && HOME="$SLIM/home" RUNNER_TEMP="$SLIM/tmp" bash 
     || bad "cleaning the cache removes installed artifacts of every version, and their local metadata"
 else
   bad "delete-built-artifacts-from-cache runs against a repository holding builds" "body missing or exited non-zero"
+fi
+
+# ============================================ 14. maven-job: background image build ==
+# The test image is built and saved in a background subshell while the artifacts
+# upload, and a later step waits for it. GitHub runs composite bash steps under
+# `bash -eo pipefail`, which the background subshell inherits, so each case below
+# runs the real step bodies the same way. The failure case is the one that matters:
+# a status that never gets written would leave every test job polling for 20 minutes.
+echo "== 14. maven-job: background image build records its outcome =="
+
+IMG="$WORKDIR/img"
+mkdir -p "$IMG/bin" "$IMG/ctx/dotCMS/target" "$IMG/ctx/src" "$IMG/tmp"
+echo hello > "$IMG/ctx/src/f"
+tar -cf "$IMG/ctx/dotCMS/target/docker-build.tar" -C "$IMG/ctx/src" f
+
+# Real bodies, with the hard-coded /tmp paths and the version input pointed at the sandbox.
+for id in build-docker-image-from-archive wait-docker-image-build; do
+  extract_run_body "$MAVEN_JOB" "$id" \
+    | sed -E -e "s#/tmp/#$IMG/tmp/#g" -e 's/\$\{\{ *inputs\.version *\}\}/1.0/g' > "$IMG/$id.sh"
+  # An empty body would "succeed" every case below, so fail loudly instead.
+  [[ -s "$IMG/$id.sh" ]] && ok "$id body is extractable" || bad "$id body is extractable" "not found in $(rel "$MAVEN_JOB")"
+done
+
+# Stub docker: build fails when DOCKER_FAIL=build, hangs when DOCKER_HANG=1 (the
+# hang records its pid so the case can clean it up), `save` writes the tar.
+cat > "$IMG/bin/docker" <<'STUB'
+#!/usr/bin/env bash
+case "$1" in
+  build) [[ "${DOCKER_FAIL:-}" == build ]] && { echo "pull timeout"; exit 7; }
+         if [[ "${DOCKER_HANG:-}" == 1 ]]; then echo $$ > "$RUNNER_TEMP/docker.pid"; exec sleep 60; fi ;;
+  save)  echo image ;;
+esac
+exit 0
+STUB
+chmod +x "$IMG/bin/docker"
+
+# Run the start step the way a runner does: bash -eo pipefail, output discarded.
+image_start() {  # extra env assignments are passed as arguments
+  rm -f "$IMG"/tmp/test-image-build.* "$IMG/tmp/image.tar" "$IMG/tmp/docker.pid"
+  rm -rf "$IMG/tmp/docker-context"
+  ( cd "$IMG/ctx" && env RUNNER_TEMP="$IMG/tmp" SDKMAN_JAVA_VERSION=25 PATH="$IMG/bin:$PATH" "$@" \
+      bash -eo pipefail "$IMG/build-docker-image-from-archive.sh" ) >/dev/null 2>&1
+}
+# Run the wait step; sets WAIT_RC and WAIT_SECS, output lands in $IMG/wait.out.
+wait_step() {
+  local t0=$SECONDS rc=0
+  ( cd "$IMG/ctx" && env RUNNER_TEMP="$IMG/tmp" PATH="$IMG/bin:$PATH" \
+      bash -eo pipefail "$IMG/wait-docker-image-build.sh" ) > "$IMG/wait.out" 2>&1 || rc=$?
+  WAIT_RC=$rc; WAIT_SECS=$((SECONDS - t0))
+}
+
+image_start DOCKER_FAIL=none
+wait_step
+if [[ $WAIT_RC -eq 0 && -s "$IMG/tmp/image.tar" ]]; then
+  ok "a successful build and save passes the wait step and leaves image.tar"
+else
+  bad "a successful build and save passes the wait step and leaves image.tar" "rc=$WAIT_RC: $(tail -n 3 "$IMG/wait.out")"
+fi
+
+image_start DOCKER_FAIL=build
+wait_step
+if [[ $WAIT_RC -ne 0 && $WAIT_SECS -lt 15 ]] && grep -q 'status: 7' "$IMG/wait.out" \
+   && grep -q 'pull timeout' "$IMG/wait.out" && [[ ! -e "$IMG/tmp/image.tar" ]]; then
+  ok "a failing docker build fails the wait step within seconds, with its status and log, and skips the save"
+else
+  bad "a failing docker build fails the wait step within seconds, with its status and log, and skips the save" \
+      "rc=$WAIT_RC after ${WAIT_SECS}s: $(tail -n 3 "$IMG/wait.out")"
+fi
+
+# The background process is killed before it can write a status (job cancelled,
+# OOM kill): the wait step must notice the pid is gone rather than poll to the limit.
+image_start DOCKER_HANG=1
+for _ in 1 2 3 4 5 6 7 8 9 10; do [[ -s "$IMG/tmp/docker.pid" ]] && break; sleep 0.5; done
+kill -9 "$(cat "$IMG/tmp/test-image-build.pid")" 2>/dev/null
+kill "$(cat "$IMG/tmp/docker.pid" 2>/dev/null)" 2>/dev/null
+sleep 1
+wait_step
+if [[ $WAIT_RC -ne 0 && $WAIT_SECS -lt 15 ]] && grep -q 'vanished' "$IMG/wait.out"; then
+  ok "a killed background build fails the wait step at once instead of polling"
+else
+  bad "a killed background build fails the wait step at once instead of polling" \
+      "rc=$WAIT_RC after ${WAIT_SECS}s: $(tail -n 3 "$IMG/wait.out")"
 fi
 
 # ---------------------------------------------------------------------- done --

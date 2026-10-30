@@ -9,6 +9,7 @@
     "targets": {
         "build": {
             "executor": "@angular/build:application",
+            "inputs": ["production", "^production", "warBuild", "tailwindSources"],
             "outputs": ["{options.outputPath.base}"],
             "defaultConfiguration": "production",
             "dependsOn": ["^build"],

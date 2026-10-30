@@ -351,6 +351,13 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-war-plugin</artifactId>
                 <configuration>
+                    <!--
+                      CI reuses Nx build outputs from a cache (maven-job's Restore Nx Cache), so the
+                      Nx target behind each directory below must list every file it reads among its
+                      inputs, including files read by path from other libs or node_modules. See the
+                      warBuild, dotcmsScss and tailwindSources named inputs in nx.json; a new
+                      directory here needs the same treatment.
+                    -->
                     <webResources>
                         <resource>
                             <!-- Explicitly scoped to core-web directory to prevent referencing external folders -->
@@ -568,6 +575,26 @@
                                         <argument>--scope=core-web</argument>
                                         <argument>--format=github</argument>
                                     </arguments>
+                                </configuration>
+                            </execution>
+                            <!--
+                              Builds the projects tagged skip:build: the SDK libraries, mcp-server,
+                              ai-evals, dotcdn and http. Nothing in the war comes from them (the
+                              war's webResources list what does), so build-test leaves them out and
+                              the Initial Artifact Build no longer waits on them. They are still
+                              compiled here, in Frontend Unit Tests, which runs on every change under
+                              core-web, so a PR that breaks one of them still fails before merge.
+                              Always with the production configuration, as the artifact build used
+                              to build them (that job passes no -Dprod).
+                            -->
+                            <execution>
+                                <id>build-unshipped</id>
+                                <goals>
+                                    <goal>exec</goal>
+                                </goals>
+                                <phase>compile</phase>
+                                <configuration>
+                                    <commandlineArgs>exec nx run-many -t build --projects=tag:skip:build --prod</commandlineArgs>
                                 </configuration>
                             </execution>
                         </executions>
