@@ -28,7 +28,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.exception.DotRuntimeException;
-import com.dotmarketing.portal.struts.DotCustomLoginPostAction;
+import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
@@ -93,18 +93,14 @@ public class CASAuthUtils {
     private static User liferayUser;
 
     
-	/* (non-Javadoc)
-	 * @see com.dotcms.enterprise.BaseAuthenticator#loadGroups(java.lang.String, java.lang.String)
+	/**
+	 * Creates a dotCMS user for a CAS login from that user's LDAP entry, then copies the LDAP
+	 * attributes and, when enabled, the LDAP groups. The local password is the hash of a random
+	 * secret, so the account can only sign in through CAS.
 	 *
-	 * Accepts: An LDAP username and password
-	 * Requires:  LDAP should be using the mail attribute to store e-mail addresses
-	 *			    and should store the group information in the isMemberOf attribute.
-	 *			  The following entries in portal-ext.properties
-	 *			  	auth.impl.build.groups=true
-	 * 			  	auth.impl.ldap.build.group.name.filter=regex with selection.
-	 * Outputs: A string list of group names that the given user is a member of.
+	 * @param userId the LDAP user id
+	 * @return the new {@link User}, or {@code null} if the user is not in LDAP or cannot be created
 	 */
-
 	public static User loadUserFromLDAP(String userId) {
 		
 		String companyId = PublicCompanyFactory.getDefaultCompanyId();
@@ -126,7 +122,7 @@ public class CASAuthUtils {
 			liferayUser = userAPI.createUser(userId, email);
 			liferayUser.setActive(true);
 			liferayUser.setCompanyId(companyId);
-			liferayUser.setPassword(DotCustomLoginPostAction.FAKE_PASSWORD);			
+			liferayUser.setPassword(PasswordFactoryProxy.generateRandomHash());
 			liferayUser.setCreateDate(new java.util.Date());
 			
 			userAPI.save(liferayUser,APILocator.getUserAPI().getSystemUser(),false);

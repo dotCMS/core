@@ -1,6 +1,8 @@
 package com.dotcms.datagen;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.enterprise.PasswordFactoryProxy;
+import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.Role;
@@ -8,6 +10,7 @@ import com.dotmarketing.business.UserFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
 import com.liferay.portal.model.User;
@@ -108,8 +111,13 @@ public class UserDataGen extends AbstractDataGen<User> {
     }
 
     /**
-     * Creates the user, then saves its fields. A general save does not write the login token id
-     * ({@code skinid}), so it is stored with {@link UserFactory#updateRememberMeToken}.
+     * Creates the user, then saves its fields. A password given to this generator is stored as a
+     * secure hash, the same way dotCMS stores passwords, so tests can sign in with the clear text.
+     * A general save does not write the login token id ({@code skinid}), so it is stored with
+     * {@link UserFactory#updateRememberMeToken}.
+     *
+     * @param user the {@link User} to save
+     * @return the saved {@link User}
      */
     @Override
     @WrapInTransaction
@@ -120,7 +128,12 @@ public class UserDataGen extends AbstractDataGen<User> {
                     .createUser(user.getUserId(), user.getEmailAddress());
             newUser.setFirstName(user.getFirstName());
             newUser.setLastName(user.getLastName());
-            newUser.setPassword(user.getPassword());
+            newUser.setPassword(UtilMethods.isSet(user.getPassword())
+                    ? PasswordFactoryProxy.generateHash(user.getPassword())
+                    : user.getPassword());
+            // Flag the account as holding a hash rather than a plaintext password, the same way
+            // production does when it stores a generated hash.
+            newUser.setPasswordEncrypted(true);
             newUser.setActive(user.getActive());
             newUser.setSkinId(user.getSkinId());
             newUser.setCompanyId(user.getCompanyId());
@@ -134,7 +147,7 @@ public class UserDataGen extends AbstractDataGen<User> {
 
             return newUser;
 
-        } catch (DotDataException | DotSecurityException e) {
+        } catch (DotDataException | DotSecurityException | PasswordException e) {
             throw new RuntimeException("Unable to persist user.", e);
         }
     }

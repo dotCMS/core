@@ -267,6 +267,13 @@ public class LoginFactory {
         return false;
     }
 
+	/**
+	 * When directory passwords are not copied into dotCMS ({@code auth.impl.ldap.syncPassword}
+	 * is off), replaces the local password of a directory user with the hash of a random
+	 * secret, so the account can only sign in through the directory.
+	 *
+	 * @param user the {@link User} that just signed in
+	 */
 	private static void syncPassword(User user) {
 		try {
 
@@ -277,7 +284,7 @@ public class LoginFactory {
 
                 if (APILocator.getRoleAPI().doesUserHaveRole(user, roleName)) {
 
-                    user.setPassword(DotCustomLoginPostAction.FAKE_PASSWORD);
+                    user.setPassword(PasswordFactoryProxy.generateRandomHash());
                     APILocator.getUserAPI().save(user, APILocator.getUserAPI().getSystemUser(), false);
                 }
             }
@@ -306,10 +313,13 @@ public class LoginFactory {
 
 
 	/**
+    * Checks a user's credentials without creating a session. When the directory authenticator
+    * is configured as the pre-authenticator it decides the result; otherwise the password is
+    * checked against the one stored in dotCMS.
     *
-    * @param userName
-    * @param password
-    * @return
+    * @param userName the email address or user id, depending on the company's authentication type
+    * @param password the password typed by the user
+    * @return {@code true} if the credentials are valid, {@code false} otherwise
     */
     public static boolean doLogin(String userName, String password) throws NoSuchUserException {
         try {
@@ -356,7 +366,7 @@ public class LoginFactory {
     				if(!SYNC_PASSWORD){
     					String roleName = LDAPImpl.LDAP_USER_ROLE;
     					if(com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user, roleName)){
-    						user.setPassword(DotCustomLoginPostAction.FAKE_PASSWORD);
+    						user.setPassword(PasswordFactoryProxy.generateRandomHash());
     						APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
     					}
     				}
@@ -423,26 +433,38 @@ public class LoginFactory {
     }
 
     /**
-     * This method validates legacy, clear and new passwords. When identifies a
-     * clear or legacy password it will validate and then change it to a
-     * stronger hash then save it into the system.
-     * 
-     * @param password
-     *            string entered by the user
-     * @param user
-     *            MUST be loaded from db with all the information because we are
-     *            going to save this object if rehash process required
-     * @return
+     * Checks whether the password a user typed matches the one stored for that user. The typed
+     * password is always hashed before it is compared: against the stored secure hash, or, for
+     * values stored in the older digest format, against the digest of the typed password. A
+     * stored value is never compared directly with the typed text. When an older format matches,
+     * the stored value is upgraded to a secure hash and saved.
+     *
+     * <p>The value {@link DotCustomLoginPostAction#FAKE_PASSWORD} is reserved for accounts that
+     * authenticate against a directory service and never matches.</p>
+     *
+     * @param password the password typed by the user
+     * @param user     the {@link User}, loaded from the database with all its information,
+     *                 because it is saved again when its stored password needs upgrading
+     * @return {@code true} if the password matches, {@code false} otherwise
      */
     public static boolean passwordMatch(final String password, final User user) {
+        if (DotCustomLoginPostAction.FAKE_PASSWORD.equals(password)) {
+            return false;
+        }
+
+        if (!UtilMethods.isSet(user.getPassword())) {
+            // Nothing to verify against. The hash verifier rejects a null or empty stored
+            // value with an unchecked exception, which would surface as a server error
+            // rather than as failed credentials.
+            return false;
+        }
+
         boolean needsToRehashPassword = false;
 
         try {
             if (PasswordFactoryProxy.isUnsecurePasswordHash(user.getPassword())) {
-                // This is the legacy functionality that we will replace with
-                // the new hash library
-                final boolean match = user.getPassword().equals(password)
-                        || user.getPassword().equals(PublicEncryptionFactory.digestString(password));
+                // Older digest format: only the digest of the typed password can match it
+                final boolean match = user.getPassword().equals(PublicEncryptionFactory.digestString(password));
 
                 // Bad credentials
                 if (!match) {

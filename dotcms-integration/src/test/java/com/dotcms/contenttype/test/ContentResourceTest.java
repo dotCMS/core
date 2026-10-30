@@ -114,6 +114,15 @@ public class ContentResourceTest extends IntegrationTestBase {
     private static final String IDENTIFIER = "identifier";
     private static final String JSON_RESPONSE = "json";
     private static final String XML_RESPONSE = "xml";
+    private static final String ADMIN_EMAIL = "admin@dotcms.com";
+    private static final String ADMIN_PASSWORD = "admin";
+
+    /**
+     * Clear-text password the users created by this test sign in with. Their stored password is
+     * a hash, so Basic credentials have to be built from the clear text kept here rather than
+     * from {@link User#getPassword()}.
+     */
+    private static final String TEST_USER_PASSWORD = "testPassword";
 
     private static FieldAPI fieldAPI;
     private static LanguageAPI languageAPI;
@@ -544,7 +553,7 @@ public class ContentResourceTest extends IntegrationTestBase {
                 createdLimitedUser =
                     new UserDataGen().firstName("name").lastName("lastName").companyId(company.getCompanyId())
                         .emailAddress("email" + System.currentTimeMillis() + "@dotcms.com").skinId(UUIDGenerator.generateUuid())
-                        .password("password" + System.currentTimeMillis()).roles(newRole, TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
+                        .password(TEST_USER_PASSWORD).roles(newRole, TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
 
                 //set individual permissions to the child
                 permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
@@ -1457,6 +1466,30 @@ public class ContentResourceTest extends IntegrationTestBase {
         return request;
     }
 
+    /**
+     * Sets a Basic {@code Authorization} header for the given credentials.
+     *
+     * @param request  the request to set the header on
+     * @param email    the email address to authenticate with
+     * @param password the clear-text password to authenticate with
+     */
+    private static void setBasicCredentials(final MockHeaderRequest request, final String email,
+            final String password) {
+        request.setHeader("Authorization", "Basic " + Base64.getEncoder()
+                .encodeToString((email + ":" + password).getBytes()));
+    }
+
+    /**
+     * Returns the clear-text password of a user this test can sign in as. {@code user.getPassword()}
+     * holds a hash and cannot be replayed as a credential.
+     *
+     * @param user the user to authenticate as
+     * @return the password that user was created with
+     */
+    private static String clearPasswordOf(final User user) {
+        return ADMIN_EMAIL.equals(user.getEmailAddress()) ? ADMIN_PASSWORD : TEST_USER_PASSWORD;
+    }
+
     private HttpServletRequest createHttpRequest(final String jsonPayload, final User user) throws Exception{
 
         MockHeaderRequest request = new MockHeaderRequest(
@@ -1467,10 +1500,10 @@ public class ContentResourceTest extends IntegrationTestBase {
         );
 
         if (user == null){
-            request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString(("admin@dotcms.com:admin").getBytes()));
+            setBasicCredentials(request, ADMIN_EMAIL, ADMIN_PASSWORD);
 
         } else if (!user.equals(userAPI.getAnonymousUser())){
-            request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString((user.getEmailAddress() + ":" + user.getPassword()).getBytes()));
+            setBasicCredentials(request, user.getEmailAddress(), clearPasswordOf(user));
         }
 
         if (jsonPayload != null) {
@@ -1980,7 +2013,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         return new UserDataGen().active(true)
                 .emailAddress("filter" + System.nanoTime() + "@dotcms.com")
                 .skinId(UUIDGenerator.generateUuid())
-                .password("password" + System.currentTimeMillis()).roles(role).nextPersisted();
+                .password(TEST_USER_PASSWORD).roles(role).nextPersisted();
     }
 
     /**
@@ -2207,7 +2240,7 @@ public class ContentResourceTest extends IntegrationTestBase {
         final User author = new UserDataGen().id("catchalluser" + System.nanoTime()).active(true)
                 .emailAddress("catchall" + System.nanoTime() + "@dotcms.com")
                 .skinId(UUIDGenerator.generateUuid())
-                .password("password" + System.currentTimeMillis()).roles(roleAPI.loadCMSAdminRole()).nextPersisted();
+                .password(TEST_USER_PASSWORD).roles(roleAPI.loadCMSAdminRole()).nextPersisted();
         final String userId = author.getUserId().toLowerCase();
         final String prefix = userId.substring(0, userId.length() - 1) + "*";
 

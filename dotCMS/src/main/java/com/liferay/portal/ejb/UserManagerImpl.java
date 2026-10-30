@@ -296,6 +296,15 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         return user.getUserId();
     }
 
+    /**
+     * Gives every user that still has the default password a newly generated one and emails it
+     * to them with the registration email. The new password is stored as a secure hash; only the
+     * email carries it in clear text.
+     *
+     * @return the number of users notified
+     * @throws PortalException if the current user is not an administrator
+     * @throws SystemException if a password cannot be generated or an email cannot be sent
+     */
     @Override
     public int notifyNewUsers() throws PortalException, SystemException {
         String companyId = getUser().getCompanyId();
@@ -326,7 +335,12 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
         for (int i = 0; i < users.size(); i++) {
             User user = (User) users.get(i);
 
-            user.setPassword(PwdToolkitUtil.generate());
+            final String newPassword = PwdToolkitUtil.generate();
+            try {
+                user.setPassword(PasswordFactoryProxy.generateHash(newPassword));
+            } catch (final PasswordException e) {
+                throw new SystemException(e);
+            }
 
             UserUtil.update(user);
 
@@ -334,13 +348,13 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
                     new String[] {"[$ADMIN_EMAIL_ADDRESS$]", "[$ADMIN_NAME$]", "[$COMPANY_MX$]", "[$COMPANY_NAME$]", "[$PORTAL_URL$]",
                             "[$USER_EMAIL_ADDRESS$]", "[$USER_NAME$]", "[$USER_PASSWORD$]"},
                     new String[] {company.getEmailAddress(), adminName, company.getMx(), company.getName(), company.getPortalURL(),
-                            user.getEmailAddress(), user.getFullName(), user.getPassword()});
+                            user.getEmailAddress(), user.getFullName(), newPassword});
 
             body = StringUtil.replace(body,
                     new String[] {"[$ADMIN_EMAIL_ADDRESS$]", "[$ADMIN_NAME$]", "[$COMPANY_MX$]", "[$COMPANY_NAME$]", "[$PORTAL_URL$]",
                             "[$USER_EMAIL_ADDRESS$]", "[$USER_NAME$]", "[$USER_PASSWORD$]"},
                     new String[] {company.getEmailAddress(), adminName, company.getMx(), company.getName(), company.getPortalURL(),
-                            user.getEmailAddress(), user.getFullName(), user.getPassword()});
+                            user.getEmailAddress(), user.getFullName(), newPassword});
 
             try {
                 MailManagerUtil.sendEmail(new MailMessage(new InternetAddress(company.getEmailAddress(), adminName),
