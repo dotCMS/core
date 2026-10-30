@@ -48,6 +48,50 @@ public class IllegalFileExtensionsValidatorTest {
     }
 
     /**
+     * Dots and spaces at the end of a name are dropped by some file systems, so the name is judged
+     * without them: the extension is the one the stored file will have.
+     */
+    @Test
+    public void listedExtension_withTrailingDotsOrSpaces_isRefused() {
+        for (final String name : new String[] {"sample-1.jsp.", "sample-2.JSP.", "sample-3.jsp ", "sample-4.Jsp. .", "sample-5.exe..."}) {
+            assertThrows(name, IllegalArgumentException.class, () -> validator.validate(name));
+        }
+    }
+
+    /**
+     * Trailing dots and spaces on an unlisted name do not make it refused, and a name made only of
+     * them has no extension.
+     */
+    @Test
+    public void unlistedExtension_withTrailingDotsOrSpaces_isAccepted() {
+        for (final String name : new String[] {"report.txt.", "report.txt ", "...", " "}) {
+            validator.validate(name);
+        }
+    }
+
+    /**
+     * Without a configured list the default one applies.
+     */
+    @Test
+    public void toBlockList_withoutConfiguration_usesTheDefaultList() {
+        assertTrue(IllegalFileExtensionsValidator.toBlockList(null).contains(".jsp"));
+        assertTrue(IllegalFileExtensionsValidator.toBlockList(new String[0]).contains(".exe"));
+    }
+
+    /**
+     * A configured list replaces the default one; each entry is read without surrounding spaces and
+     * without regard to letter case.
+     */
+    @Test
+    public void toBlockList_withConfiguration_replacesTheDefaultList() {
+        final java.util.Set<String> blocked =
+                IllegalFileExtensionsValidator.toBlockList(new String[] {".EXE", " .Php "});
+        assertTrue(blocked.contains(".exe"));
+        assertTrue(blocked.contains(".php"));
+        org.junit.Assert.assertFalse(blocked.contains(".jsp"));
+    }
+
+    /**
      * A missing name is refused.
      */
     @Test
