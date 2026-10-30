@@ -1169,20 +1169,24 @@ public class ContentHandler implements IHandler {
 				|| cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE;
 		final boolean oneParentPerChild = cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_MANY
 				|| cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE;
-		return (oneChildPerParent && this.hasOtherRelated("parent", tree.getParent(), "child", tree.getChild(),
+		return (oneChildPerParent && this.hasOtherRelated(OTHER_CHILDREN_SQL, tree.getParent(), tree.getChild(),
 						tree.getRelationType()))
-				|| (oneParentPerChild && this.hasOtherRelated("child", tree.getChild(), "parent", tree.getParent(),
+				|| (oneParentPerChild && this.hasOtherRelated(OTHER_PARENTS_SQL, tree.getChild(), tree.getParent(),
 						tree.getRelationType()));
 	}
 
+	private static final String OTHER_CHILDREN_SQL =
+			"select count(*) as total from tree where parent = ? and child <> ? and relation_type = ?";
+	private static final String OTHER_PARENTS_SQL =
+			"select count(*) as total from tree where child = ? and parent <> ? and relation_type = ?";
+
 	/**
-	 * Checks whether the content in the given {@code tree} column is related to anything other than
-	 * the specified content through the given relationship.
+	 * Checks whether the content is related to anything other than the specified content through
+	 * the given relationship, using one of the {@code OTHER_*_SQL} queries.
 	 */
-	private boolean hasOtherRelated(final String column, final String identifier, final String otherColumn,
-			final String otherIdentifier, final String relationType) throws DotDataException {
-		return new DotConnect().setSQL(String.format("select count(*) as total from tree where %s = ? and %s <> ? "
-						+ "and relation_type = ?", column, otherColumn))
+	private boolean hasOtherRelated(final String sql, final String identifier, final String otherIdentifier,
+			final String relationType) throws DotDataException {
+		return new DotConnect().setSQL(sql)
 				.addParam(identifier)
 				.addParam(otherIdentifier)
 				.addParam(relationType)
