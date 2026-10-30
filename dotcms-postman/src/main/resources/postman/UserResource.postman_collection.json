@@ -428,7 +428,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"userId\":\"userid-french-12345678\",\n    \"active\":true,\n    \"firstName\":\"FrenchUser\",\n    \"middleName\":\"S\",\n    \"lastName\":\"French\",\n    \"nickName\":\"French\",\n    \"email\":\"french@dotcms.com\",\n    \"male\":true,\n    \"languageId\":\"fr_FR\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"],\n    \"roles\":[\"DOTCMS_BACK_END_USER\", \"CMS Administrator\"]\n}",
+							"raw": "{\n    \"userId\":\"userid-french-12345678\",\n    \"active\":true,\n    \"firstName\":\"FrenchUser\",\n    \"middleName\":\"S\",\n    \"lastName\":\"French\",\n    \"nickName\":\"French\",\n    \"email\":\"french@dotcms.com\",\n    \"male\":true,\n    \"languageId\":\"fr_FR\",\n    \"password\":[\"P\",\"o\",\"s\",\"t\",\"m\",\"a\",\"n\",\"-\",\"P\",\"a\",\"s\",\"s\",\"-\",\"2\",\"0\",\"2\",\"6\",\"!\"],\n    \"roles\":[\"DOTCMS_BACK_END_USER\", \"CMS Administrator\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -500,7 +500,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"active\":true,\n    \"firstName\":\"MaxtLengtOnName-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123\",\n    \"lastName\":\"Spanish\",\n    \"email\":\"test1@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"]\n}",
+							"raw": "{\n    \"active\":true,\n    \"firstName\":\"MaxtLengtOnName-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123\",\n    \"lastName\":\"Spanish\",\n    \"email\":\"test1@dotcms.com\",\n    \"password\":[\"P\",\"o\",\"s\",\"t\",\"m\",\"a\",\"n\",\"-\",\"P\",\"a\",\"s\",\"s\",\"-\",\"2\",\"0\",\"2\",\"6\",\"!\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -547,7 +547,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"active\":true,\n    \"firstName\":\"test1\",\n    \"middleName\":\"MaxtLengtOnMiddleName-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123\",\n    \"lastName\":\"test1\",\n    \"email\":\"test1@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"]\n}",
+							"raw": "{\n    \"active\":true,\n    \"firstName\":\"test1\",\n    \"middleName\":\"MaxtLengtOnMiddleName-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123\",\n    \"lastName\":\"test1\",\n    \"email\":\"test1@dotcms.com\",\n    \"password\":[\"P\",\"o\",\"s\",\"t\",\"m\",\"a\",\"n\",\"-\",\"P\",\"a\",\"s\",\"s\",\"-\",\"2\",\"0\",\"2\",\"6\",\"!\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -590,7 +590,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"active\":true,\n    \"firstName\":\"test1\",\n    \"lastName\":\"MaxtLengtOnLastName-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123\",\n    \"email\":\"test1@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"]\n}",
+							"raw": "{\n    \"active\":true,\n    \"firstName\":\"test1\",\n    \"lastName\":\"MaxtLengtOnLastName-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123\",\n    \"email\":\"test1@dotcms.com\",\n    \"password\":[\"P\",\"o\",\"s\",\"t\",\"m\",\"a\",\"n\",\"-\",\"P\",\"a\",\"s\",\"s\",\"-\",\"2\",\"0\",\"2\",\"6\",\"!\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -633,7 +633,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"active\":true,\n    \"firstName\":\"test1\",\n    \"middleName\":\"test1\",\n    \"lastName\":\"test1\",\n    \"nickName\":\"MaxtLengtOnNickName-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123\",\n    \"email\":\"test1@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"]\n}",
+							"raw": "{\n    \"active\":true,\n    \"firstName\":\"test1\",\n    \"middleName\":\"test1\",\n    \"lastName\":\"test1\",\n    \"nickName\":\"MaxtLengtOnNickName-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123\",\n    \"email\":\"test1@dotcms.com\",\n    \"password\":[\"P\",\"o\",\"s\",\"t\",\"m\",\"a\",\"n\",\"-\",\"P\",\"a\",\"s\",\"s\",\"-\",\"2\",\"0\",\"2\",\"6\",\"!\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -676,7 +676,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"active\":true,\n    \"firstName\":\"test1\",\n    \"middleName\":\"test1\",\n    \"lastName\":\"test1\",\n    \"nickName\":\"test1\",\n    \"birthday\":\"MaxtLengtOnBirthday-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123\",\n    \"email\":\"test1@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"]\n}",
+							"raw": "{\n    \"active\":true,\n    \"firstName\":\"test1\",\n    \"middleName\":\"test1\",\n    \"lastName\":\"test1\",\n    \"nickName\":\"test1\",\n    \"birthday\":\"MaxtLengtOnBirthday-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123\",\n    \"email\":\"test1@dotcms.com\",\n    \"password\":[\"P\",\"o\",\"s\",\"t\",\"m\",\"a\",\"n\",\"-\",\"P\",\"a\",\"s\",\"s\",\"-\",\"2\",\"0\",\"2\",\"6\",\"!\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -718,7 +718,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"active\":true,\n    \"firstName\":\"Name1\",\n    \"lastName\":\"Last1\",\n    \"email\":\"MaxtLengtOnEmail-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"]\n}",
+							"raw": "{\n    \"active\":true,\n    \"firstName\":\"Name1\",\n    \"lastName\":\"Last1\",\n    \"email\":\"MaxtLengtOnEmail-aBC1dEF2gHI3jKL4mNO5pQR6sTU7vWX8yZA9bCD0eFGhIJkLMnOPqRsTtUVwXYzABCDEFGHIJKLMNOQRSTUVWXYZ123@dotcms.com\",\n    \"password\":[\"P\",\"o\",\"s\",\"t\",\"m\",\"a\",\"n\",\"-\",\"P\",\"a\",\"s\",\"s\",\"-\",\"2\",\"0\",\"2\",\"6\",\"!\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -809,7 +809,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"userId\":\"userid-test-12345678\",\n    \"active\":true,\n    \"firstName\":\"TestUser\",\n    \"middleName\":\"S\",\n    \"lastName\":\"LastTestuser\",\n    \"nickName\":\"LastTestuser\",\n    \"email\":\"test-user@dotcms.com\",\n    \"male\":true,\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"],\n    \"roles\":[\"DOTCMS_BACK_END_USER\", \"CMS Administrator\"]\n}",
+							"raw": "{\n    \"userId\":\"userid-test-12345678\",\n    \"active\":true,\n    \"firstName\":\"TestUser\",\n    \"middleName\":\"S\",\n    \"lastName\":\"LastTestuser\",\n    \"nickName\":\"LastTestuser\",\n    \"email\":\"test-user@dotcms.com\",\n    \"male\":true,\n    \"password\":[\"P\",\"o\",\"s\",\"t\",\"m\",\"a\",\"n\",\"-\",\"P\",\"a\",\"s\",\"s\",\"-\",\"2\",\"0\",\"2\",\"6\",\"!\"],\n    \"roles\":[\"DOTCMS_BACK_END_USER\", \"CMS Administrator\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1017,7 +1017,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"userId\":\"userid-test-56789023\",\n    \"active\":true,\n    \"firstName\":\"TestUser\",\n    \"middleName\":\"S\",\n    \"lastName\":\"LastTestuser\",\n    \"nickName\":\"LastTestuser\",\n    \"email\":\"test-user1@dotcms.com\",\n    \"male\":true,\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"],\n    \"roles\":[\"DOTCMS_BACK_END_USER\", \"CMS Administrator\"]\n}",
+							"raw": "{\n    \"userId\":\"userid-test-56789023\",\n    \"active\":true,\n    \"firstName\":\"TestUser\",\n    \"middleName\":\"S\",\n    \"lastName\":\"LastTestuser\",\n    \"nickName\":\"LastTestuser\",\n    \"email\":\"test-user1@dotcms.com\",\n    \"male\":true,\n    \"password\":[\"P\",\"o\",\"s\",\"t\",\"m\",\"a\",\"n\",\"-\",\"P\",\"a\",\"s\",\"s\",\"-\",\"2\",\"0\",\"2\",\"6\",\"!\"],\n    \"roles\":[\"DOTCMS_BACK_END_USER\", \"CMS Administrator\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1312,7 +1312,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"firstName\": \"saad\",\n    \"lastName\": \"sher\",\n    \"email\": \"saadsher2@dotcms.com\",\n    \"password\": \"victory123\"\n}",
+							"raw": "{\n    \"firstName\": \"saad\",\n    \"lastName\": \"sher\",\n    \"email\": \"saadsher2@dotcms.com\",\n    \"password\": \"Postman-Pass-2026!\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1423,7 +1423,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \n    \"active\": true,\n    \"firstName\": \"TestUserUpdateName\",\n    \"lastName\": \"TestUserUpdateLastName\",\n    \"email\": \"allsitesv3@dotcms.com\",\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\",\"9\"],\n    \"roles\": [\"DOTCMS_FRONT_END_USER\", \"Scripting Developer\"]\n  }",
+							"raw": "{\n    \n    \"active\": true,\n    \"firstName\": \"TestUserUpdateName\",\n    \"lastName\": \"TestUserUpdateLastName\",\n    \"email\": \"allsitesv3@dotcms.com\",\n    \"password\":[\"P\",\"o\",\"s\",\"t\",\"m\",\"a\",\"n\",\"-\",\"P\",\"a\",\"s\",\"s\",\"-\",\"2\",\"0\",\"2\",\"6\",\"!\"],\n    \"roles\": [\"DOTCMS_FRONT_END_USER\", \"Scripting Developer\"]\n  }",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1704,7 +1704,7 @@
 						},
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"active\": true,\n    \"firstName\": \"EmptyRoles\",\n    \"lastName\": \"TestUser37109\",\n    \"email\": \"emptyroles37109@dotcms.com\",\n    \"password\": [\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"],\n    \"roles\": [\"DOTCMS_BACK_END_USER\", \"Scripting Developer\"]\n}",
+							"raw": "{\n    \"active\": true,\n    \"firstName\": \"EmptyRoles\",\n    \"lastName\": \"TestUser37109\",\n    \"email\": \"emptyroles37109@dotcms.com\",\n    \"password\": [\"P\",\"o\",\"s\",\"t\",\"m\",\"a\",\"n\",\"-\",\"P\",\"a\",\"s\",\"s\",\"-\",\"2\",\"0\",\"2\",\"6\",\"!\"],\n    \"roles\": [\"DOTCMS_BACK_END_USER\", \"Scripting Developer\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2171,7 +2171,7 @@
 						},
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"userId\": \"{{sortPrefix}}-a\",\n  \"active\": true,\n  \"firstName\": \"{{sortPrefix}}A\",\n  \"lastName\": \"Young\",\n  \"email\": \"{{sortPrefix}}3@sort.dotcms.com\",\n  \"password\": [\"S\",\"o\",\"r\",\"t\",\"P\",\"a\",\"s\",\"s\",\"1\",\"2\",\"3\",\"!\"],\n  \"roles\": [\"DOTCMS_BACK_END_USER\"]\n}",
+							"raw": "{\n  \"userId\": \"{{sortPrefix}}-a\",\n  \"active\": true,\n  \"firstName\": \"{{sortPrefix}}A\",\n  \"lastName\": \"Young\",\n  \"email\": \"{{sortPrefix}}3@sort.dotcms.com\",\n  \"password\": [\"P\",\"o\",\"s\",\"t\",\"m\",\"a\",\"n\",\"-\",\"P\",\"a\",\"s\",\"s\",\"-\",\"2\",\"0\",\"2\",\"6\",\"!\"],\n  \"roles\": [\"DOTCMS_BACK_END_USER\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2229,7 +2229,7 @@
 						},
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"userId\": \"{{sortPrefix}}-bz\",\n  \"active\": true,\n  \"firstName\": \"{{sortPrefix}}B\",\n  \"lastName\": \"Zed\",\n  \"email\": \"{{sortPrefix}}2@sort.dotcms.com\",\n  \"password\": [\"S\",\"o\",\"r\",\"t\",\"P\",\"a\",\"s\",\"s\",\"1\",\"2\",\"3\",\"!\"],\n  \"roles\": [\"DOTCMS_BACK_END_USER\"]\n}",
+							"raw": "{\n  \"userId\": \"{{sortPrefix}}-bz\",\n  \"active\": true,\n  \"firstName\": \"{{sortPrefix}}B\",\n  \"lastName\": \"Zed\",\n  \"email\": \"{{sortPrefix}}2@sort.dotcms.com\",\n  \"password\": [\"P\",\"o\",\"s\",\"t\",\"m\",\"a\",\"n\",\"-\",\"P\",\"a\",\"s\",\"s\",\"-\",\"2\",\"0\",\"2\",\"6\",\"!\"],\n  \"roles\": [\"DOTCMS_BACK_END_USER\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -2287,7 +2287,7 @@
 						},
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"userId\": \"{{sortPrefix}}-ba\",\n  \"active\": true,\n  \"firstName\": \"{{sortPrefix}}B\",\n  \"lastName\": \"Alpha\",\n  \"email\": \"{{sortPrefix}}1@sort.dotcms.com\",\n  \"password\": [\"S\",\"o\",\"r\",\"t\",\"P\",\"a\",\"s\",\"s\",\"1\",\"2\",\"3\",\"!\"],\n  \"roles\": [\"DOTCMS_BACK_END_USER\"]\n}",
+							"raw": "{\n  \"userId\": \"{{sortPrefix}}-ba\",\n  \"active\": true,\n  \"firstName\": \"{{sortPrefix}}B\",\n  \"lastName\": \"Alpha\",\n  \"email\": \"{{sortPrefix}}1@sort.dotcms.com\",\n  \"password\": [\"P\",\"o\",\"s\",\"t\",\"m\",\"a\",\"n\",\"-\",\"P\",\"a\",\"s\",\"s\",\"-\",\"2\",\"0\",\"2\",\"6\",\"!\"],\n  \"roles\": [\"DOTCMS_BACK_END_USER\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -3205,6 +3205,171 @@
 								"v1",
 								"users",
 								"{{sortPrefix}}-ba"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "PasswordRequirements",
+			"item": [
+				{
+					"name": "CreateUserWithShortPasswordRefused",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": \"userid-pwdreq-short-1\",\n    \"active\": true,\n    \"firstName\": \"PasswordReq\",\n    \"lastName\": \"Postman\",\n    \"email\": \"pwdreq.short@dotcms.com\",\n    \"password\": \"Short1!pass\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateUserWithAllLowercasePasswordRefused",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": \"userid-pwdreq-lower-1\",\n    \"active\": true,\n    \"firstName\": \"PasswordReq\",\n    \"lastName\": \"Postman\",\n    \"email\": \"pwdreq.lower@dotcms.com\",\n    \"password\": \"abcdefghijklmnopqrst\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "CreateUserWithCompliantPasswordAccepted",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": \"userid-pwdreq-ok-1\",\n    \"active\": true,\n    \"firstName\": \"PasswordReq\",\n    \"lastName\": \"Postman\",\n    \"email\": \"pwdreq.ok@dotcms.com\",\n    \"password\": \"Postman-Pass-2026!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DeleteCompliantPasswordUser",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {}
+							}
+						}
+					],
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/userid-pwdreq-ok-1",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"userid-pwdreq-ok-1"
 							]
 						}
 					},
