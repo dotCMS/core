@@ -92,7 +92,7 @@ public class MySecureForm {
 
 ## Authentication and Authorization
 
-Password-storage profile changes retain legacy verification but can affect mixed-version deployments and rollback. See [Password Hash Migration](PASSWORD_HASH_MIGRATION.md) for the 192-to-256-bit upgrade and required coordinated deployment.
+Password-storage profile changes retain legacy verification but can affect mixed-version deployments and rollback. See [Password Hash Migration](PASSWORD_HASH_MIGRATION.md) for the staged 192-to-256-bit rollout: deploy dual-profile readers with legacy writes first, and activate new-profile writes only in a later release.
 
 ### Authentication Check Pattern
 ```java

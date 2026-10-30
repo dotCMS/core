@@ -76,13 +76,13 @@ public class PBKDF2 implements HashAlgorithm {
     }
 
     /**
-     * Requests an upgrade after a legacy 192-bit password has been verified.
+     * Keeps the 192-bit profile current during the reader-capability release.
      *
-     * @return {@code true} because new passwords use the 256-bit profile
+     * @return {@code false}; only outdated iteration settings request rehash
      */
     @Override
     public boolean isAlgorithmDeprecated() {
-        return true;
+        return false;
     }
 
     @Override

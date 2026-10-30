@@ -25,7 +25,7 @@ public class PBKDF2_256 extends PBKDF2 {
     /**
      * Keeps this profile current while inherited configuration checks enforce iteration policy.
      *
-     * @return {@code false} because this is the current password profile
+     * @return {@code false} so verified 256-bit records do not request a profile downgrade
      */
     @Override
     public boolean isAlgorithmDeprecated() {
@@ -33,7 +33,7 @@ public class PBKDF2_256 extends PBKDF2 {
     }
 
     /**
-     * Sets the derived output length for new password records.
+     * Sets the derived output length used to verify profile-2 password records.
      *
      * @return 256 bits
      */

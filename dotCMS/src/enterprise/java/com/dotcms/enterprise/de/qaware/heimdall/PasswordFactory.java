@@ -34,16 +34,16 @@ import com.dotcms.enterprise.de.qaware.heimdall.salt.SecureSaltProvider;
  * Factory to create an instance of {@link Password}.
  */
 public final class PasswordFactory {
-    /** Legacy profile retained to verify existing 192-bit password records. */
+    /** Profile used for writes until the reader-capable release is the rollback floor. */
     private static final HashAlgorithm LEGACY_PBKDF2 = new PBKDF2();
 
-    /** Current profile used for newly generated password records. */
+    /** Future write profile registered now for 256-bit verification only. */
     private static final HashAlgorithm CURRENT_PBKDF2 = new PBKDF2_256();
 
-    /** Singleton instance that can verify both profiles and writes the current one. */
+    /** Singleton instance that reads both profiles while continuing legacy writes. */
     private static final Password password = new PasswordImpl(new SecureSaltProvider(),
             new ConfigCoderImpl(),
-            new HashAlgorithmRegistryImpl(LEGACY_PBKDF2, CURRENT_PBKDF2), CURRENT_PBKDF2);
+            new HashAlgorithmRegistryImpl(LEGACY_PBKDF2, CURRENT_PBKDF2), LEGACY_PBKDF2);
 
     /**
      * Static class - no instances allowed.

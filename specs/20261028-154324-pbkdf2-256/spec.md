@@ -4,13 +4,44 @@
 
 **Created**: 2026-10-28
 
-**Status**: Draft — awaiting specification approval
+**Status**: Original migration approved in #38323; staged-release scope approved by the developer on 2026-10-30
 
 **Type**: New Feature
 
 **Issue**: https://github.com/dotCMS/core/issues/38322
 
 **Input**: Upgrade newly generated password hashes to 256 bits through Heimdall's existing profile migration mechanism, preserve existing passwords, and upgrade legacy hashes on successful login. Track the work separately from the push-publishing user-protection change.
+
+## Staged-release amendment (2026-10-30)
+
+The developer approved splitting the rollout in response to the rollback-safety review on #38328. **This PR ships the reader-capability release only.** The original migration design below remains the target for a later activation release, not the acceptance criteria for this first release.
+
+### Reader-capability release requirements
+
+- **RC-001**: Register and verify both profile `1` (192 bits) and profile `2` (256 bits), using each record's stored salt and cost. Preserve rejection of incorrect passwords, invalid records, and unknown profiles.
+- **RC-002**: Keep profile `1` as the shared generation default for all existing callers. Generated records MUST contain 24 derived bytes, retain the existing iteration configuration and hashed marker, use fresh random salts, and remain readable by an old-only reader.
+- **RC-003**: Do not deprecate profile `1` or request/persist a rehash solely because of its profile. Correct current-cost logins MUST leave the stored password unchanged in both email-address and user-ID modes.
+- **RC-004**: Preserve existing cost-based upgrade decisions and persistence-failure handling. Low-cost legacy login still upgrades its cost, but MUST write profile `1`, not profile `2`. Current-cost profile-`2` login MUST NOT rewrite the password solely because the write default remains profile `1`.
+- **RC-005**: The encrypted-user-ID helper MUST accept correct passwords from both profiles, including outdated-cost records, reject incorrect passwords, and continue returning credentials without persisting a rehash.
+- **RC-006**: Document the two-release sequence, phase-1 legacy-write compatibility conditions, and the requirement that every rollback target understand both profiles before phase-2 writes begin. Explain that old-only binaries can accept a stored profile-`2` hash string through their pre-existing legacy fallback, not merely lock users out.
+- **RC-007**: Use independent fixed reference vectors and real hashing with mocked account persistence. Confirm the developer-approved tests fail before changing production code, then pass after the change. No dependency, flag, bulk reset, downgrade tooling, or new iteration policy is introduced.
+
+### Acceptance and success criteria for this PR
+
+1. Correct passwords verify against independent fixtures for both profiles; incorrect passwords and invalid/unknown records fail.
+2. Shared generation uses profile `1` with 24 derived bytes and distinct salts; old-only readers verify generated records.
+3. Repeated current-cost legacy logins preserve the exact stored hash without a rehash save in both login modes.
+4. Existing low-cost upgrades persist a verifiable current-cost profile-`1` hash; failed persistence fails authentication without claiming a saved upgrade.
+5. Current-cost profile-`2` login and encrypted-user-ID checks succeed without password rewriting.
+6. Operator guidance distinguishes this reader-capability release from later activation and documents both the security and availability boundary of old-only readers.
+
+These requirements supersede the immediate activation obligations in original US1/AC1-2, US1/AC5, US2/AC1, US3/AC1-2, FR-001, FR-003-004, FR-008-010, SC-002-003, and the original legacy/deployment assumptions **for this PR**. The remaining original security, verification, salt, and iteration constraints continue to apply. The stronger-profile default and profile-driven migration are deferred until this reader-capable release is the rollback floor.
+
+The original edge-case assertion that conversion is mathematically impossible is corrected: PBKDF2 output is prefix-preserving for identical algorithm, salt, and cost. Neither phase provides a supported automatic downgrade.
+
+## Deferred activation-release design
+
+The following original design describes phase 2. It MUST NOT be activated by the reader-capability release.
 
 ## User Scenarios & Testing *(mandatory)*
 
