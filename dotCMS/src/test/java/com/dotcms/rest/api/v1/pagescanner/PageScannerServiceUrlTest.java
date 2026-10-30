@@ -147,14 +147,14 @@ class PageScannerServiceUrlTest {
         assertEquals(Optional.empty(), PageScannerServiceUrl.validate("https://localhost"));
     }
 
-    // Given an https URL whose host name does not resolve
-    // When it is validated
+    // Given an https URL whose host is the IPv6 loopback address in brackets
+    // When it is validated with the default settings
     // Then it is refused
     @Test
-    void validate_unresolvableHost_returnsEmpty() {
+    void validate_ipv6LoopbackAddress_returnsEmpty() {
         Config.setProperty(PRIVATE_SUBNETS, false);
 
-        assertEquals(Optional.empty(), PageScannerServiceUrl.validate("https://scanner.invalid"));
+        assertEquals(Optional.empty(), PageScannerServiceUrl.validate("https://[::1]"));
     }
 
     // Given ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true and an https URL on a loopback address

@@ -24,10 +24,11 @@ public final class PageScannerServiceUrl {
      * Returns the service base URL when it may be used, or empty when it may not.
      *
      * <p>The URL must be an absolute {@code https} URL with a host and no user info, query or
-     * fragment, so that a path appended to it stays on the same host. The host must not be, or
-     * resolve to, a loopback, link-local, private or otherwise internal address unless
-     * {@code ALLOW_ACCESS_TO_PRIVATE_SUBNETS} is {@code true}; a host that does not resolve is
-     * refused. A refused URL is logged without its value.</p>
+     * fragment, so that a path appended to it stays on the same host. While
+     * {@code ALLOW_ACCESS_TO_PRIVATE_SUBNETS} is off (the default), the host must also not be, or
+     * resolve to, a loopback, link-local, private or otherwise internal address, and a host that
+     * does not resolve is refused; when it is on, that address check is skipped. This class logs
+     * why a URL is refused, not the URL itself.</p>
      *
      * @param apiUrl the configured base URL of the service
      * @return the base URL without a trailing slash, or empty when it is refused
@@ -49,8 +50,8 @@ public final class PageScannerServiceUrl {
         }
         if (!Config.getBooleanProperty(ALLOW_ACCESS_TO_PRIVATE_SUBNETS, false)
                 && IPUtils.isIpPrivateSubnet(uri.getHost())) {
-            return refuse("its host is, or resolves to, a private or internal address, which "
-                    + ALLOW_ACCESS_TO_PRIVATE_SUBNETS + " would allow");
+            return refuse("its host is a private or internal address, or could not be resolved"
+                    + " (" + ALLOW_ACCESS_TO_PRIVATE_SUBNETS + " allows internal addresses)");
         }
         return Optional.of(apiUrl.endsWith("/") ? apiUrl.substring(0, apiUrl.length() - 1) : apiUrl);
     }

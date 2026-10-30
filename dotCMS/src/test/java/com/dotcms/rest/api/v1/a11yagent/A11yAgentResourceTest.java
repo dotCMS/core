@@ -374,6 +374,7 @@ public class A11yAgentResourceTest {
         assertTrue(output.isClosed());
         verify(apiTokenAPI, never())
                 .persistApiToken(anyString(), any(), anyString(), anyString(), anyString());
+        verify(httpClient, never()).send(any(), any());
     }
 
     /**
