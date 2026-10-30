@@ -22,7 +22,13 @@ import { TooltipModule } from 'primeng/tooltip';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotUsersFormGroup, passwordsMatchValidator } from './dot-users-form.model';
+import {
+    DotUsersFormGroup,
+    PASSWORD_MAX_LENGTH,
+    PASSWORD_MIN_LENGTH,
+    passwordComplexityValidator,
+    passwordsMatchValidator
+} from './dot-users-form.model';
 import { DotUsersCreateStore } from './store/dot-users-create.store';
 import { DotUsersApiTokensTabComponent } from './tabs/dot-users-api-tokens-tab/dot-users-api-tokens-tab.component';
 import { DotUsersPermissionsTabComponent } from './tabs/dot-users-permissions-tab/dot-users-permissions-tab.component';
@@ -145,10 +151,17 @@ export class DotUsersCreateComponent {
                 firstName: ['', [Validators.required]],
                 lastName: ['', [Validators.required]],
                 email: ['', [Validators.required, Validators.email]],
-                // minLength runs in both modes — the passwordsMatchValidator on
+                // Length and complexity run in both modes — the passwordsMatchValidator on
                 // the group treats an empty password as "keep current" for edit,
-                // so a 1-char value can't slip through on either flow.
-                password: ['', [Validators.minLength(6)]],
+                // so a short value can't slip through on either flow.
+                password: [
+                    '',
+                    [
+                        Validators.minLength(PASSWORD_MIN_LENGTH),
+                        Validators.maxLength(PASSWORD_MAX_LENGTH),
+                        passwordComplexityValidator
+                    ]
+                ],
                 confirmPassword: [''],
                 active: [true]
             },
@@ -519,9 +532,14 @@ export class DotUsersCreateComponent {
 
     private enableCreatePasswordValidators(): void {
         const account = this.form.controls.account;
-        // Layer `required` on top of the always-on `minLength(6)` so
+        // Layer `required` on top of the always-on length and complexity validators so
         // create mode rejects empty strings.
-        account.controls.password.setValidators([Validators.required, Validators.minLength(6)]);
+        account.controls.password.setValidators([
+            Validators.required,
+            Validators.minLength(PASSWORD_MIN_LENGTH),
+            Validators.maxLength(PASSWORD_MAX_LENGTH),
+            passwordComplexityValidator
+        ]);
         account.controls.confirmPassword.setValidators([Validators.required]);
         account.controls.password.updateValueAndValidity({ emitEvent: false });
         account.controls.confirmPassword.updateValueAndValidity({ emitEvent: false });
