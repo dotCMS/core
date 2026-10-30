@@ -122,6 +122,7 @@ import org.junit.runners.Suite;
         Task260615AlterClusterIdLengthTest.class,
         ImportContentletsActionSmokeTest.class,
         TreeFactoryTest.class,
+    com.dotmarketing.portlets.user.ajax.UserAjaxHasUserRolesIntegrationTest.class,
     com.dotcms.rest.api.v1.user.UserResourcePasswordIntegrationTest.class,
         PublisherQueueJobTest.class,
         ContentToStringUtilTest.class,
@@ -129,6 +130,7 @@ import org.junit.runners.Suite;
         InodeExistenceCheckIntegrationTest.class,
         SecretsStoreWipeRegressionTest.class,
         SecretsStoreConcurrentWriteRaceTest.class,
+    com.dotcms.rest.api.v1.system.role.RoleResourceCheckRolesIntegrationTest.class,
         RoleResourceIntegrationTest.class,
         FileAssetContainerPermissionInheritanceTest.class,
 
@@ -143,8 +145,6 @@ import org.junit.runners.Suite;
         com.dotcms.rest.api.v1.portlet.PortletResourceIntegrationTest.class,
         LayoutResourceIntegrationTest.class,
         com.dotmarketing.webdav.DotWebdavTempPathContainmentTest.class,
-        com.dotcms.rest.api.v1.system.role.RoleResourceCheckRolesIntegrationTest.class,
-        com.dotmarketing.portlets.user.ajax.UserAjaxHasUserRolesIntegrationTest.class
 })
 
 public class MainSuite3a {
