@@ -15,6 +15,7 @@ import com.dotcms.rest.api.v1.content.LockStatusFields;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.rest.filter.UserPropertiesResponseFilter;
 import com.dotcms.util.xstream.XStreamHandler;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -261,7 +262,12 @@ public class ContentResource {
         final SearchView searchView = this.contentHelper.pullContent(request, response, realQuery,
                 userForPull, pageMode, offset, limit, sort, tmDate, render, user, depth,
                 language, allCategoriesInfo);
-        return Response.ok(new ResponseEntityView<>(searchView)).build();
+        // Filtered here, while still a JSONObject, so the response filter does not parse and rebuild it
+        final SearchView callerView = new SearchView(searchView.getResultsSize(), searchView.getQueryTook(),
+                searchView.getContentTook(), new JsonObjectView(
+                        ContentHelper.filterForCaller(searchView.getJsonObjectView().getJsonObject(), user)));
+        return Response.ok(UserPropertiesResponseFilter.markFiltered(request,
+                new ResponseEntityView<>(callerView))).build();
     }
 
     /**
@@ -1318,20 +1324,21 @@ public class ContentResource {
     }
 
     /**
-     * Creates a json object (as string) of a list of contentlets
-     * @param cons
-     * @param request
-     * @param response
-     * @param render
-     * @param user
-     * @param depth
-     * @param respectFrontendRoles
-     * @param language
-     * @param live
-     * @param allCategoriesInfo
-     * @return
-     * @throws IOException
-     * @throws DotDataException
+     * Creates the JSON response (as text) for a list of contentlets, with their related content up to the
+     * given depth, prepared for the user it is sent to by {@link ContentHelper#filterForCaller(JSONObject, User)}
+     * and marked as filtered, so {@link UserPropertiesResponseFilter} does not process it again.
+     *
+     * @param cons                 the contentlets to return
+     * @param request              the current request
+     * @param response             the current response
+     * @param render               {@code "true"} to include the rendered code of a widget
+     * @param user                 the {@link User} the response is sent to
+     * @param depth                how many levels of related content to include
+     * @param respectFrontendRoles whether front-end roles are respected when loading related content
+     * @param language             the language of the related content
+     * @param live                 whether the live versions of related content are returned
+     * @param allCategoriesInfo    {@code true} to include the key, name and description of every category
+     * @return the JSON response as text
      */
     private String getJSON(final List<Contentlet> cons, final HttpServletRequest request,
             final HttpServletResponse response, final String render, final User user,
@@ -1339,7 +1346,7 @@ public class ContentResource {
             final boolean live, final boolean allCategoriesInfo){
         final JSONObject json = this.contentHelper.getJSONObject(cons, request, response, render, user,
                 depth, respectFrontendRoles, language, live, allCategoriesInfo);
-        return json.toString();
+        return UserPropertiesResponseFilter.markFiltered(request, ContentHelper.filterForCaller(json, user).toString());
     }
 
     public class MapEntryConverter implements Converter {

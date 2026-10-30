@@ -50,6 +50,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -568,7 +569,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		if(permissionable instanceof Host){	
 			//Send a websocket event to notificate a site permission change  
 			systemEventsAPI.pushAsync(SystemEventType.UPDATE_SITE_PERMISSIONS,
-					new Payload(permissionable, Visibility.GLOBAL,	(String) null));
+					sitePermissionsPayload((Host) permissionable));
 		}
 	}
 
@@ -713,7 +714,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
         if(permissionable instanceof Host){	
 			//Send a websocket event to notificate a site permission change  
 			systemEventsAPI.pushAsync(SystemEventType.UPDATE_SITE_PERMISSIONS,
-					new Payload(permissionable, Visibility.GLOBAL,	(String) null));
+					sitePermissionsPayload((Host) permissionable));
 		}
     }
 
@@ -779,7 +780,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			if(permissionable instanceof Host){	
 				//Send a websocket event to notificate a site permission change  
 				systemEventsAPI.pushAsync(SystemEventType.UPDATE_SITE_PERMISSIONS,
-						new Payload(permissionable, Visibility.GLOBAL,	(String) null));
+						sitePermissionsPayload((Host) permissionable));
 			}
 		}
 
@@ -904,7 +905,7 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 		if(permissionable instanceof Host){	
 			//Send a websocket event to notificate a site permission change  
 			systemEventsAPI.pushAsync(SystemEventType.UPDATE_SITE_PERMISSIONS,
-					new Payload(permissionable, Visibility.GLOBAL,	(String) null));
+					sitePermissionsPayload((Host) permissionable));
 		}
 
 		AdminLogger.log(PermissionBitAPIImpl.class, "assign Permissions Action", "Assigning permissions to :"+permissionable.getPermissionId(),user);
@@ -2089,6 +2090,22 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 			isCopy = contentlet.getBoolProperty(Contentlet.IS_COPY);
 		}
 		return isCopy;
+	}
+
+
+	/**
+	 * Builds the payload of the event sent to every connected session when the permissions of a site
+	 * change. It carries only what receivers need to tell which site changed, its identifier and host
+	 * name, not the whole {@link Host}.
+	 *
+	 * @param site the {@link Host} whose permissions changed
+	 * @return the event payload
+	 */
+	private static Payload sitePermissionsPayload(final Host site) {
+		final Map<String, Object> data = new LinkedHashMap<>();
+		data.put("identifier", site.getIdentifier());
+		data.put("hostname", site.getHostname());
+		return new Payload(data, Visibility.GLOBAL, (String) null);
 	}
 
 }

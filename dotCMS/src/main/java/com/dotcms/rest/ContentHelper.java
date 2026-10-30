@@ -3,6 +3,7 @@ package com.dotcms.rest;
 import com.dotcms.api.web.HttpServletRequestImpersonator;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.filter.ContentFieldFilter;
+import com.dotcms.content.filter.PropertyTreeFilter;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategy;
 import com.dotcms.contenttype.business.BaseTypeToContentTypeStrategyResolver;
 import com.dotcms.contenttype.model.field.CategoryField;
@@ -451,9 +452,8 @@ public class ContentHelper {
      * @param allCategoriesInfo If information about Categories must be included, set to {@code true}.
      * @param hydrateRelated    If related content must be hydrated into the result, set to {@code true}.
      *
-     * @return The representation of the Contentlet as a {@link JSONObject}, with the properties configured in
-     * {@link ContentFieldFilter} masked or removed when the user is neither a CMS administrator nor a back-end
-     * user.
+     * @return The representation of the Contentlet as a {@link JSONObject}, with every property. Responses
+     * apply {@link ContentFieldFilter} to the finished result with {@link #filterForCaller(JSONObject, User)}.
      *
      * @throws JSONException        An error occurred when generating the JSON object.
      * @throws IOException          An error occurred when generating the printable Contentlet map.
@@ -526,8 +526,23 @@ public class ContentHelper {
         jsonObject.put("__icon__", UtilHTML.getIconClass(contentlet));
         jsonObject.put("contentTypeIcon", type.icon());
         jsonObject.put("variant", contentlet.getVariantId());
-        // Filter last, once every property has been added, so none of them can bypass the masking
-        return ContentFieldFilter.forUser(user).apply(jsonObject);
+        return jsonObject;
+    }
+
+    /**
+     * Prepares a finished content response for the user it is sent to: the properties configured in
+     * {@link ContentFieldFilter} are masked or removed, in the contentlets and in their related content at
+     * every depth, when the user is neither a CMS administrator nor a back-end user. It is applied to the
+     * response rather than while each contentlet is built, because the same builder also serves page
+     * rendering and other callers whose results must not depend on who asked first.
+     *
+     * @param json the finished response
+     * @param user the {@link User} the response is sent to
+     * @return a filtered copy of the response, or the response itself when nothing is filtered for the user
+     */
+    public static JSONObject filterForCaller(final JSONObject json, final User user) {
+        return (JSONObject) PropertyTreeFilter.filter(json, ContentFieldFilter.forUser(user),
+                PropertyTreeFilter.storedContentTypes());
     }
 
     public JSONObject addRelationshipsToJSON(final HttpServletRequest request,
