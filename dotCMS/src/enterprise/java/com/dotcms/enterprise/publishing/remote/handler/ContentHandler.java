@@ -142,6 +142,9 @@ public class ContentHandler implements IHandler {
     // tuple3(identifier, lang, shouldReindex)
     private final HashSet<Tuple3<String, Long, Boolean>> contentToRefresh = new HashSet<>();
 	private final ExistingContentMapping existingContentMap = new ExistingContentMapping();
+	// Relationships of new content pushed with the relationships filter set to false, applied
+	// once the whole bundle is saved so the result doesn't depend on processing order
+	private final List<Tree> newContentTrees = new ArrayList<>();
 
 	private static final boolean RESPECT_FRONTEND_ROLES = true;
 
@@ -192,6 +195,7 @@ public class ContentHandler implements IHandler {
 		Collections.sort(contents);
 		contents = contents.stream().filter(File::isFile).collect(Collectors.toList());
 		handleContents(contents, bundleFolder, isHost);
+		this.relateNewContentToExistingContent();
 		HandlerUtil.setExistingContent(config.getId(), existingContentMap);
 
 		String identToRemove = null;
@@ -863,6 +867,9 @@ public class ContentHandler implements IHandler {
 			holdDefaultHostConfiguration(content, userToUse);
 		}
 
+      // Must be checked before the check-in below creates the Identifier in the receiver
+      final boolean isNewInReceiver = !updateExisting && this.isNewInReceiver(content);
+
       // Wiping out the thumbnails and resized versions (if a fileAsset)
       APILocator.getFileAssetAPI().cleanThumbnailsFromContentlet(content);
 
@@ -894,10 +901,12 @@ public class ContentHandler implements IHandler {
 			// in order to add the new ones, if the relationships filter is set to false, we shouldn't remove the trees
 			this.cleanTrees(content);
 			this.regenerateTree(wrapper, remoteLocalLanguages.getLeft());
+		} else if (isNewInReceiver) {
+			// With the relationships filter set to false, existing content keeps the relationships
+			// it already has in the receiver. New content keeps its relationships, as parent or as
+			// child, only to content that exists in the receiver once the bundle is saved
+			this.collectNewContentTrees(wrapper, content.getIdentifier());
 		}
-		// With the relationships filter set to false, the receiver's trees are never touched:
-		// new content arrives with no relationships, and existing content keeps the ones it
-		// already has in the receiver
         // Categories
         if (UtilMethods.isSet(wrapper.getCategories())) {
             handleContentCategories(content.getInode(), wrapper.getCategories());
@@ -1071,6 +1080,61 @@ public class ContentHandler implements IHandler {
 			}
 			TreeFactory.saveTree(tree);
 		}
+	}
+
+	/**
+	 * Keeps the bundle's tree rows of the pushed content, as parent or as child, so that they can
+	 * be applied once the whole bundle is saved.
+	 *
+	 * @param wrapper    The wrapped Contentlet coming from the bundle.
+	 * @param identifier The Identifier of the new Contentlet in the receiver.
+	 */
+	private void collectNewContentTrees(final ContentWrapper wrapper, final String identifier) {
+		for (final Map<String, Object> tRow : wrapper.getTree()) {
+			if (!identifier.equals(tRow.get("parent")) && !identifier.equals(tRow.get("child"))) {
+				continue;
+			}
+			final Tree tree = new Tree();
+			tree.setParent((String) tRow.get("parent"));
+			tree.setChild((String) tRow.get("child"));
+			tree.setRelationType((String) tRow.get("relation_type"));
+			tree.setTreeOrder(Integer.parseInt(tRow.get("tree_order").toString()));
+			this.newContentTrees.add(tree);
+		}
+	}
+
+	/**
+	 * Relates the new content in the bundle to the content it's related to in the sender, as long
+	 * as both sides exist in the receiver, matched by Identifier. Relationships to content that
+	 * doesn't exist there are skipped, leaving them blank. Only the {@code tree} table changes: the
+	 * existing related content isn't updated otherwise.
+	 *
+	 * @throws DotDataException An error occurred when saving the relationships.
+	 */
+	@WrapInTransaction
+	private void relateNewContentToExistingContent() throws DotDataException {
+		for (final Tree tree : this.newContentTrees) {
+			final List<String> sides = List.of(tree.getParent(), tree.getChild());
+			if (!sides.stream().allMatch(id -> UtilMethods.isSet(
+					Try.of(() -> this.identifierAPI.find(id).getId()).getOrNull()))) {
+				Logger.debug(this, () -> "Skipping relationship '" + tree.getRelationType() + "' between '" +
+						tree.getParent() + "' and '" + tree.getChild() + "': one of them doesn't exist in the receiver");
+				continue;
+			}
+			final Tree existing = TreeFactory.getTree(tree);
+			if (null != existing && UtilMethods.isSet(existing.getParent())) {
+				// The same row comes once per language, and from both sides when both are new
+				continue;
+			}
+			TreeFactory.saveTree(tree);
+			for (final String id : sides) {
+				final Contentlet related = Try.of(() -> this.contentletAPI.findContentletByIdentifierAnyLanguage(id))
+						.getOrNull();
+				this.invalidateRelationshipsCache(related);
+				APILocator.getReindexQueueAPI().addIdentifierReindex(id, Priority.STRUCTURE.dbValue());
+			}
+		}
+		this.newContentTrees.clear();
 	}
 
     /**

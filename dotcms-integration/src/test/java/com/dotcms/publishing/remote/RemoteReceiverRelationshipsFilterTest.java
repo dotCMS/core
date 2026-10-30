@@ -113,11 +113,11 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
      * Given scenario: An Article related to an Author is pushed with a filter that sets {@code
      * relationships: false}. The Author already exists in the receiver, but the Article is
      * brand-new there.
-     * Expected result: The new Article is created in the receiver WITHOUT relationships, even though
-     * the bundle carries its tree rows and the related Author exists there.
+     * Expected result: The new Article is created in the receiver related to the existing Author,
+     * matched by Identifier.
      */
     @Test
-    public void test_newContent_pushedWithoutRelationshipsFilter_hasNoRelationships() throws Exception {
+    public void test_newParent_pushedWithoutRelationshipsFilter_isRelatedToExistingChild() throws Exception {
         final TestData data = createRelatedContent();
         final FilterDescriptor filter = createFilterWithoutRelationships();
         final PreparedBundle bundle = generateBundleFor(data.article, filter);
@@ -134,8 +134,63 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
 
         assertNotNull("The Article must have been created from the bundle", APILocator.getContentletAPI()
                 .findContentletByIdentifierAnyLanguage(data.article.getIdentifier()));
-        assertTrue("The new Article must not be related to content that already exists in the receiver",
+        assertEquals("The new Article must be related to the Author that already exists in the receiver",
+                List.of(data.author.getIdentifier()), findRelatedIds(data.article, data.relationship));
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.enterprise.publishing.remote.handler.ContentHandler#handle(File)}
+     * Given scenario: An Article related to an Author is pushed with a filter that sets {@code
+     * relationships: false}. Neither the Article nor the Author exist in the receiver.
+     * Expected result: The new Article is created in the receiver with a blank relationship, since
+     * the related Author can't be found there by Identifier.
+     */
+    @Test
+    public void test_newParent_pushedWithoutRelationshipsFilter_skipsMissingChild() throws Exception {
+        final TestData data = createRelatedContent();
+        final FilterDescriptor filter = createFilterWithoutRelationships();
+        final PreparedBundle bundle = generateBundleFor(data.article, filter);
+
+        // Neither the Article nor the Author exist in the receiver
+        LocalTransaction.wrap(() -> {
+            data.article.setIndexPolicy(IndexPolicy.FORCE);
+            APILocator.getContentletAPI().destroy(data.article, adminUser, false);
+            data.author.setIndexPolicy(IndexPolicy.FORCE);
+            APILocator.getContentletAPI().destroy(data.author, adminUser, false);
+        });
+
+        processBundle(bundle);
+
+        assertNotNull("The Article must have been created from the bundle", APILocator.getContentletAPI()
+                .findContentletByIdentifierAnyLanguage(data.article.getIdentifier()));
+        assertTrue("The new Article must not be related to content that doesn't exist in the receiver",
                 findRelatedIds(data.article, data.relationship).isEmpty());
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.enterprise.publishing.remote.handler.ContentHandler#handle(File)}
+     * Given scenario: A related Article and Author are both selected and pushed together with a
+     * filter that sets {@code relationships: false}. Neither of them exist in the receiver.
+     * Expected result: Both are created and related to each other, regardless of the order in
+     * which the receiver processes them.
+     */
+    @Test
+    public void test_newParentAndChild_pushedTogetherWithoutRelationshipsFilter_areRelated() throws Exception {
+        final TestData data = createRelatedContent();
+        final FilterDescriptor filter = createFilterWithoutRelationships();
+        final PreparedBundle bundle = generateBundleFor(List.of(data.article, data.author), filter);
+
+        LocalTransaction.wrap(() -> {
+            data.article.setIndexPolicy(IndexPolicy.FORCE);
+            APILocator.getContentletAPI().destroy(data.article, adminUser, false);
+            data.author.setIndexPolicy(IndexPolicy.FORCE);
+            APILocator.getContentletAPI().destroy(data.author, adminUser, false);
+        });
+
+        processBundle(bundle);
+
+        assertEquals("The new Article must be related to the new Author pushed with it",
+                List.of(data.author.getIdentifier()), findRelatedIds(data.article, data.relationship));
     }
 
     /**
@@ -143,11 +198,11 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
      * Given scenario: An Author related to an Article is pushed with a filter that sets {@code
      * relationships: false}. The Article already exists in the receiver, but the Author is
      * brand-new there.
-     * Expected result: The new Author is created in the receiver, and the existing Article is not
-     * related to it: pushing the related side doesn't add relationships either.
+     * Expected result: The new Author is created in the receiver and related to the existing
+     * Article, matched by Identifier, the same as a new parent is related to existing children.
      */
     @Test
-    public void test_newRelatedContent_pushedWithoutRelationshipsFilter_isNotRelatedToExistingContent()
+    public void test_newChild_pushedWithoutRelationshipsFilter_isRelatedToExistingParent()
             throws Exception {
         final TestData data = createRelatedContent();
         final FilterDescriptor filter = createFilterWithoutRelationships();
@@ -165,8 +220,8 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
 
         assertNotNull("The Author must have been created from the bundle", APILocator.getContentletAPI()
                 .findContentletByIdentifierAnyLanguage(data.author.getIdentifier()));
-        assertTrue("The existing Article must not be related to the new Author",
-                findRelatedIds(data.article, data.relationship).isEmpty());
+        assertEquals("The existing Article must be related to the new Author",
+                List.of(data.author.getIdentifier()), findRelatedIds(data.article, data.relationship));
     }
 
     /**
@@ -273,14 +328,22 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
      */
     private PreparedBundle generateBundleFor(final Contentlet contentlet, final FilterDescriptor filter)
             throws Exception {
+        return generateBundleFor(List.of(contentlet), filter);
+    }
+
+    /**
+     * Generates a bundle that pushes only the specified Contentlets with the given filter.
+     */
+    private PreparedBundle generateBundleFor(final List<Contentlet> contentlets, final FilterDescriptor filter)
+            throws Exception {
         final Environment environment = createEnvironment(adminUser);
         final PublishingEndPoint endpoint = createEndpoint(environment);
 
         final Bundle bundle = new Bundle("relationshipsFilterBundle", null, null, adminUser.getUserId(),
                 false, filter.getKey());
         APILocator.getBundleAPI().saveBundle(bundle);
-        PublisherAPI.getInstance().saveBundleAssets(List.of(contentlet.getIdentifier()), bundle.getId(),
-                adminUser);
+        PublisherAPI.getInstance().saveBundleAssets(contentlets.stream().map(Contentlet::getIdentifier)
+                .collect(Collectors.toList()), bundle.getId(), adminUser);
 
         final Map<String, Object> bundleData = generateBundle(bundle.getId(), Operation.PUBLISH);
         final File file = File.class.cast(bundleData.get(PublisherTestUtil.FILE));
