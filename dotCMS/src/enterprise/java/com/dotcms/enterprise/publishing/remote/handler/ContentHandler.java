@@ -877,9 +877,6 @@ public class ContentHandler implements IHandler {
         });
       }
 
-        // Must be checked before the check-in below creates the Identifier in the receiver
-        final boolean isNewInReceiver = !updateExisting && this.isNewInReceiver(content);
-
         //Saving the content
         if (content.isArchived()){
             this.contentletAPI.unarchive(content, userToUse, !RESPECT_FRONTEND_ROLES);
@@ -897,17 +894,10 @@ public class ContentHandler implements IHandler {
 			// in order to add the new ones, if the relationships filter is set to false, we shouldn't remove the trees
 			this.cleanTrees(content);
 			this.regenerateTree(wrapper, remoteLocalLanguages.getLeft());
-		} else if (isNewInReceiver) {
-			// Brand-new content has no relationships in the receiver yet, so there's nothing to
-			// preserve: add the ones in the bundle WITHOUT cleaning any trees. Otherwise, new
-			// content pushed with a filter such as "Only Selected Items" would lose its references
-			// to related content that already lives in the receiver.
-			// NOTE: this relies on ContentBundler always adding the tree rows of the content to the
-			// bundle, regardless of the filter. If the bundle ever stops sending them when
-			// relationships is false, new content will silently lose its relationships again
-			Logger.debug(this, () -> "Adding the bundle relationships of new content: " + identifier);
-			this.regenerateTree(wrapper, remoteLocalLanguages.getLeft());
 		}
+		// With the relationships filter set to false, the receiver's trees are never touched:
+		// new content arrives with no relationships, and existing content keeps the ones it
+		// already has in the receiver
         // Categories
         if (UtilMethods.isSet(wrapper.getCategories())) {
             handleContentCategories(content.getInode(), wrapper.getCategories());
