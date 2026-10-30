@@ -16,11 +16,21 @@ import com.dotmarketing.util.Logger;
 @Provider
 public class InvalidFormatExceptionMapper implements ExceptionMapper<InvalidFormatException> {
 
+    /**
+     * Answers a request whose body holds a value that cannot be converted to the field's type.
+     * The log line names the target type only; the value the client sent is left out.
+     *
+     * @param exception the conversion failure raised by Jackson
+     * @return a 400 response describing the value and the expected type
+     */
     @Override
-    public Response toResponse(InvalidFormatException exception)
+    public Response toResponse(final InvalidFormatException exception)
     {
         //Log into our logs first.
-        Logger.warn(this.getClass(), exception.getMessage(), exception);
+        Logger.warn(this.getClass(), "Rejected request: a body value could not be converted to "
+                + (exception.getTargetType() != null
+                        ? exception.getTargetType().getSimpleName()
+                        : "the expected type"));
 
         //Create the message.
         String message = "Can not construct instance from value '" + exception.getValue()
