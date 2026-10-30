@@ -123,6 +123,7 @@ import org.junit.runners.Suite;
         ImportContentletsActionSmokeTest.class,
         TreeFactoryTest.class,
     com.dotcms.rest.api.v1.user.UserResourcePasswordIntegrationTest.class,
+    com.dotcms.rendering.velocity.viewtools.XsltToolTest.class,
         PublisherQueueJobTest.class,
         ContentToStringUtilTest.class,
         CacheResourceIntegrationTest.class,
