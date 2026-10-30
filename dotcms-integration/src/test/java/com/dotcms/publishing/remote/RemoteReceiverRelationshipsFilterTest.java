@@ -107,6 +107,11 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
         for (int i = contentTypes.size() - 1; i >= 0; i--) {
             ContentTypeDataGen.remove(contentTypes.get(i));
         }
+
+        // Surefire may rerun the class, which runs this method again
+        bundles.clear();
+        filterKeys.clear();
+        contentTypes.clear();
     }
 
     /**
@@ -240,7 +245,9 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
         final Contentlet receiverOnlyAuthor = new ContentletDataGen(data.authorType).host(host)
                 .setProperty("title", "receiver-only-" + UUIDGenerator.shorty()).nextPersisted();
         final PreparedBundle bundle = generateBundleFor(data.article, createFilterWithoutRelationships());
-        moveRelationship("child", data.author, receiverOnlyAuthor, data.article, data.relationship);
+        moveRelationship(data.author, receiverOnlyAuthor, data.article, data.relationship);
+        assertEquals("The receiver-only relationship was not set up; the scenario under test is not in place",
+                List.of(receiverOnlyAuthor.getIdentifier()), findRelatedIds(data.article, data.relationship));
 
         processBundle(bundle);
 
@@ -263,6 +270,9 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
         final Contentlet receiverOnlyArticle = new ContentletDataGen(data.article.getContentTypeId()).host(host)
                 .setProperty("title", "receiver-only-" + UUIDGenerator.shorty()).nextPersisted();
         relate(receiverOnlyArticle, data.author, data.relationship);
+        assertEquals("The receiver-only relationship was not set up; the scenario under test is not in place",
+                Set.of(data.article.getIdentifier(), receiverOnlyArticle.getIdentifier()),
+                Set.copyOf(findRelatedIds(data.author, data.relationship)));
 
         processBundle(bundle);
 
@@ -275,8 +285,8 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
      * Method to test: {@link com.dotcms.enterprise.publishing.remote.handler.ContentHandler#handle(File)}
      * Given scenario: An Article that already exists in the receiver is pushed with a filter that
      * sets {@code relationships: false} and {@code syncRelationships: true}. In the receiver, the
-     * Article is related to Author A, and
-     * in the sender its Author was changed to Author B, which also exists in the receiver.
+     * Article is related to Author A, and in the sender its Author was changed to Author B, which
+     * also exists in the receiver.
      * Expected result: The Article's relationship in the receiver is replaced with the one in the
      * sender, matched by Identifier, so it's related to Author B only.
      */
@@ -289,18 +299,8 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
         final FilterDescriptor filter = createFilterWithoutRelationships(true);
         final PreparedBundle bundle = generateBundleFor(data.article, filter);
 
-        // In the receiver, the Article is related to a different Author. The relationship row can
-        // have the Article on either side, depending on the cardinality
-        for (final String column : List.of("parent", "child")) {
-            final String otherColumn = "parent".equals(column) ? "child" : "parent";
-            new DotConnect().setSQL(String.format("update tree set %s = ? where %s = ? and %s = ? and relation_type = ?",
-                            column, column, otherColumn))
-                    .addParam(receiverOnlyAuthor.getIdentifier())
-                    .addParam(data.author.getIdentifier())
-                    .addParam(data.article.getIdentifier())
-                    .addParam(data.relationship.getRelationTypeValue())
-                    .loadResult();
-        }
+        // In the receiver, the Article is related to a different Author
+        moveRelationship(data.author, receiverOnlyAuthor, data.article, data.relationship);
         assertEquals("The receiver-only relationship was not set up; the scenario under test is not in place",
                 List.of(receiverOnlyAuthor.getIdentifier()), findRelatedIds(data.article, data.relationship));
 
@@ -329,6 +329,9 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
         final Contentlet receiverOnlyArticle = new ContentletDataGen(data.article.getContentTypeId()).host(host)
                 .setProperty("title", "receiver-only-" + UUIDGenerator.shorty()).nextPersisted();
         relate(receiverOnlyArticle, data.author, data.relationship);
+        assertEquals("The receiver-only relationship was not set up; the scenario under test is not in place",
+                Set.of(data.article.getIdentifier(), receiverOnlyArticle.getIdentifier()),
+                Set.copyOf(findRelatedIds(data.author, data.relationship)));
 
         processBundle(bundle);
 
@@ -353,7 +356,7 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
         final Contentlet maria = new ContentletDataGen(data.authorType).host(host)
                 .setProperty("title", "maria-" + UUIDGenerator.shorty()).nextPersisted();
         // In the sender, the Article's only Author is now Maria
-        moveRelationship("child", data.author, maria, data.article, data.relationship);
+        moveRelationship(data.author, maria, data.article, data.relationship);
         final PreparedBundle bundle = generateBundleFor(maria, createFilterWithoutRelationships());
 
         // In the receiver, Maria doesn't exist yet, and the Article's only Author is still Jane
@@ -362,6 +365,8 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
             APILocator.getContentletAPI().destroy(maria, adminUser, false);
         });
         relate(data.article, data.author, data.relationship);
+        assertEquals("The Article was not related to Jane only; the scenario under test is not in place",
+                List.of(data.author.getIdentifier()), findRelatedIds(data.article, data.relationship));
 
         processBundle(bundle);
 
@@ -386,7 +391,7 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
         final Contentlet newArticle = new ContentletDataGen(data.article.getContentTypeId()).host(host)
                 .setProperty("title", "new-article-" + UUIDGenerator.shorty()).nextPersisted();
         // In the sender, Jane's only Article is now the new one
-        moveRelationship("parent", data.article, newArticle, data.author, data.relationship);
+        moveRelationship(data.article, newArticle, data.author, data.relationship);
         final PreparedBundle bundle = generateBundleFor(newArticle, createFilterWithoutRelationships());
 
         // In the receiver, the new Article doesn't exist yet, and Jane's only Article is the old one
@@ -395,6 +400,8 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
             APILocator.getContentletAPI().destroy(newArticle, adminUser, false);
         });
         relate(data.article, data.author, data.relationship);
+        assertEquals("Jane was not related to the old Article only; the scenario under test is not in place",
+                List.of(data.article.getIdentifier()), findRelatedIds(data.author, data.relationship));
 
         processBundle(bundle);
 
@@ -407,29 +414,34 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
     }
 
     /**
-     * Moves the relationship between {@code related} and {@code from} to {@code to}, where {@code
-     * column} is the {@code tree} column {@code from} is in.
+     * Moves the relationship between {@code related} and {@code from} to {@code to}. The row can
+     * have {@code from} on either side, since a many-to-one field is stored as one-to-many with the
+     * related type as the parent.
      */
-    private static void moveRelationship(final String column, final Contentlet from, final Contentlet to,
-            final Contentlet related, final Relationship relationship) throws Exception {
-        final String otherColumn = "parent".equals(column) ? "child" : "parent";
-        new DotConnect().setSQL(String.format("update tree set %s = ? where %s = ? and %s = ? and relation_type = ?",
-                        column, column, otherColumn))
-                .addParam(to.getIdentifier())
-                .addParam(from.getIdentifier())
-                .addParam(related.getIdentifier())
-                .addParam(relationship.getRelationTypeValue())
-                .loadResult();
+    private static void moveRelationship(final Contentlet from, final Contentlet to, final Contentlet related,
+            final Relationship relationship) throws Exception {
+        for (final String column : List.of("parent", "child")) {
+            final String otherColumn = "parent".equals(column) ? "child" : "parent";
+            new DotConnect().setSQL(String.format("update tree set %s = ? where %s = ? and %s = ? and relation_type = ?",
+                            column, column, otherColumn))
+                    .addParam(to.getIdentifier())
+                    .addParam(from.getIdentifier())
+                    .addParam(related.getIdentifier())
+                    .addParam(relationship.getRelationTypeValue())
+                    .loadResult();
+        }
     }
 
     /**
-     * Relates the specified parent and child through the given relationship.
+     * Relates the specified contentlets through the given relationship, storing them on the side
+     * of the {@code tree} row their Content Types have in the relationship.
      */
-    private static void relate(final Contentlet parent, final Contentlet child, final Relationship relationship)
+    private static void relate(final Contentlet contentlet, final Contentlet other, final Relationship relationship)
             throws Exception {
+        final boolean isParent = contentlet.getContentTypeId().equals(relationship.getParentStructureInode());
         new DotConnect().setSQL("insert into tree (child, parent, relation_type, tree_order) values (?, ?, ?, 0)")
-                .addParam(child.getIdentifier())
-                .addParam(parent.getIdentifier())
+                .addParam(isParent ? other.getIdentifier() : contentlet.getIdentifier())
+                .addParam(isParent ? contentlet.getIdentifier() : other.getIdentifier())
                 .addParam(relationship.getRelationTypeValue())
                 .loadResult();
     }
