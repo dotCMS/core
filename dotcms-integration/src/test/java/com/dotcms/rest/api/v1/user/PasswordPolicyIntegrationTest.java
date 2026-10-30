@@ -478,4 +478,15 @@ public class PasswordPolicyIntegrationTest {
     private static String uniq() {
         return Long.toString(System.nanoTime());
     }
+
+    /**
+     * Method to test: {@link UserAPI#updatePassword(User, String, User, boolean)}
+     * Given Scenario: A {@code null} user and a password the policy rejects.
+     * Expected Result: {@link DotInvalidPasswordException}, not a {@code NullPointerException}.
+     */
+    @Test
+    public void test_updatePassword_nullUserAndInvalidPassword_throwsInvalidPassword() {
+        assertThrows(DotInvalidPasswordException.class,
+                () -> userAPI.updatePassword(null, FOURTEEN, APILocator.systemUser(), false));
+    }
 }

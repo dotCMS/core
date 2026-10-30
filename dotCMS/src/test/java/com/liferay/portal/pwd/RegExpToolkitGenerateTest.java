@@ -49,4 +49,47 @@ public class RegExpToolkitGenerateTest extends UnitTestBase {
             Config.setProperty(key, original);
         }
     }
+
+    /**
+     * Method to test: {@link RegExpToolkit#generate()}
+     * Given Scenario: A readable pattern whose lookahead demands a punctuation character from {@code !} to
+     * {@code /}, which the generator
+     * does not interpret, so about a quarter of single attempts lack it.
+     * Expected Result: every generated password is accepted by the pattern.
+     */
+    @Test
+    public void test_generate_lookaheadTheGeneratorDoesNotInterpret_stillValid() {
+        final String key = "passwords.regexptoolkit.pattern";
+        final String original = PropsUtil.get(key);
+        try {
+            final String pattern = "/^(?=.*[!-/])[ -~]{15,64}$/";
+            Config.setProperty(key, pattern);
+            final RegExpToolkit toolkit = new RegExpToolkit(pattern);
+
+            for (int i = 0; i < 500; i++) {
+                final String password = toolkit.generate();
+                assertTrue("must pass the configured pattern: " + password, toolkit.validate(password));
+            }
+        } finally {
+            Config.setProperty(key, original);
+        }
+    }
+
+    /**
+     * Method to test: {@link RegExpToolkit#generate()}
+     * Given Scenario: A pattern the generator cannot fill, so the default generator is used.
+     * Expected Result: the fallback password is at least 15 characters long.
+     */
+    @Test
+    public void test_generate_fallbackPassword_meetsTheDefaultMinimumLength() {
+        final String key = "passwords.regexptoolkit.pattern";
+        final String original = PropsUtil.get(key);
+        try {
+            Config.setProperty(key, "/^[A-Za-z0-9!@#]{6}$/");
+
+            assertTrue(new RegExpToolkit().generate().length() >= 15);
+        } finally {
+            Config.setProperty(key, original);
+        }
+    }
 }
