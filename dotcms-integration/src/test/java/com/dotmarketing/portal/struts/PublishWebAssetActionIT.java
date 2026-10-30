@@ -2,6 +2,7 @@ package com.dotmarketing.portal.struts;
 
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_PUBLISH;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -58,6 +59,7 @@ public class PublishWebAssetActionIT {
 
     private static final String SUCCESS_MESSAGE = "message";
     private static final String ERROR_MESSAGE = "error";
+    private static final String PERMISSION_ERROR = "Publish-failed-check-you-have-the-required-permission";
 
     private static User systemUser;
     private static Host site;
@@ -98,7 +100,32 @@ public class PublishWebAssetActionIT {
                 user, WebKeys.LINK_FORM_EDIT);
 
         assertFalse(isLive(link));
-        assertTrue(SessionMessages.contains(request, ERROR_MESSAGE));
+        assertEquals(PERMISSION_ERROR, SessionMessages.get(request, ERROR_MESSAGE));
+        assertFalse(SessionMessages.contains(request, SUCCESS_MESSAGE));
+    }
+
+    /**
+     * Method to test: {@link DotPortletAction#_publishWebAsset}
+     * Given Scenario: The user's only PUBLISH on the link's folder comes through the front-end
+     * "Logged In Site User" role, which the back-office does not take into account
+     * ExpectedResult: The link stays unpublished and the screen gets the permission error, not a
+     * failed request
+     */
+    @Test
+    void test_publishWebAsset_publishOnlyThroughFrontEndRole_isRefusedWithMessage()
+            throws Exception {
+        final User user = backendUser(APILocator.getRoleAPI().loadFrontEndUserRole());
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        grant(folder, APILocator.getRoleAPI().loadFrontEndUserRole(),
+                PermissionAPI.PERMISSION_READ | PERMISSION_PUBLISH);
+        final Link link = new LinkDataGen(folder).nextPersisted(false);
+        final ActionRequestImpl request = publishRequest(user, link);
+
+        new PublishLinksAction()._publishWebAsset(request, mock(ActionResponse.class), null, null,
+                user, WebKeys.LINK_FORM_EDIT);
+
+        assertFalse(isLive(link));
+        assertEquals(PERMISSION_ERROR, SessionMessages.get(request, ERROR_MESSAGE));
         assertFalse(SessionMessages.contains(request, SUCCESS_MESSAGE));
     }
 
@@ -125,12 +152,15 @@ public class PublishWebAssetActionIT {
     }
 
     /**
-     * A back-end user who can read the test site and whatever is created in it afterwards, and
-     * holds nothing else there. Created before the test's folders and links so that they inherit
-     * that READ.
+     * A back-end user, with the extra roles given, who can read the test site and whatever is
+     * created in it afterwards, and holds nothing else there. Created before the test's folders
+     * and links so that they inherit that READ.
      */
-    private static User backendUser() throws DotDataException, DotSecurityException {
-        final User user = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+    private static User backendUser(final Role... extraRoles)
+            throws DotDataException, DotSecurityException {
+        final List<Role> roles = new ArrayList<>(List.of(TestUserUtils.getBackendRole()));
+        roles.addAll(List.of(extraRoles));
+        final User user = new UserDataGen().roles(roles.toArray(new Role[0])).nextPersisted();
         usersToClean.add(user);
         grant(site, APILocator.getRoleAPI().getUserRole(user), PermissionAPI.PERMISSION_READ);
         return user;

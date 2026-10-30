@@ -350,9 +350,10 @@ public class DotPortletAction extends PortletAction {
 
 	/**
 	 * Publishes the {@link WebAsset} the request carries under the given key, for the given user.
-	 * The user must hold PUBLISH on the asset: without it nothing is touched and the screen gets
-	 * the permission message through the session messages instead of a failed request. Anything
-	 * else that goes wrong while publishing still follows the error path.
+	 * The user must hold PUBLISH on the asset, front-end roles aside: without it nothing is
+	 * touched or logged and the screen gets the permission message through the session messages
+	 * instead of a failed request. Anything else that goes wrong while publishing still follows
+	 * the error path.
 	 *
 	 * @param req the portlet request carrying the asset
 	 * @param res the portlet response
@@ -373,11 +374,11 @@ public class DotPortletAction extends PortletAction {
 		{
 			WebAsset webAsset = (WebAsset) req.getAttribute(formWebKey);
 			Logger.debug(this, "WEB ASSET " + webAsset.getType() + " TO PUBLISH=" + webAsset.getInode());
-			ActivityLogger.logInfo(this.getClass(), "Publish WebAsset action", "User " + user.getPrimaryKey() + " publishing" + webAsset.getType()+" named "+webAsset.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
 
-			// The publish itself requires PUBLISH on the asset; refuse here, before anything is
-			// touched, so the screen gets the permission message instead of the error page
-			if (!APILocator.getPermissionAPI().doesUserHavePermission(webAsset, PERMISSION_PUBLISH, user)) {
+			// The publish itself requires PUBLISH on the asset, front-end roles aside; refuse here,
+			// before anything is touched or logged, so the screen gets the permission message
+			// instead of the error page
+			if (!APILocator.getPermissionAPI().doesUserHavePermission(webAsset, PERMISSION_PUBLISH, user, false)) {
 				Logger.warn(this, "User " + user.getUserId() + " does not have permission to publish the "
 						+ webAsset.getType() + " " + webAsset.getInode());
 				SessionMessages.add(httpReq, "error", "Publish-failed-check-you-have-the-required-permission");
@@ -386,6 +387,8 @@ public class DotPortletAction extends PortletAction {
 
 			// Checking permissions
 			_checkUserPermissions(webAsset, user, PERMISSION_PUBLISH);
+
+			ActivityLogger.logInfo(this.getClass(), "Publish WebAsset action", "User " + user.getPrimaryKey() + " publishing" + webAsset.getType()+" named "+webAsset.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
 
 			if (InodeUtils.isSet(webAsset.getInode())) {
 				// calls the asset factory edit

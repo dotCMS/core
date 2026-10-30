@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.links.action;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -50,6 +51,7 @@ public class PublishLinksActionIT {
 
     private static final String SUCCESS_MESSAGE = "message";
     private static final String ERROR_MESSAGE = "error";
+    private static final String PERMISSION_ERROR = "Publish-failed-check-you-have-the-required-permission";
 
     private static User systemUser;
     private static Host site;
@@ -85,7 +87,32 @@ public class PublishLinksActionIT {
                 mock(ActionResponse.class));
 
         assertFalse(isLive(link));
-        assertTrue(SessionMessages.contains(request, ERROR_MESSAGE));
+        assertEquals(PERMISSION_ERROR, SessionMessages.get(request, ERROR_MESSAGE));
+        assertFalse(SessionMessages.contains(request, SUCCESS_MESSAGE));
+    }
+
+    /**
+     * Method to test: {@link PublishLinksAction#processAction}
+     * Given Scenario: The user's only PUBLISH on the link's folder comes through the front-end
+     * "Logged In Site User" role, which the back-office does not take into account
+     * ExpectedResult: The link stays unpublished and the screen gets the permission error, not a
+     * failed request
+     */
+    @Test
+    void test_processAction_publishOnlyThroughFrontEndRole_leavesLinkUnpublished()
+            throws Exception {
+        final User user = backendUser(APILocator.getRoleAPI().loadFrontEndUserRole());
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        grant(folder, APILocator.getRoleAPI().loadFrontEndUserRole(),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_PUBLISH);
+        final Link link = new LinkDataGen(folder).nextPersisted(false);
+        final ActionRequestImpl request = publishRequest(user, link.getInode());
+
+        new PublishLinksAction().processAction(null, null, null, request,
+                mock(ActionResponse.class));
+
+        assertFalse(isLive(link));
+        assertEquals(PERMISSION_ERROR, SessionMessages.get(request, ERROR_MESSAGE));
         assertFalse(SessionMessages.contains(request, SUCCESS_MESSAGE));
     }
 
@@ -98,7 +125,8 @@ public class PublishLinksActionIT {
     void test_processAction_userWithPublish_publishesLink() throws Exception {
         final User user = backendUser();
         final Folder folder = new FolderDataGen().site(site).nextPersisted();
-        grant(folder, user, PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_PUBLISH);
+        grant(folder, APILocator.getRoleAPI().getUserRole(user),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_PUBLISH);
         final Link link = new LinkDataGen(folder).nextPersisted(false);
         final ActionRequestImpl request = publishRequest(user, link.getInode());
 
@@ -121,7 +149,7 @@ public class PublishLinksActionIT {
         final User user = backendUser();
         final Folder allowedFolder = new FolderDataGen().site(site).nextPersisted();
         final Folder otherFolder = new FolderDataGen().site(site).nextPersisted();
-        grant(allowedFolder, user,
+        grant(allowedFolder, APILocator.getRoleAPI().getUserRole(user),
                 PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_PUBLISH);
         final Link allowedLink = new LinkDataGen(allowedFolder).nextPersisted(false);
         final Link otherLink = new LinkDataGen(otherFolder).nextPersisted(false);
@@ -138,24 +166,23 @@ public class PublishLinksActionIT {
     }
 
     /**
-     * A back-end user who can read the test site and whatever is created in it afterwards, and
-     * holds nothing else there. Created before the test's folders and links so that they inherit
-     * that READ.
+     * A back-end user, with the extra roles given, who can read the test site and whatever is
+     * created in it afterwards, and holds nothing else there. Created before the test's folders
+     * and links so that they inherit that READ.
      */
-    private static User backendUser() throws DotDataException, DotSecurityException {
-        final User user = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+    private static User backendUser(final Role... extraRoles)
+            throws DotDataException, DotSecurityException {
+        final List<Role> roles = new ArrayList<>(List.of(TestUserUtils.getBackendRole()));
+        roles.addAll(List.of(extraRoles));
+        final User user = new UserDataGen().roles(roles.toArray(new Role[0])).nextPersisted();
         usersToClean.add(user);
-        grant(site, user, PermissionAPI.PERMISSION_READ);
+        grant(site, APILocator.getRoleAPI().getUserRole(user), PermissionAPI.PERMISSION_READ);
         return user;
     }
 
-    /**
-     * Gives the user's own role the permission bits on the asset and on the folders and links
-     * created under it.
-     */
-    private static void grant(final Permissionable asset, final User user, final int permission)
+    /** Gives the role the permission bits on the asset and on the folders and links under it. */
+    private static void grant(final Permissionable asset, final Role role, final int permission)
             throws DotDataException, DotSecurityException {
-        final Role role = APILocator.getRoleAPI().getUserRole(user);
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
                 asset.getPermissionId(), role.getId(), permission, true), asset, systemUser, false);

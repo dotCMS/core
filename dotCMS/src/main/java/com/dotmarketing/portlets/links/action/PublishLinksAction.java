@@ -78,7 +78,9 @@ public class PublishLinksAction extends DotPortletAction {
 	/**
 	 * Publishes every link named by a {@code publishInode} parameter that the user may publish.
 	 * A link the user holds no PUBLISH permission on is left as it is and reported as an error on
-	 * the screen, and so is an archived one; the links the user may publish still go live.
+	 * the screen, and so is an archived one; the links the user may publish still go live. As in
+	 * the rest of the back-office, front-end roles do not count, which is also what the publish
+	 * itself checks.
 	 *
 	 * @param req the portlet request carrying the inodes
 	 * @param user the {@link User} publishing, whose PUBLISH permission decides each link
@@ -102,7 +104,7 @@ public class PublishLinksAction extends DotPortletAction {
 				continue;
 			}
 
-			if (!permissionAPI.doesUserHavePermission(link, PERMISSION_PUBLISH, user)) {
+			if (!permissionAPI.doesUserHavePermission(link, PERMISSION_PUBLISH, user, false)) {
 				Logger.warn(this, "User " + user.getUserId()
 						+ " does not have permission to publish link " + link.getInode());
 				refused = true;
