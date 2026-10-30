@@ -35,7 +35,7 @@
         <grpc.version>1.75.0</grpc.version>
         <netty.version>4.1.138.Final</netty.version>
         <commonmark.version>0.22.0</commonmark.version>
-        <jsoup.version>1.21.1</jsoup.version>
+        <jsoup.version>1.23.2</jsoup.version>
     </properties>
     <dependencyManagement>
 
@@ -679,7 +679,7 @@
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>2.14.0</version>
+                <version>2.22.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-lang</groupId>
@@ -769,7 +769,7 @@
             <dependency>
                 <groupId>com.graphql-java</groupId>
                 <artifactId>graphql-java</artifactId>
-                <version>17.5</version>
+                <version>19.11</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
@@ -914,7 +914,7 @@
             <dependency>
                 <groupId>org.apache.httpcomponents.client5</groupId>
                 <artifactId>httpclient5</artifactId>
-                <version>5.5</version>
+                <version>5.6.3</version>
             </dependency>
 
             <dependency>
@@ -955,7 +955,7 @@
             <dependency>
                 <groupId>com.sun.mail</groupId>
                 <artifactId>jakarta.mail</artifactId>
-                <version>1.6.7</version>
+                <version>1.6.8</version>
             </dependency>
             <dependency>
                 <groupId>jakarta.xml.bind</groupId>
@@ -975,7 +975,7 @@
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-validator</artifactId>
-                <version>5.4.3.Final</version>
+                <version>6.2.0.Final</version>
             </dependency>
 
             <dependency>
@@ -1070,7 +1070,7 @@
             <dependency>
                 <groupId>com.jayway.jsonpath</groupId>
                 <artifactId>json-path</artifactId>
-                <version>2.4.0</version>
+                <version>2.9.0</version>
                 <exclusions>
                     <exclusion>
                         <groupId>net.minidev</groupId>
@@ -1445,7 +1445,7 @@
                 <!-- Microsoft Document Processing -->
                 <groupId>org.apache.poi</groupId>
                 <artifactId>poi</artifactId>
-                <version>3.17</version>
+                <version>4.1.1</version>
             </dependency>
             <dependency>
                 <!-- Batik SVG Processing -->
