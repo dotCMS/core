@@ -272,5 +272,13 @@ public class IntegrityResourceTest {
                 "endPoint/" + endpoint.getId() + "/type/notatype").getStatus());
         assertEquals(400, resource.fixConflicts(requestFor(user), response(),
                 "endPoint/" + endpoint.getId() + "/type/notatype/whereToFix/local").getStatus());
+
+        // only the plain ASCII case of a type name is accepted, so the same value can be sent
+        // to the remote end-point
+        final String dottedCapitalI = "fİleassets";
+        assertEquals(400, resource.discardConflicts(requestFor(user), response(),
+                "endPoint/" + endpoint.getId() + "/type/" + dottedCapitalI).getStatus());
+        assertEquals(400, resource.fixConflicts(requestFor(user), response(),
+                "endPoint/" + endpoint.getId() + "/type/" + dottedCapitalI + "/whereToFix/local").getStatus());
     }
 }

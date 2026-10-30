@@ -61,6 +61,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
@@ -211,14 +212,17 @@ public class IntegrityResource {
     }
 
     /**
-     * Parses the {@code type} parameter of the discard and fix calls.
+     * Parses the {@code type} parameter of the discard and fix calls. The value is matched in
+     * any letter case, but only after converting it to upper case with {@link Locale#ROOT}, the
+     * same conversion the remote end-point applies to the type it receives.
      *
      * @param type the value sent by the client
      * @return the matching {@link IntegrityType}, or empty when the value names none
      */
     private static Optional<IntegrityType> parseIntegrityType(final String type) {
+        final String upperCaseType = type.toUpperCase(Locale.ROOT);
         return Arrays.stream(IntegrityType.values())
-                .filter(integrityType -> integrityType.name().equalsIgnoreCase(type))
+                .filter(integrityType -> integrityType.name().equals(upperCaseType))
                 .findFirst();
     }
 
@@ -1065,7 +1069,8 @@ public class IntegrityResource {
                         endpointId,
                         IntegrityUtil.INTEGRITY_DATA_TO_FIX_ZIP_FILENAME));
 
-                final Response response = sendFixConflictsRequest(type, endpoint, bundle);
+                final Response response = sendFixConflictsRequest(
+                        integrityTypeToFix.name(), endpoint, bundle);
 
                 if (response.getStatus() == HttpStatus.SC_OK) {
                     jsonResponse.put("success", true);
