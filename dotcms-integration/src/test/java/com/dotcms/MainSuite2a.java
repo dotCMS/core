@@ -118,6 +118,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.workflows.actionlet.CopyActionletTest.class,
         com.dotmarketing.portlets.workflows.actionlet.VelocityScriptActionletTest.class,
         com.dotcms.rest.api.v1.page.PageResourceReadAccessTest.class,
+        com.dotcms.rest.api.v1.user.PasswordPolicyIntegrationTest.class,
         com.dotmarketing.portlets.personas.business.PersonaAPITest.class,
         com.dotmarketing.portlets.personas.business.DeleteMultiTreeUsedPersonaTagJobTest.class,
         com.dotmarketing.portlets.links.business.MenuLinkAPITest.class,
