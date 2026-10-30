@@ -236,7 +236,8 @@ class ClusterLogCollectorPeerRequestTest {
     }
 
     /**
-     * A peer whose certificate is not trusted by the JVM is not sent the request.
+     * A peer whose certificate is not trusted by the JVM is not sent the request, and its error
+     * entry reports the TLS handshake with the scheme setting hint.
      */
     @Test
     void httpsScheme_untrustedPeerCertificate_isRejected() throws Exception {
@@ -245,10 +246,12 @@ class ClusterLogCollectorPeerRequestTest {
         final Map<String, String> zip = collectFrom(startHttpsPeer(selfSignedForLoopback));
 
         assertNoRequestAndLocalLogWithErrors(zip);
+        assertTlsFailureWithSchemeHint(zip);
     }
 
     /**
-     * A peer whose trusted certificate names another host is not sent the request.
+     * A peer whose trusted certificate names another host is not sent the request, and its error
+     * entry reports the TLS handshake with the scheme setting hint.
      */
     @Test
     void httpsScheme_certificateForAnotherHost_isRejected() throws Exception {
@@ -258,6 +261,26 @@ class ClusterLogCollectorPeerRequestTest {
         final Map<String, String> zip = collectFrom(startHttpsPeer(caIssuedForOtherHost));
 
         assertNoRequestAndLocalLogWithErrors(zip);
+        assertTlsFailureWithSchemeHint(zip);
+    }
+
+    /**
+     * With no scheme configured, a peer whose port accepts no connection is reported as such,
+     * without the scheme setting hint.
+     */
+    @Test
+    void defaultScheme_closedPeerPort_errorEntryHasNoSchemeHint() throws Exception {
+        final int closedPort = startHttpPeer();
+        peer.stop(0);
+        peer = null;
+
+        final Map<String, String> zip = collectFrom(closedPort);
+
+        assertTrue(zip.containsKey(ERRORS_ENTRY), "Expected " + ERRORS_ENTRY + " in " + zip.keySet());
+        final String errors = zip.get(ERRORS_ENTRY);
+        assertTrue(errors.contains("peer-node"), "Error entry should name the peer: " + errors);
+        assertTrue(errors.contains("could not connect"), "Error entry should give the reason: " + errors);
+        assertFalse(errors.contains(SCHEME_KEY), "Error entry should not name " + SCHEME_KEY + ": " + errors);
     }
 
     /**
@@ -334,6 +357,12 @@ class ClusterLogCollectorPeerRequestTest {
         assertEquals(LOCAL_LOG, zip.get(LOCAL_ENTRY), "Local log entry");
         assertFalse(zip.containsKey(PEER_ENTRY), "No peer log entry expected: " + zip.keySet());
         assertTrue(zip.containsKey(ERRORS_ENTRY), "Expected " + ERRORS_ENTRY + " in " + zip.keySet());
+    }
+
+    private void assertTlsFailureWithSchemeHint(final Map<String, String> zip) {
+        final String errors = zip.get(ERRORS_ENTRY);
+        assertTrue(errors.contains("TLS handshake failed"), "Error entry should give the reason: " + errors);
+        assertTrue(errors.contains(SCHEME_KEY), "Error entry should name " + SCHEME_KEY + ": " + errors);
     }
 
     private void assertPeerLogFetched(final Map<String, String> zip) {

@@ -6,14 +6,17 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 
+import javax.net.ssl.SSLException;
 import javax.ws.rs.core.StreamingOutput;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.net.ConnectException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -139,7 +142,7 @@ public class ClusterLogCollector {
                     Logger.info(this, "Received log from " + label
                             + " (" + response.body.length + " bytes)");
                 } else {
-                    final String hint = httpsScheme && response.connectionFailed
+                    final String hint = httpsScheme && response.possiblyTls
                             ? HTTPS_FAILURE_HINT : "";
                     final String msg = "Server " + label + " — " + response.failure + hint;
                     Logger.warn(this, msg);
@@ -195,8 +198,9 @@ public class ClusterLogCollector {
     /**
      * Attempts to fetch a log file from the given URL. The returned response holds
      * the body on success (HTTP 200); otherwise it holds a short reason: the HTTP
-     * status the peer answered with, or a connection failure (refused connection,
-     * failed TLS handshake, timeout) whose details are logged at INFO.
+     * status the peer answered with, or the kind of I/O failure ({@code could not
+     * connect}, {@code TLS handshake failed}, {@code timed out}, {@code connection
+     * failed}) whose details are logged at INFO.
      *
      * @param client      the HTTP client shared by all peer requests
      * @param url         the peer's {@code _downloadLog} URL
@@ -230,13 +234,23 @@ public class ClusterLogCollector {
                 .exceptionally(ex -> {
                     // Unwrap CompletionException to get the real cause
                     final Throwable cause = ex.getCause() != null ? ex.getCause() : ex;
-                    if (cause instanceof IOException) {
-                        // Connection refused, SSL handshake failure, timeouts, etc.
-                        Logger.info(this, "Connection to " + url + " failed: " + cause.getMessage());
-                        return PeerResponse.failure("connection failed", true);
+                    if (!(cause instanceof IOException)) {
+                        Logger.warn(this, "Error fetching " + url + ": " + cause.getMessage(), cause);
+                        return PeerResponse.failure("request failed", false);
                     }
-                    Logger.warn(this, "Error fetching " + url + ": " + cause.getMessage(), cause);
-                    return PeerResponse.failure("request failed", false);
+                    Logger.info(this, "Connection to " + url + " failed: " + cause.getMessage());
+                    if (cause instanceof SSLException) {
+                        return PeerResponse.failure("TLS handshake failed", true);
+                    }
+                    if (cause instanceof HttpTimeoutException) {
+                        // A TLS handshake that never completes also ends as a timeout
+                        return PeerResponse.failure("timed out", true);
+                    }
+                    if (cause instanceof ConnectException) {
+                        // No connection was made, so the scheme makes no difference
+                        return PeerResponse.failure("could not connect", false);
+                    }
+                    return PeerResponse.failure("connection failed", true);
                 });
     }
 
@@ -247,12 +261,12 @@ public class ClusterLogCollector {
 
         private final byte[] body;
         private final String failure;
-        private final boolean connectionFailed;
+        private final boolean possiblyTls;
 
-        private PeerResponse(final byte[] body, final String failure, final boolean connectionFailed) {
+        private PeerResponse(final byte[] body, final String failure, final boolean possiblyTls) {
             this.body = body;
             this.failure = failure;
-            this.connectionFailed = connectionFailed;
+            this.possiblyTls = possiblyTls;
         }
 
         /**
@@ -268,12 +282,14 @@ public class ClusterLogCollector {
         /**
          * A failed request.
          *
-         * @param reason           a short reason, written to {@code _errors.txt}
-         * @param connectionFailed {@code true} when no HTTP response was received
+         * @param reason      a short reason, written to {@code _errors.txt}
+         * @param possiblyTls {@code true} when the failure may come from TLS (a handshake
+         *                    error, a timeout, or a peer that does not speak TLS on the
+         *                    port), so the scheme setting hint applies under HTTPS
          * @return the response
          */
-        private static PeerResponse failure(final String reason, final boolean connectionFailed) {
-            return new PeerResponse(null, reason, connectionFailed);
+        private static PeerResponse failure(final String reason, final boolean possiblyTls) {
+            return new PeerResponse(null, reason, possiblyTls);
         }
     }
 
