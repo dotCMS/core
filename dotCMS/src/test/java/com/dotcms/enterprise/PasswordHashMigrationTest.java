@@ -123,11 +123,16 @@ public class PasswordHashMigrationTest {
                 () -> PasswordFactoryProxy.authPassword(password(), unknown));
     }
 
-    /** Incomplete serialized records must not authenticate. */
+    /** Broken structured records must fail through the checked authentication error path. */
     @Test
     public void malformedRecordIsRejected() {
-        assertThrows(PasswordException.class,
-                () -> PasswordFactoryProxy.authPassword(password(), "1:1:incomplete"));
+        final String reference = FIXTURES.getProperty("legacy-current-cost");
+        for (final String record : new String[]{"1:1:incomplete",
+                reference.replace("1:1:", "1:zz:"),
+                reference.replace("i=927c0", "i=not-hex")}) {
+            assertThrows(PasswordException.class,
+                    () -> PasswordFactoryProxy.authPassword(password(), record));
+        }
     }
 
     /** This release must keep generated records readable by old-only binaries. */

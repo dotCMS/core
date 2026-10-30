@@ -206,6 +206,8 @@ public class LoginFactoryPasswordMigrationTest {
         for (final String record : Arrays.asList(
                 reference.replace("1:1:", "1:7f:"),
                 reference.replace("1:1:", "7f:1:"),
+                reference.replace("1:1:", "1:zz:"),
+                reference.replace("i=927c0", "i=not-hex"),
                 "1:1:incomplete")) {
             user.setPassword(record);
             storedPassword.set(record);
