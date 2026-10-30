@@ -21,6 +21,7 @@ class FakeBatchStaging implements BatchStaging {
     private final List<String> staged = new ArrayList<>();
     private final Set<String> reclaimed = new LinkedHashSet<>();
     private int failOnPart = -1;
+    private String refusedName;
     private int counter = 0;
 
     /** Makes the given zero-based part throw, standing in for a client that went away mid-read. */
@@ -29,8 +30,23 @@ class FakeBatchStaging implements BatchStaging {
         return this;
     }
 
+    /**
+     * Makes the part with the given name refused before anything is read, the way
+     * {@code TempFileAPI.createEmptyTempFile} refuses a name whose extension is blocked: that check
+     * runs before the copy loop, so it arrives unwrapped as an {@code IllegalArgumentException}.
+     */
+    FakeBatchStaging refuseName(final String fileName) {
+        this.refusedName = fileName;
+        return this;
+    }
+
     @Override
     public StagedPart stage(final String fileName, final InputStream content) throws IOException {
+        if (fileName.equals(refusedName)) {
+            counter++;
+            throw new IllegalArgumentException(
+                    "The file name '" + fileName + "' has an extension that is not allowed");
+        }
         if (counter == failOnPart) {
             counter++;
             throw new IOException("connection reset by peer");

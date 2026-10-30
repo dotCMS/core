@@ -108,6 +108,34 @@ public class DotWebdavHelperTest {
     /**
      * Method to test: DotWebdavHelper.setResourceContent
      * <p>
+     * Given Scenario: A file whose name carries a listed extension, in upper or lower case, is
+     * written through WebDAV.
+     * <p>
+     * ExpectedResult: The write is refused and no file resource exists at that path afterwards.
+     */
+    @Test
+    public void Test_setResourceContent_listed_extension_any_case_is_rejected() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        final var user = APILocator.getUserAPI().getSystemUser();
+        try (MockedStatic<HttpManager> mocked = Mockito.mockStatic(HttpManager.class)) {
+            final Request mockedRequest = Mockito.mock(Request.class);
+            when(mockedRequest.getUserAgentHeader()).thenReturn("Cyberduck");
+            mocked.when(HttpManager::request).thenReturn(mockedRequest);
+            for (final String name : new String[] {"sample-1.jsp", "sample-2.JSP"}) {
+                final var resourceUri = String.format("/webdav/live/1/%s/%s", host.getName(), name);
+                try (InputStream content = new ByteArrayInputStream("qa".getBytes())) {
+                    Assert.assertThrows(name, IllegalArgumentException.class,
+                            () -> helper.setResourceContent(resourceUri, content, "",
+                                    null, java.util.Calendar.getInstance().getTime(), user, true));
+                }
+                Assert.assertNull("no file may exist at " + resourceUri, helper.loadFile(resourceUri, user));
+            }
+        }
+    }
+
+    /**
+     * Method to test: DotWebdavHelper.setResourceContent
+     * <p>
      * Given Scenario: A file is created with no content, then the same file is updated also with no
      * content.
      * <p>

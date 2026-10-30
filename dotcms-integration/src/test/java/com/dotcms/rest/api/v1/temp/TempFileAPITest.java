@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.temp;
 import static com.dotcms.datagen.TestDataUtils.getFileAssetContent;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -80,6 +81,20 @@ public class TempFileAPITest {
             assertEquals("the loopback server must never be contacted", 0, hits.get());
         } finally {
             server.stop(0);
+        }
+    }
+
+    /**
+     * A temp file whose name carries a listed extension is refused at creation, in any letter
+     * case, so no later step can turn it into an asset; nothing is created for it. The check runs
+     * on the sanitised name, so a character the sanitiser strips cannot split the extension.
+     */
+    @Test
+    public void testCreateEmptyTempFile_listedExtensionAnyCase_isRefused() {
+        final TempFileAPI tempFileAPI = APILocator.getTempFileAPI();
+        for (final String name : new String[] {"sample-1.jsp", "sample-2.JSP", "sample-6.JSPX", "sample-7.J:SP"}) {
+            assertThrows(name, IllegalArgumentException.class,
+                    () -> tempFileAPI.createEmptyTempFile(name, mockHttpServletRequest()));
         }
     }
 

@@ -16,6 +16,7 @@ import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.Request.Method;
 import com.bradmcevoy.http.Resource;
 import com.bradmcevoy.http.exceptions.BadRequestException;
+import com.dotcms.security.multipart.IllegalFileExtensionsValidator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -103,6 +104,7 @@ public class DotWebdavHelper {
 		}
 	};
 	private  org.apache.oro.text.regex.Pattern tempResourcePattern;
+	private static final IllegalFileExtensionsValidator FILE_EXTENSION_VALIDATOR = new IllegalFileExtensionsValidator();
 	/** Sub-folder of the asset temp path that holds WebDAV temp storage, apart from other features. */
 	private static final String TEMP_FOLDER_NAME = "dotwebdav";
 
@@ -897,6 +899,8 @@ public class DotWebdavHelper {
 		String folderName = getFolderName(path);
 		String fileName = getFileName(path);
 		fileName = deleteSpecialCharacter(fileName);
+		// Same extension block list as every other upload path; a WebDAV write is an upload too
+		FILE_EXTENSION_VALIDATOR.validate(fileName);
 		final boolean disableWorkflow = Config.getBooleanProperty("dotcms.webdav.disableworkflow", false);
 
 		Host host;
@@ -2029,9 +2033,16 @@ public class DotWebdavHelper {
 		}
 		return returnValue;
 	}
+	/**
+	 * Writes a resource with the current date and no auto-publish, wrapping any failure as a
+	 * {@link DotRuntimeException}. A refused file name is passed through unchanged, so the
+	 * resource layer can answer it as a client error rather than a server one.
+	 */
 	private void setResourceContent(String resourceUri, InputStream content, String contentType, String characterEncoding, User user) throws Exception {
 		try {
 			setResourceContent(resourceUri, content, contentType, characterEncoding, Calendar.getInstance().getTime(), user, false);
+		} catch (final IllegalArgumentException e) {
+			throw e;
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(),e);

@@ -175,6 +175,9 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 				if(!p.endsWith("/"))
 					p = p + "/";
 				dotDavHelper.copyTempFileToStorage(file, p + name, user, isAutoPub);
+			} catch (final IllegalArgumentException e) {
+				// the destination name was refused (for example a blocked extension); the client gets a 400
+				throw new BadRequestException(this, e.getMessage());
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
 			}
@@ -231,6 +234,9 @@ public class TempFileResourceImpl implements FileResource, LockableResource {
 					p = p + "/";
 				dotDavHelper.copyTempFileToStorage(file, p + name, user, isAutoPub);
 				file.delete();
+			} catch (final IllegalArgumentException e) {
+				// the destination name was refused (for example a blocked extension); the client gets a 400
+				throw new BadRequestException(this, e.getMessage());
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
 			}

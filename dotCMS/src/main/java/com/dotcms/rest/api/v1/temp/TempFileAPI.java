@@ -3,6 +3,7 @@ package com.dotcms.rest.api.v1.temp;
 import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.http.CircuitBreakerUrl.Method;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.security.multipart.IllegalFileExtensionsValidator;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.PathContainmentUtil;
@@ -74,6 +75,7 @@ public class TempFileAPI {
   private static final String WHO_CAN_USE_TEMP_FILE = "whoCanUse.tmp";
   private static final String TEMP_RESOURCE_BY_URL_ADMIN_ONLY="TEMP_RESOURCE_BY_URL_ADMIN_ONLY";
   private static final Lazy<Boolean> allowAccessToPrivateSubnets = Lazy.of(()->Config.getBooleanProperty("ALLOW_ACCESS_TO_PRIVATE_SUBNETS", false));
+  private static final IllegalFileExtensionsValidator fileExtensionValidator = new IllegalFileExtensionsValidator();
   
 
   /**
@@ -103,13 +105,16 @@ public class TempFileAPI {
    * <p>
    * Only the file name part of {@code incomingFileName} is used: any directory part is dropped, so
    * the file always lands in its own folder under the temp upload directory. The location is
-   * checked on canonical paths before anything is created on disk.
+   * checked on canonical paths before anything is created on disk. A name whose extension is on
+   * the upload block list is refused before anything is created, and the check runs on the
+   * sanitised name so the client's spelling cannot sidestep it.
    *
    * @param incomingFileName the name the file was uploaded with, as received from the client
    * @param request          the current request, used for the allow list
    * @return the new {@link DotTempFile}, pointing at a file that does not exist yet
-   * @throws DotSecurityException if the request is not allowed to create temp files
-   * @throws DotRuntimeException  if the name is missing, the file would fall outside the temp
+   * @throws DotSecurityException     if the request is not allowed to create temp files
+   * @throws IllegalArgumentException if the name's extension is on the block list
+   * @throws DotRuntimeException      if the name is missing, the file would fall outside the temp
    *                              upload directory, or its folder cannot be created
    */
   public DotTempFile createEmptyTempFile(final String incomingFileName,final HttpServletRequest request) throws DotSecurityException {
@@ -139,6 +144,9 @@ public class TempFileAPI {
     }
     // Keep the file name only: callers pass the client's name through, and it may carry a path
     final String fileName = FileUtil.sanitizeFileName(incomingFileName);
+    // Every temp file can become an asset, so the extension block list applies here, whichever
+    // API the name arrived through (multipart, JSON content, URL fetch, import, bulk upload)
+    fileExtensionValidator.validate(fileName);
     final String tempFileId = TEMP_RESOURCE_PREFIX + UUIDGenerator.shorty();
 
     final File tmpRoot = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary());
