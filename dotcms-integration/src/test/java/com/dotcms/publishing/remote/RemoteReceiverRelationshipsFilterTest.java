@@ -49,6 +49,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -227,18 +228,65 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
     /**
      * Method to test: {@link com.dotcms.enterprise.publishing.remote.handler.ContentHandler#handle(File)}
      * Given scenario: An Article that already exists in the receiver is pushed with a filter that
-     * sets {@code relationships: false}. In the receiver, the Article was related to a different
-     * Author than the one in the bundle.
+     * sets {@code relationships: false}, without {@code syncRelationships}. In the receiver, the
+     * Article is related to a different Author than the one in the bundle.
      * Expected result: The receiver keeps its own relationships for the existing Article, as
      * required by <a href="https://github.com/dotCMS/core/issues/30998">#30998</a>.
      */
     @Test
-    public void test_existingContent_pushedWithoutRelationshipsFilter_keepsReceiverRelationships()
+    public void test_existingParent_pushedWithoutRelationshipsFilter_keepsReceiverRelationships()
             throws Exception {
         final TestData data = createRelatedContent();
         final Contentlet receiverOnlyAuthor = new ContentletDataGen(data.authorType).host(host)
                 .setProperty("title", "receiver-only-" + UUIDGenerator.shorty()).nextPersisted();
-        final FilterDescriptor filter = createFilterWithoutRelationships();
+        final PreparedBundle bundle = generateBundleFor(data.article, createFilterWithoutRelationships());
+        moveRelationship("child", data.author, receiverOnlyAuthor, data.article, data.relationship);
+
+        processBundle(bundle);
+
+        assertEquals("The relationships of existing content in the receiver must not be modified",
+                List.of(receiverOnlyAuthor.getIdentifier()), findRelatedIds(data.article, data.relationship));
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.enterprise.publishing.remote.handler.ContentHandler#handle(File)}
+     * Given scenario: An Author that already exists in the receiver is pushed with a filter that
+     * sets {@code relationships: false}, without {@code syncRelationships}. In the receiver, a
+     * second Article that only exists there is also related to the Author.
+     * Expected result: The Author keeps both Articles, as required by
+     * <a href="https://github.com/dotCMS/core/issues/30998">#30998</a>.
+     */
+    @Test
+    public void test_existingChild_pushedWithoutRelationshipsFilter_keepsReceiverParents() throws Exception {
+        final TestData data = createRelatedContent();
+        final PreparedBundle bundle = generateBundleFor(data.author, createFilterWithoutRelationships());
+        final Contentlet receiverOnlyArticle = new ContentletDataGen(data.article.getContentTypeId()).host(host)
+                .setProperty("title", "receiver-only-" + UUIDGenerator.shorty()).nextPersisted();
+        relate(receiverOnlyArticle, data.author, data.relationship);
+
+        processBundle(bundle);
+
+        assertEquals("The pushed Author must keep the Articles it has in the receiver",
+                Set.of(data.article.getIdentifier(), receiverOnlyArticle.getIdentifier()),
+                Set.copyOf(findRelatedIds(data.author, data.relationship)));
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.enterprise.publishing.remote.handler.ContentHandler#handle(File)}
+     * Given scenario: An Article that already exists in the receiver is pushed with a filter that
+     * sets {@code relationships: false} and {@code syncRelationships: true}. In the receiver, the
+     * Article is related to Author A, and
+     * in the sender its Author was changed to Author B, which also exists in the receiver.
+     * Expected result: The Article's relationship in the receiver is replaced with the one in the
+     * sender, matched by Identifier, so it's related to Author B only.
+     */
+    @Test
+    public void test_existingParent_pushedWithSyncRelationshipsFilter_matchesSenderRelationships()
+            throws Exception {
+        final TestData data = createRelatedContent();
+        final Contentlet receiverOnlyAuthor = new ContentletDataGen(data.authorType).host(host)
+                .setProperty("title", "receiver-only-" + UUIDGenerator.shorty()).nextPersisted();
+        final FilterDescriptor filter = createFilterWithoutRelationships(true);
         final PreparedBundle bundle = generateBundleFor(data.article, filter);
 
         // In the receiver, the Article is related to a different Author. The relationship row can
@@ -258,8 +306,36 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
 
         processBundle(bundle);
 
-        assertEquals("The relationships of existing content in the receiver must not be modified",
-                List.of(receiverOnlyAuthor.getIdentifier()), findRelatedIds(data.article, data.relationship));
+        assertEquals("The pushed Article must be related to the Author it has in the sender",
+                List.of(data.author.getIdentifier()), findRelatedIds(data.article, data.relationship));
+        assertTrue("The Author the Article had in the receiver must no longer be related to it",
+                findRelatedIds(receiverOnlyAuthor, data.relationship).isEmpty());
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.enterprise.publishing.remote.handler.ContentHandler#handle(File)}
+     * Given scenario: An Author that already exists in the receiver is pushed with a filter that
+     * sets {@code relationships: false} and {@code syncRelationships: true}. In the receiver, a
+     * second Article is also related to the Author, but it isn't in the sender.
+     * Expected result: The Author's relationships in the receiver are replaced with the ones in the
+     * sender, matched by Identifier, so it's related to the first Article only.
+     */
+    @Test
+    public void test_existingChild_pushedWithSyncRelationshipsFilter_matchesSenderParents() throws Exception {
+        final TestData data = createRelatedContent();
+        final PreparedBundle bundle = generateBundleFor(data.author, createFilterWithoutRelationships(true));
+
+        // In the receiver, a second Article is related to the Author
+        final Contentlet receiverOnlyArticle = new ContentletDataGen(data.article.getContentTypeId()).host(host)
+                .setProperty("title", "receiver-only-" + UUIDGenerator.shorty()).nextPersisted();
+        relate(receiverOnlyArticle, data.author, data.relationship);
+
+        processBundle(bundle);
+
+        assertEquals("The pushed Author must be related to the Articles it has in the sender only",
+                List.of(data.article.getIdentifier()), findRelatedIds(data.author, data.relationship));
+        assertTrue("The Article that isn't related to the Author in the sender must not be related to it",
+                findRelatedIds(receiverOnlyArticle, data.relationship).isEmpty());
     }
 
     /**
@@ -415,7 +491,17 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
      * push with the default filter and expect dependencies to be included.
      */
     private FilterDescriptor createFilterWithoutRelationships() {
+        return createFilterWithoutRelationships(false);
+    }
+
+    /**
+     * Adds a filter like "Only Selected Items" that, if {@code syncRelationships} is {@code true},
+     * also makes the receiver replace the relationships of the pushed content with the ones in the
+     * sender.
+     */
+    private FilterDescriptor createFilterWithoutRelationships(final boolean syncRelationships) {
         final FilterDescriptor filter = new FilterDescriptorDataGen()
+                .syncRelationships(syncRelationships)
                 .key("onlySelectedItems_" + System.currentTimeMillis() + ".yml")
                 .dependencies(false)
                 .relationships(false)
