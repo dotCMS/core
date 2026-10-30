@@ -8,7 +8,6 @@ import javax.servlet.http.HttpSession;
 import org.apache.velocity.tools.view.context.ViewContext;
 import org.apache.velocity.tools.view.tools.ViewTool;
 
-import com.dotcms.repackage.bsh.util.Util;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
