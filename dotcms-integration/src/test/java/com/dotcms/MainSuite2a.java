@@ -120,6 +120,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.page.PageResourceReadAccessTest.class,
         com.dotmarketing.portlets.personas.business.PersonaAPITest.class,
         com.dotmarketing.portlets.personas.business.DeleteMultiTreeUsedPersonaTagJobTest.class,
+        com.dotcms.rest.api.v1.maintenance.MaintenanceToolsAccessIntegrationTest.class,
         com.dotmarketing.portlets.links.business.MenuLinkAPITest.class,
         com.dotmarketing.portlets.links.factories.LinkFactoryTest.class,
         com.dotmarketing.portlets.categories.business.CategoryAPITest.class,
@@ -162,6 +163,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.temp.TempFileNamingTest.class,
         com.dotcms.content.elasticsearch.business.ESContentletAPIImplTrailingBackslashQueryTest.class,
         com.dotmarketing.webdav.DotWebdavHelperTest.class,
+        com.dotcms.enterprise.publishing.remote.handler.UserHandlerTest.class
 })
 public class MainSuite2a {
 

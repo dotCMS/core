@@ -8,7 +8,6 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.cmsmaintenance.ajax.UserSessionAjax;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
@@ -983,37 +982,6 @@ public class MaintenanceResourceIntegrationTest extends IntegrationTestBase {
     @Test(expected = SecurityException.class)
     public void test_killAllSessions_asNonAdmin_throwsSecurity() {
         resource.killAllSessions(createRequestForUser(nonAdminUser), mockResponse);
-    }
-
-    // ==================== Legacy parity ====================
-
-    /**
-     * Given scenario: legacy DWR class still exposes obfuscateSessionId/validateSessionId
-     *                 as a backwards-compat shim
-     * Expected result: it produces and validates the same tokens as the REST utility — any
-     *                  pre-existing client code calling the static methods continues to work
-     */
-    @Test
-    public void test_legacy_userSessionAjax_delegates_to_sessionTokenUtil() {
-        final String sessionId = "session-" + UUIDGenerator.generateUuid();
-        final String csrf = "csrf-" + UUIDGenerator.generateUuid();
-
-        @SuppressWarnings("deprecation")
-        final String legacyToken = UserSessionAjax.obfuscateSessionId(sessionId, csrf);
-        final String modernToken = SessionTokenUtil.obfuscateSessionId(sessionId, csrf);
-        assertEquals("Legacy DWR shim must produce the same token as the REST utility",
-                modernToken, legacyToken);
-
-        @SuppressWarnings("deprecation")
-        final boolean legacyAccepts = UserSessionAjax.validateSessionId(
-                sessionId, csrf, legacyToken);
-        assertTrue("Legacy validate must accept its own token", legacyAccepts);
-
-        @SuppressWarnings("deprecation")
-        final boolean modernAcceptsLegacy = SessionTokenUtil.validateSessionId(
-                sessionId, csrf, legacyToken);
-        assertTrue("REST utility must accept tokens minted by the legacy shim",
-                modernAcceptsLegacy);
     }
 
     /**

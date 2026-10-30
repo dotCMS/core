@@ -625,25 +625,19 @@ runs:
         name: maven-repo${{ steps.artifact-suffix.outputs.suffix }}
         path: ${{ runner.temp }}/built-artifacts
 
-    - id: persist-docker-build-context
-      name: Persist Docker Build Context
-      if: ${{ inputs.generate-docker == 'true' }}
-      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-      with:
-        name: docker-build-context${{ steps.artifact-suffix.outputs.suffix }}
-        path: dotCMS/target/docker-build.tar
-
     - id: get-sdkman-version
       name: Get SDKMAN Java Version
-      if: ${{ inputs.generate-docker == 'true' && inputs.generate-test-image == 'true' }}
+      if: ${{ inputs.generate-docker == 'true' }}
       shell: bash
+      env:
+        JAVA_VERSION: ${{ inputs.java-version }}
       run: |
         # Use provided java-version if set, otherwise read from .sdkmanrc
-        if [ -n "${{ inputs.java-version }}" ]; then
-          SDKMAN_JAVA_VERSION="${{ inputs.java-version }}"
+        if [ -n "${JAVA_VERSION}" ]; then
+          SDKMAN_JAVA_VERSION="${JAVA_VERSION}"
           echo "Using override Java version: ${SDKMAN_JAVA_VERSION}"
         elif [ -f ".sdkmanrc" ]; then
-          SDKMAN_JAVA_VERSION=$(awk -F= '/^java=/ {print $2}' .sdkmanrc)
+          SDKMAN_JAVA_VERSION=$(awk -F= '/^java=/ {gsub(/\r/, "", $2); print $2}' .sdkmanrc)
           echo "Using default Java version from .sdkmanrc: ${SDKMAN_JAVA_VERSION}"
         else
           echo "Error: .sdkmanrc file not found and no java-version override provided"
@@ -652,7 +646,19 @@ runs:
         # This value is used as the dotcms/java-base docker tag (FROM dotcms/java-base:<tag>),
         # which cannot contain '+' - convert SDKMAN's '+' to '-' (e.g. 25.0.4+1-ms -> 25.0.4-1-ms)
         SDKMAN_JAVA_VERSION="${SDKMAN_JAVA_VERSION//+/-}"
-        echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> $GITHUB_ENV
+        echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> "$GITHUB_ENV"
+        # Keep the publisher on the build checkout's Java version, including PR merge refs.
+        printf '%s\n' "${SDKMAN_JAVA_VERSION}" > dotCMS/target/docker-java-version
+
+    - id: persist-docker-build-context
+      name: Persist Docker Build Context
+      if: ${{ inputs.generate-docker == 'true' }}
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      with:
+        name: docker-build-context${{ steps.artifact-suffix.outputs.suffix }}
+        path: |
+          dotCMS/target/docker-build.tar
+          dotCMS/target/docker-java-version
 
     - id: build-docker-image-from-archive
       name: Build Docker Image from Archive
