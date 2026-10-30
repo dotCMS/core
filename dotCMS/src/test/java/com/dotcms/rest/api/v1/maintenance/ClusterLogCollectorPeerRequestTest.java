@@ -97,6 +97,7 @@ class ClusterLogCollectorPeerRequestTest {
     private HttpServer peer;
     private ServerSocket silentPeer;
     private int peerStatus = 200;
+    private long peerDelayMillis;
     private File localLog;
 
     /**
@@ -351,6 +352,54 @@ class ClusterLogCollectorPeerRequestTest {
     }
 
     /**
+     * A verified HTTPS peer that does not answer within the request timeout is reported as timed out,
+     * without the scheme setting hint.
+     */
+    @Test
+    void defaultScheme_trustedPeerAnswersTooLate_errorEntryReportsTimeoutWithoutSchemeHint() throws Exception {
+        SSLContext.setDefault(contextTrustingTestCa);
+        Config.setProperty(TIMEOUT_KEY, 1);
+        peerDelayMillis = 2_000;
+
+        final Map<String, String> zip = collectFrom(startHttpsPeer(caIssuedForLoopback));
+
+        assertTrue(zip.containsKey(ERRORS_ENTRY), "Expected " + ERRORS_ENTRY + " in " + zip.keySet());
+        final String errors = zip.get(ERRORS_ENTRY);
+        assertTrue(errors.contains("timed out"), "Error entry should give the reason: " + errors);
+        assertFalse(errors.contains("connect timed out"), "Error entry should not report a connect timeout: " + errors);
+        assertFalse(errors.contains(SCHEME_KEY), "Error entry should not name " + SCHEME_KEY + ": " + errors);
+    }
+
+    /**
+     * With the {@code http} scheme, a peer that closes the connection without answering is reported
+     * as a failed connection, without the scheme setting hint.
+     */
+    @Test
+    void httpScheme_peerClosesConnection_errorEntryHasNoSchemeHint() throws Exception {
+        Config.setProperty(SCHEME_KEY, "http");
+        silentPeer = new ServerSocket(0, 1, InetAddress.getByName(LOOPBACK));
+        final ServerSocket closingPeer = silentPeer;
+        final Thread closer = new Thread(() -> {
+            while (!closingPeer.isClosed()) {
+                try {
+                    closingPeer.accept().close();
+                } catch (final IOException e) {
+                    return;
+                }
+            }
+        });
+        closer.setDaemon(true);
+        closer.start();
+
+        final Map<String, String> zip = collectFrom(closingPeer.getLocalPort());
+
+        assertTrue(zip.containsKey(ERRORS_ENTRY), "Expected " + ERRORS_ENTRY + " in " + zip.keySet());
+        final String errors = zip.get(ERRORS_ENTRY);
+        assertTrue(errors.contains("connection failed"), "Error entry should give the reason: " + errors);
+        assertFalse(errors.contains(SCHEME_KEY), "Error entry should not name " + SCHEME_KEY + ": " + errors);
+    }
+
+    /**
      * A verified HTTPS peer that answers with an error status is reported with that status and
      * without the scheme setting hint.
      */
@@ -429,6 +478,13 @@ class ClusterLogCollectorPeerRequestTest {
 
     private void answer(final HttpExchange exchange) throws IOException {
         receivedAuthorization.add(String.valueOf(exchange.getRequestHeaders().getFirst("Authorization")));
+        if (peerDelayMillis > 0) {
+            try {
+                Thread.sleep(peerDelayMillis);
+            } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
         final byte[] body = PEER_LOG.getBytes(StandardCharsets.UTF_8);
         exchange.sendResponseHeaders(peerStatus, body.length);
         try (OutputStream out = exchange.getResponseBody()) {
