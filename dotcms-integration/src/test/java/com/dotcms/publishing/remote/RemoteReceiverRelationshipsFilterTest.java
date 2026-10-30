@@ -263,10 +263,114 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link com.dotcms.enterprise.publishing.remote.handler.ContentHandler#handle(File)}
+     * Given scenario: With a many-to-one relationship (one Author per Article), the receiver has an
+     * Article related to Author Jane. In the sender, the Article's Author is changed to a new
+     * Author, Maria, and only Maria is pushed with a filter that sets {@code relationships: false}.
+     * Expected result: Maria is created in the receiver, but isn't related to the Article, which
+     * keeps Jane as its only Author.
+     */
+    @Test
+    public void test_newChild_pushedWithoutRelationshipsFilter_isNotRelatedToParentWithItsOnlyChild()
+            throws Exception {
+        final TestData data = createRelatedContent();
+        final Contentlet maria = new ContentletDataGen(data.authorType).host(host)
+                .setProperty("title", "maria-" + UUIDGenerator.shorty()).nextPersisted();
+        // In the sender, the Article's only Author is now Maria
+        moveRelationship("child", data.author, maria, data.article, data.relationship);
+        final PreparedBundle bundle = generateBundleFor(maria, createFilterWithoutRelationships());
+
+        // In the receiver, Maria doesn't exist yet, and the Article's only Author is still Jane
+        LocalTransaction.wrap(() -> {
+            maria.setIndexPolicy(IndexPolicy.FORCE);
+            APILocator.getContentletAPI().destroy(maria, adminUser, false);
+        });
+        relate(data.article, data.author, data.relationship);
+
+        processBundle(bundle);
+
+        assertNotNull("Maria must have been created from the bundle", APILocator.getContentletAPI()
+                .findContentletByIdentifierAnyLanguage(maria.getIdentifier()));
+        assertEquals("The Article allows one Author only, so it must keep the one it has in the receiver",
+                List.of(data.author.getIdentifier()), findRelatedIds(data.article, data.relationship));
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.enterprise.publishing.remote.handler.ContentHandler#handle(File)}
+     * Given scenario: With a one-to-many relationship (one Article per Author), the receiver has an
+     * Article related to Author Jane. In the sender, Jane is related to a new Article instead, and
+     * only the new Article is pushed with a filter that sets {@code relationships: false}.
+     * Expected result: The new Article is created in the receiver without Jane, who stays related
+     * to her only Article there.
+     */
+    @Test
+    public void test_newParent_pushedWithoutRelationshipsFilter_isNotRelatedToChildWithItsOnlyParent()
+            throws Exception {
+        final TestData data = createRelatedContent(RELATIONSHIP_CARDINALITY.ONE_TO_MANY);
+        final Contentlet newArticle = new ContentletDataGen(data.article.getContentTypeId()).host(host)
+                .setProperty("title", "new-article-" + UUIDGenerator.shorty()).nextPersisted();
+        // In the sender, Jane's only Article is now the new one
+        moveRelationship("parent", data.article, newArticle, data.author, data.relationship);
+        final PreparedBundle bundle = generateBundleFor(newArticle, createFilterWithoutRelationships());
+
+        // In the receiver, the new Article doesn't exist yet, and Jane's only Article is the old one
+        LocalTransaction.wrap(() -> {
+            newArticle.setIndexPolicy(IndexPolicy.FORCE);
+            APILocator.getContentletAPI().destroy(newArticle, adminUser, false);
+        });
+        relate(data.article, data.author, data.relationship);
+
+        processBundle(bundle);
+
+        assertNotNull("The new Article must have been created from the bundle", APILocator.getContentletAPI()
+                .findContentletByIdentifierAnyLanguage(newArticle.getIdentifier()));
+        assertTrue("Jane allows one Article only, so the new Article must not be related to her",
+                findRelatedIds(newArticle, data.relationship).isEmpty());
+        assertEquals("Jane must keep the Article she has in the receiver",
+                List.of(data.article.getIdentifier()), findRelatedIds(data.author, data.relationship));
+    }
+
+    /**
+     * Moves the relationship between {@code related} and {@code from} to {@code to}, where {@code
+     * column} is the {@code tree} column {@code from} is in.
+     */
+    private static void moveRelationship(final String column, final Contentlet from, final Contentlet to,
+            final Contentlet related, final Relationship relationship) throws Exception {
+        final String otherColumn = "parent".equals(column) ? "child" : "parent";
+        new DotConnect().setSQL(String.format("update tree set %s = ? where %s = ? and %s = ? and relation_type = ?",
+                        column, column, otherColumn))
+                .addParam(to.getIdentifier())
+                .addParam(from.getIdentifier())
+                .addParam(related.getIdentifier())
+                .addParam(relationship.getRelationTypeValue())
+                .loadResult();
+    }
+
+    /**
+     * Relates the specified parent and child through the given relationship.
+     */
+    private static void relate(final Contentlet parent, final Contentlet child, final Relationship relationship)
+            throws Exception {
+        new DotConnect().setSQL("insert into tree (child, parent, relation_type, tree_order) values (?, ?, ?, 0)")
+                .addParam(child.getIdentifier())
+                .addParam(parent.getIdentifier())
+                .addParam(relationship.getRelationTypeValue())
+                .loadResult();
+    }
+
+    /**
      * Creates an Article type with a many-to-one Relationships Field pointing to an Author type --
      * the setup of the reported use case -- and an Article related to an Author.
      */
     private TestData createRelatedContent() {
+        return createRelatedContent(RELATIONSHIP_CARDINALITY.MANY_TO_ONE);
+    }
+
+    /**
+     * Creates an Article type with a Relationships Field of the given cardinality pointing to an
+     * Author type, and an Article related to an Author.
+     */
+    private TestData createRelatedContent(final RELATIONSHIP_CARDINALITY cardinality) {
         final ContentType authorType = new ContentTypeDataGen().host(host)
                 .field(new FieldDataGen().name("title").velocityVarName("title").next())
                 .nextPersisted();
@@ -276,7 +380,7 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
         final Relationship relationship = new FieldRelationshipDataGen()
                 .parent(articleType)
                 .child(authorType)
-                .cardinality(RELATIONSHIP_CARDINALITY.MANY_TO_ONE)
+                .cardinality(cardinality)
                 .nextPersisted();
         articleType = findContentType(articleType);
         contentTypes.add(authorType);

@@ -55,6 +55,7 @@ import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.cache.MultiTreeCache;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.reindex.ReindexQueueFactory.Priority;
 import com.dotmarketing.db.FlushCacheRunnable;
 import com.dotmarketing.db.HibernateUtil;
@@ -89,6 +90,7 @@ import com.dotmarketing.util.PushPublishLogger.PushPublishAction;
 import com.dotmarketing.util.PushPublishLogger.PushPublishHandler;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -1106,8 +1108,10 @@ public class ContentHandler implements IHandler {
 	/**
 	 * Relates the new content in the bundle to the content it's related to in the sender, as long
 	 * as both sides exist in the receiver, matched by Identifier. Relationships to content that
-	 * doesn't exist there are skipped, leaving them blank. Only the {@code tree} table changes: the
-	 * existing related content isn't updated otherwise.
+	 * doesn't exist there are skipped, leaving them blank. So are relationships that would give
+	 * existing content more related items than the relationship allows, keeping the ones it has in
+	 * the receiver. Only the {@code tree} table changes: the existing related content isn't updated
+	 * otherwise.
 	 *
 	 * @throws DotDataException An error occurred when saving the relationships.
 	 */
@@ -1126,6 +1130,12 @@ public class ContentHandler implements IHandler {
 				// The same row comes once per language, and from both sides when both are new
 				continue;
 			}
+			if (this.exceedsCardinality(tree)) {
+				Logger.info(this, "Skipping relationship '" + tree.getRelationType() + "' between '" +
+						tree.getParent() + "' and '" + tree.getChild() + "': it allows only one related " +
+						"item, and the receiver already has one");
+				continue;
+			}
 			TreeFactory.saveTree(tree);
 			for (final String id : sides) {
 				final Contentlet related = Try.of(() -> this.contentletAPI.findContentletByIdentifierAnyLanguage(id))
@@ -1135,6 +1145,48 @@ public class ContentHandler implements IHandler {
 			}
 		}
 		this.newContentTrees.clear();
+	}
+
+	/**
+	 * Checks whether saving the specified {@code tree} row would give its parent or its child more
+	 * related items than the relationship allows: one child per parent for {@code MANY_TO_ONE} and
+	 * {@code ONE_TO_ONE}, and one parent per child for {@code ONE_TO_MANY} and {@code ONE_TO_ONE}.
+	 *
+	 * @param tree The {@code tree} row to check.
+	 *
+	 * @return If the parent or the child already has its only allowed related item in the receiver,
+	 * returns {@code true}.
+	 *
+	 * @throws DotDataException An error occurred when reading the {@code tree} table.
+	 */
+	private boolean exceedsCardinality(final Tree tree) throws DotDataException {
+		final Relationship relationship = APILocator.getRelationshipAPI().byTypeValue(tree.getRelationType());
+		if (null == relationship) {
+			return false;
+		}
+		final RELATIONSHIP_CARDINALITY cardinality = RELATIONSHIP_CARDINALITY.fromOrdinal(relationship.getCardinality());
+		final boolean oneChildPerParent = cardinality == RELATIONSHIP_CARDINALITY.MANY_TO_ONE
+				|| cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE;
+		final boolean oneParentPerChild = cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_MANY
+				|| cardinality == RELATIONSHIP_CARDINALITY.ONE_TO_ONE;
+		return (oneChildPerParent && this.hasOtherRelated("parent", tree.getParent(), "child", tree.getChild(),
+						tree.getRelationType()))
+				|| (oneParentPerChild && this.hasOtherRelated("child", tree.getChild(), "parent", tree.getParent(),
+						tree.getRelationType()));
+	}
+
+	/**
+	 * Checks whether the content in the given {@code tree} column is related to anything other than
+	 * the specified content through the given relationship.
+	 */
+	private boolean hasOtherRelated(final String column, final String identifier, final String otherColumn,
+			final String otherIdentifier, final String relationType) throws DotDataException {
+		return new DotConnect().setSQL(String.format("select count(*) as total from tree where %s = ? and %s <> ? "
+						+ "and relation_type = ?", column, otherColumn))
+				.addParam(identifier)
+				.addParam(otherIdentifier)
+				.addParam(relationType)
+				.getInt("total") > 0;
 	}
 
     /**
