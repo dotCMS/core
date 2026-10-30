@@ -15,6 +15,7 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.BulkResultView;
 import com.dotcms.rest.api.FailedResultView;
+import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.rest.api.v1.page.ResponseEntityPaginatedArrayListMapView;
 import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.ForbiddenException;
@@ -27,6 +28,7 @@ import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
+import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
@@ -43,6 +45,7 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerView;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.form.business.FormAPI;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -75,6 +78,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -84,6 +88,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.DefaultValue;
@@ -126,6 +131,7 @@ public class ContainerResource implements Serializable {
     private final VelocityUtil   velocityUtil;
     private final ShortyIdAPI    shortyAPI;
     private final ContentletAPI  contentletAPI;
+    private final VersionableAPI versionableAPI;
     private final ContainerDependenciesHelper dependenciesHelper;
 
     public ContainerResource() {
@@ -147,7 +153,7 @@ public class ContainerResource implements Serializable {
      * @param paginationUtil     the {@link PaginationUtil} used by the listing endpoint
      * @param formAPI            the {@link FormAPI} that resolves forms rendered into containers
      * @param containerAPI       the {@link ContainerAPI} that loads and saves containers
-     * @param versionableAPI     the {@link VersionableAPI} (kept for callers that still pass it)
+     * @param versionableAPI     the {@link VersionableAPI} that reads the working and live versions of contentlets
      * @param velocityUtil       the {@link VelocityUtil} that renders container content
      * @param shortyAPI          the {@link ShortyIdAPI} that resolves short and long ids
      * @param contentletAPI      the {@link ContentletAPI} that loads contentlets
@@ -171,6 +177,7 @@ public class ContainerResource implements Serializable {
         this.velocityUtil   = velocityUtil;
         this.shortyAPI      = shortyAPI;
         this.contentletAPI  = contentletAPI;
+        this.versionableAPI = versionableAPI;
         this.dependenciesHelper = dependenciesHelper;
     }
 
@@ -298,16 +305,21 @@ public class ContainerResource implements Serializable {
     }
 
     /**
-     * Generates the HTML for a container with a particular contentlet
+     * Renders a contentlet inside a container and returns the resulting HTML.
+     * <p>
+     * The contentlet can be given by inode or by identifier. Either way it is rendered only when
+     * the calling {@link User} can read it; otherwise the request answers 403 with a generic
+     * message. By identifier, the version the caller is served is the one checked: the working
+     * version for back-end users, the live version for anyone else (404 when there is none). By
+     * inode, that exact version is checked.
      *
-     * @param req
-     * @param res
-     * @param containerId
-     * @param contentletId
-     * @param pageInode
-     * @return Response
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param req          the current request
+     * @param res          the current response
+     * @param containerId  the container's identifier, or its path for file-based containers
+     * @param contentletId the contentlet's inode or identifier
+     * @param pageInode    optional inode of the page to use as rendering context
+     * @return a {@link ResponseEntityView} holding the rendered HTML under {@code render}
+     * @throws DotDataException if the contentlet or container cannot be loaded
      */
     @GET
     @JSONP
@@ -340,7 +352,9 @@ public class ContainerResource implements Serializable {
         final User user               = initData.getUser();
         final PageMode mode           = PageMode.EDIT_MODE;
 
-        PageMode.setPageMode(req, PageMode.EDIT_MODE);
+        // Back-end users are served EDIT_MODE (working versions); any other user stays in LIVE.
+        // The inode route keeps checking the given inode with the EDIT_MODE flags, as before.
+        final PageMode servedMode = PageMode.setPageMode(req, PageMode.EDIT_MODE);
 
         final ShortyId contentShorty = this.shortyAPI
             .getShorty(contentletId)
@@ -352,8 +366,11 @@ public class ContainerResource implements Serializable {
 
             final Contentlet contentlet =
                     (contentShorty.type == ShortType.IDENTIFIER) ?
-                            this.contentletAPI.findContentletByIdentifierAnyLanguageAnyVariant(contentShorty.longId):
+                            this.findReadableContentletByIdentifier(req, contentShorty.longId, servedMode, user):
                             this.contentletAPI.find(contentShorty.longId, user, mode.respectAnonPerms);
+            if (null == contentlet) {
+                throw new ResourceNotFoundException("Can't find contentlet:" + SecurityUtils.sanitizeForLogging(contentletId));
+            }
 
             final String html = this.getHTML(req, res, containerId, user, contentlet, pageInode);
 
@@ -361,8 +378,70 @@ public class ContainerResource implements Serializable {
 
             return Response.ok(new ResponseEntityView(response)).build();
         } catch (DotSecurityException e) {
-            throw new ForbiddenException(e);
+            throw new ForbiddenException(e, "The user does not have the permissions required for this request");
         }
+    }
+
+    /**
+     * Finds the version of a contentlet that the given user is served, by identifier, checking
+     * that the user can read it.
+     * <p>
+     * Archived versions are not served. Back-end users in edit mode are served a working version;
+     * any other user a live version. The DEFAULT variant is preferred. Permissions granted to
+     * front-end roles, including CMS Anonymous, count towards READ; the permission API only applies
+     * CMS Anonymous to live versions, so it never opens a working version.
+     * <p>
+     * While a Time Machine date is set, the container can render the working version of content
+     * scheduled to be published by that date, so a user served live content must be able to read
+     * the working version too.
+     *
+     * @param request    the current request, which may carry a Time Machine date
+     * @param identifier the contentlet's identifier
+     * @param mode       the {@link PageMode} the user is served in
+     * @param user       the {@link User} making the request
+     * @return the readable {@link Contentlet}
+     * @throws DotDataException          if the contentlet cannot be loaded
+     * @throws DotSecurityException      if the user cannot read the contentlet
+     * @throws ResourceNotFoundException if there is no version to serve
+     */
+    private Contentlet findReadableContentletByIdentifier(final HttpServletRequest request,
+                                                          final String identifier,
+                                                          final PageMode mode,
+                                                          final User user)
+            throws DotDataException, DotSecurityException {
+
+        final Optional<ContentletVersionInfo> served = this.versionableAPI.findContentletVersionInfos(identifier).stream()
+                .filter(info -> !info.isDeleted())
+                .sorted(Comparator.comparing(
+                        (ContentletVersionInfo info) -> !VariantAPI.DEFAULT_VARIANT.name().equals(info.getVariant())))
+                .filter(info -> UtilMethods.isSet(mode.showLive ? info.getLiveInode() : info.getWorkingInode()))
+                .findFirst();
+        final Contentlet contentlet = served.isPresent()
+                ? this.contentletAPI.find(mode.showLive ? served.get().getLiveInode() : served.get().getWorkingInode(), user, true)
+                : null;
+        if (null == contentlet) {
+            throw new ResourceNotFoundException("Can't find contentlet:" + SecurityUtils.sanitizeForLogging(identifier));
+        }
+        if (mode.showLive && isTimeMachineOn(request)
+                && !served.get().getLiveInode().equals(served.get().getWorkingInode())) {
+            this.contentletAPI.find(served.get().getWorkingInode(), user, true);
+        }
+        return contentlet;
+    }
+
+    /**
+     * Tells whether a Time Machine date is set on the request or the session, as the page API does
+     * when a page is requested with a future publish date.
+     *
+     * @param request the current request
+     * @return {@code true} when a Time Machine date is set
+     */
+    private static boolean isTimeMachineOn(final HttpServletRequest request) {
+        if (null != request.getAttribute(PageResource.TM_DATE)) {
+            return true;
+        }
+        final HttpSession session = request.getSession(false);
+        return null != session && null != session.getAttribute(PageResource.TM_DATE);
     }
 
     /**
