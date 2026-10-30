@@ -384,6 +384,18 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 		save((Template) webAsset);
 	}
 
+	/**
+	 * Makes the template's working version live for the user, who must hold PUBLISH on it, and
+	 * publishes the containers in its layout the user may publish; the others are left as they
+	 * are. The system template is never published.
+	 *
+	 * @param template the {@link Template} to publish
+	 * @param user the {@link User} publishing, whose PUBLISH permission decides the outcome
+	 * @param respectFrontendRoles whether front-end roles count towards the permission checks
+	 * @throws DotSecurityException if the user holds no PUBLISH on the template
+	 * @throws DotDataException if the template or its containers cannot be read or saved
+	 * @throws WebAssetException if the template cannot be published
+	 */
 	@Override
 	@WrapInTransaction
 	public void publishTemplate(final Template template, final User user, final boolean respectFrontendRoles)
@@ -398,7 +410,7 @@ public class TemplateAPIImpl extends BaseWebAssetAPI implements TemplateAPI, Dot
 		Logger.debug(this, ()-> "Publishing the template: " + template.getIdentifier());
 
 		//Check Publish Permissions over Template
-		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_PUBLISH, user)){
+		if(!this.permissionAPI.doesUserHavePermission(template, PERMISSION_PUBLISH, user, respectFrontendRoles)){
 			Logger.error(this,"The user: " + user.getUserId() + " does not have Permissions to Publish the Template");
 			throw new DotSecurityException("User does not have Permissions to Publish the Template");
 		}

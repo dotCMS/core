@@ -151,6 +151,29 @@ public class PublishAssetPermissionIT {
     }
 
     /**
+     * Method to test:
+     * {@link com.dotmarketing.portlets.templates.business.TemplateAPI#publishTemplate(Template, User, boolean)}
+     * Given Scenario: The user's only PUBLISH on the template comes through the front-end
+     * "Logged In Site User" role, and the call asks not to take front-end roles into account
+     * ExpectedResult: The call is refused and the template stays unpublished
+     */
+    @Test
+    void test_templateAPI_publishTemplate_publishOnlyThroughFrontEndRole_isRefused()
+            throws Exception {
+        final User user = backendUser(APILocator.getRoleAPI().loadFrontEndUserRole());
+        final Container container = new ContainerDataGen().site(site).nextPersisted();
+        final Template template = unpublishedTemplateWith(container);
+        grant(template, APILocator.getRoleAPI().loadFrontEndUserRole(),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_PUBLISH);
+
+        assertThrows(DotSecurityException.class,
+                () -> APILocator.getTemplateAPI().publishTemplate(template, user, false));
+
+        assertFalse(isLive(template));
+        assertFalse(isLive(container));
+    }
+
+    /**
      * A drawed template whose layout holds the given unpublished container, with its own live
      * version removed so that publishing it is observable.
      */
@@ -168,25 +191,33 @@ public class PublishAssetPermissionIT {
     }
 
     /**
-     * A back-end user who can read the test site and whatever is created in it afterwards, and
-     * holds nothing else there. Created before the test's folders and links so that they inherit
-     * that READ.
+     * A back-end user, with the extra roles given, who can read the test site and whatever is
+     * created in it afterwards, and holds nothing else there. Created before the test's folders
+     * and links so that they inherit that READ.
      */
-    private static User backendUser() throws DotDataException, DotSecurityException {
-        final User user = new UserDataGen().roles(TestUserUtils.getBackendRole()).nextPersisted();
+    private static User backendUser(final Role... extraRoles)
+            throws DotDataException, DotSecurityException {
+        final List<Role> roles = new ArrayList<>(List.of(TestUserUtils.getBackendRole()));
+        roles.addAll(List.of(extraRoles));
+        final User user = new UserDataGen().roles(roles.toArray(new Role[0])).nextPersisted();
         usersToClean.add(user);
         grant(site, user, PermissionAPI.PERMISSION_READ);
         return user;
     }
 
-    /**
-     * Gives the user's own role the permission bits on the asset and, when the asset is a site or
-     * a folder, on the folders and links created under it. A container keeps only its own row, so
-     * READ on it never implies PUBLISH.
-     */
+    /** Gives the user's own role the permission bits, see {@link #grant(Permissionable, Role, int)}. */
     private static void grant(final Permissionable asset, final User user, final int permission)
             throws DotDataException, DotSecurityException {
-        final Role role = APILocator.getRoleAPI().getUserRole(user);
+        grant(asset, APILocator.getRoleAPI().getUserRole(user), permission);
+    }
+
+    /**
+     * Gives the role the permission bits on the asset and, when the asset is a site or a folder,
+     * on the folders and links created under it. A container keeps only its own row, so READ on
+     * it never implies PUBLISH.
+     */
+    private static void grant(final Permissionable asset, final Role role, final int permission)
+            throws DotDataException, DotSecurityException {
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
                 asset.getPermissionId(), role.getId(), permission, true), asset, systemUser, false);
