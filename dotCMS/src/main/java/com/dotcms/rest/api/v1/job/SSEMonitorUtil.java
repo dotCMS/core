@@ -7,6 +7,7 @@ import com.dotcms.jobs.business.api.events.JobWatcher;
 import com.dotcms.jobs.business.job.Job;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
+import com.liferay.portal.model.User;
 import java.io.IOException;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -56,20 +57,22 @@ public class SSEMonitorUtil {
     }
 
     /**
-     * Sets up job monitoring via SSE
+     * Sets up job monitoring via SSE for the user making the request. A job the user may not read
+     * is reported as not found.
      *
      * @param jobId The job ID to monitor
+     * @param user  The {@link User} making the request
      * @return EventOutput for streaming updates
      */
     @SuppressWarnings("java:S1854") // jobWatcher assignment is needed for cleanup in catch blocks
-    public EventOutput monitorJob(final String jobId) {
+    public EventOutput monitorJob(final String jobId, final User user) {
 
         final var eventOutput = new EventOutput();
         final var resources = new MonitorResources(jobId, eventOutput, helper);
 
         try {
 
-            Job job = helper.getJobForSSE(jobId);
+            Job job = helper.getJobForSSE(jobId, user);
             if (job == null) {
                 sendErrorAndClose(SSEError.JOB_NOT_FOUND, resources);
                 return eventOutput;

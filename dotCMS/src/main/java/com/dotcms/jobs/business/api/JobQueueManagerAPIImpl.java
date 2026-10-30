@@ -20,6 +20,7 @@ import com.dotcms.jobs.business.error.JobValidationException;
 import com.dotcms.jobs.business.error.RetryPolicyProcessor;
 import com.dotcms.jobs.business.error.RetryStrategy;
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobListView;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobResult;
 import com.dotcms.jobs.business.job.JobState;
@@ -43,10 +44,13 @@ import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import com.google.common.annotations.VisibleForTesting;
+import com.liferay.portal.model.User;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -420,6 +424,57 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @CloseDBIfOpened
     @Override
+    public Job getJob(final String jobId, final User user) throws DotDataException {
+        final Job job = getJob(jobId);
+        if (!canAccess(job, user)) {
+            SecurityLogger.logInfo(this.getClass(), String.format(
+                    "User [%s] was refused access to job [%s], which they did not create",
+                    user == null ? null : user.getUserId(), job.id()));
+            throw new DoesNotExistException(new JobNotFoundException(jobId));
+        }
+        return job;
+    }
+
+    @Override
+    public void cancelJob(final String jobId, final User user) throws DotDataException {
+        cancel(getJob(jobId, user));
+    }
+
+    @CloseDBIfOpened
+    @Override
+    public JobPaginatedResult getJobs(final JobListView view, final String queueName,
+            final User user, final int page, final int pageSize) throws DotDataException {
+        if (user == null) {
+            return JobPaginatedResult.builder().jobs(List.of()).total(0).page(page)
+                    .pageSize(pageSize).build();
+        }
+        final String ownerId = user.isAdmin() ? null : user.getUserId();
+        try {
+            return jobQueue.getJobs(view, queueName, ownerId, page, pageSize);
+        } catch (JobQueueDataException e) {
+            throw new DotDataException("Error fetching jobs", e);
+        }
+    }
+
+    /**
+     * Tells whether a user may read and cancel a job: CMS Administrators can, and so can the user
+     * who created it, recorded as the job's {@code userId} parameter. A job with no recorded
+     * creator is for CMS Administrators only.
+     *
+     * @param job  the job
+     * @param user the {@link User} asking; {@code null} may not
+     * @return true when the user may read and cancel the job
+     */
+    private static boolean canAccess(final Job job, final User user) {
+        if (user == null) {
+            return false;
+        }
+        final Object creator = job.parameters().get("userId");
+        return user.isAdmin() || (creator != null && creator.equals(user.getUserId()));
+    }
+
+    @CloseDBIfOpened
+    @Override
     public JobPaginatedResult getJobs(final int page, final int pageSize) throws DotDataException {
         try {
             return jobQueue.getJobs(page, pageSize);
@@ -495,8 +550,16 @@ public class JobQueueManagerAPIImpl implements JobQueueManagerAPI {
 
     @Override
     public void cancelJob(final String jobId) throws DotDataException {
+        cancel(getJob(jobId));
+    }
 
-        final Job job = getJob(jobId);
+    /**
+     * Requests the cancellation of a job, when its state still allows it.
+     *
+     * @param job the job to cancel
+     * @throws DotDataException if there's an error requesting the cancellation
+     */
+    private void cancel(final Job job) throws DotDataException {
 
         if (isInCancelableState(job)) {
             handleJobCancelRequest(job);

@@ -1,6 +1,7 @@
 package com.dotcms.jobs.business.queue;
 
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobListView;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.jobs.business.queue.error.JobLockingException;
@@ -224,6 +225,21 @@ public interface JobQueue {
      * @throws JobQueueDataException if there's a data storage error while fetching the jobs
      */
     JobPaginatedResult getAbandonedJobs(int page, int pageSize) throws JobQueueDataException;
+
+    /**
+     * Retrieves one page of a job listing, optionally narrowed to one queue and to the jobs one
+     * user created. Paging and the total count reflect the narrowed listing.
+     *
+     * @param view      The listing to read, which decides the job states included
+     * @param queueName The queue to read from, or {@code null} for every queue
+     * @param ownerId   The id of the user whose jobs to include, or {@code null} for every user's
+     * @param page      The page number (for pagination).
+     * @param pageSize  The number of items per page.
+     * @return A result object containing the list of jobs and pagination information.
+     * @throws JobQueueDataException if there's a data storage error while fetching the jobs
+     */
+    JobPaginatedResult getJobs(JobListView view, String queueName, String ownerId, int page,
+            int pageSize) throws JobQueueDataException;
 
     /**
      * Updates the status of a job.

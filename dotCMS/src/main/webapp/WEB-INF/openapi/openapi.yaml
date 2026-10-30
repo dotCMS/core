@@ -6812,8 +6812,10 @@ paths:
       - Content
   /v1/content/_import:
     get:
-      description: Fetches a paginated list of all content import jobs regardless
-        of state. Results can be paginated using query parameters.
+      description: "Fetches a paginated list of all content import jobs regardless\
+        \ of state. Returns only the jobs the caller created, or every job for CMS\
+        \ Administrators; the pagination total counts the same jobs. Results can be\
+        \ paginated using query parameters."
       operationId: getContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -6995,8 +6997,10 @@ paths:
       - Content
   /v1/content/_import/abandoned:
     get:
-      description: Fetches a paginated list of abandoned content import jobs (jobs
-        with state ABANDONED). Results can be paginated using query parameters.
+      description: "Fetches a paginated list of abandoned content import jobs (jobs\
+        \ with state ABANDONED). Returns only the jobs the caller created, or every\
+        \ job for CMS Administrators; the pagination total counts the same jobs. Results\
+        \ can be paginated using query parameters."
       operationId: getAbandonedContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -7036,8 +7040,9 @@ paths:
   /v1/content/_import/active:
     get:
       description: "Fetches a paginated list of active content import jobs (jobs with\
-        \ state NEW, PROCESSING, or WAITING). Results can be paginated using query\
-        \ parameters."
+        \ state NEW, PROCESSING, or WAITING). Returns only the jobs the caller created,\
+        \ or every job for CMS Administrators; the pagination total counts the same\
+        \ jobs. Results can be paginated using query parameters."
       operationId: getActiveContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -7076,8 +7081,10 @@ paths:
       - Content
   /v1/content/_import/canceled:
     get:
-      description: Fetches a paginated list of canceled content import jobs (jobs
-        with state CANCELED). Results can be paginated using query parameters.
+      description: "Fetches a paginated list of canceled content import jobs (jobs\
+        \ with state CANCELED). Returns only the jobs the caller created, or every\
+        \ job for CMS Administrators; the pagination total counts the same jobs. Results\
+        \ can be paginated using query parameters."
       operationId: getCanceledContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -7116,8 +7123,10 @@ paths:
       - Content
   /v1/content/_import/completed:
     get:
-      description: Fetches a paginated list of completed content import jobs (jobs
-        with state COMPLETED). Results can be paginated using query parameters.
+      description: "Fetches a paginated list of completed content import jobs (jobs\
+        \ with state COMPLETED). Returns only the jobs the caller created, or every\
+        \ job for CMS Administrators; the pagination total counts the same jobs. Results\
+        \ can be paginated using query parameters."
       operationId: getCompletedContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -7156,8 +7165,10 @@ paths:
       - Content
   /v1/content/_import/failed:
     get:
-      description: Fetches a paginated list of failed content import jobs (jobs with
-        state FAILED). Results can be paginated using query parameters.
+      description: "Fetches a paginated list of failed content import jobs (jobs with\
+        \ state FAILED). Returns only the jobs the caller created, or every job for\
+        \ CMS Administrators; the pagination total counts the same jobs. Results can\
+        \ be paginated using query parameters."
       operationId: getFailedContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -7196,9 +7207,10 @@ paths:
       - Content
   /v1/content/_import/successful:
     get:
-      description: Fetches a paginated list of successful content import jobs (jobs
-        with state COMPLETED and successful result). Results can be paginated using
-        query parameters.
+      description: "Fetches a paginated list of successful content import jobs (jobs\
+        \ with state COMPLETED and successful result). Returns only the jobs the caller\
+        \ created, or every job for CMS Administrators; the pagination total counts\
+        \ the same jobs. Results can be paginated using query parameters."
       operationId: getSuccessfulContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -7237,8 +7249,10 @@ paths:
       - Content
   /v1/content/_import/{jobId}:
     get:
-      description: Fetches the detailed current status of a specific content import
-        job identified by its ID.
+      description: "Fetches the detailed current status of a specific content import\
+        \ job identified by its ID. Only the user who created the job and CMS Administrators\
+        \ can read it. Parameters the server sets for uploaded files (tempFileId,\
+        \ requestFingerPrint) are not included."
       operationId: getJobStatus
       parameters:
       - description: The unique identifier (UUID) of the job whose status is to be
@@ -7264,7 +7278,8 @@ paths:
           description: "Forbidden: User does not have permissions to view the specified\
             \ job."
         "404":
-          description: "Not Found: Job with the specified ID could not be found."
+          description: "Not Found: No job with the specified ID exists, or the job\
+            \ was not created by the caller (CMS Administrators can read any job)."
         "500":
           description: "Internal Server Error: An unexpected error occurred while\
             \ retrieving the job status."
@@ -7276,6 +7291,7 @@ paths:
     post:
       description: Requests cancellation of a specific content import job identified
         by its ID. Note that cancellation is asynchronous and may not be immediate.
+        Only the user who created the job and CMS Administrators can cancel it.
       operationId: cancelContentImportJob
       parameters:
       - description: The unique identifier (UUID) of the job to be cancelled.
@@ -7306,8 +7322,8 @@ paths:
           description: "Forbidden: User does not have permissions to cancel the specified\
             \ job."
         "404":
-          description: "Not Found: Job with the specified ID could not be found or\
-            \ is already completed/cancelled."
+          description: "Not Found: No job with the specified ID exists, or the job\
+            \ was not created by the caller (CMS Administrators can cancel any job)."
         "500":
           description: "Internal Server Error: An unexpected error occurred while\
             \ attempting to cancel the job."
@@ -7320,11 +7336,11 @@ paths:
       description: "Establishes a Server-Sent Events (SSE) connection to monitor the\
         \ progress of a specific content import job in real-time. This endpoint will\
         \ continuously send updates as the job progresses, including status changes\
-        \ and completion information."
+        \ and completion information. Only the user who created the job and CMS Administrators\
+        \ can monitor it."
       operationId: monitorContentImportJobs
       parameters:
-      - description: The unique identifier (UUID) of the job whose status is to be
-          retrieved.
+      - description: The unique identifier (UUID) of the job to monitor.
         in: path
         name: jobId
         required: true
@@ -7338,15 +7354,15 @@ paths:
             text/event-stream:
               schema:
                 $ref: "#/components/schemas/EventOutput"
-          description: Server-Sent Events stream established successfully. Events
-            will be sent as the job progresses.
+          description: "Server-Sent Events stream established successfully. Events\
+            \ will be sent as the job progresses. If no job with the specified ID\
+            \ exists, or the caller may not monitor it, the stream sends a single\
+            \ job-not-found event with data 404 and closes."
         "401":
           description: "Unauthorized: Invalid or missing user authentication."
         "403":
           description: "Forbidden: User does not have permissions to monitor the specified\
             \ job."
-        "404":
-          description: "Not Found: Job with the specified ID could not be found."
         "500":
           description: "Internal Server Error: An unexpected error occurred while\
             \ establishing the monitoring connection."
@@ -11978,8 +11994,10 @@ paths:
       - Health
   /v1/jobs:
     get:
-      description: Fetches a paginated list of all jobs regardless of state. Results
-        can be paginated using query parameters.
+      description: "Fetches a paginated list of jobs regardless of state. Returns\
+        \ only the jobs the caller created, or every job for CMS Administrators; the\
+        \ pagination total counts the same jobs. Results can be paginated using query\
+        \ parameters."
       operationId: listJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -12016,8 +12034,9 @@ paths:
       - Job Queue
   /v1/jobs/abandoned:
     get:
-      description: Fetches a paginated list of abandoned jobs. Results can be paginated
-        using query parameters.
+      description: "Fetches a paginated list of abandoned jobs. Returns only the jobs\
+        \ the caller created, or every job for CMS Administrators; the pagination\
+        \ total counts the same jobs. Results can be paginated using query parameters."
       operationId: getAbandonedJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -12054,8 +12073,9 @@ paths:
       - Job Queue
   /v1/jobs/active:
     get:
-      description: Fetches a paginated list of active jobs. Results can be paginated
-        using query parameters.
+      description: "Fetches a paginated list of active jobs. Returns only the jobs\
+        \ the caller created, or every job for CMS Administrators; the pagination\
+        \ total counts the same jobs. Results can be paginated using query parameters."
       operationId: getActiveJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -12092,8 +12112,9 @@ paths:
       - Job Queue
   /v1/jobs/canceled:
     get:
-      description: Fetches a paginated list of canceled jobs. Results can be paginated
-        using query parameters.
+      description: "Fetches a paginated list of canceled jobs. Returns only the jobs\
+        \ the caller created, or every job for CMS Administrators; the pagination\
+        \ total counts the same jobs. Results can be paginated using query parameters."
       operationId: getCanceledJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -12129,8 +12150,9 @@ paths:
       - Job Queue
   /v1/jobs/completed:
     get:
-      description: Fetches a paginated list of completed jobs. Results can be paginated
-        using query parameters.
+      description: "Fetches a paginated list of completed jobs. Returns only the jobs\
+        \ the caller created, or every job for CMS Administrators; the pagination\
+        \ total counts the same jobs. Results can be paginated using query parameters."
       operationId: getCompletedJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -12167,8 +12189,9 @@ paths:
       - Job Queue
   /v1/jobs/failed:
     get:
-      description: Fetches a paginated list of failed jobs. Results can be paginated
-        using query parameters.
+      description: "Fetches a paginated list of failed jobs. Returns only the jobs\
+        \ the caller created, or every job for CMS Administrators; the pagination\
+        \ total counts the same jobs. Results can be paginated using query parameters."
       operationId: getFailedJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -12226,8 +12249,9 @@ paths:
       - Job Queue
   /v1/jobs/successful:
     get:
-      description: Fetches a paginated list of successful jobs. Results can be paginated
-        using query parameters.
+      description: "Fetches a paginated list of successful jobs. Returns only the\
+        \ jobs the caller created, or every job for CMS Administrators; the pagination\
+        \ total counts the same jobs. Results can be paginated using query parameters."
       operationId: getSuccessfulJobs
       parameters:
       - description: Page number to retrieve (1-based).
@@ -12266,6 +12290,7 @@ paths:
     post:
       description: Sends an asynchronous cancellation request for the specified job.
         The job may still complete if it has already finished or cannot be interrupted.
+        Only the user who created the job and CMS Administrators can cancel it.
       operationId: cancelJobQueueJob
       parameters:
       - description: Unique identifier (UUID) of the job to cancel.
@@ -12290,8 +12315,8 @@ paths:
         "403":
           description: "Forbidden: User does not have permission to cancel this job."
         "404":
-          description: "Not Found: Job with the specified ID does not exist or is\
-            \ already completed/cancelled."
+          description: "Not Found: No job with the specified ID exists, or the job\
+            \ was not created by the caller (CMS Administrators can cancel any job)."
         "500":
           description: "Internal Server Error: An unexpected error occurred while\
             \ attempting to cancel the job."
@@ -12301,13 +12326,13 @@ paths:
   /v1/jobs/{jobId}/monitor:
     get:
       description: "Establishes a Server-Sent Events (SSE) connection to monitor the\
-        \ progress of a specific  job in real-time. This endpoint will continuously\
+        \ progress of a specific job in real-time. This endpoint will continuously\
         \ send updates as the job progresses, including status changes and completion\
-        \ information."
+        \ information. Only the user who created the job and CMS Administrators can\
+        \ monitor it."
       operationId: monitorJob
       parameters:
-      - description: The unique identifier (UUID) of the job whose status is to be
-          retrieved.
+      - description: The unique identifier (UUID) of the job to monitor.
         in: path
         name: jobId
         required: true
@@ -12321,15 +12346,15 @@ paths:
             text/event-stream:
               schema:
                 $ref: "#/components/schemas/EventOutput"
-          description: Server-Sent Events stream established successfully. Events
-            will be sent as the job progresses.
+          description: "Server-Sent Events stream established successfully. Events\
+            \ will be sent as the job progresses. If no job with the specified ID\
+            \ exists, or the caller may not monitor it, the stream sends a single\
+            \ job-not-found event with data 404 and closes."
         "401":
           description: "Unauthorized: Invalid or missing user authentication."
         "403":
           description: "Forbidden: User does not have permissions to monitor the specified\
             \ job."
-        "404":
-          description: "Not Found: Job with the specified ID could not be found."
         "500":
           description: "Internal Server Error: An unexpected error occurred while\
             \ establishing the monitoring connection."
@@ -12339,7 +12364,9 @@ paths:
   /v1/jobs/{jobId}/status:
     get:
       description: "Returns detailed status information for a specific job including\
-        \ progress, state, and results."
+        \ progress, state, and results. Only the user who created the job and CMS\
+        \ Administrators can read it. Parameters the server sets for uploaded files\
+        \ (tempFileId, requestFingerPrint) are not included."
       operationId: getJobStatus_1
       parameters:
       - description: Unique identifier (UUID) of the job.
@@ -12364,7 +12391,8 @@ paths:
         "403":
           description: Forbidden - User lacks required permissions
         "404":
-          description: Job not found
+          description: "Not Found: No job with the specified ID exists, or the job\
+            \ was not created by the caller (CMS Administrators can read any job)."
         "500":
           description: Internal server error
       summary: Retrieves job status information
@@ -12408,7 +12436,8 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityJobStatusView"
           description: Job created successfully
         "400":
-          description: "Bad Request: Invalid parameters or malformed JSON."
+          description: "Bad Request: Invalid parameters or malformed JSON. The job\
+            \ parameters may not include tempFileId or requestFingerPrint."
         "401":
           description: "Unauthorized: Invalid or missing user authentication."
         "403":
@@ -12425,8 +12454,10 @@ paths:
       - Job Queue
   /v1/jobs/{queueName}/active:
     get:
-      description: Fetches a paginated list of active jobs. Results can be paginated
-        using query parameters.for the specified queue.
+      description: "Fetches a paginated list of active jobs for the specified queue.\
+        \ Returns only the jobs the caller created, or every job for CMS Administrators;\
+        \ the pagination total counts the same jobs. Results can be paginated using\
+        \ query parameters."
       operationId: getActiveJobsByQueue
       parameters:
       - description: Logical name of the queue.
@@ -12521,7 +12552,8 @@ paths:
           description: Job created successfully
         "400":
           description: "Bad Request: Invalid parameters, malformed multipart payload,\
-            \ or file issues."
+            \ or file issues. The job parameters may not include tempFileId or requestFingerPrint;\
+            \ the server sets these when a file is uploaded with the request."
         "401":
           description: "Unauthorized: Invalid or missing user authentication."
         "403":

@@ -7,13 +7,19 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 import com.dotcms.Junit5WeldBaseTest;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobView;
 import com.dotcms.jobs.business.job.JobViewPaginatedResult;
 import com.dotcms.jobs.business.util.JobUtil;
 import com.dotcms.mock.response.MockHttpResponse;
@@ -531,6 +537,65 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
 
 
     /**
+     * Scenario: an administrator starts an import, then a back-end user who is not an
+     * administrator reads, lists and cancels it, and the administrator reads it back.
+     * <p>
+     * Expected: the back-end user gets "not found" on read and cancel, does not see the job in
+     * any listing and is the user the monitor is opened for; the administrator sees the job in the
+     * listing and reads it, without the staged file's id and request fingerprint in its parameters.
+     * Ordered after the tests that count jobs, since it adds one.
+     * </p>
+     */
+    @Test
+    @Order(100)
+    void test_import_job_is_visible_only_to_its_creator_and_administrators() throws Exception {
+        final ContentImportForm form = createContentImportForm(contentType.name(),
+                String.valueOf(defaultLanguage.getId()), WORKFLOW_PUBLISH_ACTION_ID, List.of(fieldId));
+        final Response created = importResource.importContent(request, response,
+                createContentImportParams(csvFile, form));
+        final String jobId = ((ResponseEntityJobStatusView) created.getEntity()).getEntity().jobId();
+
+        final User backendUser = new UserDataGen().roles(TestUserUtils.getBackendRole())
+                .nextPersisted();
+        try {
+            assertTrue(importResource.listJobs(request, response, 1, 100).getEntity().jobs()
+                    .stream().anyMatch(job -> jobId.equals(job.id())), "job not listed for admin");
+
+            final HttpServletRequest backendRequest = JobUtil.generateMockRequest(backendUser,
+                    defaultSite.getHostname());
+
+            assertThrows(DoesNotExistException.class,
+                    () -> importResource.getJobStatus(backendRequest, response, jobId));
+            assertThrows(DoesNotExistException.class,
+                    () -> importResource.cancelJob(backendRequest, response, jobId));
+            for (final JobViewPaginatedResult listed : List.of(
+                    importResource.listJobs(backendRequest, response, 1, 100).getEntity(),
+                    importResource.activeJobs(backendRequest, response, 1, 100).getEntity(),
+                    importResource.completedJobs(backendRequest, response, 1, 100).getEntity(),
+                    importResource.canceledJobs(backendRequest, response, 1, 100).getEntity(),
+                    importResource.failedJobs(backendRequest, response, 1, 100).getEntity(),
+                    importResource.abandonedJobs(backendRequest, response, 1, 100).getEntity(),
+                    importResource.successfulJobs(backendRequest, response, 1, 100).getEntity())) {
+                assertTrue(listed.jobs().stream().noneMatch(job -> jobId.equals(job.id())),
+                        "job listed for another user");
+            }
+
+            final SSEMonitorUtil monitor = mock(SSEMonitorUtil.class);
+            new ContentImportResource(contentImportHelper, monitor)
+                    .monitorJob(backendRequest, response, jobId);
+            verify(monitor).monitorJob(eq(jobId),
+                    argThat(user -> backendUser.getUserId().equals(user.getUserId())));
+        } finally {
+            UserDataGen.remove(backendUser);
+        }
+
+        final JobView view = importResource.getJobStatus(request, response, jobId).getEntity();
+        assertEquals(jobId, view.id());
+        assertFalse(view.parameters().containsKey("tempFileId"));
+        assertFalse(view.parameters().containsKey("requestFingerPrint"));
+    }
+
+    /**
      * Scenario: Attempt to validate content import with a valid CSV file but without providing the required form data.
      * <p>
      * Expected: A ValidationException should be thrown since form data is a required parameter
@@ -610,8 +675,7 @@ public class ContentImportResourceIntegrationTest extends Junit5WeldBaseTest {
 
         // Retrieve and validate job exists in the queue
         Job job = contentImportHelper.getJob(responseEntityJobStatusView
-
-                .getEntity().jobId());
+                .getEntity().jobId(), adminUser);
         assertNotNull(job, "Job should exist in queue");
 
         // Validate core import parameters

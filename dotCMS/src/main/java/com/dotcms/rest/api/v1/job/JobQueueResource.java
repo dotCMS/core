@@ -2,12 +2,14 @@ package com.dotcms.rest.api.v1.job;
 
 import com.dotcms.jobs.business.error.JobValidationException;
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobListView;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.rest.*;
 import com.dotcms.rest.WebResource.InitBuilder;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.liferay.portal.model.User;
 import graphql.VisibleForTesting;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -99,7 +101,7 @@ public class JobQueueResource {
                                             "}")
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad Request: Invalid parameters, malformed multipart payload, or file issues."),
+                    @ApiResponse(responseCode = "400", description = "Bad Request: Invalid parameters, malformed multipart payload, or file issues. The job parameters may not include tempFileId or requestFingerPrint; the server sets these when a file is uploaded with the request."),
                     @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
                     @ApiResponse(responseCode = "403", description = "Forbidden: User lacks permission to enqueue jobs in the specified queue, or the queue has a dedicated endpoint (the message names it) and does not accept jobs through this one."),
                     @ApiResponse(responseCode = "404", description = "Not Found: Queue with the specified name does not exist."),
@@ -189,7 +191,7 @@ public class JobQueueResource {
                                             "}")
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad Request: Invalid parameters or malformed JSON."),
+                    @ApiResponse(responseCode = "400", description = "Bad Request: Invalid parameters or malformed JSON. The job parameters may not include tempFileId or requestFingerPrint."),
                     @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
                     @ApiResponse(responseCode = "403", description = "Forbidden: User lacks permission to enqueue jobs in the specified queue, or the queue has a dedicated endpoint (the message names it) and does not accept jobs through this one."),
                     @ApiResponse(responseCode = "404", description = "Not Found: Queue with the specified name does not exist."),
@@ -279,7 +281,9 @@ public class JobQueueResource {
     @Operation(
             operationId = "getJobStatus",
             summary = "Retrieves job status information",
-            description = "Returns detailed status information for a specific job including progress, state, and results.",
+            description = "Returns detailed status information for a specific job including progress, state, and results."
+                    + " Only the user who created the job and CMS Administrators can read it."
+                    + " Parameters the server sets for uploaded files (tempFileId, requestFingerPrint) are not included.",
             tags = {"Job Queue"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Job status retrieved successfully",
@@ -288,7 +292,7 @@ public class JobQueueResource {
                     @ApiResponse(responseCode = "400", description = "Bad request - Invalid job ID"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
-                    @ApiResponse(responseCode = "404", description = "Job not found"),
+                    @ApiResponse(responseCode = "404", description = "Not Found: No job with the specified ID exists, or the job was not created by the caller (CMS Administrators can read any job)."),
                     @ApiResponse(responseCode = "500", description = "Internal server error")
             }
     )
@@ -305,14 +309,14 @@ public class JobQueueResource {
             )
             String jobId) throws DotDataException {
 
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
+                .init().getUser();
 
-        Job job = helper.getJob(jobId);
+        Job job = helper.getJob(jobId, user);
         return new ResponseEntityView<>(job);
     }
 
@@ -333,7 +337,8 @@ public class JobQueueResource {
             operationId = "cancelJobQueueJob",
             summary     = "Cancel a job",
             description = "Sends an asynchronous cancellation request for the specified job. "
-                    + "The job may still complete if it has already finished or cannot be interrupted.",
+                    + "The job may still complete if it has already finished or cannot be interrupted. "
+                    + "Only the user who created the job and CMS Administrators can cancel it.",
             tags        = {"Job Queue"},
             responses   = {
                     @ApiResponse(
@@ -353,7 +358,7 @@ public class JobQueueResource {
                     ),
                     @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
                     @ApiResponse(responseCode = "403", description = "Forbidden: User does not have permission to cancel this job."),
-                    @ApiResponse(responseCode = "404", description = "Not Found: Job with the specified ID does not exist or is already completed/cancelled."),
+                    @ApiResponse(responseCode = "404", description = "Not Found: No job with the specified ID exists, or the job was not created by the caller (CMS Administrators can cancel any job)."),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while attempting to cancel the job.")
             }
     )
@@ -369,13 +374,13 @@ public class JobQueueResource {
                     schema      = @Schema(type = "string", format = "uuid", example = "e6d9bae8-657b-4e2f-8524-c0222db66355")
             )
             String jobId) throws DotDataException {
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
-        helper.cancelJob(jobId);
+                .init().getUser();
+        helper.cancelJob(jobId, user);
         return new ResponseEntityView<>("Cancellation request successfully sent to job " + jobId);
     }
 
@@ -395,8 +400,8 @@ public class JobQueueResource {
     @Operation(
             operationId = "getActiveJobsByQueue",
             summary     = "Retrieves active jobs in a queue",
-            description = "Fetches a paginated list of active jobs. Results can be paginated using query parameters."
-                    + "for the specified queue.",
+            description = "Fetches a paginated list of active jobs for the specified queue."
+                    + " Returns only the jobs the caller created, or every job for CMS Administrators; the pagination total counts the same jobs. Results can be paginated using query parameters.",
             tags        = {"Job Queue"},
             responses   = {
                     @ApiResponse(
@@ -433,13 +438,13 @@ public class JobQueueResource {
                     description = "Number of records per page."
             )
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
-        final JobPaginatedResult result = helper.getActiveJobs(queueName, page, pageSize);
+                .init().getUser();
+        final JobPaginatedResult result = helper.getJobs(JobListView.ACTIVE, queueName, user, page, pageSize);
         return new ResponseEntityView<>(result);
     }
 
@@ -457,7 +462,8 @@ public class JobQueueResource {
     @Operation(
             operationId = "listJobs",
             summary = "Retrieves jobs",
-            description = "Fetches a paginated list of all jobs regardless of state. Results can be paginated using query parameters.",
+            description = "Fetches a paginated list of jobs regardless of state."
+                    + " Returns only the jobs the caller created, or every job for CMS Administrators; the pagination total counts the same jobs. Results can be paginated using query parameters.",
             tags        = {"Job Queue"},
             responses = {
                     @ApiResponse(
@@ -484,13 +490,13 @@ public class JobQueueResource {
                     description = "Number of records per page."
             )
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
-        final JobPaginatedResult result = helper.getJobs(page, pageSize);
+                .init().getUser();
+        final JobPaginatedResult result = helper.getJobs(JobListView.ALL, null, user, page, pageSize);
         return new ResponseEntityView<>(result);
     }
 
@@ -509,7 +515,8 @@ public class JobQueueResource {
     @Operation(
             operationId = "getActiveJobs",
             summary = "Retrieves active jobs",
-            description = "Fetches a paginated list of active jobs. Results can be paginated using query parameters.",
+            description = "Fetches a paginated list of active jobs."
+                    + " Returns only the jobs the caller created, or every job for CMS Administrators; the pagination total counts the same jobs. Results can be paginated using query parameters.",
             tags        = {"Job Queue"},
             responses = {
                     @ApiResponse(
@@ -536,13 +543,13 @@ public class JobQueueResource {
                     description = "Number of records per page."
             )
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
-        final JobPaginatedResult result = helper.getActiveJobs(page, pageSize);
+                .init().getUser();
+        final JobPaginatedResult result = helper.getJobs(JobListView.ACTIVE, null, user, page, pageSize);
         return new ResponseEntityView<>(result);
     }
 
@@ -561,7 +568,8 @@ public class JobQueueResource {
     @Operation(
             operationId = "getCompletedJobs",
             summary = "Retrieves completed jobs",
-            description = "Fetches a paginated list of completed jobs. Results can be paginated using query parameters.",
+            description = "Fetches a paginated list of completed jobs."
+                    + " Returns only the jobs the caller created, or every job for CMS Administrators; the pagination total counts the same jobs. Results can be paginated using query parameters.",
             tags        = {"Job Queue"},
             responses = {
                     @ApiResponse(
@@ -588,13 +596,13 @@ public class JobQueueResource {
                     description = "Number of records per page."
             )
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
-        final JobPaginatedResult result = helper.getCompletedJobs(page, pageSize);
+                .init().getUser();
+        final JobPaginatedResult result = helper.getJobs(JobListView.COMPLETED, null, user, page, pageSize);
         return new ResponseEntityView<>(result);
     }
 
@@ -613,7 +621,8 @@ public class JobQueueResource {
     @Operation(
             operationId = "getSuccessfulJobs",
             summary = "Retrieves successful jobs",
-            description = "Fetches a paginated list of successful jobs. Results can be paginated using query parameters.",
+            description = "Fetches a paginated list of successful jobs."
+                    + " Returns only the jobs the caller created, or every job for CMS Administrators; the pagination total counts the same jobs. Results can be paginated using query parameters.",
             tags        = {"Job Queue"},
             responses = {
                     @ApiResponse(
@@ -640,13 +649,13 @@ public class JobQueueResource {
             @DefaultValue("20")
             @Parameter(description = "Number of records per page.")
             int pageSize) {
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
-        final JobPaginatedResult result = helper.getSuccessfulJobs(page, pageSize);
+                .init().getUser();
+        final JobPaginatedResult result = helper.getJobs(JobListView.SUCCESSFUL, null, user, page, pageSize);
         return new ResponseEntityView<>(result);
     }
 
@@ -665,7 +674,8 @@ public class JobQueueResource {
     @Operation(
             operationId = "getCanceledJobs",
             summary     = "Retrieves canceled jobs",
-            description = "Fetches a paginated list of canceled jobs. Results can be paginated using query parameters.",
+            description = "Fetches a paginated list of canceled jobs."
+                    + " Returns only the jobs the caller created, or every job for CMS Administrators; the pagination total counts the same jobs. Results can be paginated using query parameters.",
             tags        = {"Job Queue"},
             responses   = {
                     @ApiResponse(
@@ -692,13 +702,13 @@ public class JobQueueResource {
                     description = "Number of records per page."
             )
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
-        final JobPaginatedResult result = helper.getCanceledJobs(page, pageSize);
+                .init().getUser();
+        final JobPaginatedResult result = helper.getJobs(JobListView.CANCELED, null, user, page, pageSize);
         return new ResponseEntityView<>(result);
     }
 
@@ -717,7 +727,8 @@ public class JobQueueResource {
     @Operation(
             operationId = "getFailedJobs",
             summary     = "Retrieves failed jobs",
-            description = "Fetches a paginated list of failed jobs. Results can be paginated using query parameters.",
+            description = "Fetches a paginated list of failed jobs."
+                    + " Returns only the jobs the caller created, or every job for CMS Administrators; the pagination total counts the same jobs. Results can be paginated using query parameters.",
             tags        = {"Job Queue"},
             responses = {
                     @ApiResponse(
@@ -744,13 +755,13 @@ public class JobQueueResource {
                     description = "Number of records per page."
             )
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
-        final JobPaginatedResult result = helper.getFailedJobs(page, pageSize);
+                .init().getUser();
+        final JobPaginatedResult result = helper.getJobs(JobListView.FAILED, null, user, page, pageSize);
         return new ResponseEntityView<>(result);
     }
 
@@ -769,7 +780,8 @@ public class JobQueueResource {
     @Operation(
             operationId = "getAbandonedJobs",
             summary = "Retrieves abandoned jobs",
-            description = "Fetches a paginated list of abandoned jobs. Results can be paginated using query parameters.",
+            description = "Fetches a paginated list of abandoned jobs."
+                    + " Returns only the jobs the caller created, or every job for CMS Administrators; the pagination total counts the same jobs. Results can be paginated using query parameters.",
             tags        = {"Job Queue"},
             responses = {
                     @ApiResponse(
@@ -796,13 +808,13 @@ public class JobQueueResource {
                     description = "Number of records per page."
             )
             @QueryParam("pageSize") @DefaultValue("20") int pageSize) {
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
-        final JobPaginatedResult result = helper.getAbandonedJobs(page, pageSize);
+                .init().getUser();
+        final JobPaginatedResult result = helper.getJobs(JobListView.ABANDONED, null, user, page, pageSize);
         return new ResponseEntityView<>(result);
     }
 
@@ -821,12 +833,15 @@ public class JobQueueResource {
     @Operation(
             operationId = "monitorJob",
             summary     = "Monitor a job in real time",
-            description = "Establishes a Server-Sent Events (SSE) connection to monitor the progress of a specific  job in real-time. This endpoint will continuously send updates as the job progresses, including status changes and completion information.",
+            description = "Establishes a Server-Sent Events (SSE) connection to monitor the progress of a specific job in real-time. This endpoint will continuously send updates as the job progresses, including status changes and completion information."
+                    + " Only the user who created the job and CMS Administrators can monitor it.",
             tags        = {"Job Queue"},
             responses = {
                     @ApiResponse(
                             responseCode = "200",
-                            description = "Server-Sent Events stream established successfully. Events will be sent as the job progresses.",
+                            description = "Server-Sent Events stream established successfully. Events will be sent as the job progresses."
+                                    + " If no job with the specified ID exists, or the caller may not monitor it, the stream sends a single"
+                                    + " job-not-found event with data 404 and closes.",
                             content = @Content(
                                     mediaType = SseFeature.SERVER_SENT_EVENTS,
                                     schema = @Schema(implementation = EventOutput.class)
@@ -834,7 +849,6 @@ public class JobQueueResource {
                     ),
                     @ApiResponse(responseCode = "401", description = "Unauthorized: Invalid or missing user authentication."),
                     @ApiResponse(responseCode = "403", description = "Forbidden: User does not have permissions to monitor the specified job."),
-                    @ApiResponse(responseCode = "404", description = "Not Found: Job with the specified ID could not be found."),
                     @ApiResponse(responseCode = "500", description = "Internal Server Error: An unexpected error occurred while establishing the monitoring connection.")
             }
     )
@@ -846,20 +860,20 @@ public class JobQueueResource {
                     name = "jobId",
                     in = ParameterIn.PATH,
                     required = true,
-                    description = "The unique identifier (UUID) of the job whose status is to be retrieved.",
+                    description = "The unique identifier (UUID) of the job to monitor.",
                     schema = @Schema(type = "string", format = "uuid", example = "e6d9bae8-657b-4e2f-8524-c0222db66355")
             )
             String jobId) {
 
-        new InitBuilder(webResource)
+        final User user = new InitBuilder(webResource)
                 .requiredBackendUser(true)
                 .requiredFrontendUser(false)
                 .requestAndResponse(request, response)
                 .rejectWhenNoUser(true)
-                .init();
+                .init().getUser();
 
         // Set up job monitoring
-        return sseMonitorUtil.monitorJob(jobId);
+        return sseMonitorUtil.monitorJob(jobId, user);
     }
 
 }
