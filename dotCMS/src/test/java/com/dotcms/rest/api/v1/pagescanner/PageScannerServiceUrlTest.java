@@ -157,6 +157,16 @@ class PageScannerServiceUrlTest {
         assertEquals(Optional.empty(), PageScannerServiceUrl.validate("https://[::1]"));
     }
 
+    // Given an https URL whose host name does not resolve (.invalid is a reserved name)
+    // When it is validated with the default settings
+    // Then it is refused
+    @Test
+    void validate_unresolvableHost_returnsEmpty() {
+        Config.setProperty(PRIVATE_SUBNETS, false);
+
+        assertEquals(Optional.empty(), PageScannerServiceUrl.validate("https://scanner.invalid"));
+    }
+
     // Given ALLOW_ACCESS_TO_PRIVATE_SUBNETS=true and an https URL on a loopback address
     // When it is validated
     // Then it is accepted
