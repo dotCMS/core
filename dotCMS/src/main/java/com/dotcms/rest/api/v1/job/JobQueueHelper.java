@@ -7,10 +7,12 @@ import com.dotcms.jobs.business.api.JobQueueManagerAPI;
 import com.dotcms.jobs.business.api.events.JobWatcher;
 import com.dotcms.jobs.business.error.JobProcessorNotFoundException;
 import com.dotcms.jobs.business.job.Job;
+import com.dotcms.jobs.business.job.JobListView;
 import com.dotcms.jobs.business.job.JobPaginatedResult;
 import com.dotcms.jobs.business.job.JobState;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -22,6 +24,7 @@ import com.liferay.portal.model.User;
 import java.io.InputStream;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
@@ -84,6 +87,7 @@ public class JobQueueHelper {
      * @return jobId The ID of the created job
      * @throws JsonProcessingException If there is an error processing the request form parameters
      * @throws DotDataException        If there is an error creating the job
+     * @throws BadRequestException     If the parameters include ones only the server may set
      */
     String createJob(final String queueName, final JobParams form, final User user,
             final HttpServletRequest request) throws JsonProcessingException, DotDataException {
@@ -91,6 +95,7 @@ public class JobQueueHelper {
         final HashMap<String, Object> in;
 
         final var parameters = form.getParams();
+        JobResponseUtil.rejectServerFileParameters(parameters);
         if (parameters != null) {
             in = new HashMap<>(parameters);
         } else {
@@ -109,11 +114,13 @@ public class JobQueueHelper {
      * @param user       The user requesting to create the job
      * @param request    The request object
      * @return jobId The ID of the created job
-     * @throws DotDataException If there is an error creating the job
+     * @throws DotDataException    If there is an error creating the job
+     * @throws BadRequestException If the parameters include ones only the server may set
      */
     String createJob(final String queueName, final Map<String, Object> parameters, final User user,
             final HttpServletRequest request) throws DotDataException {
 
+        JobResponseUtil.rejectServerFileParameters(parameters);
         final HashMap<String, Object> in;
         if (parameters != null) {
             in = new HashMap<>(parameters);
@@ -153,23 +160,31 @@ public class JobQueueHelper {
     }
 
     /**
-     * gets a job
+     * Gets a job for the user making the request. Only the job's creator and CMS Administrators
+     * can read it.
+     *
      * @param jobId The ID of the job
-     * @return Job
-     * @throws DotDataException if there's an error fetching the job
+     * @param user  The {@link User} making the request
+     * @return the job
+     * @throws DoesNotExistException if there is no such job, or the user may not read it
+     * @throws DotDataException      if there's an error fetching the job
      */
-    Job getJob(String jobId) throws DotDataException {
-        return jobQueueManagerAPI.getJob(jobId);
+    Job getJob(final String jobId, final User user) throws DotDataException {
+        return JobResponseUtil.forResponse(jobQueueManagerAPI.getJob(jobId, user));
     }
 
     /**
-     * cancels a job
+     * Cancels a job for the user making the request. Only the job's creator and CMS
+     * Administrators can cancel it.
+     *
      * @param jobId The ID of the job
-     * @throws DotDataException if there's an error cancelling the job
+     * @param user  The {@link User} making the request
+     * @throws DoesNotExistException if there is no such job, or the user may not cancel it
+     * @throws DotDataException      if there's an error cancelling the job
      */
-    void cancelJob(String jobId) throws DotDataException {
+    void cancelJob(final String jobId, final User user) throws DotDataException {
        try{
-           jobQueueManagerAPI.cancelJob(jobId);
+           jobQueueManagerAPI.cancelJob(jobId, user);
         } catch (JobProcessorNotFoundException e) {
             Logger.error(this.getClass(), "Error cancelling job", e);
             throw new DoesNotExistException(e.getMessage());
@@ -206,131 +221,26 @@ public class JobQueueHelper {
     }
 
     /**
-     * Retrieves a list of jobs.
-     * @param page    The page number
-     * @param pageSize The number of jobs per page
-     * @return JobPaginatedResult
-     * @throws DotDataException if there's an error fetching the jobs
-     */
-    JobPaginatedResult getActiveJobs(String queueName, int page, int pageSize) {
-        try {
-            return jobQueueManagerAPI.getActiveJobs(queueName, page, pageSize);
-        } catch (DotDataException e) {
-            Logger.error(this.getClass(), "Error fetching active jobs", e);
-        }
-        return JobPaginatedResult.builder().build();
-    }
-
-    /**
-     * Retrieves a list of jobs.
+     * Retrieves one page of a job listing for the user making the request. CMS Administrators see
+     * every user's jobs; anyone else sees only the jobs they created.
      *
-     * @param page     The page number
-     * @param pageSize The number of jobs per page
-     * @return A result object containing the list of jobs and pagination information.
+     * @param view      The listing to read
+     * @param queueName The queue to read from, or {@code null} for every queue
+     * @param user      The {@link User} making the request
+     * @param page      The page number
+     * @param pageSize  The number of jobs per page
+     * @return the page of jobs, or an empty result if the jobs could not be read
      */
-    JobPaginatedResult getJobs(int page, int pageSize) {
+    JobPaginatedResult getJobs(final JobListView view, final String queueName, final User user,
+            final int page, final int pageSize) {
         try {
-            return jobQueueManagerAPI.getJobs(page, pageSize);
+            return JobResponseUtil.forResponse(
+                    jobQueueManagerAPI.getJobs(view, queueName, user, page, pageSize));
         } catch (DotDataException e) {
             Logger.error(this.getClass(), "Error fetching jobs", e);
         }
-        return JobPaginatedResult.builder().build();
-    }
-
-    /**
-     * Retrieves a list of active jobs, meaning jobs that are currently being processed.
-     *
-     * @param page     The page number
-     * @param pageSize The number of jobs per page
-     * @return A result object containing the list of active jobs and pagination information.
-     */
-    JobPaginatedResult getActiveJobs(int page, int pageSize) {
-        try {
-            return jobQueueManagerAPI.getActiveJobs(page, pageSize);
-        } catch (DotDataException e) {
-            Logger.error(this.getClass(), "Error fetching active jobs", e);
-        }
-        return JobPaginatedResult.builder().build();
-    }
-
-    /**
-     * Retrieves a list of completed jobs
-     *
-     * @param page     The page number
-     * @param pageSize The number of jobs per page
-     * @return A result object containing the list of completed jobs and pagination information.
-     */
-    JobPaginatedResult getCompletedJobs(int page, int pageSize) {
-        try {
-            return jobQueueManagerAPI.getCompletedJobs(page, pageSize);
-        } catch (DotDataException e) {
-            Logger.error(this.getClass(), "Error fetching completed jobs", e);
-        }
-        return JobPaginatedResult.builder().build();
-    }
-
-    /**
-     * Retrieves a list of successful jobs
-     *
-     * @param page     The page number
-     * @param pageSize The number of jobs per page
-     * @return A result object containing the list of successful jobs and pagination information.
-     */
-    JobPaginatedResult getSuccessfulJobs(int page, int pageSize) {
-        try {
-            return jobQueueManagerAPI.getSuccessfulJobs(page, pageSize);
-        } catch (DotDataException e) {
-            Logger.error(this.getClass(), "Error fetching successful jobs", e);
-        }
-        return JobPaginatedResult.builder().build();
-    }
-
-    /**
-     * Retrieves a list of canceled jobs
-     *
-     * @param page     The page number
-     * @param pageSize The number of jobs per page
-     * @return A result object containing the list of canceled jobs and pagination information.
-     */
-    JobPaginatedResult getCanceledJobs(int page, int pageSize) {
-        try {
-            return jobQueueManagerAPI.getCanceledJobs(page, pageSize);
-        } catch (DotDataException e) {
-            Logger.error(this.getClass(), "Error fetching canceled jobs", e);
-        }
-        return JobPaginatedResult.builder().build();
-    }
-
-    /**
-     * Retrieves a list of failed jobs
-     *
-     * @param page     The page number
-     * @param pageSize The number of jobs per page
-     * @return A result object containing the list of failed jobs and pagination information.
-     */
-    JobPaginatedResult getFailedJobs(int page, int pageSize) {
-        try {
-            return jobQueueManagerAPI.getFailedJobs(page, pageSize);
-        } catch (DotDataException e) {
-            Logger.error(this.getClass(), "Error fetching failed jobs", e);
-        }
-        return JobPaginatedResult.builder().build();
-    }
-
-    /**
-     * Retrieves a list of abandoned jobs
-     *
-     * @param page     The page number
-     * @param pageSize The number of jobs per page
-     * @return A result object containing the list of abandoned jobs and pagination information.
-     */
-    JobPaginatedResult getAbandonedJobs(int page, int pageSize) {
-        try {
-            return jobQueueManagerAPI.getAbandonedJobs(page, pageSize);
-        } catch (DotDataException e) {
-            Logger.error(this.getClass(), "Error fetching abandoned jobs", e);
-        }
-        return JobPaginatedResult.builder().build();
+        return JobPaginatedResult.builder().jobs(List.of()).total(0).page(page)
+                .pageSize(pageSize).build();
     }
 
     /**
@@ -390,17 +300,20 @@ public class JobQueueHelper {
     }
 
     /**
-     * Get the job for the given ID
+     * Gets a job to monitor for the user making the request, or {@code null} when there is no
+     * such job or the user may not read it.
      *
      * @param jobId The ID of the job
-     * @return The job or null if it doesn't exist
+     * @param user  The {@link User} making the request
+     * @return The job or null if it doesn't exist or isn't readable by the user
+     * @throws DotDataException if there's an error fetching the job
      */
-    Job getJobForSSE(final String jobId) throws DotDataException {
+    Job getJobForSSE(final String jobId, final User user) throws DotDataException {
 
         Job job = null;
 
         try {
-            job = getJob(jobId);
+            job = getJob(jobId, user);
         } catch (DoesNotExistException e) {
             // ignore
         }
