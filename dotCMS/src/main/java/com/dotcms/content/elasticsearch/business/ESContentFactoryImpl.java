@@ -136,7 +136,7 @@ import org.apache.commons.lang.StringUtils;
 )
 public class ESContentFactoryImpl implements ContentletFactory {
 
-    private static final boolean REFRESH_BLOCK_EDITOR_REFERENCES = Config.getBooleanProperty("REFRESH_BLOCK_EDITOR_REFERENCES", true);
+    private static final String REFRESH_BLOCK_EDITOR_REFERENCES = "REFRESH_BLOCK_EDITOR_REFERENCES";
     private static final String[] ES_FIELDS = {"inode", "identifier"};
     public static final int ES_TRACK_TOTAL_HITS_DEFAULT = 10000000;
     public static final String ES_TRACK_TOTAL_HITS = "ES_TRACK_TOTAL_HITS";
@@ -799,13 +799,14 @@ public class ESContentFactoryImpl implements ContentletFactory {
      *
      * @param inode {@link Contentlet}'s inode
      * @param ignoreStoryBlock if it is true then the StoryBlock are not hydrated
-     * @return
+     * @return The Contentlet, or an empty {@link Optional} if there is none with that inode.
      */
     // The cache-miss surcharge for the single-contentlet path. Reaching this method IS the
     // miss - find() has already charged the CONTENT_FROM_CACHE base fee, so a warm find
     // costs 1 and a cold one costs 11. Annotations are not inherited, so the @RequestCost on
     // ContentletFactory's findInDb default does nothing here; this needs its own.
     @RequestCost(Price.CONTENT_FROM_DB)
+    @Override
     public Optional<Contentlet> findInDb(final String inode, final boolean ignoreStoryBlock) {
         try {
             if (inode != null) {
@@ -836,16 +837,20 @@ public class ESContentFactoryImpl implements ContentletFactory {
     }
 
     /**
-     * Find a {@link Contentlet}, first look for the  {@link Contentlet} is cache is it is not there then
-     * hit the Database
+     * Finds a {@link Contentlet} by inode, in the contentlet cache first and in the database when
+     * it is not cached. The cache always holds the Story Block values as they are stored.
      *
-     * @param inode {@link Contentlet}'s inode
-     * @param ignoreStoryBlock if it is true, then if the {@link Contentlet} is loaded from cache then the StoryBlock are not refresh
-     *                         if the {@link Contentlet} is loaded from Database then the SToryBlocks are not hydrated
-     * @return
-     * @throws DotStateException
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param inode            The {@link Contentlet}'s inode.
+     * @param ignoreStoryBlock If {@code true}, the Contentlet is returned with its Story Block
+     *                         values as stored, which is the cached instance on a cache hit. If
+     *                         {@code false}, the references in them are refreshed for the user of
+     *                         the current request on a copy.
+     *
+     * @return The {@link Contentlet}, or {@code null} if there is none with that inode.
+     *
+     * @throws DotStateException    The Contentlet could not be read.
+     * @throws DotDataException     An error occurred when reading the database.
+     * @throws DotSecurityException An error occurred when hydrating the Story Block references.
      */
     public Contentlet find(final String inode, final boolean ignoreStoryBlock) throws DotStateException, DotDataException, DotSecurityException {
         Contentlet contentlet = contentletCache.get(inode);
@@ -853,17 +858,15 @@ public class ESContentFactoryImpl implements ContentletFactory {
             if (CACHE_404_CONTENTLET.equals(contentlet.getInode())) {
                 return null;
             }
-
-            if (!ignoreStoryBlock) {
-                return processCachedContentlet(contentlet);
-            }
+            // The cached instance is what the database branch below would cache and return
+            return ignoreStoryBlock ? contentlet : processCachedContentlet(contentlet);
         }
 
-        final Optional<Contentlet> dbContentlet = this.findInDb(inode);
+        final Optional<Contentlet> dbContentlet = this.findInDb(inode, true);
         if (dbContentlet.isPresent()) {
             contentlet = dbContentlet.get();
             contentletCache.add(contentlet.getInode(), contentlet);
-            return contentlet;
+            return ignoreStoryBlock ? contentlet : this.hydrateStoryBlocks(contentlet, true);
         } else {
             contentletCache.add(inode, cache404Content);
             return null;
@@ -880,11 +883,13 @@ public class ESContentFactoryImpl implements ContentletFactory {
             return processCachedContentlet(contentlet);
         }
 
-        final Optional<Contentlet> dbContentlet = this.findInDb(inode, variant);
+        // Same row as findInDb(inode, variant), loaded with the stored Story Block values
+        final Optional<Contentlet> dbContentlet = this.findInDb(inode, true)
+                .filter(found -> found.getVariantId().equals(variant));
         if (dbContentlet.isPresent()) {
             contentlet = dbContentlet.get();
             contentletCache.add(contentlet.getInode(), contentlet);
-            return contentlet;
+            return this.hydrateStoryBlocks(contentlet, true);
         } else {
             contentletCache.add(inode, cache404Content);
             return null;
@@ -905,20 +910,66 @@ public class ESContentFactoryImpl implements ContentletFactory {
      * Contentlets, if applicable.
      */
     private Contentlet processCachedContentlet(final Contentlet cachedContentlet) {
-        final ContentType contentType = cachedContentlet.getContentType();
-        if (REFRESH_BLOCK_EDITOR_REFERENCES && null != contentType && contentType.hasStoryBlockFields()) {
-            final StoryBlockReferenceResult storyBlockRefreshedResult =
-                    APILocator.getStoryBlockAPI().refreshReferences(cachedContentlet);
-            if (storyBlockRefreshedResult.isRefreshed()) {
-                Logger.debug(this, () -> String.format("Refreshed Story Block dependencies for Contentlet: '%s'",
-                        cachedContentlet.getIdentifier()));
+        return this.hydrateStoryBlocks(cachedContentlet, false);
+    }
 
-                final Contentlet refreshedContentlet = (Contentlet) storyBlockRefreshedResult.getValue();
-                contentletCache.add(refreshedContentlet.getInode(), refreshedContentlet);
-                return refreshedContentlet;
-            }
+    /**
+     * Puts a {@link Contentlet} just loaded from the database, with its Story Block values as
+     * stored, in the contentlet cache, and returns what the current reader gets for it.
+     *
+     * @param storedContentlet The Contentlet loaded without refreshing its Story Block references.
+     *
+     * @return See {@link #hydrateStoryBlocks(Contentlet, boolean)}.
+     */
+    private Contentlet cacheAndHydrate(final Contentlet storedContentlet) {
+        contentletCache.add(storedContentlet.getInode(), storedContentlet);
+        return this.hydrateStoryBlocks(storedContentlet, true);
+    }
+
+    /**
+     * Returns the {@link Contentlet} the current reader gets for one kept in the contentlet cache.
+     * When its Content Type has Story Block fields, the Contentlets referenced in them are
+     * refreshed for the user of the current request on a <b>copy</b>: the cached instance keeps the
+     * Story Block values as they are stored, so what one reader gets never reaches another one.
+     *
+     * <p>When {@code REFRESH_BLOCK_EDITOR_REFERENCES} is disabled, cached reads do not refresh the
+     * references, but the reader's READ permission on each of them still decides whether the data
+     * stored with it is returned.</p>
+     *
+     * @param storedContentlet The Contentlet as stored and cached.
+     * @param alwaysRefresh    If {@code true}, the references are refreshed even when
+     *                         {@code REFRESH_BLOCK_EDITOR_REFERENCES} is disabled. Used right after
+     *                         loading from the database, where they were always refreshed.
+     *
+     * @return The copy for the reader, or the given Contentlet when it has no Story Block fields.
+     */
+    private Contentlet hydrateStoryBlocks(final Contentlet storedContentlet, final boolean alwaysRefresh) {
+        final ContentType contentType = storedContentlet.getContentType();
+        if (null == contentType || !contentType.hasStoryBlockFields()) {
+            return storedContentlet;
         }
-        return cachedContentlet;
+        final Contentlet readerCopy = this.copyForReader(storedContentlet);
+        final StoryBlockReferenceResult result =
+                alwaysRefresh || Config.getBooleanProperty(REFRESH_BLOCK_EDITOR_REFERENCES, true)
+                        ? APILocator.getStoryBlockAPI().refreshReferences(readerCopy)
+                        : APILocator.getStoryBlockAPI().limitReferencesToReader(readerCopy);
+        if (result.isRefreshed()) {
+            Logger.debug(this, () -> String.format("Refreshed Story Block dependencies for Contentlet: '%s'",
+                    storedContentlet.getIdentifier()));
+        }
+        return (Contentlet) result.getValue();
+    }
+
+    /**
+     * Copies a cached {@link Contentlet} for one reader: its properties, plus the state that is not
+     * kept in its property map (variant, index policies).
+     */
+    private Contentlet copyForReader(final Contentlet storedContentlet) {
+        final Contentlet readerCopy = new Contentlet(storedContentlet);
+        readerCopy.setVariantId(storedContentlet.getVariantId());
+        readerCopy.setIndexPolicyDependencies(storedContentlet.getIndexPolicyDependencies());
+        readerCopy.setLowIndexPriority(storedContentlet.isLowIndexPriority());
+        return readerCopy;
     }
 
 	@Override
@@ -1172,13 +1223,10 @@ public class ESContentFactoryImpl implements ContentletFactory {
             dotConnect.setMaxRows(limit);
         }
 
-        List<Contentlet> contentlets = TransformerLocator.createContentletTransformer
-                (dotConnect.loadObjectResults()).asList();
+        final List<Contentlet> contentlets = TransformerLocator.createContentletTransformer
+                (dotConnect.loadObjectResults(), true).asList();
 
-        contentlets.forEach(contentlet ->contentletCache
-                .add(String.valueOf(contentlet.getInode()), contentlet));
-
-        return contentlets;
+        return contentlets.stream().map(this::cacheAndHydrate).collect(Collectors.toList());
     }
 
     @Override
@@ -1369,12 +1417,9 @@ public class ESContentFactoryImpl implements ContentletFactory {
             dotConnect.setSQL(query.toString());
 
             final List<Contentlet> result = TransformerLocator
-                    .createContentletTransformer(dotConnect.loadObjectResults()).asList();
+                    .createContentletTransformer(dotConnect.loadObjectResults(), true).asList();
 
-            result.forEach(contentlet -> {
-                conMap.put(contentlet.getInode(), contentlet);
-                contentletCache.add(contentlet.getInode(), contentlet);
-            });
+            result.forEach(contentlet -> conMap.put(contentlet.getInode(), this.cacheAndHydrate(contentlet)));
         }
     }
 
@@ -1425,11 +1470,9 @@ public class ESContentFactoryImpl implements ContentletFactory {
         }
         dotConnect.addParam(identifier);
         final List<Contentlet> result = TransformerLocator
-                .createContentletTransformer(dotConnect.loadObjectResults()).asList();
+                .createContentletTransformer(dotConnect.loadObjectResults(), true).asList();
 
-        result.forEach(contentlet -> contentletCache.add(String.valueOf(contentlet.getInode()), contentlet));
-
-        return result;
+        return result.stream().map(this::cacheAndHydrate).collect(Collectors.toList());
 	}
 
 	@Override
@@ -1524,10 +1567,9 @@ public class ESContentFactoryImpl implements ContentletFactory {
         dotConnect.addParam(containerIdentifier);
 
         final List<Contentlet> result = TransformerLocator
-                .createContentletTransformer(dotConnect.loadObjectResults()).asList();
-        result.forEach(contentlet -> contentletCache.add(contentlet.getInode(), contentlet));
+                .createContentletTransformer(dotConnect.loadObjectResults(), true).asList();
 
-        return result;
+        return result.stream().map(this::cacheAndHydrate).collect(Collectors.toList());
 	}
 
 
@@ -1605,10 +1647,9 @@ public class ESContentFactoryImpl implements ContentletFactory {
         dotConnect.addParam(identifier);
 
         final List<Contentlet> result = TransformerLocator
-                .createContentletTransformer(dotConnect.loadObjectResults()).asList();
-        result.forEach(contentlet -> contentletCache.add(contentlet.getInode(), contentlet));
+                .createContentletTransformer(dotConnect.loadObjectResults(), true).asList();
 
-        return result;
+        return result.stream().map(this::cacheAndHydrate).collect(Collectors.toList());
 	}
 
 	@Override

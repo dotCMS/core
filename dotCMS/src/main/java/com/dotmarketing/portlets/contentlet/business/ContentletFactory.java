@@ -662,6 +662,18 @@ public interface ContentletFactory {
     Optional<Contentlet> findInDb(String inode) ;
 
 	/**
+	 * Loads the Contentlet with the given inode from the database, skipping the contentlet cache.
+	 *
+	 * @param inode            The inode of the Contentlet.
+	 * @param ignoreStoryBlock If {@code true}, the Story Block values are returned as they are
+	 *                         stored; otherwise the references in them are refreshed for the user
+	 *                         of the current request, as {@link #findInDb(String)} does.
+	 *
+	 * @return The Contentlet, or an empty {@link Optional} if there is none with that inode.
+	 */
+	Optional<Contentlet> findInDb(String inode, boolean ignoreStoryBlock);
+
+	/**
 	 * Creates an ESContentletScroll instance for scroll-based queries.
 	 * <p>
 	 * The Scroll API is designed for efficiently retrieving large result sets that exceed
