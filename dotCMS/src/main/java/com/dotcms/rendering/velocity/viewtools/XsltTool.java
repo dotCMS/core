@@ -24,6 +24,7 @@ import com.dotmarketing.util.Logger;
 import com.liferay.portal.PortalException;
 import com.liferay.portal.SystemException;
 import com.liferay.portal.model.User;
+import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -36,6 +37,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Date;
 import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.servlet.http.HttpServletRequest;
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
@@ -74,6 +77,13 @@ public class XsltTool implements ViewTool {
 
 	/** The engine the probe stylesheet is written for; see {@link #extensionFunctionsStillRun()}. */
 	private static final String JDK_TRANSFORMER_FACTORY_PREFIX = "com.sun.org.apache.xalan.internal.xsltc";
+
+	/**
+	 * Stylesheets whose last transformation failed, so the full stack trace is logged once per
+	 * stylesheet instead of on every render. An entry is dropped as soon as it transforms again,
+	 * so a later regression is reported with its trace too.
+	 */
+	private static final Set<String> FAILED_STYLESHEETS = ConcurrentHashMap.newKeySet();
 
 	/** Checks the engine on first use and warns when it is not running with the expected settings. */
 	private static final Lazy<Boolean> ENGINE_CAPABILITY_CHECK = Lazy.of(() -> {
@@ -127,10 +137,23 @@ public class XsltTool implements ViewTool {
 
 	
 	
+	/**
+	 * Transforms the XML with the stylesheet and hands back the result for the template to write
+	 * out.
+	 *
+	 * <p>Everything this tool declines to do — scripting turned off for the user, or an XML source
+	 * given as a URL while remote sources are off — is a reason not to render anything rather than
+	 * a reason to fail the page, so it comes back as an empty string with the reason in the log.
+	 *
+	 * @param xmlPath path inside dotCMS of the XML to transform
+	 * @param xslPath path inside dotCMS of the stylesheet to apply
+	 * @param ttl how long, in milliseconds, the result may be served from cache
+	 * @return the transformed document, or an empty string when there is nothing to render
+	 */
 	public String transform(String xmlPath, String xslPath, int ttl)
 			throws SystemException, TransformerConfigurationException, DotDataException, DotSecurityException, PortalException, IOException {
-		return xslTransform(xmlPath, xslPath, ttl).getXmlTransformation();
-
+		final XSLTranformationDoc doc = xslTransform(xmlPath, xslPath, ttl);
+		return doc == null ? StringPool.BLANK : doc.getXmlTransformation();
 	}
 	
 	
@@ -138,10 +161,18 @@ public class XsltTool implements ViewTool {
 	
 	
 	/**
-	 * Transform the XML into the string according to the specification of the xsl file
+	 * Transform the XML into the string according to the specification of the xsl file.
+	 *
+	 * <p>Returns {@code null} when there is nothing to transform rather than failing the render:
+	 * the user may not run scripts, the XML source is a URL while remote sources are off, or the
+	 * URL did not answer. Callers must handle that; {@link #transform(String, String, int)} turns
+	 * it into an empty string.
+	 *
 	 * @param xmlPath Location of the XML file
 	 * @param xslPath Location of the XSL file
 	 * @param ttl Time to Live
+	 * @return the transformation, or {@code null} when there is nothing to render
+	 * @throws IllegalArgumentException if the stylesheet, or an XML stored in dotCMS, is not there
 	 * @throws TransformerConfigurationException 
 	 * @throws DotSecurityException 
 	 * @throws DotDataException 
@@ -183,6 +214,16 @@ public class XsltTool implements ViewTool {
 
 				final Optional<Source> xmlSource = loadXML(site, xmlPath);
 				if(xmlSource.isEmpty()){
+					if (isRemoteSource(xmlPath)) {
+						// The download already said in the log why it came back empty. A URL that
+						// does not answer is a reason to render nothing, not to break the page:
+						// before the download moved in here the failure happened inside the
+						// transformer and was caught the same way.
+						Logger.warn(XsltTool.class, String.format(
+								"XSLTTool got no XML from the URL [%s], so there is nothing to transform",
+								xmlPath));
+						return null;
+					}
 					final String errorMessage = String.format("Fail retrieving xml file from site [%s] using path [%s]", site.getName(), xmlPath);
 					Logger.error(XsltTool.class, errorMessage);
 					throw new IllegalArgumentException(errorMessage);
@@ -209,9 +250,17 @@ public class XsltTool implements ViewTool {
 		boolean transformed = true;
 		try{
 			trans.transform(xmlSource, result);
+			FAILED_STYLESHEETS.remove(xslPath);
 		}catch(Exception e1){
 			transformed = false;
-			Logger.error(XsltTool.class, "Error in transformation of [" + xslPath + "]. ", e1);
+			// The result is not cached, so a broken stylesheet is recompiled on every render. Log
+			// the trace the first time and a single line afterwards, or a busy page floods the log.
+			if (FAILED_STYLESHEETS.add(xslPath)) {
+				Logger.error(XsltTool.class, "Error in transformation of [" + xslPath + "]. ", e1);
+			} else {
+				Logger.warn(XsltTool.class, "Transformation of [" + xslPath
+						+ "] is still failing and is retried on each render: " + e1.getMessage());
+			}
 		}
 
 		final String outputXML = result.getOutputStream().toString();
@@ -350,26 +399,6 @@ public class XsltTool implements ViewTool {
 	}
 
 	/**
-	 * Downloads an XML document that the template asked for by URL.
-	 *
-	 * <p>Turned off by default: the download only happens when
-	 * {@link FeatureFlagName#FEATURE_FLAG_XSLT_REMOTE_XML} is enabled, and it goes through
-	 * {@link CircuitBreakerUrl}, which applies the platform's outbound network policy, stops waiting
-	 * after
-	 * {@code XSLT_REMOTE_XML_TIMEOUT_MS} and stops reading after {@code XSLT_REMOTE_XML_MAX_BYTES}.
-	 * The document is read into memory and handed to the transformer as text, so the XSLT engine
-	 * never opens a connection of its own.
-	 *
-	 * <p>Anything other than a successful response — an error status, a timeout, a refused host, a
-	 * document over the size limit — returns empty rather than the bytes that arrived, so a failed
-	 * download cannot end up transformed and cached as if it were the document.
-	 *
-	 * @param xmlPath the URL the template passed as the XML source
-	 * @return the downloaded document, or empty when remote sources are off or the download failed
-	 * @deprecated taking the XML from an arbitrary URL is on its way out. Store the document in
-	 * dotCMS and pass its path instead.
-	 */
-	/**
 	 * Tells whether the template asked for the XML by URL rather than by a path inside dotCMS.
 	 *
 	 * @param xmlPath what the template passed as the XML source
@@ -393,6 +422,26 @@ public class XsltTool implements ViewTool {
 				xmlPath, FeatureFlagName.FEATURE_FLAG_XSLT_REMOTE_XML);
 	}
 
+	/**
+	 * Downloads an XML document that the template asked for by URL.
+	 *
+	 * <p>Turned off by default: the download only happens when
+	 * {@link FeatureFlagName#FEATURE_FLAG_XSLT_REMOTE_XML} is enabled, and it goes through
+	 * {@link CircuitBreakerUrl}, which applies the platform's outbound network policy, stops
+	 * waiting after {@code XSLT_REMOTE_XML_TIMEOUT_MS} and stops reading after
+	 * {@code XSLT_REMOTE_XML_MAX_BYTES}. The document is read into memory and handed to the
+	 * transformer as bytes, so its own encoding declaration is honoured and the XSLT engine never
+	 * opens a connection of its own.
+	 *
+	 * <p>Anything other than a successful response — an error status, a timeout, a refused host, a
+	 * document over the size limit — returns empty rather than the bytes that arrived, so a failed
+	 * download cannot end up transformed and cached as if it were the document.
+	 *
+	 * @param xmlPath the URL the template passed as the XML source
+	 * @return the downloaded document, or empty when remote sources are off or the download failed
+	 * @deprecated taking the XML from an arbitrary URL is on its way out. Store the document in
+	 * dotCMS and pass its path instead.
+	 */
 	@Deprecated
 	Optional<Source> loadRemoteXML(final String xmlPath) {
 		if (!Config.getBooleanProperty(FeatureFlagName.FEATURE_FLAG_XSLT_REMOTE_XML, false)) {

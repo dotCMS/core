@@ -7,6 +7,7 @@ import static org.junit.Assert.fail;
 
 import javax.xml.XMLConstants;
 import com.dotcms.featureflag.FeatureFlagName;
+import com.dotmarketing.util.Config;
 import java.io.StringReader;
 import java.util.Optional;
 import java.io.StringWriter;
@@ -27,6 +28,11 @@ import org.junit.Test;
 public class XsltToolTest {
 
     private static final String XML = "<root><name>dotCMS</name></root>";
+
+    /** JVM-wide switch that puts extension functions back on, over what the factory asks for. */
+    private static final String ENABLE_EXTENSION_FUNCTIONS = "jdk.xml.enableExtensionFunctions";
+
+    private static final String ENABLE_SCRIPTING = "ENABLE_SCRIPTING";
 
     /** Uses an XSLT extension function, which is outside what this tool allows. */
     private static final String STYLESHEET_WITH_EXTENSION_FUNCTION =
@@ -86,6 +92,34 @@ public class XsltToolTest {
     }
 
     /**
+     * The case the warning exists for, forced.
+     *
+     * <p>A JVM started with {@code jdk.xml.enableExtensionFunctions} set puts extension functions
+     * back on over what the factory asks for, so asking for secure processing is not enough on its
+     * own and the tool has to find out by running something. Without this, the test above is green
+     * whether or not the factory sets anything, because it cannot tell a refusal apart from an
+     * engine it declined to read.
+     *
+     * <p>The property is read each time a factory is built, not once per JVM, so setting it here
+     * takes effect even though other tests in this class have already built one.
+     */
+    @Test
+    public void test_probe_reports_extension_functions_that_the_jvm_turned_back_on() {
+        final String previous = System.getProperty(ENABLE_EXTENSION_FUNCTIONS);
+        try {
+            System.setProperty(ENABLE_EXTENSION_FUNCTIONS, "true");
+            assertTrue("The engine runs extension functions but the check did not say so",
+                    XsltTool.extensionFunctionsStillRun());
+        } finally {
+            if (previous == null) {
+                System.clearProperty(ENABLE_EXTENSION_FUNCTIONS);
+            } else {
+                System.setProperty(ENABLE_EXTENSION_FUNCTIONS, previous);
+            }
+        }
+    }
+
+    /**
      * The restrictions must not get in the way of what the tool is for: an ordinary stylesheet,
      * with no Java in it, still transforms.
      */
@@ -121,5 +155,22 @@ public class XsltToolTest {
                 message.contains(FeatureFlagName.FEATURE_FLAG_XSLT_REMOTE_XML));
         assertTrue("The message does not name the URL: " + message,
                 message.contains("http://example.com/feed.xml"));
+    }
+
+    /**
+     * Whatever makes the tool decline to transform, the template gets an empty string back and the
+     * page keeps rendering. Scripting being off is the cheapest way to reach that path; a URL
+     * source with remote sources off reaches the same return further down.
+     */
+    @Test
+    public void test_transform_renders_nothing_rather_than_failing_the_page() throws Exception {
+        final boolean enableScripting = Config.getBooleanProperty(ENABLE_SCRIPTING, false);
+        try {
+            Config.setProperty(ENABLE_SCRIPTING, false);
+            assertEquals("Declining to transform must not break the render", "",
+                    new XsltTool().transform("/application/feed.xml", "/application/feed.xsl", 30));
+        } finally {
+            Config.setProperty(ENABLE_SCRIPTING, enableScripting);
+        }
     }
 }
