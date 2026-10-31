@@ -35,11 +35,45 @@ jobs:
       pull-requests: write
       issues: write
     steps:
+      # The checkout below writes the machine-user PAT into .git/config, so fork heads
+      # (untrusted code) must never reach it. Fails closed: a deleted fork reports null.
+      - name: Reject fork PR heads
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.issue.number || github.event.pull_request.number }}
+        run: |
+          set -euo pipefail
+          if [[ -z "${PR_NUMBER}" ]]; then
+            echo "::error::Unable to determine the PR number for this comment"
+            exit 1
+          fi
+          is_fork=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" --jq '.head.repo.fork')
+          if [[ "${is_fork}" != "false" ]]; then
+            echo "::error::/dotbot refuses PR #${PR_NUMBER}: head is not a same-repo branch (head.repo.fork=${is_fork})."
+            exit 1
+          fi
+
+      # Pushes made with GITHUB_TOKEN start no workflows, so dotbot-review.yml would never
+      # re-review the agent's commit. Fail loudly instead of silently skipping re-review.
+      - name: Require DOTBOT_GITHUB_USER_PAT
+        env:
+          PAT_PRESENT: ${{ secrets.DOTBOT_GITHUB_USER_PAT != '' }}
+        run: |
+          set -euo pipefail
+          if [[ "${PAT_PRESENT}" != "true" ]]; then
+            echo "::error::DOTBOT_GITHUB_USER_PAT resolved empty in this job."
+            echo "::error::It is an org-level secret, so either a repo-level secret of the same name is overriding it with an empty value, or the org secret was removed or no longer grants this repository access."
+            echo "::error::Without it the agent's push uses GITHUB_TOKEN, which triggers no workflows: dotbot-review.yml would not re-review the commit and any earlier approval would stay on unreviewed code."
+            exit 1
+          fi
+
       # Pinned to a full commit SHA: a mutable tag could be repointed to run
       # attacker-controlled code with this job's write-scoped GITHUB_TOKEN.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+          # Machine-user PAT so the agent's push triggers dotbot-review.yml (see step above).
+          token: ${{ secrets.DOTBOT_GITHUB_USER_PAT }}
           # The action code must be loaded from the pinned release SHA, not this
           # checkout (untrusted PR head), so `uses:` points at a fixed commit.
           # Note: the checkout is still the PR head by design (the agent edits it),
