@@ -1,13 +1,10 @@
-# Reusable: promote an already-built docker-image artifact to dotcms/dotcms-test.
-#
-# Does NOT build. The PR build (core-cicd/maven-job) already builds
-# dotcms/dotcms-test:<version> and uploads it as the `docker-image` artifact;
-# this loads that artifact, retags it for the PR, and pushes it to Docker Hub.
+# Reusable: build multi-arch PR images from the docker-build-context artifact
+# and push them to dotcms/dotcms-test. Ordinary CI test images stay AMD64-only.
 #
 # Callers:
 #   cicd_1-pr.yml          — needs: build, passes artifact_run_id = github.run_id
 #   cicd_publish-pr-test-image.yml (pull_request_target labeled) — omits
-#     artifact_run_id, so this workflow discovers the newest docker-image
+#     artifact_run_id, so this workflow discovers the newest docker-build-context
 #     artifact for the head SHA.
 #
 # Tag scheme — branch feat/x on PR #1234 ->
@@ -29,7 +26,7 @@ on:
         required: true
         type: string
       artifact_run_id:
-        description: 'Run id holding the docker-image artifact; empty = discover by SHA'
+        description: 'Run id holding the docker-build-context artifact; empty = discover by SHA'
         required: false
         type: string
         default: ''
@@ -44,7 +41,7 @@ permissions:
 
 jobs:
   publish:
-    name: Promote to Docker Hub
+    name: Build and push to Docker Hub
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     permissions:
       contents: read
@@ -64,20 +61,20 @@ jobs:
           set -euo pipefail
           run_id="${RUN_ID_IN}"
           # Label path has no run id — find the newest run with a non-expired
-          # docker-image artifact for this exact commit.
+          # docker-build-context artifact for this exact commit.
           if [ -z "${run_id}" ]; then
             for rid in $(gh api "repos/${REPO}/actions/runs?head_sha=${SHA}&per_page=50" \
                           --jq '.workflow_runs[].id'); do
               [ "${rid}" = "${GITHUB_RUN_ID}" ] && continue
-              if gh api "repos/${REPO}/actions/runs/${rid}/artifacts" \
+              if gh api --paginate "repos/${REPO}/actions/runs/${rid}/artifacts" \
                    --jq '.artifacts[] | select(.expired==false) | .name' \
-                 | grep -qx 'docker-image'; then
+                 | grep -x 'docker-build-context' >/dev/null; then
                 run_id="${rid}"; break
               fi
             done
           fi
           if [ -z "${run_id}" ]; then
-            echo "No docker-image artifact for ${SHA}; nothing to publish yet."
+            echo "No docker-build-context artifact for ${SHA}; nothing to publish yet."
             echo "found=false" >> "$GITHUB_OUTPUT"; exit 0
           fi
           norm=$(printf '%s' "${BRANCH}" \
@@ -88,48 +85,60 @@ jobs:
           {
             echo "found=true"
             echo "run_id=${run_id}"
-            echo "tag=pr-${PR}-${norm}"
+            echo "tags<<EOF"
+            echo "dotcms/dotcms-test:pr-${PR}-${norm}"
+            echo "dotcms/dotcms-test:pr-${PR}-${norm}_${SHA:0:7}"
+            echo "EOF"
           } >> "$GITHUB_OUTPUT"
           echo "Publishing pr-${PR}-${norm} from run ${run_id}"
 
-      - name: Download prebuilt image
+      - name: Download Docker build context
         if: steps.resolve.outputs.found == 'true'
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           digest-mismatch: error
-          name: docker-image
+          name: docker-build-context
           path: /tmp/prebuilt
           run-id: ${{ steps.resolve.outputs.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Load, retag and push
+      - name: Extract Docker build context
+        id: context
+        if: steps.resolve.outputs.found == 'true'
+        run: |
+          mkdir -p /tmp/docker-context
+          tar -xf /tmp/prebuilt/docker-build.tar -C /tmp/docker-context
+          java_version=$(< /tmp/prebuilt/docker-java-version)
+          echo "java_version=${java_version}" >> "$GITHUB_OUTPUT"
+
+      - name: Set up QEMU
+        if: steps.resolve.outputs.found == 'true'
+        uses: docker/setup-qemu-action@29109295f81e9208d7d86ff1c6c12d2833863392 # v3.6.0
+        with:
+          platforms: arm64
+
+      - name: Set up Buildx
+        if: steps.resolve.outputs.found == 'true'
+        uses: docker/setup-buildx-action@b5ca514318bd6ebac0fb2aedd5d36ec1b5c232a2 # v3.10.0
+
+      - name: Docker Hub login
+        if: steps.resolve.outputs.found == 'true'
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+
+      - name: Build and push multi-arch image
         id: push
         if: steps.resolve.outputs.found == 'true'
-        env:
-          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
-          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-          TAG: ${{ steps.resolve.outputs.tag }}
-          SHA: ${{ inputs.sha }}
-        run: |
-          set -euo pipefail
-          DEST='dotcms/dotcms-test'
-          SHA7="${SHA:0:7}"
-
-          loaded=$(docker load -i /tmp/prebuilt/image.tar | sed -n 's/.*Loaded image: //p' | head -1)
-          if [ -z "${loaded}" ]; then
-            echo "::error::No image found in artifact"; exit 1
-          fi
-          echo "Loaded ${loaded}"
-
-          echo "${DOCKER_TOKEN}" | docker login -u "${DOCKER_USERNAME}" --password-stdin
-
-          pushed=""
-          for t in "${TAG}" "${TAG}_${SHA7}"; do
-            docker tag "${loaded}" "${DEST}:${t}"
-            docker push "${DEST}:${t}"
-            pushed="${pushed} ${DEST}:${t}"
-          done
-          echo "tags=$(echo ${pushed} | xargs)" >> "$GITHUB_OUTPUT"
+        uses: docker/build-push-action@471d1dc4e07e5cdedd4c2171150001c434f0b7a4 # v6.15.0
+        with:
+          context: /tmp/docker-context
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.resolve.outputs.tags }}
+          build-args: |
+            SDKMAN_JAVA_VERSION=${{ steps.context.outputs.java_version }}
 
       - name: Sticky comment with image tags
         if: steps.resolve.outputs.found == 'true' && steps.push.outcome == 'success'
@@ -138,7 +147,7 @@ jobs:
           REPO: ${{ github.repository }}
           PR: ${{ inputs.pr }}
           SHA: ${{ inputs.sha }}
-          TAGS: ${{ steps.push.outputs.tags }}
+          TAGS: ${{ steps.resolve.outputs.tags }}
         run: |
           MARKER='<!-- pr-docker-image-sticky -->'
           {

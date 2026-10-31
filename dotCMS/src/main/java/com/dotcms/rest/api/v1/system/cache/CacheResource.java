@@ -6,6 +6,7 @@ import com.dotcms.rest.ResponseEntityListStringView;
 import com.dotcms.rest.ResponseEntityStringView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
+import com.dotcms.rest.api.v1.apps.view.SecretView;
 import com.dotcms.rest.annotation.NoCache;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -121,7 +122,8 @@ public class CacheResource {
     }
 
     /**
-     * Returns the providers associated to a group
+     * Returns the providers associated to a group.
+     * Requires a CMS Administrator.
      * @param request   {@link HttpServletRequest}
      * @param response  {@link HttpServletResponse}
      * @param group {@link String}
@@ -138,6 +140,7 @@ public class CacheResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -148,7 +151,8 @@ public class CacheResource {
     }
 
     /**
-     * Returns the provider associated to a group
+     * Returns the provider associated to a group.
+     * Requires a CMS Administrator.
      *  @param request   {@link HttpServletRequest}
      *  @param response  {@link HttpServletResponse}
      *  @param provider {@link String}
@@ -168,6 +172,7 @@ public class CacheResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -178,7 +183,8 @@ public class CacheResource {
     }
 
     /**
-     * Get keys for a provider and group
+     * Get keys for a provider and group.
+     * Requires a CMS Administrator.
      *
      *  @param request   {@link HttpServletRequest}
      *  @param response  {@link HttpServletResponse}
@@ -198,6 +204,7 @@ public class CacheResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -209,7 +216,8 @@ public class CacheResource {
     }
 
     /**
-     * Shows an specific object by id in cache provider and group
+     * Shows an specific object by id in cache provider and group.
+     * Requires a CMS Administrator.
      *  @param request   {@link HttpServletRequest}
      *  @param response  {@link HttpServletResponse}
      *  @param provider {@link String}
@@ -230,6 +238,7 @@ public class CacheResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -238,11 +247,12 @@ public class CacheResource {
                 + ", provider = " + provider + ", id = " + id);
 
         final Object obj = this.getProvider(provider, group).get(group, id);
-        return Response.ok(new ResponseEntityView(obj == null? "NOPE" : obj)).build();
+        return Response.ok(new ResponseEntityView(responseValue(group, obj))).build();
     }
 
     /**
-     * Show all object for a provider and group
+     * Show all object for a provider and group.
+     * Requires a CMS Administrator.
      *  @param request   {@link HttpServletRequest}
      *  @param response  {@link HttpServletResponse}
      *  @param provider {@link String}
@@ -261,6 +271,7 @@ public class CacheResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -274,13 +285,14 @@ public class CacheResource {
         for (final String key : keys) {
 
             final Object obj = this.getProvider(provider, group).get(group, key);
-            objectMap.put(key, obj == null? "NOPE" : obj);
+            objectMap.put(key, responseValue(group, obj));
         }
         return Response.ok(new ResponseEntityView(objectMap)).build();
     }
 
     /**
-     * Show all objects for a provider and group
+     * Show all objects for a provider and group.
+     * Requires a CMS Administrator.
      *  @param request   {@link HttpServletRequest}
      *  @param response  {@link HttpServletResponse}
      *  @param provider {@link String}
@@ -299,6 +311,7 @@ public class CacheResource {
         final User user = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init().getUser();
@@ -312,7 +325,8 @@ public class CacheResource {
     }
 
     /**
-     * Deletes an object for a provider and group
+     * Deletes an object for a provider and group.
+     * Requires a CMS Administrator.
      *  @param request   {@link HttpServletRequest}
      *  @param response  {@link HttpServletResponse}
      *  @param provider {@link String}
@@ -332,6 +346,7 @@ public class CacheResource {
         final User user = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init().getUser();
@@ -348,6 +363,7 @@ public class CacheResource {
      * Flushes all caches across all providers, resets permission references,
      * and reloads PushPublishing filters. The provider path parameter is ignored —
      * all caches are flushed regardless.
+     * Requires a CMS Administrator.
      *
      *  @param request   {@link HttpServletRequest}
      *  @param response  {@link HttpServletResponse}
@@ -361,8 +377,7 @@ public class CacheResource {
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "All caches flushed successfully"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - requires maintenance portlet access")
+            @ApiResponse(responseCode = "401", description = "Unauthorized - requires a logged-in CMS Administrator")
     })
     @NoCache
     @DELETE
@@ -375,6 +390,7 @@ public class CacheResource {
         final User user = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init().getUser();
@@ -389,6 +405,7 @@ public class CacheResource {
     /**
      * Returns an alphabetically sorted list of all cache region names.
      * Used to populate the flush-cache dropdown in the Cache tab.
+     * Requires a CMS Administrator.
      *
      * @param request  {@link HttpServletRequest}
      * @param response {@link HttpServletResponse}
@@ -403,8 +420,7 @@ public class CacheResource {
             @ApiResponse(responseCode = "200", description = "Cache regions retrieved successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityListStringView.class))),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - requires maintenance portlet access")
+            @ApiResponse(responseCode = "401", description = "Unauthorized - requires a logged-in CMS Administrator")
     })
     @GET
     @JSONP
@@ -417,6 +433,7 @@ public class CacheResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -435,6 +452,7 @@ public class CacheResource {
     /**
      * Returns JVM memory information and per-provider per-region cache statistics.
      * Used to render the Cache Stats section in the Maintenance portlet.
+     * Requires a CMS Administrator.
      *
      * @param request  {@link HttpServletRequest}
      * @param response {@link HttpServletResponse}
@@ -449,8 +467,7 @@ public class CacheResource {
             @ApiResponse(responseCode = "200", description = "Cache statistics retrieved successfully",
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityCacheStatsView.class))),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - requires maintenance portlet access")
+            @ApiResponse(responseCode = "401", description = "Unauthorized - requires a logged-in CMS Administrator")
     })
     @GET
     @Path("/stats")
@@ -464,6 +481,7 @@ public class CacheResource {
         new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init();
@@ -476,6 +494,7 @@ public class CacheResource {
     /**
      * Flushes a specific cache region across all providers, resets permission references,
      * and conditionally reloads PushPublishing filters. Pass {@code "all"} to flush all caches.
+     * Requires a CMS Administrator.
      *
      * @param request    {@link HttpServletRequest}
      * @param response   {@link HttpServletResponse}
@@ -493,8 +512,7 @@ public class CacheResource {
                     content = @Content(mediaType = "application/json",
                             schema = @Schema(implementation = ResponseEntityStringView.class))),
             @ApiResponse(responseCode = "400", description = "Bad request - unknown cache region name"),
-            @ApiResponse(responseCode = "401", description = "Unauthorized - authentication required"),
-            @ApiResponse(responseCode = "403", description = "Forbidden - requires maintenance portlet access")
+            @ApiResponse(responseCode = "401", description = "Unauthorized - requires a logged-in CMS Administrator")
     })
     @DELETE
     @Path("/region/{regionName: .*}")
@@ -511,6 +529,7 @@ public class CacheResource {
         final User user = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init().getUser();
@@ -525,6 +544,28 @@ public class CacheResource {
         Logger.info(this, String.format("User '%s' flushed cache region '%s'",
                 user.getUserId(), canonical));
         return new ResponseEntityStringView("Flushed " + canonical);
+    }
+
+    /**
+     * Returns the value the cache object routes send back for one cached entry. Values of the Apps secrets group are
+     * replaced by the hidden-value mask; any other value goes through {@link CachedValues#forResponse(Object)}, which
+     * leaves out the credentials of users and the key of companies wherever they appear. The cached object is not
+     * modified.
+     *
+     * @param group the cache group the entry belongs to, in any case
+     * @param value the cached value, or {@code null} when there is none
+     * @return {@code "NOPE"} when there is no value, the mask for a secret, otherwise the value as
+     *         {@link CachedValues#forResponse(Object)} returns it
+     */
+    @VisibleForTesting
+    static Object responseValue(final String group, final Object value) {
+        if (value == null) {
+            return "NOPE";
+        }
+        if (CachedValues.isAppsSecretsGroup(group)) {
+            return SecretView.SecretViewSerializer.HIDDEN_SECRET_MASK;
+        }
+        return CachedValues.forResponse(value);
     }
 
     /**
@@ -585,7 +626,8 @@ public class CacheResource {
     }
 
     /**
-     * Deletes the menu cache
+     * Deletes the menu cache.
+     * Requires a CMS Administrator.
      *  @param request   {@link HttpServletRequest}
      *  @param response  {@link HttpServletResponse}
      * @return ResponseEntityStringView
@@ -603,6 +645,7 @@ public class CacheResource {
                                     schema = @Schema(implementation = ResponseEntityStringView.class)
                             )
                     ),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - requires a logged-in CMS Administrator"),
                     @ApiResponse(responseCode = "500", description = "General Error")
             }
     )
@@ -612,6 +655,7 @@ public class CacheResource {
         final User user = new WebResource.InitBuilder(webResource)
                 .requestAndResponse(request, response)
                 .requiredBackendUser(true)
+                .requireAdmin(true)
                 .requiredFrontendUser(false)
                 .requiredPortlet(PortletID.MAINTENANCE.toString().toLowerCase())
                 .rejectWhenNoUser(true).init().getUser();

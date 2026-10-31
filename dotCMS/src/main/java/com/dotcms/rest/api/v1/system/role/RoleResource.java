@@ -128,6 +128,11 @@ public class RoleResource implements Serializable {
 	 * not guaranteed that this method will traverse the full list of roles.
 	 * Once it finds a role that is associated to the user, it will return.
 	 * <p>
+	 * Any back-end user can check their own roles. Checking another user's roles
+	 * takes the role membership privilege: an administrator, or a user with access
+	 * to both the Roles and the Users portlets. The rule is applied by
+	 * {@link RoleAPI#doesUserHaveRoles(String, List, User)}.
+	 * <p>
 	 * Example:
 	 *
 	 * <pre>
@@ -136,6 +141,8 @@ public class RoleResource implements Serializable {
 	 *
 	 * @param request
 	 *            - The {@link HttpServletRequest} object.
+	 * @param response
+	 *            - The {@link HttpServletResponse} object.
 	 * @param userId
 	 *            - The ID of the user going through role verification.
 	 * @param roleIds
@@ -144,24 +151,28 @@ public class RoleResource implements Serializable {
 	 * @return If the user is associated to at least one role ID, returns a
 	 *         {@link Response} with {@code true}. Otherwise, returns a
 	 *         {@link Response} with {@code false}.
+	 * @throws ForbiddenException if the user to check is not the caller and the
+	 *         caller does not have the role membership privilege
 	 */
 	@Operation(
 		operationId = "checkUserRoles",
 		summary = "Check user roles",
-		description = "Verifies that a user is assigned to one of the specified role IDs"
+		description = "Verifies that a user is assigned to one of the specified role IDs. "
+				+ "Any back-end user can check their own roles; checking another user's roles "
+				+ "requires an administrator or access to both the Roles and the Users portlets."
 	)
 	@ApiResponses(value = {
 		@ApiResponse(responseCode = "200", 
 					description = "Role check completed successfully",
 					content = @Content(mediaType = "application/json",
 									  schema = @Schema(implementation = ResponseEntityRoleOperationView.class))),
-		@ApiResponse(responseCode = "401", 
+		@ApiResponse(responseCode = "401",
 					description = "Unauthorized - authentication required",
 					content = @Content(mediaType = "application/json")),
-		@ApiResponse(responseCode = "403", 
-					description = "Forbidden - insufficient permissions",
+		@ApiResponse(responseCode = "403",
+					description = "Forbidden - checking another user's roles requires an administrator, or Roles and Users portlet access",
 					content = @Content(mediaType = "application/json")),
-		@ApiResponse(responseCode = "500", 
+		@ApiResponse(responseCode = "500",
 					description = "Internal server error",
 					content = @Content(mediaType = "application/json"))
 	})
@@ -184,7 +195,9 @@ public class RoleResource implements Serializable {
 		boolean hasUserRole = false;
 		try {
 			String[] roles = roleIds.split(ROLE_ID_SEPARATOR);
-			hasUserRole = this.roleAPI.doesUserHaveRoles(userId, list(roles));
+			hasUserRole = this.roleAPI.doesUserHaveRoles(userId, list(roles), init.getUser());
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e.getMessage());
 		} catch (Exception e) {
 			// In case of unknown error, so we report it as a 500
 			Logger.error(this, "An error occurred when processing the request.", e);

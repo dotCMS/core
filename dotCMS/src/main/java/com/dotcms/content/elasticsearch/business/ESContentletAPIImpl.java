@@ -10741,48 +10741,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * Counts the documents in the index that match the given query, restricted by the roles the
-     * caller holds. The clauses are appended as text, so the query is normalized first for every
-     * caller, administrators included.
+     * Counts the documents in the index that match the given query and that the caller is allowed
+     * to read.
      * <p>
-     * Only {@link #addPermissionsToQuery(StringBuffer, User, List, boolean)} is applied here, so
-     * the count is not narrowed by category read permissions the way
-     * {@link #applyPermissionsToQuery(String, User, boolean)} narrows a search, and it can come
-     * out higher than the number of results the same query returns.
+     * The query is narrowed by {@link #applyPermissionsToQuery(String, User, boolean)}, the same
+     * method the search path uses, so the count and the search agree on what the caller may see.
      *
      * @param luceneQuery the query written by the caller
      * @param user the {@link User} the count is run for, or {@code null} for an anonymous caller
      * @param respectFrontendRoles whether the anonymous and logged-in-site roles grant read as well
-     * @return how many documents match the query and are granted to one of the caller's roles
+     * @return how many documents match the query and are readable by the caller
      * @throws DotDataException if the count cannot be read from the index
      * @throws DotSecurityException if no user is given and front-end roles are not respected
      */
     @Override
-    public long indexCount(String luceneQuery, User user, boolean respectFrontendRoles)
-            throws DotDataException, DotSecurityException {
-        boolean isAdmin = false;
-        List<Role> roles = new ArrayList<>();
-        if (user == null && !respectFrontendRoles) {
-            throw new DotSecurityException(
-                    "You must specify a user if you are not respecting frontend roles");
-        }
-        if (user != null) {
-            if (!APILocator.getRoleAPI()
-                    .doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())) {
-                roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
-            } else {
-                isAdmin = true;
-            }
-        }
-        final StringBuffer buffy = new StringBuffer(luceneQuery);
-        balanceTrailingEscape(buffy);
-
-        // Permissions in the query
-        if (!isAdmin) {
-            addPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
-        }
-
-        return contentFactory.indexCount(buffy.toString());
+    public long indexCount(final String luceneQuery, final User user,
+            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        return contentFactory.indexCount(
+                applyPermissionsToQuery(luceneQuery, user, respectFrontendRoles));
     }
 
     @CloseDBIfOpened

@@ -1264,17 +1264,20 @@ public class UserAjax {
 	}
 
 	/**
-	 * Verifies 
-	 * @param userId
-	 * @param roles
-	 * @return
-	 * @throws Exception
+	 * Tells whether a user holds at least one of the given roles, on behalf of the logged-in user.
+	 * Legacy DWR entry point kept as a delegate: the rule lives in
+	 * {@link RoleAPI#doesUserHaveRoles(String, List, User)}, which lets any user check their own
+	 * roles and requires the role membership privilege for another user's.
+	 *
+	 * @param userId the id of the {@link User} whose roles are checked
+	 * @param roles  the ids of the roles to look for
+	 * @return {@code true} if the user holds at least one of the roles
+	 * @throws DotSecurityException if there is no logged-in user, or if the user to check is not the
+	 *                              caller and the caller does not have the role membership privilege
+	 * @throws Exception            if the logged-in user or the roles cannot be resolved
 	 */
-	public boolean hasUserRoles(String userId, String[] roles) throws Exception {
-		// Make sure the DWR request calling this method is authenticated
-		getLoggedInUser();
-		RoleAPI roleAPI = APILocator.getRoleAPI();
-		return roleAPI.doesUserHaveRoles(userId, Arrays.asList(roles));
+	public boolean hasUserRoles(final String userId, final String[] roles) throws Exception {
+		return APILocator.getRoleAPI().doesUserHaveRoles(userId, Arrays.asList(roles), getLoggedInUser());
 	}
 
 

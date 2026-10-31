@@ -192,11 +192,6 @@
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.commons-fileupload</artifactId>
-                <version>1.3.3_1</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.commons-httpclient</artifactId>
                 <version>3.1_3</version>
             </dependency>
@@ -252,11 +247,6 @@
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.fileupload-ext</artifactId>
-                <version>ukv_3</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.gif89</artifactId>
                 <version>ukv_2</version>
             </dependency>
@@ -274,11 +264,6 @@
                 <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.httpbridge</artifactId>
                 <version>ukv_2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.httpclient</artifactId>
-                <version>4.2.2_2</version>
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>

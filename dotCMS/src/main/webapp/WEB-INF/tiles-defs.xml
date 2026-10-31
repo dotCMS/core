@@ -379,41 +379,6 @@
 	<!-- File Management -->
 
 
-	<!-- Category Admin -->
-	<definition name="portlet.ext.categories.view" extends="portal">
-		<put name="content" value="/portlet/ext/categories/view.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.categories" extends="portal">
-		<put name="portlet_sub_nav"
-			value="/portlet/ext/categories/sub_nav.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.categories.view_categories"
-		extends="portlet.ext.categories">
-		<put name="content"
-			value="/portlet/ext/categories/view_categories.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.categories.view_category"
-		extends="portlet.ext.categories">
-		<put name="content"
-			value="/portlet/ext/categories/view_category.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.categories.edit_category"
-		extends="portlet.ext.categories">
-		<put name="content"
-			value="/portlet/ext/categories/edit_category.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.categories.view_category"
-		extends="portlet.ext.categories">
-		<put name="content"
-			value="/portlet/ext/categories/view_category.jsp" />
-	</definition>
-	<!-- Category Admin -->
-
 	<!-- Entities -->
 	<definition name="portlet.ext.entities.view" extends="portal">
 		<put name="content" value="/portlet/ext/entities/view.jsp" />
