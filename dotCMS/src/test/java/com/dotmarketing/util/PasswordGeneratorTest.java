@@ -36,7 +36,8 @@ public class PasswordGeneratorTest {
                     .replace("-",  "\\-");
     }
 
-    // Default portal.properties pattern (passwords.regexptoolkit.pattern) after the ? fix
+    // Previous default pattern, kept as a sample of the simple /^[class]{n,}$/ shape the extractor
+    // still reads. The current default (lookaheads plus a class) is covered by PasswordGeneratorPolicyShapeTest.
     static final String DEFAULT_REGEXP_PATTERN =
             "/^[A-Za-z0-9!@#$%^&*()_\\-=+.,';:`~<>\\[\\]?]{8,}$/";
 

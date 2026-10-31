@@ -160,7 +160,7 @@
                     inputId="users-profile-password"
                     formControlName="password"
                     [toggleMask]="true"
-                    [feedback]="!isEdit()"
+                    [feedback]="false"
                     [placeholder]="isEdit() ? '••••••••' : null"
                     [invalid]="isAccountFieldInvalid('password')"
                     styleClass="w-full"
@@ -179,6 +179,22 @@
                 ) {
                     <small class="text-red-600" data-testid="users-profile-password-min-error">
                         {{ 'users.dialog.error.password-min' | dm }}
+                    </small>
+                } @else if (
+                    $accountGroup().get('password')?.touched &&
+                    $accountGroup().get('password')?.errors?.['maxlength']
+                ) {
+                    <small class="text-red-600" data-testid="users-profile-password-max-error">
+                        {{ 'users.dialog.error.password-max' | dm }}
+                    </small>
+                } @else if (
+                    $accountGroup().get('password')?.touched &&
+                    $accountGroup().get('password')?.errors?.['passwordComplexity']
+                ) {
+                    <small
+                        class="text-red-600"
+                        data-testid="users-profile-password-complexity-error">
+                        {{ 'users.dialog.error.password-complexity' | dm }}
                     </small>
                 } @else if (isEdit()) {
                     <small class="text-slate-500">

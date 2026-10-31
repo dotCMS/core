@@ -12,7 +12,7 @@ Feature: Workflow fire with a permission list
     * def encodedAuth = function(s) { return java.util.Base64.getEncoder().encodeToString(s.getBytes('UTF-8')); }
     * def asRows = function(rows) { return karate.sort(karate.map(rows, function(row) { return { roleId: row.roleId, permission: row.permission, type: row.type } }), function(row) { return row.roleId + ':' + row.permission + ':' + row.type }) }
     * def editorEmail = 'editor' + suffix + '@dotcms.com'
-    * def editorPassword = 'Pw' + suffix
+    * def editorPassword = 'Editor-Pw-' + suffix + '-Aa1!'
     * def editorHeaders = { 'Content-Type': 'application/json', 'Authorization': '#("Basic " + encodedAuth(editorEmail + ":" + editorPassword))' }
 
   @permissions

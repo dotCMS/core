@@ -742,7 +742,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"userId\":\"userid-apiToken-12345678\",\n    \"active\":true,\n    \"firstName\":\"test\",\n    \"middleName\":\"S\",\n    \"lastName\":\"test\",\n    \"nickName\":\"test\",\n    \"email\":\"test@dotcms.com\",\n    \"male\":true,\n    \"password\":[\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"],\n    \"roles\":[\"DOTCMS_BACK_END_USER\"]\n}",
+							"raw": "{\n    \"userId\":\"userid-apiToken-12345678\",\n    \"active\":true,\n    \"firstName\":\"test\",\n    \"middleName\":\"S\",\n    \"lastName\":\"test\",\n    \"nickName\":\"test\",\n    \"email\":\"test@dotcms.com\",\n    \"male\":true,\n    \"password\": \"Postman-Pass-2026!\",\n    \"roles\":[\"DOTCMS_BACK_END_USER\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1374,7 +1374,7 @@
 								},
 								{
 									"key": "password",
-									"value": "12345678",
+									"value": "Postman-Pass-2026!",
 									"type": "string"
 								}
 							]
@@ -1492,7 +1492,7 @@
 								},
 								{
 									"key": "password",
-									"value": "12345678",
+									"value": "Postman-Pass-2026!",
 									"type": "string"
 								}
 							]
@@ -1544,7 +1544,7 @@
 								},
 								{
 									"key": "password",
-									"value": "12345678",
+									"value": "Postman-Pass-2026!",
 									"type": "string"
 								}
 							]

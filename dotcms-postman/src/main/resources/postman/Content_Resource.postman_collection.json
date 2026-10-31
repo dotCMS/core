@@ -6569,7 +6569,7 @@
 						},
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"firstName\": \"Widget\",\n    \"lastName\": \"Author\",\n    \"email\": \"widget.warning.author@dotcms.com\",\n    \"password\": [\n        \"d\",\n        \"o\",\n        \"t\",\n        \"c\",\n        \"m\",\n        \"s\",\n        \"1\",\n        \"2\",\n        \"3\",\n        \"4\",\n        \"5\",\n        \"6\",\n        \"7\",\n        \"8\"\n    ],\n    \"roles\": [\n        \"DOTCMS_BACK_END_USER\",\n        \"CMS Administrator\"\n    ]\n}",
+							"raw": "{\n    \"firstName\": \"Widget\",\n    \"lastName\": \"Author\",\n    \"email\": \"widget.warning.author@dotcms.com\",\n    \"password\": \"Postman-Pass-2026!\",\n    \"roles\": [\n        \"DOTCMS_BACK_END_USER\",\n        \"CMS Administrator\"\n    ]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -6739,7 +6739,7 @@
 							"basic": [
 								{
 									"key": "password",
-									"value": "dotcms12345678",
+									"value": "Postman-Pass-2026!",
 									"type": "string"
 								},
 								{

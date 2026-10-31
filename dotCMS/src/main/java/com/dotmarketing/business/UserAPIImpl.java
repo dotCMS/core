@@ -1,11 +1,13 @@
 package com.dotmarketing.business;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotcms.publisher.bundle.business.BundleAPI;
 import com.dotcms.rest.api.v1.authentication.DotInvalidTokenException;
+import com.dotcms.util.PasswordRejectionReason;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -43,6 +45,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import javax.servlet.http.HttpServletRequest;
 
 import static com.dotmarketing.business.UserHelper.validateMaximumLength;
 import static com.dotmarketing.business.UserHelper.validateName;
@@ -486,6 +489,7 @@ public class UserAPIImpl implements UserAPI {
             try {
                 if (!passwordTracker.isValidPassword(userToSave.getUserId(),
                         pwd)) {
+                    logPasswordRejection(userToSave.getUserId(), user, pwd);
                     // Get the first validation error and display it
                     throw new DotDataException(passwordTracker
                             .getValidationErrors().get(0).toString(),"User-Info-Save-Password-Failed");
@@ -677,6 +681,35 @@ public class UserAPIImpl implements UserAPI {
     }
 
     /**
+     * Writes one security log entry for a rejected password: the target user, the acting user, the
+     * entry point of the request (or {@code internal} when there is none) and the rule that failed.
+     * The password, its length and anything derived from it are never written. The client address
+     * is added by {@link SecurityLogger} itself. A failure to log never changes the outcome of the
+     * rejection.
+     *
+     * @param targetUserId the user whose password was refused
+     * @param actingUser the user making the change, may be {@code null}
+     * @param password the rejected password, used only to tell which rule it breaks
+     */
+    private void logPasswordRejection(final String targetUserId, final User actingUser, final String password) {
+        try {
+            final HttpServletRequest request = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+            final String entryPoint = null != request
+                    ? request.getMethod() + " " + request.getRequestURI() : "internal";
+            final PasswordRejectionReason reason = PasswordRejectionReason.classify(password,
+                    PropsUtil.get(PropsUtil.PASSWORDS_REGEXPTOOLKIT_PATTERN));
+            final String actingUserId = null != actingUser ? actingUser.getUserId() : "unknown";
+            SecurityLogger.logWarn(UserAPIImpl.class, () -> "Password rejected: target="
+                    + PasswordRejectionReason.sanitizeForLog(targetUserId)
+                    + ", actor=" + PasswordRejectionReason.sanitizeForLog(actingUserId)
+                    + ", entry=" + PasswordRejectionReason.sanitizeForLog(entryPoint)
+                    + ", rule=" + reason);
+        } catch (final RuntimeException e) {
+            Logger.debug(UserAPIImpl.class, "Could not log the rejected password: " + e.getMessage());
+        }
+    }
+
+    /**
      * Sets a new password on the user and saves it. After the save,
      * {@link #invalidateLoginTokens(String)} runs in the same transaction, so login tokens issued
      * before the change stop working.
@@ -685,6 +718,7 @@ public class UserAPIImpl implements UserAPI {
     @Override
     public void updatePassword(User user, String newpass, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotInvalidPasswordException, DotSecurityException {
         if(!PwdToolkitUtil.validate(newpass)) {
+            logPasswordRejection(null != user ? user.getUserId() : null, currentUser, newpass);
             throw new DotInvalidPasswordException("Invalid password");
         }
 
