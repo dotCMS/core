@@ -153,6 +153,13 @@ public class ContentHandler implements IHandler {
 	private final Map<String, Pair<Set<String>, Set<String>>> pushedContent = new LinkedHashMap<>();
 
 	private static final boolean RESPECT_FRONTEND_ROLES = true;
+	/**
+	 * Receiver-side property. When {@code true}, content pushed with a filter that sets
+	 * {@code relationships: false} gets its relationships replaced with the sender's, to related
+	 * content that exists in the receiver. It's off by default because it removes relationships
+	 * created only in the receiver, which matters to clients that edit content in both.
+	 */
+	public static final String SYNC_RELATIONSHIPS_PROPERTY = "PUSH_PUBLISHING_SYNC_RELATIONSHIPS";
 
 	private final PublisherConfig config;
 
@@ -907,9 +914,8 @@ public class ContentHandler implements IHandler {
 			// in order to add the new ones, if the relationships filter is set to false, we shouldn't remove the trees
 			this.cleanTrees(content);
 			this.regenerateTree(wrapper, remoteLocalLanguages.getLeft());
-		} else if (Boolean.parseBoolean(String.valueOf(
-				filterDescriptor.getFilters().get(FilterDescriptor.SYNC_RELATIONSHIPS_KEY)))) {
-			// With the relationships filter set to false and the sync option on, the pushed
+		} else if (Config.getBooleanProperty(SYNC_RELATIONSHIPS_PROPERTY, false)) {
+			// With the relationships filter set to false and the sync property on, the pushed
 			// content's relationships are replaced with the ones in the bundle, to content that
 			// exists in the receiver. The related content isn't pushed
 			this.collectPushedTrees(wrapper, identifier, content, true);

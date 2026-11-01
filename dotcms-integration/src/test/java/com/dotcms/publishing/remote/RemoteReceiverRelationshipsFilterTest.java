@@ -18,6 +18,7 @@ import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FieldRelationshipDataGen;
 import com.dotcms.datagen.FilterDescriptorDataGen;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.enterprise.publishing.remote.handler.ContentHandler;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.business.PublishAuditAPI;
 import com.dotcms.publisher.business.PublishAuditStatus;
@@ -233,7 +234,8 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
     /**
      * Method to test: {@link com.dotcms.enterprise.publishing.remote.handler.ContentHandler#handle(File)}
      * Given scenario: An Article that already exists in the receiver is pushed with a filter that
-     * sets {@code relationships: false}, without {@code syncRelationships}. In the receiver, the
+     * sets {@code relationships: false}, without the receiver's
+     * {@code PUSH_PUBLISHING_SYNC_RELATIONSHIPS} property. In the receiver, the
      * Article is related to a different Author than the one in the bundle.
      * Expected result: The receiver keeps its own relationships for the existing Article, as
      * required by <a href="https://github.com/dotCMS/core/issues/30998">#30998</a>.
@@ -258,7 +260,8 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
     /**
      * Method to test: {@link com.dotcms.enterprise.publishing.remote.handler.ContentHandler#handle(File)}
      * Given scenario: An Author that already exists in the receiver is pushed with a filter that
-     * sets {@code relationships: false}, without {@code syncRelationships}. In the receiver, a
+     * sets {@code relationships: false}, without the receiver's
+     * {@code PUSH_PUBLISHING_SYNC_RELATIONSHIPS} property. In the receiver, a
      * second Article that only exists there is also related to the Author.
      * Expected result: The Author keeps both Articles, as required by
      * <a href="https://github.com/dotCMS/core/issues/30998">#30998</a>.
@@ -284,19 +287,20 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
     /**
      * Method to test: {@link com.dotcms.enterprise.publishing.remote.handler.ContentHandler#handle(File)}
      * Given scenario: An Article that already exists in the receiver is pushed with a filter that
-     * sets {@code relationships: false} and {@code syncRelationships: true}. In the receiver, the
+     * sets {@code relationships: false}, with the receiver's
+     * {@code PUSH_PUBLISHING_SYNC_RELATIONSHIPS} property set to {@code true}. In the receiver, the
      * Article is related to Author A, and in the sender its Author was changed to Author B, which
      * also exists in the receiver.
      * Expected result: The Article's relationship in the receiver is replaced with the one in the
      * sender, matched by Identifier, so it's related to Author B only.
      */
     @Test
-    public void test_existingParent_pushedWithSyncRelationshipsFilter_matchesSenderRelationships()
+    public void test_existingParent_pushedWithSyncRelationshipsProperty_matchesSenderRelationships()
             throws Exception {
         final TestData data = createRelatedContent();
         final Contentlet receiverOnlyAuthor = new ContentletDataGen(data.authorType).host(host)
                 .setProperty("title", "receiver-only-" + UUIDGenerator.shorty()).nextPersisted();
-        final FilterDescriptor filter = createFilterWithoutRelationships(true);
+        final FilterDescriptor filter = createFilterWithoutRelationships();
         final PreparedBundle bundle = generateBundleFor(data.article, filter);
 
         // In the receiver, the Article is related to a different Author
@@ -304,7 +308,7 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
         assertEquals("The receiver-only relationship was not set up; the scenario under test is not in place",
                 List.of(receiverOnlyAuthor.getIdentifier()), findRelatedIds(data.article, data.relationship));
 
-        processBundle(bundle);
+        processBundleWithSync(bundle);
 
         assertEquals("The pushed Article must be related to the Author it has in the sender",
                 List.of(data.author.getIdentifier()), findRelatedIds(data.article, data.relationship));
@@ -315,15 +319,16 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
     /**
      * Method to test: {@link com.dotcms.enterprise.publishing.remote.handler.ContentHandler#handle(File)}
      * Given scenario: An Author that already exists in the receiver is pushed with a filter that
-     * sets {@code relationships: false} and {@code syncRelationships: true}. In the receiver, a
+     * sets {@code relationships: false}, with the receiver's
+     * {@code PUSH_PUBLISHING_SYNC_RELATIONSHIPS} property set to {@code true}. In the receiver, a
      * second Article is also related to the Author, but it isn't in the sender.
      * Expected result: The Author's relationships in the receiver are replaced with the ones in the
      * sender, matched by Identifier, so it's related to the first Article only.
      */
     @Test
-    public void test_existingChild_pushedWithSyncRelationshipsFilter_matchesSenderParents() throws Exception {
+    public void test_existingChild_pushedWithSyncRelationshipsProperty_matchesSenderParents() throws Exception {
         final TestData data = createRelatedContent();
-        final PreparedBundle bundle = generateBundleFor(data.author, createFilterWithoutRelationships(true));
+        final PreparedBundle bundle = generateBundleFor(data.author, createFilterWithoutRelationships());
 
         // In the receiver, a second Article is related to the Author
         final Contentlet receiverOnlyArticle = new ContentletDataGen(data.article.getContentTypeId()).host(host)
@@ -333,7 +338,7 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
                 Set.of(data.article.getIdentifier(), receiverOnlyArticle.getIdentifier()),
                 Set.copyOf(findRelatedIds(data.author, data.relationship)));
 
-        processBundle(bundle);
+        processBundleWithSync(bundle);
 
         assertEquals("The pushed Author must be related to the Articles it has in the sender only",
                 List.of(data.article.getIdentifier()), findRelatedIds(data.author, data.relationship));
@@ -498,22 +503,26 @@ public class RemoteReceiverRelationshipsFilterTest extends IntegrationTestBase {
     }
 
     /**
+     * Processes the bundle with the receiver's {@code PUSH_PUBLISHING_SYNC_RELATIONSHIPS} property
+     * on, restoring its previous value afterwards so other tests keep the default behavior.
+     */
+    private void processBundleWithSync(final PreparedBundle bundle) throws Exception {
+        final boolean previous = Config.getBooleanProperty(ContentHandler.SYNC_RELATIONSHIPS_PROPERTY, false);
+        Config.setProperty(ContentHandler.SYNC_RELATIONSHIPS_PROPERTY, true);
+        try {
+            processBundle(bundle);
+        } finally {
+            Config.setProperty(ContentHandler.SYNC_RELATIONSHIPS_PROPERTY, previous);
+        }
+    }
+
+    /**
      * Adds a filter like "Only Selected Items" that the test bundles reference by key. It must not
      * become the default filter or replace the existing ones, as other tests in the same suite
      * push with the default filter and expect dependencies to be included.
      */
     private FilterDescriptor createFilterWithoutRelationships() {
-        return createFilterWithoutRelationships(false);
-    }
-
-    /**
-     * Adds a filter like "Only Selected Items" that, if {@code syncRelationships} is {@code true},
-     * also makes the receiver replace the relationships of the pushed content with the ones in the
-     * sender.
-     */
-    private FilterDescriptor createFilterWithoutRelationships(final boolean syncRelationships) {
         final FilterDescriptor filter = new FilterDescriptorDataGen()
-                .syncRelationships(syncRelationships)
                 .key("onlySelectedItems_" + System.currentTimeMillis() + ".yml")
                 .dependencies(false)
                 .relationships(false)
