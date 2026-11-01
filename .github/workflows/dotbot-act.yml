@@ -81,6 +81,10 @@ jobs:
           ref: ${{ github.event.pull_request.head.sha || format('refs/pull/{0}/head', github.event.issue.number) }}
       - name: dotbot autonomous edits
         uses: wezell/openrouter-code-review-action@34ee169dd9f35bf20a6b358b902c6c76e5df3a14
+        env:
+          # The action runs `python3 -m pip` / `-m cli.main` from the PR checkout, which
+          # holds the PAT. Keep the PR head off sys.path so it can't shadow them (pip.py).
+          PYTHONSAFEPATH: "1"
         with:
           mode: act
           openrouter_api_key: ${{ secrets.OPENROUTER_API_KEY }}
