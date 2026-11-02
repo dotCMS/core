@@ -4,7 +4,7 @@ import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component, DebugElement, Injector, Input } from '@angular/core';
+import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -109,11 +109,6 @@ class MockDotLargeMessageDisplayComponent {}
 })
 class MockDotPushPublishDialogComponent {}
 
-/** The handler once it can be told which injector its panels live under (#38303). */
-type HandlerWithInjector = DotCustomEventHandlerService & {
-    setInjector?: (injector: Injector) => void;
-};
-
 const createFeatureFlagResponse = (enabled = 'NOT_FOUND') => ({
     [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: enabled
 });
@@ -143,6 +138,8 @@ describe('MainLegacyComponent', () => {
                 DotFormatDateService,
                 DotAlertConfirmService,
                 ConfirmationService,
+                // Stands in for a MessageService a route provides, as UVE's does.
+                MessageService,
                 DotcmsConfigService,
                 LoggerService,
                 StringUtils,
@@ -218,37 +215,27 @@ describe('MainLegacyComponent', () => {
     });
 
     /**
-     * Panels opened by root services (the legacy JSP portlets' events, the deep links) resolve
-     * their toasts through the root injector (#38303, FR-037). Nothing provided a PrimeNG
-     * MessageService or a toast at the admin root before, so their messages had nowhere to go.
+     * The admin root is an element ancestor of every routed portlet, and Angular resolves element
+     * injectors before a route's providers. A MessageService provided here shadowed the one UVE
+     * provides on its route, so UVE's toast and the admin root's both rendered every UVE message
+     * (#38303). The side panels and their toast live in `dot-side-panel-host`, a sibling of the
+     * router outlet, instead.
      */
     describe('side panel toasts', () => {
-        it('should provide a MessageService and a toast beside the side panel outlet', () => {
-            expect(de.injector.get(MessageService)).toBeDefined();
-            expect(de.query(By.css('p-toast'))).not.toBeNull();
-            expect(de.query(By.css('dot-side-panel-outlet'))).not.toBeNull();
+        it('should not provide a MessageService of its own', () => {
+            // Compared by identity: printing a MessageService on failure floods the output.
+            expect(de.injector.get(MessageService) === TestBed.inject(MessageService)).toBe(true);
         });
 
-        /**
-         * The legacy portlets' events reach the root `DotCustomEventHandlerService`, whose panels
-         * must live under this component so they find the MessageService above, not the root
-         * injector, where nothing provides one (#38303, T090).
-         */
-        it('should register its own injector with the custom-event handler', () => {
-            const handler = TestBed.inject(DotCustomEventHandlerService) as HandlerWithInjector;
-            expect(typeof handler.setInjector, 'the handler accepts an injector').toBe('function');
-            const setInjector = vi.spyOn(handler as Required<HandlerWithInjector>, 'setInjector');
+        it('should render the side panel host', () => {
+            expect(de.query(By.css('dot-side-panel-host'))).not.toBeNull();
+        });
 
-            const mounted = TestBed.createComponent(MainComponentLegacyComponent);
-            mounted.detectChanges();
+        it('should render no toast or side panel outlet of its own', () => {
+            const host: HTMLElement = fixture.nativeElement;
 
-            expect(setInjector.mock.calls.length).toBe(1);
-            const [registered] = setInjector.mock.calls[0];
-            // Compared by identity: printing an injector runs the worker out of memory.
-            expect(
-                registered.get(MessageService, null) ===
-                    mounted.debugElement.injector.get(MessageService)
-            ).toBe(true);
+            expect(host.querySelector(':scope > p-toast')).toBeNull();
+            expect(host.querySelector(':scope > dot-side-panel-outlet')).toBeNull();
         });
     });
 });

@@ -8,7 +8,8 @@ import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { LazyLoadEvent, MenuItem } from 'primeng/api';
+import { LazyLoadEvent, MenuItem, MessageService } from 'primeng/api';
+import { Toast } from 'primeng/toast';
 
 import { DotEventsService, DotMessageDisplayService, DotRouterService } from '@dotcms/data-access';
 import {
@@ -100,6 +101,8 @@ describe('DotPagesComponent', () => {
     const createComponent = createComponentFactory({
         component: DotPagesComponent,
         imports: [DotPagesComponent],
+        // Stands in for a MessageService an ancestor would provide.
+        providers: [MessageService],
         detectChanges: false
     });
 
@@ -117,6 +120,7 @@ describe('DotPagesComponent', () => {
             set: {
                 imports: [
                     CommonModule,
+                    Toast,
                     TieredMenuStubComponent,
                     MockComponent(DotPageFavoritesPanelComponent),
                     MockComponent(DotPagesTableComponent),
@@ -335,6 +339,24 @@ describe('DotPagesComponent', () => {
             spectator.triggerEventHandler('dot-add-to-bundle', 'cancel', null);
 
             expect(store.hideBundleDialog).toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * The page actions' Edit opens the side panel with this component's injector (the actions
+     * service is provided here). The admin root provides no MessageService (it would shadow the page
+     * editor's), so the panel's editor finds this one and toasts in this component's toast (#38303).
+     */
+    describe('side panel toasts', () => {
+        it('should provide a MessageService of its own', () => {
+            // Compared by identity: printing a MessageService on failure floods the output.
+            expect(spectator.inject(MessageService, true) === spectator.inject(MessageService)).toBe(
+                false
+            );
+        });
+
+        it("should render a toast for the panel's messages", () => {
+            expect(spectator.query(Toast)).not.toBeNull();
         });
     });
 

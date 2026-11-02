@@ -8,9 +8,10 @@ import { MockComponent } from 'ng-mocks';
 import { Subject, of, throwError } from 'rxjs';
 import { Mock, MockInstance, Mocked, vi } from 'vitest';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { Button } from 'primeng/button';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
+import { Toast } from 'primeng/toast';
 
 /* eslint-disable @nx/enforce-module-boundaries */
 
@@ -83,6 +84,8 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
     const createComponent = createComponentFactory({
         component: DotPublishingQueueSelectBundleDialogComponent,
         providers: [
+            // Stands in for a MessageService an ancestor would provide.
+            MessageService,
             mockProvider(DotPublishingQueueService, {
                 getUnsendBundles: vi.fn().mockReturnValue(of(UNSENT_RESPONSE)),
                 getBundleAssets: vi.fn().mockReturnValue(of(MOCK_ASSETS)),
@@ -388,6 +391,21 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
                 openOptions().injector.get(DotPublishingQueueSelectBundleDialogComponent, null) ===
                     spectator.component
             ).toBe(true);
+        });
+
+        // The admin root provides none (it would shadow the page editor's), so the panel's editor
+        // toasts through this one.
+        it('opens it with an injector that resolves a MessageService of its own', () => {
+            clickRow(0);
+            const own = spectator.inject(MessageService, true);
+
+            // Compared by identity: printing a MessageService on failure floods the output.
+            expect(own === spectator.inject(MessageService), 'the dialog provides one').toBe(false);
+            expect(openOptions().injector.get(MessageService, null) === own).toBe(true);
+        });
+
+        it("renders a toast for the panel's messages", () => {
+            expect(spectator.query(Toast)).not.toBeNull();
         });
 
         it("reloads the active bundle's assets on every save", () => {

@@ -3,6 +3,9 @@ import { Mock, vi } from 'vitest';
 
 import { ActivatedRoute, convertToParamMap, Params, Router } from '@angular/router';
 
+import { MessageService } from 'primeng/api';
+import { Toast } from 'primeng/toast';
+
 import { DotIframeService, DotRouterService } from '@dotcms/data-access';
 // The opener is the component's dependency; the app also lazy-loads the library's routes (#38303).
 // eslint-disable-next-line @nx/enforce-module-boundaries
@@ -36,6 +39,8 @@ describe('DotEditContentDeepLinkComponent', () => {
         component: DotEditContentDeepLinkComponent,
         detectChanges: false,
         providers: [
+            // Stands in for a MessageService an ancestor would provide.
+            MessageService,
             mockProvider(DotEditContentOpenerService, {
                 // Like the real opener: `closed` fires when the returned ref closes.
                 open: vi.fn(
@@ -143,6 +148,22 @@ describe('DotEditContentDeepLinkComponent', () => {
             expect(
                 injector.get(DotEditContentDeepLinkComponent, null) === spectator.component
             ).toBe(true);
+        });
+
+        // The admin root provides none (it would shadow the page editor's), so the panel's editor
+        // toasts through this one.
+        it('should open the panel with an injector that resolves a MessageService of its own', () => {
+            const own = spectator.inject(MessageService, true);
+
+            // Compared by identity: printing a MessageService on failure floods the output.
+            expect(own === spectator.inject(MessageService), 'the component provides one').toBe(
+                false
+            );
+            expect(openOptions().injector.get(MessageService, null) === own).toBe(true);
+        });
+
+        it("should render a toast for the panel's messages", () => {
+            expect(spectator.query(Toast)).not.toBeNull();
         });
 
         it('should reload the parent portlet on every save', () => {

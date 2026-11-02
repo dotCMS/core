@@ -9,9 +9,10 @@ import { Mock, MockInstance, Mocked, vi } from 'vitest';
 
 import { signal } from '@angular/core';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { Button } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { Toast } from 'primeng/toast';
 
 import { DotContentletEditUrlService, DotMessageService } from '@dotcms/data-access';
 import { BundleAssetView, DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -56,6 +57,8 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
         componentProviders: [mockProvider(DotPublishingQueueStore, storeStub())],
         providers: [
             ConfirmationService,
+            // Stands in for a MessageService an ancestor would provide.
+            MessageService,
             mockProvider(DynamicDialogRef, { close: vi.fn() }),
             // Records whether the dialog asked for it at all: it no longer resolves URLs (#38303).
             {
@@ -200,6 +203,21 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
                 openOptions().injector.get(DotPublishingQueueAssetListDialogComponent, null) ===
                     spectator.component
             ).toBe(true);
+        });
+
+        // The admin root provides none (it would shadow the page editor's), so the panel's editor
+        // toasts through this one.
+        it('opens it with an injector that resolves a MessageService of its own', () => {
+            clickRow(0);
+            const own = spectator.inject(MessageService, true);
+
+            // Compared by identity: printing a MessageService on failure floods the output.
+            expect(own === spectator.inject(MessageService), 'the dialog provides one').toBe(false);
+            expect(openOptions().injector.get(MessageService, null) === own).toBe(true);
+        });
+
+        it("renders a toast for the panel's messages", () => {
+            expect(spectator.query(Toast)).not.toBeNull();
         });
 
         it('reloads the asset list on every save', () => {
