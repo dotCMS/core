@@ -267,7 +267,8 @@ public class JobQueueResource {
     }
 
     /**
-     * Retrieves the status of a job based on the provided job ID.
+     * Retrieves the status of a job based on the provided job ID. Only the user who created the
+     * job and CMS Administrators may read it; any other user is reported as a not-found job.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
@@ -321,7 +322,8 @@ public class JobQueueResource {
     }
 
     /**
-     * Cancels a job based on the provided job ID.
+     * Cancels a job based on the provided job ID. Only the user who created the job and CMS
+     * Administrators may cancel it; any other user is reported as a not-found job.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
@@ -386,6 +388,7 @@ public class JobQueueResource {
 
     /**
      * Retrieves the status of active jobs on a given queue.
+     * CMS Administrators see every user's jobs; anyone else sees only the jobs they created.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
@@ -449,7 +452,8 @@ public class JobQueueResource {
     }
 
     /**
-     * Retrieves the status of all jobs.
+     * Retrieves the status of jobs, regardless of state.
+     * CMS Administrators see every user's jobs; anyone else sees only the jobs they created.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
@@ -502,6 +506,7 @@ public class JobQueueResource {
 
     /**
      * Retrieves the status of active jobs.
+     * CMS Administrators see every user's jobs; anyone else sees only the jobs they created.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
@@ -555,6 +560,7 @@ public class JobQueueResource {
 
     /**
      * Retrieves the status of completed jobs.
+     * CMS Administrators see every user's jobs; anyone else sees only the jobs they created.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
@@ -608,6 +614,7 @@ public class JobQueueResource {
 
     /**
      * Retrieves the status of successful jobs.
+     * CMS Administrators see every user's jobs; anyone else sees only the jobs they created.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
@@ -661,6 +668,7 @@ public class JobQueueResource {
 
     /**
      * Retrieves the status of canceled jobs.
+     * CMS Administrators see every user's jobs; anyone else sees only the jobs they created.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
@@ -714,6 +722,7 @@ public class JobQueueResource {
 
     /**
      * Retrieves the status of failed jobs.
+     * CMS Administrators see every user's jobs; anyone else sees only the jobs they created.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
@@ -767,6 +776,7 @@ public class JobQueueResource {
 
     /**
      * Retrieves the status of abandoned jobs.
+     * CMS Administrators see every user's jobs; anyone else sees only the jobs they created.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
@@ -819,7 +829,9 @@ public class JobQueueResource {
     }
 
     /**
-     * Monitors the progress of a specific job identified by its jobId.
+     * Monitors the progress of a specific job identified by its jobId. Only the user who created
+     * the job and CMS Administrators may monitor it; for any other user the stream reports a
+     * not-found job.
      *
      * @param request The HTTP servlet request containing user and context information.
      * @param response The HTTP servlet response that will contain the response to the client.
