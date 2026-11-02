@@ -16,7 +16,7 @@ import {
     viewChild
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Params, UrlSerializer, UrlTree } from '@angular/router';
 
 import { MessageService, SortEvent, ToastMessageOptions } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -54,12 +54,13 @@ import {
     DotContentDrivePaginateEvent,
     DotFolderBean,
     DotSite,
-    isActionableBrowseItem,
-    DotCMSContentlet
+    isActionableBrowseItem
 } from '@dotcms/dotcms-models';
 import {
     DotEditContentPanelBinding,
+    DotEditContentUrlOption,
     DotPageEditorRequest,
+    DotPanelUrlStateService,
     injectEditContentPanel,
     loadDotSourceEditorSidePanel
 } from '@dotcms/edit-content';
@@ -86,7 +87,6 @@ import {
     DotUploadTypeSelectorComponent,
     STATUS_TOAST_KEY,
     DotJspIframeDialogComponent,
-    DotSidePanelHandle,
     DotSidePanelService,
     injectSidePanel
 } from '@dotcms/ui';
@@ -147,7 +147,6 @@ import {
     isFolder,
     browsedFolderRef,
     normalizeFolderRef,
-    panelParamOf,
     resolveContentDriveUrlIntent,
     toFolderRef,
     uploadIndicatorKey,
@@ -240,18 +239,25 @@ type DotFolderUserAccess = { canEdit: boolean; canEditPermissions: boolean };
 export class DotContentDriveShellComponent implements OnDestroy {
     readonly #store = inject(DotContentDriveStore);
 
-    readonly #router = inject(Router);
     readonly #route = inject(ActivatedRoute);
 
     readonly #location = inject(Location);
+    readonly #urlSerializer = inject(UrlSerializer);
     readonly #navigationService = inject(DotContentDriveNavigationService);
+
+    /**
+     * Writes the open side panels to the URL and closes them on Back, for every surface (#38303).
+     * The Edit Content panel reaches it through the opener; the shell registers Edit Code with it,
+     * and clears the panel params through it when a link names more than one thing.
+     */
+    readonly #panelUrl = inject(DotPanelUrlStateService);
 
     readonly #shortcuts = inject(DotKeyboardShortcutService);
 
     /** Withdraws the portlet-level shortcut claims. Released in {@link ngOnDestroy}. */
     #withdrawShortcuts?: DotKeyboardShortcutUnregister;
 
-    /** Browser history subscription for the edit-panel guard. Released in {@link ngOnDestroy}. */
+    /** Browser history subscription for the folder dialogs. Released in {@link ngOnDestroy}. */
     #locationSubscription?: SubscriptionLike;
 
     readonly #dotMessageService = inject(DotMessageService);
@@ -365,8 +371,10 @@ export class DotContentDriveShellComponent implements OnDestroy {
     /**
      * The Edit Content side panel, open while the navigation service names content to edit or
      * create (#38303). The opener picks the editor from the content type, so one binding serves
-     * both editors, and loads each editor on its first open.
+     * both editors, and loads each editor on its first open. It also writes the panel to the URL
+     * and closes it on Back, so nothing here reads the panel itself.
      */
+    // eslint-disable-next-line no-unused-private-class-members -- the helper keeps the panel open for as long as the request is set; the field only holds its handle
     readonly #editPanel = injectEditContentPanel(this.#panelRequest, this.#editPanelBinding());
 
     /** The file open in the Edit Code panel, from the store. */
@@ -374,14 +382,18 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
     /**
      * The Edit Code panel: a file's source in Monaco, open while the store names a file. Loaded on
-     * its first open, so Monaco stays out of this portlet's chunk. Kept so browser Back can route
-     * its close through the panel's unsaved-changes prompt.
+     * its first open, so Monaco stays out of this portlet's chunk. Registered with the panel URL
+     * service as it opens, so its file is in the URL and browser Back routes its close through the
+     * panel's unsaved-changes prompt (#37965, #38303).
      */
+    // eslint-disable-next-line no-unused-private-class-members -- the helper keeps the panel open for as long as the request is set; the field only holds its handle
     readonly #sourceEditorPanel = injectSidePanel(this.$sourceEditorRequest, {
         component: loadDotSourceEditorSidePanel,
         heading: (request) => request.title,
         inputs: (request) => ({ request }),
         outputs: { saved: () => this.onSourceEditorSaved() },
+        opened: (ref, request) =>
+            this.#panelUrl.register(ref, { [CONTENT_DRIVE_EDIT_CODE_PARAM]: request.inode }),
         closed: () => this.onSourceEditorClosed()
     });
 
@@ -391,12 +403,6 @@ export class DotContentDriveShellComponent implements OnDestroy {
     );
 
     /**
-     * Whether the last URL write named an open side panel. Lets the effect push when
-     * opening (so Back can pop the panel) but replace when closing — a push on close would leave a
-     * phantom entry whose Back puts the just-removed param back with no panel rendered.
-     */
-    #editPanelUrlWasSet = false;
-    /**
      * The folder path the URL was last written with, so a genuine folder navigation can be told apart
      * from a filter-only write. `undefined` until the first write, which is what keeps the very first
      * URL from pushing an entry on top of the one the user arrived on.
@@ -404,36 +410,35 @@ export class DotContentDriveShellComponent implements OnDestroy {
     #lastWrittenPath: string | undefined = undefined;
 
     /**
-     * The open side panel, Edit Content (either editor) or Edit Code, so browser Back can route its
-     * close through that panel's unsaved-changes guard.
-     *
-     * @returns The open panel, or `undefined` when none is open.
-     */
-    #activePanel(): DotSidePanelHandle | undefined {
-        return [this.#editPanel, this.#sourceEditorPanel].find((panel) => panel.isOpen());
-    }
-
-    /**
      * The Edit Content panel's handlers, for either editor. A save and a close both refresh the list
      * quietly: a move or a language switch inside the legacy editor sends no event of its own, so
      * the close catches it (#38303, FR-017). A restored version arrives as a save, and a delete is
-     * followed by the close that refreshes.
+     * followed by the close that refreshes. A language switch only moves the URL, which is the
+     * opener's, so it has no handler here.
      *
-     * `editor` is a getter, read each time the panel opens, so "switch to the old editor" can reopen
-     * the content in the legacy editor. Remove the getter with the legacy editor.
+     * The panel is written to the URL by the opener, with Content Drive's route and no extra params:
+     * the folder a create lands in is already in Content Drive's own `path` param (#38303, FR-044).
+     *
+     * `editor` and `url` are getters, read each time the panel opens, so "switch to the old editor"
+     * can reopen the content in the legacy editor, in place of the panel it closed: the reopen takes
+     * that panel's history entry, so Back still leaves it in one step. Remove the getters' legacy
+     * branches with the legacy editor.
      *
      * @returns The binding.
      */
     #editPanelBinding(): DotEditContentPanelBinding {
         const forceLegacyEditor = this.#navigationService.$forceLegacyEditor;
+        const route = this.#route;
 
         return {
-            saved: (contentlet) => this.onEditPanelSaved(contentlet),
-            languageChanged: (languageId) => this.onEditPanelLanguage(languageId),
+            saved: () => this.onEditPanelSaved(),
             pageEditorRequested: (page) => this.onEditPanelPageEditor(page),
             closed: () => this.onEditPanelClosed(),
             get editor(): 'legacy' | undefined {
                 return forceLegacyEditor() ? 'legacy' : undefined;
+            },
+            get url(): DotEditContentUrlOption {
+                return forceLegacyEditor() ? { route, inPlace: true } : { route };
             }
         };
     }
@@ -682,8 +687,9 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
         // Shareable deep-link: a panel or folder-dialog param reopens what it names on load. Read
         // once from the snapshot (the portlet is not re-created on in-session query-param changes).
-        // `editContentLang` names the exact version to reopen: an identifier has one version per
-        // language, so without it the resolver can only guess.
+        // The panel params are read as every surface reads them (#38303, FR-049). `editContentLang`
+        // names the exact version to reopen: an identifier has one version per language, so
+        // without it the resolver can only guess.
         const intent = resolveContentDriveUrlIntent(this.#route.snapshot.queryParams);
         if (intent.kind === 'edit') {
             this.#navigationService.openEditByIdentifier(intent.identifier, intent.languageId);
@@ -695,63 +701,34 @@ export class DotContentDriveShellComponent implements OnDestroy {
             this.#openFolderSettingsFromUrl(intent.identifier);
         } else if (intent.kind === 'folderPermissions') {
             this.#openFolderPermissionsFromUrl(intent.identifier);
+        } else if (intent.kind === 'editCode') {
+            // Edit Code's file is in the URL so Back closes it through its prompt; a link to it opens
+            // nothing, and the param goes rather than naming a panel that is not open (#37965).
+            this.#panelUrl.clear();
         } else if (intent.kind === 'conflict') {
             // Params that can't hold together: Content Drive can't tell which one the author meant,
             // so it opens nothing and removes all of them, keeping the rest of the URL (FR-023).
-            const cleared = Object.fromEntries(
-                Object.values(CONTENT_DRIVE_URL_PARAM).map((param) => [param, null])
-            );
-            this.#location.replaceState(
-                this.#router
-                    .createUrlTree([], { queryParams: cleared, queryParamsHandling: 'merge' })
-                    .toString()
-            );
+            // The panel params are the panel URL service's; the folder dialog ones go with them.
+            this.#panelUrl.clear([
+                CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER,
+                CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER,
+                CONTENT_DRIVE_URL_PARAM.FOLDER_PERMISSIONS
+            ]);
         }
 
-        // Browser Back/Forward: the open panel's params are written via `Location.go` (no router
-        // navigation), so nothing else reacts to popstate. When Back removes or changes the param
-        // that names the open panel (an edit, a create, or Edit Code's file), route the close
-        // through the panel's unsaved-changes guard — a direct `closeEditPanel()` would tear the
-        // editor down and discard unsaved edits silently.
+        // Browser Back/Forward for the folder dialogs. The side panels are the panel URL service's:
+        // it puts their params back while the editor's prompt decides and asks them to close.
         const locationSubscription = this.#location.subscribe((event) => {
-            const params = new URLSearchParams(event.url?.split('?')[1] ?? '');
-
             // An open folder dialog closes when Back drops its param, the same way its own close
             // does (#37759, FR-032). It has no unsaved-changes guard to go through.
             const folderParam = folderDialogParamOf(this.#store.dialog());
-            if (folderParam) {
-                if (params.get(folderParam.key) !== folderParam.value) {
-                    this.#closeFolderDialog();
-                }
-
+            if (!folderParam) {
                 return;
             }
 
-            const sourceEditor = this.#store.sourceEditor();
-            const location = this.#navigationService.$panelLocation();
-            const panelParam = sourceEditor
-                ? { key: CONTENT_DRIVE_EDIT_CODE_PARAM, value: sourceEditor.inode }
-                : location && panelParamOf(location);
-
-            if (!panelParam) {
-                return;
-            }
-
-            const { key, value } = panelParam;
-
-            if (params.get(key) !== value) {
-                // Restore the param so the URL matches the still-open panel while the guard decides.
-                // `replaceState` (not `go`) avoids piling up history entries. Discard → the panel
-                // closes → onEditPanelClosed → closeEditPanel clears the param; Keep editing → the
-                // panel stays open and the URL is already back in sync.
-                const restoredUrl = this.#router
-                    .createUrlTree([], {
-                        queryParams: { [key]: value },
-                        queryParamsHandling: 'merge'
-                    })
-                    .toString();
-                this.#location.replaceState(restoredUrl);
-                this.#activePanel()?.requestClose();
+            const { queryParams } = this.#urlSerializer.parse(event.url ?? '');
+            if (queryParams[folderParam.key] !== folderParam.value) {
+                this.#closeFolderDialog();
             }
         });
         this.#locationSubscription = locationSubscription;
@@ -1614,75 +1591,61 @@ export class DotContentDriveShellComponent implements OnDestroy {
         });
     });
 
+    /**
+     * Writes Content Drive's own params to the URL: the browsing ones (`path`, `filters`,
+     * `isTreeExpanded`, `viewType`) and the open folder dialog's. Every other param is left as it
+     * is: the open side panel's, which the opener writes through `DotPanelUrlStateService`, and the
+     * menu's `mId`. So the URL is built from the address bar, not from the router, which never saw
+     * the URLs written with `Location` and would drop them (#38303, FR-044). Written with
+     * `Location.go`/`replaceState`, so no navigation runs.
+     */
     readonly updateQueryParamsEffect = effect(() => {
         const isTreeExpanded = this.#store.isTreeExpanded();
         const path = this.#store.path();
         const filters = this.#store.filters();
 
-        // `null` removes the param when queryParamsHandling is 'merge'
-        const queryParams: Record<string, string | null> = {};
+        // A `null` value takes the param out.
+        const owned: Record<string, string | null> = {};
 
-        queryParams['isTreeExpanded'] = isTreeExpanded.toString();
+        owned['isTreeExpanded'] = isTreeExpanded.toString();
         // Always written, so a copied link opens in the view it was copied from, whatever the
         // person opening it remembered (#37930, US4 #2). A view switch replaces the entry; only
-        // panel opens and folder moves push one, below.
-        queryParams[CONTENT_DRIVE_VIEW_PARAM.VIEW_TYPE] = this.#store.viewType();
+        // folder dialog opens and folder moves push one, below.
+        owned[CONTENT_DRIVE_VIEW_PARAM.VIEW_TYPE] = this.#store.viewType();
+        owned['path'] = path && path.length ? path : null;
+        owned['filters'] = filters && Object.keys(filters).length ? encodeFilters(filters) : null;
 
-        if (path && path.length) {
-            queryParams['path'] = path;
-        } else {
-            queryParams['path'] = null;
-        }
-
-        if (filters && Object.keys(filters).length) {
-            queryParams['filters'] = encodeFilters(filters);
-        } else {
-            queryParams['filters'] = null;
-        }
-
-        // Reflect the open panel, in either editor: `editContent` + `editContentLang` for an edit
-        // (the language, so the link reopens the very version that is open), `createContent` for a
-        // create (#37759, FR-020). Every one is `null` (removed) unless it describes the open panel,
-        // so none lingers after a close or a switch. Written via Location.go/replaceState so it
-        // triggers no navigation/reload.
-        const panelLocation = this.#navigationService.$panelLocation();
-        const isEdit = panelLocation?.kind === 'edit';
-        queryParams[CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT] = isEdit
-            ? panelLocation.editContent
-            : null;
-        queryParams[CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT_LANG] =
-            isEdit && panelLocation.editContentLang ? String(panelLocation.editContentLang) : null;
-        queryParams[CONTENT_DRIVE_URL_PARAM.CREATE_CONTENT] =
-            panelLocation?.kind === 'create' ? panelLocation.createContent : null;
-        // Edit Code names its file the same way, so Back pops the panel through its prompt
-        // instead of leaving Content Drive. Only for Back: a URL carrying it opens nothing, and
-        // this write removes it.
-        const sourceEditor = this.#store.sourceEditor();
-        queryParams[CONTENT_DRIVE_EDIT_CODE_PARAM] = sourceEditor?.inode ?? null;
-        const panelOpen = panelLocation !== null || sourceEditor !== null;
-
-        // The open folder dialog, the same way (#37759, FR-030).
+        // The open folder dialog (#37759, FR-030).
         const folderParam = folderDialogParamOf(this.#store.dialog());
         for (const key of [
             CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER,
             CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER,
             CONTENT_DRIVE_URL_PARAM.FOLDER_PERMISSIONS
         ]) {
-            queryParams[key] = folderParam?.key === key ? folderParam.value : null;
+            owned[key] = folderParam?.key === key ? folderParam.value : null;
         }
         const folderDialogOpen = folderParam !== null;
 
-        const urlTree = this.#router.createUrlTree([], {
-            queryParams,
-            queryParamsHandling: 'merge'
-        });
+        const current = this.#urlSerializer.parse(this.#location.path(true));
+        const queryParams: Params = { ...current.queryParams };
+        for (const [key, value] of Object.entries(owned)) {
+            if (value === null) {
+                delete queryParams[key];
+            } else {
+                queryParams[key] = value;
+            }
+        }
+
+        const newUrl = this.#urlSerializer.serialize(
+            new UrlTree(current.root, queryParams, current.fragment)
+        );
 
         // Only write when the URL actually changes (keeps it idempotent — e.g. after Back already
         // moved the URL).
-        const newUrl = urlTree.toString();
-        if (newUrl !== this.#location.path(true)) {
-            // Push only for the two transitions a user would expect Back to undo: opening the panel
-            // (AC8) and navigating to a different folder. Everything else replaces.
+        if (newUrl !== this.#urlSerializer.serialize(current)) {
+            // Push only for the two transitions a user would expect Back to undo: opening a folder
+            // dialog (FR-030) and navigating to a different folder. Everything else replaces. A
+            // side panel's entry is the opener's.
             //
             // Filter writes must never push, because the default seed is a filter write and is not a
             // user action at all: it lands on a cold load and again when the default language
@@ -1692,29 +1655,24 @@ export class DotContentDriveShellComponent implements OnDestroy {
             //
             // The first write never pushes: `#lastWrittenPath` is undefined until then, so the URL the
             // portlet opens with replaces rather than stacking on top of the referring page.
-            const isOpeningPanel =
-                (panelOpen && !this.#editPanelUrlWasSet) ||
-                (folderDialogOpen && !this.#folderDialogUrlWasSet);
+            const isOpeningFolderDialog = folderDialogOpen && !this.#folderDialogUrlWasSet;
             //
             // A folder the URL already names is not navigation: Back put it there. The write that
             // follows only corrects `viewType`, which Back leaves as the user last picked it
             // (#37930); pushing it would cut off Forward.
-            const urlPath = new URLSearchParams(this.#location.path(true).split('?')[1] ?? '').get(
-                'path'
-            );
+            const urlPath = current.queryParams['path'] ?? null;
             const isFolderNavigation =
                 this.#lastWrittenPath !== undefined &&
                 path !== this.#lastWrittenPath &&
                 (path || null) !== urlPath;
 
-            if (isOpeningPanel || isFolderNavigation) {
+            if (isOpeningFolderDialog || isFolderNavigation) {
                 this.#location.go(newUrl);
             } else {
                 this.#location.replaceState(newUrl);
             }
             this.#lastWrittenPath = path;
         }
-        this.#editPanelUrlWasSet = panelOpen;
         this.#folderDialogUrlWasSet = folderDialogOpen;
     });
 
@@ -2104,27 +2062,11 @@ export class DotContentDriveShellComponent implements OnDestroy {
 
     /**
      * A save in the Edit Content panel, from either editor, including a workflow action and a
-     * restored version: refresh the list quietly and keep the panel open. The first save of a
-     * create also switches the URL to the saved content (#37759, FR-013, FR-025).
-     *
-     * @param contentlet The saved content.
+     * restored version: refresh the list quietly and keep the panel open (#37759, FR-013). The
+     * opener switches the URL to the saved content on a create's first save (FR-025).
      */
-    protected onEditPanelSaved(contentlet: DotCMSContentlet) {
+    protected onEditPanelSaved() {
         this.#store.reloadContentDrive({ quiet: true });
-        this.#navigationService.panelSaved({
-            identifier: contentlet.identifier,
-            languageId: contentlet.languageId
-        });
-    }
-
-    /**
-     * The author switched language inside the Edit Content panel. The URL follows, so a refresh or
-     * a switch to the old editor reopens that language (#37759, FR-020, FR-028).
-     *
-     * @param languageId The language the editor now shows.
-     */
-    protected onEditPanelLanguage(languageId: number) {
-        this.#navigationService.panelLanguageChanged(languageId);
     }
 
     /**

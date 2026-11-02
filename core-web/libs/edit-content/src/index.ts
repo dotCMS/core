@@ -26,7 +26,10 @@ export type {
 // surface passes the `url` option; the surface reads it once on load with `readPanelUrlIntent`.
 export { DOT_PANEL_URL_PARAM, readPanelUrlIntent } from './lib/opener/url/read-panel-url-intent';
 export type { DotPanelUrlIntent } from './lib/opener/url/read-panel-url-intent';
-export { DotPanelUrlStateService } from './lib/opener/url/dot-panel-url-state.service';
+export {
+    DotPanelUrlStateService,
+    type DotPanelUrlRegisterOptions
+} from './lib/opener/url/dot-panel-url-state.service';
 // The legacy editor and any other legacy admin screen as side panel content, loaded on demand.
 // Remove with the legacy editor.
 export { loadDotLegacyEditorSidePanel } from './lib/components/dot-legacy-editor-side-panel/load-dot-legacy-editor-side-panel';

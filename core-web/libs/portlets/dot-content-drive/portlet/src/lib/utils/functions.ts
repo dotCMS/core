@@ -15,6 +15,7 @@ import {
     LOAD_MORE_NODE_TYPE,
     DotFolderBean
 } from '@dotcms/dotcms-models';
+import { readPanelUrlIntent } from '@dotcms/edit-content';
 import { DotFolderTreeNodeData, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { isDotIdentifier } from '@dotcms/utils';
 
@@ -38,7 +39,6 @@ import {
     DOT_CONTENT_DRIVE_SEARCH_SCOPE,
     DotContentDriveDecodeFunction,
     DotContentDriveFilters,
-    DotContentDrivePanelLocation,
     DotContentDriveSearchScope,
     DotContentDriveUrlIntent,
     DotKnownContentDriveFilters,
@@ -1022,18 +1022,13 @@ export const uploadIndicatorKey = (count: number, options?: { backgrounded?: boo
 };
 
 /**
- * What a `createContent` link may name: a content type variable or id. Letters, digits, `_` and
- * `-` only, so the value cannot reshape the REST paths it reaches (Constitution III).
- */
-const CONTENT_TYPE_REF_PATTERN = /^[A-Za-z0-9_-]+$/;
-
-/**
  * Reads what a Content Drive URL asks to open when the portlet loads (#37759, FR-023).
  *
- * One URL may name at most one side panel or folder dialog. When it names more, Content Drive can't
- * tell which one the author meant, so the answer is `conflict` and the caller opens nothing. The
- * retired `editContent=new` create marker counts as absent, so old links open nothing rather than
- * an empty form.
+ * The panel params are read by `readPanelUrlIntent`, as every surface reads them (#38303, FR-049);
+ * only the folder dialog params are Content Drive's own. One URL may name at most one side panel
+ * or folder dialog. When it names more, Content Drive can't tell which one the author meant, so
+ * the answer is `conflict` and the caller opens nothing. The retired `editContent=new` create
+ * marker counts as absent, so old links open nothing rather than an empty form.
  *
  * @param queryParams The route's query params.
  * @returns The single thing the URL asks to open, `none`, or `conflict`.
@@ -1041,53 +1036,39 @@ const CONTENT_TYPE_REF_PATTERN = /^[A-Za-z0-9_-]+$/;
 export function resolveContentDriveUrlIntent(
     queryParams: Record<string, unknown>
 ): DotContentDriveUrlIntent {
+    const panel = readPanelUrlIntent(queryParams);
+
     const read = (key: string): string | undefined => {
         const value = queryParams[key];
 
         return typeof value === 'string' && value.length > 0 ? value : undefined;
     };
 
-    // Values from the URL reach a Lucene query and REST paths, so only the shapes they can take
-    // are accepted; anything else reads as absent (Constitution III). The retired `new` create
-    // marker is not an identifier, so it is refused the same way.
+    // Values from the URL reach REST paths, so only identifier-shaped values are accepted; anything
+    // else reads as absent (Constitution III).
     const readIdentifier = (key: string): string | undefined => {
         const value = read(key);
 
         return isDotIdentifier(value) ? value : undefined;
     };
 
-    const identifier = readIdentifier(CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT);
-    const createContent = read(CONTENT_DRIVE_URL_PARAM.CREATE_CONTENT);
-    const contentType =
-        createContent && CONTENT_TYPE_REF_PATTERN.test(createContent) ? createContent : undefined;
     const createFolder = read(CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER) === 'true';
     const editFolder = readIdentifier(CONTENT_DRIVE_URL_PARAM.EDIT_FOLDER);
     const folderPermissions = readIdentifier(CONTENT_DRIVE_URL_PARAM.FOLDER_PERMISSIONS);
 
     const asked = [
-        identifier,
-        contentType,
+        panel.kind === 'none' ? undefined : panel,
         createFolder || undefined,
         editFolder,
         folderPermissions
     ];
 
-    if (asked.filter(Boolean).length > 1) {
+    if (panel.kind === 'conflict' || asked.filter(Boolean).length > 1) {
         return { kind: 'conflict' };
     }
 
-    if (identifier) {
-        const languageId = Number(read(CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT_LANG));
-
-        return {
-            kind: 'edit',
-            identifier,
-            languageId: Number.isInteger(languageId) && languageId > 0 ? languageId : undefined
-        };
-    }
-
-    if (contentType) {
-        return { kind: 'create', contentType };
+    if (panel.kind !== 'none') {
+        return panel;
     }
 
     if (createFolder) {
@@ -1103,23 +1084,6 @@ export function resolveContentDriveUrlIntent(
     }
 
     return { kind: 'none' };
-}
-
-/**
- * The one URL param that names an open panel, and the value it must hold: the identifier for an
- * edit, the content type variable for a create. Browser Back compares the URL against it to tell
- * whether the open panel was popped.
- *
- * @param location What the URL says about the open panel.
- * @returns The param key and the value it must carry.
- */
-export function panelParamOf(location: DotContentDrivePanelLocation): {
-    key: string;
-    value: string;
-} {
-    return location.kind === 'edit'
-        ? { key: CONTENT_DRIVE_URL_PARAM.EDIT_CONTENT, value: location.editContent }
-        : { key: CONTENT_DRIVE_URL_PARAM.CREATE_CONTENT, value: location.createContent };
 }
 
 /**

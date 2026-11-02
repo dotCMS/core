@@ -21,7 +21,6 @@ import { DotFolderTreeNodeContentData } from '@dotcms/portlets/content-drive/ui'
 
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { SYSTEM_HOST } from '../constants';
-import { DotContentDrivePanelLocation } from '../models';
 
 /** Shape of the `/api/content/_search` entity we read the resolved contentlet from. */
 interface ContentSearchEntity {
@@ -65,19 +64,10 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
     /**
      * True for the one tick in which the open panel must close so it can reopen on a fresh
      * request. The panel helper keeps a panel open while its request changes, so the shell binds
-     * `null` while this is set and the panel closes first. {@link $editPanelRequest} never goes
-     * `null` meanwhile, so the URL keeps naming the content. Remove with the legacy editor.
+     * `null` while this is set and the panel closes first. Remove with the legacy editor.
      */
     readonly $reopeningPanel = this.#reopeningPanel.asReadonly();
 
-    readonly #panelLocation = signal<DotContentDrivePanelLocation | null>(null);
-
-    /**
-     * What the URL must say about the open panel (#37759, FR-020). Set from the request when a
-     * panel opens, then free to follow the panel without touching the request, which would
-     * remount it.
-     */
-    readonly $panelLocation = this.#panelLocation.asReadonly();
     /**
      * Navigates to the appropriate editor based on the content type.
      * Routes to the page editor for HTML pages, or opens the side panel for other content.
@@ -209,14 +199,15 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
     /**
      * "Switch to the old editor" in Content Drive's new-editor panel: the type was just set back to
      * the legacy editor, so the same content reopens, in the same language, in the legacy editor
-     * (#37759, FR-028). The URL already names this content, unless the panel moved in place to
-     * related content, in which case it follows the switched content. From a create there is no
-     * content yet: a create for the same type opens instead, in the folder being browsed and the
-     * language the create started in.
+     * (#37759, FR-028). The panel may have moved in place to related content: what reopens is the
+     * content it shows, and the opener names that content and its language in the URL. From a
+     * create there is no content yet: a create for the same type opens instead, in the folder being
+     * browsed and the language the create started in.
      *
      * The request names no editor (#38303), and the opener remembers the type's old choice, so the
      * reopen forces the legacy editor ({@link $forceLegacyEditor}) and closes the open panel for
-     * one tick first ({@link $reopeningPanel}).
+     * one tick first ({@link $reopeningPanel}). The shell reopens it in place in the URL, so it
+     * takes the closed panel's history entry.
      *
      * Content Drive answers only for the panel it opened. Any other editor that inherits the
      * override (a related content opened from a relationship field) is declined, and navigates as
@@ -245,22 +236,6 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
         this.#forceLegacyEditor.set(true);
         this.#panelRequest.set(request);
         this.#reopenPanel();
-
-        // Inside the panel, related content opens in place, so the content switched can differ
-        // from the one the URL names. The URL follows what reopens (FR-020).
-        const location = this.#panelLocation();
-        if (
-            contentlet &&
-            location?.kind === 'edit' &&
-            (location.editContent !== contentlet.identifier ||
-                location.editContentLang !== contentlet.languageId)
-        ) {
-            this.#panelLocation.set({
-                kind: 'edit',
-                editContent: contentlet.identifier,
-                editContentLang: contentlet.languageId
-            });
-        }
 
         return true;
     }
@@ -318,69 +293,21 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
         return isOwn ? request : null;
     }
 
-    /**
-     * A panel saved. The first save of a create switches the URL to the saved content, so a refresh
-     * reopens it instead of a second empty form (#37759, FR-025). A later save only follows a
-     * language the saved version names, such as a new translation (FR-020). The request is left
-     * alone, so the panel is not remounted.
-     *
-     * @param saved The saved content's identifier and language.
-     */
-    panelSaved({ identifier, languageId }: { identifier: string; languageId: number }): void {
-        const location = this.#panelLocation();
-
-        if (location?.kind === 'create') {
-            this.#panelLocation.set({
-                kind: 'edit',
-                editContent: identifier,
-                editContentLang: languageId
-            });
-
-            return;
-        }
-
-        // A new translation saved in the new editor: the saved version names the language. A save
-        // of related content reached in place names another content, so it is left alone.
-        if (
-            location?.kind === 'edit' &&
-            location.editContent === identifier &&
-            location.editContentLang !== languageId
-        ) {
-            this.#panelLocation.set({ ...location, editContentLang: languageId });
-        }
-    }
-
-    /**
-     * The author switched language inside the panel: the URL follows it, so a refresh reopens that
-     * language (#37759, FR-020). A create names no content yet, so it is left alone.
-     *
-     * @param languageId The language the editor now shows.
-     */
-    panelLanguageChanged(languageId: number): void {
-        const location = this.#panelLocation();
-
-        if (location?.kind === 'edit') {
-            this.#panelLocation.set({ ...location, editContentLang: languageId });
-        }
-    }
-
-    /** Closes the side panel, clears what the URL says about it and drops any forced editor. */
+    /** Closes the side panel and drops any forced editor. */
     closeEditPanel(): void {
         this.#forceLegacyEditor.set(false);
         this.#panelRequest.set(null);
-        this.#panelLocation.set(null);
     }
 
     /**
-     * Opens the side panel and names it in the URL: the identifier and language for an edit, the
-     * content type variable for a create. The opener picks the editor from the content type.
+     * Opens the side panel. The opener picks the editor from the content type, and names the panel
+     * in the URL: the identifier and language for an edit, the content type for a create (#38303).
      *
      * @param request What to open.
      */
     #openPanel(request: DotEditContentRequest): void {
         this.#forceLegacyEditor.set(false);
         this.#panelRequest.set(request);
-        this.#panelLocation.set(locationOf(request));
     }
 
     /**
@@ -477,23 +404,6 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
 
         return Number(selected) || this.#store.defaultLanguageId() || undefined;
     }
-}
-
-/**
- * The URL location a freshly opened panel starts from: the identifier and language for an edit,
- * the content type variable for a create.
- *
- * @param request The request the panel was opened with.
- * @returns The location for that request.
- */
-function locationOf(request: DotEditContentRequest): DotContentDrivePanelLocation {
-    return request.mode === 'edit'
-        ? {
-              kind: 'edit',
-              editContent: request.identifier ?? '',
-              editContentLang: request.languageId
-          }
-        : { kind: 'create', createContent: request.contentType ?? '' };
 }
 
 /**

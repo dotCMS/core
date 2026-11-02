@@ -64,10 +64,17 @@ export interface DotEditContentUrlOption {
     /** The surface's route. */
     route: ActivatedRoute;
     /**
-     * Params written beside the panel's own and cleared with them, such as Content Drive's folder
-     * for a create. Not passed on to the panels stacked from inside this one.
+     * Params written beside the panel's own and cleared with them. Not passed on to the panels
+     * stacked from inside this one.
      */
     extraParams?: Record<string, string>;
+    /**
+     * Writes the panel into the current history entry instead of adding one: for a panel that
+     * takes the place of one the surface has just closed, such as Content Drive's reopen in the
+     * legacy editor, so Back still leaves it in one step. Not passed on to the panels stacked from
+     * inside this one. Remove with the legacy editor.
+     */
+    inPlace?: boolean;
 }
 
 /** What the server said about a request before any editor shows. */
@@ -268,7 +275,7 @@ export class DotEditContentOpenerService {
      * not an output here: it is taken from the panel ref, so it fires even when no editor loaded.
      *
      * With the URL option a language switch and a save also go to the URL, and the stacked panel is
-     * written to the URL too, without this panel's extra params.
+     * written to the URL too, with an entry of its own and without this panel's extra params.
      *
      * @param options The caller's injector and handlers.
      * @param url The panel's name in the URL, when it is written there.
@@ -319,10 +326,13 @@ export class DotEditContentOpenerService {
 class DotPanelUrlTracker {
     readonly #urlState: DotPanelUrlStateService;
     readonly #extraParams: Record<string, string>;
+    readonly #inPlace: boolean;
     readonly #mode: DotEditContentRequest['mode'];
     #ref: DotSidePanelRef | null = null;
     /** The content the URL names: an edit's from the start, a create's from its first save. */
     #identifier: string | null = null;
+    /** The language the URL names for that content, when it names one. */
+    #languageId: number | undefined;
 
     constructor(
         urlState: DotPanelUrlStateService,
@@ -331,6 +341,7 @@ class DotPanelUrlTracker {
     ) {
         this.#urlState = urlState;
         this.#extraParams = option.extraParams ?? {};
+        this.#inPlace = !!option.inPlace;
         this.#mode = mode;
     }
 
@@ -343,7 +354,7 @@ class DotPanelUrlTracker {
     register(ref: DotSidePanelRef, request: DotEditContentRequest): void {
         if (request.mode === 'new') {
             this.#ref = ref;
-            this.#urlState.register(ref, {
+            this.#registerWith(ref, {
                 [DOT_PANEL_URL_PARAM.CREATE_CONTENT]: request.contentType as string,
                 ...this.#extraParams
             });
@@ -357,27 +368,65 @@ class DotPanelUrlTracker {
 
         this.#ref = ref;
         this.#identifier = request.identifier;
-        this.#urlState.register(ref, this.#editParams(request.identifier, request.languageId));
+        this.#languageId = request.languageId;
+        this.#registerWith(ref, this.#editParams(request.identifier, request.languageId));
     }
 
     /** The author switched language: the URL names that version, in place. */
     languageChanged(languageId: number): void {
         if (this.#ref && this.#identifier) {
-            this.#urlState.update(this.#ref, this.#editParams(this.#identifier, languageId));
+            this.#rename(this.#identifier, languageId);
         }
     }
 
-    /** A create's first save makes it an edit: the URL names the new content, in place. */
+    /**
+     * A save. A create's first save makes it an edit: the URL names the new content, in place. A
+     * save of the content the URL names, in another language, is a new translation's first save:
+     * switching to a language the content lacks reports no language, so this is the first the URL
+     * hears of it. A save of other content, such as related content opened in place, leaves the URL
+     * alone.
+     */
     saved(contentlet: DotCMSContentlet): void {
-        if (!this.#ref || this.#mode !== 'new' || this.#identifier || !contentlet.identifier) {
+        if (!this.#ref || !contentlet.identifier) {
             return;
         }
 
-        this.#identifier = contentlet.identifier;
+        if (!this.#identifier) {
+            if (this.#mode === 'new') {
+                this.#rename(contentlet.identifier, contentlet.languageId);
+            }
+
+            return;
+        }
+
+        if (
+            contentlet.identifier === this.#identifier &&
+            contentlet.languageId &&
+            contentlet.languageId !== this.#languageId
+        ) {
+            this.#rename(contentlet.identifier, contentlet.languageId);
+        }
+    }
+
+    /** Names the panel's content and language in place. */
+    #rename(identifier: string, languageId: number | undefined): void {
+        this.#identifier = identifier;
+        this.#languageId = languageId;
         this.#urlState.update(
-            this.#ref,
-            this.#editParams(contentlet.identifier, contentlet.languageId)
+            this.#ref as DotSidePanelRef,
+            this.#editParams(identifier, languageId)
         );
+    }
+
+    /** Registers the panel, in place when the surface asked for it. */
+    #registerWith(ref: DotSidePanelRef, params: Record<string, string>): void {
+        if (this.#inPlace) {
+            this.#urlState.register(ref, params, { inPlace: true });
+
+            return;
+        }
+
+        this.#urlState.register(ref, params);
     }
 
     #editParams(identifier: string, languageId: number | undefined): Record<string, string> {
