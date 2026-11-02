@@ -1,8 +1,11 @@
 package com.dotcms.security.multipart;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
+import com.dotmarketing.util.Config;
+import java.util.Set;
 import org.junit.Test;
 
 /**
@@ -84,11 +87,61 @@ public class IllegalFileExtensionsValidatorTest {
      */
     @Test
     public void toBlockList_withConfiguration_replacesTheDefaultList() {
-        final java.util.Set<String> blocked =
+        final Set<String> blocked =
                 IllegalFileExtensionsValidator.toBlockList(new String[] {".EXE", " .Php "});
         assertTrue(blocked.contains(".exe"));
         assertTrue(blocked.contains(".php"));
-        org.junit.Assert.assertFalse(blocked.contains(".jsp"));
+        assertFalse(blocked.contains(".jsp"));
+    }
+
+    /**
+     * An entry written without its leading dot, or as a glob, names the same extension as one
+     * written with it.
+     */
+    @Test
+    public void toBlockList_entriesWithoutLeadingDot_areMatched() {
+        final Set<String> blocked =
+                IllegalFileExtensionsValidator.toBlockList(new String[] {"jsp", " EXE", "*.bat", "..sh"});
+        assertTrue(blocked.contains(".jsp"));
+        assertTrue(blocked.contains(".exe"));
+        assertTrue(blocked.contains(".bat"));
+        assertTrue(blocked.contains(".sh"));
+        assertFalse(blocked.contains("jsp"));
+    }
+
+    /**
+     * A configured value that names no extension (an empty string, spaces, a lone dot) leaves the
+     * default list in force instead of blocking nothing.
+     */
+    @Test
+    public void toBlockList_withOnlyBlankEntries_usesTheDefaultList() {
+        for (final String[] configured : new String[][] {{""}, {" "}, {"."}, {"", " . ", "*"}}) {
+            final Set<String> blocked = IllegalFileExtensionsValidator.toBlockList(configured);
+            assertTrue(String.join("|", configured), blocked.contains(".jsp"));
+            assertFalse(String.join("|", configured), blocked.contains("."));
+        }
+    }
+
+    /**
+     * The configured list is read at each check: a value set while the application runs applies
+     * to the next check on the same validator, and removing it restores the default list.
+     */
+    @Test
+    public void validate_configurationChangedAtRuntime_isAppliedWithoutRestart() {
+        final String property = "MULTI_PART_ILLEGAL_FILE_EXTENSIONS";
+        validator.validate("before.php");
+        assertThrows(IllegalArgumentException.class, () -> validator.validate("before.jsp"));
+        try {
+            Config.setProperty(property, ".exe,.php");
+            assertThrows(IllegalArgumentException.class, () -> validator.validate("configured.php"));
+            validator.validate("configured.jsp");
+
+            Config.setProperty(property, null);
+            assertThrows(IllegalArgumentException.class, () -> validator.validate("restored.jsp"));
+            validator.validate("restored.php");
+        } finally {
+            Config.setProperty(property, null);
+        }
     }
 
     /**
