@@ -1288,8 +1288,7 @@ public class MaintenanceResource implements Serializable {
 
     /**
      * Captures a structured JVM thread dump including stack traces, lock info, and deadlock
-     * detection. Replaces the legacy DWR call {@code ThreadMonitorTool.getThreads(boolean)} which
-     * returned an HTML {@code <pre>} blob — this endpoint returns JSON for the Angular UI.
+     * detection, as JSON. The Threads tab of the Maintenance portlet formats it as a text dump.
      *
      * @param request    The current {@link HttpServletRequest}
      * @param response   The current {@link HttpServletResponse}
@@ -1416,10 +1415,8 @@ public class MaintenanceResource implements Serializable {
     }
 
     /**
-     * Returns lightweight JVM startup and thread-count information. Replaces the legacy DWR
-     * call {@code ThreadMonitorTool.getSysProps()} which returned a {@code Map<String,String>}
-     * of pre-formatted strings; this endpoint also exposes raw millis values so the UI can
-     * compute uptime client-side.
+     * Returns lightweight JVM startup and thread-count information, shown by the Threads tab of
+     * the Maintenance portlet; raw millis values are included so a client can compute uptime.
      *
      * @param request  The current {@link HttpServletRequest}
      * @param response The current {@link HttpServletResponse}

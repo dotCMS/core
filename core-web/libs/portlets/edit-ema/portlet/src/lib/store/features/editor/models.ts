@@ -1,4 +1,10 @@
-import { DotDeviceListItem, SeoMetaTags, SeoMetaTagsResult } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentlet,
+    DotDevice,
+    DotDeviceListItem,
+    SeoMetaTags,
+    SeoMetaTagsResult
+} from '@dotcms/dotcms-models';
 import { DotCMSViewAsPersona } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/types/internal';
 
@@ -7,8 +13,8 @@ import {
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
-import { EDITOR_STATE } from '../../../shared/enums';
-import { ActionPayload } from '../../../shared/models';
+import { CONTAINER_INSERT_ERROR, EDITOR_STATE } from '../../../shared/enums';
+import { ActionPayload, ContainerPayload } from '../../../shared/models';
 import { Orientation, PageType } from '../../models';
 
 export interface EditorState {
@@ -36,6 +42,23 @@ export interface EditorToolbarState {
     orientation?: Orientation;
     ogTagsResults?: SeoMetaTagsResult[];
 }
+
+/**
+ * What the device selector shows: the active device, social-media preview and orientation.
+ */
+export interface DeviceSelectorState {
+    device: DotDevice | null;
+    socialMedia: string | null;
+    orientation: Orientation | null;
+}
+
+/**
+ * One change picked in the device selector: a device, a social-media preview or an orientation.
+ */
+export type DeviceSelectorChange =
+    | { type: 'device'; device: DotDevice }
+    | { type: 'socialMedia'; socialMedia: string }
+    | { type: 'orientation'; orientation: Orientation };
 
 export interface PageDataContainer {
     identifier: string;
@@ -75,3 +98,37 @@ export enum UVE_PALETTE_TABS {
     FAVORITES = 2,
     LAYERS = 3
 }
+
+/**
+ * The tabs of the edit panel: quick edit and the style editor.
+ */
+export enum UVE_EDIT_PANEL_TABS {
+    QUICK_EDIT = 0,
+    STYLE_EDITOR = 1
+}
+
+/**
+ * The selected contentlet as the edit panel shows it, with the container it sits in.
+ */
+export interface ContentletEditData {
+    container: ContainerPayload | undefined;
+    contentlet: DotCMSContentlet;
+}
+
+/**
+ * Why a container refused a contentlet: it is full, holding `maxContentlets` already, or it
+ * already holds that contentlet.
+ */
+export type EditorInsertRefusal =
+    | {
+          didInsert: false;
+          errorCode: CONTAINER_INSERT_ERROR.CONTAINER_LIMIT_REACHED;
+          maxContentlets: number;
+      }
+    | { didInsert: false; errorCode: CONTAINER_INSERT_ERROR.DUPLICATE_CONTENT };
+
+/**
+ * What `editorInsertContentlet` reports: the contentlet went into the container, or why the
+ * container refused it.
+ */
+export type EditorInsertResult = { didInsert: true } | EditorInsertRefusal;

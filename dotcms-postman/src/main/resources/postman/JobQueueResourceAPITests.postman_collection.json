@@ -34,8 +34,8 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/jobs?page={{page}}&pageSize={{pageSize}}",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{serverURL}}/api/v1/jobs?page={{page}}&pageSize={{pageSize}}",
+          "host": ["{{serverURL}}"],
           "path": ["api", "v1", "jobs"],
           "query": [
             {
@@ -84,8 +84,8 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/jobs/queues",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{serverURL}}/api/v1/jobs/queues",
+          "host": ["{{serverURL}}"],
           "path": ["api", "v1", "jobs", "queues"]
         },
         "description": "Retrieves a list of available queue names."
@@ -111,7 +111,7 @@
               "",
               "// Extract the jobId and build the expected statusUrl",
               "    let jobId = jsonData.entity.jobId;",
-              "    let serverUrl = pm.collectionVariables.get(\"baseUrl\");",
+              "    let serverUrl = pm.variables.get(\"serverURL\");",
               "",
               "    // Remove the port 80 or 443 if present",
               "    serverUrl = serverUrl.replace(/(:80|:443)\\/?$/, \"\");",
@@ -154,8 +154,8 @@
           ]
         },
         "url": {
-          "raw": "{{baseUrl}}/api/v1/jobs/{{queueName}}/upload",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{serverURL}}/api/v1/jobs/{{queueName}}/upload",
+          "host": ["{{serverURL}}"],
           "path": ["api", "v1", "jobs", "{{queueName}}", "upload"]
         },
         "description": "Creates a new job with a multipart content type in the specified queue."
@@ -297,8 +297,8 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/jobs/{{jobId}}/status",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{serverURL}}/api/v1/jobs/{{jobId}}/status",
+          "host": ["{{serverURL}}"],
           "path": ["api", "v1", "jobs", "{{jobId}}", "status"]
         },
         "description": "Retrieves the status of a specific job."
@@ -457,8 +457,8 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/jobs/active?page={{page}}&pageSize={{pageSize}}",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{serverURL}}/api/v1/jobs/active?page={{page}}&pageSize={{pageSize}}",
+          "host": ["{{serverURL}}"],
           "path": ["api", "v1", "jobs", "active"],
           "query": [
             {
@@ -624,8 +624,8 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/jobs/{{queueName}}/active?page={{page}}&pageSize={{pageSize}}",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{serverURL}}/api/v1/jobs/{{queueName}}/active?page={{page}}&pageSize={{pageSize}}",
+          "host": ["{{serverURL}}"],
           "path": ["api", "v1", "jobs", "{{queueName}}", "active"],
           "query": [
             {
@@ -729,8 +729,8 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/jobs/{{jobId}}/status",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{serverURL}}/api/v1/jobs/{{jobId}}/status",
+          "host": ["{{serverURL}}"],
           "path": ["api", "v1", "jobs", "{{jobId}}", "status"]
         },
         "description": "Retrieves the status of a specific job."
@@ -755,7 +755,7 @@
               "pm.expect(jsonData.entity).to.have.property(\"statusUrl\").that.is.a(\"string\").and.is.not.empty;",
               "// Extract the jobId and build the expected statusUrl",
               "    let jobId = jsonData.entity.jobId;",
-              "    let serverUrl = pm.collectionVariables.get(\"baseUrl\");",
+              "    let serverUrl = pm.variables.get(\"serverURL\");",
               "",
               "    // Remove the port 80 or 443 if present",
               "    serverUrl = serverUrl.replace(/(:80|:443)\\/?$/, \"\");",
@@ -786,8 +786,8 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/api/v1/jobs/failSuccess",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{serverURL}}/api/v1/jobs/failSuccess",
+          "host": ["{{serverURL}}"],
           "path": ["api", "v1", "jobs", "failSuccess"]
         },
         "description": "Creates a new job in the specified queue (Create Failing Job)"
@@ -812,7 +812,7 @@
               "pm.expect(jsonData.entity).to.have.property(\"statusUrl\").that.is.a(\"string\").and.is.not.empty;",
               "// Extract the jobId and build the expected statusUrl",
               "    let jobId = jsonData.entity.jobId;",
-              "    let serverUrl = pm.collectionVariables.get(\"baseUrl\");",
+              "    let serverUrl = pm.variables.get(\"serverURL\");",
               "",
               "    // Remove the port 80 or 443 if present",
               "    serverUrl = serverUrl.replace(/(:80|:443)\\/?$/, \"\");",
@@ -844,8 +844,8 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/api/v1/jobs/failSuccess",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{serverURL}}/api/v1/jobs/failSuccess",
+          "host": ["{{serverURL}}"],
           "path": ["api", "v1", "jobs", "failSuccess"]
         },
         "description": "Creates a new job in the specified queue (Create a job that will finish sucessfully)"
@@ -904,8 +904,8 @@
         "method": "POST",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/jobs/{{jobId}}/cancel",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{serverURL}}/api/v1/jobs/{{jobId}}/cancel",
+          "host": ["{{serverURL}}"],
           "path": ["api", "v1", "jobs", "{{jobId}}", "cancel"]
         },
         "description": "Cancels a specific job."
@@ -991,8 +991,8 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/jobs/{{successJobId}}/status",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{serverURL}}/api/v1/jobs/{{successJobId}}/status",
+          "host": ["{{serverURL}}"],
           "path": ["api", "v1", "jobs", "{{successJobId}}", "status"]
         },
         "description": "Waits for the job to finish"
@@ -1078,8 +1078,8 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/jobs/{{failingJobId}}/status",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{serverURL}}/api/v1/jobs/{{failingJobId}}/status",
+          "host": ["{{serverURL}}"],
           "path": ["api", "v1", "jobs", "{{failingJobId}}", "status"]
         },
         "description": "Waits for the job to finish"
@@ -1165,8 +1165,8 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/jobs/{{cancelledJobId}}/status",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{serverURL}}/api/v1/jobs/{{cancelledJobId}}/status",
+          "host": ["{{serverURL}}"],
           "path": ["api", "v1", "jobs", "{{cancelledJobId}}", "status"]
         },
         "description": "Waits for the job to finish"
@@ -1205,8 +1205,8 @@
           }
         ],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/jobs/nonExistingJob/monitor",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{serverURL}}/api/v1/jobs/nonExistingJob/monitor",
+          "host": ["{{serverURL}}"],
           "path": ["api", "v1", "jobs", "nonExistingJob", "monitor"]
         },
         "description": "Monitors a specific job using Server-Sent Events (SSE)."
@@ -1264,8 +1264,8 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/jobs/canceled?page={{page}}&pageSize={{pageSize}}",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{serverURL}}/api/v1/jobs/canceled?page={{page}}&pageSize={{pageSize}}",
+          "host": ["{{serverURL}}"],
           "path": ["api", "v1", "jobs", "canceled"],
           "query": [
             {
@@ -1325,8 +1325,8 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/jobs/completed?page={{page}}&pageSize={{pageSize}}",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{serverURL}}/api/v1/jobs/completed?page={{page}}&pageSize={{pageSize}}",
+          "host": ["{{serverURL}}"],
           "path": ["api", "v1", "jobs", "completed"],
           "query": [
             {
@@ -1394,8 +1394,8 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/jobs/successful?page={{page}}&pageSize={{pageSize}}",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{serverURL}}/api/v1/jobs/successful?page={{page}}&pageSize={{pageSize}}",
+          "host": ["{{serverURL}}"],
           "path": ["api", "v1", "jobs", "successful"],
           "query": [
             {
@@ -1455,8 +1455,8 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/jobs/failed?page={{page}}&pageSize={{pageSize}}",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{serverURL}}/api/v1/jobs/failed?page={{page}}&pageSize={{pageSize}}",
+          "host": ["{{serverURL}}"],
           "path": ["api", "v1", "jobs", "failed"],
           "query": [
             {
@@ -1530,8 +1530,8 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/v1/jobs?page={{page}}&pageSize={{pageSize}}",
-          "host": ["{{baseUrl}}"],
+          "raw": "{{serverURL}}/api/v1/jobs?page={{page}}&pageSize={{pageSize}}",
+          "host": ["{{serverURL}}"],
           "path": ["api", "v1", "jobs"],
           "query": [
             {
@@ -1571,7 +1571,7 @@
           "   ",
           "if(!pm.collectionVariables.get('jwt')){",
           "    console.log(\"generating....\")",
-          "    const serverURL = pm.environment.get('serverURL') || pm.collectionVariables.get('baseUrl'); // Get the server URL from the environment variable",
+          "    const serverURL = pm.environment.get('serverURL') || pm.collectionVariables.get('serverURL'); // Get the server URL from the environment variable",
           "    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
           "",
           "        const username = pm.environment.get(\"user\") || pm.collectionVariables.get('user'); ",
@@ -1621,7 +1621,7 @@
   ],
   "variable": [
     {
-      "key": "baseUrl",
+      "key": "serverURL",
       "value": "http://localhost:8080",
       "type": "string"
     },

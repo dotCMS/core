@@ -305,12 +305,20 @@
 		    dijit.byId("showFrontEndUsers").attr('checked',true);
 		    dijit.byId("showAllUsers").attr('checked',false);
 		    dijit.byId("showBackEndUsers").attr('checked',false);
+		    dijit.byId("showCmsAdminUsers").attr('checked',false);
 		    showUsers="frontEnd";
 		}else if(myId === "showBackEndUsers"){
 		      dijit.byId("showBackEndUsers").attr('checked',true);
 	          dijit.byId("showAllUsers").attr('checked',false);
 	          dijit.byId("showFrontEndUsers").attr('checked',false);
+	          dijit.byId("showCmsAdminUsers").attr('checked',false);
 	          showUsers="backEnd";
+		}else if(myId === "showCmsAdminUsers"){
+		      dijit.byId("showCmsAdminUsers").attr('checked',true);
+	          dijit.byId("showAllUsers").attr('checked',false);
+	          dijit.byId("showFrontEndUsers").attr('checked',false);
+	          dijit.byId("showBackEndUsers").attr('checked',false);
+	          showUsers="cmsAdmin";
 		}
 
 		UserAjax.getUsersList(null, null, { start: 0, limit: 50, query: value, includeDefault: false, showUsers: showUsers }, dojo.hitch(this, getUsersListCallback));
@@ -321,6 +329,7 @@
 	    dijit.byId("showAllUsers").attr('checked',true);
         dijit.byId("showBackEndUsers").attr('checked',false);
         dijit.byId("showFrontEndUsers").attr('checked',false);
+        dijit.byId("showCmsAdminUsers").attr('checked',false);
 
 	    dojo.byId('loadingUsers').style.display = '';
 		dojo.byId('usersGrid').style.display = 'none';
@@ -1499,25 +1508,6 @@
 
 
 
-    function getJwt(keyId){
-
-
-        var xhrArgs = {
-            url : "/api/v1/apitoken/" + keyId +"/jwt",
-            handleAs : "json",
-            load : function(data){
-
-            	revealJWT(data.entity.jwt);
-
-            },
-            error : function(error) {
-                console.error("Error getting JWT data for keyId [" + keyId + "]", error);
-
-            }
-        };
-
-        dojo.xhrGet(xhrArgs);
-    }
 
 
 	   function deleteKey(keyId){
@@ -1597,7 +1587,6 @@
             	"Content-Type": "application/json"
             	},
             load : function(data){
-            	console.log("jwt", data);
             	loadApiKeys() ;
                 revealJWT(data.entity.jwt);
             },
@@ -1657,7 +1646,7 @@
           myRow +=(token.valid)   ? `<td >{token.allowNetwork}</td>`:`<td>{token.allowNetwork}</td>`;
           myRow +=(token.expired || token.revoked)
                 ? `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:deleteKey(\"{token.id}\")'><%=LanguageUtil.get(pageContext, "api.token.delete") %></a> </td>`
-                : `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:revokeKey(\"{token.id}\")'><%=LanguageUtil.get(pageContext, "api.token.revoke") %></a> | <a style="text-decoration:underline" href='javascript:getJwt("{token.id}")'><%=LanguageUtil.get(pageContext, "api.token.get.token") %></a></td>`;
+                : `<td style="text-align:center"><a style="text-decoration:underline" href='javascript:revokeKey(\"{token.id}\")'><%=LanguageUtil.get(pageContext, "api.token.revoke") %></a></td>`;
           myRow+=`</tr>`;
 
 

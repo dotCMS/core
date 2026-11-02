@@ -67,6 +67,7 @@ const MESSAGES = {
     'users.search.placeholder': 'Search users',
     'users.access.backend': 'Back-end',
     'users.access.frontend': 'Front-end',
+    'users.access.cms-admin': 'CMS Administrator',
     'users.table.header.user': 'User',
     'users.table.header.email': 'Email',
     'users.table.header.roles': 'Roles',
@@ -141,6 +142,7 @@ describe('DotUsersListComponent', () => {
                 selectedUsers: vi.fn().mockReturnValue([]),
                 filter: vi.fn().mockReturnValue(''),
                 roleFilter: vi.fn().mockReturnValue(''),
+                canFilterByRole: vi.fn().mockReturnValue(true),
                 page: vi.fn().mockReturnValue(1),
                 rows: vi.fn().mockReturnValue(20),
                 totalRecords: vi.fn().mockReturnValue(2),
@@ -254,6 +256,13 @@ describe('DotUsersListComponent', () => {
 
     it('should render Front-end chip when user is a frontend user', () => {
         expect(spectator.queryAll(byTestId('users-access-frontend-chip')).length).toBe(2);
+    });
+
+    it('should render CMS Administrator chip only for CMS Administrators', () => {
+        const chips = spectator.queryAll(byTestId('users-access-cms-admin-chip'));
+
+        expect(chips.length).toBe(1);
+        expect(chips[0].textContent).toContain('CMS Administrator');
     });
 
     it('should render a trailing more button on every visible row when enterprise', () => {
@@ -500,6 +509,7 @@ describe('DotUsersListComponent — non-enterprise instance', () => {
                 selectedUsers: vi.fn().mockReturnValue([]),
                 filter: vi.fn().mockReturnValue(''),
                 roleFilter: vi.fn().mockReturnValue(''),
+                canFilterByRole: vi.fn().mockReturnValue(true),
                 page: vi.fn().mockReturnValue(1),
                 rows: vi.fn().mockReturnValue(20),
                 totalRecords: vi.fn().mockReturnValue(2),

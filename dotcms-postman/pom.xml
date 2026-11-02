@@ -132,8 +132,33 @@
                                     <DOT_INDEX_POLICY_SINGLE_CONTENT>FORCE</DOT_INDEX_POLICY_SINGLE_CONTENT>
                                     <DOT_ASYNC_REINDEX_COMMIT_LISTENERS>false</DOT_ASYNC_REINDEX_COMMIT_LISTENERS>
                                     <DOT_ASYNC_COMMIT_LISTENERS>false</DOT_ASYNC_COMMIT_LISTENERS>
+                                    <!-- With synchronous commit listeners, the cache-flush delay is a sleep on the
+                                         request thread after every write (3000 ms by default). One node needs no
+                                         wait for a cluster to catch up; the integration tests use 10 as well. -->
+                                    <DOT_NETWORK_CACHE_FLUSH_DELAY>10</DOT_NETWORK_CACHE_FLUSH_DELAY>
+                                    <!-- Drop the GraphQL schema as soon as a content type changes (default: 5 s
+                                         debounce), so a query right after the change sees the new type. Safe only
+                                         because requests run one at a time (newman is sequential): field delete and
+                                         type destroy drop the schema before their transaction commits, so a
+                                         concurrent query could rebuild it from the old state. -->
+                                    <DOT_GRAPHQL_SCHEMA_DEBOUNCE_DELAY_MILLIS>0</DOT_GRAPHQL_SCHEMA_DEBOUNCE_DELAY_MILLIS>
+                                    <!-- Tomcat's keep-alive timeout defaults to this (3000 ms in server.xml). It must
+                                         exceed the longest script wait before a request (70 s in GraphQLTests), or
+                                         newman reuses a connection Tomcat is closing. -->
+                                    <CMS_CONNECTION_TIMEOUT>120000</CMS_CONNECTION_TIMEOUT>
                                     <DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>600</DOT_CACHE_GRAPHQLQUERYCACHE_SECONDS>
                                     <JVM_ENDPOINT_TEST_PASS>obfuscate_me</JVM_ENDPOINT_TEST_PASS>
+                                    <!-- The escalation job runs every 30 s and archives any workflow task past its
+                                         step's escalation time. Bundles imported by the collections carry old task
+                                         dates, so it archives their content at an arbitrary moment, undoing a publish
+                                         the request before. No collection tests escalation, so turn it off. -->
+                                    <DOT_ESCALATION_ENABLE>false</DOT_ESCALATION_ENABLE>
+                                    <!-- Deleting a content type returns before the type is gone by default: a
+                                         background thread removes the row later, and until then its variable is
+                                         taken. Image, PagesResourceTests and Template_Resource delete the starter
+                                         Image type and then import a bundle with its own Image type, which fails
+                                         when the old row is still there. Delete in the request instead. -->
+                                    <DOT_DELETE_CONTENT_TYPE_ASYNC>false</DOT_DELETE_CONTENT_TYPE_ASYNC>
                                     <DOT_ENABLE_SCRIPTING>true</DOT_ENABLE_SCRIPTING>
                                     <DOT_ANNOUNCEMENTS_BASE_URL>http://localhost:8080</DOT_ANNOUNCEMENTS_BASE_URL>
                                     <DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>true</DOT_ALLOW_ACCESS_TO_PRIVATE_SUBNETS>

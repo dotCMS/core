@@ -35,6 +35,7 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.util.Config;
@@ -1361,6 +1362,101 @@ public class ContentResourceTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test: {@link ContentResource#canLockContent(HttpServletRequest, HttpServletResponse, String)}
+     * <p>
+     * Given scenario: a published contentlet readable by anonymous visitors, a front-end user
+     * and a back-end user, locked by another back-end user.
+     * <p>
+     * Expected result: anonymous and front-end callers get the lock state without the lock
+     * owner; the back-end caller gets the owner's id and the owner's full name as a String.
+     */
+    @Test
+    public void test_canLockContent_lockOwnerOnlyForBackendCallers() throws Exception {
+        final String password = "TestPass" + System.currentTimeMillis() + "!";
+        User owner = null;
+        User backendCaller = null;
+        User frontendCaller = null;
+        Structure structure = null;
+        Contentlet content = null;
+        try {
+            owner = new UserDataGen().firstName("Lock").lastName("Owner")
+                    .roles(TestUserUtils.getBackendRole()).nextPersisted();
+            backendCaller = new UserDataGen().password(password)
+                    .roles(TestUserUtils.getBackendRole()).nextPersisted();
+            frontendCaller = new UserDataGen().password(password)
+                    .roles(TestUserUtils.getFrontendRole()).nextPersisted();
+            structure = new StructureDataGen().nextPersisted();
+            content = ContentletDataGen.publish(new ContentletDataGen(structure.getInode())
+                    .languageId(APILocator.getLanguageAPI().getDefaultLanguage().getId())
+                    .nextPersisted());
+            final User systemUser = APILocator.systemUser();
+            final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+            permissionAPI.save(new Permission(content.getPermissionId(),
+                    APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                    PermissionAPI.PERMISSION_READ, true), content, systemUser, false);
+            permissionAPI.save(new Permission(content.getPermissionId(),
+                    APILocator.getRoleAPI().getUserRole(backendCaller).getId(),
+                    PermissionAPI.PERMISSION_READ, true), content, systemUser, false);
+            permissionAPI.save(new Permission(content.getPermissionId(),
+                    APILocator.getRoleAPI().getUserRole(frontendCaller).getId(),
+                    PermissionAPI.PERMISSION_READ, true), content, systemUser, false);
+            APILocator.getVersionableAPI().setLocked(content, true, owner);
+
+            final ContentResource contentResource = new ContentResource();
+            final String params = "id/" + content.getIdentifier();
+
+            final JSONObject anonymousView = new JSONObject(contentResource.canLockContent(
+                    lockStatusRequest(null, null), mock(HttpServletResponse.class), params)
+                    .getEntity().toString());
+            assertTrue(anonymousView.getBoolean("locked"));
+            assertFalse(anonymousView.has("lockedBy"));
+            assertFalse(anonymousView.has("lockedByName"));
+
+            final JSONObject frontendView = new JSONObject(contentResource.canLockContent(
+                    lockStatusRequest(frontendCaller.getEmailAddress(), password),
+                    mock(HttpServletResponse.class), params).getEntity().toString());
+            assertTrue(frontendView.getBoolean("locked"));
+            assertFalse(frontendView.has("lockedBy"));
+            assertFalse(frontendView.has("lockedByName"));
+
+            final JSONObject backendView = new JSONObject(contentResource.canLockContent(
+                    lockStatusRequest(backendCaller.getEmailAddress(), password),
+                    mock(HttpServletResponse.class), params).getEntity().toString());
+            assertTrue(backendView.getBoolean("locked"));
+            assertEquals(owner.getUserId(), backendView.getString("lockedBy"));
+            assertEquals(owner.getFullName(), backendView.getString("lockedByName"));
+        } finally {
+            if (content != null) {
+                APILocator.getVersionableAPI().setLocked(content, false, APILocator.systemUser());
+                ContentletDataGen.destroy(content, true);
+            }
+            if (structure != null) {
+                StructureDataGen.remove(structure);
+            }
+            for (final User user : new User[]{owner, backendCaller, frontendCaller}) {
+                if (user != null) {
+                    UserDataGen.remove(user, true);
+                }
+            }
+        }
+    }
+
+    /**
+     * Builds a request with Basic credentials for the given user, or with no credentials when
+     * {@code email} is null.
+     */
+    private static HttpServletRequest lockStatusRequest(final String email, final String password) {
+        final MockHeaderRequest request = new MockHeaderRequest(new MockSessionRequest(
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/")
+                        .request()).request()).request());
+        if (email != null) {
+            request.setHeader("Authorization", "Basic " + Base64.getEncoder()
+                    .encodeToString((email + ":" + password).getBytes()));
+        }
+        return request;
+    }
+
     private HttpServletRequest createHttpRequest(final String jsonPayload, final User user) throws Exception{
 
         MockHeaderRequest request = new MockHeaderRequest(
@@ -1725,7 +1821,13 @@ public class ContentResourceTest extends IntegrationTestBase {
                 .setProperty("code", code)
                 .setProperty("url", "somevalue");
 
-        final Contentlet contentlet = contentletDataGen.nextPersisted();
+        // A widget's field values are only evaluated as Velocity when its last modifier holds the
+        // Scripting Developer role, so the content is checked in by a user who has it.
+        final Contentlet toCheckin = contentletDataGen.next();
+        toCheckin.setIndexPolicy(IndexPolicy.FORCE);
+        toCheckin.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+        final Contentlet contentlet = contentletAPI.checkin(toCheckin, getScriptingDeveloperUser(),
+                false);
         ContentletDataGen.publish(contentlet);
 
         // Build request and response
@@ -1750,6 +1852,28 @@ public class ContentResourceTest extends IntegrationTestBase {
         Assert.assertEquals(15,Integer.parseInt(parsedCode));
         Assert.assertEquals(15,Integer.parseInt(parsedWidgetCode));
 
+    }
+
+    /**
+     * Returns a reusable back-end user holding the Scripting Developer role, which is what allows a
+     * widget's field values to be evaluated as Velocity, plus the CMS Administrator role so the
+     * user can check content in.
+     *
+     * @return the user, created on the first call and reused afterwards
+     * @throws DotDataException if the role or the user cannot be read or created
+     */
+    private static User getScriptingDeveloperUser() throws DotDataException {
+        Role scriptingRole = roleAPI.loadRoleByKey(Role.SCRIPTING_DEVELOPER);
+        if (scriptingRole == null) {
+            scriptingRole = new RoleDataGen().key(Role.SCRIPTING_DEVELOPER)
+                    .name(Role.SCRIPTING_DEVELOPER).nextPersisted();
+        }
+        final User scriptingDeveloper = TestUserUtils.getUser(scriptingRole,
+                "scripting.developer@dotcms.com", "Scripting", "Developer", "scripting");
+        // The CMS Administrator role, not the deprecated "Administrator" one, is what grants the
+        // write permission the checkin needs.
+        roleAPI.addRoleToUser(roleAPI.loadCMSAdminRole(), scriptingDeveloper);
+        return scriptingDeveloper;
     }
 
     public static String removeSpecialCharacters(String input) {

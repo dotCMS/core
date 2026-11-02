@@ -585,6 +585,707 @@
 				}
 			},
 			"response": []
+		},
+		{
+			"name": "Container dependencies",
+			"item": [
+				{
+					"name": "Create Container",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"containerDeps_ContainerId\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"CONTAINER_dependencies_test\",\n    \"friendlyName\": \"Container used to check template dependencies\",\n    \"maxContentlets\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Dependencies of a container no template uses",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"The container is returned with an empty templates list\", function () {",
+									"    pm.expect(jsonData.entity).to.be.an(\"array\").that.has.lengthOf(1);",
+									"    pm.expect(jsonData.entity[0].identifier).to.eql(pm.collectionVariables.get(\"containerDeps_ContainerId\"));",
+									"    pm.expect(jsonData.entity[0].title).to.eql(\"CONTAINER_dependencies_test\");",
+									"    pm.expect(jsonData.entity[0].templates).to.be.an(\"array\").that.is.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers/dependencies?containerId={{containerDeps_ContainerId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers",
+								"dependencies"
+							],
+							"query": [
+								{
+									"key": "containerId",
+									"value": "{{containerDeps_ContainerId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Template that uses the container",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.collectionVariables.set(\"containerDeps_TemplateId\", jsonData.entity.identifier);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"layout\": {\n        \"body\": {\n            \"rows\": [\n                {\n                    \"styleClass\": \"\",\n                    \"columns\": [\n                        {\n                            \"styleClass\": \"\",\n                            \"leftOffset\": 1,\n                            \"width\": 12,\n                            \"containers\": [\n                                {\n                                    \"identifier\": \"{{containerDeps_ContainerId}}\"\n                                }\n                            ]\n                        }\n                    ]\n                }\n            ]\n        }\n    },\n    \"friendlyName\": \"\",\n    \"title\": \"TEMPLATE_dependencies_test\",\n    \"theme\": \"SYSTEM_THEME\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Dependencies of a container a template uses",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"The template that uses the container is listed\", function () {",
+									"    pm.expect(jsonData.entity[0].templates).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity[0].templates[0].identifier).to.eql(pm.collectionVariables.get(\"containerDeps_TemplateId\"));",
+									"    pm.expect(jsonData.entity[0].templates[0].title).to.eql(\"TEMPLATE_dependencies_test\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers/dependencies?containerId={{containerDeps_ContainerId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers",
+								"dependencies"
+							],
+							"query": [
+								{
+									"key": "containerId",
+									"value": "{{containerDeps_ContainerId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Dependencies with a repeated container id answers once per container",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"The container is answered once, with its template\", function () {",
+									"    pm.expect(jsonData.entity).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity[0].identifier).to.eql(pm.collectionVariables.get(\"containerDeps_ContainerId\"));",
+									"    pm.expect(jsonData.entity[0].templates[0].identifier).to.eql(pm.collectionVariables.get(\"containerDeps_TemplateId\"));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers/dependencies?containerId={{containerDeps_ContainerId}}&containerId={{containerDeps_ContainerId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers",
+								"dependencies"
+							],
+							"query": [
+								{
+									"key": "containerId",
+									"value": "{{containerDeps_ContainerId}}"
+								},
+								{
+									"key": "containerId",
+									"value": "{{containerDeps_ContainerId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Dependencies fail as a whole when one container does not exist",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 404 Not Found\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers/dependencies?containerId={{containerDeps_ContainerId}}&containerId=this-container-does-not-exist",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers",
+								"dependencies"
+							],
+							"query": [
+								{
+									"key": "containerId",
+									"value": "{{containerDeps_ContainerId}}"
+								},
+								{
+									"key": "containerId",
+									"value": "this-container-does-not-exist"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete a container a template uses is refused",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 409 Conflict\", function () {",
+									"    pm.response.to.have.status(409);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers?containerId={{containerDeps_ContainerId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers"
+							],
+							"query": [
+								{
+									"key": "containerId",
+									"value": "{{containerDeps_ContainerId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Bulk delete reports a container a template uses as failed",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Nothing is deleted and the container is reported as failed\", function () {",
+									"    pm.expect(jsonData.entity.successCount).to.eql(0);",
+									"    pm.expect(jsonData.entity.fails).to.have.lengthOf(1);",
+									"    pm.expect(jsonData.entity.fails[0].element).to.eql(pm.collectionVariables.get(\"containerDeps_ContainerId\"));",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers/_bulkdelete",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers",
+								"_bulkdelete"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{containerDeps_ContainerId}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Dependencies without a container id",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 400 Bad Request\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers/dependencies",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers",
+								"dependencies"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Dependencies of an unknown container",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 404 Not Found\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers/dependencies?containerId=this-container-does-not-exist",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers",
+								"dependencies"
+							],
+							"query": [
+								{
+									"key": "containerId",
+									"value": "this-container-does-not-exist"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Archive the template",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates/_archive",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates",
+								"_archive"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{containerDeps_TemplateId}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete the template",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/templates",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"templates"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "[\"{{containerDeps_TemplateId}}\"]",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Delete the container once no template uses it",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"The container is deleted\", function () {",
+									"    pm.expect(jsonData.entity).to.eql(true);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers?containerId={{containerDeps_ContainerId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers"
+							],
+							"query": [
+								{
+									"key": "containerId",
+									"value": "{{containerDeps_ContainerId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	],
 	"event": [
@@ -671,6 +1372,14 @@
 		},
 		{
 			"key": "addFormInsidePage_CONTENT_Id",
+			"value": ""
+		},
+		{
+			"key": "containerDeps_ContainerId",
+			"value": ""
+		},
+		{
+			"key": "containerDeps_TemplateId",
 			"value": ""
 		}
 	]

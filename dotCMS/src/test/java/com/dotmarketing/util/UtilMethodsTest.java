@@ -712,4 +712,40 @@ public class UtilMethodsTest extends UnitTestBase {
       assertFalse(decoded.contains("&#58;"));
       assertFalse(decoded.contains("&#44;"));
    }
+
+	/**
+	 * Method to test: {@link UtilMethods#cleanFileSystemPathURI(String)}
+	 * When: the path is a plain folder or file name under the web application root
+	 * Should: return the same path
+	 */
+	@Test
+	public void cleanFileSystemPathURI_keepsRegularPaths() {
+		assertEquals("/html/images", UtilMethods.cleanFileSystemPathURI("/html/images"));
+		assertEquals("logo-dark_2.png", UtilMethods.cleanFileSystemPathURI("logo-dark_2.png"));
+		assertEquals("/application/my folder", UtilMethods.cleanFileSystemPathURI("/application/my folder"));
+		// names that only contain the protected words or two dots are regular names
+		assertEquals("/html/web-info", UtilMethods.cleanFileSystemPathURI("/html/web-info"));
+		assertEquals("/meta-info/a", UtilMethods.cleanFileSystemPathURI("/meta-info/a"));
+		assertEquals("/html/report..final", UtilMethods.cleanFileSystemPathURI("/html/report..final"));
+	}
+
+	/**
+	 * Method to test: {@link UtilMethods#cleanFileSystemPathURI(String)}
+	 * When: the path is empty, contains a parent-directory segment, refers to WEB-INF or
+	 * META-INF in any case, or contains a disallowed character
+	 * Should: return null for each one of them
+	 */
+	@Test
+	public void cleanFileSystemPathURI_rejectsDisallowedPaths() {
+		final String[] disallowed = {
+				null, "", "/WEB-INF", "/web-inf/classes", "/META-INF", "/Meta-Inf/context.xml",
+				"/WEB-INF.", "/html/WEB-INF ", "/WEB-INF../x", "/x/meta-inf",
+				"..", "/html/../../etc", "/html/..", "..\\windows", "/html\\images",
+				"/html/images?x=1", "/html;jsessionid=1", "file:/etc", "/html/*", "/html/%2e%2e",
+				"/html/$x", "/html/a|b", "/html/a,b", "/html/a=b", "/html/a&b", "/html/[a]",
+				"/html/a\"b", "/html/a!b", "/html/<a>", "~/x", "/html/a\nb", "/html/a\u0000b"};
+		for (final String path : disallowed) {
+			assertNull("Should reject: " + path, UtilMethods.cleanFileSystemPathURI(path));
+		}
+	}
 }

@@ -233,14 +233,27 @@ public class CMSMaintenanceAjax {
     }
 
 	/**
+	 * @deprecated The {@code userId} argument is ignored; the acting user is resolved from the
+	 * session and authorized internally. Retained so a browser still holding the previous
+	 * two-argument JavaScript proxy keeps working across a rollback. Prefer
+	 * {@link #deleteContentletsFromIdList(String)}.
+	 *
+	 * @param list   comma-separated inodes of the contentlets to delete
+	 * @param userId ignored; retained only for backward-compatible remoting
+	 * @return the outcome message produced by {@link #deleteContentletsFromIdList(String)}
+	 */
+	@Deprecated
+	public String deleteContentletsFromIdList(final String list, final String userId)
+			throws PortalException, SystemException, DotDataException, DotSecurityException {
+		return deleteContentletsFromIdList(list);
+	}
+
+	/**
 	 * Takes a list of comma-separated Identifiers and deletes them. The content is
 	 * always deleted as the logged-in user.
 	 *
 	 * @param List
 	 *            - The list of Identifiers as Strings.
-	 * @param userId
-	 *            - Not used. The Maintenance portlet still sends it, so it stays in the
-	 *            signature; the deletion runs as the logged-in user.
 	 * @return A String array of information that provides the user with the
 	 *         results of performing this action.
 	 * @throws PortalException
@@ -253,7 +266,7 @@ public class CMSMaintenanceAjax {
 	 *             The logged-in user is not a CMS administrator with access to the
 	 *             Maintenance portlet, or cannot delete the content.
 	 */
-	public String deleteContentletsFromIdList(String List, String userId) throws PortalException, SystemException, DotDataException,DotSecurityException {
+	public String deleteContentletsFromIdList(String List) throws PortalException, SystemException, DotDataException,DotSecurityException {
 		final User user = requireAdminWithMaintenancePortlet();
 		List<String> conditionletWithErrors = new ArrayList<>();
 		ContentletAPI conAPI = APILocator.getContentletAPI();

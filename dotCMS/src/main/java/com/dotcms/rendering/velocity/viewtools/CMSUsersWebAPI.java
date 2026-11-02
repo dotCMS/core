@@ -29,6 +29,17 @@ import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 
+/**
+ * User lookups and role checks, kept for Java callers such as OSGi plugins, with the same
+ * signatures as before.
+ *
+ * <p>Templates no longer use this class: {@code $cmsuser} is provided by {@link CMSUserTool}, which
+ * hands templates read-only user profiles. Java code should move to {@link CMSUserTool} or to
+ * {@code APILocator.getUserAPI()}.
+ *
+ * @deprecated use {@link CMSUserTool} for templates, or {@code APILocator.getUserAPI()} from Java
+ */
+@Deprecated
 public class CMSUsersWebAPI implements ViewTool {
 
 	private HttpServletRequest request;

@@ -112,7 +112,7 @@
 	<tool>
 		<key>cmsuser</key>
 		<scope>request</scope>
-		<class>com.dotcms.rendering.velocity.viewtools.CMSUsersWebAPI</class>
+		<class>com.dotcms.rendering.velocity.viewtools.CMSUserTool</class>
 	</tool>
 	<tool>
 		<key>website</key>
@@ -257,7 +257,7 @@
 	</tool>
 	<tool>
 		<key>filetool</key>
-		<scope>application</scope>
+		<scope>request</scope>
 		<class>com.dotcms.rendering.velocity.viewtools.FileTool</class>
 	</tool>
 	<tool>

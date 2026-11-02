@@ -2,12 +2,24 @@ import { patchState, signalStoreFeature, type, withComputed, withMethods } from 
 
 import { computed, inject, Signal, untracked } from '@angular/core';
 
-import { DotTreeNode, SeoMetaTags, SeoMetaTagsResult } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentlet,
+    DotTreeNode,
+    SeoMetaTags,
+    SeoMetaTagsResult
+} from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/types/internal';
 import { WINDOW } from '@dotcms/utils';
+import { getContentletsInContainer } from '@dotcms/uve/internal';
 
-import { PageData, PageDataContainer, ReloadEditorContent } from './models';
+import {
+    ContentletEditData,
+    PageData,
+    PageDataContainer,
+    ReloadEditorContent,
+    UVE_EDIT_PANEL_TABS
+} from './models';
 
 import {
     Container,
@@ -15,7 +27,7 @@ import {
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
 import { DEFAULT_PERSONA } from '../../../shared/consts';
-import { EDITOR_STATE } from '../../../shared/enums';
+import { EDITOR_STATE, UVE_STATUS } from '../../../shared/enums';
 import {
     ActionPayload,
     ContainerPayload,
@@ -32,7 +44,7 @@ import {
     sanitizeURL
 } from '../../../utils';
 import { PageType, UVEState } from '../../models';
-import { PageComputed } from '../page/withPage';
+import { PageComputed, PageLoadingConfigState } from '../page/withPage';
 
 import type { WorkflowLockComputed } from '../workflow/withWorkflow';
 
@@ -75,6 +87,7 @@ const buildIframeURL = ({ url, params, dotCMSHost }) => {
  *
  * Dependencies:
  * - UVEState: Flat editor state (editorDragItem, editorBounds, etc.)
+ * - PageLoadingConfigState: Client readiness, for the iframe loading state
  * - PageComputed: Access to page data for edit checks
  * - WorkflowLockComputed: Access to lock state for permission checks
  * - ViewComputed: Access to viewMode for edit/preview mode checks
@@ -82,7 +95,7 @@ const buildIframeURL = ({ url, params, dotCMSHost }) => {
 export function withEditor() {
     return signalStoreFeature(
         {
-            state: type<UVEState>(),
+            state: type<UVEState & Pick<PageLoadingConfigState, 'isClientReady'>>(),
             props: type<PageComputed & WorkflowLockComputed & ViewComputed>()
         },
         withComputed((store) => {
@@ -144,6 +157,61 @@ export function withEditor() {
                 () => store.flags()?.FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION === true
             );
 
+            /**
+             * The selected contentlet as the edit panel shows it: the page-asset version when the
+             * page holds it, which is the latest saved one, otherwise the selection's own payload.
+             */
+            const $editorContentletEditData = computed<ContentletEditData>(() => {
+                const { container, contentlet: contentletPayload } =
+                    store.editorSelected()?.payload ?? {};
+
+                // Get the full contentlet from containers using the SDK utility.
+                // It handles both uuid-${uuid} and uuid-dotParser_${uuid} key formats.
+                let contentlet: DotCMSContentlet = contentletPayload as DotCMSContentlet;
+                const pageAsset = store.pageAsset();
+
+                if (
+                    container?.identifier &&
+                    container?.uuid &&
+                    contentletPayload?.identifier &&
+                    pageAsset?.containers?.[container.identifier]
+                ) {
+                    const contentlets = getContentletsInContainer(pageAsset, {
+                        identifier: container.identifier,
+                        uuid: container.uuid,
+                        historyUUIDs: []
+                    });
+                    const foundContentlet = contentlets.find(
+                        (c) => c.identifier === contentletPayload.identifier
+                    );
+
+                    if (foundContentlet) {
+                        // The page-asset contentlet is the fresher one (new inode after
+                        // a save), but it carries no permission — `canEdit` only exists
+                        // on the DOM payload. Carry it across the swap or the quick-edit
+                        // panel has nothing to gate on.
+                        contentlet = {
+                            ...(foundContentlet as DotCMSContentlet),
+                            ...(contentletPayload?.canEdit === undefined
+                                ? {}
+                                : { canEdit: contentletPayload.canEdit })
+                        };
+                    }
+                }
+
+                return { container, contentlet };
+            });
+
+            /**
+             * Whether the selected contentlet may be modified. Drives the edit panel's style tab
+             * and the style-editor guard, mirroring the quick-edit gate so neither tab offers a
+             * way to change a contentlet the user has no permission on. Fail-open when the
+             * permission is absent.
+             */
+            const editorCanEditSelectedContentlet = computed(
+                () => $editorContentletEditData()?.contentlet?.['canEdit'] !== false
+            );
+
             return {
                 editorCanEditContent,
                 editorCanEditLayout,
@@ -151,6 +219,21 @@ export function withEditor() {
                 editorEnableInlineEdit,
                 $isEmaLegacyScriptInjectionEnabled,
                 editorHasAccessToEditMode,
+                $editorContentletEditData,
+                editorCanEditSelectedContentlet,
+                /**
+                 * Whether the page in the iframe is still loading: the page itself is loading,
+                 * or a headless page in edit mode is still waiting for its client to be ready.
+                 */
+                $editorIsIframeLoading: computed<boolean>(() => {
+                    const isEditMode = store.viewMode() === UVE_MODE.EDIT;
+                    const isPageReady =
+                        store.pageType() === PageType.TRADITIONAL ||
+                        store.isClientReady() ||
+                        !isEditMode;
+
+                    return !isPageReady || store.uveStatus() === UVE_STATUS.LOADING;
+                }),
 
                 $allowContentDelete: computed<boolean>(() => {
                     const numberContents = store.pageAsset()?.numberContents;
@@ -492,6 +575,18 @@ export function withEditor() {
                 setEditPanelOpen(open: boolean) {
                     patchState(store, {
                         editorEditPanelOpen: open
+                    });
+                },
+                /** Shows the given tab of the edit panel; leaves the panel open or closed. */
+                editorSetEditPanelTab(tab: UVE_EDIT_PANEL_TABS) {
+                    patchState(store, {
+                        editorEditPanelTab: tab
+                    });
+                },
+                /** Records whether the content editor is placed; it sets this itself. */
+                editorSetContentEditorPlaced(placed: boolean) {
+                    patchState(store, {
+                        editorContentEditorPlaced: placed
                     });
                 },
                 cancelContentletEdit() {

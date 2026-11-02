@@ -98,6 +98,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import org.apache.commons.lang.SerializationUtils;
 import org.apache.commons.lang3.StringUtils;
 
 public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<SystemTableUpdatedKeyEvent> {
@@ -166,6 +167,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         return experimentsLookbackWindow.get();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>The experiment's targeting rule is saved after the experiment itself, because the rule's
+     * permission check resolves the experiment as the rule's parent.</p>
+     */
     @Override
     @WrapInTransaction
     public Experiment save(final Experiment experiment, final User user) throws
@@ -195,10 +201,6 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
             MetricsUtil.INSTANCE.validateGoals(goals);
         }
 
-        if(experiment.targetingConditions().isPresent()) {
-            saveTargetingConditions(experiment, user);
-        }
-
         Experiment experimentToSave = builder.build();
 
         Optional<Experiment> existingExperiment = find(experimentToSave.id().get(), user);
@@ -218,6 +220,11 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         }
 
         factory.save(experimentToSave);
+
+        // targeting rules are saved once the experiment row exists
+        if(experiment.targetingConditions().isPresent()) {
+            saveTargetingConditions(experiment, user);
+        }
 
         Logger.info(this, "Saving experiment with id: " + experimentToSave.id().get() + ", and status:"
         + experimentToSave.status());
@@ -307,11 +314,19 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                                 createAndSaveCondition(user, experimentRule, targetingCondition)));
     }
 
-    private void createAndSaveCondition(User user, Rule experimentRule,
-            TargetingCondition targetingCondition) {
-        Condition condition = targetingCondition.id().isPresent()
-            ? Try.of(()->rulesAPI.getConditionById(targetingCondition.id().get(), user, false))
-                .getOrElseThrow(()->new IllegalArgumentException("Invalid targeting Condition Id provided. Id: " + targetingCondition.id().get()))
+    /**
+     * Saves one targeting condition of the experiment's rule. A condition sent with an id must be
+     * one of that rule's own conditions; it is changed on a copy, so the stored condition only
+     * changes when the save succeeds.
+     *
+     * @param user               the user saving the experiment
+     * @param experimentRule     the experiment's targeting rule
+     * @param targetingCondition the targeting condition to save
+     */
+    private void createAndSaveCondition(final User user, final Rule experimentRule,
+            final TargetingCondition targetingCondition) {
+        final Condition condition = targetingCondition.id().isPresent()
+            ? copyOfExperimentCondition(user, experimentRule, targetingCondition.id().get())
             : createCondition(experimentRule);
 
         condition.setOperator(targetingCondition.operator());
@@ -324,6 +339,27 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
         Try.run(()->rulesAPI.saveCondition(condition, user, false))
                 .getOrElseThrow(()->new DotStateException("Error saving Condition: "
                         + condition.getConditionletId()));
+    }
+
+    /**
+     * Returns a copy of the experiment rule's condition with the given id.
+     *
+     * @param user           the user saving the experiment
+     * @param experimentRule the experiment's targeting rule
+     * @param conditionId    the id of the condition to update
+     * @return a copy of the stored condition
+     * @throws IllegalArgumentException when the id is not one of the experiment rule's conditions
+     */
+    private Condition copyOfExperimentCondition(final User user, final Rule experimentRule,
+            final String conditionId) {
+        final Condition stored = Try.of(() -> rulesAPI.getConditionById(conditionId, user, false))
+                .getOrNull();
+        final boolean experimentCondition = stored != null && experimentRule.getGroups().stream()
+                .anyMatch(group -> group.getId().equals(stored.getConditionGroup()));
+        if (!experimentCondition) {
+            throw new IllegalArgumentException("Invalid targeting Condition Id provided. Id: " + conditionId);
+        }
+        return (Condition) SerializationUtils.clone(stored);
     }
 
     private Condition createCondition(final Rule experimentRule) {

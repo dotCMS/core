@@ -304,6 +304,23 @@ jobs:
           ./.github/scripts/publish-to-s3/publish.sh maven --version "$VERSION"
           echo "::endgroup::"
 
+      # In reuse mode ~/.m2/repository holds only the release coordinates the build
+      # installed (the maven-repo artifact no longer carries third-party jars), so the
+      # Javadoc run below would download all of dotcms-core's dependencies (~700 MB)
+      # from Maven Central. Restore them from the shared dependency cache instead. This is
+      # deliberately AFTER the validate and publish steps: those read the repository as the
+      # publication source, which must hold nothing but the artifact. The cache holds no
+      # installed builds (the build job removes them before saving), so it cannot overwrite
+      # a release coordinate; on a miss, Maven downloads as before.
+      - name: Restore Maven Dependency Cache for Javadocs
+        if: inputs.upload_javadocs == true && inputs.java-version == '' && inputs.reuse-build-artifacts == true
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-mavencore-v2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-mavencore-v2-
+
       - name: Generate and Upload Javadocs
         run: |
           # shellcheck disable=SC2086

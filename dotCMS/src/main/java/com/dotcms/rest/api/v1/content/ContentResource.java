@@ -559,9 +559,11 @@ public class ContentResource {
      *         <ul>
      *             <li>"canLock": boolean indicating if the contentlet can be locked by the user.</li>
      *             <li>"locked": boolean indicating if the contentlet is currently locked.</li>
-     *             <li>"lockedBy": (optional) user ID of the user who locked the contentlet, if locked.</li>
      *             <li>"lockedOn": (optional) timestamp when the contentlet was locked, if locked.</li>
-     *             <li>"lockedByName": (optional) name of the user who locked the contentlet, if locked.</li>
+     *             <li>"lockedBy": (optional) user ID of the user who locked the contentlet, if locked;
+     *             back-end users only.</li>
+     *             <li>"lockedByName": (optional) full name of the user who locked the contentlet, if
+     *             locked; back-end users only.</li>
      *             <li>"inode": the inode of the contentlet.</li>
      *             <li>"id": the identifier of the contentlet.</li>
      *         </ul>
@@ -573,7 +575,9 @@ public class ContentResource {
     @Path("/_canlock/{inodeOrIdentifier}")
     @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "canLockContent", summary = "Check if a contentlet can be locked",
-            description = "Checks if the contentlet specified by its inode or identifier can be locked by the current user.",
+            description = "Checks if the contentlet specified by its inode or identifier can be locked by the current user, " +
+                    "and whether it is locked. When locked, the response includes lockedOn; lockedBy (user id) and " +
+                    "lockedByName (full name) are included for back-end users only.",
             tags = {"Content"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Successfully retrieved lock status",
@@ -615,16 +619,7 @@ public class ContentResource {
 
         resultMap.put("canLock", canLock);
         resultMap.put("locked", contentlet.isLocked());
-
-        final Optional<ContentletVersionInfo> cvi = APILocator.getVersionableAPI()
-                .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId());
-
-        if (contentlet.isLocked() && cvi.isPresent()) {
-            resultMap.put("lockedBy", cvi.get().getLockedBy());
-            resultMap.put("lockedOn", cvi.get().getLockedOn());
-            resultMap.put("lockedByName", APILocator.getUserAPI().loadUserById(cvi.get().getLockedBy()));
-        }
-
+        resultMap.putAll(LockStatusFields.of(contentlet, user));
         resultMap.put("inode", contentlet.getInode());
         resultMap.put("id",    contentlet.getIdentifier());
 

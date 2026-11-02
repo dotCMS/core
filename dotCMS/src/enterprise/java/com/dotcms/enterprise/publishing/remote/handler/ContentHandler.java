@@ -613,12 +613,35 @@ public class ContentHandler implements IHandler {
 		}
     }
 
+	/**
+	 * Checks whether the pushed Contentlet doesn't exist in the receiver yet, i.e., no Identifier
+	 * record has been created for it.
+	 *
+	 * @param content The {@link Contentlet} coming from the bundle.
+	 *
+	 * @return If the Contentlet's Identifier doesn't exist in the receiver, returns {@code true}.
+	 */
+	private boolean isNewInReceiver(final Contentlet content) {
+		return !UtilMethods.isSet(Try.of(() -> this.identifierAPI.find(content.getIdentifier()).getId()).getOrNull());
+	}
+
+	/**
+	 * Returns the Identifier the pushed Contentlet has in the receiver. If its Identifier already
+	 * exists there, it's used as is. Otherwise, HTML Pages and File Assets are matched by Site and
+	 * URI, so that an existing asset created with a different Identifier is updated instead of
+	 * duplicated.
+	 *
+	 * @param content The {@link Contentlet} coming from the bundle.
+	 *
+	 * @return The Identifier of the matching Contentlet in the receiver, or the bundle's own
+	 * Identifier if there is no match.
+	 *
+	 * @throws DotDataException An error occurred when looking up the Identifier by Site and URI.
+	 */
 	private String findLocalIdentifier(final Contentlet content) throws DotDataException {
 
-		String localIdentifier = Try.of(()->APILocator.getIdentifierAPI().find(content.getIdentifier()).getId()).getOrNull();
-
-		if(UtilMethods.isSet(localIdentifier)){
-			return localIdentifier;
+		if (!this.isNewInReceiver(content)) {
+			return content.getIdentifier();
 		}
 
 
@@ -872,6 +895,9 @@ public class ContentHandler implements IHandler {
 			this.cleanTrees(content);
 			this.regenerateTree(wrapper, remoteLocalLanguages.getLeft());
 		}
+		// With the relationships filter set to false, the receiver's trees are never touched:
+		// new content arrives with no relationships, and existing content keeps the ones it
+		// already has in the receiver
         // Categories
         if (UtilMethods.isSet(wrapper.getCategories())) {
             handleContentCategories(content.getInode(), wrapper.getCategories());

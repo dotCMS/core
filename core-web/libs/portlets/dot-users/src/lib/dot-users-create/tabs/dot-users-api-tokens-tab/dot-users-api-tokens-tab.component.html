@@ -118,18 +118,7 @@
                     @let status = statusOf(token);
                     @let isInactive = status !== 'valid';
                     <tr
-                        [class.cursor-pointer]="!isInactive"
                         [class.opacity-60]="isInactive"
-                        [attr.role]="!isInactive ? 'button' : null"
-                        [attr.tabindex]="!isInactive ? 0 : null"
-                        [attr.aria-label]="
-                            !isInactive ? ('users.dialog.tokens.row.reveal-hint' | dm) : null
-                        "
-                        [attr.title]="
-                            !isInactive ? ('users.dialog.tokens.row.reveal-hint' | dm) : null
-                        "
-                        (click)="onRowClick(token)"
-                        (keydown)="onRowKeydown(token, $event)"
                         [attr.data-testid]="'users-api-tokens-row-' + token.id">
                         <!--
                             No per-column font overrides — every cell
@@ -148,7 +137,7 @@
                         <td>
                             {{ token.allowNetwork || ('users.dialog.tokens.network.any' | dm) }}
                         </td>
-                        <td (click)="$event.stopPropagation()">
+                        <td>
                             @if (!isInactive) {
                                 <p-button
                                     [label]="'users.dialog.tokens.revoke' | dm"
@@ -258,8 +247,8 @@
         [visible]="$revealVisible()"
         (visibleChange)="$revealVisible.set($event)"
         [modal]="true"
-        [closable]="true"
-        [closeOnEscape]="true"
+        [closable]="false"
+        [closeOnEscape]="false"
         [draggable]="false"
         [style]="{ width: '600px' }"
         [header]="'users.dialog.tokens.reveal.title' | dm"
@@ -314,24 +303,6 @@
                             {{ $copied() ? 'check' : 'content_copy' }}
                         </span>
                     </p-button>
-                </div>
-            } @else {
-                <div
-                    class="flex items-center gap-2 text-sm text-slate-500"
-                    data-testid="users-api-tokens-reveal-loading">
-                    <!--
-                        Portlet-wide icon font is Google Material Symbols
-                        (see the profile tab / list). `progress_activity`
-                        is the equivalent of `pi pi-spinner` under that
-                        family; `animate-spin` from Tailwind gives the
-                        rotation.
-                    -->
-                    <span
-                        class="material-symbols-rounded animate-spin text-base!"
-                        aria-hidden="true">
-                        progress_activity
-                    </span>
-                    {{ 'users.dialog.tokens.reveal.loading' | dm }}
                 </div>
             }
         </div>

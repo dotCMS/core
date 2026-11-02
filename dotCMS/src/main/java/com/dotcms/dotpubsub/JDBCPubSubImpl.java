@@ -18,6 +18,7 @@ import javax.validation.constraints.NotNull;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
+import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -248,18 +249,40 @@ public class JDBCPubSubImpl implements DotPubSubProvider {
                     continue;
                 }
 
-                topicMap.values().stream()
-                        .filter(t -> t.getKey().toString().compareToIgnoreCase(channelName) == 0)
-                        .forEach(t -> {
-                            t.incrementReceivedCounters(event);
-                            t.notify(event);
-                        });
+                dispatch(event, channelName, topicMap.values());
             }
             return notifications.length;
 
         }
 
 
+    }
+
+    /**
+     * Delivers one incoming event to every topic subscribed to its channel.
+     *
+     * <p>Each topic is guarded on its own: a topic whose handler throws is logged and skipped, and
+     * the event still reaches the other topics. The exception also no longer reaches the listener
+     * loop, where it used to abandon the rest of the notification batch, cache invalidations from
+     * other servers included.</p>
+     *
+     * @param event       the decoded event
+     * @param channelName the Postgres channel it arrived on
+     * @param topics      the subscribed topics
+     */
+    static void dispatch(final DotPubSubEvent event, final String channelName,
+            final Collection<DotPubSubTopic> topics) {
+        topics.stream()
+                .filter(t -> t.getKey().toString().compareToIgnoreCase(channelName) == 0)
+                .forEach(t -> {
+                    try {
+                        t.incrementReceivedCounters(event);
+                        t.notify(event);
+                    } catch (final Exception e) {
+                        Logger.warnAndDebug(JDBCPubSubImpl.class,
+                                "Topic " + t.getKey() + " failed to handle an event: " + e.getMessage(), e);
+                    }
+                });
     }
 
 

@@ -16,7 +16,28 @@ export type UploadPlaceholderCopy = {
     uploading: (mediaType: UploadPlaceholderMediaType) => string;
 };
 
-const PLACEHOLDER_NODE_NAME = 'uploadPlaceholder' as const;
+/** TipTap node name of the upload placeholder; exported so paste handling can create one. */
+export const UPLOAD_PLACEHOLDER_NODE_NAME = 'uploadPlaceholder' as const;
+
+/** Id prefix per media kind. */
+const PLACEHOLDER_ID_PREFIX: Record<UploadPlaceholderMediaType, string> = {
+    image: 'img',
+    video: 'vid',
+    audio: 'aud'
+};
+
+/** Keeps placeholder ids unique even when two pastes land within the same millisecond. */
+let placeholderSequence = 0;
+
+/**
+ * Builds a placeholder id that is unique for the page's lifetime.
+ *
+ * @param mediaType - Media kind, which picks the id prefix.
+ * @returns `<prefix>-<timestamp>-<sequence>`.
+ */
+export function createUploadPlaceholderId(mediaType: UploadPlaceholderMediaType): string {
+    return `${PLACEHOLDER_ID_PREFIX[mediaType]}-${Date.now()}-${placeholderSequence++}`;
+}
 
 /**
  * Locates the document position of an `uploadPlaceholder` node by its `id` attribute.
@@ -29,7 +50,7 @@ function findUploadPlaceholderPosition(doc: PMNode, placeholderId: string): numb
     let targetPos: number | null = null;
 
     doc.descendants((node, pos) => {
-        if (node.type.name === PLACEHOLDER_NODE_NAME && node.attrs['id'] === placeholderId) {
+        if (node.type.name === UPLOAD_PLACEHOLDER_NODE_NAME && node.attrs['id'] === placeholderId) {
             targetPos = pos;
             return false;
         }
@@ -115,7 +136,7 @@ function createUploadPlaceholderDom(
  */
 export function createUploadPlaceholderExtension(copy: UploadPlaceholderCopy) {
     return Node.create({
-        name: PLACEHOLDER_NODE_NAME,
+        name: UPLOAD_PLACEHOLDER_NODE_NAME,
         group: 'block',
         atom: true,
         selectable: false,
@@ -160,7 +181,7 @@ export function insertUploadPlaceholders(
     placeholders: UploadPlaceholderItem[]
 ): void {
     const content = placeholders.map(({ id, mediaType }) => ({
-        type: PLACEHOLDER_NODE_NAME,
+        type: UPLOAD_PLACEHOLDER_NODE_NAME,
         attrs: { id, mediaType }
     }));
     editor.chain().focus().insertContentAt(pos, content).run();

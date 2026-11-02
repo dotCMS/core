@@ -24,7 +24,7 @@
         <bouncy-castle.version>1.85</bouncy-castle.version>
         <awaitility.version>4.0.0</awaitility.version>
         <shedlock.version>4.33.0</shedlock.version>
-        <jackson.version>2.18.11</jackson.version>
+        <jackson.version>2.18.12</jackson.version>
         <jersey.version>2.47</jersey.version>
         <graalvm.polyglot.version>25.0.1</graalvm.polyglot.version>
         <micrometer.version>1.15.12</micrometer.version>
@@ -192,11 +192,6 @@
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.commons-fileupload</artifactId>
-                <version>1.3.3_1</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.commons-httpclient</artifactId>
                 <version>3.1_3</version>
             </dependency>
@@ -252,11 +247,6 @@
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.fileupload-ext</artifactId>
-                <version>ukv_3</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.gif89</artifactId>
                 <version>ukv_2</version>
             </dependency>
@@ -274,11 +264,6 @@
                 <groupId>com.dotcms.lib</groupId>
                 <artifactId>dot.httpbridge</artifactId>
                 <version>ukv_2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.dotcms.lib</groupId>
-                <artifactId>dot.httpclient</artifactId>
-                <version>4.2.2_2</version>
             </dependency>
             <dependency>
                 <groupId>com.dotcms.lib</groupId>

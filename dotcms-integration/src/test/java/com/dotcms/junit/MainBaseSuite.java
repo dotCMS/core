@@ -9,6 +9,9 @@ import java.util.LinkedList;
 import java.util.List;
 import org.junit.runner.Description;
 import org.junit.runner.Runner;
+import org.junit.runner.manipulation.Filter;
+import org.junit.runner.manipulation.Filterable;
+import org.junit.runner.manipulation.NoTestsRemainException;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.Suite;
 import org.junit.runners.model.InitializationError;
@@ -53,7 +56,13 @@ public class MainBaseSuite extends Suite {
     }
 
 
-    private static class DotRunner extends Runner {
+    /**
+     * Thin wrapper around the per-class runner. It must implement {@link Filterable}: JUnit's
+     * {@code Filter.apply} silently skips any child runner that is not Filterable, so without it
+     * failsafe's {@code rerunFailingTestsCount} (which filters the suite by the failed
+     * descriptions) re-ran every method of a failing class instead of only the failed ones.
+     */
+    private static class DotRunner extends Runner implements Filterable {
 
         private final Runner runner;
 
@@ -69,6 +78,17 @@ public class MainBaseSuite extends Suite {
         @Override
         public void run(RunNotifier notifier) {
             this.runner.run(notifier);
+        }
+
+        /**
+         * Applies the filter to the wrapped runner so only the matching test methods remain.
+         *
+         * @param filter the filter to apply
+         * @throws NoTestsRemainException if the wrapped runner has no matching test left
+         */
+        @Override
+        public void filter(Filter filter) throws NoTestsRemainException {
+            filter.apply(this.runner);
         }
     }
 }
