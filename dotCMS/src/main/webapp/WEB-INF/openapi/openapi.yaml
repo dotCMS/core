@@ -6521,6 +6521,9 @@ paths:
           description: Forbidden - User lacks required permissions
         "404":
           description: Container or form not found
+        "409":
+          description: Conflict - The form's widget is being created by another request;
+            try again
       summary: "Creates a form's widget and renders it, with container ID as query\
         \ param"
       tags:
@@ -6716,6 +6719,9 @@ paths:
           description: Forbidden - User lacks required permissions
         "404":
           description: Container or form not found
+        "409":
+          description: Conflict - The form's widget is being created by another request;
+            try again
         "500":
           description: Internal server error
       summary: Creates a form's widget and renders it within a container

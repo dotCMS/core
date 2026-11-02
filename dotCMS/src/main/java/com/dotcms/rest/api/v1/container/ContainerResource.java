@@ -562,7 +562,8 @@ public class ContainerResource implements Serializable {
                     @ApiResponse(responseCode = "400", description = "Bad request - The content type is not a form"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
-                    @ApiResponse(responseCode = "404", description = "Container or form not found")
+                    @ApiResponse(responseCode = "404", description = "Container or form not found"),
+                    @ApiResponse(responseCode = "409", description = "Conflict - The form's widget is being created by another request; try again")
             }
     )
     public final Response createContainerFormByQueryParam(@Context final HttpServletRequest req,
@@ -609,6 +610,7 @@ public class ContainerResource implements Serializable {
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
                     @ApiResponse(responseCode = "404", description = "Container or form not found"),
+                    @ApiResponse(responseCode = "409", description = "Conflict - The form's widget is being created by another request; try again"),
                     @ApiResponse(responseCode = "500", description = "Internal server error")
             }
     )
@@ -632,16 +634,48 @@ public class ContainerResource implements Serializable {
      * Returns the form's widget the user can read, creating it when there is none. Requests for the
      * same form wait for each other on this server, so requests arriving together get the one
      * widget the first of them creates; requests on different servers of a cluster do not wait for
-     * each other. A request that waits too long looks for the widget once more instead of failing.
+     * each other. A request that waits too long waits once more, then looks for the widget.
      *
      * @param form the form
      * @param user the user reading or creating the widget
      * @return the widget
-     * @throws DotDataException     if the widget cannot be read or saved, or the wait times out and
-     *                              the widget is still not there
+     * @throws DotDataException     if the widget cannot be read or saved
      * @throws DotSecurityException if the user cannot create or publish the widget
+     * @throws ConflictException    if both waits time out and the widget is still not there, so the
+     *                              caller can try again
      */
     private Contentlet findOrCreateFormWidget(final ContentType form, final User user)
+            throws DotDataException, DotSecurityException {
+        try {
+            return this.findOrCreateFormWidgetInLock(form, user);
+        } catch (final DotConcurrentException firstWait) {
+            // Another request for the same form is creating its widget and took longer than this
+            // one waits, so wait for it once more.
+            try {
+                return this.findOrCreateFormWidgetInLock(form, user);
+            } catch (final DotConcurrentException secondWait) {
+                final Contentlet created = formAPI.getFormContent(form.id(), user);
+                if (created == null) {
+                    throw new ConflictException("The widget of the form " + form.variable()
+                            + " is being created by another request, try again");
+                }
+                return created;
+            }
+        }
+    }
+
+    /**
+     * Returns the form's widget the user can read, creating it when there is none, while holding
+     * the form's lock.
+     *
+     * @param form the form
+     * @param user the user reading or creating the widget
+     * @return the widget
+     * @throws DotDataException       if the widget cannot be read or saved
+     * @throws DotSecurityException   if the user cannot create or publish the widget
+     * @throws DotConcurrentException if the lock is not free within the time a request waits
+     */
+    private Contentlet findOrCreateFormWidgetInLock(final ContentType form, final User user)
             throws DotDataException, DotSecurityException {
         try {
             return DotConcurrentFactory.getInstance().getIdentifierStripedLock().tryLock(
@@ -650,14 +684,6 @@ public class ContainerResource implements Serializable {
                         return existing != null ? existing
                                 : formAPI.createDefaultFormContent(form.id(), user);
                     });
-        } catch (final DotConcurrentException e) {
-            // Another request for the same form held it for longer than this one waits. That
-            // request is creating the widget, so look for it once more before giving up.
-            final Contentlet created = formAPI.getFormContent(form.id(), user);
-            if (created == null) {
-                throw new DotDataException(e.getMessage(), e);
-            }
-            return created;
         } catch (final DotDataException | DotSecurityException | RuntimeException e) {
             throw e;
         } catch (final Throwable e) {

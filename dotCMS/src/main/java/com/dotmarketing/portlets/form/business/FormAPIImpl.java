@@ -300,7 +300,7 @@ public class FormAPIImpl implements FormAPI {
 
 		Contentlet widget = new Contentlet();
 		widget.setStructureInode(formWidget.getInode());
-		widget.setProperty(FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME, formId);
+		widget.setProperty(FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME, form.id());
 		widget.setProperty(FormAPI.FORM_WIDGET_CODE_VELOCITY_VAR_NAME, codeField.getDefaultValue());
 		widget.setStringProperty(FormAPI.FORM_WIDGET_TITLE_VELOCITY_VAR_NAME, form.name());
 		widget.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
@@ -313,10 +313,10 @@ public class FormAPIImpl implements FormAPI {
 		conAPI.publish(widget, user, false);
 
 		// Setting up who may see and change the new widget is part of creating it, not something
-		// the user is asked to have permission for: visitors read it, and every other role may read,
-		// edit and publish it as far as it may read, edit and publish the form. The permissions the
-		// widget inherits are copied onto it first, so that those added here extend them instead of
-		// replacing them, and whoever could read the widget, its creator included, still can.
+		// the user is asked to have permission for. The permissions the widget inherits are copied
+		// onto it first, so roles the form does not name keep them, its creator included. Visitors
+		// are then set to read it, and every other role the form names is set to read, edit and
+		// publish it as far as it may with the form, replacing what that role inherited.
 		perAPI.permissionIndividually(perAPI.findParentPermissionable(widget), widget, systemUser);
 		final Role anonymous = APILocator.getRoleAPI().loadCMSAnonymousRole();
 		perAPI.save(new Permission(widget.getPermissionId(), anonymous.getId(),

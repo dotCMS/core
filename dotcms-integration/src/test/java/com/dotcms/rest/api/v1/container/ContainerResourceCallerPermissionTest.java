@@ -23,6 +23,7 @@ import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.SecurityException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
@@ -331,6 +332,65 @@ public class ContainerResourceCallerPermissionTest {
             assertEquals("a single widget should be created", 1, widgetsFor(form.id()).size());
         } finally {
             pool.shutdownNow();
+        }
+    }
+
+    /**
+     * Method to test: {@link FormAPI#createDefaultFormContent(String, User)}
+     * Given: a form with no widget yet
+     * When: its widget is created by the form's variable
+     * Should: store the widget under the form's id, so that looking it up by id finds it
+     */
+    @Test
+    public void test_createDefaultFormContent_byVariable_isFoundById() throws Exception {
+        final ContentType form = formType();
+
+        final Contentlet created = APILocator.getFormAPI()
+                .createDefaultFormContent(form.variable(), adminUser);
+
+        assertEquals(form.id(),
+                created.getStringProperty(FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME));
+        final Contentlet found = APILocator.getFormAPI().getFormContent(form.id(), adminUser);
+        assertNotNull("the widget should be found by the form's id", found);
+        assertEquals(created.getIdentifier(), found.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#createContainerFormByQueryParam}
+     * Given: another request for the same form that holds the form's lock without creating its
+     *        widget, for longer than a request waits for it twice
+     * When: the widget is asked to be created
+     * Should: answer that there is a conflict, so the editor can try again, and create nothing
+     */
+    @Test
+    public void test_createForm_whileAnotherRequestHoldsTheFormWithoutAWidget_conflict()
+            throws Exception {
+        final ContentType form = formType();
+        final String containerId = readableContainer(adminUser).getIdentifier();
+        final CountDownLatch holding = new CountDownLatch(1);
+        final ExecutorService other = Executors.newSingleThreadExecutor();
+        try {
+            other.submit(() -> {
+                try {
+                    return DotConcurrentFactory.getInstance().getIdentifierStripedLock().tryLock(
+                            FORM_WIDGET_LOCK_PREFIX + form.id(), () -> {
+                                holding.countDown();
+                                // Longer than a request waits for the lock twice.
+                                Thread.sleep(TimeUnit.SECONDS.toMillis(8));
+                                return null;
+                            });
+                } catch (final Throwable e) {
+                    throw new Exception(e);
+                }
+            });
+            assertTrue("the other request should hold the form",
+                    holding.await(60, TimeUnit.SECONDS));
+
+            assertThrows(ConflictException.class, () -> resource.createContainerFormByQueryParam(
+                    request(adminUser), response, containerId, form.id()));
+            assertTrue("no widget should be created", widgetsFor(form.id()).isEmpty());
+        } finally {
+            other.shutdownNow();
         }
     }
 
