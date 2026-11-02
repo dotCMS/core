@@ -108,6 +108,14 @@ describe('DotEditContentJsonFieldComponent', () => {
             expect(monacoEditor.$forcedLanguage()).toBe(AvailableLanguageMonaco.Json);
         });
 
+        // Issue #37996: the shared editor no longer fails the form on syntax markers by default.
+        // Invalid JSON must still block Save, so the JSON field opts back in.
+        it('should keep JSON syntax errors blocking save', () => {
+            const monacoEditor = spectator.query(DotEditContentMonacoEditorControlComponent);
+
+            expect(monacoEditor.$syntaxErrorsBlockSave()).toBe(true);
+        });
+
         it('should call insertLanguageVariableInMonaco when language variable is selected', () => {
             // Mock the insertLanguageVariableInMonaco private method
             const insertLanguageVariableInMonacoMock = vi.fn();

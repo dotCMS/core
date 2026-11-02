@@ -79,6 +79,13 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy {
      * If provided, this overrides the automatic language detection.
      */
     $forcedLanguage = input<AvailableLanguageMonaco | null>(null, { alias: 'forceLanguage' });
+    /**
+     * Whether the editor's syntax markers (the red squiggles) make the field invalid and so block
+     * Save. Off by default: the language is often guessed from the content, and a wrong guess
+     * covers valid content in the wrong language's errors (issue #37996). Fields whose language
+     * is fixed and whose syntax must be valid, such as JSON, turn it on.
+     */
+    $syntaxErrorsBlockSave = input<boolean>(false, { alias: 'syntaxErrorsBlockSave' });
 
     /**
      * A computed property that retrieves and parses custom Monaco properties that comes from
@@ -176,8 +183,37 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy {
     onEditorInit($editorRef: monaco.editor.IStandaloneCodeEditor) {
         this.#editor = $editorRef;
 
+        this.applySyntaxErrorPolicy();
         this.detectLanguage();
         this.setupContentChangeListener();
+    }
+
+    /**
+     * Stops the editor's syntax markers from invalidating the field, unless
+     * `syntaxErrorsBlockSave` is set.
+     *
+     * `@materia-ui/ngx-monaco-editor` registers itself as a form validator and returns a `monaco`
+     * error whenever the editor shows any marker, of any severity. Angular calls that validator
+     * through the instance (`c => validator.validate(c)`), so replacing `validate` here takes
+     * effect for every later check. If markers were already reported before this ran, the control
+     * is re-validated to clear the error.
+     */
+    private applySyntaxErrorPolicy(): void {
+        if (this.$syntaxErrorsBlockSave()) {
+            return;
+        }
+
+        const editorComponent = this.$monacoEditorComponentRef();
+        if (!editorComponent) {
+            return;
+        }
+
+        editorComponent.validate = () => null;
+
+        const control = this.formControl;
+        if (control?.hasError('monaco')) {
+            control.updateValueAndValidity();
+        }
     }
 
     ngOnDestroy() {
