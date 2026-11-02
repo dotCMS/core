@@ -15,6 +15,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.ajax.ContentletAjax;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
@@ -286,9 +287,12 @@ public class FormAPIImpl implements FormAPI {
 		widget.setProperty(FormAPI.FORM_WIDGET_CODE_VELOCITY_VAR_NAME, codeField.getDefaultValue());
 		widget.setStringProperty(FormAPI.FORM_WIDGET_TITLE_VELOCITY_VAR_NAME, form.name());
 		widget.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
-		widget.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
+		// The widget is looked up by searching the index, so it is only returned once it can be
+		// found there; otherwise a second request right after this one would create another.
+		widget.setIndexPolicy(IndexPolicy.WAIT_FOR);
 
 		widget = conAPI.checkin(widget, user, false);
+		widget.setIndexPolicy(IndexPolicy.WAIT_FOR);
 		conAPI.publish(widget, user, false);
 
 		// Setting up who may see and change the new widget is part of creating it, not something
