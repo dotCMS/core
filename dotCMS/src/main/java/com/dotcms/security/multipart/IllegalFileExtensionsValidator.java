@@ -153,9 +153,9 @@ public class IllegalFileExtensionsValidator implements SecureFileValidator {
      * check.
      *
      * @param fileName the file name as received
-     * @throws IllegalArgumentException if the name is missing or its extension is blocked; the
-     *         message names the file so a caller that reports per item (a CSV import row, a job
-     *         submission) can say which one was refused
+     * @throws IllegalArgumentException if the name is missing, carries a null character, or its
+     *         extension is blocked; the message names the file so a caller that reports per item
+     *         (a CSV import row, a job submission) can say which one was refused
      */
     @Override
     public void validate(final String fileName) {
@@ -164,6 +164,16 @@ public class IllegalFileExtensionsValidator implements SecureFileValidator {
 
             SecurityLogger.logInfo(this.getClass(), "The filename: null is invalid");
             throw new IllegalArgumentException("Illegal Multipart Request");
+        }
+
+        // a null character cannot be part of a stored name (the database refuses it, and some
+        // libraries cut the name there), so the name is refused up front rather than failing later
+        if (fileName.indexOf('\0') >= 0) {
+
+            final String shown = fileName.replace("\0", "\\0");
+            SecurityLogger.logInfo(this.getClass(), "The filename: '" + shown + "' is invalid");
+            throw new IllegalArgumentException(
+                    "The file name '" + shown + "' contains a character that is not allowed");
         }
 
         final String fileExtension = extensionOf(fileName).toLowerCase(Locale.ROOT);

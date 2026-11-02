@@ -145,6 +145,20 @@ public class IllegalFileExtensionsValidatorTest {
     }
 
     /**
+     * A name carrying a null character is refused whatever its extension, and the message does
+     * not carry the character itself.
+     */
+    @Test
+    public void nameWithNullCharacter_isRefused() {
+        for (final String name : new String[] {"sample-1.jsp\0.txt", "sample-2.txt\0", "\0sample-3.png", "\0"}) {
+            final IllegalArgumentException refusal =
+                    assertThrows(name, IllegalArgumentException.class, () -> validator.validate(name));
+            assertFalse(refusal.getMessage().contains("\0"));
+            assertTrue(refusal.getMessage().contains("not allowed"));
+        }
+    }
+
+    /**
      * A missing name is refused.
      */
     @Test
