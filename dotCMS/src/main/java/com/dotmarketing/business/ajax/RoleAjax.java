@@ -292,15 +292,7 @@ public class RoleAjax {
 	 */
 	public void removeUsersFromRole(String[] userIds, String roleId) throws DotDataException, NoSuchUserException, DotRuntimeException, PortalException, SystemException, DotSecurityException {
 
-		//Validate if this logged in user has the required permissions to access the roles portlet
-		final User callerForRemove = getLoggedInUser();
-		validateRolesPortletPermissions(callerForRemove);
-		if (!callerForRemove.isAdmin()) {
-			SecurityLogger.logInfo(getClass(),
-					"Unauthorized attempt to remove role by user " + callerForRemove.getUserId());
-			throw new DotSecurityException(
-					"User does not have permission to remove roles from users");
-		}
+		validateCMSAdmin("remove roles from users");
 
 		WebContext ctx = WebContextFactory.get();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
@@ -327,15 +319,7 @@ public class RoleAjax {
 
 	public Map<String, Object> addUserToRole(String userId, String roleId) throws DotDataException, DotRuntimeException, PortalException, SystemException, DotSecurityException, IllegalAccessException, InvocationTargetException, NoSuchMethodException {
 
-		//Validate if this logged in user has the required permissions to access the roles portlet
-		final User caller = getLoggedInUser();
-		validateRolesPortletPermissions(caller);
-		if (!caller.isAdmin()) {
-			SecurityLogger.logInfo(getClass(),
-					"Unauthorized attempt to assign role by user " + caller.getUserId());
-			throw new DotSecurityException(
-					"User does not have permission to assign roles to users");
-		}
+		validateCMSAdmin("assign roles to users");
 
 		WebContext ctx = WebContextFactory.get();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
@@ -512,6 +496,26 @@ public class RoleAjax {
         return loggedInUser;
 	}
 
+	/**
+	 * Verifies that the logged-in user can access the Roles portlet and is a CMS Administrator.
+	 * Any other caller is recorded in the security log and rejected.
+	 *
+	 * @param action The attempted operation, used in the security log entry and the error message.
+	 *
+	 * @throws DotSecurityException The caller cannot access the Roles portlet or is not a CMS
+	 *                              Administrator.
+	 */
+	private void validateCMSAdmin(final String action)
+			throws DotDataException, DotSecurityException, PortalException, SystemException {
+		final User caller = getLoggedInUser();
+		validateRolesPortletPermissions(caller);
+		if (!caller.isAdmin()) {
+			SecurityLogger.logWarn(getClass(), "Unauthorized attempt to " + action + " by user "
+					+ caller.getUserId() + " from " + DwrUtil.getHttpServletRequest().getRemoteHost());
+			throw new DotSecurityException("User does not have permission to " + action);
+		}
+	}
+
 	public void lockRole (String roleId) throws DotDataException, PortalException, SystemException, DotSecurityException {
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		Role role = roleAPI.loadRoleById(roleId);
@@ -611,13 +615,11 @@ public class RoleAjax {
 
 	public void saveRoleLayouts(String roleId, String[] layoutIds) throws DotDataException, PortalException, SystemException, DotSecurityException {
 
-		//Validate if this logged in user has the required permissions to access the roles portlet
-		validateRolesPortletPermissions(getLoggedInUser());
+		validateCMSAdmin("save role layouts");
 
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		RoleAPI roleAPI = APILocator.getRoleAPI();
 		Role role = roleAPI.loadRoleById(roleId);
-		User user = getAdminUser();
 		List<Layout> layouts = layoutAPI.loadLayoutsForRole(role);
 
 		//Looking for removed layouts
@@ -711,10 +713,8 @@ public class RoleAjax {
 
 	public void updateLayout(String layoutId, String layoutName, String layoutDescription, int order, List<String> portletIds) throws DotDataException, PortalException, SystemException, DotSecurityException {
 
-		//Validate if this logged in user has the required permissions to access the roles portlet
-		validateRolesPortletPermissions(getLoggedInUser());
+		validateCMSAdmin("update layouts");
 
-		User user = getAdminUser();
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 
 		Layout layout = layoutAPI.findLayout(layoutId);
@@ -732,15 +732,13 @@ public class RoleAjax {
 	
 	public void deleteLayout(String layoutId) throws DotDataException, PortalException, SystemException, DotSecurityException {
 
-		//Validate if this logged in user has the required permissions to access the roles portlet
-		validateRolesPortletPermissions(getLoggedInUser());
+		validateCMSAdmin("delete layouts");
 
 		// Getting Started is the product's onboarding section: users switch it on and off, so it must always exist
 		if (LayoutAPI.GETTING_STARTED_LAYOUT_ID.equals(layoutId)) {
 			throw new DotStateException("The Getting Started section cannot be deleted");
 		}
 
-		User user = getAdminUser();
 		LayoutAPI layoutAPI = APILocator.getLayoutAPI();
 		Layout layout = layoutAPI.loadLayout(layoutId);
 		layoutAPI.removeLayout(layout);
@@ -849,8 +847,7 @@ public class RoleAjax {
 	}
 
 	public void saveRolePermission(String roleId, String folderHostId, Map<String, String> permissions, boolean cascade) throws DotDataException, DotSecurityException, PortalException, SystemException {
-		//Validate if this logged in user has the required permissions to access the roles portlet
-		validateRolesPortletPermissions(getLoggedInUser());
+		validateCMSAdmin("save role permissions");
 
 		Logger.info(this, "Applying role permissions for role " + roleId + " and folder/host id " + folderHostId);
 

@@ -349,31 +349,46 @@ public class DotPortletAction extends PortletAction {
 	}
 
 	/**
-	 * Generic method to publish a WebAsset
+	 * Publishes the {@link WebAsset} the request carries under the given key, for the given user.
+	 * The user must hold PUBLISH on the asset, front-end roles aside: without it nothing is
+	 * touched or logged and the screen gets the permission message through the session messages
+	 * instead of a failed request. Anything else that goes wrong while publishing still follows
+	 * the error path.
 	 *
-	 * @param req
-	 * @param res
-	 * @param config
-	 * @param form
-	 * @param user
-	 * @param formWebKey
-	 * @throws Exception
+	 * @param req the portlet request carrying the asset
+	 * @param res the portlet response
+	 * @param config the portlet configuration
+	 * @param form the Struts form
+	 * @param user the {@link User} publishing, whose PUBLISH permission decides the outcome
+	 * @param formWebKey the request attribute holding the asset
+	 * @throws WebAssetException if the asset cannot be published
+	 * @throws Exception if the asset or its permissions cannot be read
 	 */
 	@WrapInTransaction
 	public void _publishWebAsset(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user, String formWebKey)
 	throws WebAssetException, Exception {
+		// wraps request to get session object
+		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
+		HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
 		try
 		{
-			// wraps request to get session object
-			ActionRequestImpl reqImpl = (ActionRequestImpl) req;
-			HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
-
 			WebAsset webAsset = (WebAsset) req.getAttribute(formWebKey);
 			Logger.debug(this, "WEB ASSET " + webAsset.getType() + " TO PUBLISH=" + webAsset.getInode());
-			ActivityLogger.logInfo(this.getClass(), "Publish WebAsset action", "User " + user.getPrimaryKey() + " publishing" + webAsset.getType()+" named "+webAsset.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
+
+			// The publish itself requires PUBLISH on the asset, front-end roles aside; refuse here,
+			// before anything is touched or logged, so the screen gets the permission message
+			// instead of the error page
+			if (!APILocator.getPermissionAPI().doesUserHavePermission(webAsset, PERMISSION_PUBLISH, user, false)) {
+				Logger.warn(this, "User " + user.getUserId() + " does not have permission to publish the "
+						+ webAsset.getType() + " " + webAsset.getInode());
+				SessionMessages.add(httpReq, "error", "Publish-failed-check-you-have-the-required-permission");
+				return;
+			}
 
 			// Checking permissions
 			_checkUserPermissions(webAsset, user, PERMISSION_PUBLISH);
+
+			ActivityLogger.logInfo(this.getClass(), "Publish WebAsset action", "User " + user.getPrimaryKey() + " publishing" + webAsset.getType()+" named "+webAsset.getTitle(), HostUtil.hostNameUtil(req, _getUser(req)));
 
 			if (InodeUtils.isSet(webAsset.getInode())) {
 				// calls the asset factory edit

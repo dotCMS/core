@@ -257,7 +257,7 @@
 	</tool>
 	<tool>
 		<key>filetool</key>
-		<scope>application</scope>
+		<scope>request</scope>
 		<class>com.dotcms.rendering.velocity.viewtools.FileTool</class>
 	</tool>
 	<tool>

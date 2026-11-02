@@ -69,6 +69,18 @@ public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 		return "This actionlet will do checkin as draft the content.";
 	}
 
+	/**
+	 * Saves the contentlet carried by the workflow processor as a draft, with the categories,
+	 * relationships and permissions sent along with it, and puts the saved version back on the
+	 * processor. Any failure is rethrown as a {@link WorkflowActionFailureException}. Permission
+	 * refusals ({@link DotSecurityException}) are expected outcomes, so they are not logged here as
+	 * errors; the caller reports them, and a refused permission change is also written to the
+	 * security log where it is decided.
+	 *
+	 * @param processor the workflow processor carrying the contentlet to save
+	 * @param params    the actionlet parameters
+	 * @throws WorkflowActionFailureException if the contentlet cannot be saved
+	 */
 	public void executeAction(final WorkflowProcessor processor,
 							  final Map<String, WorkflowActionClassParameter> params) throws WorkflowActionFailureException {
 
@@ -128,7 +140,9 @@ public class SaveContentAsDraftActionlet extends WorkFlowActionlet {
 					"content draft already saved for the contentlet: " + contentlet.getIdentifier());
 		} catch (Exception e) {
 
-			Logger.error(this.getClass(),e.getMessage(),e);
+			if (!(e instanceof DotSecurityException)) {
+				Logger.error(this.getClass(),e.getMessage(),e);
+			}
 			throw new  WorkflowActionFailureException(e.getMessage(),e);
 		}
 	}

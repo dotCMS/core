@@ -10,8 +10,11 @@ import com.dotcms.api.system.event.message.MessageType;
 import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.JsonWebTokenUtils;
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
+import com.dotcms.auth.providers.jwt.beans.JWToken;
+import com.dotcms.auth.providers.jwt.beans.UserToken;
 import com.dotcms.auth.providers.jwt.factories.ApiTokenAPI;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.concurrent.DotConcurrentFactory;
@@ -35,7 +38,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.NoSuchUserException;
 import com.liferay.portal.PortalException;
@@ -68,6 +70,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -207,10 +211,16 @@ public class LoginServiceAPIFactory implements Serializable {
                     APILocator.getUserAPI());
         }
 
+        /**
+         * Logs out the user of this request: runs the logout events, expires the cookies,
+         * invalidates the HTTP session and its portlet sessions, and invalidates every login token
+         * issued to the user so a copy of the login cookie cannot be used afterwards.
+         */
         @Override
         public void doActionLogout(final HttpServletRequest req,
                 final HttpServletResponse res) throws Exception {
 
+            this.invalidateLoginTokens(req);
             final HttpSession session = req.getSession(false);
             if (null != session) {
                 log.debug("Logout - Events Processor Pre Logout events.");
@@ -350,7 +360,8 @@ public class LoginServiceAPIFactory implements Serializable {
         /**
          * Executes the authentication process for the specified User ID. Several session-related
          * parameters are loaded as well. Additionally, users/developers can run their own Pre- and
-         * Post-Login code, if necessary.
+         * Post-Login code, if necessary. A user logging in for the first time gets a login token id
+         * through {@link UserAPI#invalidateLoginTokens(String)} before the login JWT is issued.
          *
          * @param userId     The ID of the user to authenticate.
          * @param rememberMe This parameter is no longer useful.
@@ -382,7 +393,8 @@ public class LoginServiceAPIFactory implements Serializable {
             }
 
             if(UtilMethods.isEmpty(user.getRememberMeToken())){
-               user.setRememberMeToken(UUIDGenerator.uuid());
+               // first login: the user has no login token id yet, so store one for the JWT below
+               user.setRememberMeToken(userAPI.invalidateLoginTokens(user.getUserId()));
             }
 
             user.setLastLoginDate(new Date());
@@ -675,10 +687,74 @@ public class LoginServiceAPIFactory implements Serializable {
             return LoginServiceAPI.super.doLogin(userName, password);
         }
 
+        /**
+         * Invalidates the login tokens of the user of this request, then invalidates the HTTP
+         * session.
+         */
         @Override
         public void doLogout(final HttpServletRequest request, final HttpServletResponse response) {
 
+            this.invalidateLoginTokens(request);
             LoginServiceAPI.super.doLogout(request, response);
+        }
+
+        /**
+         * Gives the user logging out a new login token id, so every login token issued to that
+         * user before the logout is rejected, on every node. This must run before the session is
+         * invalidated. A failure is logged and does not stop the logout.
+         *
+         * @param request the logout request
+         */
+        private void invalidateLoginTokens(final HttpServletRequest request) {
+
+            String userId = null;
+            try {
+                userId = this.loggingOutUserId(request);
+                if (UtilMethods.isSet(userId)) {
+                    this.userAPI.invalidateLoginTokens(userId);
+                }
+            } catch (final Exception e) {
+                Logger.warn(this, String.format("Unable to invalidate the login tokens of user '%s' on logout: %s",
+                        userId, e.getMessage()));
+            }
+        }
+
+        /**
+         * Resolves the user whose login tokens a logout invalidates. During "Login As" this is the
+         * administrator who started it, since the login cookie the browser holds is theirs; else it
+         * is the user of the request attribute or the session. When there is neither, for example
+         * because the session has already expired, it is the owner of a login token sent in the
+         * login cookie or as a Bearer header, but only if that token passes validation (signature,
+         * expiry and current token id).
+         *
+         * @param request the logout request
+         * @return the user id, or {@code null} if the request identifies no user
+         */
+        private String loggingOutUserId(final HttpServletRequest request) {
+
+            final HttpSession session = request.getSession(false);
+            final Object principalUserId = null != session ? session.getAttribute(WebKeys.PRINCIPAL_USER_ID) : null;
+            if (null != principalUserId) {
+                return principalUserId.toString();
+            }
+            final String userId = PortalUtil.getUserId(request);
+            if (UtilMethods.isSet(userId)) {
+                return userId;
+            }
+            final Cookie cookie = UtilMethods.getCookie(request.getCookies(), CookieKeys.REMEMBER_ME_COOKIE.get());
+            final String header = request.getHeader("Authorization");
+            final String bearer = null != header && header.startsWith(JsonWebTokenAuthCredentialProcessor.BEARER) ?
+                    header.substring(JsonWebTokenAuthCredentialProcessor.BEARER.length()).trim() : null;
+            return Stream.of(null != cookie ? cookie.getValue() : null, bearer)
+                    .filter(UtilMethods::isSet)
+                    .map(jwt -> APILocator.getApiTokenAPI().fromJwt(jwt, request.getRemoteAddr()))
+                    .flatMap(Optional::stream)
+                    .filter(UserToken.class::isInstance)
+                    .map(JWToken::getActiveUser)
+                    .flatMap(Optional::stream)
+                    .map(User::getUserId)
+                    .findFirst()
+                    .orElse(null);
         }
 
         @CloseDBIfOpened

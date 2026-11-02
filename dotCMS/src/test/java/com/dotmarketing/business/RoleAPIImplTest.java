@@ -1,13 +1,30 @@
 package com.dotmarketing.business;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.util.PortletID;
+import com.dotmarketing.util.SecurityLogger;
+import com.liferay.portal.model.User;
+import java.util.ArrayList;
+import java.util.List;
+import org.mockito.MockedStatic;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -125,4 +142,190 @@ public class RoleAPIImplTest {
         verify(roleFactory, never()).getRoleById(anyString());
     }
 
+    // ==================== role membership: who may read it ====================
+
+    /**
+     * Method to test: {@link RoleAPIImpl#canReadRoleMembership(User)}
+     * Given scenario: The user is a CMS Administrator without any portlet.
+     * Expected result: Role membership is readable.
+     */
+    @Test
+    public void testCanReadRoleMembership_WhenAdministrator_ShouldBeTrue() throws Exception {
+        assertTrue(canReadRoleMembership(true, false, false));
+    }
+
+    /**
+     * Method to test: {@link RoleAPIImpl#canReadRoleMembership(User)}
+     * Given scenario: The user is not an administrator but has both the Roles and the Users portlets.
+     * Expected result: Role membership is readable.
+     */
+    @Test
+    public void testCanReadRoleMembership_WhenRolesAndUsersPortlets_ShouldBeTrue() throws Exception {
+        assertTrue(canReadRoleMembership(false, true, true));
+    }
+
+    /**
+     * Method to test: {@link RoleAPIImpl#canReadRoleMembership(User)}
+     * Given scenario: The user is not an administrator and has the Roles portlet only.
+     * Expected result: Role membership is not readable; both portlets are required.
+     */
+    @Test
+    public void testCanReadRoleMembership_WhenRolesPortletOnly_ShouldBeFalse() throws Exception {
+        assertFalse(canReadRoleMembership(false, true, false));
+    }
+
+    /**
+     * Method to test: {@link RoleAPIImpl#canReadRoleMembership(User)}
+     * Given scenario: The user is not an administrator and has the Users portlet only.
+     * Expected result: Role membership is not readable; both portlets are required.
+     */
+    @Test
+    public void testCanReadRoleMembership_WhenUsersPortletOnly_ShouldBeFalse() throws Exception {
+        assertFalse(canReadRoleMembership(false, false, true));
+    }
+
+    // ==================== role check on behalf of a requesting user ====================
+
+    /**
+     * Method to test: {@link RoleAPIImpl#doesUserHaveRoles(String, List, User)}
+     * Given scenario: There is no requesting user.
+     * Expected result: {@link DotSecurityException}, and no role lookup runs.
+     */
+    @Test
+    public void testDoesUserHaveRoles_WhenNoRequestingUser_ShouldReject() throws Exception {
+        final RoleAPIImpl api = spyAnswering(true);
+
+        assertThrows(DotSecurityException.class, () -> api.doesUserHaveRoles(OTHER_USER_ID, ROLE_IDS, null));
+        verify(api, never()).doesUserHaveRoles(anyString(), anyList());
+    }
+
+    /**
+     * Method to test: {@link RoleAPIImpl#doesUserHaveRoles(String, List, User)}
+     * Given scenario: A requesting user without the role membership privilege checks its own roles.
+     * Expected result: The answer of the role lookup.
+     */
+    @Test
+    public void testDoesUserHaveRoles_WhenOwnUserWithoutMembershipPrivilege_ShouldAnswer() throws Exception {
+        final RoleAPIImpl api = spyAnswering(true);
+
+        assertTrue(checkAs(api, false, REQUESTER_ID));
+        verify(api).doesUserHaveRoles(REQUESTER_ID, ROLE_IDS);
+    }
+
+    /**
+     * Method to test: {@link RoleAPIImpl#doesUserHaveRoles(String, List, User)}
+     * Given scenario: A requesting user without the role membership privilege checks another user.
+     * Expected result: {@link DotSecurityException}, and no role lookup runs.
+     */
+    @Test
+    public void testDoesUserHaveRoles_WhenOtherUserWithoutMembershipPrivilege_ShouldReject() throws Exception {
+        final RoleAPIImpl api = spyAnswering(true);
+
+        assertThrows(DotSecurityException.class, () -> checkAs(api, false, OTHER_USER_ID));
+        verify(api, never()).doesUserHaveRoles(anyString(), anyList());
+    }
+
+    /**
+     * Method to test: {@link RoleAPIImpl#doesUserHaveRoles(String, List, User)}
+     * Given scenario: A requesting user without the role membership privilege sends its own email
+     * address instead of its user id.
+     * Expected result: {@link DotSecurityException}, as for any other user.
+     */
+    @Test
+    public void testDoesUserHaveRoles_WhenOwnEmailInsteadOfUserId_ShouldReject() throws Exception {
+        final RoleAPIImpl api = spyAnswering(true);
+
+        assertThrows(DotSecurityException.class, () -> checkAs(api, false, REQUESTER_EMAIL));
+        verify(api, never()).doesUserHaveRoles(anyString(), anyList());
+    }
+
+    /**
+     * Method to test: {@link RoleAPIImpl#doesUserHaveRoles(String, List, User)}
+     * Given scenario: A requesting user with the Roles and Users portlets checks another user.
+     * Expected result: The answer of the role lookup for that user.
+     */
+    @Test
+    public void testDoesUserHaveRoles_WhenOtherUserWithMembershipPrivilege_ShouldAnswer() throws Exception {
+        final RoleAPIImpl api = spyAnswering(true);
+
+        assertTrue(checkAs(api, true, OTHER_USER_ID));
+        verify(api).doesUserHaveRoles(OTHER_USER_ID, ROLE_IDS);
+    }
+
+    /**
+     * Method to test: {@link RoleAPIImpl#doesUserHaveRoles(String, List, User)}
+     * Given scenario: A requesting user without the role membership privilege checks another user.
+     * Expected result: One security log line names the requesting user and not the requested user
+     * or roles.
+     */
+    @Test
+    public void testDoesUserHaveRoles_WhenRejected_ShouldLogTheRequesterOnly() throws Exception {
+        final RoleAPIImpl api = spyAnswering(true);
+
+        assertThrows(DotSecurityException.class, () -> checkAs(api, false, OTHER_USER_ID));
+
+        assertEquals(1, securityLog.size());
+        final String line = securityLog.get(0);
+        assertTrue(line.contains(REQUESTER_ID));
+        assertFalse(line.contains(OTHER_USER_ID));
+        assertFalse(line.contains(ROLE_IDS.get(0)));
+    }
+
+    private static final String REQUESTER_ID = "requester-user-id";
+    private static final String REQUESTER_EMAIL = "requester@example.com";
+    private static final String OTHER_USER_ID = "other-user-id";
+    private static final List<String> ROLE_IDS = List.of("role-a", "role-b");
+
+    private final List<String> securityLog = new ArrayList<>();
+
+    /**
+     * Builds a {@link User} with the given administrator flag and asks
+     * {@link RoleAPIImpl#canReadRoleMembership(User)} about it, with the Roles and Users portlet
+     * access given.
+     */
+    private boolean canReadRoleMembership(final boolean admin, final boolean rolesPortlet,
+            final boolean usersPortlet) throws Exception {
+        final User user = requester(admin);
+        final LayoutAPI layoutAPI = mock(LayoutAPI.class);
+        when(layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user)).thenReturn(rolesPortlet);
+        when(layoutAPI.doesUserHaveAccessToUsersPortlet(user)).thenReturn(usersPortlet);
+        try (MockedStatic<APILocator> apiLocator = mockStatic(APILocator.class)) {
+            apiLocator.when(APILocator::getLayoutAPI).thenReturn(layoutAPI);
+            return roleAPI.canReadRoleMembership(user);
+        }
+    }
+
+    /**
+     * A spy of the API under test whose plain role lookup ({@code doesUserHaveRoles(String, List)})
+     * answers the given value, so the tests observe whether and for whom it runs.
+     */
+    private RoleAPIImpl spyAnswering(final boolean answer) {
+        final RoleAPIImpl api = spy(new RoleAPIImpl(roleFactory, mock(UserAPI.class)));
+        doReturn(answer).when(api).doesUserHaveRoles(anyString(), anyList());
+        return api;
+    }
+
+    /**
+     * Calls {@link RoleAPIImpl#doesUserHaveRoles(String, List, User)} for the given user id on behalf
+     * of a non-administrator requester whose membership privilege is granted or withheld, keeping
+     * every security log line in {@link #securityLog}.
+     */
+    private boolean checkAs(final RoleAPIImpl api, final boolean membershipPrivilege, final String userId)
+            throws Exception {
+        final User requester = requester(false);
+        doReturn(membershipPrivilege).when(api).canReadRoleMembership(requester);
+        try (MockedStatic<SecurityLogger> securityLogger = mockStatic(SecurityLogger.class)) {
+            securityLogger.when(() -> SecurityLogger.logInfo(any(), anyString()))
+                    .thenAnswer(invocation -> securityLog.add(invocation.getArgument(1)));
+            return api.doesUserHaveRoles(userId, ROLE_IDS, requester);
+        }
+    }
+
+    private static User requester(final boolean admin) {
+        final User user = mock(User.class);
+        when(user.getUserId()).thenReturn(REQUESTER_ID);
+        when(user.getEmailAddress()).thenReturn(REQUESTER_EMAIL);
+        when(user.isAdmin()).thenReturn(admin);
+        return user;
+    }
 }

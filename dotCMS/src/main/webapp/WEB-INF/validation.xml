@@ -61,29 +61,6 @@
 			</field>
 		</form>
 
-		<!-- ================= Container Form ===================== -->
-		<form name="ContainerForm">
-			<field property="title" depends="required,mask">
-			    <msg name="mask" key="prompt.containerTitle.mask"/>
-				<arg0 key="prompt.containerTitle" />
-			    <var>
-			        <var-name>mask</var-name>
-			        <var-value>^([^\074^\076])*$</var-value>
-			    </var>
-			</field>
-<!-- 			<field property="code" depends="required"> -->
-<!-- 				<arg0 key="prompt.containerCode" /> -->
-<!-- 			</field> -->
-			<field property="hostId" depends="validwhen">
-				<arg0 key="prompt.host"/>
-		        <var>
-		          <var-name>test</var-name>
-		          <var-value>(*this* > 0)</var-value>
-		        </var>
-			</field>
-		</form>
-
-
 		<!-- ================= Contentlet Form ===================== -->
 		<form name="ContentletForm">
 			<field property="title" depends="required,mask">
