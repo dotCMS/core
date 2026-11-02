@@ -11,7 +11,10 @@ import {
 
 import { DotSidePanelRef } from '@dotcms/ui';
 
-import { DotEditContentOpenerService } from './dot-edit-content-opener.service';
+import {
+    DotEditContentOpenerService,
+    DotEditContentUrlOption
+} from './dot-edit-content-opener.service';
 
 import { DotEditContentPanelHandlers } from '../models/dot-edit-content-panel-events.model';
 import { DotEditContentRequest } from '../models/dot-edit-content-request.model';
@@ -19,9 +22,9 @@ import { DotEditContentRequest } from '../models/dot-edit-content-request.model'
 /** The events a surface handles for the panel {@link injectEditContentPanel} keeps open. */
 export interface DotEditContentPanelBinding extends DotEditContentPanelHandlers {
     /**
-     * The panel closed itself: the X, Escape, a mask click, a delete, or browser Back routed by the
-     * surface. Clear the request here. Not called when the panel closes because the request was
-     * cleared or the opener was destroyed.
+     * The panel closed itself: the X, Escape, a mask click, a delete, or browser Back. Clear the
+     * request here. Not called when the panel closes because the request was cleared or the opener
+     * was destroyed.
      */
     closed?: () => void;
 
@@ -31,6 +34,12 @@ export interface DotEditContentPanelBinding extends DotEditContentPanelHandlers 
      * editor.
      */
     editor?: 'legacy';
+
+    /**
+     * Writes the open panel to the surface's URL, and browser Back closes it through the editor's
+     * guard; see `DotEditContentOpenOptions`. Every surface except the page editor sets it.
+     */
+    url?: DotEditContentUrlOption;
 }
 
 /** The panel {@link injectEditContentPanel} keeps open, as the surface sees it. */
@@ -85,7 +94,7 @@ export function injectEditContentPanel(
 
     const open = (): void => {
         // Read here, on every open, so a getter on the binding can change the editor between opens.
-        const { closed, editor, ...handlers } = binding;
+        const { closed, editor, url, ...handlers } = binding;
 
         // Declared before the call: a refused request closes, and reports it, inside `open`.
         let ref: DotSidePanelRef | null = null;
@@ -93,6 +102,7 @@ export function injectEditContentPanel(
         ref = opener.open(current, {
             ...handlers,
             editor,
+            url,
             injector,
             closed: () => {
                 // Only a panel this surface still shows reports its close. A refused request was
