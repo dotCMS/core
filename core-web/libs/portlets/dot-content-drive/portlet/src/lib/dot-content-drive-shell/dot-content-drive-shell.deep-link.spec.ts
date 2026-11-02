@@ -97,6 +97,8 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
     // Held at describe scope so we can clear it before each mount (mockProvider reuses the same fn).
     const openEditByIdentifier = vi.fn();
     const createContent = vi.fn();
+    // How a link naming two things, or an Edit Code link, is cleared (#38303).
+    const clearPanelParams = vi.fn();
     // What a `createContent` link waits for before it opens: the tree's first load, and the
     // default language a create may start in (#37759, FR-024).
     const folders = signal<DotFolderTreeNodeItem[]>([]);
@@ -162,12 +164,10 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 openEditByIdentifier,
                 $editPanelRequest: signal(null),
                 $forceLegacyEditor: signal(false),
-                $reopeningPanel: signal(false),
-                // Read only by the URL code this slice moves to the opener; goes with it (#38303).
-                $panelLocation: signal(null)
+                $reopeningPanel: signal(false)
             }),
             // A link naming two things is cleared through the service that owns the panel params.
-            mockProvider(DotPanelUrlStateService, { register: vi.fn(), clear: vi.fn() }),
+            mockProvider(DotPanelUrlStateService, { register: vi.fn(), clear: clearPanelParams }),
             LoggerService,
             StringUtils,
             mockProvider(PushPublishService, {
@@ -204,6 +204,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
     beforeEach(() => {
         sidePanels = createSidePanelsFake();
         openEditByIdentifier.mockClear();
+        clearPanelParams.mockClear();
         createContent.mockClear();
         folders.set([]);
         sidebarLoading.set(false);

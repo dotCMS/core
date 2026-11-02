@@ -12,7 +12,7 @@ import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal, WritableSignal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -118,7 +118,6 @@ const pathSignal: WritableSignal<string> = signal('/');
 describe('DotContentDriveShellComponent — grid view', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
     let store: Mocked<InstanceType<typeof DotContentDriveStore>>;
-    let router: SpyObject<Router>;
     let location: SpyObject<Location>;
     let filtersSignal: ReturnType<typeof signal>;
     let statusSignal: ReturnType<typeof signal<DotContentDriveStatus>>;
@@ -376,24 +375,6 @@ describe('DotContentDriveShellComponent — grid view', () => {
                     viewType: viewTypeSignal,
                     setViewType: vi.fn()
                 }),
-                mockProvider(Router, {
-                    createUrlTree: vi.fn(
-                        (
-                            _commands: unknown[],
-                            opts: { queryParams?: Record<string, string | null> }
-                        ) => ({
-                            toString: () => {
-                                const params = Object.fromEntries(
-                                    Object.entries(opts?.queryParams ?? {}).filter(
-                                        ([, value]) => value != null
-                                    )
-                                ) as Record<string, string>;
-
-                                return '?' + new URLSearchParams(params).toString();
-                            }
-                        })
-                    )
-                }),
                 mockProvider(Location, {
                     go: vi.fn(),
                     replaceState: vi.fn(),
@@ -440,7 +421,6 @@ describe('DotContentDriveShellComponent — grid view', () => {
             ]
         });
         store = spectator.inject(DotContentDriveStore, true);
-        router = spectator.inject(Router);
         location = spectator.inject(Location);
 
         // Module-level, so whatever the last test left here is what the next one starts with. The
@@ -510,10 +490,8 @@ describe('DotContentDriveShellComponent — grid view', () => {
                 spectator.detectChanges();
                 showGrid();
 
-                expect(router.createUrlTree).toHaveBeenLastCalledWith([], {
-                    queryParams: expect.objectContaining({ viewType: 'card' }),
-                    queryParamsHandling: 'merge'
-                });
+                // The shell builds the URL from the address bar, so its own params are all it sets
+                // (#38303).
                 expect(location.replaceState).toHaveBeenLastCalledWith(
                     expect.stringContaining('viewType=card')
                 );

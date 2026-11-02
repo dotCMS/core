@@ -3,6 +3,7 @@ import {
     DotCMSBaseTypesContentTypes,
     DotSite
 } from '@dotcms/dotcms-models';
+import { DOT_PANEL_URL_PARAM } from '@dotcms/edit-content';
 import { CHIP_FILTER_SCROLL_HEIGHT, SYSTEM_HOST_ID } from '@dotcms/ui';
 
 import {
@@ -319,16 +320,17 @@ export const MOVE_TO_FOLDER_WORKFLOW_ACTION_ID = 'dd4c4b7c-e9d3-4dc0-8fbf-36102f
 
 /**
  * The Content Drive URL params that say which side panel or folder dialog is open (#37759). They are
- * a supported entry point: Part 1's redirects build the panel ones, other screens may link to them,
- * and at most one of them is in the URL at a time (FR-023).
+ * a supported entry point: other screens may link to them, and at most one of them is in the URL at
+ * a time (FR-023). The panel ones are every surface's (`DOT_PANEL_URL_PARAM`), written by the opener
+ * through `DotPanelUrlStateService` (#38303); the folder dialog ones are Content Drive's own.
  */
 export const CONTENT_DRIVE_URL_PARAM = {
     /** Identifier of the content open for edit, in either editor. */
-    EDIT_CONTENT: 'editContent',
+    EDIT_CONTENT: DOT_PANEL_URL_PARAM.EDIT_CONTENT,
     /** Language of the version open for edit. Read only together with `editContent`. */
-    EDIT_CONTENT_LANG: 'editContentLang',
+    EDIT_CONTENT_LANG: DOT_PANEL_URL_PARAM.EDIT_CONTENT_LANG,
     /** Variable of the content type being created, in either editor. */
-    CREATE_CONTENT: 'createContent',
+    CREATE_CONTENT: DOT_PANEL_URL_PARAM.CREATE_CONTENT,
     /** `true` while New Folder is open; its parent is the folder in `path`. */
     CREATE_FOLDER: 'createFolder',
     /** Identifier of the folder whose Folder Settings are open. */
@@ -338,11 +340,12 @@ export const CONTENT_DRIVE_URL_PARAM = {
 } as const;
 
 /**
- * Inode of the file open in Edit Code (#37965). Unlike {@link CONTENT_DRIVE_URL_PARAM}, not an
- * entry point: it is written so that browser Back pops the panel through its unsaved-changes prompt
- * instead of leaving Content Drive, and a URL that carries it opens nothing.
+ * Inode of the file open in Edit Code (#37965), every surface's `DOT_PANEL_URL_PARAM.EDIT_CODE`.
+ * Unlike {@link CONTENT_DRIVE_URL_PARAM}, not an entry point in Content Drive: it is written so
+ * that browser Back pops the panel through its unsaved-changes prompt instead of leaving Content
+ * Drive, and a URL that carries it opens nothing.
  */
-export const CONTENT_DRIVE_EDIT_CODE_PARAM = 'editCode';
+export const CONTENT_DRIVE_EDIT_CODE_PARAM = DOT_PANEL_URL_PARAM.EDIT_CODE;
 
 /**
  * URL params that choose the listing (#37930). Kept apart from {@link CONTENT_DRIVE_URL_PARAM}: those

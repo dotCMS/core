@@ -276,10 +276,14 @@ const PORTLETS_ANGULAR: Route[] = [
             import('@dotcms/portlets/dot-tools/portlet').then((m) => m.dotToolsRoutes)
     },
     {
+        // Deliberately NO `data: { reuseRoute: false }`. The route has no path params, so the flag
+        // only ever rebuilt the page on a navigation to the Query Tool itself, which in practice is
+        // browser Back: the router answers every Back with a navigation (`onSameUrlNavigation:
+        // 'reload'`). Rebuilt, the page lost the side panel open over it, its unsaved changes, and
+        // the URL DotPanelUrlStateService had just restored for the panel's prompt (#38303).
         path: 'query-tool',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
-        data: { reuseRoute: false },
         loadChildren: () =>
             import('@dotcms/portlets/dot-query-tool/portlet').then((m) => m.dotQueryToolRoutes)
     },

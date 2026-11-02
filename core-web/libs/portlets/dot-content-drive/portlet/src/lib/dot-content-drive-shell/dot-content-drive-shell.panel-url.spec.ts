@@ -367,11 +367,11 @@ describe('DotContentDriveShellComponent — the open panel in the URL', () => {
 
     const navigation = () => spectator.inject(DotContentDriveNavigationService);
 
-    /** Lets the panel bindings and the URL effect run. */
-    const settle = () => {
-        spectator.flushEffects();
-        spectator.detectChanges();
-    };
+    /**
+     * Lets the panel bindings and the URL effect run. Through the fixture only: an application tick
+     * (`flushEffects`) here re-enters itself under zone change detection (NG0101).
+     */
+    const settle = () => spectator.detectChanges();
 
     /** The router's answer to a Back landing on `url`: a navigation that rewrites that URL. */
     const routerAnswersBack = (url: string) => {
