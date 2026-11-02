@@ -62,6 +62,58 @@ Behaviour of `open()`:
 5. Call `DotSidePanelService.open(componentPromise, { heading, inputs: { request, createUrl? }, outputs, injector })`, where `componentPromise` resolves to `loadDotEditContentSidePanel()` or `loadDotLegacyEditorSidePanel()` only after steps 2 to 4 complete. The panel's spinner shows meanwhile.
 6. Wire outputs: the five events to the caller's handlers; `openContent` (from either panel, see open-content-from-fields.md) to a nested `open()` with the hosting panel's injector, which the panel puts on the event (`DotOpenContentEvent.injector`), so the stacked panel closes when its host does; routing that panel's `saved` to the event's `onSaved`.
 7. `closed` is taken from the ref, so it fires even when the content component never loaded.
+8. With the `url` option, register the panel with `DotPanelUrlStateService` after step 2 (identifier and language known) or at once for a create, and route `languageChanged`, the first `saved` of a create and `closed` to it (next section).
+
+### The panel in the URL (FR-044 to FR-050)
+
+```ts
+export interface DotEditContentOpenOptions extends DotEditContentPanelHandlers {
+    injector: Injector;
+    /**
+     * When set, the open panel is written to the current URL and browser Back closes it. Every surface
+     * except UVE sets it. `extraParams` are written beside the panel params (Content Drive's folder for
+     * a create) and cleared with them.
+     */
+    url?: { route: ActivatedRoute; extraParams?: Record<string, string> };
+}
+
+/** The query params that name an open panel, the same on every surface. */
+export const DOT_PANEL_URL_PARAM = {
+    EDIT_CONTENT: 'editContent', // identifier
+    EDIT_CONTENT_LANG: 'editContentLang', // language id
+    CREATE_CONTENT: 'createContent', // content type variable or id
+    EDIT_CODE: 'editCode' // inode, Edit Source
+} as const;
+
+export type DotPanelUrlIntent =
+    | { kind: 'none' }
+    | { kind: 'edit'; identifier: string; languageId?: number }
+    | { kind: 'create'; contentType: string }
+    | { kind: 'editCode'; inode: string }
+    | { kind: 'conflict' };
+
+/**
+ * What a URL asks to open, read once by a surface on init. Accepts only identifier-shaped, content
+ * type-shaped and inode-shaped values (anything else reads as absent); more than one panel named is a
+ * `conflict`, and the surface opens nothing and clears the params.
+ */
+export function readPanelUrlIntent(queryParams: Record<string, unknown>): DotPanelUrlIntent;
+
+/**
+ * Root service the opener registers every panel opened with the `url` option with. Keeps a stack of
+ * open panels and their params; the URL shows the front one merged with the surface's own query
+ * string. Written with `Location.go` and `Location.replaceState`, never through the router, so the
+ * surface underneath is not reloaded or recreated.
+ */
+export class DotPanelUrlStateService {
+    /** Pushes one history entry with the panel's params. Called by the opener once identifier and language are known. */
+    register(ref: DotSidePanelRef, params: Record<string, string>, route: ActivatedRoute): void;
+    /** Rewrites the registered panel's params in place (language switch, create's first save). */
+    update(ref: DotSidePanelRef, params: Record<string, string>): void;
+}
+```
+
+Behaviour: register → `Location.go`. `languageChanged` → `update` with the new `editContentLang`, `replaceState`. A create's first `saved` → `update` swapping `createContent` for `editContent` + `editContentLang`, `replaceState`. `closed` → pop; `replaceState` with the new front panel's params, or with the params removed when the stack is empty, so Forward never reopens a closed panel. A `Location` popstate whose URL lacks the front panel's params → `replaceState` restoring them, then `ref.requestClose()`; the panel underneath is untouched. Nested opens from `openContent` (step 6) inherit the option, so a stacked panel pushes its own entry. `injectEditContentPanel` passes the option through its binding.
 
 ## The signal helper
 
@@ -91,14 +143,14 @@ Behaviour notes carried over from `injectSidePanel`: a request that changes whil
 
 ## Who uses which
 
-| Surface | Entry point |
-|---|---|
-| Content Drive shell | `injectEditContentPanel` (one call replaces two `injectSidePanel` calls) |
-| UVE editor | `injectEditContentPanel` on the editor component |
-| UVE shell (Properties outside the content route) | `open()` with the shell's injector |
-| Query Tool | `injectEditContentPanel` |
-| Pages portlet | `open()` from the actions service with the component's injector |
-| Publishing Queue dialogs | `open()` with the dialog component's injector |
-| Custom-event handler (legacy JSP portlets) | `open()` with the injector of `DotSidePanelHostComponent` (layer 5), never the root injector, which reaches no `MessageService` |
+| Surface | Entry point | `url` option |
+|---|---|---|
+| Content Drive shell | `injectEditContentPanel` (one call replaces two `injectSidePanel` calls) | yes, with the folder param as `extraParams` for a create; `editCode` for Edit Source |
+| UVE editor | `injectEditContentPanel` on the editor component | no, the URL names the page |
+| UVE shell (Properties outside the content route) | `open()` with the shell's injector | no |
+| Query Tool | `injectEditContentPanel` | yes |
+| Pages portlet | `open()` from the actions service with the component's injector | yes |
+| Publishing Queue dialogs | `open()` with the dialog component's injector | yes; on load the panel reopens over the list, not the dialog |
+| Custom-event handler (legacy JSP portlets) | `open()` with the root injector |
 | Deep-link component | `open()` with the component's injector |
 | `RouterEditContentHost`, `OverlayEditContentHost` | `open()` with the shell's or the panel's injector |
