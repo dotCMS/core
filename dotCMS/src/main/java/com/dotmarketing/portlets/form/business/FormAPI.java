@@ -57,7 +57,50 @@ public interface FormAPI {
 		 */
 		public void createFormWidgetInstanceStructure()throws DotDataException, DotStateException;
 
+		/**
+		 * Finds the widget a form is placed on pages with, read as the system user.
+		 *
+		 * @param formId the form's content type id
+		 * @return the widget, or {@code null} when the form has none
+		 * @deprecated use {@link #getFormContent(String, User)}, which reads with the caller's permissions
+		 */
+		@Deprecated
 		public Contentlet getFormContent(String formId);
 
+		/**
+		 * Finds the widget a form is placed on pages with, among the widgets the given user can read.
+		 *
+		 * @param formId the form's content type id
+		 * @param user   the user the widget is read for
+		 * @return the widget, or {@code null} when the form has none the user can read
+		 * @throws DotDataException     if the widgets cannot be searched
+		 * @throws DotSecurityException if the user cannot run the search
+		 */
+		public Contentlet getFormContent(String formId, User user) throws DotDataException, DotSecurityException;
+
+		/**
+		 * Creates and publishes the widget a form is placed on pages with, as the system user.
+		 *
+		 * @param formId the form's content type id
+		 * @return the new widget
+		 * @throws DotDataException     if the widget cannot be saved
+		 * @throws DotSecurityException if the widget cannot be saved
+		 * @deprecated use {@link #createDefaultFormContent(String, User)}, which saves and publishes as
+		 *             the caller
+		 */
+		@Deprecated
 		public Contentlet createDefaultFormContent(String formId) throws DotDataException, DotSecurityException;
+
+		/**
+		 * Creates the widget a form is placed on pages with, and publishes it, as the given user, so the
+		 * user needs permission to create and publish widget content. Visitors can read the new widget,
+		 * and every role that may read, edit and publish the form may do the same with the widget.
+		 *
+		 * @param formId the form's content type id
+		 * @param user   the user the widget is created and published as
+		 * @return the new, live widget
+		 * @throws DotDataException     if the widget cannot be saved
+		 * @throws DotSecurityException if the user may not create or publish widget content
+		 */
+		public Contentlet createDefaultFormContent(String formId, User user) throws DotDataException, DotSecurityException;
 }

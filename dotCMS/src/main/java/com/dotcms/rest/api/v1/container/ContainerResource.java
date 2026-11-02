@@ -2,6 +2,8 @@ package com.dotcms.rest.api.v1.container;
 
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
+import com.dotcms.contenttype.model.type.BaseContentType;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
@@ -16,6 +18,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.api.BulkResultView;
 import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.rest.api.v1.page.ResponseEntityPaginatedArrayListMapView;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
@@ -31,6 +34,7 @@ import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.PermissionLevel;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -415,21 +419,23 @@ public class ContainerResource implements Serializable {
 
 
     /**
-     * This method is pretty much the same of {@link #containerForm(HttpServletRequest, HttpServletResponse, String, String)}
-     * But there is a limitation on the vanity url for the rest call since the container id path parameter is a path itself
-     * (for {@link com.dotmarketing.portlets.containers.model.FileAssetContainer)} so we need to pass it by query string
+     * Same as {@link #containerForm(HttpServletRequest, HttpServletResponse, String, String)}, with
+     * the container id passed in the query string, since the id of a
+     * {@link com.dotmarketing.portlets.containers.model.FileAssetContainer} is a path and cannot be a
+     * path segment.
      *
      * <i>Example:</i>
      * <code>
      *     /api/v1/containers/form/27108d63-969e-4086-a405-86777be16230?containerId=/application/containers/large-column
      * </code>
-     * @param req
-     * @param res
-     * @param containerId
-     * @param formId
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     *
+     * @param req         the current request
+     * @param res         the current response
+     * @param containerId the container's identifier or folder path
+     * @param formId      the form's content type id or variable
+     * @return the form's widget rendered into the container, and the widget itself
+     * @throws DotDataException     if the form, its widget or the container cannot be read
+     * @throws DotSecurityException if the user cannot read the form, its widget or the container
      */
     @GET
     @JSONP
@@ -439,17 +445,19 @@ public class ContainerResource implements Serializable {
     @Operation(
             operationId = "getContainerFormByQueryParam",
             summary = "Renders a form with container ID as query param",
-            description = "Returns HTML content for a form rendered within the specified container. " +
-                    "The container ID is passed as a query parameter, which is useful for file-asset containers " +
-                    "where the container ID is a path.",
+            description = "Returns the HTML of a form's widget rendered within the specified container, and the " +
+                    "widget itself. The container ID is passed as a query parameter, which is useful for " +
+                    "file-asset containers where the container ID is a path. Answers 404 when the form has no " +
+                    "widget the user can read yet; the POST on the same path creates it. Requires a back-end user " +
+                    "who can read the form.",
             responses = {
                     @ApiResponse(responseCode = "200", description = "Form rendered successfully",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ResponseEntityContainerObjectMapView.class))),
-                    @ApiResponse(responseCode = "400", description = "Bad request - Invalid parameters"),
+                    @ApiResponse(responseCode = "400", description = "Bad request - The content type is not a form"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
-                    @ApiResponse(responseCode = "404", description = "Container or form not found")
+                    @ApiResponse(responseCode = "404", description = "Container, form or the form's widget not found")
             }
     )
     public final Response containerFormByQueryParam(@Context final HttpServletRequest req,
@@ -462,15 +470,17 @@ public class ContainerResource implements Serializable {
     }
 
     /**
-     * Return a form render into a specific container
+     * Renders a form's widget into a container, for the page editor to place the form on a page.
+     * Only reads: when the form has no widget the user can read, it answers 404 and the editor asks
+     * {@link #createContainerForm(HttpServletRequest, HttpServletResponse, String, String)} for one.
      *
-     * @param req
-     * @param res
-     * @param containerId
-     * @param formId
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
+     * @param req         the current request
+     * @param res         the current response
+     * @param containerId the container's identifier or folder path
+     * @param formId      the form's content type id or variable
+     * @return the form's widget rendered into the container, and the widget itself
+     * @throws DotDataException     if the form, its widget or the container cannot be read
+     * @throws DotSecurityException if the user cannot read the form, its widget or the container
      */
     @GET
     @JSONP
@@ -480,17 +490,19 @@ public class ContainerResource implements Serializable {
     @Operation(
             operationId = "containerForm",
             summary = "Renders a form within a container",
-            description = "Returns HTML content for a form rendered within the specified container. " +
-                    "This is used to display forms with container styling and layout.",
+            description = "Returns the HTML of a form's widget rendered within the specified container, and the " +
+                    "widget itself. This is used to display forms with container styling and layout. Answers 404 " +
+                    "when the form has no widget the user can read yet; the POST on the same path creates it. " +
+                    "Requires a back-end user who can read the form.",
             tags = {"Containers"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Form rendered successfully",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ResponseEntityContainerObjectMapView.class))),
-                    @ApiResponse(responseCode = "400", description = "Bad request - Invalid container or form ID"),
+                    @ApiResponse(responseCode = "400", description = "Bad request - The content type is not a form"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
-                    @ApiResponse(responseCode = "404", description = "Container or form not found"),
+                    @ApiResponse(responseCode = "404", description = "Container, form or the form's widget not found"),
                     @ApiResponse(responseCode = "500", description = "Internal server error")
             }
     )
@@ -500,26 +512,182 @@ public class ContainerResource implements Serializable {
                                         @Parameter(description = "Form identifier") @PathParam("formId") final String formId)
             throws DotDataException, DotSecurityException {
 
-        final InitDataObject initData = webResource.init(req, res, true);
-        final User user = initData.getUser();
+        final User user = this.formEditorUser(req, res);
+        final ContentType form = this.findForm(formId, user);
+        final Contentlet widget = formAPI.getFormContent(form.id(), user);
 
-        PageMode.setPageMode(req, PageMode.EDIT_MODE);
-        Contentlet formContent = formAPI.getFormContent(formId);
-
-        if (formContent == null) {
-            formContent = formAPI.createDefaultFormContent(formId);
+        if (widget == null) {
+            throw new DoesNotExistException("The form " + form.variable() + " has no widget yet");
         }
 
-        final String html = getHTML(req, res, containerId, user, formContent);
+        return this.renderForm(req, res, containerId, user, widget);
+    }
+
+    /**
+     * Same as {@link #createContainerForm(HttpServletRequest, HttpServletResponse, String, String)},
+     * with the container id passed in the query string, as in
+     * {@link #containerFormByQueryParam(HttpServletRequest, HttpServletResponse, String, String)}.
+     *
+     * @param req         the current request
+     * @param res         the current response
+     * @param containerId the container's identifier or folder path
+     * @param formId      the form's content type id or variable
+     * @return the form's widget rendered into the container, and the widget itself
+     * @throws DotDataException     if the form, its widget or the container cannot be read or saved
+     * @throws DotSecurityException if the user cannot read the form or the container, or cannot
+     *                              create and publish the widget
+     */
+    @POST
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("/form/{formId}")
+    @Operation(
+            operationId = "createContainerFormByQueryParam",
+            summary = "Creates a form's widget and renders it, with container ID as query param",
+            description = "Returns the HTML of a form's widget rendered within the specified container, and the " +
+                    "widget itself, creating and publishing the widget as the user when the form has none the " +
+                    "user can read. The container ID is passed as a query parameter, which is useful for " +
+                    "file-asset containers where the container ID is a path. Requires a back-end user who can " +
+                    "read the form and, to create the widget, create and publish widget content.",
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Form rendered successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityContainerObjectMapView.class))),
+                    @ApiResponse(responseCode = "400", description = "Bad request - The content type is not a form"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
+                    @ApiResponse(responseCode = "404", description = "Container or form not found")
+            }
+    )
+    public final Response createContainerFormByQueryParam(@Context final HttpServletRequest req,
+                                                          @Context final HttpServletResponse res,
+                                                          @Parameter(description = "Container identifier (UUID or file-asset path)") @QueryParam("containerId") final String containerId,
+                                                          @Parameter(description = "Form identifier") @PathParam("formId") final String formId)
+            throws DotDataException, DotSecurityException {
+
+        return this.createContainerForm(req, res, containerId, formId);
+    }
+
+    /**
+     * Renders a form's widget into a container, creating and publishing the widget first when the
+     * form has none the user can read. The widget is created and published as the user, so the user
+     * needs permission to create and publish widget content.
+     *
+     * @param req         the current request
+     * @param res         the current response
+     * @param containerId the container's identifier or folder path
+     * @param formId      the form's content type id or variable
+     * @return the form's widget rendered into the container, and the widget itself
+     * @throws DotDataException     if the form, its widget or the container cannot be read or saved
+     * @throws DotSecurityException if the user cannot read the form or the container, or cannot
+     *                              create and publish the widget
+     */
+    @POST
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Path("/{containerId}/form/{formId}")
+    @Operation(
+            operationId = "createContainerForm",
+            summary = "Creates a form's widget and renders it within a container",
+            description = "Returns the HTML of a form's widget rendered within the specified container, and the " +
+                    "widget itself, creating and publishing the widget as the user when the form has none the " +
+                    "user can read. Requires a back-end user who can read the form and, to create the widget, " +
+                    "create and publish widget content.",
+            tags = {"Containers"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Form rendered successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityContainerObjectMapView.class))),
+                    @ApiResponse(responseCode = "400", description = "Bad request - The content type is not a form"),
+                    @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
+                    @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
+                    @ApiResponse(responseCode = "404", description = "Container or form not found"),
+                    @ApiResponse(responseCode = "500", description = "Internal server error")
+            }
+    )
+    public final Response createContainerForm(@Context final HttpServletRequest req,
+                                              @Context final HttpServletResponse res,
+                                              @Parameter(description = "Container identifier (UUID or path)") @PathParam("containerId") final String containerId,
+                                              @Parameter(description = "Form identifier") @PathParam("formId") final String formId)
+            throws DotDataException, DotSecurityException {
+
+        final User user = this.formEditorUser(req, res);
+        final ContentType form = this.findForm(formId, user);
+        final Contentlet existing = formAPI.getFormContent(form.id(), user);
+        final Contentlet widget = existing != null ? existing
+                : formAPI.createDefaultFormContent(form.id(), user);
+
+        return this.renderForm(req, res, containerId, user, widget);
+    }
+
+    /**
+     * Authenticates a call to the form endpoints, which only the page editor makes.
+     *
+     * @param req the current request
+     * @param res the current response
+     * @return the back-end user making the call
+     */
+    private User formEditorUser(final HttpServletRequest req, final HttpServletResponse res) {
+        return new WebResource.InitBuilder(webResource)
+                .requestAndResponse(req, res)
+                .requiredBackendUser(true)
+                .rejectWhenNoUser(true)
+                .init()
+                .getUser();
+    }
+
+    /**
+     * Loads a form as the user, which requires read permission on it.
+     *
+     * @param formId the form's content type id or variable
+     * @param user   the user reading it
+     * @return the form
+     * @throws DotDataException     if the content type cannot be read
+     * @throws DotSecurityException if the user cannot read the content type
+     * @throws BadRequestException  if the content type is not a form
+     */
+    private ContentType findForm(final String formId, final User user)
+            throws DotDataException, DotSecurityException {
+        final ContentType contentType = APILocator.getContentTypeAPI(user).find(formId);
+        if (!APILocator.getPermissionAPI().doesUserHavePermission(contentType,
+                PermissionAPI.PERMISSION_READ, user, false)) {
+            throw new DotSecurityException("The user " + user.getUserId()
+                    + " cannot read the content type " + contentType.variable());
+        }
+        if (contentType.baseType() != BaseContentType.FORM) {
+            throw new BadRequestException("The content type " + contentType.variable() + " is not a form");
+        }
+        return contentType;
+    }
+
+    /**
+     * Renders a form's widget into a container as the page editor shows it.
+     *
+     * @param req         the current request
+     * @param res         the current response
+     * @param containerId the container's identifier or folder path
+     * @param user        the user rendering it
+     * @param widget      the form's widget
+     * @return the rendered HTML and the widget
+     * @throws DotDataException     if the container cannot be read
+     * @throws DotSecurityException if the user cannot read the container
+     */
+    private Response renderForm(final HttpServletRequest req, final HttpServletResponse res,
+            final String containerId, final User user, final Contentlet widget)
+            throws DotDataException, DotSecurityException {
+
+        PageMode.setPageMode(req, PageMode.EDIT_MODE);
+        final String html = getHTML(req, res, containerId, user, widget);
 
         final Map<String, Object> response = ImmutableMap.<String, Object> builder()
             .put(MessageConstants.RENDER, html)
-            .put("content", formContent.getMap())
+            .put("content", widget.getMap())
             .build();
 
         return Response.ok(new ResponseEntityView(response))
                 .build();
-
     }
 
     private String getHTML(final HttpServletRequest req,
@@ -687,10 +855,10 @@ public class ContainerResource implements Serializable {
                 if (!defaultHost.getIdentifier().equals(containerHost.getIdentifier())) {
 
                     return  mode.showLive ?
-                            this.containerAPI.getLiveContainerByFolderPath(relativePath, defaultHost, APILocator.getUserAPI().getSystemUser(), false) :
+                            this.containerAPI.getLiveContainerByFolderPath(relativePath, defaultHost, user, mode.respectAnonPerms) :
                             (archive?
-                                    this.containerAPI.getWorkingArchiveContainerByFolderPath(relativePath, defaultHost, APILocator.getUserAPI().getSystemUser(), false):
-                                    this.containerAPI.getWorkingContainerByFolderPath(relativePath, defaultHost, APILocator.getUserAPI().getSystemUser(), false));
+                                    this.containerAPI.getWorkingArchiveContainerByFolderPath(relativePath, defaultHost, user, mode.respectAnonPerms):
+                                    this.containerAPI.getWorkingContainerByFolderPath(relativePath, defaultHost, user, mode.respectAnonPerms));
                 }
             }
         }

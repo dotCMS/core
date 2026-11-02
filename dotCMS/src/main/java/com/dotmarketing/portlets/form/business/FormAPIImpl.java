@@ -254,4 +254,62 @@ public class FormAPIImpl implements FormAPI {
 
 	}
 
+	@Override
+	@CloseDBIfOpened
+	public Contentlet getFormContent(final String formId, final User user)
+			throws DotDataException, DotSecurityException {
+		final String luceneQuery = "+structureName:" + FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + " +" +
+				FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + "." + FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME + ":" + formId;
+
+		final List<Contentlet> widgets = conAPI.search(luceneQuery, 1, 0, null, user, false);
+		return widgets.isEmpty() ? null : widgets.get(0);
+	}
+
+	@Override
+	@WrapInTransaction
+	public Contentlet createDefaultFormContent(final String formId, final User user)
+			throws DotDataException, DotSecurityException {
+		final User systemUser = userAPI.getSystemUser();
+
+		Structure formWidget = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME);
+		if (!UtilMethods.isSet(formWidget.getInode())) {
+			createFormWidgetInstanceStructure();
+			formWidget = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME);
+		}
+
+		final ContentType form = APILocator.getContentTypeAPI(user).find(formId);
+		final Field codeField = formWidget.getFieldVar(FormAPI.FORM_WIDGET_CODE_VELOCITY_VAR_NAME);
+
+		Contentlet widget = new Contentlet();
+		widget.setStructureInode(formWidget.getInode());
+		widget.setProperty(FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME, formId);
+		widget.setProperty(FormAPI.FORM_WIDGET_CODE_VELOCITY_VAR_NAME, codeField.getDefaultValue());
+		widget.setStringProperty(FormAPI.FORM_WIDGET_TITLE_VELOCITY_VAR_NAME, form.name());
+		widget.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		widget.setIndexPolicy(IndexPolicyProvider.getInstance().forSingleContent());
+
+		widget = conAPI.checkin(widget, user, false);
+		conAPI.publish(widget, user, false);
+
+		// Setting up who may see and change the new widget is part of creating it, not something
+		// the user is asked to have permission for: visitors read it, and the other roles that
+		// manage the form manage it as they manage the form. The permissions the widget inherits
+		// are copied onto it first, so that those added here extend them instead of replacing them,
+		// and whoever could read the widget, its creator included, still can.
+		perAPI.permissionIndividually(perAPI.findParentPermissionable(widget), widget, systemUser);
+		final Role anonymous = APILocator.getRoleAPI().loadCMSAnonymousRole();
+		perAPI.save(new Permission(widget.getPermissionId(), anonymous.getId(),
+				PermissionAPI.PERMISSION_READ, true), widget, systemUser, false);
+		final int formPermissions = PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT
+				+ PermissionAPI.PERMISSION_PUBLISH;
+		for (final Role role : perAPI.getRoles(formId, formPermissions, "", 0, 10, true)) {
+			if (!anonymous.getId().equals(role.getId())) {
+				perAPI.save(new Permission(widget.getPermissionId(), role.getId(), formPermissions, true),
+						widget, systemUser, false);
+			}
+		}
+
+		return widget;
+	}
+
 }

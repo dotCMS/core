@@ -1,6 +1,6 @@
-import { EMPTY, Observable } from 'rxjs';
+import { EMPTY, Observable, throwError } from 'rxjs';
 
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
@@ -54,6 +54,11 @@ export interface GetPersonasParams {
 export interface GetPersonasResponse {
     data: DotPersona[];
     pagination: DotPagination;
+}
+
+/** What the container form endpoints answer: the form placed in a container, with its identifier. */
+interface DotFormInContainerResponse {
+    entity: { content: { identifier: string } };
 }
 
 @Injectable()
@@ -153,19 +158,26 @@ export class DotPageApiService {
     }
 
     /**
-     * Get form information to add to the page
+     * Gets the identifier a form is placed in containers with. A form placed for the first time has
+     * none yet, so when the lookup answers 404 the identifier is asked to be created. Looking up
+     * first keeps this working against a server whose lookup still creates it.
      *
-     * @param {string} containerId
-     * @param {string} formId
-     * @return {*}  {Observable<{ render: string; content: { [key: string]: string } }>}
+     * @param {string} containerId the container the form goes into
+     * @param {string} formId the form's content type id
+     * @return {*}  {Observable<string>} the identifier to place in the container
      * @memberof DotPageApiService
      */
     getFormIndetifier(containerId: string, formId: string): Observable<string> {
-        return this.http
-            .get<{
-                entity: { content: { identifier: string } };
-            }>(`/api/v1/containers/form/${formId}?containerId=${containerId}`)
-            .pipe(map((x) => x?.entity?.content?.identifier));
+        const url = `/api/v1/containers/form/${formId}?containerId=${containerId}`;
+
+        return this.http.get<DotFormInContainerResponse>(url).pipe(
+            catchError((error: HttpErrorResponse) =>
+                error.status === 404
+                    ? this.http.post<DotFormInContainerResponse>(url, null)
+                    : throwError(() => error)
+            ),
+            map((response) => response?.entity?.content?.identifier)
+        );
     }
 
     /**

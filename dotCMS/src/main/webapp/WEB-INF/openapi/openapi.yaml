@@ -6449,9 +6449,12 @@ paths:
       - Containers
   /v1/containers/form/{formId}:
     get:
-      description: "Returns HTML content for a form rendered within the specified\
-        \ container. The container ID is passed as a query parameter, which is useful\
-        \ for file-asset containers where the container ID is a path."
+      description: "Returns the HTML of a form's widget rendered within the specified\
+        \ container, and the widget itself. The container ID is passed as a query\
+        \ parameter, which is useful for file-asset containers where the container\
+        \ ID is a path. Answers 404 when the form has no widget the user can read\
+        \ yet; the POST on the same path creates it. Requires a back-end user who\
+        \ can read the form."
       operationId: getContainerFormByQueryParam
       parameters:
       - description: Container identifier (UUID or file-asset path)
@@ -6473,14 +6476,53 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityContainerObjectMapView"
           description: Form rendered successfully
         "400":
-          description: Bad request - Invalid parameters
+          description: Bad request - The content type is not a form
+        "401":
+          description: Unauthorized - User not authenticated
+        "403":
+          description: Forbidden - User lacks required permissions
+        "404":
+          description: "Container, form or the form's widget not found"
+      summary: Renders a form with container ID as query param
+      tags:
+      - Containers
+    post:
+      description: "Returns the HTML of a form's widget rendered within the specified\
+        \ container, and the widget itself, creating and publishing the widget as\
+        \ the user when the form has none the user can read. The container ID is passed\
+        \ as a query parameter, which is useful for file-asset containers where the\
+        \ container ID is a path. Requires a back-end user who can read the form and,\
+        \ to create the widget, create and publish widget content."
+      operationId: createContainerFormByQueryParam
+      parameters:
+      - description: Container identifier (UUID or file-asset path)
+        in: query
+        name: containerId
+        schema:
+          type: string
+      - description: Form identifier
+        in: path
+        name: formId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContainerObjectMapView"
+          description: Form rendered successfully
+        "400":
+          description: Bad request - The content type is not a form
         "401":
           description: Unauthorized - User not authenticated
         "403":
           description: Forbidden - User lacks required permissions
         "404":
           description: Container or form not found
-      summary: Renders a form with container ID as query param
+      summary: "Creates a form's widget and renders it, with container ID as query\
+        \ param"
       tags:
       - Containers
   /v1/containers/live:
@@ -6600,8 +6642,11 @@ paths:
       - Containers
   /v1/containers/{containerId}/form/{formId}:
     get:
-      description: Returns HTML content for a form rendered within the specified container.
-        This is used to display forms with container styling and layout.
+      description: "Returns the HTML of a form's widget rendered within the specified\
+        \ container, and the widget itself. This is used to display forms with container\
+        \ styling and layout. Answers 404 when the form has no widget the user can\
+        \ read yet; the POST on the same path creates it. Requires a back-end user\
+        \ who can read the form."
       operationId: containerForm
       parameters:
       - description: Container identifier (UUID or path)
@@ -6624,7 +6669,47 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityContainerObjectMapView"
           description: Form rendered successfully
         "400":
-          description: Bad request - Invalid container or form ID
+          description: Bad request - The content type is not a form
+        "401":
+          description: Unauthorized - User not authenticated
+        "403":
+          description: Forbidden - User lacks required permissions
+        "404":
+          description: "Container, form or the form's widget not found"
+        "500":
+          description: Internal server error
+      summary: Renders a form within a container
+      tags:
+      - Containers
+    post:
+      description: "Returns the HTML of a form's widget rendered within the specified\
+        \ container, and the widget itself, creating and publishing the widget as\
+        \ the user when the form has none the user can read. Requires a back-end user\
+        \ who can read the form and, to create the widget, create and publish widget\
+        \ content."
+      operationId: createContainerForm
+      parameters:
+      - description: Container identifier (UUID or path)
+        in: path
+        name: containerId
+        required: true
+        schema:
+          type: string
+      - description: Form identifier
+        in: path
+        name: formId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContainerObjectMapView"
+          description: Form rendered successfully
+        "400":
+          description: Bad request - The content type is not a form
         "401":
           description: Unauthorized - User not authenticated
         "403":
@@ -6633,7 +6718,7 @@ paths:
           description: Container or form not found
         "500":
           description: Internal server error
-      summary: Renders a form within a container
+      summary: Creates a form's widget and renders it within a container
       tags:
       - Containers
   /v1/containers/{id}/_copy:

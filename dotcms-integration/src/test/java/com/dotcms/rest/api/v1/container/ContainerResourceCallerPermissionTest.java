@@ -1,0 +1,479 @@
+package com.dotcms.rest.api.v1.container;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContainerAsFileDataGen;
+import com.dotcms.datagen.ContainerDataGen;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHeaderRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
+import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.mock.response.MockHttpResponse;
+import com.dotcms.rest.ResponseEntityView;
+import com.dotcms.rest.exception.BadRequestException;
+import com.dotcms.rest.exception.SecurityException;
+import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Permissionable;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.model.Container;
+import com.dotmarketing.portlets.containers.model.ContainerView;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.form.business.FormAPI;
+import com.dotmarketing.util.Constants;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.model.User;
+import com.liferay.util.Base64;
+import io.vavr.control.Try;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.core.Response;
+import org.junit.After;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+/**
+ * Covers which user the {@link ContainerResource} endpoints read and write with: the lookup of a
+ * container by folder path when it is only found on the default site, and the form endpoints that
+ * find or create the widget a form is placed on a page with.
+ */
+public class ContainerResourceCallerPermissionTest {
+
+    private static final String PASSWORD = "admin";
+
+    private static ContainerResource resource;
+    private static HttpServletResponse response;
+    private static User adminUser;
+
+    private static final List<User> users = new ArrayList<>();
+    private static final List<ContentType> contentTypes = new ArrayList<>();
+    private static final List<Container> containers = new ArrayList<>();
+    private static final List<Host> sites = new ArrayList<>();
+
+    @BeforeClass
+    public static void prepare() throws Exception {
+        IntegrationTestInitService.getInstance().init();
+        resource = new ContainerResource();
+        adminUser = TestUserUtils.getAdminUser();
+        response = new MockHttpResponse();
+        if (null == formWidgetType()) {
+            APILocator.getFormAPI().createFormWidgetInstanceStructure();
+        }
+    }
+
+    @After
+    public void clearThreadRequest() {
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(null);
+    }
+
+    @AfterClass
+    public static void cleanUp() {
+        contentTypes.forEach(type -> Try.run(() -> {
+            widgetsFor(type.id()).forEach(widget -> Try.run(() -> {
+                APILocator.getContentletAPI().unpublish(widget, APILocator.systemUser(), false);
+                APILocator.getContentletAPI().archive(widget, APILocator.systemUser(), false);
+                APILocator.getContentletAPI().delete(widget, APILocator.systemUser(), false);
+            }));
+            APILocator.getContentTypeAPI(APILocator.systemUser()).delete(type);
+        }).onFailure(e -> Logger.warn(ContainerResourceCallerPermissionTest.class,
+                "Could not remove content type " + type.variable(), e)));
+        containers.forEach(container -> Try.run(() -> ContainerDataGen.remove(container))
+                .onFailure(e -> Logger.warn(ContainerResourceCallerPermissionTest.class,
+                        "Could not remove container " + container.getIdentifier(), e)));
+        users.forEach(user -> Try.run(() -> UserDataGen.remove(user))
+                .onFailure(e -> Logger.warn(ContainerResourceCallerPermissionTest.class,
+                        "Could not remove user " + user.getUserId(), e)));
+        sites.forEach(site -> Try.run(() -> {
+            APILocator.getHostAPI().archive(site, APILocator.systemUser(), false);
+            APILocator.getHostAPI().delete(site, APILocator.systemUser(), false);
+        }).onFailure(e -> Logger.warn(ContainerResourceCallerPermissionTest.class,
+                "Could not remove site " + site.getIdentifier(), e)));
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#getWorkingById}
+     * Given: a container stored as files only on the default site, a request made from another
+     *        site, and a back-end user who can read both sites but not the container
+     * When: the container is asked for by its relative folder path
+     * Should: refuse it, because the default site's copy is read with the caller's permissions
+     */
+    @Test
+    public void test_getWorkingById_containerOnlyOnTheDefaultSite_unreadableByTheCaller_refused()
+            throws Exception {
+        final String folderName = "caller-permission-" + System.nanoTime();
+        final FileAssetContainer container = defaultSiteContainer(folderName);
+        final Host otherSite = freshSite();
+        final User user = user(TestUserUtils.getBackendRole());
+        grantRead(user, defaultSite());
+        grantRead(user, otherSite);
+        assertFalse("the fixture should keep the container unreadable for the user",
+                APILocator.getPermissionAPI().doesUserHavePermission(
+                        container, PermissionAPI.PERMISSION_READ, user, false));
+
+        assertThrows(DotSecurityException.class, () -> resource.getWorkingById(
+                requestFrom(user, otherSite), response, relativePath(folderName), false));
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#getWorkingById}
+     * Given: the same container stored only on the default site, asked for from another site
+     * When: an administrator asks for it by its relative folder path
+     * Should: return it from the default site, as before
+     */
+    @Test
+    public void test_getWorkingById_containerOnlyOnTheDefaultSite_readableByTheCaller_returned()
+            throws Exception {
+        final String folderName = "caller-permission-" + System.nanoTime();
+        final FileAssetContainer container = defaultSiteContainer(folderName);
+        final Host otherSite = freshSite();
+
+        final Response result = resource.getWorkingById(
+                requestFrom(adminUser, otherSite), response, relativePath(folderName), false);
+
+        assertEquals(Response.Status.OK.getStatusCode(), result.getStatus());
+        assertEquals(container.getIdentifier(),
+                ((ContainerView) ((ResponseEntityView<?>) result.getEntity()).getEntity())
+                        .getContainer().getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#containerFormByQueryParam}
+     * Given: a front-end user
+     * When: the user asks for a form's widget
+     * Should: refuse the request, since only the page editor places forms
+     */
+    @Test
+    public void test_getForm_frontEndUser_refused() throws Exception {
+        final ContentType form = formType();
+        final User user = user(APILocator.getRoleAPI().loadFrontEndUserRole());
+        grantRead(user, form);
+
+        assertThrows(SecurityException.class, () -> resource.containerFormByQueryParam(
+                request(user), response, readableContainer(user).getIdentifier(), form.id()));
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#containerFormByQueryParam}
+     * Given: a content type that is not a form
+     * When: an administrator asks for its widget
+     * Should: answer 400 and create nothing
+     */
+    @Test
+    public void test_getForm_typeThatIsNotAForm_badRequest() throws Exception {
+        final ContentType notAForm = track(new ContentTypeDataGen().nextPersisted());
+
+        assertThrows(BadRequestException.class, () -> resource.containerFormByQueryParam(
+                request(adminUser), response, readableContainer(adminUser).getIdentifier(),
+                notAForm.id()));
+        assertTrue("no widget should exist for a type that is not a form",
+                widgetsFor(notAForm.id()).isEmpty());
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#containerFormByQueryParam}
+     * Given: a form the back-end user cannot read
+     * When: the user asks for its widget
+     * Should: refuse it
+     */
+    @Test
+    public void test_getForm_formTheUserCannotRead_refused() throws Exception {
+        final ContentType form = formType();
+        final User user = user(TestUserUtils.getBackendRole());
+        assertFalse("the fixture should keep the form unreadable for the user",
+                APILocator.getPermissionAPI().doesUserHavePermission(
+                        form, PermissionAPI.PERMISSION_READ, user, false));
+
+        assertThrows(DotSecurityException.class, () -> resource.containerFormByQueryParam(
+                request(user), response, readableContainer(user).getIdentifier(), form.id()));
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#containerFormByQueryParam}
+     * Given: a form with no widget yet, readable by an administrator
+     * When: the administrator asks for its widget with a GET
+     * Should: answer that there is none, and create nothing
+     */
+    @Test
+    public void test_getForm_withoutAWidget_notFoundAndNothingCreated() throws Exception {
+        final ContentType form = formType();
+
+        assertThrows(DoesNotExistException.class, () -> resource.containerFormByQueryParam(
+                request(adminUser), response, readableContainer(adminUser).getIdentifier(),
+                form.id()));
+        assertTrue("a GET should not create a widget", widgetsFor(form.id()).isEmpty());
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#createContainerFormByQueryParam}
+     * Given: a form with no widget yet, and a back-end user who can read the form but cannot
+     *        create widget content
+     * When: the user asks for the widget to be created
+     * Should: refuse it and create nothing
+     */
+    @Test
+    public void test_createForm_userWhoCannotCreateWidgets_refusedAndNothingCreated()
+            throws Exception {
+        final ContentType form = formType();
+        final User user = user(TestUserUtils.getBackendRole());
+        grantRead(user, form);
+
+        assertThrows(DotSecurityException.class, () -> resource.createContainerFormByQueryParam(
+                request(user), response, readableContainer(user).getIdentifier(), form.id()));
+        assertTrue("no widget should be created", widgetsFor(form.id()).isEmpty());
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#createContainerFormByQueryParam}
+     * Given: a form with no widget yet, and a back-end user who can create widget content but not
+     *        publish it
+     * When: the user asks for the widget to be created
+     * Should: refuse it and leave no live widget
+     */
+    @Test
+    public void test_createForm_userWhoCannotPublishWidgets_refusedAndNothingLive()
+            throws Exception {
+        final ContentType form = formType();
+        final User user = user(TestUserUtils.getBackendRole());
+        grantRead(user, form);
+        grant(user, formWidgetType(),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE);
+
+        assertThrows(DotSecurityException.class, () -> resource.createContainerFormByQueryParam(
+                request(user), response, readableContainer(user).getIdentifier(), form.id()));
+        assertTrue("no widget should be live",
+                widgetsFor(form.id()).stream().noneMatch(widget -> Try.of(widget::isLive)
+                        .getOrElse(false)));
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#createContainerFormByQueryParam} and
+     * {@link ContainerResource#containerFormByQueryParam}
+     * Given: a form with no widget yet, and a back-end user who can read the form and create and
+     *        publish widget content
+     * When: the user asks for the widget to be created, then asks for it again both ways
+     * Should: create one live widget saved as that user, readable by visitors but not editable or
+     *         publishable by them, and return that same widget afterwards
+     */
+    @Test
+    public void test_createForm_userWhoCanCreateAndPublishWidgets_createsOneWidgetAsThatUser()
+            throws Exception {
+        final ContentType form = formType();
+        final User user = user(TestUserUtils.getBackendRole());
+        grantRead(user, form);
+        grant(user, formWidgetType(), PermissionAPI.PERMISSION_READ
+                | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH);
+        // The forms portlet sets these permissions on every form it creates.
+        final Role anonymous = APILocator.getRoleAPI().loadCMSAnonymousRole();
+        APILocator.getPermissionAPI().save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                form.getPermissionId(), anonymous.getId(), PermissionAPI.PERMISSION_READ
+                        | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_PUBLISH, true),
+                form, APILocator.systemUser(), false);
+        final String containerId = readableContainer(user).getIdentifier();
+
+        final String created = widgetIdentifier(
+                resource.createContainerFormByQueryParam(request(user), response, containerId,
+                        form.id()));
+
+        final List<Contentlet> widgets = widgetsFor(form.id());
+        assertEquals("one widget should be created", 1, widgets.size());
+        final Contentlet widget = widgets.get(0);
+        assertEquals(created, widget.getIdentifier());
+        assertTrue("the widget should be live", widget.isLive());
+        assertEquals("the widget should be saved as the user", user.getUserId(),
+                widget.getModUser());
+        assertEquals("the widget should be owned by the user", user.getUserId(),
+                widget.getOwner());
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        assertTrue("visitors should read the widget",
+                permissionAPI.doesRoleHavePermission(widget, PermissionAPI.PERMISSION_READ,
+                        anonymous));
+        assertFalse("visitors should not edit the widget",
+                permissionAPI.doesRoleHavePermission(widget, PermissionAPI.PERMISSION_EDIT,
+                        anonymous));
+        assertFalse("visitors should not publish the widget",
+                permissionAPI.doesRoleHavePermission(widget, PermissionAPI.PERMISSION_PUBLISH,
+                        anonymous));
+
+        assertEquals("a GET should return the same widget", created, widgetIdentifier(
+                resource.containerFormByQueryParam(request(user), response, containerId,
+                        form.id())));
+        assertEquals("a second create should return the same widget", created, widgetIdentifier(
+                resource.createContainerFormByQueryParam(request(user), response, containerId,
+                        form.id())));
+        assertEquals("no second widget should be created", 1, widgetsFor(form.id()).size());
+    }
+
+    /**
+     * Creates a container stored as files on the default site.
+     *
+     * @param folderName the container's folder name, used by no other site
+     * @return the container
+     * @throws Exception if the container cannot be created
+     */
+    private static FileAssetContainer defaultSiteContainer(final String folderName)
+            throws Exception {
+        return new ContainerAsFileDataGen()
+                .host(defaultSite())
+                .folderName(folderName)
+                .nextPersisted();
+    }
+
+    private static String relativePath(final String folderName) {
+        return Constants.CONTAINER_FOLDER_PATH + "/" + folderName;
+    }
+
+    /**
+     * Creates a container the given user can read.
+     *
+     * @param user the user who reads it
+     * @return the container
+     * @throws Exception if the container or the permission cannot be saved
+     */
+    private static Container readableContainer(final User user) throws Exception {
+        final Container container = new ContainerDataGen().nextPersisted();
+        containers.add(container);
+        grantRead(user, container);
+        return container;
+    }
+
+    /**
+     * Creates a form content type, removed after the class runs together with its widgets.
+     *
+     * @return the form type
+     */
+    private static ContentType formType() {
+        return track(TestDataUtils.getFormLikeContentType("CallerForm" + System.nanoTime(), null));
+    }
+
+    private static ContentType track(final ContentType type) {
+        contentTypes.add(type);
+        return type;
+    }
+
+    /**
+     * Loads the content type form widgets are saved as.
+     *
+     * @return the type, or {@code null} when it does not exist yet
+     */
+    private static ContentType formWidgetType() {
+        return Try.of(() -> APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME)).getOrNull();
+    }
+
+    /**
+     * Finds every widget saved for a form, in any state, read as the system user.
+     *
+     * @param formId the form's content type id
+     * @return the widgets
+     * @throws Exception if the index cannot be searched
+     */
+    private static List<Contentlet> widgetsFor(final String formId) throws Exception {
+        return APILocator.getContentletAPI().search("+contentType:"
+                        + FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + " +"
+                        + FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + "."
+                        + FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME + ":" + formId
+                        + " +working:true", 10, 0, null, APILocator.systemUser(), false);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static String widgetIdentifier(final Response result) {
+        final Map<String, Object> entity =
+                (Map<String, Object>) ((ResponseEntityView<?>) result.getEntity()).getEntity();
+        final Map<String, Object> content = (Map<String, Object>) entity.get("content");
+        assertNotNull("the response should carry the widget", content);
+        return (String) content.get("identifier");
+    }
+
+    private static Host defaultSite() throws Exception {
+        return APILocator.getHostAPI().findDefaultHost(APILocator.systemUser(), false);
+    }
+
+    private static Host freshSite() {
+        final Host site = new SiteDataGen().nextPersisted();
+        sites.add(site);
+        return site;
+    }
+
+    private static User user(final Role role) throws Exception {
+        final User user = new UserDataGen().roles(role).nextPersisted();
+        user.setPassword(PASSWORD);
+        APILocator.getUserAPI().save(user, APILocator.systemUser(), false);
+        users.add(user);
+        return user;
+    }
+
+    private static void grantRead(final User user, final Permissionable asset) throws Exception {
+        grant(user, asset, PermissionAPI.PERMISSION_READ);
+    }
+
+    /**
+     * Gives the user's own role the given permissions on the asset, and, for a content type, on
+     * the content created from it.
+     *
+     * @param user        the user
+     * @param asset       the asset
+     * @param permissions the permission bits
+     * @throws Exception if a permission cannot be saved
+     */
+    private static void grant(final User user, final Permissionable asset, final int permissions)
+            throws Exception {
+        final String roleId = APILocator.getRoleAPI().loadRoleByKey(user.getUserId()).getId();
+        APILocator.getPermissionAPI().save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                asset.getPermissionId(), roleId, permissions, true), asset,
+                APILocator.systemUser(), false);
+        if (asset instanceof ContentType) {
+            APILocator.getPermissionAPI().save(new Permission(Contentlet.class.getCanonicalName(),
+                    asset.getPermissionId(), roleId, permissions, true), asset,
+                    APILocator.systemUser(), false);
+        }
+    }
+
+    private static HttpServletRequest request(final User user) {
+        final MockHeaderRequest request = new MockHeaderRequest(
+                new MockSessionRequest(
+                        new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
+                                .request())
+                        .request());
+        request.setHeader("Authorization",
+                "Basic " + new String(Base64.encode((user.getEmailAddress() + ":" + PASSWORD).getBytes())));
+        return request;
+    }
+
+    /**
+     * Builds a request made from the given site. The site is set on the request and the request is
+     * registered for the current thread, where the container lookup reads the current site from.
+     *
+     * @param user the user the request authenticates as
+     * @param site the site the request is made from
+     * @return the request
+     */
+    private static HttpServletRequest requestFrom(final User user, final Host site) {
+        final HttpServletRequest request = request(user);
+        request.setAttribute(WebKeys.CURRENT_HOST, site);
+        HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+        return request;
+    }
+}
