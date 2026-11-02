@@ -265,7 +265,8 @@ public class ContentResource {
         // Filtered here, while still a JSONObject, so the response filter does not parse and rebuild it
         final SearchView callerView = new SearchView(searchView.getResultsSize(), searchView.getQueryTook(),
                 searchView.getContentTook(), new JsonObjectView(
-                        ContentHelper.filterForCaller(searchView.getJsonObjectView().getJsonObject(), user)));
+                        ContentHelper.filterForCaller(searchView.getJsonObjectView().getJsonObject(), user)),
+                searchView.getWarnings());
         return Response.ok(UserPropertiesResponseFilter.markFiltered(request,
                 new ResponseEntityView<>(callerView))).build();
     }
