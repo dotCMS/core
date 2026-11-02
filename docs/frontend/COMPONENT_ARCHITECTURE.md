@@ -523,10 +523,13 @@ Every screen that edits or creates content outside the full-screen `#/content` r
 - **Hand it to the opener.** Call [`DotEditContentOpenerService.open(request, { injector, ...handlers })`](../../core-web/libs/edit-content/src/lib/opener/dot-edit-content-opener.service.ts) for a one-off open, or bind a request signal with [`injectEditContentPanel($request, handlers)`](../../core-web/libs/edit-content/src/lib/opener/inject-edit-content-panel.ts) when the panel follows the surface's state: it opens when the signal is set and closes when it is cleared. The opener picks the new or the legacy editor from the content type.
 - **Handle the five events** ([`DotEditContentPanelEvents`](../../core-web/libs/edit-content/src/lib/models/dot-edit-content-panel-events.model.ts)): `saved` on every save, with the contentlet; `languageChanged`; `pageEditorRequested`; `deleted`, always followed by `closed`; and `closed`, exactly once. Refresh on `saved` **and** on `closed`, because some legacy-editor changes (a move, a translation) send no usable save.
 - **Fields never open overlays.** A field that needs other content opened (Relationship, the block editors) calls `openContent()` on the injected [`EDIT_CONTENT_HOST`](../../core-web/libs/edit-content/src/lib/services/host/edit-content-host.model.ts). The host decides between a new panel, one stacked over the current panel, or replacing its own content in place with a breadcrumb.
+- **Put the open panel in the URL.** Every surface except the page editor passes `url: { route }` to the opener or to `injectEditContentPanel`. The opener then writes the panel to the surface's URL as `editContent` and `editContentLang` (or `createContent`, or `editCode`) beside the surface's own params, with one history entry per open, rewrites them in place on a language switch, on a create's first save and on close, and routes browser Back through the editor's unsaved-changes guard. With panels stacked, the URL names the front one. The surface never writes these params itself. On load it reads them once with [`readPanelUrlIntent(route.snapshot.queryParams)`](../../core-web/libs/edit-content/src/lib/opener/url/read-panel-url-intent.ts), opens what the result names, and calls `DotPanelUrlStateService.clear()` when it is a `conflict`.
+- **Never write these params through the router.** [`DotPanelUrlStateService`](../../core-web/libs/edit-content/src/lib/opener/url/dot-panel-url-state.service.ts) writes them with `Location.go` and `Location.replaceState` because a router navigation reloads the legacy iframe portlets (they reload on every `queryParams` emission) and recreates every `reuseRoute: false` portlet. It also reads the surface's own params from `Location`, not the router, since the router does not see URLs written with `replaceState`.
 
 ```ts
 export class DotMyListComponent {
     readonly #store = inject(DotMyListStore);
+    readonly #route = inject(ActivatedRoute);
     readonly $editRequest = signal<DotEditContentRequest | null>(null);
 
     readonly #panel = injectEditContentPanel(this.$editRequest, {
@@ -534,7 +537,8 @@ export class DotMyListComponent {
         closed: () => {
             this.#store.reload();
             this.$editRequest.set(null);
-        }
+        },
+        url: { route: this.#route }
     });
 
     edit(row: DotCMSContentlet): void {

@@ -41,7 +41,12 @@ import {
     DotMessageService
 } from '@dotcms/data-access';
 import { ComponentStatus, DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotEditContentRequest, injectEditContentPanel } from '@dotcms/edit-content';
+import {
+    DotEditContentRequest,
+    DotPanelUrlStateService,
+    injectEditContentPanel,
+    readPanelUrlIntent
+} from '@dotcms/edit-content';
 import {
     DOT_MONACO_BASE_OPTIONS,
     DOT_MONACO_RAW_OPTIONS,
@@ -111,6 +116,7 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly #location = inject(Location);
     readonly #editUrlResolver = inject(DotContentletEditUrlService);
     readonly #contentSearch = inject(DotContentSearchService);
+    readonly #panelUrl = inject(DotPanelUrlStateService);
     readonly #destroyRef = inject(DestroyRef);
 
     /** Keyboard shortcut shown in the Run button tooltip (`⌘ + Enter` / `Ctrl + Enter`). */
@@ -120,38 +126,6 @@ export class DotQueryToolPageComponent implements OnInit {
 
     /** The content open in the side panel, or `null` when it is closed. */
     readonly $editRequest = signal<DotEditContentRequest | null>(null);
-
-    /**
-     * The side panel, open while {@link $editRequest} is set, in whichever editor the content's type
-     * uses (#38303). Every save reruns the search; a close reruns it too and clears the request.
-     */
-    readonly #editPanel = injectEditContentPanel(this.$editRequest, {
-        saved: () => this.onEditPanelSaved(),
-        closed: () => this.onEditPanelClosed()
-    });
-
-    /**
-     * Whether the last `editContent` URL write reflected an open panel — so a close writes with
-     * replaceState instead of a history push whose Back would resurrect the just-removed param.
-     */
-    #editContentUrlWasSet = false;
-
-    /**
-     * Reflects the open edit panel in the URL (`?editContent=<identifier>`) so it is shareable,
-     * refresh-safe, and dismissible with browser Back (see the popstate listener in ngOnInit).
-     * Written with `Location.go` (a history push) — NOT `replaceState` like the search-param sync
-     * above — precisely so Back has an entry to pop. `merge` preserves the query-tool params.
-     */
-    // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects
-    readonly #editContentUrlEffect = effect(() => {
-        const request = this.$editRequest();
-
-        untracked(() =>
-            this.#syncEditContentParam(
-                request?.mode === 'edit' ? (request.identifier ?? null) : null
-            )
-        );
-    });
 
     // Mirrors store state into the address bar via Location.replaceState, but only
     // once the search settles (LOADED or ERROR). Tying the sync to `status` instead
@@ -244,6 +218,19 @@ export class DotQueryToolPageComponent implements OnInit {
         }
     ];
 
+    constructor() {
+        // The side panel, open while `$editRequest` is set, in whichever editor the content's type
+        // uses (#38303). Every save reruns the search; a close reruns it too and clears the request.
+        // The opener writes the open panel to this page's URL (`editContent`, `editContentLang`)
+        // and routes browser Back through the editor's guard (FR-044 to FR-047). Called rather than
+        // assigned: nothing here reads the panel back.
+        injectEditContentPanel(this.$editRequest, {
+            saved: () => this.onEditPanelSaved(),
+            closed: () => this.onEditPanelClosed(),
+            url: { route: this.#route }
+        });
+    }
+
     ngOnInit(): void {
         const params = this.#route.snapshot.queryParamMap;
         const query = params.get('q') ?? '';
@@ -273,35 +260,7 @@ export class DotQueryToolPageComponent implements OnInit {
             this.store.runSearch();
         }
 
-        // Shareable deep-link: `?editContent=<identifier>` reopens the edit panel on load.
-        const editContent = params.get('editContent');
-        if (editContent) {
-            this.#resolveAndOpenByIdentifier(editContent);
-        }
-
-        // Browser Back/Forward: nothing else reacts to the `editContent` param (written via
-        // Location.go, not the router). When Back removes/changes it while the panel is open, route
-        // the close through the panel's unsaved-changes guard — a direct clear would tear the editor
-        // down and discard unsaved edits silently.
-        const locationSubscription = this.#location.subscribe((event) => {
-            const backParams = new URLSearchParams(event.url?.split('?')[1] ?? '');
-            const editContentParam = backParams.get('editContent');
-            const request = this.$editRequest();
-
-            if (request?.mode === 'edit' && request.identifier !== editContentParam) {
-                // Restore the param so the URL matches the still-open panel while the guard decides.
-                const restored = this.#router
-                    .createUrlTree([], {
-                        relativeTo: this.#route,
-                        queryParams: { editContent: request.identifier },
-                        queryParamsHandling: 'merge'
-                    })
-                    .toString();
-                this.#location.replaceState(restored);
-                this.#editPanel.requestClose();
-            }
-        });
-        this.#destroyRef.onDestroy(() => locationSubscription.unsubscribe());
+        this.#openFromUrl();
     }
 
     onQueryChange(value: string): void {
@@ -375,40 +334,36 @@ export class DotQueryToolPageComponent implements OnInit {
     }
 
     /**
-     * Writes/clears `editContent` (merged with the query-tool params). Pushes when opening the
-     * panel (so browser Back can pop it) but replaces when closing — a push on close would leave a
-     * phantom history entry whose Back puts the removed param back with no panel rendered.
+     * Reopens the panel a shared link names, once, on load (#38303, FR-049): an edit, or a create
+     * that was stacked over a result's panel when the link was copied, since a link names only the
+     * front panel. A link naming more than one panel opens nothing and loses the panel params.
+     * Edit Source never opens from here.
      */
-    #syncEditContentParam(identifier: string | null): void {
-        const url = this.#router
-            .createUrlTree([], {
-                relativeTo: this.#route,
-                queryParams: { editContent: identifier },
-                queryParamsHandling: 'merge'
-            })
-            .toString();
+    #openFromUrl(): void {
+        const intent = readPanelUrlIntent(this.#route.snapshot.queryParams);
 
-        if (url !== this.#location.path(true)) {
-            if (identifier === null && this.#editContentUrlWasSet) {
-                this.#location.replaceState(url);
-            } else {
-                this.#location.go(url);
-            }
+        if (intent.kind === 'edit') {
+            this.#resolveAndOpenByIdentifier(intent.identifier, intent.languageId);
+        } else if (intent.kind === 'create') {
+            this.$editRequest.set({ mode: 'new', contentType: intent.contentType });
+        } else if (intent.kind === 'conflict') {
+            this.#panelUrl.clear();
         }
-
-        this.#editContentUrlWasSet = identifier !== null;
     }
 
     /**
      * Resolves a shared `?editContent=` identifier to its working contentlet and opens the panel on
      * it, with the same request a click on that result would open.
      *
-     * @param identifier The identifier the link names.
+     * @param identifier The identifier the link names, already checked to be identifier-shaped.
+     * @param languageId The language the link names: an identifier has one version per language.
      */
-    #resolveAndOpenByIdentifier(identifier: string): void {
+    #resolveAndOpenByIdentifier(identifier: string, languageId: number | undefined): void {
+        const language = languageId ? ` +languageId:${languageId}` : '';
+
         this.#contentSearch
             .get<{ jsonObjectView: { contentlets: DotCMSContentlet[] } }>({
-                query: `+identifier:${identifier} +working:true`,
+                query: `+identifier:${identifier}${language} +working:true`,
                 limit: 1
             })
             .pipe(

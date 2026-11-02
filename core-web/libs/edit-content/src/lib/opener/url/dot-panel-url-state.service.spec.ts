@@ -293,6 +293,17 @@ describe('DotPanelUrlStateService', () => {
         });
     });
 
+    // A link naming two panels opens neither, and loses both (FR-049).
+    it("clears every panel param and the surface's extra keys in place", () => {
+        start(surfaceUrlWith({ editContent: ID_1, createContent: 'Blog', folder: 'f-1' }));
+
+        spectator.service.clear(['folder']);
+
+        expect(location.go).not.toHaveBeenCalled();
+        expect(location.replaceState).toHaveBeenCalledTimes(1);
+        expect(lastWrite(location.replaceState).params).toEqual(SURFACE_PARAMS);
+    });
+
     it('never navigates through the router', () => {
         start();
         const underneath = newRef();
