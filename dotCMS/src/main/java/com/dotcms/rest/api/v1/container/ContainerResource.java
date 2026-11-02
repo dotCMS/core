@@ -424,9 +424,28 @@ public class ContainerResource implements Serializable {
         }
         if (mode.showLive && isTimeMachineOn(request)
                 && !served.get().getLiveInode().equals(served.get().getWorkingInode())) {
-            this.contentletAPI.find(served.get().getWorkingInode(), user, true);
+            // Time Machine can make the container render the working version instead of the live one
+            this.checkReadPermission(served.get().getWorkingInode(), user);
         }
         return contentlet;
+    }
+
+    /**
+     * Checks that the given user can read the given version of a contentlet.
+     * <p>
+     * {@link ContentletAPI#find(String, User, boolean)} <em>is</em> the check: it answers a denial by
+     * throwing {@link DotSecurityException}, so the contentlet it loads is deliberately discarded
+     * here. Front-end roles count towards READ, as they do for the version the caller is served.
+     * A version that no longer exists is not an error: there is nothing to render and nothing to check.
+     *
+     * @param inode the inode of the version to check
+     * @param user  the {@link User} making the request
+     * @throws DotDataException     if the contentlet cannot be loaded
+     * @throws DotSecurityException if the user cannot read that version
+     */
+    private void checkReadPermission(final String inode, final User user)
+            throws DotDataException, DotSecurityException {
+        this.contentletAPI.find(inode, user, true);
     }
 
     /**
