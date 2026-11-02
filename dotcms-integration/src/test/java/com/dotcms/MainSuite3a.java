@@ -122,6 +122,7 @@ import org.junit.runners.Suite;
         Task260615AlterClusterIdLengthTest.class,
         ImportContentletsActionSmokeTest.class,
         TreeFactoryTest.class,
+    com.dotmarketing.portlets.user.ajax.UserAjaxHasUserRolesIntegrationTest.class,
     com.dotcms.rest.api.v1.user.UserResourcePasswordIntegrationTest.class,
     com.dotcms.rendering.velocity.viewtools.XsltToolTest.class,
         PublisherQueueJobTest.class,
@@ -130,6 +131,7 @@ import org.junit.runners.Suite;
         InodeExistenceCheckIntegrationTest.class,
         SecretsStoreWipeRegressionTest.class,
         SecretsStoreConcurrentWriteRaceTest.class,
+    com.dotcms.rest.api.v1.system.role.RoleResourceCheckRolesIntegrationTest.class,
         RoleResourceIntegrationTest.class,
         FileAssetContainerPermissionInheritanceTest.class,
 

@@ -1,7 +1,7 @@
 # Publish a per-PR test image when the "PR: docker image" label is applied to an
 # existing PR (no new commit). The push-on-commit path lives in cicd_1-pr.yml,
 # which publishes right after build. This entry covers the label-applied case by
-# reusing the newest docker-image artifact already built for the head SHA.
+# building both architectures from the newest docker-build-context artifact for the head SHA.
 #
 # Uses pull_request_target so it runs from main (DOCKER_* secrets never run in
 # PR-modifiable code on this path) and so the GITHUB_TOKEN can comment.

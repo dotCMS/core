@@ -105,9 +105,11 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         postgresql-client-18 \
         jaz && \
-    /usr/bin/pg_dump --version && \
-    apt-get purge -y postgresql-common && \
+    # ssl-cert is pulled in by postgresql-common and generates a key pair in its postinst;
+    # purge it with postgresql-common so those generated files do not stay in the image.
+    apt-get purge -y postgresql-common ssl-cert && \
     apt-get autoremove -y && \
+    /usr/bin/pg_dump --version && \
     rm -rf /var/lib/apt/lists/*
 
 ARG USER_UID="65001"

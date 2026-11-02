@@ -2499,12 +2499,21 @@ public interface ContentletAPI {
 	public Object loadField(String inode, com.dotcms.contenttype.model.field.Field field) throws DotDataException;
 
     /**
-     * Allows to count how many records match the specified lucene query and user
-     * 
-     * @param luceneQuery
-     * @param user
-     * @param respectFrontendRoles
-     * @return
+     * Counts how many indexed contentlets match the given Lucene query and may be read by the
+     * given user.
+     * <p>
+     * The count is narrowed by the same permission clauses a search is narrowed by, the content
+     * read permissions and the secondary category check alike, so a caller never gets a total
+     * that counts content the matching search would hide from them. The category clause is
+     * governed by the {@code PERMISSION_SECONDARY_CATEGORY_CHECK} property, on by default, and a
+     * search drops it on the same terms, so the two agree either way.
+     *
+     * @param luceneQuery the query written by the caller
+     * @param user the {@link User} the count is run for, or {@code null} for an anonymous caller
+     * @param respectFrontendRoles whether the anonymous and logged-in-site roles grant read as well
+     * @return how many matching contentlets the caller may read
+     * @throws DotDataException if the count cannot be read from the index
+     * @throws DotSecurityException if no user is given and front-end roles are not respected
      */
     public long indexCount(String luceneQuery, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
 

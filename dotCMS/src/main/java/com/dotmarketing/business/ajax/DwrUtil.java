@@ -7,7 +7,6 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.web.WebAPILocator;
-import com.dotcms.rest.api.v1.system.role.RoleHelper;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.browser.ajax.BrowserAjax;
@@ -66,7 +65,9 @@ public class DwrUtil {
 
     /**
      * Rejects a caller who may not see which users hold a role: it takes an administrator, or a
-     * user with both the Roles and the Users portlets, the same rule the REST listings apply.
+     * user with both the Roles and the Users portlets, the rule in
+     * {@link com.dotmarketing.business.RoleAPI#canReadRoleMembership(User)} that the REST listings
+     * apply as well.
      *
      * @param loggedInUser the user making the DWR call
      * @throws DotSecurityException when there is no user or the user lacks the privilege
@@ -78,7 +79,7 @@ public class DwrUtil {
         if (null == loggedInUser) {
             throw new DotSecurityException("A logged in User is required to list the users of a Role");
         }
-        if (!new RoleHelper().canReadRoleMembership(loggedInUser)) {
+        if (!APILocator.getRoleAPI().canReadRoleMembership(loggedInUser)) {
             final String errorMessage = String.format(
                     "User [%s] does not have permissions to list the users of a Role",
                     loggedInUser.getUserId());

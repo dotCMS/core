@@ -764,8 +764,9 @@ paths:
       - Content Delivery
   /content/indexcount/{query}:
     get:
-      description: Performs an index count using the specified Lucene query and returns
-        the total number of matching contentlets as a plain text string.
+      description: "Performs an index count using the specified Lucene query and returns,\
+        \ as a plain text string, the total number of matching contentlets that the\
+        \ calling user is allowed to read."
       operationId: indexCountContent
       parameters:
       - description: Lucene query string to count matching content
@@ -790,7 +791,8 @@ paths:
             text/plain:
               schema:
                 type: string
-                description: The count of contentlets matching the query
+                description: The count of contentlets matching the query that the
+                  calling user is allowed to read
           description: Count of matching contentlets returned successfully
         "400":
           content:
@@ -16446,7 +16448,9 @@ paths:
       - Roles
   /v1/roles/checkuserroles/userid/{userId}/roleids/{roleIds}:
     get:
-      description: Verifies that a user is assigned to one of the specified role IDs
+      description: Verifies that a user is assigned to one of the specified role IDs.
+        Any back-end user can check their own roles; checking another user's roles
+        requires an administrator or access to both the Roles and the Users portlets.
       operationId: checkUserRoles
       parameters:
       - description: User ID to check
@@ -16475,7 +16479,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions
+          description: "Forbidden - checking another user's roles requires an administrator,\
+            \ or Roles and Users portlet access"
         "500":
           content:
             application/json: {}

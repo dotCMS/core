@@ -79,9 +79,9 @@ jobs:
       contents: read
       packages: write
 
-  # Publish Test Image - for PRs labeled "PR: docker image", promote the
-  # docker-image artifact this build just produced to dotcms/dotcms-test, in
-  # parallel with the tests below. Label-gated and internal-branch only (fork PRs
+  # Publish Test Image - for PRs labeled "PR: docker image", build multi-arch
+  # images from this build's docker-build-context and push to dotcms/dotcms-test,
+  # in parallel with the tests below. Label-gated and internal-branch only (fork PRs
   # have no DOCKER_* secrets). Skipped automatically when build did not run.
   publish-test-image:
     name: Publish Test Image
