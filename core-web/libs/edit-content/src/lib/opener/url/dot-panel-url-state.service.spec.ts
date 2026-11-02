@@ -1,8 +1,17 @@
 import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { Subject } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
 import { Location, PopStateEvent } from '@angular/common';
-import { Router } from '@angular/router';
+import {
+    Event as RouterEvent,
+    NavigationCancel,
+    NavigationEnd,
+    NavigationError,
+    NavigationSkipped,
+    NavigationStart,
+    Router
+} from '@angular/router';
 
 import { DotSidePanelRef } from '@dotcms/ui';
 
@@ -38,15 +47,28 @@ const createLocationDouble = (initialUrl: string) => {
 
             return { unsubscribe: vi.fn() };
         }),
-        /** Browser Back or Forward, landing on `url`. */
-        pop(url: string): void {
+        /**
+         * Browser Back or Forward, landing on `url`. Under hash routing the browser follows the
+         * `popstate` with a `hashchange` for the same move, and `Location` reports both.
+         */
+        pop(url: string, type: 'popstate' | 'hashchange' = 'popstate'): void {
             current = url;
-            listeners.forEach((listener) =>
-                listener({ url, pop: true, type: 'popstate', state: null })
-            );
+            listeners.forEach((listener) => listener({ url, pop: true, type, state: null }));
         }
     };
 };
+
+/**
+ * Stands in for Angular's `Router`, which answers every Back with a navigation of its own once it
+ * has navigated (`onSameUrlNavigation: 'reload'` in dotcms-ui), ending with a `replaceState` of
+ * the URL Back landed on. `navigate` and `navigateByUrl` are spies the service must never call.
+ */
+const createRouterDouble = (navigated: boolean) => ({
+    navigated,
+    events: new Subject<RouterEvent>(),
+    navigate: vi.fn(),
+    navigateByUrl: vi.fn()
+});
 
 /**
  * The last URL written with `write`, as its path and its decoded params, so a test reads what the
@@ -88,7 +110,7 @@ const guardedRef = (): { ref: DotSidePanelRef; requestClose: Mock } => {
 describe('DotPanelUrlStateService', () => {
     let spectator: SpectatorService<DotPanelUrlStateService>;
     let location: ReturnType<typeof createLocationDouble>;
-    let router: { navigate: Mock; navigateByUrl: Mock };
+    let router: ReturnType<typeof createRouterDouble>;
 
     const createService = createServiceFactory({
         service: DotPanelUrlStateService,
@@ -98,12 +120,35 @@ describe('DotPanelUrlStateService', () => {
         ]
     });
 
-    /** Starts the service on a surface whose address bar holds `url`. */
-    const start = (url = SURFACE_URL): void => {
+    /**
+     * Starts the service on a surface whose address bar holds `url`, in an app whose router has
+     * navigated unless told otherwise.
+     */
+    const start = (url = SURFACE_URL, { routerNavigated = true } = {}): void => {
         location = createLocationDouble(url);
-        router = { navigate: vi.fn(), navigateByUrl: vi.fn() };
+        router = createRouterDouble(routerNavigated);
         spectator = createService();
     };
+
+    /**
+     * The router's answer to a Back landing on `url`: its own navigation, which writes that URL
+     * with `replaceState` before it ends.
+     */
+    const routerAnswersBack = (url: string, end: RouterEvent = new NavigationEnd(2, url, url)) => {
+        router.events.next(new NavigationStart(2, url, 'popstate'));
+        location.replaceState(url);
+        router.events.next(end);
+    };
+
+    /** Browser Back or Forward landing on `url`, and the router's navigation for it. */
+    const back = (url: string): void => {
+        location.pop(url);
+        routerAnswersBack(url);
+    };
+
+    /** How many times the service wrote with `replaceState`, the router's own writes left out. */
+    const serviceReplaces = (routerWrites: number): number =>
+        location.replaceState.mock.calls.length - routerWrites;
 
     describe('opening a panel', () => {
         it("pushes one history entry naming an edit, beside the surface's own params", () => {
@@ -140,6 +185,28 @@ describe('DotPanelUrlStateService', () => {
 
             expect(location.go).not.toHaveBeenCalled();
             expect(location.replaceState).not.toHaveBeenCalled();
+        });
+
+        // Content Drive's switch to the old editor closes the panel and reopens it at once: the
+        // reopened panel takes the entry the closed one had, so Back still leaves in one step.
+        it('rewrites the current entry instead of adding one for a panel registered in place', () => {
+            start();
+            const first = newRef();
+            spectator.service.register(first, { editContent: ID_1, editContentLang: '1' });
+            first.close();
+
+            spectator.service.register(
+                newRef(),
+                { editContent: ID_2, editContentLang: '2' },
+                { inPlace: true }
+            );
+
+            expect(location.go).toHaveBeenCalledTimes(1);
+            expect(lastWrite(location.replaceState).params).toEqual({
+                ...SURFACE_PARAMS,
+                editContent: ID_2,
+                editContentLang: '2'
+            });
         });
     });
 
@@ -238,10 +305,10 @@ describe('DotPanelUrlStateService', () => {
             const { ref, requestClose } = guardedRef();
             spectator.service.register(ref, { editContent: ID_1, editContentLang: '1' });
 
-            location.pop(SURFACE_URL);
+            back(SURFACE_URL);
 
             expect(requestClose).toHaveBeenCalledTimes(1);
-            expect(location.replaceState).toHaveBeenCalledTimes(1);
+            expect(serviceReplaces(1)).toBe(1);
             expect(lastWrite(location.replaceState).params).toEqual({
                 ...SURFACE_PARAMS,
                 editContent: ID_1,
@@ -253,7 +320,7 @@ describe('DotPanelUrlStateService', () => {
             start();
             const { ref } = guardedRef();
             spectator.service.register(ref, { editContent: ID_1, editContentLang: '1' });
-            location.pop(SURFACE_URL);
+            back(SURFACE_URL);
 
             ref.close();
 
@@ -269,11 +336,11 @@ describe('DotPanelUrlStateService', () => {
             spectator.service.register(front.ref, { editContent: ID_2, editContentLang: '2' });
 
             // Back one step: the entry the first panel pushed.
-            location.pop(surfaceUrlWith({ editContent: ID_1, editContentLang: '1' }));
+            back(surfaceUrlWith({ editContent: ID_1, editContentLang: '1' }));
 
             expect(front.requestClose).toHaveBeenCalledTimes(1);
             expect(underneath.requestClose).not.toHaveBeenCalled();
-            expect(location.replaceState).toHaveBeenCalledTimes(1);
+            expect(serviceReplaces(1)).toBe(1);
             expect(lastWrite(location.replaceState).params).toEqual({
                 ...SURFACE_PARAMS,
                 editContent: ID_2,
@@ -286,10 +353,151 @@ describe('DotPanelUrlStateService', () => {
             const { ref, requestClose } = guardedRef();
             spectator.service.register(ref, { editContent: ID_1, editContentLang: '1' });
 
-            location.pop(surfaceUrlWith({ editContent: ID_1, editContentLang: '1' }));
+            back(surfaceUrlWith({ editContent: ID_1, editContentLang: '1' }));
 
             expect(requestClose).not.toHaveBeenCalled();
-            expect(location.replaceState).not.toHaveBeenCalled();
+            expect(serviceReplaces(1)).toBe(0);
+        });
+
+        /**
+         * The router navigates on every Back once it has navigated, even to a URL it already holds
+         * (`onSameUrlNavigation: 'reload'`), and its navigation ends with a `replaceState` of the URL
+         * Back landed on. A restore written before that is overwritten while the editor's prompt is
+         * open, so the service restores once the navigation is over (T156, FR-047).
+         */
+        describe('while the router answers Back', () => {
+            it("waits for the router's navigation to end, so the router's own write cannot undo the restore", () => {
+                start();
+                const { ref, requestClose } = guardedRef();
+                spectator.service.register(ref, { editContent: ID_1, editContentLang: '1' });
+
+                location.pop(SURFACE_URL);
+                router.events.next(new NavigationStart(2, SURFACE_URL, 'popstate'));
+
+                expect(requestClose).not.toHaveBeenCalled();
+                expect(location.replaceState).not.toHaveBeenCalled();
+
+                location.replaceState(SURFACE_URL);
+                router.events.next(new NavigationEnd(2, SURFACE_URL, SURFACE_URL));
+
+                expect(requestClose).toHaveBeenCalledTimes(1);
+                expect(serviceReplaces(1)).toBe(1);
+                expect(lastWrite(location.replaceState).params).toEqual({
+                    ...SURFACE_PARAMS,
+                    editContent: ID_1,
+                    editContentLang: '1'
+                });
+            });
+
+            it.each([
+                ['cancelled', new NavigationCancel(2, SURFACE_URL, 'guard')],
+                ['failed', new NavigationError(2, SURFACE_URL, new Error('boom'))],
+                ['skipped', new NavigationSkipped(2, SURFACE_URL, 'same URL')]
+            ])('restores once a %s navigation ends it', (_label, end) => {
+                start();
+                const { ref, requestClose } = guardedRef();
+                spectator.service.register(ref, { editContent: ID_1, editContentLang: '1' });
+
+                location.pop(SURFACE_URL);
+                routerAnswersBack(SURFACE_URL, end);
+
+                expect(requestClose).toHaveBeenCalledTimes(1);
+                expect(lastWrite(location.replaceState).params).toEqual({
+                    ...SURFACE_PARAMS,
+                    editContent: ID_1,
+                    editContentLang: '1'
+                });
+            });
+
+            // No navigation will answer this Back, so waiting would leave the panel unnamed.
+            it('restores at once when the router has never navigated', () => {
+                start(SURFACE_URL, { routerNavigated: false });
+                const { ref, requestClose } = guardedRef();
+                spectator.service.register(ref, { editContent: ID_1, editContentLang: '1' });
+
+                location.pop(SURFACE_URL);
+
+                expect(requestClose).toHaveBeenCalledTimes(1);
+                expect(location.replaceState).toHaveBeenCalledTimes(1);
+            });
+
+            // Under hash routing `Location` reports a `hashchange` after the `popstate`.
+            it('treats the hashchange that follows the popstate as the same Back', () => {
+                start();
+                const { ref, requestClose } = guardedRef();
+                spectator.service.register(ref, { editContent: ID_1, editContentLang: '1' });
+
+                location.pop(SURFACE_URL);
+                location.pop(SURFACE_URL, 'hashchange');
+                routerAnswersBack(SURFACE_URL);
+
+                expect(requestClose).toHaveBeenCalledTimes(1);
+                expect(serviceReplaces(1)).toBe(1);
+            });
+
+            it('restores nothing for a panel that closed before the navigation ended', () => {
+                start();
+                const { ref, requestClose } = guardedRef();
+                spectator.service.register(ref, { editContent: ID_1, editContentLang: '1' });
+
+                location.pop(SURFACE_URL);
+                ref.close();
+                routerAnswersBack(SURFACE_URL);
+
+                expect(requestClose).not.toHaveBeenCalled();
+                expect(lastWrite(location.replaceState).params).toEqual(SURFACE_PARAMS);
+            });
+
+            it('ignores router navigations that answer no Back', () => {
+                start();
+                const { ref, requestClose } = guardedRef();
+                spectator.service.register(ref, { editContent: ID_1, editContentLang: '1' });
+
+                router.events.next(new NavigationEnd(3, SURFACE_URL, SURFACE_URL));
+
+                expect(requestClose).not.toHaveBeenCalled();
+                expect(location.replaceState).not.toHaveBeenCalled();
+            });
+        });
+
+        /**
+         * Back that lands on another route has left the surface: the panel goes with the surface's
+         * injector, and the URL Back landed on belongs to another screen (T155).
+         */
+        describe('when Back leaves the surface', () => {
+            /** A page on another route, which happens to name a panel of its own. */
+            const OTHER_ROUTE_URL = `/c/content-drive?path=%2Fblog&editContent=${ID_2}`;
+
+            it.each([
+                ['a panel that pushed its own entry', SURFACE_URL],
+                [
+                    'a panel a link opened, which has no entry of its own',
+                    surfaceUrlWith({ editContent: ID_1, editContentLang: '1' })
+                ]
+            ])('restores nothing and asks nothing to close, for %s', (_label, url) => {
+                start(url);
+                const { ref, requestClose } = guardedRef();
+                spectator.service.register(ref, { editContent: ID_1, editContentLang: '1' });
+                location.go.mockClear();
+
+                back(OTHER_ROUTE_URL);
+
+                expect(requestClose).not.toHaveBeenCalled();
+                expect(serviceReplaces(1)).toBe(0);
+                expect(location.go).not.toHaveBeenCalled();
+            });
+
+            it("leaves the other route's URL alone when the panel then closes with its surface", () => {
+                start();
+                const { ref } = guardedRef();
+                spectator.service.register(ref, { editContent: ID_1, editContentLang: '1' });
+                back(OTHER_ROUTE_URL);
+
+                ref.close();
+
+                expect(serviceReplaces(1)).toBe(0);
+                expect(location.path()).toBe(OTHER_ROUTE_URL);
+            });
         });
     });
 

@@ -674,13 +674,87 @@ describe('DotEditContentOpenerService', () => {
             expect(params).toEqual({ editContent: 'new-id', editContentLang: '2' });
         });
 
-        it("leaves the URL as it is when an edit's content is saved", async () => {
+        it("leaves the URL as it is when an edit's content is saved in the language it names", async () => {
             spectator.service.open(EDIT_REQUEST, { injector, url: { route } });
             const { config } = await lastOpen();
 
-            config.outputs?.['saved'](createFakeContentlet({ inode: 'abc2' }) as never);
+            config.outputs?.['saved'](
+                createFakeContentlet({ inode: 'abc2', identifier: 'id-1', languageId: 1 }) as never
+            );
 
             expect(update).not.toHaveBeenCalled();
+        });
+
+        // Switching to a language the content lacks reports no language: the new translation's
+        // first save is the first the URL hears of it. Content Drive did this itself until #38303.
+        it('names the language of a new translation in place when it is first saved', async () => {
+            const ref = spectator.service.open(EDIT_REQUEST, { injector, url: { route } });
+            const { config } = await lastOpen();
+
+            config.outputs?.['saved'](
+                createFakeContentlet({
+                    inode: 'abc-es',
+                    identifier: 'id-1',
+                    languageId: 2
+                }) as never
+            );
+
+            expect(update).toHaveBeenCalledTimes(1);
+            const [updatedRef, params] = update.mock.calls[0];
+            expect(updatedRef === ref).toBe(true);
+            expect(params).toEqual({ editContent: 'id-1', editContentLang: '2' });
+        });
+
+        // Related content opened in place inside the panel saves under another identifier.
+        it('leaves the URL as it is when other content is saved inside the panel', async () => {
+            spectator.service.open(EDIT_REQUEST, { injector, url: { route } });
+            const { config } = await lastOpen();
+
+            config.outputs?.['saved'](
+                createFakeContentlet({
+                    inode: 'rel-2',
+                    identifier: 'rel-id',
+                    languageId: 2
+                }) as never
+            );
+
+            expect(update).not.toHaveBeenCalled();
+        });
+
+        it('registers the panel in place when the option asks for it', () => {
+            resolveEditor.mockReturnValue(NEVER);
+
+            const ref = spectator.service.open(EDIT_REQUEST, {
+                injector,
+                url: { route, inPlace: true }
+            });
+
+            expect(register).toHaveBeenCalledTimes(1);
+            const [registeredRef, params, how] = register.mock.calls[0];
+            expect(registeredRef === ref).toBe(true);
+            expect(params).toEqual({ editContent: 'id-1', editContentLang: '1' });
+            expect(how).toEqual({ inPlace: true });
+        });
+
+        it('registers a panel opened from inside one with an entry of its own, even when the first was in place', async () => {
+            getContentletByInode.mockReturnValue(
+                of(
+                    createFakeContentlet({
+                        inode: 'rel-1',
+                        identifier: 'rel-id',
+                        contentType: 'Banner',
+                        languageId: 2
+                    })
+                )
+            );
+            spectator.service.open(EDIT_REQUEST, { injector, url: { route, inPlace: true } });
+            const { config: first } = await lastOpen();
+
+            first.outputs?.['openContent']({ request: { mode: 'edit', inode: 'rel-1' } } as never);
+            await lastOpen();
+
+            expect(register).toHaveBeenCalledTimes(2);
+            expect(register.mock.calls[1]).toHaveLength(2);
         });
 
         it('passes the option to a panel opened from inside one, so the stacked panel registers its own params', async () => {

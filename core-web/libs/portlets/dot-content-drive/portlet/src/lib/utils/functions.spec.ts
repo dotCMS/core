@@ -11,6 +11,7 @@ import {
     isTreeNodeContentData,
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
+import { readPanelUrlIntent } from '@dotcms/edit-content';
 import {
     createFakeCheckboxField,
     createFakeDateField,
@@ -2198,6 +2199,47 @@ describe('resolveContentDriveUrlIntent', () => {
         expect(resolveContentDriveUrlIntent({ createContent: 'Banner', path: '/blog/' })).toEqual({
             kind: 'create',
             contentType: 'Banner'
+        });
+    });
+
+    /**
+     * The panel params are every surface's, read by the shared `readPanelUrlIntent` (#38303,
+     * FR-049): a link means the same in Content Drive as anywhere else. Only the folder dialogs
+     * are Content Drive's own.
+     */
+    describe('the panel params, as every surface reads them', () => {
+        const INODE = '0d4b8e2c-1a57-4c1e-9a6f-3f0c8e5a7b2d';
+
+        it.each([
+            ['an edit with its language', { editContent: CONTENT_ID, editContentLang: '2' }],
+            [
+                'an edit with a language that is not one',
+                { editContent: CONTENT_ID, editContentLang: 'x' }
+            ],
+            ['a create', { createContent: 'Banner', path: '/blog/' }],
+            ['Edit Code', { editCode: INODE }],
+            ['an edit and a create', { editContent: CONTENT_ID, createContent: 'Banner' }],
+            ['an edit and Edit Code', { editContent: CONTENT_ID, editCode: INODE }],
+            ['the retired create marker', { editContent: 'new' }],
+            ['a value that is not an identifier', { editContent: 'id-1 OR +working:true' }]
+        ])('reads %s as readPanelUrlIntent does', (_label, queryParams) => {
+            expect(resolveContentDriveUrlIntent(queryParams)).toEqual(
+                readPanelUrlIntent(queryParams)
+            );
+        });
+
+        // Opens nothing in Content Drive: the param is there so Back closes Edit Code.
+        it('reads an Edit Code link by inode', () => {
+            expect(resolveContentDriveUrlIntent({ editCode: INODE })).toEqual({
+                kind: 'editCode',
+                inode: INODE
+            });
+        });
+
+        it('is a conflict for Edit Code with a folder dialog', () => {
+            expect(
+                resolveContentDriveUrlIntent({ editCode: INODE, editFolder: FOLDER_ID })
+            ).toEqual({ kind: 'conflict' });
         });
     });
 

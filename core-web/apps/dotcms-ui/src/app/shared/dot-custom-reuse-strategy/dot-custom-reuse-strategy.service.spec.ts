@@ -53,4 +53,29 @@ describe('DotCustomReuseStrategyService', () => {
             )
         ).toEqual(false);
     });
+
+    /**
+     * Pinned because UVE depends on it (#38303): `/edit-page` reads its page from the URL once,
+     * when it is built, and writes page changes with `Location.go`. Browser Back to another page,
+     * and the vanity-URL redirect (`router.navigate([], { queryParams: { url } })`), load the
+     * right page only because a query-only navigation rebuilds a `reuseRoute: false` route. A
+     * screen that must survive Back with a side panel open drops the flag from its route instead.
+     */
+    it('should rebuild a `reuseRoute: false` route on a navigation that only changes its query params', () => {
+        const config = { path: 'content' };
+        const current = {
+            routeConfig: config,
+            params: {},
+            queryParams: { url: '/about-us' },
+            data: { reuseRoute: false }
+        };
+        const future = { ...current, queryParams: { url: '/blog' } };
+
+        expect(
+            service.shouldReuseRoute(
+                future as unknown as ActivatedRouteSnapshot,
+                current as unknown as ActivatedRouteSnapshot
+            )
+        ).toEqual(false);
+    });
 });

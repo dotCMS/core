@@ -90,4 +90,21 @@ describe('appRoutes', () => {
             expect(loaded.some((route) => route.path === '')).toBe(true);
         });
     });
+
+    describe('Query Tool portlet', () => {
+        const queryToolRoutes = allRoutes.filter((route) => route.path === 'query-tool');
+
+        it('should be registered exactly once', () => {
+            expect(queryToolRoutes).toHaveLength(1);
+        });
+
+        it('should not force `reuseRoute: false` on its route', () => {
+            // The route has no path params, so the flag only ever rebuilt the page on a
+            // navigation to the Query Tool itself, which in practice is browser Back: the router
+            // answers every Back with a navigation (`onSameUrlNavigation: 'reload'`). Rebuilt, the
+            // page dropped the side panel open over it, its unsaved changes, and the URL the panel
+            // service had just restored for its prompt (#38303, FR-047).
+            expect(queryToolRoutes[0].data?.['reuseRoute']).toBeUndefined();
+        });
+    });
 });

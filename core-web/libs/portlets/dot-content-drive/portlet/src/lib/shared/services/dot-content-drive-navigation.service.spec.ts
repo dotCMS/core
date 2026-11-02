@@ -219,11 +219,6 @@ describe('DotContentDriveNavigationService', () => {
                 title: 'Breaking',
                 portletId: 'content-drive'
             });
-            expect(service.$panelLocation()).toEqual({
-                kind: 'edit',
-                editContent: 'id-1',
-                editContentLang: 2
-            });
             expect(router.navigate).not.toHaveBeenCalled();
         });
 
@@ -278,10 +273,6 @@ describe('DotContentDriveNavigationService', () => {
                     folderInode: 'inode-1',
                     languageId: 1,
                     portletId: 'content-drive'
-                });
-                expect(service.$panelLocation()).toEqual({
-                    kind: 'create',
-                    createContent: contentType
                 });
                 expect(router.navigate).not.toHaveBeenCalled();
             }
@@ -453,17 +444,23 @@ describe('DotContentDriveNavigationService', () => {
     });
 
     /**
-     * One signal says what was asked to open, whichever editor will show it, plus `$panelLocation`,
-     * which says what the URL must show. Keeping the location separate is what lets it follow the
-     * panel later (first save, language switch) without remounting it (#37759, #38303).
+     * One signal says what was asked to open, whichever editor will show it. What the URL shows is
+     * the opener's, which names the panel from this request and follows it after it opened (first
+     * save, language switch) without remounting it (#38303, FR-044).
      */
-    describe('panel request and URL location', () => {
-        it('starts with nothing open and no location', () => {
+    describe('panel request', () => {
+        it('starts with nothing open', () => {
             expect(service.$editPanelRequest()).toBeNull();
-            expect(service.$panelLocation()).toBeNull();
         });
 
-        it('exposes an edit through $editPanelRequest and names it in the location', () => {
+        it('keeps no URL location of its own: the opener writes the panel to the URL', () => {
+            expect('$panelLocation' in service).toBe(false);
+            expect('panelSaved' in service).toBe(false);
+            expect('panelLanguageChanged' in service).toBe(false);
+        });
+
+        // The opener names an edit in the URL by the request's identifier and language.
+        it('exposes an edit through $editPanelRequest, with its identifier and language', () => {
             service.editContent(
                 createFakeContentlet({
                     contentType: 'blog',
@@ -474,19 +471,13 @@ describe('DotContentDriveNavigationService', () => {
             );
 
             expect(service.$editPanelRequest()).toEqual(
-                expect.objectContaining({ mode: 'edit', inode: 'inode-1' })
+                expect.objectContaining({
+                    mode: 'edit',
+                    inode: 'inode-1',
+                    identifier: 'id-1',
+                    languageId: 2
+                })
             );
-            expect(service.$panelLocation()).toEqual({
-                kind: 'edit',
-                editContent: 'id-1',
-                editContentLang: 2
-            });
-        });
-
-        it('names a create by its content type variable in the location', () => {
-            service.createContent('blog');
-
-            expect(service.$panelLocation()).toEqual({ kind: 'create', createContent: 'blog' });
         });
 
         it('names a deep-linked edit by identifier and the resolved language', () => {
@@ -506,118 +497,9 @@ describe('DotContentDriveNavigationService', () => {
 
             service.openEditByIdentifier('id-1', 3);
 
-            expect(service.$panelLocation()).toEqual({
-                kind: 'edit',
-                editContent: 'id-1',
-                editContentLang: 3
-            });
-        });
-
-        /**
-         * The location follows the panel after it opened, without touching the request: replacing
-         * the request would remount the panel and reload the editor under the author (#37759,
-         * FR-020, FR-025).
-         */
-        describe('following the open panel', () => {
-            const openCreate = () => {
-                service.createContent('blog');
-            };
-
-            const openEdit = () => {
-                service.editContent(
-                    createFakeContentlet({
-                        contentType: 'blog',
-                        inode: 'inode-1',
-                        identifier: 'id-1',
-                        languageId: 1
-                    })
-                );
-            };
-
-            it('names the saved content once a create is saved for the first time', () => {
-                openCreate();
-                const request = service.$editPanelRequest();
-
-                service.panelSaved({ identifier: 'id-9', languageId: 2 });
-
-                expect(service.$panelLocation()).toEqual({
-                    kind: 'edit',
-                    editContent: 'id-9',
-                    editContentLang: 2
-                });
-                expect(service.$editPanelRequest()).toBe(request);
-            });
-
-            it('leaves an edit where it is on a later save', () => {
-                openEdit();
-
-                service.panelSaved({ identifier: 'id-1', languageId: 1 });
-
-                expect(service.$panelLocation()).toEqual({
-                    kind: 'edit',
-                    editContent: 'id-1',
-                    editContentLang: 1
-                });
-            });
-
-            // A new translation saved in the new editor: the saved content names the language
-            // (#37759, FR-020, T124).
-            it('follows the language a save names in an open edit', () => {
-                openEdit();
-                const request = service.$editPanelRequest();
-
-                service.panelSaved({ identifier: 'id-1', languageId: 4 });
-
-                expect(service.$panelLocation()).toEqual({
-                    kind: 'edit',
-                    editContent: 'id-1',
-                    editContentLang: 4
-                });
-                expect(service.$editPanelRequest()).toBe(request);
-            });
-
-            // A save of related content reached in place names another content: its language is
-            // not the language of the content the URL names (#37759, FR-020, T131).
-            it('ignores the language of a save that names another content', () => {
-                openEdit();
-
-                service.panelSaved({ identifier: 'id-9', languageId: 4 });
-
-                expect(service.$panelLocation()).toEqual({
-                    kind: 'edit',
-                    editContent: 'id-1',
-                    editContentLang: 1
-                });
-            });
-
-            it('follows a language switch in the open edit', () => {
-                openEdit();
-                const request = service.$editPanelRequest();
-
-                service.panelLanguageChanged(3);
-
-                expect(service.$panelLocation()).toEqual({
-                    kind: 'edit',
-                    editContent: 'id-1',
-                    editContentLang: 3
-                });
-                expect(service.$editPanelRequest()).toBe(request);
-            });
-
-            it('ignores a language switch while creating, which has no content to name yet', () => {
-                openCreate();
-
-                service.panelLanguageChanged(3);
-
-                expect(service.$panelLocation()).toEqual({ kind: 'create', createContent: 'blog' });
-            });
-
-            it('does nothing with no panel open', () => {
-                service.panelSaved({ identifier: 'id-9', languageId: 2 });
-                service.panelLanguageChanged(3);
-
-                expect(service.$panelLocation()).toBeNull();
-            });
+            expect(service.$editPanelRequest()).toEqual(
+                expect.objectContaining({ mode: 'edit', identifier: 'id-1', languageId: 3 })
+            );
         });
 
         /**
@@ -650,7 +532,6 @@ describe('DotContentDriveNavigationService', () => {
             it('reopens its edit, in the same language, as a fresh request', () => {
                 openEdit();
                 const before = service.$editPanelRequest();
-                const locationBefore = service.$panelLocation();
 
                 const handled = service.switchToLegacyEditor(
                     { inode: 'inode-1' },
@@ -670,13 +551,12 @@ describe('DotContentDriveNavigationService', () => {
                 });
                 // A new request, so the panel reopens rather than keeping the new editor.
                 expect(service.$editPanelRequest()).not.toBe(before);
-                // Same content, same language: the URL already says so.
-                expect(service.$panelLocation()).toEqual(locationBefore);
             });
 
             // Inside the panel, related content opens in place, so the panel opened for one content
-            // can show another. The URL names what reopens (#37759, FR-020, T131).
-            it('names the switched content when the panel moved to related content', () => {
+            // can show another. The request names what reopens, identifier and language, and the
+            // opener names the reopened panel in the URL from it (#37759, FR-020, T131).
+            it('names the switched content and its language when the panel moved to related content', () => {
                 openEdit();
 
                 const handled = service.switchToLegacyEditor(
@@ -696,14 +576,10 @@ describe('DotContentDriveNavigationService', () => {
                         mode: 'edit',
                         inode: 'inode-9',
                         identifier: 'id-9',
-                        contentType: 'news'
+                        contentType: 'news',
+                        languageId: 3
                     })
                 );
-                expect(service.$panelLocation()).toEqual({
-                    kind: 'edit',
-                    editContent: 'id-9',
-                    editContentLang: 3
-                });
             });
 
             it('reopens its create as a fresh create of the same type, in the same language', () => {
@@ -727,7 +603,6 @@ describe('DotContentDriveNavigationService', () => {
                     })
                 );
                 expect(service.$editPanelRequest()).not.toBe(before);
-                expect(service.$panelLocation()).toEqual({ kind: 'create', createContent: 'blog' });
             });
 
             /**
@@ -812,7 +687,6 @@ describe('DotContentDriveNavigationService', () => {
 
                 expect(handled).toBe(true);
                 expect(service.$editPanelRequest()).toBeNull();
-                expect(service.$panelLocation()).toBeNull();
             });
 
             it("declines another editor's load error and keeps its panel open", () => {
@@ -824,13 +698,12 @@ describe('DotContentDriveNavigationService', () => {
             });
         });
 
-        it('clears the request and the location on close', () => {
+        it('clears the request on close', () => {
             service.createContent('blog');
 
             service.closeEditPanel();
 
             expect(service.$editPanelRequest()).toBeNull();
-            expect(service.$panelLocation()).toBeNull();
         });
     });
 
@@ -1010,11 +883,6 @@ describe('DotContentDriveNavigationService', () => {
                         languageId: 2,
                         title: 'Spring sale',
                         portletId: 'content-drive'
-                    });
-                    expect(service.$panelLocation()).toEqual({
-                        kind: 'edit',
-                        editContent: 'banner-id',
-                        editContentLang: 2
                     });
                     expect(router.navigate).not.toHaveBeenCalled();
                 }
