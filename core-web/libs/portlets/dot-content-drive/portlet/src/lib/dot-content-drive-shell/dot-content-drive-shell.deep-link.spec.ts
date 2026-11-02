@@ -6,7 +6,7 @@ import { Location } from '@angular/common';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { signal, WritableSignal } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -35,6 +35,7 @@ import {
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { DotSite, PERMISSIONS_TYPE } from '@dotcms/dotcms-models';
+import { DotPanelUrlStateService } from '@dotcms/edit-content';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotSidePanelConfig, DotSidePanelService } from '@dotcms/ui';
@@ -162,8 +163,11 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 $editPanelRequest: signal(null),
                 $forceLegacyEditor: signal(false),
                 $reopeningPanel: signal(false),
+                // Read only by the URL code this slice moves to the opener; goes with it (#38303).
                 $panelLocation: signal(null)
             }),
+            // A link naming two things is cleared through the service that owns the panel params.
+            mockProvider(DotPanelUrlStateService, { register: vi.fn(), clear: vi.fn() }),
             LoggerService,
             StringUtils,
             mockProvider(PushPublishService, {
@@ -213,8 +217,17 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
         delete deepLinkQueryParams['editContentLang'];
     });
 
+    /** The address bar: the link the shell loads on, then the last URL written. */
+    let currentUrl = '';
+
     /** Mounts with the deps the constructor needs; does not run change detection. */
-    const mountShell = () =>
+    const mountShell = () => {
+        currentUrl = `/content-drive?${new URLSearchParams(deepLinkQueryParams).toString()}`;
+
+        return mountOnLink();
+    };
+
+    const mountOnLink = () =>
         createComponent({
             providers: [
                 mockProvider(DotContentDriveStore, {
@@ -324,13 +337,11 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                     viewType: signal<'list' | 'card'>('list'),
                     setViewType: vi.fn()
                 }),
-                mockProvider(Router, {
-                    createUrlTree: vi.fn().mockReturnValue({ toString: () => '' })
-                }),
+                // Keeps the URL the last write left, as the browser does, starting from the link.
                 mockProvider(Location, {
-                    go: vi.fn(),
-                    replaceState: vi.fn(),
-                    path: vi.fn().mockReturnValue(''),
+                    go: vi.fn((url: string) => (currentUrl = url)),
+                    replaceState: vi.fn((url: string) => (currentUrl = url)),
+                    path: vi.fn(() => currentUrl),
                     subscribe: vi.fn().mockReturnValue({ unsubscribe: vi.fn() })
                 }),
                 mockProvider(DotContentTypeService, {
@@ -477,34 +488,60 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             deepLinkQueryParams['editContent'] = DEEP_LINK_ID;
         });
 
-        /** What the shell writes to clear every panel and folder-dialog param, keeping the rest. */
-        const ALL_CLEARED = {
-            editContent: null,
-            editContentLang: null,
-            createContent: null,
-            createFolder: null,
-            editFolder: null,
-            folderPermissions: null
-        };
-
+        /**
+         * The panel params are cleared by the service that owns them, with Content Drive's folder
+         * dialog params beside them (#38303, FR-049).
+         */
         it.each([
             ['an edit and a create', { createContent: 'Blog' }],
             ['an edit and a folder dialog', { editFolder: FOLDER_ID }]
-        ])('opens nothing for %s, and removes all of those params', (_label, extra) => {
-            Object.assign(deepLinkQueryParams, extra);
+        ])(
+            'opens nothing for %s, and clears them with the folder dialog params',
+            (_label, extra) => {
+                Object.assign(deepLinkQueryParams, extra);
 
+                const spectator = mountShell();
+                const panelUrl = spectator.inject(DotPanelUrlStateService);
+                const location = spectator.inject(Location);
+
+                expect(openEditByIdentifier).not.toHaveBeenCalled();
+                expect(createContent).not.toHaveBeenCalled();
+                expect(panelUrl.clear).toHaveBeenCalledTimes(1);
+                expect(panelUrl.clear).toHaveBeenCalledWith([
+                    'createFolder',
+                    'editFolder',
+                    'folderPermissions'
+                ]);
+                // The shell writes none of it itself.
+                expect(location.replaceState).not.toHaveBeenCalled();
+                expect(location.go).not.toHaveBeenCalled();
+            }
+        );
+    });
+
+    /**
+     * Edit Code is in the URL so Back closes it through its prompt; a link to it opens nothing, as
+     * before #38303, and the param is cleared rather than left naming a panel that is not open.
+     */
+    describe('Edit Code link', () => {
+        const FILE_INODE = '0d4b8e2c-1a57-4c1e-9a6f-3f0c8e5a7b2d';
+
+        beforeEach(() => {
+            delete deepLinkQueryParams['editContent'];
+            deepLinkQueryParams['editCode'] = FILE_INODE;
+        });
+
+        afterEach(() => {
+            delete deepLinkQueryParams['editCode'];
+            deepLinkQueryParams['editContent'] = DEEP_LINK_ID;
+        });
+
+        it('opens nothing and clears the param', () => {
             const spectator = mountShell();
-            const router = spectator.inject(Router);
-            const location = spectator.inject(Location);
 
             expect(openEditByIdentifier).not.toHaveBeenCalled();
-            expect(createContent).not.toHaveBeenCalled();
-            expect(router.createUrlTree).toHaveBeenCalledWith([], {
-                queryParams: ALL_CLEARED,
-                queryParamsHandling: 'merge'
-            });
-            expect(location.replaceState).toHaveBeenCalledTimes(1);
-            expect(location.go).not.toHaveBeenCalled();
+            expect(sidePanels.open).not.toHaveBeenCalled();
+            expect(spectator.inject(DotPanelUrlStateService).clear).toHaveBeenCalledTimes(1);
         });
     });
 
@@ -718,12 +755,9 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 const spectator = mountShell();
                 spectator.detectChanges();
 
-                expect(spectator.inject(Router).createUrlTree).toHaveBeenLastCalledWith(
-                    [],
-                    expect.objectContaining({
-                        queryParams: expect.objectContaining({ folderPermissions: null })
-                    })
-                );
+                expect(currentUrl).not.toContain('folderPermissions');
+                // The rest of the link stays.
+                expect(currentUrl).toContain('path=');
             });
 
             it('opens Edit Permissions when the author may edit the folder permissions', () => {
