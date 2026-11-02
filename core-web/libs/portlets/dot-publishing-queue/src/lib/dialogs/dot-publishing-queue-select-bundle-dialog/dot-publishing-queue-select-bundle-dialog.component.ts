@@ -14,7 +14,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -24,6 +24,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 
 import {
@@ -122,6 +123,7 @@ const ASSETS_PER_PAGE = 10;
         SkeletonModule,
         TableModule,
         TagModule,
+        ToastModule,
         TooltipModule,
         DotCopyButtonComponent,
         DotDownloadBundleFormComponent,
@@ -134,7 +136,11 @@ const ASSETS_PER_PAGE = 10;
     // to component-provide it (the legacy DotPushPublishDialogComponent did,
     // but that's a stateless HttpClient wrapper so the per-instance copy was
     // redundant).
-    providers: [ConfirmationService],
+    //
+    // MessageService: an asset row opens the side panel under this dialog's injector, and its
+    // editor needs PrimeNG's MessageService. The admin root provides none (one there would hide the
+    // page editor's), so the panel toasts through this one, in this template (#38303).
+    providers: [ConfirmationService, MessageService],
     templateUrl: './dot-publishing-queue-select-bundle-dialog.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex h-full min-h-0 flex-col' }
