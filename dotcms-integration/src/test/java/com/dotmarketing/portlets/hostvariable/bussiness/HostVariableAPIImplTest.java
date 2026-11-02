@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.junit.TimeoutWithDiagnostics;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
@@ -21,6 +22,7 @@ import com.dotmarketing.portlets.hostvariable.model.HostVariable;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -29,6 +31,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
 
 /**
@@ -49,6 +52,13 @@ public class HostVariableAPIImplTest {
     private static User readerOfBothSites;
     private static final List<User> users = new ArrayList<>();
     private static final List<Host> sites = new ArrayList<>();
+
+    /**
+     * Each test takes seconds; one still running after five minutes is failed, with its threads and database waits
+     * logged, instead of holding the CI job until it times out.
+     */
+    @Rule
+    public final TimeoutWithDiagnostics timeout = new TimeoutWithDiagnostics(Duration.ofMinutes(5));
 
     /**
      * Boots the integration test environment and creates two Sites plus three users: one who can edit Site A only,
@@ -206,21 +216,15 @@ public class HostVariableAPIImplTest {
         final String otherId = createVariable(siteB, uniqueKey("listother"), "valueOnB");
         final Map<String, Object> ownBefore = storedRow(ownId).orElseThrow();
         final Map<String, Object> otherBefore = storedRow(otherId).orElseThrow();
-        // The list save processes entries in the order Collectors.toMap gives their keys: pick a key for the refused
-        // entry that comes after the own change, so the own change is written first and only the rollback undoes it
-        List<HostVariable> list;
-        String refusedKey;
-        do {
-            refusedKey = uniqueKey("listchanged");
-            list = variablesOf(siteA).stream()
-                    .filter(variable -> !ownId.equals(variable.getId())).collect(Collectors.toList());
-            list.add(variable(ownId, siteA, ownKey, "ownValueChanged", editorOfSiteA));
-            list.add(variable(otherId, siteA, refusedKey, "changedValue", editorOfSiteA));
-        } while (!processedBefore(list, ownKey, refusedKey));
-        final List<HostVariable> toSave = list;
+        // The list save processes entries in the given order: the own change comes first, so it is written before the
+        // refused entry and only the rollback undoes it
+        final List<HostVariable> list = variablesOf(siteA).stream()
+                .filter(variable -> !ownId.equals(variable.getId())).collect(Collectors.toList());
+        list.add(variable(ownId, siteA, ownKey, "ownValueChanged", editorOfSiteA));
+        list.add(variable(otherId, siteA, uniqueKey("listchanged"), "changedValue", editorOfSiteA));
 
         assertThrows(DotDataException.class,
-                () -> hostVariableAPI.save(toSave, siteA.getIdentifier(), editorOfSiteA, false));
+                () -> hostVariableAPI.save(list, siteA.getIdentifier(), editorOfSiteA, false));
 
         assertEquals(otherBefore, storedRow(otherId).orElseThrow());
         assertEquals(ownBefore, storedRow(ownId).orElseThrow());
@@ -503,23 +507,6 @@ public class HostVariableAPIImplTest {
     private static Optional<Map<String, Object>> storedRowByKey(final String key) throws DotDataException {
         return firstRow(new DotConnect().setSQL("SELECT id, host_id, variable_name, variable_key, variable_value, "
                 + "user_id FROM host_variable WHERE variable_key = ?").addParam(key).loadObjectResults());
-    }
-
-    /**
-     * Tells whether the list save processes the entry with the first key before the entry with the second key. The
-     * list save removes duplicate keys with {@code Collectors.toMap} and processes the entries in that map's order.
-     *
-     * @param list   The variables passed to the list save.
-     * @param first  The key expected first.
-     * @param second The key expected later.
-     *
-     * @return {@code true} when the first key comes before the second.
-     */
-    private static boolean processedBefore(final List<HostVariable> list, final String first, final String second) {
-        final List<String> order = new ArrayList<>(list.stream()
-                .collect(Collectors.toMap(HostVariable::getKey, HostVariable::getKey, (existing, replacement) -> existing))
-                .values());
-        return order.indexOf(first) < order.indexOf(second);
     }
 
     /**
