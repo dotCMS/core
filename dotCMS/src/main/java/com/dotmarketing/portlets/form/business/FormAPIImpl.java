@@ -31,6 +31,8 @@ import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 
@@ -205,7 +207,7 @@ public class FormAPIImpl implements FormAPI {
 			return null;
 		}
 		final String luceneQuery = "+structureName:" + FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + " +" +
-				FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + "." + FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME + ":" + form.id();
+				FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + "." + FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME + ":(" + form.id() + " " + form.variable() + ")";
 
 		final List<Contentlet> widgets = conAPI.search(luceneQuery, 1, 0, null, user, false);
 		return widgets.isEmpty() ? null : widgets.get(0);
@@ -314,19 +316,24 @@ public class FormAPIImpl implements FormAPI {
 
 		// Setting up who may see and change the new widget is part of creating it, not something
 		// the user is asked to have permission for. The permissions the widget inherits are copied
-		// onto it first, so roles the form does not name keep them, its creator included. Visitors
-		// are then set to read it, and every other role the form names is set to read, edit and
-		// publish it as far as it may with the form, replacing what that role inherited.
+		// onto it first, so roles the form does not name keep them, its creator included, and so do
+		// roles locked against permission changes. Visitors are then set to read it, and every other
+		// role the form names is set to read, edit and publish it exactly as far as it may with the
+		// form, which removes what that role inherited when it may do none of the three.
 		perAPI.permissionIndividually(perAPI.findParentPermissionable(widget), widget, systemUser);
 		final Role anonymous = APILocator.getRoleAPI().loadCMSAnonymousRole();
 		perAPI.save(new Permission(widget.getPermissionId(), anonymous.getId(),
 				PermissionAPI.PERMISSION_READ, true), widget, systemUser, false);
 		final int widgetPermissions = PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT
 				+ PermissionAPI.PERMISSION_PUBLISH;
+		final Set<String> onWidget = perAPI.getPermissions(widget, true, true).stream()
+				.map(Permission::getRoleId).collect(Collectors.toSet());
 		for (final Permission onForm : perAPI.getPermissions(form, true)) {
+			final Role role = APILocator.getRoleAPI().loadRoleById(onForm.getRoleId());
 			final int granted = onForm.getPermission() & widgetPermissions;
-			if (granted > 0 && !anonymous.getId().equals(onForm.getRoleId())) {
-				perAPI.save(new Permission(widget.getPermissionId(), onForm.getRoleId(), granted, true),
+			if (role.isEditPermissions() && !anonymous.getId().equals(role.getId())
+					&& (granted > 0 || onWidget.contains(role.getId()))) {
+				perAPI.save(new Permission(widget.getPermissionId(), role.getId(), granted, true),
 						widget, systemUser, false);
 			}
 		}

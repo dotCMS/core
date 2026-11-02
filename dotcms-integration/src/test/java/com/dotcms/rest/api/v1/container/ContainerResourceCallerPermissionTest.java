@@ -29,9 +29,11 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
@@ -353,6 +355,82 @@ public class ContainerResourceCallerPermissionTest {
         final Contentlet found = APILocator.getFormAPI().getFormContent(form.id(), adminUser);
         assertNotNull("the widget should be found by the form's id", found);
         assertEquals(created.getIdentifier(), found.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link FormAPI#getFormContent(String, User)}
+     * Given: a widget stored under the form's variable, as the earlier way of creating widgets did
+     *        when it was given the variable
+     * When: the widget is asked for by the form's id
+     * Should: find it
+     */
+    @Test
+    public void test_getFormContent_widgetStoredUnderTheVariable_isFoundById() throws Exception {
+        final ContentType form = formType();
+        final Contentlet stored = APILocator.getFormAPI().createDefaultFormContent(form.variable());
+        assertEquals(form.variable(),
+                stored.getStringProperty(FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME));
+
+        final Contentlet found = APILocator.getFormAPI().getFormContent(form.id(), adminUser);
+
+        assertNotNull("the widget stored under the variable should be found", found);
+        assertEquals(stored.getIdentifier(), found.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#createContainerFormByQueryParam}
+     * Given: a form whose own permissions name a role that is locked against permission changes
+     * When: an administrator asks for its widget to be created
+     * Should: create it
+     */
+    @Test
+    public void test_createForm_formNamingALockedRole_createsTheWidget() throws Exception {
+        final ContentType form = formType();
+        final Role locked = APILocator.getRoleAPI().loadCMSAdminRole();
+        assertFalse("the fixture needs a role locked against permission changes",
+                locked.isEditPermissions());
+        new DotConnect().setSQL("insert into permission (id, permission_type, inode_id, roleid, permission)"
+                        + " values (nextval('permission_seq'), ?, ?, ?, ?)")
+                .addParam(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE)
+                .addParam(form.getPermissionId())
+                .addParam(locked.getId())
+                .addParam(PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT
+                        | PermissionAPI.PERMISSION_PUBLISH)
+                .loadResult();
+        CacheLocator.getPermissionCache().clearCache();
+
+        final String created = widgetIdentifier(resource.createContainerFormByQueryParam(
+                request(adminUser), response, readableContainer(adminUser).getIdentifier(),
+                form.id()));
+
+        assertEquals(1, widgetsFor(form.id()).size());
+        assertEquals(created, widgetsFor(form.id()).get(0).getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#createContainerFormByQueryParam}
+     * Given: a role the form names without read, edit or publish, that may read widgets in general
+     * When: the form's widget is created
+     * Should: leave that role unable to read the new widget, as it is unable to read the form
+     */
+    @Test
+    public void test_createForm_roleTheFormNamesWithoutReadEditOrPublish_getsNothing()
+            throws Exception {
+        final ContentType form = formType();
+        final User named = user(TestUserUtils.getBackendRole());
+        final Role namedRole = APILocator.getRoleAPI().loadRoleByKey(named.getUserId());
+        grant(named, formWidgetType(), PermissionAPI.PERMISSION_READ);
+        grant(named, form, PermissionAPI.PERMISSION_EDIT_PERMISSIONS);
+
+        final String created = widgetIdentifier(resource.createContainerFormByQueryParam(
+                request(adminUser), response, readableContainer(adminUser).getIdentifier(),
+                form.id()));
+
+        final Contentlet widget = APILocator.getContentletAPI()
+                .findContentletByIdentifierAnyLanguage(created);
+        assertFalse("a role that cannot read the form should not read its widget",
+                APILocator.getPermissionAPI().doesRoleHavePermission(widget,
+                        PermissionAPI.PERMISSION_READ, namedRole));
     }
 
     /**
