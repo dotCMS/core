@@ -6,6 +6,7 @@ import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.PermissionUtilTest;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TemplateLayoutDataGen;
 import com.dotcms.datagen.TestDataUtils;
@@ -13,6 +14,7 @@ import com.dotcms.datagen.ThemeDataGen;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -21,9 +23,11 @@ import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -34,6 +38,27 @@ import java.util.Map;
 public final class PageRenderTestUtil {
 
     private PageRenderTestUtil(){}
+
+    /**
+     * Grants the user READ on the site and on every page under it, the way a site-level page
+     * permission is set up from the permissions screen. Grant it before creating the pages.
+     *
+     * @param site the site holding the pages
+     * @param user the user to grant READ to
+     */
+    public static void grantPageReadOnSite(final Host site, final User user)
+            throws DotDataException, DotSecurityException {
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final User systemUser = APILocator.systemUser();
+        if (permissionAPI.isInheritingPermissions(site)) {
+            permissionAPI.permissionIndividually(permissionAPI.findParentPermissionable(site), site, systemUser);
+        }
+
+        PermissionUtilTest.addPermission(site, user, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                PermissionAPI.PERMISSION_READ);
+        PermissionUtilTest.addPermission(site, user, IHTMLPage.class.getCanonicalName(),
+                PermissionAPI.PERMISSION_READ);
+    }
 
     public static PageRenderTest createPage(final int containersNumber, final Host host) {
         return createPage(containersNumber, host, true);

@@ -1,6 +1,7 @@
 package com.dotcms.rendering.js;
 
 import com.dotcms.rendering.util.ScriptingReaderParams;
+import com.dotcms.rendering.util.ScriptingUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
@@ -37,6 +38,16 @@ import java.io.Reader;
 public class FileJavascriptReader implements JavascriptReader {
     private static final String FILE_EXTENSION = ".js";
 
+    /**
+     * Reads the file named after the request's HTTP method in the requested folder, for example
+     * {@code get.js}, through {@link #getJavascriptReaderFromPath}.
+     *
+     * @param params the folder, HTTP method, request, user and page mode of the call
+     * @return a reader over the file's code
+     * @throws DotSecurityException when the user cannot read the file or its last modifier may not write scripts
+     * @throws IOException          when the file's contents cannot be opened
+     * @throws DotDataException     when the file or the role cannot be loaded
+     */
     @Override
     public Reader getJavaScriptReader(final ScriptingReaderParams params) throws DotSecurityException,
             IOException, DotDataException {
@@ -53,16 +64,19 @@ public class FileJavascriptReader implements JavascriptReader {
     }
 
     /**
-     * Retrieve a javascript reader from a given path
-     * @param jsFilePath
-     * @param site
-     * @param currentLanguage
-     * @param pageMode
-     * @param user
-     * @return
-     * @throws DotSecurityException
-     * @throws IOException
-     * @throws DotDataException
+     * Opens the javascript file at the given path, once
+     * {@link ScriptingUtil#checkLastModifierCanScript(Contentlet)} confirms its last modifier may
+     * write scripts.
+     *
+     * @param jsFilePath      the file's path on the site
+     * @param site            the site the file lives in
+     * @param currentLanguage the language of the version to read
+     * @param pageMode        the page mode to read the file in
+     * @param user            the user reading the file
+     * @return a reader over the file's code
+     * @throws DotSecurityException when the user cannot read the file or its last modifier may not write scripts
+     * @throws IOException          when the file's contents cannot be opened
+     * @throws DotDataException     when the file or the role cannot be loaded
      */
     public static Reader getJavascriptReaderFromPath (final String jsFilePath, final Host site,
                                                       final Language currentLanguage, final PageMode pageMode,
@@ -85,6 +99,7 @@ public class FileJavascriptReader implements JavascriptReader {
             throw new DoesNotExistException (e.getMessage(), e);
         }
 
+        ScriptingUtil.getInstance().checkLastModifierCanScript(getFileContent);
         final FileAsset getFileAsset = APILocator.getFileAssetAPI().fromContentlet(getFileContent);
         return new InputStreamReader(getFileAsset.getInputStream());
     }

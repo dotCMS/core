@@ -1439,7 +1439,7 @@
 
                        if(add) {
                        %>
-            addSelectedCat<%=counter%>("<%= cat.getInode() %>", "<%= cat.getCategoryName() %>");
+            addSelectedCat<%=counter%>("<%= cat.getInode() %>", <%= com.dotmarketing.util.json.JSONObject.quote(cat.getCategoryName()) %>);
             <%}
          }
        }

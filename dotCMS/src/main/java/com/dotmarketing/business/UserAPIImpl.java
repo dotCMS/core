@@ -17,6 +17,7 @@ import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.DuplicateUserEmailAddressException;
@@ -467,6 +468,13 @@ public class UserAPIImpl implements UserAPI {
         APILocator.getRoleAPI().getUserRole(userToSave);
     }
 
+    /**
+     * Saves the user. When {@code validatePassword} is true the password on {@code userToSave} is a
+     * new plain-text password: it is checked against the password policy and hashed, and after the
+     * save {@link #invalidateLoginTokens(String)} runs in the same transaction, so login tokens
+     * issued before the change stop working.
+     */
+    @WrapInTransaction
     @Override
     public void save(User userToSave, User user, boolean validatePassword,
             boolean respectFrontEndRoles) throws DotDataException,
@@ -490,12 +498,17 @@ public class UserAPIImpl implements UserAPI {
             // Use new password hash method
             try {
                 userToSave.setPassword(PasswordFactoryProxy.generateHash(pwd));
+                // flag it as hashed so EncryptPlainPasswordsJob doesn't hash the hash
+                userToSave.setPasswordEncrypted(true);
             } catch (PasswordException e) {
                 Logger.error(UserAPIImpl.class, "An error occurred generating the hashed password for userId: " + userToSave.getUserId(), e);
                 throw new DotDataException("An error occurred generating the hashed password.");
             }
         }
         save(userToSave, user, respectFrontEndRoles);
+        if (validatePassword) {
+            userToSave.setRememberMeToken(invalidateLoginTokens(userToSave.getUserId()));
+        }
     }
 
     @Override
@@ -663,6 +676,12 @@ public class UserAPIImpl implements UserAPI {
         return roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole());
     }
 
+    /**
+     * Sets a new password on the user and saves it. After the save,
+     * {@link #invalidateLoginTokens(String)} runs in the same transaction, so login tokens issued
+     * before the change stop working.
+     */
+    @WrapInTransaction
     @Override
     public void updatePassword(User user, String newpass, User currentUser, boolean respectFrontEndRoles) throws DotDataException, DotInvalidPasswordException, DotSecurityException {
         if(!PwdToolkitUtil.validate(newpass)) {
@@ -681,7 +700,21 @@ public class UserAPIImpl implements UserAPI {
         user.setPasswordReset(GetterUtil.getBoolean(
                 PropsUtil.get(PropsUtil.PASSWORDS_CHANGE_ON_FIRST_USE)));
         save(user, currentUser, respectFrontEndRoles);
+        user.setRememberMeToken(invalidateLoginTokens(user.getUserId()));
+    }
 
+    /**
+     * Stores a new random UUID as the user's login token id, with a single-column update that
+     * leaves the other user fields untouched. A random UUID works because a login JWT is accepted
+     * only while its id matches the stored value, and no token issued so far carries the new one;
+     * {@link UserAPI#invalidateLoginTokens(String)} has the full contract.
+     */
+    @WrapInTransaction
+    @Override
+    public String invalidateLoginTokens(final String userId) throws DotDataException {
+        final String rememberMeToken = UUIDGenerator.uuid();
+        userFactory.updateRememberMeToken(userId, rememberMeToken);
+        return rememberMeToken;
     }
 
     @WrapInTransaction

@@ -12,6 +12,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
 import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.exception.DotDataException;
@@ -70,6 +71,7 @@ public  class WebResource {
     private final UserWebAPI        userWebAPI;
     private final UserAPI           userAPI;
     private final LayoutAPI         layoutAPI;
+    private final RoleAPI           roleAPI;
     private final JsonWebTokenAuthCredentialProcessor jsonWebTokenAuthCredentialProcessor;
     private final DotAuthSessionCredentialProcessor dotAuthSessionCredentialProcessor =
             DotAuthSessionCredentialProcessorImpl.getInstance();
@@ -90,6 +92,7 @@ public  class WebResource {
         this.userAPI           = apiProvider.userAPI();
         this.userWebAPI        = apiProvider.userWebAPI();
         this.layoutAPI         = apiProvider.layoutAPI();
+        this.roleAPI           = apiProvider.roleAPI();
         this.jsonWebTokenAuthCredentialProcessor = jsonWebTokenAuthCredentialProcessor;
     }
 
@@ -420,25 +423,56 @@ public  class WebResource {
     }
 
     /**
-     * make sure we have the right Role permissions
-     * @param builder {@link InitBuilder}
-     * @param user {@link User}
+     * Makes sure the user holds at least one of the roles the endpoint requires, such as the
+     * back-end user role added by {@link InitBuilder#requiredBackendUser(boolean)}. Nothing is
+     * checked when the builder requires no role.
+     *
+     * @param builder the {@link InitBuilder} carrying the required role keys
+     * @param user    the {@link User} resolved for the request, possibly {@code null}
+     *
+     * @throws SecurityException if the user holds none of the required roles
      */
     @VisibleForTesting
-    void checkRolePermissions(final InitBuilder builder, User user) {
+    void checkRolePermissions(final InitBuilder builder, final User user) {
         if(builder.requiredRolesSet.isEmpty()){
             return;
         }
-        for (String roleKey : builder.requiredRolesSet) {
-            if (Try.of(() -> APILocator.getRoleAPI()
-                    .doesUserHaveRole(user, roleKey)).getOrElse(false)) {
-                return;
-            }
+        if (hasAnyRole(this.roleAPI, user, builder.requiredRolesSet)) {
+            return;
         }
         throw new SecurityException(
                 String.format("User " + (user != null ? user.getFullName() + ":" + user.getEmailAddress() : user)
                         + " lacks one of the required role %s", builder.requiredRolesSet),
                 Response.Status.UNAUTHORIZED);
+    }
+
+    /**
+     * Tells whether the user holds at least one of the given roles. Each entry is a role key, such
+     * as {@link Role#DOTCMS_BACK_END_USER}, although a role id is accepted too. The role is
+     * resolved with {@link RoleAPI#loadRoleByKeyOrId(String)} before the membership check, instead
+     * of handing the key to {@link RoleAPI#doesUserHaveRole(User, String)}: that overload expects
+     * a role id and only found a key while the role cache happened to hold the role, so the check
+     * failed every time the cache had just been cleared (for instance, by deleting any role).
+     *
+     * @param roleAPI  the {@link RoleAPI} used to resolve the roles and check membership
+     * @param user     the {@link User} being checked, possibly {@code null}
+     * @param roleKeys the keys (or ids) of the roles, any one of which grants access
+     *
+     * @return {@code true} if the user holds at least one of the roles; {@code false} if the user
+     * is {@code null}, holds none of them, or none of the keys resolves to a role
+     */
+    @VisibleForTesting
+    static boolean hasAnyRole(final RoleAPI roleAPI, final User user, final Set<String> roleKeys) {
+        if (null == user) {
+            return false;
+        }
+        for (final String roleKey : roleKeys) {
+            final Role role = Try.of(() -> roleAPI.loadRoleByKeyOrId(roleKey)).getOrNull();
+            if (null != role && Try.of(() -> roleAPI.doesUserHaveRole(user, role)).getOrElse(false)) {
+                return true;
+            }
+        }
+        return false;
     }
 
 
@@ -1038,6 +1072,17 @@ public  class WebResource {
         @VisibleForTesting
         public Set<String> getRequiredPortlets() {
             return Collections.unmodifiableSet(requiredPortlet);
+        }
+
+        /**
+         * Returns the role keys the caller must hold for this request to be accepted, such as the
+         * back-end user role added by {@link #requiredBackendUser(boolean)}.
+         *
+         * @return a read-only view of the required role keys
+         */
+        @VisibleForTesting
+        public Set<String> getRequiredRoles() {
+            return Collections.unmodifiableSet(requiredRolesSet);
         }
 
         public InitBuilder requireLicense(final boolean requireLicense){
