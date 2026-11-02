@@ -368,16 +368,16 @@ describe('DotCustomEventHandlerService', () => {
 
     /**
      * #38303 (R11) — the legacy portlets' content events open the side panel through the opener,
-     * whatever editor the content type uses. The panel lives under `MainComponentLegacyComponent`,
+     * whatever editor the content type uses. The panel lives under `DotSidePanelHostComponent`,
      * which registers its own injector here, so a panel finds the `MessageService` and the
-     * `<p-toast>` the admin root provides. Saving or closing reloads the portlet that asked.
+     * `<p-toast>` that component provides. Saving or closing reloads the portlet that asked.
      */
     describe('content events open the side panel', () => {
         /** The portlet `MockDotRouterService` reports as current. */
         const PORTLET_ID = '123-567';
 
-        /** Stands in for `MainComponentLegacyComponent`'s injector. */
-        let adminRootInjector: Injector;
+        /** Stands in for `DotSidePanelHostComponent`'s injector. */
+        let sidePanelHostInjector: Injector;
 
         /** The opener's `open`, as the mock records it. */
         const opened = () => TestBed.inject(DotEditContentOpenerService).open as Mock;
@@ -407,11 +407,11 @@ describe('DotCustomEventHandlerService', () => {
 
         beforeEach(() => {
             opened().mockClear();
-            adminRootInjector = Injector.create({
+            sidePanelHostInjector = Injector.create({
                 providers: [],
                 parent: TestBed.inject(Injector)
             });
-            (service as WithInjector).setInjector?.(adminRootInjector);
+            (service as WithInjector).setInjector?.(sidePanelHostInjector);
         });
 
         describe('edit-contentlet', () => {
@@ -499,16 +499,16 @@ describe('DotCustomEventHandlerService', () => {
             ['create-contentlet', { contentType: 'Blog', folderPath: 'default/' }],
             ['create-host', { url: '/c/portal/layout?p_p_id=sites' }]
         ])('%s', (name, data) => {
-            it('should hand the opener the injector the admin root registered, not the root one', async () => {
+            it('should hand the opener the injector the side panel host registered, not the root one', async () => {
                 expect(
                     typeof (service as WithInjector).setInjector,
-                    'the admin root can register its injector'
+                    'the side panel host can register its injector'
                 ).toBe('function');
 
                 await send(name, data);
 
                 // Compared by identity: printing an injector runs the worker out of memory.
-                expect(openOptions().injector === adminRootInjector).toBe(true);
+                expect(openOptions().injector === sidePanelHostInjector).toBe(true);
             });
 
             it('should reload the portlet that asked on every save', async () => {

@@ -350,9 +350,9 @@ describe('DotPagesComponent', () => {
     describe('side panel toasts', () => {
         it('should provide a MessageService of its own', () => {
             // Compared by identity: printing a MessageService on failure floods the output.
-            expect(spectator.inject(MessageService, true) === spectator.inject(MessageService)).toBe(
-                false
-            );
+            expect(
+                spectator.inject(MessageService, true) === spectator.inject(MessageService)
+            ).toBe(false);
         });
 
         it("should render a toast for the panel's messages", () => {

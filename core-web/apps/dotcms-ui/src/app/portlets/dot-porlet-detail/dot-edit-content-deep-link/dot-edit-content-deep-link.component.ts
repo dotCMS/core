@@ -1,6 +1,9 @@
 import { Component, Injector, OnDestroy, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { MessageService } from 'primeng/api';
+import { ToastModule } from 'primeng/toast';
+
 import { DotIframeService, DotRouterService } from '@dotcms/data-access';
 import type { DotEditContentRequest } from '@dotcms/edit-content';
 import type { DotSidePanelRef } from '@dotcms/ui';
@@ -15,10 +18,16 @@ import { openEditContentPanel } from '../../../api/util/open-edit-content-panel'
  *
  * The portlet is the one `DotRouterService.currentPortlet` names: its id goes on the request and to
  * the iframe reload, and its URL without the asset segments is where closing the panel returns.
+ *
+ * The panel lives under this component's injector, and its editor needs PrimeNG's `MessageService`.
+ * The admin root provides none (one there would hide the page editor's), so this component provides
+ * its own and renders its toast (#38303).
  */
 @Component({
     selector: 'dot-edit-content-deep-link',
-    template: ''
+    imports: [ToastModule],
+    providers: [MessageService],
+    templateUrl: './dot-edit-content-deep-link.component.html'
 })
 export class DotEditContentDeepLinkComponent implements OnInit, OnDestroy {
     readonly #route = inject(ActivatedRoute);
