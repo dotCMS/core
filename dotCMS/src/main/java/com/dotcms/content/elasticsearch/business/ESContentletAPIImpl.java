@@ -36,6 +36,7 @@ import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.RowField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TabDividerField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -6128,6 +6129,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             contentlet = applyNullProperties(contentlet);
             contentlet = SET_DEFAULT_VALUES.get() && isNewContent? setDefaultValues(contentlet):contentlet;
+            if (!isNewContent) {
+                restoreStoryBlockReferenceData(contentlet, contentType, workingContentletInode);
+            }
 
             //This is executed first hand to create the inode-contentlet relationship.
             if (InodeUtils.isSet(existingInode)) {
@@ -9325,6 +9329,37 @@ public class ESContentletAPIImpl implements ContentletAPI {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Fills back the Story Block references that arrive with only the keys that identify them,
+     * taking their data from the version being replaced. An editor gets references like that when
+     * it cannot read them, and saving the document as it got it must not drop the data stored with
+     * them. See
+     * {@link com.dotcms.contenttype.business.StoryBlockAPI#restoreReferenceData(Object, Supplier)}.
+     *
+     * @param contentlet    The Contentlet being saved, modified in place.
+     * @param contentType   The Contentlet's content type.
+     * @param previousInode The inode of the version being replaced; it is only read from the
+     *                      database when a reference needs it.
+     */
+    private void restoreStoryBlockReferenceData(final Contentlet contentlet, final ContentType contentType,
+                                                final String previousInode) {
+        if (!contentType.hasStoryBlockFields() || !InodeUtils.isSet(previousInode)) {
+            return;
+        }
+        final Lazy<Optional<Contentlet>> previous = Lazy.of(() -> contentFactory.findInDb(previousInode, true));
+        for (final com.dotcms.contenttype.model.field.Field field : contentType.fields(StoryBlockField.class)) {
+            final Object submitted = contentlet.get(field.variable());
+            if (null == submitted) {
+                continue;
+            }
+            final Object restored = APILocator.getStoryBlockAPI().restoreReferenceData(submitted,
+                    () -> previous.get().map(stored -> stored.get(field.variable())).orElse(null));
+            if (restored != submitted) {
+                contentlet.setProperty(field.variable(), restored);
+            }
+        }
     }
 
     /**
