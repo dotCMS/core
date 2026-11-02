@@ -32,10 +32,12 @@ This work makes the side panel the only way content is edited or created from in
 4. **Fields never open panels themselves.** The Relationship field and both block editors inside the new editor announce that they want to open content and wait for the result; whoever hosts the form opens the panel. Inside a panel, an existing related item opens in place with a breadcrumb back; a new one, and a block editor's "edit contentlet", stack a new panel. Block editors running inside the legacy editor send their request out of the iframe so the panel that hosts the legacy editor can stack a new panel over itself.
 5. **The side-panel flag is no longer read anywhere in the frontend.** The panel always opens, and the only switch left is each content type's editor setting.
 6. **Every edit dialog is deleted.** The UVE's iframe dialog and its store, the centered new-editor dialog, the admin's legacy iframe dialog wrapper and the service that drove it, the two unused add-content and reorder-menu wrappers, the block editors' window navigation with its confirm prompt and its browser-storage breadcrumb, and the new-editor panel's dialog-compatibility callbacks.
+7. **Every open panel has a URL.** On every admin surface except the page editor, the open panel is written to the surface's URL as query params: `editContent=<identifier>` with `editContentLang=<languageId>` for an edit, `createContent=<contentType>` with its folder for a create, `editCode=<inode>` for Edit Source. The link can be shared, a refresh reopens the panel, and browser Back closes it through the unsaved-changes prompt. Content Drive and the Query Tool already do this, each in its own way; the behavior moves into the opener and every surface gets it.
 
 **Out of scope**
 
 - The full-screen new editor at `#/content/<inode>` stays, for deep links and bookmarks.
+- The page editor (UVE) does not write the panel to its URL. Its URL names the page (`url`, `language_id`); a panel param there would compete with it for what Back means.
 - The `edit-page` event (opens the page editor) and the `edit-task` event (the workflow task screen) keep their current behavior.
 - Query Tool results that are pages keep opening the page editor.
 - "Create new" in a Relationship field stays disabled for content types on the legacy editor.
@@ -90,7 +92,7 @@ An author editing from Content Drive, the Query Tool, the Pages portlet, a legac
 4. **Given** the Pages portlet, **When** the author chooses Edit on a page, **Then** the side panel opens, with the new editor for page types on the new editor, and the list refreshes after a save.
 5. **Given** a legacy JSP portlet such as the old content search or Sites, **When** the author edits or creates content, **Then** the side panel opens over the portlet and the portlet's list refreshes after a save or a close.
 6. **Given** the Publishing Queue's asset list or select-bundle dialog, **When** the author edits an asset, **Then** the side panel opens above the dialog, and closing the panel returns to the dialog with focus on the row that opened it.
-7. **Given** a fresh browser tab, **When** the author opens `/<portlet>/<inode>` or `/c/content/new/<contentType>`, **Then** the portlet renders and the side panel opens over it.
+7. **Given** a fresh browser tab, **When** the author opens `/<portlet>/<inode>` or `/c/content/new/<contentType>`, **Then** the portlet renders, the side panel opens over it, and the address bar shows the portlet's URL with the panel's query params, so the link behaves like any other open panel from then on.
 
 ---
 
@@ -169,6 +171,28 @@ Panels stack in open order, the front one is the only one that reacts to Escape 
 
 ---
 
+### User Story 7 - The open panel is in the URL (Priority: P2)
+
+An author who opens content in the side panel on any admin surface except the page editor sees the panel in the address bar. They can copy the link and send it, refresh without losing the panel, and press Back to close it the same way they would press X.
+
+**Why this priority**: Two surfaces already behave this way and authors expect the other four to match. Without it, an edit opened from a legacy portlet or the Pages list is unreachable by link and vanishes on refresh.
+
+**Independent Test**: On each surface, open a panel, copy the URL into a new tab, refresh, press Back with and without unsaved changes, and press Forward after closing.
+
+**Acceptance Scenarios**:
+
+1. **Given** a panel opened from Content Drive, the Query Tool, the Pages portlet, a legacy JSP portlet or a Publishing Queue dialog, **When** the author looks at the address bar, **Then** it shows the surface's URL plus `editContent` and `editContentLang` (or `createContent`, or `editCode`), and nothing else about the URL changed.
+2. **Given** that URL pasted into a new tab, **When** it loads, **Then** the surface renders and the same panel opens over it. For the Publishing Queue, the panel opens over the list without the dialog.
+3. **Given** an open panel with no changes, **When** the author presses Back, **Then** the panel closes and the URL is the surface's URL without the panel params.
+4. **Given** an open panel with unsaved changes, **When** the author presses Back, **Then** the unsaved-changes prompt shows. "Keep editing" leaves the panel open and the URL still names it; "Discard" closes it and clears the params.
+5. **Given** a panel closed through X, Escape or the mask, **When** the author presses Forward, **Then** the panel does not reopen.
+6. **Given** an open edit panel, **When** the author switches language inside the editor, **Then** `editContentLang` changes in place and Back still closes the panel in one step.
+7. **Given** an open create panel, **When** the author saves for the first time, **Then** `createContent` is replaced by `editContent` and `editContentLang` for the new content, in place.
+8. **Given** a panel opened from inside another panel, **When** the author looks at the address bar, **Then** it names the front panel; Back closes the front panel and the URL names the one underneath; a refresh reopens only the front one.
+9. **Given** a URL that names more than one panel, **When** it loads, **Then** no panel opens and the panel params are removed from the URL.
+
+---
+
 ### Edge Cases
 
 - **Save rejected by validation**: the editor shows the errors inside the panel and reports no save. The panel stays open, the screen behind does not refresh.
@@ -179,12 +203,13 @@ Panels stack in open order, the front one is the only one that reacts to Escape 
 - **Delete from the panel**: the opener receives `deleted` and then `closed`, never `saved`. A screen that refreshes on close no longer shows the content.
 - **Workflow action that removes the content** (archive, delete, destroy): the legacy editor calls its window hook with `deleted-contenlet` (or `deleted-page` for a page) and then sends `close`; the new editor leaves the content through its host. Both are reported as `deleted` then `closed`, never `saved`.
 - **Legacy save notification without the saved content's language**: the `saved` payload is fetched by inode, so every listener gets the same shape regardless of editor.
-- **Refresh with a panel open**: unsaved changes are lost, as today. Surfaces that write the open panel to their URL (Content Drive) reopen it; others do not.
+- **Refresh with a panel open**: unsaved changes are lost, as today. Every surface except the page editor reopens the panel the URL names; with a stack open, only the front panel comes back.
 - **Panel opened over a modal dialog, then the dialog closes underneath** (the Publishing Queue dialog times out or is closed by code): the panel stays open and closes normally; focus returns to the screen.
 - **Second save from a create panel in the UVE**: the content is already in the container, so it is not inserted again and no duplicate message is shown.
 - **A stacked panel whose opener panel is closed**: closing the front panel still returns to the panel underneath; the underneath panel's own close guard is untouched.
 - **The legacy editor inside a panel receives an `edit-contentlet` or `create-contentlet` request from a block editor**: the request is forwarded to the opener, which stacks a new panel; the legacy editor's own window is never navigated.
-- **Panel opened by a deep link, then closed**: the author stays on the portlet the link named, with no panel open.
+- **Panel opened by a deep link, then closed**: the author stays on the portlet the link named, at the portlet's URL, with no panel open and no history entry pointing back to the link.
+- **URL names content the author cannot open** (no permission, deleted, malformed value): the editor shows its own message inside the panel where it can, otherwise the standard error is shown, and the panel params are removed from the URL. A value that is not shaped like an identifier, a content type variable or an inode is treated as absent.
 - **Escape inside a legacy iframe while a dialog inside the iframe is open**: the dialog consumes the key and the panel stays open.
 
 ## Requirements *(mandatory)*
@@ -230,7 +255,7 @@ Panels stack in open order, the front one is the only one that reacts to Escape 
 - **FR-023**: The SDK's `editContentlet()` MUST open the editor the content type chooses, in the side panel, instead of always opening the legacy iframe dialog.
 - **FR-024**: The Pages portlet's Edit action (its only edit entry; there is no View action) MUST open the panel through the opener, so page types on the new editor get the new editor, and MUST reload the list after a save.
 - **FR-025**: The legacy JSP events `edit-contentlet`, `create-contentlet`, `edit-host` and `create-host` MUST open the panel through the opener. The `edit-page` and `edit-task` events keep their current behavior.
-- **FR-026**: The deep links `/<portlet>/<inode>` and `/c/content/new/<contentType>` MUST render the portlet and open the panel over it. Closing the panel leaves the author on the portlet.
+- **FR-026**: The deep links `/<portlet>/<inode>` and `/c/content/new/<contentType>` MUST render the portlet, open the panel over it, and replace themselves in the address bar with the portlet's URL plus the panel's query params (FR-044), without adding a history entry. Closing the panel leaves the author on the portlet. The path forms stay because the server still emits them (`linkToContent` in Velocity).
 - **FR-027**: Query Tool results that are pages MUST keep opening the page editor.
 
 **Fields and nested editors**
@@ -244,7 +269,7 @@ Panels stack in open order, the front one is the only one that reacts to Escape 
 
 **Panel behavior, both editors**
 
-- **FR-034**: Closing a panel with unsaved changes through the X, Escape, a mask click or browser Back MUST ask before discarding. "Keep editing" keeps the changes; "discard" closes. Browser Back reaches the panel on the surfaces that put the open panel in their URL and route Back to it (Content Drive, the Query Tool), as today; the other surfaces do not write the panel to the URL.
+- **FR-034**: Closing a panel with unsaved changes through the X, Escape, a mask click or browser Back MUST ask before discarding. "Keep editing" keeps the changes and the URL keeps naming the panel; "discard" closes and clears the params. Browser Back reaches the panel on every surface that writes it to the URL (FR-044), which is every surface except the page editor.
 - **FR-035**: Saving MUST keep the panel open and the panel MUST report `saved` on every save, so "save, edit again, save again" refreshes the screen behind each time.
 - **FR-036**: Switching language inside the editor MUST keep the panel open in the new language and report `languageChanged`, so the opener can follow it.
 - **FR-037**: Confirmation toasts MUST appear in the screen that opened the panel.
@@ -252,6 +277,16 @@ Panels stack in open order, the front one is the only one that reacts to Escape 
 - **FR-039**: A panel opened over a modal dialog MUST render above it with its mask, MUST hold focus (typing and Tab stay in the panel), MUST close on the first Escape with the dialog closing only on a second, and MUST return focus to the dialog's originating row when it closes.
 - **FR-040**: Escape pressed inside a legacy iframe MUST close the panel unless a dialog inside the iframe handled it first.
 - **FR-041**: Legacy screens hosted in a panel MUST be usable at the panel's default and expanded widths.
+
+**The panel in the URL**
+
+- **FR-044**: On every surface except the page editor, an open panel MUST be written to the surface's URL as query params merged with the surface's own: `editContent=<identifier>` and `editContentLang=<languageId>` for an edit, `createContent=<contentType>` and the surface's folder param for a create, `editCode=<inode>` for Edit Source. Nothing else in the URL changes.
+- **FR-045**: Opening a panel MUST add one history entry. Closing it by any means MUST clear the params without adding an entry, so Forward does not reopen the panel. A language switch, and the first save of a create, MUST rewrite the params in place without adding an entry.
+- **FR-046**: Writing the panel to the URL MUST NOT reload or recreate the surface underneath: a legacy iframe keeps its page, a list keeps its rows and scroll, a dialog stays open.
+- **FR-047**: When Back or Forward removes or changes the params of an open panel, the panel MUST be asked to close through its unsaved-changes guard (FR-034). While the prompt is open the URL MUST keep naming the panel.
+- **FR-048**: With panels stacked, the URL MUST name the front panel. Closing the front panel MUST leave the URL naming the one underneath. On load, a URL MUST open at most one panel.
+- **FR-049**: On load, a surface MUST read the panel params once, accept only values shaped like an identifier, a content type variable or an inode, open what they name, and treat a URL naming more than one panel as naming none, removing the params.
+- **FR-050**: The URL behavior MUST be implemented once, beside the opener, and used by every surface. Content Drive and the Query Tool MUST drop their own implementations in favor of it, with no change in what their authors see.
 
 **Flag and cleanup**
 
@@ -265,6 +300,7 @@ Panels stack in open order, the front one is the only one that reacts to Escape 
 - **Panel events**: The five things an editor can tell its opener: content was saved (with the contentlet), the language changed (with the language), the page editor was requested (with the page URL and language), the content was deleted, and the panel closed.
 - **Open-content request from a field**: What a Relationship field or a block editor emits when it wants other content opened: an edit request plus a reply channel for the saved contentlet. The host decides whether to stack or replace.
 - **Legacy screen request**: A legacy admin URL to load in the generic panel, with the events the opener wants forwarded.
+- **Panel URL state**: The query params that name an open panel on a surface's URL (`editContent` + `editContentLang`, `createContent` + folder, `editCode`), who pushed them, and the panel they belong to. Owned by the opener; a surface only says whether it participates.
 
 ## Success Criteria *(mandatory)*
 
@@ -279,6 +315,7 @@ Panels stack in open order, the front one is the only one that reacts to Escape 
 - **SC-007**: Every stacking case in the QA plan (panel over panel, legacy editor over legacy editor, panel over the Publishing Queue dialog) passes its focus and Escape checks.
 - **SC-008**: The four dialogs and the service named for deletion are gone, with 0 references in the codebase.
 - **SC-009**: The team can describe how to edit content from any admin surface in one sentence: it opens in the side panel, with the editor the content type chose.
+- **SC-010**: On every surface except the page editor, 100% of open panels are reflected in the URL, 100% of those URLs reopen the panel in a fresh tab, and 100% of Back presses on an open panel go through the close prompt. 0 surface-specific URL-sync implementations remain.
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
@@ -290,6 +327,7 @@ Panels stack in open order, the front one is the only one that reacts to Escape 
   - The Pages portlet opens the new editor for page types that opted in, where it always opened the legacy dialog (FR-024).
   - Related content from a block editor opens in a stacked panel instead of navigating away; the confirm prompt and the browser-storage breadcrumb go away (FR-031, FR-033).
   - Content Drive's separate restore notification becomes a `saved` event (FR-019).
+  - The Pages portlet, the legacy JSP portlets and the Publishing Queue write the open panel to the URL, where they wrote nothing (FR-044). The path deep links replace themselves with that form once the panel opens (FR-026).
 - **Known related decisions**:
   - The root side-panel outlet already exists and every panel in the admin opens there (#37970). This work builds on it and does not change it.
   - Content Drive already opens both editors in the panel and already stopped reading the side-panel flag (#37759). Its legacy panel is the one that moves beside the editors and is generalized.
@@ -298,6 +336,8 @@ Panels stack in open order, the front one is the only one that reacts to Escape 
   - The three open questions in the issue are decided in Scope: the UVE derives URL changes from the saved contentlet, a restore is a save, and workflow actions reuse the existing events. Each can be overturned in the review of this spec.
   - This is the first step toward hosting the new editor's fields outside the full editor (UVE quick edit), so the request and event contract are designed to be reused by that work.
   - The plan formally consults `dotCMS/platform-adrs`.
+  - The legacy JSP content surfaces (old content search, the legacy editor) are being retired in favor of Content Drive and the new editor over the next six months (target around May 2027). The URL behavior treats them as temporary: they get it through the shared piece (FR-050) and nothing is built only for them. When they go, `/c/content/<inode>` links can point at Content Drive with a one-line change in the deep-link resolver, since the panel params are the same on every surface.
+  - Redirecting `#/content/<inode>` to Content Drive was considered and dropped: the route takes an inode, Content Drive takes an identifier and a language, and an author without Content Drive in their menu would be bounced to their first portlet. The full-screen editor stays until the sunset decides its fate.
 
 ## Assumptions
 
@@ -311,6 +351,8 @@ Panels stack in open order, the front one is the only one that reacts to Escape 
 - The side panel is attached to the document body and is modal, so it stacks above a PrimeNG modal dialog. The QA note on the issue covers the focus-trap checks; if the dialog's focus trap wins, resolving it is implementation work inside this issue, not a scope change.
 - The Publishing Queue dialogs stay modal dialogs. Only the editor they open moves to the panel.
 - The legacy JSP portlets refresh through the admin's existing iframe reload call, as the custom-event handler does today after the legacy dialog closes.
-- Deep links keep rendering the portlet they name; the panel opens over it, so a user without that portlet in their menu is redirected as today.
+- Deep links keep rendering the portlet they name; the panel opens over it, so a user without that portlet in their menu is redirected as today. Once open, the link is indistinguishable from a panel opened on the portlet itself.
+- The URL can be written without going through the router, so writing the panel to it does not reload the legacy iframe or recreate the portlets that are recreated on navigation. Content Drive and the Query Tool already rely on this.
+- The Publishing Queue dialogs are not reopened from the URL; the panel reopens over the list. Restoring the dialog is out of scope.
 - The unsaved-changes prompt reuses the existing wording for both editors. No new user-facing text is needed beyond panel titles.
 - The backend flag `FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL` stays defined and served until its follow-up removal; the frontend simply ignores it.
