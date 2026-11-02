@@ -343,9 +343,7 @@ describe('DotContentDriveShellComponent', () => {
                 closeEditPanel: vi.fn(),
                 openEditByIdentifier: vi.fn(),
                 $editPanelRequest: editPanelRequestSignal,
-                $forceLegacyEditor: forceLegacyEditorSignal,
-                // Read only by the URL code this slice moves to the opener; goes with it (#38303).
-                $panelLocation: signal(null)
+                $forceLegacyEditor: forceLegacyEditorSignal
             }),
             // Edit Code registers its panel here; the Edit Content panel does so through the opener.
             mockProvider(DotPanelUrlStateService, { register: vi.fn(), clear: vi.fn() }),

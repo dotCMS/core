@@ -30,6 +30,12 @@ export interface DotSidePanelBinding<R> {
     /** Handlers for the content's outputs, by public name. */
     outputs?: Record<string, (value: never) => void>;
     /**
+     * The panel opened, for the request it opened on. Called once per panel, not while the request
+     * changes under an open one. For openers that follow the panel itself, such as Content Drive
+     * writing Edit Code's file to the URL.
+     */
+    opened?: (ref: DotSidePanelRef, request: R) => void;
+    /**
      * The panel closed itself: the author closed it, or its content did. Clear the request here. Not
      * called when the panel closes because the request was cleared or the opener was destroyed.
      */
@@ -111,7 +117,9 @@ export function injectSidePanel<R>(
                 shown.set(value);
 
                 if (!panel()) {
-                    panel.set(open(value));
+                    const ref = open(value);
+                    panel.set(ref);
+                    binding.opened?.(ref, value);
                 }
 
                 return;

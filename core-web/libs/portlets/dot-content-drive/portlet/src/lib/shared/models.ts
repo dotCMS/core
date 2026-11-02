@@ -11,6 +11,7 @@ import {
     DotLanguage,
     DotSite
 } from '@dotcms/dotcms-models';
+import type { DotPanelUrlIntent } from '@dotcms/edit-content';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotUploadBaseType, DotUploadSelection, DotUploadSelectorPayload } from '@dotcms/ui';
@@ -171,34 +172,13 @@ export interface DotContentDriveFolderPermissionsPayload {
 }
 
 /**
- * What the Content Drive URL must say about the open side panel, for either editor (#37759, FR-020).
- *
- * Kept apart from the panel request on purpose: the URL has to follow the panel after it opened (a
- * create's first save, a language switch in the legacy editor) and changing the request instead would
- * remount the panel and reload the editor under the author.
- */
-export type DotContentDrivePanelLocation =
-    | {
-          kind: 'edit';
-          /** Identifier of the open content (`editContent`). */
-          editContent: string;
-          /** Language of the open version (`editContentLang`); absent only when it is unknown. */
-          editContentLang?: number;
-      }
-    | {
-          kind: 'create';
-          /** Variable of the content type being created (`createContent`). */
-          createContent: string;
-      };
-
-/**
- * What a Content Drive URL asks to open when the portlet loads (#37759, FR-023). `conflict` means
- * the URL combines params that can't hold together, so nothing opens and all of them are removed.
+ * What a Content Drive URL asks to open when the portlet loads (#37759, FR-023): a panel, read as
+ * every surface reads it (`DotPanelUrlIntent`, #38303), or one of Content Drive's folder dialogs.
+ * `conflict` means the URL combines params that can't hold together, so nothing opens and all of
+ * them are removed.
  */
 export type DotContentDriveUrlIntent =
-    | { kind: 'none' }
-    | { kind: 'edit'; identifier: string; languageId?: number }
-    | { kind: 'create'; contentType: string }
+    | DotPanelUrlIntent
     | { kind: 'createFolder' }
     | { kind: 'editFolder'; identifier: string }
     | { kind: 'folderPermissions'; identifier: string }
