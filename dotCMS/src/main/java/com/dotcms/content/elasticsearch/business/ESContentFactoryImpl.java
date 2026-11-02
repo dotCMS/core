@@ -2307,15 +2307,21 @@ public class ESContentFactoryImpl implements ContentletFactory {
 
     /**
      * This method filters out some content types depending on the license level
+     * <p>
+     * A copy of this method lives in
+     * {@code TranslatedQuery.getQueryWithValidContentTypes(String)}; keep the two in sync.
+     *
      * @param query String with the lucene query where the filter will be applied
      * @return String Query excluding non allowed content types
      */
     private static String getQueryWithValidContentTypes(final String query){
         if (!LicenseManager.getInstance().isEnterprise()) {
-            final StringBuilder queryBuilder = new StringBuilder(query);
-            queryBuilder.append(" -baseType:" + BaseContentType.PERSONA.getType() + " ");
-            queryBuilder.append(" -basetype:" + BaseContentType.FORM.getType() + " ");
-            return queryBuilder.toString();
+            // The exclusions go before the caller's query: appended after it, a query ending in
+            // an unbalanced escape would consume the space that separates the two.
+            final StringBuilder queryBuilder = new StringBuilder();
+            queryBuilder.append("-baseType:" + BaseContentType.PERSONA.getType() + " ");
+            queryBuilder.append("-basetype:" + BaseContentType.FORM.getType() + " ");
+            return queryBuilder.append(query).toString();
         }
 
         return query;
@@ -2367,7 +2373,8 @@ public class ESContentFactoryImpl implements ContentletFactory {
 	            int index = query.indexOf(stInodestr) + stInodestr.length() + 1;
 	            String inode = null;
 	            try {
-	                inode = query.substring(index, query.indexOf(" ", index));
+	                final int end = query.indexOf(" ", index);
+	                inode = end < 0 ? query.substring(index) : query.substring(index, end);
 	            } catch (StringIndexOutOfBoundsException e) {
 	                Logger.debug(ESContentFactoryImpl.class, e.toString());
 	                inode = query.substring(index);

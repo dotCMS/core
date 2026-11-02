@@ -73,7 +73,6 @@ describe('DotUsersCreateComponent', () => {
                     })
                 ),
                 getApiTokens: vi.fn().mockReturnValue(of([])),
-                getApiTokenJwt: vi.fn().mockReturnValue(of('mock-jwt')),
                 createApiToken: vi.fn(),
                 revokeApiToken: vi.fn(),
                 deleteApiToken: vi.fn()

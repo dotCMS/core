@@ -89,7 +89,6 @@ export default [
             '/dotcms-block-editor',
             '/dotcms-binary-field-builder',
             '/edit-content-bridge',
-            '/categoriesServlet',
             '/JSONTags',
             '/api/vtl',
             '/tinymce',

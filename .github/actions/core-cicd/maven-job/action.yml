@@ -45,10 +45,6 @@ inputs:
     description: 'Build, save and upload the throwaway test image. Only test phases consume it.'
     required: false
     default: 'true'
-  upload-docker-context:
-    description: 'Upload the docker-build-context artifact. Only the deployment phase downloads it; pull request builds turn it off. Needs generate-docker.'
-    required: false
-    default: 'true'
   generate-build-classes:
     description: 'Upload per-module build classes (build-classes artifact). Only the deploy-javadoc action reads it, and no workflow calls that action.'
     required: false
@@ -695,15 +691,17 @@ runs:
 
     - id: get-sdkman-version
       name: Get SDKMAN Java Version
-      if: ${{ inputs.generate-docker == 'true' && inputs.generate-test-image == 'true' }}
+      if: ${{ inputs.generate-docker == 'true' }}
       shell: bash
+      env:
+        JAVA_VERSION: ${{ inputs.java-version }}
       run: |
         # Use provided java-version if set, otherwise read from .sdkmanrc
-        if [ -n "${{ inputs.java-version }}" ]; then
-          SDKMAN_JAVA_VERSION="${{ inputs.java-version }}"
+        if [ -n "${JAVA_VERSION}" ]; then
+          SDKMAN_JAVA_VERSION="${JAVA_VERSION}"
           echo "Using override Java version: ${SDKMAN_JAVA_VERSION}"
         elif [ -f ".sdkmanrc" ]; then
-          SDKMAN_JAVA_VERSION=$(awk -F= '/^java=/ {print $2}' .sdkmanrc)
+          SDKMAN_JAVA_VERSION=$(awk -F= '/^java=/ {gsub(/\r/, "", $2); print $2}' .sdkmanrc)
           echo "Using default Java version from .sdkmanrc: ${SDKMAN_JAVA_VERSION}"
         else
           echo "Error: .sdkmanrc file not found and no java-version override provided"
@@ -712,7 +710,9 @@ runs:
         # This value is used as the dotcms/java-base docker tag (FROM dotcms/java-base:<tag>),
         # which cannot contain '+' - convert SDKMAN's '+' to '-' (e.g. 25.0.4+1-ms -> 25.0.4-1-ms)
         SDKMAN_JAVA_VERSION="${SDKMAN_JAVA_VERSION//+/-}"
-        echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> $GITHUB_ENV
+        echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> "$GITHUB_ENV"
+        # Keep the publisher on the build checkout's Java version, including PR merge refs.
+        printf '%s\n' "${SDKMAN_JAVA_VERSION}" > dotCMS/target/docker-java-version
 
     # The test image is built and saved in the background while the artifacts below
     # upload: the build and `docker save` are CPU and disk work, the uploads are
@@ -758,16 +758,21 @@ runs:
         path: ${{ runner.temp }}/built-artifacts
         compression-level: 0
 
-    # Only the deployment phase downloads this (trunk, nightly, release and manual
-    # deploy, which reuse the merge-queue build). A pull request build is never
-    # deployed, so it passes upload-docker-context: false.
+    # The deployment phase downloads this (trunk, nightly, release and manual deploy,
+    # which reuse the merge-queue build), and so does the PR test-image publisher
+    # (cicd_comp_publish-pr-test-image.yml), which builds multi-arch images from it and
+    # reads docker-java-version for the Java base tag. Pull request builds upload it
+    # too: the label-applied publish path finds the context of an earlier build of
+    # the head commit.
     - id: persist-docker-build-context
       name: Persist Docker Build Context
-      if: ${{ inputs.generate-docker == 'true' && inputs.upload-docker-context == 'true' }}
+      if: ${{ inputs.generate-docker == 'true' }}
       uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: docker-build-context${{ steps.artifact-suffix.outputs.suffix }}
-        path: dotCMS/target/docker-build.tar
+        path: |
+          dotCMS/target/docker-build.tar
+          dotCMS/target/docker-java-version
         compression-level: 0
 
     - id: wait-docker-image-build

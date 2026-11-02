@@ -13,7 +13,9 @@ import java.util.Collections;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotmarketing.business.Layout;
 import com.dotmarketing.business.LayoutAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.PortletID;
+import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.business.Role;
 import java.util.Date;
@@ -219,6 +221,110 @@ public class UserResourceIntegrationTest {
     @Test
     public void test_loginAs_success() throws Exception{
         loginAs();
+    }
+
+    /**
+     * Creates a back-end user with the Login As role, a known password and, optionally, the CMS
+     * Administrator role.
+     */
+    private static User newLoginAsUser(final String password, final boolean cmsAdmin) throws Exception {
+        final Role loginAsRole = APILocator.getRoleAPI().findRoleByFQN(Role.SYSTEM + " --> " + Role.LOGIN_AS);
+        final List<Role> roles = new ArrayList<>(List.of(loginAsRole, APILocator.getRoleAPI().loadBackEndUserRole()));
+        if (cmsAdmin) {
+            roles.add(APILocator.getRoleAPI().loadCMSAdminRole());
+        }
+        final User loginAsUser = new UserDataGen().password(password).roles(roles.toArray(new Role[0])).nextPersisted();
+        usersToClean.add(loginAsUser);
+        return loginAsUser;
+    }
+
+    /**
+     * Given: a non-admin user holding the Login As role
+     * When: they try to Login As an administrator, re-entering their own password
+     * Then: the operation is refused
+     */
+    @Test(expected = DotSecurityException.class)
+    public void test_doLoginAs_nonAdmin_cannotImpersonateAdmin() throws Exception {
+        final String password = "loginAsPwd" + System.currentTimeMillis();
+        final User nonAdmin = newLoginAsUser(password, false);
+        UserResourceHelper.getInstance().doLoginAs(nonAdmin, adminUser.getUserId(), password, host.getHostname());
+    }
+
+    /**
+     * Method to test: {@link UserResource#loginAs}
+     * Given Scenario: a non-admin user holding the Login As role asks to Login As an administrator.
+     * ExpectedResult: the answer is 403 (not 401, which makes the UI end the session) and the
+     * session still belongs to the caller: the administrator is not stored as the session
+     * user and no principal user is set.
+     */
+    @Test
+    public void test_loginAs_nonAdminToAdmin_answers403AndKeepsSession() throws Exception {
+        final String password = "loginAsPwd" + System.currentTimeMillis();
+        final User nonAdmin = newLoginAsUser(password, false);
+        final HttpServletRequest nonAdminRequest = mockRequestAs(nonAdmin.getEmailAddress(), password);
+        final LoginAsForm form = new LoginAsForm.Builder().userId(adminUser.getUserId()).build();
+
+        final Response result = resource.loginAs(nonAdminRequest, response, form);
+
+        assertNotNull(result);
+        assertEquals(Status.FORBIDDEN.getStatusCode(), result.getStatus());
+        assertEquals("loginas.error.adminrequired", result.getHeaderString("error-key"));
+        // the request authentication stores the caller in the session; a denied Login As must leave it there
+        assertEquals(nonAdmin.getUserId(), nonAdminRequest.getSession().getAttribute(WebKeys.USER_ID));
+        assertNull(nonAdminRequest.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
+    }
+
+    /**
+     * Given: a non-admin user holding the Login As role and {@code LOGIN_AS_ADMIN_REQUIRES_ADMIN=false}
+     * When: they try to Login As an administrator, re-entering their own password
+     * Then: the previous behavior is kept and the operation is allowed
+     */
+    @Test
+    public void test_doLoginAs_nonAdmin_canImpersonateAdmin_whenRestrictionDisabled() throws Exception {
+        final String password = "loginAsPwd" + System.currentTimeMillis();
+        final User nonAdmin = newLoginAsUser(password, false);
+        final boolean previous = Config.getBooleanProperty(UserResourceHelper.LOGIN_AS_ADMIN_REQUIRES_ADMIN, true);
+        Config.setProperty(UserResourceHelper.LOGIN_AS_ADMIN_REQUIRES_ADMIN, false);
+        try {
+            final Map<String, Object> sessionData = UserResourceHelper.getInstance()
+                    .doLoginAs(nonAdmin, adminUser.getUserId(), password, host.getHostname());
+            assertEquals(adminUser.getUserId(), sessionData.get(WebKeys.USER_ID));
+            assertEquals(nonAdmin.getUserId(), sessionData.get(WebKeys.PRINCIPAL_USER_ID));
+        } finally {
+            Config.setProperty(UserResourceHelper.LOGIN_AS_ADMIN_REQUIRES_ADMIN, previous);
+        }
+    }
+
+    /**
+     * Given: an administrator holding the Login As role
+     * When: they Login As another administrator, re-entering their own password
+     * Then: the operation is allowed
+     */
+    @Test
+    public void test_doLoginAs_admin_canImpersonateAdmin_withOwnPassword() throws Exception {
+        final String password = "loginAsPwd" + System.currentTimeMillis();
+        final User admin = newLoginAsUser(password, true);
+        final Map<String, Object> sessionData = UserResourceHelper.getInstance()
+                .doLoginAs(admin, adminUser.getUserId(), password, host.getHostname());
+        assertEquals(adminUser.getUserId(), sessionData.get(WebKeys.USER_ID));
+        assertEquals(admin.getUserId(), sessionData.get(WebKeys.PRINCIPAL_USER_ID));
+    }
+
+    /**
+     * Given: an administrator holding the Login As role
+     * When: they Login As another administrator with a password that is not their own
+     * Then: the operation is refused
+     */
+    @Test
+    public void test_doLoginAs_admin_wrongPassword_isRefused() throws Exception {
+        final User admin = newLoginAsUser("loginAsPwd" + System.currentTimeMillis(), true);
+        try {
+            UserResourceHelper.getInstance().doLoginAs(admin, adminUser.getUserId(), "not-the-password",
+                    host.getHostname());
+            fail("Login As an administrator with a wrong password must be refused");
+        } catch (final DotDataException e) {
+            assertEquals("loginas.error.invalidloginascredentials", e.getMessageKey());
+        }
     }
 
     @Test

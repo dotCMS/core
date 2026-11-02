@@ -98,7 +98,6 @@ import org.jetbrains.annotations.NotNull;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -1065,7 +1064,7 @@ public class ContentletAjax {
 		try{
 			final String luceneQueryTOElasticSearch = relatedIdentifiers.isEmpty() ?
 					luceneQuery.toString() :
-					appendRelatedIdentifierToQuery(luceneQuery.toString(), relatedIdentifiers);
+					prependRelatedIdentifierToQuery(luceneQuery.toString(), relatedIdentifiers);
 
 			hits =(PaginatedArrayList)conAPI.searchIndex(luceneQueryTOElasticSearch, perPage, offset, finalSort, currentUser, false);
 
@@ -1180,14 +1179,28 @@ public class ContentletAjax {
 		return results;
 	}
 
-	private String appendRelatedIdentifierToQuery(final String luceneQuery,
+	/**
+	 * Restricts the given query to the given identifiers.
+	 * <p>
+	 * The clause is placed before the caller's query rather than after it, which is how a fixed
+	 * clause is composed everywhere else in the search code: what a clause appended at the end
+	 * means depends on how the query ends, since a query ending in an unbalanced escape consumes
+	 * the space that separates the two. The query built here ends in a variant clause written by
+	 * this class, so either order works today; prepending keeps it that way without the next
+	 * caller having to check.
+	 *
+	 * @param luceneQuery the query to restrict
+	 * @param relatedIdentifiers the identifiers the results are restricted to, never empty
+	 * @return the restriction followed by the given query
+	 */
+	private String prependRelatedIdentifierToQuery(final String luceneQuery,
 			final List<String> relatedIdentifiers) {
 
 		Preconditions.checkArgument(UtilMethods.isSet(relatedIdentifiers), "relatedIdentifiers can not be empty or null");
-		final StringBuffer result = new StringBuffer(luceneQuery);
+		final StringBuffer result = new StringBuffer("+identifier:(");
 
-		return result.append(" +identifier:(")
-				.append(String.join(" OR ", relatedIdentifiers)).append(") ")
+		return result.append(String.join(" OR ", relatedIdentifiers)).append(") ")
+				.append(luceneQuery)
 				.toString();
 	}
 
@@ -1813,11 +1826,15 @@ public class ContentletAjax {
 	}
 
 	/**
+	 * Saves the content submitted by the legacy edit content screen.
 	 *
-	 * @param
-	 * @param
-	 * @param
-	 * @return
+	 * @param formData   the form fields, each one as name, separator and value
+	 *                   ({@link WebKeys#CONTENTLET_FORM_NAME_VALUE_SEPARATOR})
+	 * @param isAutoSave whether the save was triggered by the auto-save timer
+	 * @param isCheckin  whether the content is checked in as a new version
+	 * @param publish    whether the content is published after it is saved
+	 * @return the data the screen needs after the save: identifier, inode, lock state and any
+	 *         validation errors under {@code saveContentErrors}
 	 * @throws SystemException
 	 * @throws PortalException
 	 * @throws LanguageException
@@ -1910,52 +1927,37 @@ public class ContentletAjax {
 				elementValue = elementValue.toString().trim();
 			}
 
-			//http://jira.dotmarketing.net/browse/DOTCMS-3463
+			// A binary value is either a temp file id, resolved later by the field handler, or the
+			// name of a file the server copied into the user's tmp_binary folder for that binary
+			// column when the content was populated from another language (EditContentletAction)
 			if(elementName.startsWith("binary")){
 				String binaryFileValue = (String) elementValue;
 				File binaryFile = null;
 				if(UtilMethods.isSet(binaryFileValue) && !binaryFileValue.equals("---removed---")){
-					Contentlet binaryContentlet =  new Contentlet();
-					try{
-						binaryContentlet = conAPI.find(binaryFileValue, APILocator.getUserAPI().getSystemUser(), false);
-					}catch(Exception e){
-						Logger.error(this.getClass(), "Problems finding binary content " + binaryFileValue, e);
-					}
-					if(UtilMethods.isSet(binaryContentlet) && UtilMethods.isSet(binaryContentlet.getInode())){
-						try {
-							elementValue = binaryContentlet.getBinary(FileAssetAPI.BINARY_FIELD);
-							binaryFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-									+ File.separator + user.getUserId() + File.separator + "binary1"
-									+ File.separator + ((File)elementValue).getName());
-							if(binaryFile.exists())
-								elementValue = binaryFile;
-						} catch (IOException e) {}
-					}else{
-						binaryFileValue = ContentletUtil.sanitizeFileName(binaryFileValue);
-						binaryFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-								+ File.separator + user.getUserId() + File.separator + elementName
-								+ File.separator + binaryFileValue);
-						if(binaryFile.exists()) {
-	    					try {
-	    					    // https://github.com/dotCMS/dotCMS/issues/35
-	    					    // making a copy just in case the transaction fails so
-	    					    // we can have the file for possible next attempts
-	                            File acopyFolder=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
-	                                    + File.separator + user.getUserId() + File.separator + elementName
-	                                    + File.separator + UUIDGenerator.generateUuid());
-	                            if(!acopyFolder.exists())
-	                                acopyFolder.mkdir();
-	                            File acopy=new File(acopyFolder, binaryFileValue);
-	                            FileUtil.copyFile(binaryFile, acopy);
-	                            elementValue = acopy;
-	                        } catch (Exception e) {
-                                Logger.error(this, "can't make a copy of the uploaded file:" + e, e);
-                                String errorString = LanguageUtil.get(user,"message.event.recurrence.can.not.copy.uploaded.file");
-                                saveContentErrors.add(errorString);
-                                callbackData.put("saveContentErrors", saveContentErrors);
-                                return callbackData;
-                            }
-						}
+					binaryFileValue = ContentletUtil.sanitizeFileName(binaryFileValue);
+					binaryFile = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
+							+ File.separator + user.getUserId() + File.separator + elementName
+							+ File.separator + binaryFileValue);
+					if(binaryFile.exists()) {
+    					try {
+    					    // https://github.com/dotCMS/dotCMS/issues/35
+    					    // making a copy just in case the transaction fails so
+    					    // we can have the file for possible next attempts
+                            File acopyFolder=new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary()
+                                    + File.separator + user.getUserId() + File.separator + elementName
+                                    + File.separator + UUIDGenerator.generateUuid());
+                            if(!acopyFolder.exists())
+                                acopyFolder.mkdir();
+                            File acopy=new File(acopyFolder, binaryFileValue);
+                            FileUtil.copyFile(binaryFile, acopy);
+                            elementValue = acopy;
+                        } catch (Exception e) {
+                            Logger.error(this, "can't make a copy of the uploaded file:" + e, e);
+                            String errorString = LanguageUtil.get(user,"message.event.recurrence.can.not.copy.uploaded.file");
+                            saveContentErrors.add(errorString);
+                            callbackData.put("saveContentErrors", saveContentErrors);
+                            return callbackData;
+                        }
 					}
 				}else{
 					elementValue = new File(binaryFileValue);

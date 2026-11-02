@@ -94,6 +94,7 @@ public class HostVariableAPIImpl implements HostVariableAPI {
 		
 	}
 
+	@Override
 	@WrapInTransaction
 	public List<HostVariable> save(final List<HostVariable> siteVariables, final String siteId,
 			final User user, final boolean respectFrontendRoles)
@@ -133,7 +134,9 @@ public class HostVariableAPIImpl implements HostVariableAPI {
 				// Useful for the comparison
 				siteVariable.setId(toProcess.getId());
 			} else {
+				// A new variable always belongs to the Site being saved
 				toProcess = new HostVariable(siteVariable);
+				toProcess.setHostId(siteId);
 			}
 
 			// Simple comparison to avoid unnecessary updates

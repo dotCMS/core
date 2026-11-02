@@ -51,12 +51,6 @@ on:
         required: false
         type: boolean
         default: true
-      # A pull request build is never deployed, so it can skip the context.
-      upload-docker-context:
-        description: 'Upload the docker-build-context artifact. Only the deployment phase downloads it.'
-        required: false
-        type: boolean
-        default: true
       # Nothing downloads build-classes: its only reader is the deploy-javadoc
       # action, which no workflow calls. Off by default to save the 30 s upload.
       generate-build-classes:
@@ -226,7 +220,6 @@ jobs:
           version: ${{ inputs.version }}
           generate-docker: ${{ inputs.generate-docker }}
           generate-test-image: ${{ inputs.generate-test-image }}
-          upload-docker-context: ${{ inputs.upload-docker-context }}
           generate-build-classes: ${{ inputs.generate-build-classes }}
           java-version: ${{ inputs.java-version }}
           maven-compiler-release: ${{ inputs.maven-compiler-release }}

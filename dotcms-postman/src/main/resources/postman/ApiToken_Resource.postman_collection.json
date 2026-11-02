@@ -1102,6 +1102,530 @@
 			"description": "1 - Create a limited user\n\n2 - Create a token to admin user and expiring in less than 7 days\n\n3 - Create a token to the step 1 user and expiring in less than 7 days\n\n4 - Create a token to admin user expiring in more than 7 days\n\n5 - Get the tokens and verify functionality is working fine"
 		},
 		{
+			"name": "Token access by user",
+			"item": [
+				{
+					"name": "admin creates a token for the limited user",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"var jsonData = pm.response.json();",
+									"pm.test(\"The JWT is returned when the token is created\", function () {",
+									"    pm.expect(jsonData.entity.jwt).to.be.a('string').and.not.empty;",
+									"});",
+									"pm.collectionVariables.set(\"limitedTokenId\", jsonData.entity.token.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"userId\":\"{{userId}}\",\n\t\"expirationSeconds\":3600\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "admin creates an own token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"var jsonData = pm.response.json();",
+									"pm.collectionVariables.set(\"adminTokenId\", jsonData.entity.token.id);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n\t\"expirationSeconds\":3600\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "owner cannot get the JWT of an existing token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"pm.test(\"Response does not contain a JWT\", function () {",
+									"    pm.expect(pm.response.text()).to.not.include('\"jwt\"');",
+									"    pm.expect(pm.response.text()).to.not.include('eyJ');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken/{{adminTokenId}}/jwt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken",
+								"{{adminTokenId}}",
+								"jwt"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "admin cannot get the JWT of another user's token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"pm.test(\"Response does not contain a JWT\", function () {",
+									"    pm.expect(pm.response.text()).to.not.include('\"jwt\"');",
+									"    pm.expect(pm.response.text()).to.not.include('eyJ');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken/{{limitedTokenId}}/jwt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken",
+								"{{limitedTokenId}}",
+								"jwt"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "non-admin user cannot get the JWT of another user's token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"pm.test(\"Response does not contain a JWT\", function () {",
+									"    pm.expect(pm.response.text()).to.not.include('\"jwt\"');",
+									"    pm.expect(pm.response.text()).to.not.include('eyJ');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "test@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "12345678",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken/{{adminTokenId}}/jwt",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken",
+								"{{adminTokenId}}",
+								"jwt"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "admin lists another user's tokens without their JWT",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"var jsonData = pm.response.json();",
+									"pm.test(\"The token is listed\", function () {",
+									"    var ids = jsonData.entity.tokens.map(function (t) { return t.id; });",
+									"    pm.expect(ids).to.include(pm.collectionVariables.get(\"limitedTokenId\"));",
+									"});",
+									"pm.test(\"Response does not contain a JWT\", function () {",
+									"    pm.expect(pm.response.text()).to.not.include('\"jwt\"');",
+									"    pm.expect(pm.response.text()).to.not.include('eyJ');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken/{{userId}}/tokens",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken",
+								"{{userId}}",
+								"tokens"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "non-admin user cannot list another user's tokens",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"No tokens are returned\", function () {",
+									"    if (pm.response.code === 200) {",
+									"        pm.expect(pm.response.json().entity.tokens).to.be.empty;",
+									"    } else {",
+									"        pm.expect(pm.response.code).to.be.oneOf([401, 403]);",
+									"    }",
+									"});",
+									"pm.test(\"Response does not contain a JWT\", function () {",
+									"    pm.expect(pm.response.text()).to.not.include('\"jwt\"');",
+									"    pm.expect(pm.response.text()).to.not.include('eyJ');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "test@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "12345678",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken/dotcms.org.1/tokens",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken",
+								"dotcms.org.1",
+								"tokens"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "non-admin user cannot revoke another user's token",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Request is not successful\", function () {",
+									"    pm.expect(pm.response.code).to.not.eql(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"protocolProfileBehavior": {
+						"disableCookies": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "test@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "12345678",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken/{{adminTokenId}}/revoke",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken",
+								"{{adminTokenId}}",
+								"revoke"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "admin token is still active",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code should be 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"The token was not revoked\", function () {",
+									"    var token = pm.response.json().entity.tokens.find(function (t) {",
+									"        return t.id === pm.collectionVariables.get(\"adminTokenId\");",
+									"    });",
+									"    pm.expect(token).to.not.be.undefined;",
+									"    pm.expect(token.revokedDate).to.not.be.ok;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/apitoken/dotcms.org.1/tokens",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"apitoken",
+								"dotcms.org.1",
+								"tokens"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "createToken",
 			"event": [
 				{
@@ -1358,18 +1882,15 @@
 			"response": []
 		},
 		{
-			"name": "getJwtFromApiToken",
+			"name": "getJwtFromApiToken is not available",
 			"event": [
 				{
 					"listen": "test",
 					"script": {
 						"exec": [
-							"pm.test(\"Status code should be 200\", function() {",
-							"    pm.response.to.have.status(200);",
-							"});",
-							"",
-							"pm.test(\"Response has a valid JWT\", function () {",
-							"    pm.expect(pm.response.json().entity.jwt).to.match(/^[A-Za-z0-9-_]+\\.[A-Za-z0-9-_]+\\.[A-Za-z0-9-_.+/=]*$/);",
+							"// A token's JWT is only returned when the token is created.",
+							"pm.test(\"Status code should be 404\", function() {",
+							"    pm.response.to.have.status(404);",
 							"});"
 						],
 						"type": "text/javascript"
@@ -1770,6 +2291,14 @@
 		},
 		{
 			"key": "userId",
+			"value": ""
+		},
+		{
+			"key": "limitedTokenId",
+			"value": ""
+		},
+		{
+			"key": "adminTokenId",
 			"value": ""
 		}
 	]

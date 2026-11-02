@@ -1,0 +1,72 @@
+@let activeTab = store.editorEditPanelTab();
+
+<!-- Slides out while the panel is closed, as the host narrows to nothing. -->
+<div
+    class="h-full w-[clamp(360px,20vw,500px)] min-w-[clamp(360px,20vw,500px)] transition-transform duration-150 ease-[ease-in-out]"
+    [class.translate-x-full]="!store.editorEditPanelOpen()"
+    data-testid="edit-panel-body">
+    <p-tabs
+        class="h-full"
+        [value]="activeTab"
+        [dt]="{ tabpanel: { padding: '0' } }"
+        [pt]="{ tablist: { class: 'bg-gray-100' } }"
+        (valueChange)="handleTabChange($event)">
+        <p-tablist>
+            <p-tab [value]="UVE_EDIT_PANEL_TABS.QUICK_EDIT" data-testid="edit-panel-quick-edit-tab">
+                <div [pTooltip]="'uve.toolbar.content.editor' | dm" tooltipPosition="bottom">
+                    <i class="pi pi-pencil"></i>
+                </div>
+            </p-tab>
+            @if (store.editorCanEditStyles()) {
+                <p-tab
+                    [value]="UVE_EDIT_PANEL_TABS.STYLE_EDITOR"
+                    data-testid="edit-panel-style-editor-tab">
+                    <div
+                        class="flex h-full flex-1 items-center justify-center"
+                        [pTooltip]="'uve.toolbar.style.editor' | dm"
+                        tooltipPosition="bottom">
+                        <i class="pi pi-palette"></i>
+                    </div>
+                </p-tab>
+            }
+        </p-tablist>
+        <p-tabpanels class="h-full flex-1 overflow-hidden">
+            <p-tabpanel [value]="UVE_EDIT_PANEL_TABS.QUICK_EDIT">
+                @if (activeTab === UVE_EDIT_PANEL_TABS.QUICK_EDIT) {
+                    <dot-uve-contentlet-quick-edit
+                        [data]="store.$editorContentletEditData()"
+                        [loading]="store.$editorIsIframeLoading()" />
+                }
+            </p-tabpanel>
+            @if (store.editorCanEditStyles()) {
+                <p-tabpanel [value]="UVE_EDIT_PANEL_TABS.STYLE_EDITOR">
+                    @if (activeTab === UVE_EDIT_PANEL_TABS.STYLE_EDITOR) {
+                        <div class="flex size-full gap-2">
+                            @if (!store.editorCanEditSelectedContentlet()) {
+                                <!-- Neither panel tab may modify a contentlet the user has no
+                                     edit permission on; the quick-edit tab shows the same
+                                     message through its own no-permission mode. -->
+                                <div
+                                    data-testid="style-editor-no-permission"
+                                    class="flex size-full flex-col items-center justify-center gap-3 px-6 text-center">
+                                    <span
+                                        class="material-symbols-outlined text-[5rem]! text-gray-300">
+                                        lock
+                                    </span>
+                                    <p class="m-0 text-sm text-gray-800">
+                                        {{ 'uve.contentlet.no.edit.permission' | dm }}
+                                    </p>
+                                </div>
+                            } @else if (store.$styleSchema(); as styleSchema) {
+                                <dot-uve-style-editor-form [schema]="styleSchema" />
+                            } @else {
+                                <dot-uve-style-editor-empty-state
+                                    [contentTypeVar]="$styleSchemaContentTypeVar()" />
+                            }
+                        </div>
+                    }
+                </p-tabpanel>
+            }
+        </p-tabpanels>
+    </p-tabs>
+</div>
