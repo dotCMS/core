@@ -1,6 +1,6 @@
-import { EMPTY, Observable, throwError } from 'rxjs';
+import { EMPTY, Observable, iif, throwError } from 'rxjs';
 
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
 import { catchError, map } from 'rxjs/operators';
@@ -172,9 +172,11 @@ export class DotPageApiService {
 
         return this.http.get<DotFormInContainerResponse>(url).pipe(
             catchError((error: HttpErrorResponse) =>
-                error.status === 404
-                    ? this.http.post<DotFormInContainerResponse>(url, null)
-                    : throwError(() => error)
+                iif(
+                    () => error.status === HttpStatusCode.NotFound,
+                    this.http.post<DotFormInContainerResponse>(url, null),
+                    throwError(() => error)
+                )
             ),
             map((response) => response?.entity?.content?.identifier)
         );
