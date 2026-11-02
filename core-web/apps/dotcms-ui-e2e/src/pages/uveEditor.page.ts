@@ -4,11 +4,12 @@ import { Locator, Page } from '@playwright/test';
 const NO_PERSONA_ID = 'modes.persona.no.persona';
 
 /**
- * The Universal Visual Editor, as far as the Experiments entry points need it (#37478).
+ * The Universal Visual Editor, as far as the Experiments entry points (#37478) and adding a form
+ * to a page need it.
  *
- * Deliberately small: this covers the navigation bar, the toolbar's running-experiment badge and
- * the Experiments panel, which is what the two experiments suites assert against. It is not an
- * attempt to model the editor.
+ * Deliberately small: this covers the navigation bar, the toolbar's running-experiment badge, the
+ * Experiments panel, and the containers and contentlets on the canvas, which is what those suites
+ * assert against. It is not an attempt to model the editor.
  */
 export class UveEditorPage {
     constructor(private page: Page) {}
@@ -59,5 +60,34 @@ export class UveEditorPage {
     /** The iframe holding the rendered page. Its `src` is how a reload is detected. */
     get canvas(): Locator {
         return this.page.locator('iframe[data-testid="iframe"]');
+    }
+
+    /** A container on the rendered page, by its position among the page's containers. */
+    container(index: number): Locator {
+        return this.page
+            .frameLocator('iframe[data-testid="iframe"]')
+            .locator('[data-dot-object="container"]')
+            .nth(index);
+    }
+
+    /** Every place a contentlet is rendered on the page. */
+    contentlet(identifier: string): Locator {
+        return this.page
+            .frameLocator('iframe[data-testid="iframe"]')
+            .locator(`[data-dot-object="contentlet"][data-dot-identifier="${identifier}"]`);
+    }
+
+    /**
+     * Adds a form to a container the way an editor does: the container's add menu, then the form
+     * in the form selector.
+     */
+    async addForm(containerIndex: number, formName: string) {
+        await this.container(containerIndex).hover();
+        await this.page.getByRole('button', { name: 'Add content' }).click();
+        await this.page.getByRole('menuitem', { name: 'Form' }).click();
+        await this.page
+            .getByRole('row', { name: formName })
+            .getByTestId('form-select-button')
+            .click();
     }
 }
