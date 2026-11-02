@@ -338,6 +338,7 @@ public class UserManagerImpl extends PrincipalBean implements UserManager {
             final String newPassword = PwdToolkitUtil.generate();
             try {
                 user.setPassword(PasswordFactoryProxy.generateHash(newPassword));
+                user.setPasswordEncrypted(true);
             } catch (final PasswordException e) {
                 throw new SystemException(e);
             }
