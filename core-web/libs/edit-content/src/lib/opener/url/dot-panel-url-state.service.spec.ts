@@ -1,0 +1,310 @@
+import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
+import { Mock, vi } from 'vitest';
+
+import { Location, PopStateEvent } from '@angular/common';
+import { Router } from '@angular/router';
+
+import { DotSidePanelRef } from '@dotcms/ui';
+
+import { DotPanelUrlStateService } from './dot-panel-url-state.service';
+
+/** The surface's own URL, before any panel opens. */
+const SURFACE_URL = '/c/query-tool?q=%2Blive%3Atrue&limit=20';
+
+/** The surface's own params, decoded. No panel write may change them (FR-044). */
+const SURFACE_PARAMS = { q: '+live:true', limit: '20' };
+
+const ID_1 = '3f0c8e5a-7b2d-4c1e-9a6f-0d4b8e2c1a57';
+const ID_2 = '7c2e9b14-5a3d-4f6e-8b1c-2d9a0e4f6b38';
+const NEW_ID = 'b4e1f0a2-9c3d-4e5f-a6b7-c8d9e0f1a2b3';
+
+/**
+ * Stands in for Angular's `Location`: keeps the URL the last write left, as the browser does, and
+ * plays Back or Forward to everyone subscribed.
+ */
+const createLocationDouble = (initialUrl: string) => {
+    let current = initialUrl;
+    const listeners: Array<(event: PopStateEvent) => void> = [];
+    const write = (path: string, query = ''): void => {
+        current = query ? `${path}?${query.replace(/^\?/, '')}` : path;
+    };
+
+    return {
+        path: vi.fn(() => current),
+        go: vi.fn(write),
+        replaceState: vi.fn(write),
+        subscribe: vi.fn((onNext: (event: PopStateEvent) => void) => {
+            listeners.push(onNext);
+
+            return { unsubscribe: vi.fn() };
+        }),
+        /** Browser Back or Forward, landing on `url`. */
+        pop(url: string): void {
+            current = url;
+            listeners.forEach((listener) =>
+                listener({ url, pop: true, type: 'popstate', state: null })
+            );
+        }
+    };
+};
+
+/**
+ * The last URL written with `write`, as its path and its decoded params, so a test reads what the
+ * address bar shows whatever the encoding or the order of the params.
+ */
+const lastWrite = (write: {
+    mock: { calls: unknown[][] };
+}): { path: string; params: Record<string, string> } => {
+    const [path, query = ''] = write.mock.calls[write.mock.calls.length - 1] as [string, string?];
+    const url = new URL(query ? `${path}?${query.replace(/^\?/, '')}` : path, 'http://dotcms.test');
+
+    return { path: url.pathname, params: Object.fromEntries(url.searchParams) };
+};
+
+/** The surface's URL with `params` added, as the address bar would hold it. */
+const surfaceUrlWith = (params: Record<string, string>): string =>
+    `${SURFACE_URL}&${new URLSearchParams(params).toString()}`;
+
+/** A panel ref as the outlet hands it out: `closed` and `isClosed` behave as the real one's. */
+const newRef = (): DotSidePanelRef => new DotSidePanelRef(() => undefined);
+
+/**
+ * A ref whose `requestClose` does nothing, as an editor's unsaved-changes guard does while its
+ * prompt is open.
+ */
+const guardedRef = (): { ref: DotSidePanelRef; requestClose: Mock } => {
+    const ref = newRef();
+    const requestClose = vi.fn();
+    vi.spyOn(ref, 'requestClose').mockImplementation(requestClose);
+
+    return { ref, requestClose };
+};
+
+/**
+ * The open side panel, in the surface's URL (#38303, FR-044 to FR-048). Written with
+ * `Location.go` and `Location.replaceState` only: the legacy iframe reloads on every router query
+ * param change, and a router navigation recreates a `reuseRoute: false` portlet (FR-046).
+ */
+describe('DotPanelUrlStateService', () => {
+    let spectator: SpectatorService<DotPanelUrlStateService>;
+    let location: ReturnType<typeof createLocationDouble>;
+    let router: { navigate: Mock; navigateByUrl: Mock };
+
+    const createService = createServiceFactory({
+        service: DotPanelUrlStateService,
+        providers: [
+            { provide: Location, useFactory: () => location },
+            { provide: Router, useFactory: () => router }
+        ]
+    });
+
+    /** Starts the service on a surface whose address bar holds `url`. */
+    const start = (url = SURFACE_URL): void => {
+        location = createLocationDouble(url);
+        router = { navigate: vi.fn(), navigateByUrl: vi.fn() };
+        spectator = createService();
+    };
+
+    describe('opening a panel', () => {
+        it("pushes one history entry naming an edit, beside the surface's own params", () => {
+            start();
+
+            spectator.service.register(newRef(), { editContent: ID_1, editContentLang: '1' });
+
+            expect(location.go).toHaveBeenCalledTimes(1);
+            expect(location.replaceState).not.toHaveBeenCalled();
+            expect(lastWrite(location.go)).toEqual({
+                path: '/c/query-tool',
+                params: { ...SURFACE_PARAMS, editContent: ID_1, editContentLang: '1' }
+            });
+        });
+
+        it("pushes a create's content type and the caller's extra params", () => {
+            start();
+
+            spectator.service.register(newRef(), { createContent: 'Blog', folder: 'f-1' });
+
+            expect(location.go).toHaveBeenCalledTimes(1);
+            expect(lastWrite(location.go).params).toEqual({
+                ...SURFACE_PARAMS,
+                createContent: 'Blog',
+                folder: 'f-1'
+            });
+        });
+
+        // A link opened on load: a second entry for the same URL would make Back do nothing.
+        it('writes nothing when the URL already names the panel', () => {
+            start(surfaceUrlWith({ editContent: ID_1, editContentLang: '1' }));
+
+            spectator.service.register(newRef(), { editContent: ID_1, editContentLang: '1' });
+
+            expect(location.go).not.toHaveBeenCalled();
+            expect(location.replaceState).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('closing a panel', () => {
+        it('clears its params in place, so Forward cannot reopen it', () => {
+            start();
+            const ref = newRef();
+            spectator.service.register(ref, { editContent: ID_1, editContentLang: '1' });
+
+            ref.close();
+
+            expect(location.go).toHaveBeenCalledTimes(1);
+            expect(location.replaceState).toHaveBeenCalledTimes(1);
+            expect(lastWrite(location.replaceState).params).toEqual(SURFACE_PARAMS);
+        });
+
+        it("clears a create's extra params with its own", () => {
+            start();
+            const ref = newRef();
+            spectator.service.register(ref, { createContent: 'Blog', folder: 'f-1' });
+
+            ref.close();
+
+            expect(location.replaceState).toHaveBeenCalledTimes(1);
+            expect(lastWrite(location.replaceState).params).toEqual(SURFACE_PARAMS);
+        });
+    });
+
+    describe('rewriting a panel in place', () => {
+        it('rewrites the language when the editor switches it, without a history entry', () => {
+            start();
+            const ref = newRef();
+            spectator.service.register(ref, { editContent: ID_1, editContentLang: '1' });
+
+            spectator.service.update(ref, { editContent: ID_1, editContentLang: '2' });
+
+            expect(location.go).toHaveBeenCalledTimes(1);
+            expect(location.replaceState).toHaveBeenCalledTimes(1);
+            expect(lastWrite(location.replaceState).params).toEqual({
+                ...SURFACE_PARAMS,
+                editContent: ID_1,
+                editContentLang: '2'
+            });
+        });
+
+        it("names the new content in place of the create on the create's first save", () => {
+            start();
+            const ref = newRef();
+            spectator.service.register(ref, { createContent: 'Blog' });
+
+            spectator.service.update(ref, { editContent: NEW_ID, editContentLang: '1' });
+
+            expect(location.go).toHaveBeenCalledTimes(1);
+            expect(location.replaceState).toHaveBeenCalledTimes(1);
+            expect(lastWrite(location.replaceState).params).toEqual({
+                ...SURFACE_PARAMS,
+                editContent: NEW_ID,
+                editContentLang: '1'
+            });
+        });
+    });
+
+    describe('stacked panels', () => {
+        it('names only the front panel, and the one underneath again once the front one closes', () => {
+            start();
+            const underneath = newRef();
+            const front = newRef();
+            spectator.service.register(underneath, { editContent: ID_1, editContentLang: '1' });
+
+            spectator.service.register(front, { createContent: 'Blog', folder: 'f-1' });
+
+            expect(location.go).toHaveBeenCalledTimes(2);
+            // One panel named at a time: a URL naming two would open none on load (FR-048, FR-049).
+            expect(lastWrite(location.go).params).toEqual({
+                ...SURFACE_PARAMS,
+                createContent: 'Blog',
+                folder: 'f-1'
+            });
+
+            front.close();
+
+            expect(location.go).toHaveBeenCalledTimes(2);
+            expect(location.replaceState).toHaveBeenCalledTimes(1);
+            expect(lastWrite(location.replaceState).params).toEqual({
+                ...SURFACE_PARAMS,
+                editContent: ID_1,
+                editContentLang: '1'
+            });
+            expect(underneath.isClosed).toBe(false);
+        });
+    });
+
+    describe('browser Back and Forward', () => {
+        it("restores the open panel's params while its guard decides, and asks it to close", () => {
+            start();
+            const { ref, requestClose } = guardedRef();
+            spectator.service.register(ref, { editContent: ID_1, editContentLang: '1' });
+
+            location.pop(SURFACE_URL);
+
+            expect(requestClose).toHaveBeenCalledTimes(1);
+            expect(location.replaceState).toHaveBeenCalledTimes(1);
+            expect(lastWrite(location.replaceState).params).toEqual({
+                ...SURFACE_PARAMS,
+                editContent: ID_1,
+                editContentLang: '1'
+            });
+        });
+
+        it('clears the params once the author discards and the panel closes', () => {
+            start();
+            const { ref } = guardedRef();
+            spectator.service.register(ref, { editContent: ID_1, editContentLang: '1' });
+            location.pop(SURFACE_URL);
+
+            ref.close();
+
+            expect(location.go).toHaveBeenCalledTimes(1);
+            expect(lastWrite(location.replaceState).params).toEqual(SURFACE_PARAMS);
+        });
+
+        it('asks only the front panel to close when panels are stacked', () => {
+            start();
+            const underneath = guardedRef();
+            const front = guardedRef();
+            spectator.service.register(underneath.ref, { editContent: ID_1, editContentLang: '1' });
+            spectator.service.register(front.ref, { editContent: ID_2, editContentLang: '2' });
+
+            // Back one step: the entry the first panel pushed.
+            location.pop(surfaceUrlWith({ editContent: ID_1, editContentLang: '1' }));
+
+            expect(front.requestClose).toHaveBeenCalledTimes(1);
+            expect(underneath.requestClose).not.toHaveBeenCalled();
+            expect(location.replaceState).toHaveBeenCalledTimes(1);
+            expect(lastWrite(location.replaceState).params).toEqual({
+                ...SURFACE_PARAMS,
+                editContent: ID_2,
+                editContentLang: '2'
+            });
+        });
+
+        it('does nothing when the URL still names the front panel', () => {
+            start();
+            const { ref, requestClose } = guardedRef();
+            spectator.service.register(ref, { editContent: ID_1, editContentLang: '1' });
+
+            location.pop(surfaceUrlWith({ editContent: ID_1, editContentLang: '1' }));
+
+            expect(requestClose).not.toHaveBeenCalled();
+            expect(location.replaceState).not.toHaveBeenCalled();
+        });
+    });
+
+    it('never navigates through the router', () => {
+        start();
+        const underneath = newRef();
+        const { ref: front } = guardedRef();
+        spectator.service.register(underneath, { editContent: ID_1, editContentLang: '1' });
+        spectator.service.register(front, { createContent: 'Blog' });
+        spectator.service.update(front, { editContent: NEW_ID, editContentLang: '1' });
+        location.pop(SURFACE_URL);
+        front.close();
+        underneath.close();
+
+        expect(router.navigate).not.toHaveBeenCalled();
+        expect(router.navigateByUrl).not.toHaveBeenCalled();
+    });
+});

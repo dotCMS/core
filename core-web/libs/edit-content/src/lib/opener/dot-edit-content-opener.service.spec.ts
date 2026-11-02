@@ -1,5 +1,5 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
-import { of, throwError } from 'rxjs';
+import { NEVER, of, Subject, throwError } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
 import {
@@ -14,6 +14,7 @@ import {
     signal
 } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { ActivatedRoute } from '@angular/router';
 
 import {
     DotActionUrlService,
@@ -33,6 +34,7 @@ import {
 import { createFakeContentlet, createFakeContentType } from '@dotcms/utils-testing';
 
 import { DotEditContentOpenerService } from './dot-edit-content-opener.service';
+import { DotPanelUrlStateService } from './url/dot-panel-url-state.service';
 
 import { DotEditContentRequest } from '../models/dot-edit-content-request.model';
 import { DotOpenContentEvent } from '../models/dot-open-content-event.model';
@@ -115,7 +117,8 @@ describe('DotEditContentOpenerService', () => {
             mockProvider(DotContentletEditUrlService, { resolveEditor: vi.fn() }),
             mockProvider(DotActionUrlService, { getCreateContentletUrl: vi.fn() }),
             mockProvider(DotContentletService, { getContentletByInode: vi.fn() }),
-            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() })
+            mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
+            mockProvider(DotPanelUrlStateService, { register: vi.fn(), update: vi.fn() })
         ]
     });
 
@@ -509,6 +512,197 @@ describe('DotEditContentOpenerService', () => {
 
             expect(heading(config)).toBe('Renamed');
             expect(input<DotEditContentRequest>(config, 'request').title).toBe('Renamed');
+        });
+    });
+
+    /**
+     * With the `url` option the opener hands each panel to `DotPanelUrlStateService`, which writes
+     * it to the surface's URL; the surface never writes the URL itself (#38303, FR-044 to FR-050).
+     */
+    describe('the panel in the URL', () => {
+        const route = { snapshot: { queryParams: {} } } as unknown as ActivatedRoute;
+        let register: Mock;
+        let update: Mock;
+
+        beforeEach(() => {
+            const urlState = spectator.inject(DotPanelUrlStateService);
+            register = urlState.register as Mock;
+            update = urlState.update as Mock;
+        });
+
+        /** The ref and params the opener registered, by call. Refs compared by identity. */
+        const registered = (call: number) => {
+            const [ref, params] = register.mock.calls[call] as [
+                DotSidePanelRef,
+                Record<string, string>
+            ];
+
+            return { ref, params };
+        };
+
+        // The editor is still being chosen: the URL names the panel while its spinner shows.
+        it('registers an edit that names its identifier and language at once, with them', () => {
+            resolveEditor.mockReturnValue(NEVER);
+
+            const ref = spectator.service.open(EDIT_REQUEST, { injector, url: { route } });
+
+            expect(register).toHaveBeenCalledTimes(1);
+            expect(registered(0).ref === ref).toBe(true);
+            expect(registered(0).params).toEqual({ editContent: 'id-1', editContentLang: '1' });
+        });
+
+        it('registers an edit without a content type once its contentlet is fetched, with its identifier and language', () => {
+            const fetched = new Subject<DotCMSContentlet>();
+            getContentletByInode.mockReturnValue(fetched);
+
+            const ref = spectator.service.open(
+                { mode: 'edit', inode: 'host-inode' },
+                { injector, url: { route } }
+            );
+
+            expect(register).not.toHaveBeenCalled();
+
+            fetched.next(
+                createFakeContentlet({
+                    inode: 'host-inode',
+                    identifier: 'host-id',
+                    contentType: 'Banner',
+                    languageId: 3
+                })
+            );
+
+            expect(register).toHaveBeenCalledTimes(1);
+            expect(registered(0).ref === ref).toBe(true);
+            expect(registered(0).params).toEqual({
+                editContent: 'host-id',
+                editContentLang: '3'
+            });
+        });
+
+        // The Publishing Queue's dialogs name the inode and the content type, not the identifier.
+        it('fetches an edit that names no identifier, so the URL can name it', () => {
+            getContentletByInode.mockReturnValue(
+                of(
+                    createFakeContentlet({
+                        inode: 'abc',
+                        identifier: 'fetched-id',
+                        contentType: 'Blog',
+                        languageId: 2
+                    })
+                )
+            );
+
+            spectator.service.open(
+                { mode: 'edit', inode: 'abc', contentType: 'Blog' },
+                { injector, url: { route } }
+            );
+
+            expect(getContentletByInode).toHaveBeenCalledWith('abc');
+            expect(register).toHaveBeenCalledTimes(1);
+            expect(registered(0).params).toEqual({
+                editContent: 'fetched-id',
+                editContentLang: '2'
+            });
+        });
+
+        it("registers a create at once, with its content type and the caller's extra params", () => {
+            resolveEditor.mockReturnValue(NEVER);
+
+            const ref = spectator.service.open(CREATE_REQUEST, {
+                injector,
+                url: { route, extraParams: { folder: 'f-1' } }
+            });
+
+            expect(register).toHaveBeenCalledTimes(1);
+            expect(registered(0).ref === ref).toBe(true);
+            expect(registered(0).params).toEqual({ createContent: 'Banner', folder: 'f-1' });
+        });
+
+        it('never tells the service about a panel opened without the option', async () => {
+            getContentletByInode.mockReturnValue(
+                of(createFakeContentlet({ inode: 'host-inode', identifier: 'host-id' }))
+            );
+
+            spectator.service.open({ mode: 'edit', inode: 'host-inode' }, { injector });
+            spectator.service.open({ ...CREATE_REQUEST, contentType: 'Blog' }, { injector });
+            const { config } = await lastOpen();
+            config.outputs?.['saved']?.(createFakeContentlet({ identifier: 'new-id' }) as never);
+            spectator.service.open(EDIT_REQUEST, { injector });
+            const { config: edit } = await lastOpen();
+            edit.outputs?.['languageChanged']?.(2 as never);
+
+            expect(register).not.toHaveBeenCalled();
+            expect(update).not.toHaveBeenCalled();
+        });
+
+        it('rewrites the language in place when the editor switches it, and still tells the caller', async () => {
+            const languageChanged = vi.fn();
+            const ref = spectator.service.open(EDIT_REQUEST, {
+                injector,
+                languageChanged,
+                url: { route }
+            });
+            const { config } = await lastOpen();
+
+            config.outputs?.['languageChanged'](2 as never);
+
+            expect(update).toHaveBeenCalledTimes(1);
+            const [updatedRef, params] = update.mock.calls[0];
+            expect(updatedRef === ref).toBe(true);
+            expect(params).toEqual({ editContent: 'id-1', editContentLang: '2' });
+            expect(languageChanged).toHaveBeenCalledWith(2);
+        });
+
+        it("names the new content in place of the create on the create's first save, and only then", async () => {
+            const ref = spectator.service.open(
+                { ...CREATE_REQUEST, contentType: 'Blog' },
+                { injector, url: { route } }
+            );
+            const { config } = await lastOpen();
+            const saved = createFakeContentlet({
+                inode: 'new-inode',
+                identifier: 'new-id',
+                languageId: 2
+            });
+
+            config.outputs?.['saved'](saved as never);
+            config.outputs?.['saved']({ ...saved, inode: 'newer-inode' } as never);
+
+            expect(update).toHaveBeenCalledTimes(1);
+            const [updatedRef, params] = update.mock.calls[0];
+            expect(updatedRef === ref).toBe(true);
+            expect(params).toEqual({ editContent: 'new-id', editContentLang: '2' });
+        });
+
+        it("leaves the URL as it is when an edit's content is saved", async () => {
+            spectator.service.open(EDIT_REQUEST, { injector, url: { route } });
+            const { config } = await lastOpen();
+
+            config.outputs?.['saved'](createFakeContentlet({ inode: 'abc2' }) as never);
+
+            expect(update).not.toHaveBeenCalled();
+        });
+
+        it('passes the option to a panel opened from inside one, so the stacked panel registers its own params', async () => {
+            getContentletByInode.mockReturnValue(
+                of(
+                    createFakeContentlet({
+                        inode: 'rel-1',
+                        identifier: 'rel-id',
+                        contentType: 'Banner',
+                        languageId: 2
+                    })
+                )
+            );
+            spectator.service.open(EDIT_REQUEST, { injector, url: { route } });
+            const { config: first } = await lastOpen();
+
+            first.outputs?.['openContent']({ request: { mode: 'edit', inode: 'rel-1' } } as never);
+            await lastOpen();
+
+            expect(register).toHaveBeenCalledTimes(2);
+            expect(registered(1).ref === open.mock.results[1].value).toBe(true);
+            expect(registered(1).params).toEqual({ editContent: 'rel-id', editContentLang: '2' });
         });
     });
 });
