@@ -296,6 +296,151 @@
       "response": []
     },
     {
+      "name": "Setup - create a template - 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('templateId', pm.response.json().entity.identifier);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/templates",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "templates"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"title\": \"user-properties-{{runId}}\",\n  \"body\": \"<html><body>user properties</body></html>\",\n  \"siteId\": \"{{siteId}}\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Setup - publish the template - 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/templates/_publish",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "templates",
+            "_publish"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "[\"{{templateId}}\"]",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Setup - publish a page - 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "pm.collectionVariables.set('pageId', pm.response.json().entity.identifier);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "actions",
+            "default",
+            "fire",
+            "PUBLISH"
+          ],
+          "query": [
+            {
+              "key": "indexPolicy",
+              "value": "WAIT_FOR"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"contentlet\": {\n    \"contentType\": \"htmlpageasset\",\n    \"title\": \"user-properties-{{runId}}\",\n    \"url\": \"user-properties-{{runId}}\",\n    \"friendlyName\": \"user-properties-{{runId}}\",\n    \"hostFolder\": \"{{siteId}}\",\n    \"template\": \"{{templateId}}\",\n    \"languageId\": 1,\n    \"cachettl\": \"0\",\n    \"sortOrder\": 0\n  }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
       "name": "Setup - create a front-end user - 200",
       "event": [
         {
@@ -1138,7 +1283,7 @@
           }
         ],
         "url": {
-          "raw": "{{serverURL}}/api/v1/page/json/destinations/costa-rica",
+          "raw": "{{serverURL}}/api/v1/page/json/user-properties-{{runId}}?host_id={{siteId}}",
           "host": [
             "{{serverURL}}"
           ],
@@ -1147,8 +1292,13 @@
             "v1",
             "page",
             "json",
-            "destinations",
-            "costa-rica"
+            "user-properties-{{runId}}"
+          ],
+          "query": [
+            {
+              "key": "host_id",
+              "value": "{{siteId}}"
+            }
           ]
         },
         "auth": {
@@ -1491,7 +1641,7 @@
           }
         ],
         "url": {
-          "raw": "{{serverURL}}/api/v1/page/json/destinations/costa-rica",
+          "raw": "{{serverURL}}/api/v1/page/json/user-properties-{{runId}}?host_id={{siteId}}",
           "host": [
             "{{serverURL}}"
           ],
@@ -1500,8 +1650,13 @@
             "v1",
             "page",
             "json",
-            "destinations",
-            "costa-rica"
+            "user-properties-{{runId}}"
+          ],
+          "query": [
+            {
+              "key": "host_id",
+              "value": "{{siteId}}"
+            }
           ]
         }
       },
@@ -1545,6 +1700,248 @@
               "value": "dotcms.org.1"
             }
           ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Cleanup - archive the page - 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/ARCHIVE?identifier={{pageId}}",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "actions",
+            "default",
+            "fire",
+            "ARCHIVE"
+          ],
+          "query": [
+            {
+              "key": "identifier",
+              "value": "{{pageId}}"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Cleanup - delete the page - 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/DELETE?identifier={{pageId}}",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "workflow",
+            "actions",
+            "default",
+            "fire",
+            "DELETE"
+          ],
+          "query": [
+            {
+              "key": "identifier",
+              "value": "{{pageId}}"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Cleanup - unpublish the template - 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/templates/_unpublish",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "templates",
+            "_unpublish"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "[\"{{templateId}}\"]",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Cleanup - archive the template - 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/templates/_archive",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "templates",
+            "_archive"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "[\"{{templateId}}\"]",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Cleanup - delete the template - 200",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('200', () => pm.response.to.have.status(200));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "DELETE",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/templates",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "templates"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "[\"{{templateId}}\"]",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
         }
       },
       "response": []
@@ -1651,6 +2048,14 @@
     },
     {
       "key": "feToken",
+      "value": ""
+    },
+    {
+      "key": "templateId",
+      "value": ""
+    },
+    {
+      "key": "pageId",
       "value": ""
     }
   ]
