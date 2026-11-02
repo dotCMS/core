@@ -1,9 +1,9 @@
-import { EMPTY, Observable, iif, throwError } from 'rxjs';
+import { EMPTY, Observable, iif, throwError, timer } from 'rxjs';
 
 import { HttpClient, HttpErrorResponse, HttpStatusCode } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, retry } from 'rxjs/operators';
 
 import { graphqlToPageEntity } from '@dotcms/client/internal';
 import { DEFAULT_VARIANT_ID, DotPagination, DotPersona } from '@dotcms/dotcms-models';
@@ -170,11 +170,21 @@ export class DotPageApiService {
     getFormIndetifier(containerId: string, formId: string): Observable<string> {
         const url = `/api/v1/containers/form/${formId}?containerId=${containerId}`;
 
+        // A 409 means another request is still placing the same form; asking again shortly after
+        // gets the identifier it created.
+        const place$ = this.http.post<DotFormInContainerResponse>(url, null).pipe(
+            retry({
+                count: 1,
+                delay: (error: HttpErrorResponse) =>
+                    error.status === HttpStatusCode.Conflict ? timer(1000) : throwError(() => error)
+            })
+        );
+
         return this.http.get<DotFormInContainerResponse>(url).pipe(
             catchError((error: HttpErrorResponse) =>
                 iif(
                     () => error.status === HttpStatusCode.NotFound,
-                    this.http.post<DotFormInContainerResponse>(url, null),
+                    place$,
                     throwError(() => error)
                 )
             ),

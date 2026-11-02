@@ -239,6 +239,55 @@ describe('DotPageApiService', () => {
 
             expect(status).toBe(403);
         });
+
+        describe('when another request is still placing the form', () => {
+            beforeEach(() => vi.useFakeTimers());
+            afterEach(() => vi.useRealTimers());
+
+            it('should ask again after a moment and return the identifier', () => {
+                let identifier: string | undefined;
+                spectator.service
+                    .getFormIndetifier('container-id', 'form-id')
+                    .subscribe((value) => (identifier = value));
+
+                spectator
+                    .expectOne(FORM_URL, HttpMethod.GET)
+                    .flush(null, { status: 404, statusText: 'Not Found' });
+                spectator
+                    .expectOne(FORM_URL, HttpMethod.POST)
+                    .flush(null, { status: 409, statusText: 'Conflict' });
+
+                vi.advanceTimersByTime(1000);
+
+                spectator
+                    .expectOne(FORM_URL, HttpMethod.POST)
+                    .flush({ entity: { content: { identifier: 'new-widget' } } });
+
+                expect(identifier).toBe('new-widget');
+            });
+
+            it('should report the conflict when it is still there after asking again', () => {
+                let status: number | undefined;
+                spectator.service.getFormIndetifier('container-id', 'form-id').subscribe({
+                    error: (error) => (status = error.status)
+                });
+
+                spectator
+                    .expectOne(FORM_URL, HttpMethod.GET)
+                    .flush(null, { status: 404, statusText: 'Not Found' });
+                spectator
+                    .expectOne(FORM_URL, HttpMethod.POST)
+                    .flush(null, { status: 409, statusText: 'Conflict' });
+
+                vi.advanceTimersByTime(1000);
+
+                spectator
+                    .expectOne(FORM_URL, HttpMethod.POST)
+                    .flush(null, { status: 409, statusText: 'Conflict' });
+
+                expect(status).toBe(409);
+            });
+        });
     });
 
     describe('getGraphQLPage', () => {
