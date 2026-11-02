@@ -14,7 +14,7 @@ import java.nio.charset.StandardCharsets;
 public class XMLSerializerUtil {
 
     private static final XMLSerializerUtil instance= new XMLSerializerUtil();
-    private XStream xmlSerializer;
+    private final XStreamHandler.Cached xmlSerializer;
 
 
     /**
@@ -28,12 +28,19 @@ public class XMLSerializerUtil {
     }
 
     private XMLSerializerUtil(){
-        xmlSerializer = XStreamHandler.newXStreamInstance(StandardCharsets.UTF_8.name());
-        xmlSerializer.autodetectAnnotations(true);
+        xmlSerializer = new XStreamHandler.Cached(StandardCharsets.UTF_8.name(),
+                xstream -> xstream.autodetectAnnotations(true));
     }
 
+    /**
+     * The serializer this singleton hands out. Rebuilt behind the scenes when the trusted-list
+     * configuration changes, so an installation does not have to restart for a configured
+     * extension to take effect on the bundle-reading path.
+     *
+     * @return the serializer to marshal with or read from
+     */
     public XStream getXmlSerializer() {
-        return xmlSerializer;
+        return xmlSerializer.get();
     }
 
     /**
@@ -42,6 +49,6 @@ public class XMLSerializerUtil {
      * @throws XStreamException if the object cannot be serialized
      */
     public void marshal(Object obj, final HierarchicalStreamWriter xmlWriter) {
-        xmlSerializer.marshal(obj, xmlWriter);
+        xmlSerializer.get().marshal(obj, xmlWriter);
     }
 }
