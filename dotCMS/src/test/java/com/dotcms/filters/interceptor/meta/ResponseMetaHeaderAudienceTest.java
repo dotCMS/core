@@ -27,6 +27,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.MockedStatic;
 import org.mockito.Mockito;
@@ -41,8 +42,21 @@ public class ResponseMetaHeaderAudienceTest extends UnitTestBase {
     private final HttpServletRequest request = mock(HttpServletRequest.class);
     private final HttpServletResponse response = mock(HttpServletResponse.class);
 
+    /**
+     * Starts every test from the shipped default: the anonymous flag and the node header settings
+     * are unset, whatever an earlier test class in the same JVM or a test properties file left behind.
+     */
+    @Before
+    public void clearAudienceSettings() {
+        clearSettings();
+    }
+
     @After
     public void tearDown() {
+        clearSettings();
+    }
+
+    private static void clearSettings() {
         Config.setProperty(FeatureFlagName.FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS, null);
         Config.setProperty(ResponseMetaDataWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID, null);
         Config.setProperty(ResponseMetaDataWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID_INCLUDE_NODE_NAME, null);
@@ -62,8 +76,11 @@ public class ResponseMetaHeaderAudienceTest extends UnitTestBase {
 
     /**
      * Method to test: {@link SdkVersionWebInterceptor#intercept}
-     * Given scenario: a request whose Authorization header is not a token dotCMS issued
-     * Expected result: neither version header is added, so presenting any header value is not enough
+     * Given scenario: a request whose Authorization header is a string that is not a token at all
+     * Expected result: neither version header is added, so presenting any header value is not enough.
+     * This bare unit test has no token service, so it cannot tell a rejected token from an
+     * uninitialised service; that a revoked token dotCMS issued gets no headers is checked in
+     * {@code MetaWebInterceptorTest#testSdkVersionHeaders_whenApiTokenIsRevoked_shouldNotAddVersionHeaders}.
      */
     @Test
     public void testIntercept_whenBearerTokenIsNotValid_shouldNotAddVersionHeaders() {
@@ -218,6 +235,24 @@ public class ResponseMetaHeaderAudienceTest extends UnitTestBase {
         }
 
         verify(response).addHeader(eq(ResponseMetaDataWebInterceptor.X_DOT_SERVER_HEADER), anyString());
+    }
+
+    /**
+     * Method to test: {@link ResponseMetaDataWebInterceptor#intercept}
+     * Given scenario: the node header is switched off with RESPONSE_HEADER_ADD_NODE_ID=false, the
+     * anonymous feature flag is on, and the request has no nodeid parameter
+     * Expected result: the x-dot-server header is not added, the flag does not override the switch
+     */
+    @Test
+    public void testIntercept_whenNodeHeaderConfigOffAndAnonymousFlagOn_shouldNotAddNodeHeader() {
+        Config.setProperty(FeatureFlagName.FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS, true);
+        Config.setProperty(ResponseMetaDataWebInterceptor.RESPONSE_HEADER_ADD_NODE_ID, false);
+
+        try (MockedStatic<APILocator> apiLocator = givenNodeHeaderInputs()) {
+            new ResponseMetaDataWebInterceptor().intercept(request, response);
+        }
+
+        verify(response, never()).addHeader(anyString(), anyString());
     }
 
     /**
