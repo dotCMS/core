@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.container;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentException;
 import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -630,12 +631,14 @@ public class ContainerResource implements Serializable {
     /**
      * Returns the form's widget the user can read, creating it when there is none. Requests for the
      * same form wait for each other on this server, so requests arriving together get the one
-     * widget the first of them creates.
+     * widget the first of them creates. A request that waits too long looks for the widget once
+     * more instead of failing.
      *
      * @param form the form
      * @param user the user reading or creating the widget
      * @return the widget
-     * @throws DotDataException     if the widget cannot be read or saved, or the wait times out
+     * @throws DotDataException     if the widget cannot be read or saved, or the wait times out and
+     *                              the widget is still not there
      * @throws DotSecurityException if the user cannot create or publish the widget
      */
     private Contentlet findOrCreateFormWidget(final ContentType form, final User user)
@@ -647,6 +650,14 @@ public class ContainerResource implements Serializable {
                         return existing != null ? existing
                                 : formAPI.createDefaultFormContent(form.id(), user);
                     });
+        } catch (final DotConcurrentException e) {
+            // Another request for the same form held it for longer than this one waits. That
+            // request is creating the widget, so look for it once more before giving up.
+            final Contentlet created = formAPI.getFormContent(form.id(), user);
+            if (created == null) {
+                throw new DotDataException(e.getMessage(), e);
+            }
+            return created;
         } catch (final DotDataException | DotSecurityException | RuntimeException e) {
             throw e;
         } catch (final Throwable e) {

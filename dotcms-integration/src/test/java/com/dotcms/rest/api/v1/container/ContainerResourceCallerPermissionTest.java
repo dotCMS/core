@@ -15,6 +15,7 @@ import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -69,6 +70,8 @@ import org.junit.Test;
 public class ContainerResourceCallerPermissionTest {
 
     private static final String PASSWORD = "admin";
+    /** The key prefix ContainerResource locks a form's widget creation on. */
+    private static final String FORM_WIDGET_LOCK_PREFIX = "form-widget-";
 
     private static ContainerResource resource;
     private static HttpServletResponse response;
@@ -328,6 +331,50 @@ public class ContainerResourceCallerPermissionTest {
             assertEquals("a single widget should be created", 1, widgetsFor(form.id()).size());
         } finally {
             pool.shutdownNow();
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#createContainerFormByQueryParam}
+     * Given: another request for the same form that created its widget and is still holding the
+     *        form's lock for longer than a request waits for it
+     * When: the widget is asked to be created
+     * Should: return the widget the other request created instead of failing
+     */
+    @Test
+    public void test_createForm_whileAnotherRequestHoldsTheFormPastTheWait_returnsItsWidget()
+            throws Exception {
+        final ContentType form = formType();
+        final String containerId = readableContainer(adminUser).getIdentifier();
+        final CountDownLatch created = new CountDownLatch(1);
+        final ExecutorService other = Executors.newSingleThreadExecutor();
+        try {
+            final Future<String> holder = other.submit(() -> {
+                try {
+                    return DotConcurrentFactory.getInstance().getIdentifierStripedLock().tryLock(
+                            FORM_WIDGET_LOCK_PREFIX + form.id(), () -> {
+                                final Contentlet widget = APILocator.getFormAPI()
+                                        .createDefaultFormContent(form.id(), adminUser);
+                                created.countDown();
+                                // Longer than a request waits for the lock.
+                                Thread.sleep(TimeUnit.SECONDS.toMillis(5));
+                                return widget.getIdentifier();
+                            });
+                } catch (final Throwable e) {
+                    throw new Exception(e);
+                }
+            });
+            assertTrue("the other request should create the widget",
+                    created.await(60, TimeUnit.SECONDS));
+
+            final String returned = widgetIdentifier(resource.createContainerFormByQueryParam(
+                    request(adminUser), response, containerId, form.id()));
+
+            assertEquals("the widget the other request created should be returned",
+                    holder.get(60, TimeUnit.SECONDS), returned);
+            assertEquals("no second widget should be created", 1, widgetsFor(form.id()).size());
+        } finally {
+            other.shutdownNow();
         }
     }
 
