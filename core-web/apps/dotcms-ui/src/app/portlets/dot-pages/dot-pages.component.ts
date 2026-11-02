@@ -12,11 +12,12 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterOutlet } from '@angular/router';
 
-import { LazyLoadEvent, MenuItem } from 'primeng/api';
+import { LazyLoadEvent, MenuItem, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 import { Menu, MenuModule } from 'primeng/menu';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TieredMenu } from 'primeng/tieredmenu';
+import { ToastModule } from 'primeng/toast';
 
 import { take } from 'rxjs/operators';
 
@@ -81,7 +82,11 @@ type SavePageEventData = {
         DotRouterService,
         DotFavoritePageService,
         DotCMSPagesStore,
-        DotPageActionsService
+        DotPageActionsService,
+        // The page actions' Edit opens the side panel under this component's injector, and its
+        // editor needs PrimeNG's MessageService. The admin root provides none (one there would
+        // hide the page editor's), so the panel toasts through this one, in this template (#38303).
+        MessageService
     ],
     selector: 'dot-pages',
     templateUrl: './dot-pages.component.html',
@@ -93,7 +98,8 @@ type SavePageEventData = {
         DotPageFavoritesPanelComponent,
         DotPagesTableComponent,
         DotCreatePageDialogComponent,
-        TieredMenu
+        TieredMenu,
+        ToastModule
     ],
     changeDetection: ChangeDetectionStrategy.Eager,
     host: {

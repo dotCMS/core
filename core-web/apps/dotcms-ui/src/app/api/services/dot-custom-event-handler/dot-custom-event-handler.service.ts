@@ -52,10 +52,10 @@ export class DotCustomEventHandlerService {
     private dotEventsService = inject(DotEventsService);
     private dotLicenseService = inject(DotLicenseService);
 
-    /** This service's own injector: the fallback until the admin root registers its own. */
+    /** This service's own injector, until `DotSidePanelHostComponent` registers its own. */
     readonly #injector = inject(Injector);
 
-    /** The admin root's injector, which the side panels this service opens live under. */
+    /** `DotSidePanelHostComponent`'s injector: the side panels this service opens live under it. */
     #panelInjector: Injector | null = null;
 
     private handlers: Record<string, ($event: CustomEvent) => void> = {
@@ -88,10 +88,10 @@ export class DotCustomEventHandlerService {
 
     /**
      * Sets the injector the side panels this service opens live under (#38303).
-     * `MainComponentLegacyComponent` registers its own, so a panel finds the `MessageService` and
-     * the `<p-toast>` the admin root provides; the root injector has neither.
+     * `DotSidePanelHostComponent` registers its own, so a panel finds the `MessageService` and the
+     * `<p-toast>` that component provides; the root injector has neither.
      *
-     * @param injector The admin root's injector.
+     * @param injector `DotSidePanelHostComponent`'s injector.
      */
     setInjector(injector: Injector): void {
         this.#panelInjector = injector;

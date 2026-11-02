@@ -54,9 +54,10 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotPublishingQueueAssetListDialogComponent,
-        componentProviders: [mockProvider(DotPublishingQueueStore, storeStub())],
+        // The store comes from the portlet, above the dialog. Not `componentProviders`: that would
+        // replace the dialog's own providers (ConfirmationService, MessageService) under test.
         providers: [
-            ConfirmationService,
+            mockProvider(DotPublishingQueueStore, storeStub()),
             // Stands in for a MessageService an ancestor would provide.
             MessageService,
             mockProvider(DynamicDialogRef, { close: vi.fn() }),
@@ -104,7 +105,10 @@ describe('DotPublishingQueueAssetListDialogComponent', () => {
         store = spectator.inject(DotPublishingQueueStore, true) as unknown as ReturnType<
             typeof storeStub
         >;
-        confirmationService = spectator.inject(ConfirmationService) as Mocked<ConfirmationService>;
+        confirmationService = spectator.inject(
+            ConfirmationService,
+            true
+        ) as Mocked<ConfirmationService>;
         dialogRef = spectator.inject(DynamicDialogRef) as Mocked<DynamicDialogRef>;
         vi.spyOn(confirmationService, 'confirm').mockImplementation((cfg) => {
             cfg.accept?.();
@@ -393,16 +397,14 @@ describe('DotPublishingQueueAssetListDialogComponent — read-only (allowRemove=
 
     const createComponent = createComponentFactory({
         component: DotPublishingQueueAssetListDialogComponent,
-        componentProviders: [
+        // The store comes from the portlet, above the dialog; the dialog keeps its own providers.
+        providers: [
             mockProvider(DotPublishingQueueStore, {
                 selectedAssets,
                 assetListStatus,
                 selectedBundleId,
                 removeBundleAsset: vi.fn()
-            })
-        ],
-        providers: [
-            ConfirmationService,
+            }),
             mockProvider(DynamicDialogRef, { close: vi.fn() }),
             mockProvider(DotContentletEditUrlService, {
                 resolveEditUrl: vi.fn().mockReturnValue(of('/dotAdmin/#/edit/inode/i1'))
