@@ -107,8 +107,12 @@ public class ForgotPasswordResourceIntegrationTest {
         SENT.clear();
     }
 
-    /** A request like a browser's: the mock has no locale of its own, a real container always supplies one. */
+    /**
+     * A request like a browser's: the mock has no locale of its own, a real container always supplies one.
+     * Each request has a client address of its own, so the tests never run into the per-client request limit.
+     */
     private static HttpServletRequest request() {
+        final String remoteAddr = "client-" + UUID.randomUUID();
         return new HttpServletRequestWrapper(new MockHeaderRequest(
                 new MockSessionRequest(
                         new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request())
@@ -117,6 +121,11 @@ public class ForgotPasswordResourceIntegrationTest {
             @Override
             public Locale getLocale() {
                 return Locale.US;
+            }
+
+            @Override
+            public String getRemoteAddr() {
+                return remoteAddr;
             }
         };
     }

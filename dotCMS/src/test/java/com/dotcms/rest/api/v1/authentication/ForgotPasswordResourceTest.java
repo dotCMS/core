@@ -57,6 +57,8 @@ import org.mockito.stubbing.Answer;
 
 public class ForgotPasswordResourceTest extends UnitTestBase {
 
+    private static final String CLIENT_LIMIT_PROPERTY = "forgot-password.client.max.requests";
+
 
     public ForgotPasswordResourceTest() {
 
@@ -452,7 +454,7 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
             assertTrue(((ResponseEntityView<?>) response.getEntity()).getErrors().isEmpty());
             verifyNoInteractions(userService);
             assertFalse(ForgotPasswordResource.isResetPending(
-                    ForgotPasswordResource.pendingKey(RestUtilTest.DEFAULT_COMPANY, email, false)));
+                    ForgotPasswordResource.pendingKey(RestUtilTest.DEFAULT_COMPANY, email)));
         } finally {
 
             release.countDown();
@@ -495,6 +497,26 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
     }
 
     /**
+     * Given login by user id and a reset already queued for a user id,
+     * when another reset is requested for the same user id in a different case,
+     * then only one reset is queued, since user ids are looked up without case.
+     */
+    @Test
+    public void duplicatePendingUserId_inAnotherCase_isQueuedOnce() throws Exception {
+
+        final String userId = "owner-" + UUID.randomUUID();
+        final List<Runnable> queued = new ArrayList<>();
+
+        requestReset(Company.AUTH_TYPE_ID, new ForgotPasswordForm.Builder().userId(userId).build(),
+                mock(UserLocalManager.class), mock(UserService.class), queued::add);
+        requestReset(Company.AUTH_TYPE_ID, new ForgotPasswordForm.Builder().userId(userId.toUpperCase()).build(),
+                mock(UserLocalManager.class), mock(UserService.class), queued::add);
+
+        assertEquals(1, queued.size());
+        queued.get(0).run();
+    }
+
+    /**
      * Given the queued reset fails, either with a known reset error or an unexpected one,
      * when it has run,
      * then the value is no longer marked as pending.
@@ -508,7 +530,7 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
             final UserService userService = mock(UserService.class);
             final String email = "owner-" + UUID.randomUUID() + "@example.com";
             doThrow(failure).when(userService).sendResetPassword(any(), eq(email), any(Locale.class));
-            final String key = ForgotPasswordResource.pendingKey(RestUtilTest.DEFAULT_COMPANY, email, false);
+            final String key = ForgotPasswordResource.pendingKey(RestUtilTest.DEFAULT_COMPANY, email);
             final List<Runnable> queued = new ArrayList<>();
 
             requestReset(Company.AUTH_TYPE_EA, new ForgotPasswordForm.Builder().userId(email).build(),
@@ -522,16 +544,17 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
     }
 
     /**
-     * Given one client already has its limit of resets pending,
+     * Given one client has already sent its limit of requests in the current window,
      * when it requests a reset for yet another address,
      * then it gets the same 200 but nothing is queued, while a request from a different client is
-     * still queued, and once one of the first client's resets has run it can queue again.
+     * still queued; running the first client's resets does not let it queue more, and a new
+     * window does.
      */
     @Test
-    public void clientAtItsPendingLimit_isNotQueued() throws Exception {
+    public void clientOverItsRequestLimit_isNotQueued() throws Exception {
 
-        final int previousLimit = Config.getIntProperty("forgot-password.client.max.pending", 10);
-        Config.setProperty("forgot-password.client.max.pending", 2);
+        final int previousLimit = Config.getIntProperty(CLIENT_LIMIT_PROPERTY, 10);
+        Config.setProperty(CLIENT_LIMIT_PROPERTY, 2);
         try {
 
             final UserService userService = mock(UserService.class);
@@ -555,22 +578,79 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
                     mock(UserLocalManager.class), userService, queued::add, burstClient + "1");
             assertEquals(3, queued.size());
 
-            queued.get(0).run();
+            queued.forEach(Runnable::run);
             requestReset(Company.AUTH_TYPE_EA,
                     new ForgotPasswordForm.Builder().userId("burst-" + UUID.randomUUID() + "@example.com").build(),
                     mock(UserLocalManager.class), userService, queued::add, burstClient);
-            assertEquals(4, queued.size());
+            assertEquals(3, queued.size());
 
-            queued.subList(1, queued.size()).forEach(Runnable::run);
-            assertTrue(ForgotPasswordResource.reserveClientSlot(burstClient, 2));
-            assertTrue(ForgotPasswordResource.reserveClientSlot(burstClient, 2));
-            assertFalse(ForgotPasswordResource.reserveClientSlot(burstClient, 2));
-            ForgotPasswordResource.releaseClientSlot(burstClient);
-            ForgotPasswordResource.releaseClientSlot(burstClient);
+            // the window is 60 seconds by default; a request after it starts a new one
+            final long later = System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(61);
+            assertTrue(ForgotPasswordResource.admitClient(burstClient, 2, later));
+            assertTrue(ForgotPasswordResource.admitClient(burstClient, 2, later));
+            assertFalse(ForgotPasswordResource.admitClient(burstClient, 2, later));
         } finally {
 
-            Config.setProperty("forgot-password.client.max.pending", previousLimit);
+            Config.setProperty(CLIENT_LIMIT_PROPERTY, previousLimit);
         }
+    }
+
+    /**
+     * Given a client limit of two requests,
+     * when two clients send the same three requests, and only the first client's first reset has
+     * finished before the rest are sent,
+     * then the third request is queued for both or for neither: whether a request is admitted
+     * does not depend on how long earlier resets took to run. The second case repeats the first
+     * value, so a repeat that finds its value still pending must count against the client like
+     * one that does not.
+     */
+    @Test
+    public void clientAdmission_doesNotDependOnWhetherEarlierResetsFinished() throws Exception {
+
+        final int previousLimit = Config.getIntProperty(CLIENT_LIMIT_PROPERTY, 10);
+        Config.setProperty(CLIENT_LIMIT_PROPERTY, 2);
+        try {
+
+            assertEquals("different values", thirdQueuedForClient(false, false),
+                    thirdQueuedForClient(false, true));
+            assertEquals("first value repeated", thirdQueuedForClient(true, false),
+                    thirdQueuedForClient(true, true));
+        } finally {
+
+            Config.setProperty(CLIENT_LIMIT_PROPERTY, previousLimit);
+        }
+    }
+
+    /**
+     * Sends three reset requests from one new client address and returns whether the third one
+     * was queued. The first two requests are for the same address when {@code repeatFirstValue}
+     * is true, otherwise for two different ones; the third is always a new one. When
+     * {@code firstFinishes} is true, the first queued reset runs right after the first request;
+     * otherwise nothing runs until all three requests are sent.
+     */
+    private boolean thirdQueuedForClient(final boolean repeatFirstValue, final boolean firstFinishes)
+            throws Exception {
+
+        final String client = "client-" + UUID.randomUUID();
+        final String firstValue = "first-" + UUID.randomUUID() + "@example.com";
+        final List<String> values = List.of(firstValue,
+                repeatFirstValue ? firstValue : "second-" + UUID.randomUUID() + "@example.com",
+                "third-" + UUID.randomUUID() + "@example.com");
+        final List<Runnable> queued = new ArrayList<>();
+        boolean thirdQueued = false;
+
+        for (int i = 0; i < values.size(); i++) {
+
+            final int before = queued.size();
+            requestReset(Company.AUTH_TYPE_EA, new ForgotPasswordForm.Builder().userId(values.get(i)).build(),
+                    mock(UserLocalManager.class), mock(UserService.class), queued::add, client);
+            thirdQueued = i == 2 && queued.size() > before;
+            if (i == 0 && firstFinishes) {
+                queued.get(0).run();
+            }
+        }
+        queued.subList(firstFinishes ? 1 : 0, queued.size()).forEach(Runnable::run);
+        return thirdQueued;
     }
 
     private static void awaitQuietly(final CountDownLatch latch) {
@@ -628,7 +708,9 @@ public class ForgotPasswordResourceTest extends UnitTestBase {
                                   final UserService userService,
                                   final Executor executor) throws Exception {
 
-        return requestReset(authType, form, userLocalManager, userService, executor, null);
+        // a client address of its own, so requests from different tests never share a client limit
+        return requestReset(authType, form, userLocalManager, userService, executor,
+                "test-client-" + UUID.randomUUID());
     }
 
     /**
