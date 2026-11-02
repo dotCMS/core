@@ -268,6 +268,32 @@ public class ContainerResourceCallerPermissionTest {
     }
 
     /**
+     * Method to test: {@link ContainerResource#createContainerFormByQueryParam}
+     * Given: a form with no widget yet, and a back-end user who can read the form and create and
+     *        publish widget content, but cannot read the container the form is placed in
+     * When: the user asks for the widget to be created in that container
+     * Should: refuse it and create nothing, since the form cannot be placed there
+     */
+    @Test
+    public void test_createForm_containerTheUserCannotRead_refusedAndNothingCreated()
+            throws Exception {
+        final ContentType form = formType();
+        final User user = user(TestUserUtils.getBackendRole());
+        grantRead(user, form);
+        grant(user, formWidgetType(), PermissionAPI.PERMISSION_READ
+                | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH);
+        final Container container = new ContainerDataGen().nextPersisted();
+        containers.add(container);
+        assertFalse("the fixture should keep the container unreadable for the user",
+                APILocator.getPermissionAPI().doesUserHavePermission(
+                        container, PermissionAPI.PERMISSION_READ, user, false));
+
+        assertThrows(DotSecurityException.class, () -> resource.createContainerFormByQueryParam(
+                request(user), response, container.getIdentifier(), form.id()));
+        assertTrue("no widget should be created", widgetsFor(form.id()).isEmpty());
+    }
+
+    /**
      * Method to test: {@link ContainerResource#createContainerFormByQueryParam} and
      * {@link ContainerResource#containerFormByQueryParam}
      * Given: a form with no widget yet, and a back-end user who can read the form and create and
