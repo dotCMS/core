@@ -631,8 +631,8 @@ public class ContainerResource implements Serializable {
     /**
      * Returns the form's widget the user can read, creating it when there is none. Requests for the
      * same form wait for each other on this server, so requests arriving together get the one
-     * widget the first of them creates. A request that waits too long looks for the widget once
-     * more instead of failing.
+     * widget the first of them creates; requests on different servers of a cluster do not wait for
+     * each other. A request that waits too long looks for the widget once more instead of failing.
      *
      * @param form the form
      * @param user the user reading or creating the widget

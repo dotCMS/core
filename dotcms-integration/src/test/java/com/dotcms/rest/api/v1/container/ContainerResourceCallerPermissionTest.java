@@ -431,6 +431,11 @@ public class ContainerResourceCallerPermissionTest {
         final User viewer = user(TestUserUtils.getBackendRole());
         grantRead(viewer, form);
         final Role viewerRole = APILocator.getRoleAPI().loadRoleByKey(viewer.getUserId());
+        // What a role may do with the form's submissions is not what it may do with the form.
+        APILocator.getPermissionAPI().save(new Permission(Contentlet.class.getCanonicalName(),
+                form.getPermissionId(), viewerRole.getId(), PermissionAPI.PERMISSION_READ
+                        | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_PUBLISH, true),
+                form, APILocator.systemUser(), false);
         final String containerId = readableContainer(user).getIdentifier();
 
         final String created = widgetIdentifier(
