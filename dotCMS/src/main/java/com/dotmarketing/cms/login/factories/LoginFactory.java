@@ -179,8 +179,8 @@ public class LoginFactory {
 	            	user = APILocator.getUserAPI().loadUserById(userName, APILocator.getUserAPI().getSystemUser(), false);
 	            }
 
-				// if we do not get the user from LDAP, does not make sense to sync the password.
-				if (!skipPasswordCheck) {
+				// only a login the directory accepted updates the local password
+				if (!skipPasswordCheck && auth == Authenticator.SUCCESS) {
 
 					syncPassword(user);
 				}
@@ -270,7 +270,8 @@ public class LoginFactory {
 	/**
 	 * When directory passwords are not copied into dotCMS ({@code auth.impl.ldap.syncPassword}
 	 * is off), replaces the local password of a directory user with the hash of a random
-	 * secret, so the account can only sign in through the directory.
+	 * secret, so the account can only sign in through the directory. Call it only after the
+	 * directory has accepted the login.
 	 *
 	 * @param user the {@link User} that just signed in
 	 */
@@ -314,8 +315,9 @@ public class LoginFactory {
 
 	/**
     * Checks a user's credentials without creating a session. When the directory authenticator
-    * is configured as the pre-authenticator it decides the result; otherwise the password is
-    * checked against the one stored in dotCMS.
+    * is configured as the pre-authenticator it decides the result, and the local password is
+    * only updated after the directory accepts the login; otherwise the password is checked
+    * against the one stored in dotCMS.
     *
     * @param userName the email address or user id, depending on the company's authentication type
     * @param password the password typed by the user
@@ -363,7 +365,8 @@ public class LoginFactory {
 
     			try{
     				boolean SYNC_PASSWORD = BaseAuthenticator.SYNC_PASSWORD;
-    				if(!SYNC_PASSWORD){
+    				// only a login the directory accepted updates the local password
+    				if(auth == Authenticator.SUCCESS && !SYNC_PASSWORD){
     					String roleName = LDAPImpl.LDAP_USER_ROLE;
     					if(com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user, roleName)){
     						user.setPassword(PasswordFactoryProxy.generateRandomHash());
