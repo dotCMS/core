@@ -70,9 +70,10 @@ public interface FormAPI {
 		/**
 		 * Finds the widget a form is placed on pages with, among the widgets the given user can read.
 		 *
-		 * @param formId the form's content type id
+		 * @param formId the form's content type id or variable
 		 * @param user   the user the widget is read for
-		 * @return the widget, or {@code null} when the form has none the user can read
+		 * @return the widget, or {@code null} when no content type has that id or variable, or the form
+		 *         has none the user can read
 		 * @throws DotDataException     if the widgets cannot be searched
 		 * @throws DotSecurityException if the user cannot run the search
 		 */
@@ -94,7 +95,7 @@ public interface FormAPI {
 		/**
 		 * Creates the widget a form is placed on pages with, and publishes it, as the given user, so the
 		 * user needs permission to create and publish widget content. Visitors can read the new widget,
-		 * and every role that may read, edit and publish the form may do the same with the widget.
+		 * and every other role may read, edit and publish it as far as it may do so with the form.
 		 *
 		 * @param formId the form's content type id
 		 * @param user   the user the widget is created and published as

@@ -44,8 +44,15 @@ import com.liferay.portal.model.User;
 import com.liferay.util.Base64;
 import io.vavr.control.Try;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
@@ -268,6 +275,63 @@ public class ContainerResourceCallerPermissionTest {
     }
 
     /**
+     * Method to test: {@link FormAPI#getFormContent(String, User)}
+     * Given: a form with a widget
+     * When: the widget is asked for by the form's variable, and by a value that is no content type
+     * Should: find the form's widget by its variable, and find nothing for the other value
+     */
+    @Test
+    public void test_getFormContent_byVariableAndByAValueThatIsNoContentType() throws Exception {
+        final ContentType form = formType();
+        final String created = widgetIdentifier(resource.createContainerFormByQueryParam(
+                request(adminUser), response, readableContainer(adminUser).getIdentifier(),
+                form.id()));
+
+        final Contentlet byVariable = APILocator.getFormAPI()
+                .getFormContent(form.variable(), adminUser);
+        assertNotNull("the widget should be found by the form's variable", byVariable);
+        assertEquals(created, byVariable.getIdentifier());
+
+        assertEquals("a value that is no content type should find no widget", null,
+                APILocator.getFormAPI().getFormContent("*", adminUser));
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#createContainerFormByQueryParam}
+     * Given: a form with no widget yet
+     * When: several requests ask for its widget to be created at the same time
+     * Should: create a single widget and return it to all of them
+     */
+    @Test
+    public void test_createForm_concurrentRequests_createOneWidget() throws Exception {
+        final ContentType form = formType();
+        final String containerId = readableContainer(adminUser).getIdentifier();
+        final int requests = 6;
+        final CountDownLatch start = new CountDownLatch(1);
+        final ExecutorService pool = Executors.newFixedThreadPool(requests);
+        try {
+            final List<Future<String>> results = new ArrayList<>();
+            for (int i = 0; i < requests; i++) {
+                results.add(pool.submit(() -> {
+                    start.await();
+                    return widgetIdentifier(resource.createContainerFormByQueryParam(
+                            request(adminUser), response, containerId, form.id()));
+                }));
+            }
+            start.countDown();
+
+            final Set<String> returned = new HashSet<>();
+            for (final Future<String> result : results) {
+                returned.add(result.get(60, TimeUnit.SECONDS));
+            }
+            assertEquals("every request should get the same widget", 1, returned.size());
+            assertEquals("a single widget should be created", 1, widgetsFor(form.id()).size());
+        } finally {
+            pool.shutdownNow();
+        }
+    }
+
+    /**
      * Method to test: {@link ContainerResource#createContainerFormByQueryParam}
      * Given: a form with no widget yet, and a back-end user who can read the form and create and
      *        publish widget content, but cannot read the container the form is placed in
@@ -316,6 +380,10 @@ public class ContainerResourceCallerPermissionTest {
                 form.getPermissionId(), anonymous.getId(), PermissionAPI.PERMISSION_READ
                         | PermissionAPI.PERMISSION_EDIT | PermissionAPI.PERMISSION_PUBLISH, true),
                 form, APILocator.systemUser(), false);
+        // A role that may only read the form should only be able to read its widget.
+        final User viewer = user(TestUserUtils.getBackendRole());
+        grantRead(viewer, form);
+        final Role viewerRole = APILocator.getRoleAPI().loadRoleByKey(viewer.getUserId());
         final String containerId = readableContainer(user).getIdentifier();
 
         final String created = widgetIdentifier(
@@ -342,6 +410,15 @@ public class ContainerResourceCallerPermissionTest {
         assertFalse("visitors should not publish the widget",
                 permissionAPI.doesRoleHavePermission(widget, PermissionAPI.PERMISSION_PUBLISH,
                         anonymous));
+        assertTrue("a role that reads the form should read the widget",
+                permissionAPI.doesRoleHavePermission(widget, PermissionAPI.PERMISSION_READ,
+                        viewerRole));
+        assertFalse("a role that only reads the form should not edit the widget",
+                permissionAPI.doesRoleHavePermission(widget, PermissionAPI.PERMISSION_EDIT,
+                        viewerRole));
+        assertFalse("a role that only reads the form should not publish the widget",
+                permissionAPI.doesRoleHavePermission(widget, PermissionAPI.PERMISSION_PUBLISH,
+                        viewerRole));
 
         assertEquals("a GET should return the same widget", created, widgetIdentifier(
                 resource.containerFormByQueryParam(request(user), response, containerId,

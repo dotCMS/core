@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.container;
 
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -122,6 +123,9 @@ public class ContainerResource implements Serializable {
 
     /** Language.properties key of the message that refuses to delete a container a template uses. */
     private static final String CONTAINER_IN_USE_KEY = "message.containers.delete.in_use";
+
+    /** Prefix of the lock key that makes requests for the same form's widget wait for each other. */
+    private static final String FORM_WIDGET_LOCK_PREFIX = "form-widget-";
 
     private final PaginationUtil paginationUtil;
     private final WebResource    webResource;
@@ -618,11 +622,36 @@ public class ContainerResource implements Serializable {
         // The widget is only worth creating if it can be rendered into the container, so the
         // container is read as the user first and nothing is created when that fails.
         this.getContainerWorking(containerId, user, WebAPILocator.getHostWebAPI().getHost(req));
-        final Contentlet existing = formAPI.getFormContent(form.id(), user);
-        final Contentlet widget = existing != null ? existing
-                : formAPI.createDefaultFormContent(form.id(), user);
+        final Contentlet widget = this.findOrCreateFormWidget(form, user);
 
         return this.renderForm(req, res, containerId, user, widget);
+    }
+
+    /**
+     * Returns the form's widget the user can read, creating it when there is none. Requests for the
+     * same form wait for each other on this server, so requests arriving together get the one
+     * widget the first of them creates.
+     *
+     * @param form the form
+     * @param user the user reading or creating the widget
+     * @return the widget
+     * @throws DotDataException     if the widget cannot be read or saved, or the wait times out
+     * @throws DotSecurityException if the user cannot create or publish the widget
+     */
+    private Contentlet findOrCreateFormWidget(final ContentType form, final User user)
+            throws DotDataException, DotSecurityException {
+        try {
+            return DotConcurrentFactory.getInstance().getIdentifierStripedLock().tryLock(
+                    FORM_WIDGET_LOCK_PREFIX + form.id(), () -> {
+                        final Contentlet existing = formAPI.getFormContent(form.id(), user);
+                        return existing != null ? existing
+                                : formAPI.createDefaultFormContent(form.id(), user);
+                    });
+        } catch (final DotDataException | DotSecurityException | RuntimeException e) {
+            throw e;
+        } catch (final Throwable e) {
+            throw new DotDataException(e.getMessage(), e);
+        }
     }
 
     /**

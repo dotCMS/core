@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.form.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 import com.google.common.annotations.VisibleForTesting;
@@ -177,17 +178,37 @@ public class FormAPIImpl implements FormAPI {
 	@Override
 	public Contentlet getFormContent(final String formId) {
 		try {
-			final User systemUser = userAPI.getSystemUser();
-			final String luceneQuery = "+structureName:" + FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + " +" +
-					FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + "." + FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME + ":" + formId;
-
-			final List<Contentlet> listContentlet = conAPI.search(luceneQuery, 1, 0, null,
-					systemUser, false);
-
-			return listContentlet.isEmpty() ? null : listContentlet.get(0);
+			return findWidget(formId, userAPI.getSystemUser());
 		} catch(final DotDataException | DotSecurityException e) {
 			throw new DotRuntimeException(e);
 		}
+	}
+
+	/**
+	 * Finds the widget of the form the given id or variable names, among the widgets the user can
+	 * read. The form is resolved first and its own id is searched for, so the value passed in is
+	 * never part of the search query.
+	 *
+	 * @param formId the form's content type id or variable
+	 * @param user   the user the widget is read for
+	 * @return the widget, or {@code null} when no content type has that id or variable, or the form
+	 *         has no widget the user can read
+	 * @throws DotDataException     if the content type or the widgets cannot be read
+	 * @throws DotSecurityException if the user cannot run the search
+	 */
+	private Contentlet findWidget(final String formId, final User user)
+			throws DotDataException, DotSecurityException {
+		final ContentType form;
+		try {
+			form = APILocator.getContentTypeAPI(userAPI.getSystemUser()).find(formId);
+		} catch (final NotFoundInDbException e) {
+			return null;
+		}
+		final String luceneQuery = "+structureName:" + FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + " +" +
+				FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + "." + FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME + ":" + form.id();
+
+		final List<Contentlet> widgets = conAPI.search(luceneQuery, 1, 0, null, user, false);
+		return widgets.isEmpty() ? null : widgets.get(0);
 	}
 
 	@Override
@@ -259,11 +280,7 @@ public class FormAPIImpl implements FormAPI {
 	@CloseDBIfOpened
 	public Contentlet getFormContent(final String formId, final User user)
 			throws DotDataException, DotSecurityException {
-		final String luceneQuery = "+structureName:" + FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + " +" +
-				FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + "." + FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME + ":" + formId;
-
-		final List<Contentlet> widgets = conAPI.search(luceneQuery, 1, 0, null, user, false);
-		return widgets.isEmpty() ? null : widgets.get(0);
+		return findWidget(formId, user);
 	}
 
 	@Override
@@ -296,19 +313,20 @@ public class FormAPIImpl implements FormAPI {
 		conAPI.publish(widget, user, false);
 
 		// Setting up who may see and change the new widget is part of creating it, not something
-		// the user is asked to have permission for: visitors read it, and the other roles that
-		// manage the form manage it as they manage the form. The permissions the widget inherits
-		// are copied onto it first, so that those added here extend them instead of replacing them,
-		// and whoever could read the widget, its creator included, still can.
+		// the user is asked to have permission for: visitors read it, and every other role may read,
+		// edit and publish it as far as it may read, edit and publish the form. The permissions the
+		// widget inherits are copied onto it first, so that those added here extend them instead of
+		// replacing them, and whoever could read the widget, its creator included, still can.
 		perAPI.permissionIndividually(perAPI.findParentPermissionable(widget), widget, systemUser);
 		final Role anonymous = APILocator.getRoleAPI().loadCMSAnonymousRole();
 		perAPI.save(new Permission(widget.getPermissionId(), anonymous.getId(),
 				PermissionAPI.PERMISSION_READ, true), widget, systemUser, false);
-		final int formPermissions = PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT
+		final int widgetPermissions = PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT
 				+ PermissionAPI.PERMISSION_PUBLISH;
-		for (final Role role : perAPI.getRoles(formId, formPermissions, "", 0, 10, true)) {
-			if (!anonymous.getId().equals(role.getId())) {
-				perAPI.save(new Permission(widget.getPermissionId(), role.getId(), formPermissions, true),
+		for (final Permission onForm : perAPI.getPermissions(form, true)) {
+			final int granted = onForm.getPermission() & widgetPermissions;
+			if (granted > 0 && !anonymous.getId().equals(onForm.getRoleId())) {
+				perAPI.save(new Permission(widget.getPermissionId(), onForm.getRoleId(), granted, true),
 						widget, systemUser, false);
 			}
 		}
