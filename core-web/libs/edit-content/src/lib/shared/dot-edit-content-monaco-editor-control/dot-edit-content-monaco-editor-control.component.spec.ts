@@ -162,15 +162,15 @@ describe('DotEditContentMonacoEditorControlComponent', () => {
         it('should not invalidate the field when the editor reports syntax errors', () => {
             spectator.detectChanges();
 
-            expect(control().errors).toBeNull();
-            expect(control().valid).toBe(true);
+            expect(control()?.errors).toBeNull();
+            expect(control()?.valid).toBe(true);
         });
 
         it('should keep syntax errors as a validation error when syntaxErrorsBlockSave is set', () => {
             spectator.hostComponent.syntaxErrorsBlockSave = true;
             spectator.detectChanges();
 
-            expect(control().errors).toEqual({ monaco: { value: ['Simulated error'] } });
+            expect(control()?.errors).toEqual({ monaco: { value: ['Simulated error'] } });
         });
     });
 });

@@ -113,7 +113,7 @@ describe('DotEditContentJsonFieldComponent', () => {
         it('should keep JSON syntax errors blocking save', () => {
             const monacoEditor = spectator.query(DotEditContentMonacoEditorControlComponent);
 
-            expect(monacoEditor.$syntaxErrorsBlockSave()).toBe(true);
+            expect(monacoEditor?.$syntaxErrorsBlockSave()).toBe(true);
         });
 
         it('should call insertLanguageVariableInMonaco when language variable is selected', () => {

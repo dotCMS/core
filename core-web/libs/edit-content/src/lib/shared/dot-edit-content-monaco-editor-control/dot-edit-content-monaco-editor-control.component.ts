@@ -17,7 +17,7 @@ import {
     viewChild
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ControlContainer, FormControl, ReactiveFormsModule } from '@angular/forms';
+import { ControlContainer, FormControl, ReactiveFormsModule, Validator } from '@angular/forms';
 
 import { PaginatorModule } from 'primeng/paginator';
 
@@ -208,7 +208,10 @@ export class DotEditContentMonacoEditorControlComponent implements OnDestroy {
             return;
         }
 
-        editorComponent.validate = () => null;
+        // Typed as Angular's `Validator`, whose `validate` may return null ("valid"); the
+        // library's own declaration omits the null.
+        const editorValidator: Validator = editorComponent;
+        editorValidator.validate = () => null;
 
         const control = this.formControl;
         if (control?.hasError('monaco')) {
