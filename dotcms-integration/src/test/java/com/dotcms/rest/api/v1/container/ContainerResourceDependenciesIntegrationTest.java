@@ -430,7 +430,7 @@ public class ContainerResourceDependenciesIntegrationTest {
 
     private static User user(final Role role) throws Exception {
         final User user = new UserDataGen().roles(role).nextPersisted();
-        user.setPassword(PASSWORD);
+        user.setPassword(UserDataGen.hashPassword(PASSWORD));
         APILocator.getUserAPI().save(user, APILocator.systemUser(), false);
         users.add(user);
         return user;

@@ -285,7 +285,7 @@ public class FolderResourceSearchTest {
                 .roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole())
                 .nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser, APILocator.systemUser(), false);
 
         final String limitedRoleId = APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId();
@@ -653,7 +653,7 @@ public class FolderResourceSearchTest {
         final User limitedUser = new UserDataGen()
                 .roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole())
                 .nextPersisted();
-        limitedUser.setPassword(LIMITED_USER_PASSWORD);
+        limitedUser.setPassword(UserDataGen.hashPassword(LIMITED_USER_PASSWORD));
         APILocator.getUserAPI().save(limitedUser, APILocator.systemUser(), false);
 
         final String roleId = APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId();

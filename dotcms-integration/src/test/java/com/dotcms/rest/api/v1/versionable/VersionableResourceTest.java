@@ -128,7 +128,7 @@ public class VersionableResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Give Permissions Over the Container
         Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
@@ -198,7 +198,7 @@ public class VersionableResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Give Permissions Over the Container
         Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
@@ -334,7 +334,7 @@ public class VersionableResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Call Resource
         resource.findVersionable(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,
@@ -357,7 +357,7 @@ public class VersionableResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Call Resource
         resource.findVersionable(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,
@@ -380,7 +380,7 @@ public class VersionableResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Call Resource
         resource.findVersionable(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,
@@ -521,7 +521,7 @@ public class VersionableResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Call Resource
         resource.findVersionable(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,
@@ -544,7 +544,7 @@ public class VersionableResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Call Resource
         resource.findVersionable(getHttpRequest(limitedUser.getEmailAddress(),"admin"),response,
@@ -605,7 +605,7 @@ public class VersionableResourceTest {
         //Create the limited user
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
         //Give Permissions Over the Container
         Permission permissions = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,

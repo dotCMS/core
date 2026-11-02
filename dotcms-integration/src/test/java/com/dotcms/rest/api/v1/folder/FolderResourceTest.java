@@ -104,7 +104,7 @@ public class FolderResourceTest {
         final Host newHost = new SiteDataGen().nextPersisted();
         final User chrisUser = TestUserUtils.getChrisPublisherUser(newHost);
         final String password = "admin";
-        chrisUser.setPassword(password);
+        chrisUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(chrisUser,APILocator.systemUser(),false);
         final long currentTime = System.currentTimeMillis();
         final List<String> foldersToCreate = Arrays.asList("test"+currentTime+"/folder"+currentTime,"/test2"+currentTime+"/","test3"+currentTime);
@@ -244,7 +244,7 @@ public class FolderResourceTest {
 
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
 
         //Give Permissions Over the Host
@@ -280,7 +280,7 @@ public class FolderResourceTest {
 
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
 
         //Get all the folders and subfolders using the limited user
@@ -590,7 +590,7 @@ public class FolderResourceTest {
 
         final User limitedUser = new UserDataGen().roles(TestUserUtils.getFrontendRole(), TestUserUtils.getBackendRole()).nextPersisted();
         final String password = "admin";
-        limitedUser.setPassword(password);
+        limitedUser.setPassword(UserDataGen.hashPassword(password));
         APILocator.getUserAPI().save(limitedUser,APILocator.systemUser(),false);
 
         //Give Permissions Over the Host
