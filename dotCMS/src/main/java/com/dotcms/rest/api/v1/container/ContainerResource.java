@@ -623,8 +623,14 @@ public class ContainerResource implements Serializable {
         final User user = this.formEditorUser(req, res);
         final ContentType form = this.findForm(formId, user);
         // The widget is only worth creating if it can be rendered into the container, so the
-        // container is read as the user first and nothing is created when that fails.
-        this.getContainerWorking(containerId, user, WebAPILocator.getHostWebAPI().getHost(req));
+        // container is read as the user first, and nothing is created when that fails or the id
+        // names something that is not a container.
+        final Container container = this.getContainerWorking(containerId, user,
+                WebAPILocator.getHostWebAPI().getHost(req));
+        if (container == null || !UtilMethods.isSet(container.getInode())) {
+            throw new DoesNotExistException("The container " + SecurityUtils.sanitizeForLogging(containerId)
+                    + " does not exist");
+        }
         final Contentlet widget = this.findOrCreateFormWidget(form, user);
 
         return this.renderForm(req, res, containerId, user, widget);

@@ -10,6 +10,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerAsFileDataGen;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
@@ -355,6 +356,24 @@ public class ContainerResourceCallerPermissionTest {
         final Contentlet found = APILocator.getFormAPI().getFormContent(form.id(), adminUser);
         assertNotNull("the widget should be found by the form's id", found);
         assertEquals(created.getIdentifier(), found.getIdentifier());
+    }
+
+    /**
+     * Method to test: {@link ContainerResource#createContainerFormByQueryParam}
+     * Given: a form with no widget yet, and a container id that names content that is not a
+     *        container
+     * When: an administrator asks for the widget to be created in it
+     * Should: answer that the container does not exist, and create nothing
+     */
+    @Test
+    public void test_createForm_idThatIsNoContainer_notFoundAndNothingCreated() throws Exception {
+        final ContentType form = formType();
+        final Contentlet notAContainer = new ContentletDataGen(
+                track(new ContentTypeDataGen().nextPersisted()).id()).nextPersisted();
+
+        assertThrows(DoesNotExistException.class, () -> resource.createContainerFormByQueryParam(
+                request(adminUser), response, notAContainer.getIdentifier(), form.id()));
+        assertTrue("no widget should be created", widgetsFor(form.id()).isEmpty());
     }
 
     /**
