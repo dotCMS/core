@@ -41,6 +41,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
+import com.dotcms.variant.VariantAPI;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.DownloadUtil;
 import com.dotcms.util.SecurityUtils;
@@ -707,11 +708,28 @@ public class BinaryExporterServlet extends HttpServlet {
 
 	}
 
+	/**
+	 * Finds the version of a content item an asset request should be served from, by identifier.
+	 *
+	 * <p>The variant is only resolved from the request for a back-end user; any other caller is
+	 * served the default variant, whatever the request carries. The lookup then falls back to the
+	 * version with no variant of its own when the resolved variant holds none.
+	 *
+	 * @param pageMode the {@link PageMode} the request is being served in
+	 * @param identifier the content item's identifier
+	 * @param languageId the language the asset is requested in
+	 * @param user the {@link User} the request is served for
+	 * @return the matching {@link Contentlet}, or null when there is none
+	 * @throws DotDataException if the lookup fails
+	 * @throws DotSecurityException if the user cannot read the content item
+	 */
 	private Contentlet getContentletByIdentifier(final PageMode pageMode,
 			final String identifier, final long languageId, final User user)
 			throws DotDataException, DotSecurityException {
 
-		final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
+		final String currentVariantId = null != user && user.isBackendUser()
+				? WebAPILocator.getVariantWebAPI().currentVariantId()
+				: VariantAPI.DEFAULT_VARIANT.name();
 
 		final Contentlet contentletByIdentifier = contentAPI.findContentletByIdentifier(
 				identifier, pageMode.showLive, languageId, currentVariantId, user,

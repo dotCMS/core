@@ -5,9 +5,11 @@ import static com.dotcms.util.CollectionsUtils.list;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.variant.VariantAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.util.LoginMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+import io.vavr.control.Try;
 import java.io.IOException;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
@@ -23,6 +25,9 @@ import javax.servlet.http.HttpSession;
  * And check if the request has the parameter <code>variantName</code>, if the parameter not exists
  * then check if the request has the header <code>referer</code> and if the header has the parameter
  * <code>variantName</code> then set it as an attribute to the request.
+ *
+ * Both the referer header and the session are values the caller carries, so they are only read for
+ * a caller logged into the back end; any other caller is left on the default variant.
  */
 public class CurrentVariantWebInterceptor implements WebInterceptor {
     private static final long serialVersionUID = 1L;
@@ -36,8 +41,28 @@ public class CurrentVariantWebInterceptor implements WebInterceptor {
         return PATHS;
     }
 
+    /**
+     * Resolves the variant a request to a binary asset should be served from, and leaves it on the
+     * request as the <code>variantName</code> attribute.
+     *
+     * <p>The variant is only taken from the referer header or from the session when the caller is
+     * logged into the back end. For every other caller the attribute is left untouched, so the
+     * request resolves on the default variant.
+     *
+     * @param request the incoming {@link HttpServletRequest}
+     * @param response the {@link HttpServletResponse} being built
+     * @return always {@link Result#NEXT}; this interceptor only annotates the request
+     */
     @Override
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
+        // A caller whose session cannot be read is treated as not logged into the back end
+        final boolean backEndCaller = Try.of(
+                () -> WebAPILocator.getUserWebAPI().isLoggedToBackend(request)).getOrElse(false);
+
+        if (!backEndCaller) {
+            return Result.NEXT;
+        }
+
         final String requestParameter = request.getParameter(VariantAPI.VARIANT_KEY);
 
         if (UtilMethods.isSet(requestParameter)) {
