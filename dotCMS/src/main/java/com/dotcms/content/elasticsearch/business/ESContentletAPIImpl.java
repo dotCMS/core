@@ -1645,6 +1645,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
         buffy.append(")");
 
+        // A variant is a version axis of a content item, like its language and its live/working
+        // state: which version a caller reads is the server's to decide, not the query's. The
+        // clause is appended rather than used as a default, so a query naming another variant
+        // resolves to nothing instead of to that variant. It belongs here, beside the live clause
+        // and under the same predicate, because every search path reaches this method - the
+        // OpenSearch one included - and a per-endpoint clause would only cover the endpoints
+        // someone remembered.
         if (user == null || !user.isBackendUser()) {
             buffy.append(" +live:true ");
             buffy.append(" +").append(ESMappingConstants.VARIANT).append(":")
