@@ -100,6 +100,22 @@ export class DotContainersService {
     }
 
     /**
+     * Get the containers that use the given content type, archived ones included.
+     *
+     * @param {string} contentTypeId id of the content type
+     * @param {number} [perPage=100] maximum number of containers to return
+     * @return {*}  {Observable<DotContainer[]>} the containers, or an empty list when none use it
+     * @memberof DotContainersService
+     */
+    getByContentType(contentTypeId: string, perPage = 100): Observable<DotContainer[]> {
+        const url = `${this.#CONTAINER_API_URL}?content_type=${encodeURIComponent(contentTypeId)}&per_page=${perPage}&archive=true`;
+
+        return this.#http
+            .get<{ entity?: DotContainer[] }>(url)
+            .pipe(map((response) => response.entity ?? []));
+    }
+
+    /**
      * Get the container filtered by title.
      *
      * @param {string} title

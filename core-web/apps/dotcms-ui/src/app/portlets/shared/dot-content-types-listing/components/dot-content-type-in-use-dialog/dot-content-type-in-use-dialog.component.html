@@ -1,0 +1,40 @@
+<div class="flex flex-col gap-5">
+    <p-message class="block" severity="warn" data-testid="in-use-explainer">
+        {{ 'message.contenttypes.in_use.explainer' | dm }}
+    </p-message>
+
+    <ul
+        class="m-0 list-none divide-y divide-gray-200 overflow-hidden rounded-md border border-gray-200 p-0">
+        @for (container of containers; track $index) {
+            <li
+                class="flex items-baseline justify-between gap-4 px-4 py-3"
+                data-testid="in-use-container">
+                <span
+                    class="min-w-0 font-medium wrap-break-word"
+                    data-testid="in-use-container-title">
+                    {{ container.title }}
+                </span>
+                @if (container.path) {
+                    <span
+                        class="min-w-0 text-sm wrap-break-word text-gray-500"
+                        data-testid="in-use-container-path">
+                        {{ container.path }}
+                    </span>
+                }
+            </li>
+        }
+    </ul>
+
+    <div class="flex justify-end gap-2">
+        <p-button
+            severity="secondary"
+            [label]="'contenttypes.action.cancel' | dm"
+            (onClick)="ref.close(false)"
+            data-testid="in-use-cancel" />
+        <p-button
+            severity="danger"
+            [label]="'contenttypes.action.delete' | dm"
+            (onClick)="ref.close(true)"
+            data-testid="in-use-delete" />
+    </div>
+</div>

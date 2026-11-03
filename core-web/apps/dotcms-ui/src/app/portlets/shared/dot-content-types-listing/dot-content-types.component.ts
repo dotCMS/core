@@ -11,10 +11,13 @@ import {
 } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
+import { DialogService } from 'primeng/dynamicdialog';
+
 import { map, take } from 'rxjs/operators';
 
 import {
     DotAlertConfirmService,
+    DotContainersService,
     DotContentTypeService,
     DotContentTypesInfoService,
     DotCrudService,
@@ -27,6 +30,7 @@ import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     DotActionMenuItem,
     DotCMSBaseTypesContentTypes,
+    DotContainer,
     DotCMSContentType,
     DotCopyContentTypeDialogFormFields,
     DotEnvironment,
@@ -35,6 +39,7 @@ import {
 import { DotAddToBundleComponent, DotDynamicDirective } from '@dotcms/ui';
 
 import { DotAddToMenuComponent } from './components/dot-add-to-menu/dot-add-to-menu.component';
+import { DotContentTypeInUseDialogComponent } from './components/dot-content-type-in-use-dialog/dot-content-type-in-use-dialog.component';
 import { DotContentTypeStore } from './dot-content-type.store';
 
 import { DotAddToMenuService } from '../../../api/services/add-to-menu/add-to-menu.service';
@@ -80,7 +85,8 @@ type DotRowActions = {
         DotContentTypeService,
         DotAddToMenuService,
         DotMenuService,
-        DotNavigationService
+        DotNavigationService,
+        DialogService
     ]
 })
 export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
@@ -97,6 +103,8 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     private dotPushPublishDialogService = inject(DotPushPublishDialogService);
     private dotContentTypeStore = inject(DotContentTypeStore);
     private cdr = inject(ChangeDetectorRef);
+    private dialogService = inject(DialogService);
+    private dotContainersService = inject(DotContainersService);
 
     $listing = viewChild<DotListingDataTableComponent>('listing');
     $dotDynamicDialog = viewChild.required(DotDynamicDirective);
@@ -355,7 +363,31 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
         this.router.navigate(params, { relativeTo: this.route });
     }
 
+    /**
+     * Looks up the containers that use the content type before deleting it: when none use it the
+     * delete confirmation is shown, otherwise a dialog lists the containers.
+     */
     private removeConfirmation(item: DotCMSContentType): void {
+        this.dotContainersService
+            .getByContentType(item.id)
+            .pipe(take(1))
+            .subscribe({
+                next: (containers) => {
+                    if (containers.length === 0) {
+                        this.confirmRemoval(item);
+                    } else {
+                        this.showContainersInUseDialog(item, containers);
+                    }
+                },
+                error: (error) =>
+                    this.httpErrorManagerService.handle(error).pipe(take(1)).subscribe()
+            });
+    }
+
+    /**
+     * Asks the user to confirm the delete of a content type no container uses.
+     */
+    private confirmRemoval(item: DotCMSContentType): void {
         this.dotDialogService.confirm({
             accept: () => {
                 this.removeContentType(item);
@@ -370,6 +402,28 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
                 reject: this.dotMessageService.get('contenttypes.action.cancel')
             }
         });
+    }
+
+    /**
+     * Lists the containers that use the content type and deletes it only when the user picks Delete.
+     */
+    private showContainersInUseDialog(item: DotCMSContentType, containers: DotContainer[]): void {
+        this.dialogService
+            .open(DotContentTypeInUseDialogComponent, {
+                header: this.dotMessageService.get('message.structure.cantdelete'),
+                closable: true,
+                closeOnEscape: true,
+                width: '40rem',
+                contentStyle: { 'max-height': '500px', overflow: 'auto' },
+                baseZIndex: 10000,
+                data: containers
+            })
+            .onClose.pipe(take(1))
+            .subscribe((confirmed: boolean) => {
+                if (confirmed === true) {
+                    this.removeContentType(item);
+                }
+            });
     }
 
     private removeContentType(item: DotCMSContentType): void {

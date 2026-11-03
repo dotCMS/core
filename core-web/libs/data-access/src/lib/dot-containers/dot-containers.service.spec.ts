@@ -271,4 +271,45 @@ describe('DotContainersService', () => {
             req.flush('Not Found', errorResponse);
         });
     });
+
+    describe('getByContentType', () => {
+        it('requests the containers that use the content type', () => {
+            // Given: a content type id with characters that need URL encoding
+            // When: getByContentType(id) is called
+            // Then: one GET to /api/v1/containers/?content_type=<encoded id>&per_page=100&archive=true and the
+            // entity array is returned
+            let result: DotContainer[] | undefined;
+
+            spectator.service.getByContentType('a b/c').subscribe((containers) => {
+                result = containers;
+            });
+
+            const req = spectator.expectOne(
+                `${EXPECTED_CONTAINER_API_URL}?content_type=a%20b%2Fc&per_page=100&archive=true`,
+                HttpMethod.GET
+            );
+            req.flush({ entity: mockContainers });
+
+            expect(result).toEqual(mockContainers);
+        });
+
+        it('answers an empty list when the response has no entity', () => {
+            // Given: a response without an entity
+            // When: getByContentType(id) is called
+            // Then: it resolves to []
+            let result: DotContainer[] | undefined;
+
+            spectator.service.getByContentType('content-type-id').subscribe((containers) => {
+                result = containers;
+            });
+
+            const req = spectator.expectOne(
+                `${EXPECTED_CONTAINER_API_URL}?content_type=content-type-id&per_page=100&archive=true`,
+                HttpMethod.GET
+            );
+            req.flush({});
+
+            expect(result).toEqual([]);
+        });
+    });
 });

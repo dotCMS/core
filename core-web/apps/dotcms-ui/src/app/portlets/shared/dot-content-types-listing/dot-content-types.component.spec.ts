@@ -15,9 +15,11 @@ import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService, SelectItem } from 'primeng/api';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import {
     DotAlertConfirmService,
+    DotContainersService,
     DotContentTypeService,
     DotContentTypesInfoService,
     DotCrudService,
@@ -35,13 +37,18 @@ import {
     ResponseView,
     StringUtils
 } from '@dotcms/dotcms-js';
-import { DotCMSContentType, DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
+import {
+    DotCMSContentType,
+    DotContainer,
+    DotCopyContentTypeDialogFormFields
+} from '@dotcms/dotcms-models';
 import {
     dotcmsContentTypeBasicMock,
     MockDotMessageService,
     MockPushPublishService
 } from '@dotcms/utils-testing';
 
+import { DotContentTypeInUseDialogComponent } from './components/dot-content-type-in-use-dialog/dot-content-type-in-use-dialog.component';
 import { DotContentTypeStore } from './dot-content-type.store';
 import { DotContentTypesPortletComponent } from './dot-content-types.component';
 
@@ -165,6 +172,8 @@ describe('DotContentTypesPortletComponent', () => {
             'contenttypes.content.variable': 'Variable Name',
             mod_date: 'Last Edit Date',
             'contenttypes.action.delete': 'Delete',
+            'contenttypes.action.cancel': 'Cancel',
+            'message.structure.cantdelete': 'Delete Content Type',
             'contenttypes.content.push_publish': 'Push Publish',
             'contenttypes.content.add_to_bundle': 'Add to bundle',
             'contenttypes.content.add_to_menu': 'Add to Menu',
@@ -211,7 +220,8 @@ describe('DotContentTypesPortletComponent', () => {
                     provide: DotHttpErrorManagerService,
                     useClass: MockDotHttpErrorManagerService
                 },
-                { provide: DotContentTypeStore, useClass: MockDotContentTypeStore }
+                { provide: DotContentTypeStore, useClass: MockDotContentTypeStore },
+                { provide: DotContainersService, useValue: { getByContentType: vi.fn() } }
             ]
         }).compileComponents();
 
@@ -301,8 +311,15 @@ describe('DotContentTypesPortletComponent', () => {
         comp.showTable = true;
         fixture.detectChanges();
 
+        const getByContentType = vi.mocked(TestBed.inject(DotContainersService).getByContentType);
+        getByContentType.mockReturnValue(of([]));
+        const dialogService = fixture.debugElement.injector.get(DialogService);
+        vi.spyOn(dialogService, 'open');
+
         comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
 
+        expect(getByContentType).toHaveBeenCalledWith(mockContentType.id);
+        expect(dialogService.open).not.toHaveBeenCalled();
         expect(crudService.delete).toHaveBeenCalledWith('v1/contenttype/id', mockContentType.id);
         expect(crudService.delete).toHaveBeenCalledTimes(1);
     });
@@ -484,6 +501,7 @@ describe('DotContentTypesPortletComponent', () => {
 
         vi.spyOn(dotHttpErrorManagerService, 'handle');
         vi.spyOn(crudService, 'delete').mockReturnValue(observableThrowError(forbiddenError));
+        vi.mocked(TestBed.inject(DotContainersService).getByContentType).mockReturnValue(of([]));
         comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
 
         fixture.detectChanges();
@@ -548,5 +566,124 @@ describe('DotContentTypesPortletComponent', () => {
             expect(comp.actionHeaderOptions.primary.model).toBe(null);
             expect(comp.actionHeaderOptions.primary.command).toBeDefined();
         }));
+    });
+
+    describe('delete with containers using the content type', () => {
+        const mockContentType: DotCMSContentType = {
+            ...dotcmsContentTypeBasicMock,
+            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+            id: '1234567890',
+            name: 'Nuevo',
+            variable: 'Nuevo',
+            defaultType: false,
+            fixed: false,
+            folder: 'SYSTEM_FOLDER',
+            host: null,
+            owner: '123',
+            system: false
+        };
+        const containers = [
+            { identifier: 'a', title: 'A' },
+            { identifier: 'b', title: 'B' }
+        ] as DotContainer[];
+
+        let dialogService: DialogService;
+        let dotDialogService: DotAlertConfirmService;
+        let getByContentType: ReturnType<typeof vi.fn>;
+
+        const answerDialogWith = (confirmed: boolean | undefined): void => {
+            vi.spyOn(dialogService, 'open').mockReturnValue({
+                onClose: of(confirmed)
+            } as unknown as DynamicDialogRef);
+        };
+
+        beforeEach(() => {
+            fixture.detectChanges();
+            comp.showTable = true;
+            fixture.detectChanges();
+
+            dialogService = fixture.debugElement.injector.get(DialogService);
+            dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
+            vi.spyOn(dotDialogService, 'confirm');
+            vi.spyOn(crudService, 'delete').mockReturnValue(of(mockContentType));
+            vi.spyOn(comp.$listing(), 'loadCurrentPage');
+            getByContentType = vi.mocked(TestBed.inject(DotContainersService).getByContentType);
+        });
+
+        it('should warn about the containers using the content type and delete it on Delete', () => {
+            // Given: the containers lookup answers two containers and the dialog answers Delete
+            getByContentType.mockReturnValue(of(containers));
+            answerDialogWith(true);
+
+            // When: the Delete row action runs
+            comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
+
+            // Then: the dialog lists the containers, the content type is deleted and the list reloads
+            expect(dotDialogService.confirm).not.toHaveBeenCalled();
+            expect(dialogService.open).toHaveBeenCalledTimes(1);
+            expect(dialogService.open).toHaveBeenCalledWith(
+                DotContentTypeInUseDialogComponent,
+                expect.objectContaining({
+                    closable: true,
+                    closeOnEscape: true,
+                    data: containers
+                })
+            );
+            expect(crudService.delete).toHaveBeenCalledTimes(1);
+            expect(crudService.delete).toHaveBeenCalledWith('v1/contenttype/id', '1234567890');
+            expect(comp.$listing().loadCurrentPage).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not delete the content type when the in-use dialog is cancelled', () => {
+            // Given: the containers lookup answers two containers and the dialog answers Cancel
+            getByContentType.mockReturnValue(of(containers));
+            answerDialogWith(false);
+
+            // When: the Delete row action runs
+            comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
+
+            // Then: nothing is deleted
+            expect(dialogService.open).toHaveBeenCalledTimes(1);
+            expect(crudService.delete).not.toHaveBeenCalled();
+        });
+
+        it('should not delete the content type when the in-use dialog is dismissed', () => {
+            // Given: the containers lookup answers two containers and the dialog closes without an answer
+            getByContentType.mockReturnValue(of(containers));
+            answerDialogWith(undefined);
+
+            // When: the Delete row action runs
+            comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
+
+            // Then: no confirm is shown and nothing is deleted
+            expect(dialogService.open).toHaveBeenCalledTimes(1);
+            expect(dotDialogService.confirm).not.toHaveBeenCalled();
+            expect(crudService.delete).not.toHaveBeenCalled();
+        });
+
+        it('should handle a failed container lookup and not delete the content type', () => {
+            // Given: the containers lookup fails
+            const forbiddenError = {
+                bodyJsonObject: {
+                    error: ''
+                },
+                response: {
+                    status: 403
+                }
+            };
+            getByContentType.mockReturnValue(observableThrowError(forbiddenError));
+            answerDialogWith(true);
+            vi.spyOn(dotHttpErrorManagerService, 'handle');
+
+            // When: the Delete row action runs
+            comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
+
+            // Then: the error is handled and nothing is shown or deleted
+            expect<any>(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
+            expect<any>(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(forbiddenError);
+            expect(dotDialogService.confirm).not.toHaveBeenCalled();
+            expect(dialogService.open).not.toHaveBeenCalled();
+            expect(crudService.delete).not.toHaveBeenCalled();
+        });
     });
 });
