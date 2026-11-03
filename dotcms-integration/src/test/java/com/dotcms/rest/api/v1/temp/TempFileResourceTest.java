@@ -22,6 +22,7 @@ import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.AnonymousAccess;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotcms.util.network.IPUtils;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
@@ -562,17 +563,37 @@ public class TempFileResourceTest {
         }
     }
 
+    /**
+     * A temp file can be created from a URL that answers 200 with a body. The file is served by an
+     * in-process HTTP server on the loopback interface, so the test does not depend on an
+     * external host being reachable. The remote-call guard refuses loopback targets, so it is
+     * switched off for this test only and switched back on afterwards.
+     */
     @Test
-    public void test_TempResource_uploadFileByURL_success() {
-        HttpServletRequest request = mockRequest();
-        final String fileName = "test.png";
-        final String url = "https://dotcms-storage.b-cdn.net/Bocas2.jpg";
+    public void test_TempResource_uploadFileByURL_success() throws Exception {
+        final byte[] body = "not really a picture, but a non-empty body".getBytes(StandardCharsets.UTF_8);
+        final HttpServer server = HttpServer.create(
+                new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
+        server.createContext("/", exchange -> {
+            exchange.getResponseHeaders().add("Content-Type", "image/jpeg");
+            exchange.sendResponseHeaders(200, body.length);
+            try (OutputStream out = exchange.getResponseBody()) {
+                out.write(body);
+            }
+        });
+        server.start();
+        IPUtils.disabledIpPrivateSubnet(true);
+        try {
+            final String url = "http://127.0.0.1:" + server.getAddress().getPort() + "/Bocas2.jpg";
 
-        final RemoteUrlForm remoteUrlForm = new RemoteUrlForm(url, fileName, null);
+            final Response jsonResponse = resource.copyTempFromUrl(mockRequest(), response,
+                    new RemoteUrlForm(url, "test.png", null));
 
-        final Response jsonResponse = resource.copyTempFromUrl(request, response, remoteUrlForm);
-
-        assertEquals(Status.OK.getStatusCode(), jsonResponse.getStatus());
+            assertEquals(Status.OK.getStatusCode(), jsonResponse.getStatus());
+        } finally {
+            IPUtils.disabledIpPrivateSubnet(false);
+            server.stop(0);
+        }
     }
 
     /**
