@@ -155,7 +155,7 @@ Back and Forward. A `Location` `popstate` on the path the front panel was regist
 
 A route with `data: { reuseRoute: false }` is rebuilt by the router's navigation on Back, which discards the panel and its prompt. The Query Tool's and the Publishing Queue's routes drop the flag (neither has path params, so the flag only ever mattered there); `DotCustomReuseStrategyService` is unchanged, because UVE (`/edit-page`) reads its page from the URL once and depends on a query-only navigation rebuilding it. Content Drive's and Pages' routes have no flag.
 
-The legacy (JSP) portlets read their panel params from the router's `queryParams`, on load and on every router navigation that changes them, not once: a deep link redirects there with a router navigation. So Forward to an entry that still names a panel (after Back closed it) reopens it there, and reloads the portlet's iframe; Content Drive, the Query Tool, Pages and the Publishing Queue read their URL once and do not. Accepted (T151).
+The legacy (JSP) portlets and Pages read their panel params from the router's `queryParams`, on load and on every router navigation that changes them, once per value, not once: a deep link redirects there with a router navigation, after the portlet was built. So Forward to an entry that still names a panel (after Back closed it) reopens it there, and reloads a legacy portlet's iframe; Content Drive, the Query Tool and the Publishing Queue read their URL once and do not. Accepted (T151, T158).
 
 ## The signal helper
 
