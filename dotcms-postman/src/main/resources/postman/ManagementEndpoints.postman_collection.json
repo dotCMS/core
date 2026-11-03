@@ -1,0 +1,657 @@
+{
+	"info": {
+		"_postman_id": "7b8ac411-5a81-5339-86e7-c469663d995a",
+		"name": "ManagementEndpoints",
+		"description": "Checks that /dotmgt/* is served only on the management port.\n\n{{serverURL}} is the main port and {{managementURL}} the management port; the runner passes both (postman.server.url and postman.management.url in dotcms-postman/pom.xml).\n\nmanagementPort and regularPort are the ports inside the container (CMS_MANAGEMENT_PORT and the HTTP connector). The server compares X-Forwarded-Port with these, not with the host ports Docker publishes, so they stay 8090 and 8080 whatever host ports the stack uses.\n\nA refused or unknown management request gets dotCMS's generic not-found page (the filter sends a bare 404), so the tests check for that page rather than a specific message.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Setup",
+			"item": [
+				{
+					"name": "Wait for the management port to report ready",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Same wait as the Karate waitForReady helper: poll readyz every 10 s, up to 30 attempts (5 minutes).",
+									"const attempt = Number(pm.collectionVariables.get('readyAttempt') || 0) + 1;",
+									"const ready = pm.response.code === 200 && pm.response.text() === 'ready';",
+									"if (ready || attempt >= 30) {",
+									"    pm.collectionVariables.unset('readyAttempt');",
+									"    pm.test('Management port reports ready within 5 minutes', function () {",
+									"        pm.expect(pm.response.code).to.eql(200);",
+									"        pm.expect(pm.response.text()).to.eql('ready');",
+									"    });",
+									"} else {",
+									"    pm.collectionVariables.set('readyAttempt', attempt);",
+									"    console.log('readyz returned ' + pm.response.code + ', attempt ' + attempt + ' of 30');",
+									"    setTimeout(function () {}, 10000);",
+									"    pm.execution.setNextRequest(pm.info.requestName);",
+									"}"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{managementURL}}/dotmgt/readyz",
+							"host": [
+								"{{managementURL}}"
+							],
+							"path": [
+								"dotmgt",
+								"readyz"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Management endpoints are refused on the main port",
+			"item": [
+				{
+					"name": "livez with admin auth is refused",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"pm.test(\"Body is the generic dotCMS not-found page\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"dotCMS: Page not found (404 error)\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/dotmgt/livez",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dotmgt",
+								"livez"
+							]
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "readyz with admin auth is refused",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"pm.test(\"Body is the generic dotCMS not-found page\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"dotCMS: Page not found (404 error)\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/dotmgt/readyz",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dotmgt",
+								"readyz"
+							]
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "health with admin auth is refused",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"pm.test(\"Body is the generic dotCMS not-found page\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"dotCMS: Page not found (404 error)\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/dotmgt/health",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dotmgt",
+								"health"
+							]
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "info with admin auth is refused",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"pm.test(\"Body is the generic dotCMS not-found page\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"dotCMS: Page not found (404 error)\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/dotmgt/info",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dotmgt",
+								"info"
+							]
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "livez without auth is refused",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"pm.test(\"Body is the generic dotCMS not-found page\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"dotCMS: Page not found (404 error)\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/dotmgt/livez",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dotmgt",
+								"livez"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "livez with X-Forwarded-Port of the main port is refused",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"pm.test(\"Body is the generic dotCMS not-found page\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"dotCMS: Page not found (404 error)\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Forwarded-Port",
+								"value": "{{regularPort}}"
+							}
+						],
+						"url": {
+							"raw": "{{serverURL}}/dotmgt/livez",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dotmgt",
+								"livez"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Management endpoints are served on the management port",
+			"item": [
+				{
+					"name": "livez with admin auth is alive",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Body is 'alive'\", function () {",
+									"    pm.expect(pm.response.text()).to.eql(\"alive\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{managementURL}}/dotmgt/livez",
+							"host": [
+								"{{managementURL}}"
+							],
+							"path": [
+								"dotmgt",
+								"livez"
+							]
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "readyz with admin auth is ready",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Body is 'ready'\", function () {",
+									"    pm.expect(pm.response.text()).to.eql(\"ready\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{managementURL}}/dotmgt/readyz",
+							"host": [
+								"{{managementURL}}"
+							],
+							"path": [
+								"dotmgt",
+								"readyz"
+							]
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "health with admin auth is UP",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Health status is UP\", function () {",
+									"    pm.expect(pm.response.json().status).to.eql(\"UP\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{managementURL}}/dotmgt/health",
+							"host": [
+								"{{managementURL}}"
+							],
+							"path": [
+								"dotmgt",
+								"health"
+							]
+						},
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "username",
+									"value": "admin@dotcms.com",
+									"type": "string"
+								},
+								{
+									"key": "password",
+									"value": "admin",
+									"type": "string"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "livez without auth is alive",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Body is 'alive'\", function () {",
+									"    pm.expect(pm.response.text()).to.eql(\"alive\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{managementURL}}/dotmgt/livez",
+							"host": [
+								"{{managementURL}}"
+							],
+							"path": [
+								"dotmgt",
+								"livez"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unknown endpoint is not found",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 404\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});",
+									"pm.test(\"Body is the generic dotCMS not-found page\", function () {",
+									"    pm.expect(pm.response.text()).to.include(\"dotCMS: Page not found (404 error)\");",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{managementURL}}/dotmgt/nonexistent",
+							"host": [
+								"{{managementURL}}"
+							],
+							"path": [
+								"dotmgt",
+								"nonexistent"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "livez with X-Forwarded-Port of the management port is served",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Forwarded-Port",
+								"value": "{{managementPort}}"
+							}
+						],
+						"url": {
+							"raw": "{{managementURL}}/dotmgt/livez",
+							"host": [
+								"{{managementURL}}"
+							],
+							"path": [
+								"dotmgt",
+								"livez"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "readyz with X-Forwarded-Port of the management port is served",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "X-Forwarded-Port",
+								"value": "{{managementPort}}"
+							}
+						],
+						"url": {
+							"raw": "{{managementURL}}/dotmgt/readyz",
+							"host": [
+								"{{managementURL}}"
+							],
+							"path": [
+								"dotmgt",
+								"readyz"
+							]
+						},
+						"auth": {
+							"type": "noauth"
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "managementPort",
+			"value": "8090",
+			"type": "string"
+		},
+		{
+			"key": "regularPort",
+			"value": "8080",
+			"type": "string"
+		}
+	]
+}
