@@ -5373,16 +5373,11 @@ describe('DotContentDriveShellComponent', () => {
         it.each([
             ['an edit', EDIT_REQUEST],
             ['a create', CREATE_REQUEST]
-        ])(
-            'asks the opener to write %s to the URL, with its route and no extra params',
-            (_label, request) => {
-                const { options } = openOn(request);
+        ])('asks the opener to write %s to the URL, with no extra params', (_label, request) => {
+            const { options } = openOn(request);
 
-                expect(options.url?.route === spectator.inject(ActivatedRoute)).toBe(true);
-                expect(options.url?.extraParams).toBeUndefined();
-                expect(options.url?.inPlace).toBeUndefined();
-            }
-        );
+            expect(options.url).toEqual({});
+        });
 
         it('writes none of the panel params itself, from open to close', () => {
             spectator.detectChanges();
@@ -5449,11 +5444,8 @@ describe('DotContentDriveShellComponent', () => {
             expect(requestOf(openedContent())).toEqual(EDIT_REQUEST);
             // The reopened panel takes the history entry of the one it replaces, so Back still
             // leaves it in one step, as before the opener wrote the URL.
-            expect(first.options.url?.inPlace).toBeUndefined();
-            expect(openedContent().options.url?.route === spectator.inject(ActivatedRoute)).toBe(
-                true
-            );
-            expect(openedContent().options.url?.inPlace).toBe(true);
+            expect(first.options.url).toEqual({});
+            expect(openedContent().options.url).toEqual({ inPlace: true });
         });
 
         it('closes the panel when the request is cleared, without reporting a close', () => {

@@ -1,8 +1,7 @@
 import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { Mock, vi } from 'vitest';
 
-import { Component, inject, isSignal, signal } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { Component, isSignal, signal } from '@angular/core';
 
 import { DotSidePanelRef } from '@dotcms/ui';
 
@@ -197,14 +196,12 @@ describe('injectEditContentPanel, forcing the legacy editor', () => {
     });
 });
 
-const ROUTE = { snapshot: { queryParams: {} } } as unknown as ActivatedRoute;
-
 /** An opener whose panel is written to its URL, as every surface but the page editor's is. */
 @Component({ selector: 'dot-test-url-opener', template: '' })
 class TestUrlOpenerComponent {
     readonly request = signal<DotEditContentRequest | null>(null);
     readonly panel = injectEditContentPanel(this.request, {
-        url: { route: inject(ActivatedRoute), extraParams: { folder: 'f-1' } }
+        url: { extraParams: { folder: 'f-1' } }
     });
 }
 
@@ -214,10 +211,7 @@ describe('injectEditContentPanel, with the panel in the URL', () => {
 
     const createComponent = createComponentFactory({
         component: TestUrlOpenerComponent,
-        providers: [
-            mockProvider(DotEditContentOpenerService, { open: vi.fn() }),
-            { provide: ActivatedRoute, useValue: ROUTE }
-        ]
+        providers: [mockProvider(DotEditContentOpenerService, { open: vi.fn() })]
     });
 
     beforeEach(() => {
@@ -232,8 +226,7 @@ describe('injectEditContentPanel, with the panel in the URL', () => {
         spectator.component.request.set(EDIT_REQUEST);
         spectator.detectChanges();
 
-        const { url } = open.mock.calls[0][1];
-        expect(url?.route === ROUTE).toBe(true);
-        expect(url?.extraParams).toEqual({ folder: 'f-1' });
+        // The option names no route (#38303).
+        expect(open.mock.calls[0][1].url).toEqual({ extraParams: { folder: 'f-1' } });
     });
 });

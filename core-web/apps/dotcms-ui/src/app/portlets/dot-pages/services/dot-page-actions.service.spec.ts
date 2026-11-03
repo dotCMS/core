@@ -177,9 +177,7 @@ describe('DotPageActionsService', () => {
             getByInode: vi.fn().mockReturnValue(of([MOCK_WORKFLOW_ACTION_NO_INPUTS]))
         } as unknown as Mocked<DotWorkflowsActionsService>;
 
-        mockRouterService = {
-            goToEditContentlet: vi.fn()
-        } as unknown as Mocked<DotRouterService>;
+        mockRouterService = {} as unknown as Mocked<DotRouterService>;
 
         mockEventsService = {
             notify: vi.fn()
@@ -571,10 +569,52 @@ describe('DotPageActionsService', () => {
             expect(refresh).toHaveBeenCalledTimes(1);
         });
 
-        it('should not route to the legacy edit screen', async () => {
+        // The opener writes the panel to the Pages URL, as on every surface but UVE (FR-044).
+        it('should ask the opener to write the panel to the URL', async () => {
             await clickEdit();
 
-            expect(mockRouterService.goToEditContentlet.mock.calls.length).toBe(0);
+            expect(openOptions().url).toEqual({});
+        });
+    });
+
+    /**
+     * #38303 (FR-049) — the Pages portlet opens what its URL names on load through the same path as
+     * Edit, so a link, a refresh and a click open the same panel with the same refresh.
+     */
+    describe('openContent', () => {
+        const IDENTIFIER = '3f0c8e5a-7b2d-4c1e-9a6f-0d4b8e2c1a57';
+
+        type WithOpenContent = {
+            openContent: (request: Record<string, unknown>, refresh?: () => void) => void;
+        };
+
+        it('should open the request for the Pages portlet, written to the URL, refreshing the listing', async () => {
+            const refresh = vi.fn();
+
+            (spectator.service as unknown as WithOpenContent).openContent(
+                { mode: 'edit', identifier: IDENTIFIER, languageId: 2 },
+                refresh
+            );
+            await vi.dynamicImportSettled();
+
+            expect(mockOpener.open.mock.calls.length, 'one panel').toBe(1);
+            const [request, options] = mockOpener.open.mock.calls[0] as [
+                Record<string, unknown>,
+                DotEditContentOpenOptions
+            ];
+            expect(request).toEqual({
+                mode: 'edit',
+                identifier: IDENTIFIER,
+                languageId: 2,
+                portletId: 'pages'
+            });
+            expect(options.url).toEqual({});
+            expect(options.injector === spectator.inject(Injector)).toBe(true);
+
+            options.saved?.(MOCK_HTMLPAGE_CONTENTLET);
+            options.closed?.();
+
+            expect(refresh).toHaveBeenCalledTimes(2);
         });
     });
 

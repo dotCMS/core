@@ -426,12 +426,11 @@ describe('DotCustomEventHandlerService', () => {
                 });
             });
 
-            it('should neither route to the legacy edit screen nor to the new editor', async () => {
+            it('should not route anywhere', async () => {
                 vi.spyOn(router, 'navigate');
 
                 await send('edit-contentlet', { inode: '123', contentType: 'Blog' });
 
-                expect((dotRouterService.goToEditContentlet as Mock).mock.calls.length).toBe(0);
                 expect((router.navigate as Mock).mock.calls.length).toBe(0);
             });
         });
@@ -447,7 +446,6 @@ describe('DotCustomEventHandlerService', () => {
                     portletId: PORTLET_ID
                 });
                 expect(request.contentType).toBeUndefined();
-                expect((dotRouterService.goToEditContentlet as Mock).mock.calls.length).toBe(0);
             });
         });
 
@@ -548,6 +546,65 @@ describe('DotCustomEventHandlerService', () => {
 
                 openOptions().closed?.();
 
+                expect(reloadData).toHaveBeenCalledWith(PORTLET_ID);
+            });
+
+            // The opener writes the panel to the portlet's URL, as on every surface but UVE
+            // (#38303, FR-044).
+            it('should ask the opener to write the panel to the URL', async () => {
+                await send(name, data);
+
+                expect(openOptions().url).toEqual({});
+            });
+        });
+
+        /**
+         * The legacy portlet route opens what a URL names through the same path the events use
+         * (#38303, FR-049): `IframePortletLegacyComponent` calls it with the identifier and the
+         * language, or the content type and the folder.
+         */
+        describe('openContent', () => {
+            const IDENTIFIER = '3f0c8e5a-7b2d-4c1e-9a6f-0d4b8e2c1a57';
+
+            const openContent = (request: DotEditContentRequest): Promise<void> => {
+                (
+                    service as unknown as { openContent: (r: DotEditContentRequest) => void }
+                ).openContent(request);
+
+                return vi.dynamicImportSettled();
+            };
+
+            it('should be public', () => {
+                expect(typeof (service as unknown as { openContent?: unknown }).openContent).toBe(
+                    'function'
+                );
+            });
+
+            it('should open the request for the current portlet, written to the URL', async () => {
+                await openContent({ mode: 'edit', identifier: IDENTIFIER, languageId: 2 });
+
+                expect(openedRequest()).toEqual({
+                    mode: 'edit',
+                    identifier: IDENTIFIER,
+                    languageId: 2,
+                    portletId: PORTLET_ID
+                });
+                expect(openOptions().url).toEqual({});
+                expect(openOptions().injector === sidePanelHostInjector).toBe(true);
+            });
+
+            it('should reload the portlet on every save and when the panel closes', async () => {
+                const reloadData = vi.spyOn(dotIframeService, 'reloadData');
+                await openContent({
+                    mode: 'new',
+                    contentType: 'Blog',
+                    folderInode: 'folder-inode'
+                });
+
+                openOptions().saved?.(createFakeContentlet({ inode: 'saved-inode' }));
+                openOptions().closed?.();
+
+                expect(reloadData).toHaveBeenCalledTimes(2);
                 expect(reloadData).toHaveBeenCalledWith(PORTLET_ID);
             });
         });

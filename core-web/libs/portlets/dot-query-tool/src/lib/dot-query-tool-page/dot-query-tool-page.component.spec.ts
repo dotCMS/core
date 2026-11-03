@@ -568,12 +568,11 @@ describe('DotQueryToolPageComponent', () => {
                 expect(spectator.component.$editRequest()).toBeNull();
             });
 
-            // The opener writes the panel to the URL; the page only says on which route (FR-050).
-            it("opens with the url option, naming the page's route", () => {
+            // The opener writes the panel to the URL; the page only asks for it (FR-050).
+            it('opens with the url option', () => {
                 clickResult(SAMPLE_CONTENTLET);
 
-                const { url } = opener.opened[0].options;
-                expect(url?.route === spectator.inject(ActivatedRoute)).toBe(true);
+                expect(opener.opened[0].options.url).toEqual({});
             });
 
             it('writes nothing to the URL itself when the panel opens or closes', () => {
@@ -857,11 +856,10 @@ describe('DotQueryToolPageComponent (panel deep link)', () => {
     });
 
     // The opener keeps the panel in the URL, and Back closes it, as for a panel opened by a click.
-    it("opens it with the url option, naming the page's route", () => {
+    it('opens it with the url option', () => {
         mount({ editContent: LINKED_IDENTIFIER });
 
-        const { url } = opener.opened[0].options;
-        expect(url?.route === spectator.inject(ActivatedRoute)).toBe(true);
+        expect(opener.opened[0].options.url).toEqual({});
     });
 
     // An identifier has one version per language; the link names the one that was open.
