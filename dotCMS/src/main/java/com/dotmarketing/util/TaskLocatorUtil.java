@@ -274,6 +274,7 @@ import com.dotmarketing.startup.runonce.Task260720AddDefaultBaseTypeToFolderTabl
 import com.dotmarketing.startup.runonce.Task260826CreateSystemEventCursorTable;
 import com.dotmarketing.startup.runonce.Task261023RemoveContainersLegacyPortletFromLayouts;
 import com.dotmarketing.startup.runonce.Task261028RemoveSearchLegacyPortletsFromLayouts;
+import com.dotmarketing.startup.runonce.Task261030RemoveContentTypesLegacyPortletFromLayouts;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -621,6 +622,7 @@ public class TaskLocatorUtil {
         .add(Task260826CreateSystemEventCursorTable.class)
         .add(Task261023RemoveContainersLegacyPortletFromLayouts.class)
         .add(Task261028RemoveSearchLegacyPortletsFromLayouts.class)
+        .add(Task261030RemoveContentTypesLegacyPortletFromLayouts.class)
         .build();
 
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
