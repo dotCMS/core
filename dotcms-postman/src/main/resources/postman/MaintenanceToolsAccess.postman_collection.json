@@ -760,6 +760,9 @@
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
 											"});"
 										]
 									}
@@ -811,6 +814,9 @@
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
 											"});"
 										]
 									}
@@ -859,6 +865,9 @@
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
 											"});"
 										]
 									}
@@ -907,6 +916,9 @@
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
 											"});"
 										]
 									}
@@ -955,6 +967,9 @@
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
 											"});"
 										]
 									}
@@ -1003,6 +1018,9 @@
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
 											"});"
 										]
 									}
@@ -1050,6 +1068,9 @@
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
 											"});"
 										]
 									}
@@ -1098,6 +1119,9 @@
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
 											"});"
 										]
 									}
@@ -1152,6 +1176,9 @@
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
 											"});"
 										]
 									}
@@ -1185,7 +1212,7 @@
 									"script": {
 										"type": "text/javascript",
 										"exec": [
-											"pm.test(\"Status code is 200\", function () {",
+											"pm.test(\"The logout call answers 200 (it also does without a session, so this does not show a session ended)\", function () {",
 											"    pm.response.to.have.status(200);",
 											"});"
 										]
@@ -1239,6 +1266,9 @@
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
 											"});"
 										]
 									}
@@ -1290,6 +1320,9 @@
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
 											"});"
 										]
 									}
@@ -1338,6 +1371,9 @@
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
 											"});"
 										]
 									}
@@ -1386,6 +1422,9 @@
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
 											"});"
 										]
 									}
@@ -1434,6 +1473,9 @@
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
 											"});"
 										]
 									}
@@ -1482,6 +1524,9 @@
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
 											"});"
 										]
 									}
@@ -1529,6 +1574,9 @@
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
 											"});"
 										]
 									}
@@ -1577,6 +1625,9 @@
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
 											"});"
 										]
 									}
@@ -1631,6 +1682,9 @@
 										"exec": [
 											"pm.test(\"Status code is 401\", function () {",
 											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
 											"});"
 										]
 									}
@@ -1664,7 +1718,7 @@
 									"script": {
 										"type": "text/javascript",
 										"exec": [
-											"pm.test(\"Status code is 200\", function () {",
+											"pm.test(\"The logout call answers 200 (it also does without a session, so this does not show a session ended)\", function () {",
 											"    pm.response.to.have.status(200);",
 											"});"
 										]
@@ -2170,7 +2224,7 @@
 									"script": {
 										"type": "text/javascript",
 										"exec": [
-											"pm.test(\"Status code is 200\", function () {",
+											"pm.test(\"The logout call answers 200 (it also does without a session, so this does not show a session ended)\", function () {",
 											"    pm.response.to.have.status(200);",
 											"});"
 										]
@@ -2690,7 +2744,7 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
+									"pm.test(\"The logout call answers 200 (it also does without a session, so this does not show a session ended)\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});"
 								]
@@ -2786,7 +2840,7 @@
 					]
 				},
 				{
-					"name": "GET /api/v1/jvm hides both values and the environment password",
+					"name": "GET /api/v1/jvm (checked after the two overrides are deleted)",
 					"request": {
 						"method": "GET",
 						"header": [],
@@ -2809,30 +2863,10 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"const json = pm.response.json();",
-									"const suffix = pm.collectionVariables.get('fixtureSuffix');",
-									"const passwordKey = 'SAMPLE_' + suffix + '_PWD';",
-									"const urlKey = 'SAMPLE_' + suffix + '_DB_URL';",
-									"const storedPassword = 'value-' + suffix;",
-									"const storedUrlPassword = 'url-' + suffix;",
-									"pm.test(\"A config override whose name says password is hidden\", function () {",
-									"    pm.expect(json.configOverrides[passwordKey]).to.eql('*****');",
-									"});",
-									"pm.test(\"The user part of a URL in a config override is hidden\", function () {",
-									"    pm.expect(json.configOverrides[urlKey]).to.eql('jdbc:postgresql://*****@db:5432/dotcms');",
-									"});",
-									"pm.test(\"An environment variable whose name says pass is hidden\", function () {",
-									"    // JVM_ENDPOINT_TEST_PASS is set on the dotCMS container in dotcms-postman/pom.xml",
-									"    pm.expect(json.environment.JVM_ENDPOINT_TEST_PASS).to.eql('*****');",
-									"});",
-									"pm.test(\"Neither stored secret appears anywhere in the response\", function () {",
-									"    const body = pm.response.text();",
-									"    pm.expect(body.indexOf(storedPassword)).to.be.below(0);",
-									"    pm.expect(body.indexOf(storedUrlPassword)).to.be.below(0);",
-									"});"
+									"// Newman runs with bail: true, so a failed assertion here would skip the two deletes that follow.",
+									"// Keep this request assertion-free: stash what it returned, delete the rows, then check it in the last delete.",
+									"pm.collectionVariables.set('jvmStatus', pm.response.code);",
+									"pm.collectionVariables.set('jvmBody', pm.response.text());"
 								]
 							}
 						}
@@ -2881,7 +2915,7 @@
 					]
 				},
 				{
-					"name": "Delete the _DB_URL override",
+					"name": "Delete the _DB_URL override, then check the JVM response read before the deletes",
 					"request": {
 						"method": "DELETE",
 						"header": [],
@@ -2916,6 +2950,35 @@
 								"exec": [
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
+									"});",
+									"// The assertions on the GET /api/v1/jvm response that was read before the deletes.",
+									"const stashedStatus = pm.collectionVariables.get('jvmStatus');",
+									"const stashedBody = pm.collectionVariables.get('jvmBody');",
+									"pm.collectionVariables.unset('jvmStatus');",
+									"pm.collectionVariables.unset('jvmBody');",
+									"pm.test(\"GET /api/v1/jvm answered 200\", function () {",
+									"    pm.expect(stashedStatus).to.eql(200);",
+									"});",
+									"const json = JSON.parse(stashedBody);",
+									"const suffix = pm.collectionVariables.get('fixtureSuffix');",
+									"const passwordKey = 'SAMPLE_' + suffix + '_PWD';",
+									"const urlKey = 'SAMPLE_' + suffix + '_DB_URL';",
+									"const storedPassword = 'value-' + suffix;",
+									"const storedUrlPassword = 'url-' + suffix;",
+									"pm.test(\"A config override whose name says password is hidden\", function () {",
+									"    pm.expect(json.configOverrides[passwordKey]).to.eql('*****');",
+									"});",
+									"pm.test(\"The user part of a URL in a config override is hidden\", function () {",
+									"    pm.expect(json.configOverrides[urlKey]).to.eql('jdbc:postgresql://*****@db:5432/dotcms');",
+									"});",
+									"pm.test(\"An environment variable whose name says pass is hidden\", function () {",
+									"    // JVM_ENDPOINT_TEST_PASS is set on the dotCMS container in dotcms-postman/pom.xml",
+									"    pm.expect(json.environment.JVM_ENDPOINT_TEST_PASS).to.eql('*****');",
+									"});",
+									"pm.test(\"Neither stored secret appears anywhere in the response\", function () {",
+									"    const body = stashedBody;",
+									"    pm.expect(body.indexOf(storedPassword)).to.be.below(0);",
+									"    pm.expect(body.indexOf(storedUrlPassword)).to.be.below(0);",
 									"});"
 								]
 							}
@@ -2998,7 +3061,7 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
+									"pm.test(\"The logout call answers 200 (it also does without a session, so this does not show a session ended)\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});"
 								]
@@ -3306,7 +3369,7 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
+									"pm.test(\"The logout call answers 200 (it also does without a session, so this does not show a session ended)\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});"
 								]
@@ -3486,7 +3549,7 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
+									"pm.test(\"The logout call answers 200 (it also does without a session, so this does not show a session ended)\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});"
 								]

@@ -2997,6 +2997,13 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
+									"pm.test(\"The only GraphQL error is the page not being found\", function () {",
+									"    // dotCMS answers a missing page with data.page null plus this one error, so any other error is a failure.",
+									"    const errors = pm.response.json().errors;",
+									"    pm.expect(errors).to.be.an('array').with.lengthOf(1);",
+									"    pm.expect(errors[0].message).to.include('Page not found');",
+									"});",
+									"",
 									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",

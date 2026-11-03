@@ -130,6 +130,17 @@ dotcms-postman/
 ./mvnw verify -Dpostman.test.skip=false -pl :dotcms-postman -Dpostman.debug=true
 ```
 
+### Ports and URL Variables
+
+The Postman module starts dotCMS in Docker and gives every collection two base URLs as collection variables, so a collection never hard-codes a host or port:
+
+| Variable | Maven property (default) | What it reaches |
+|---|---|---|
+| `{{serverURL}}` | `tomcat.port` (8080) | The main HTTP connector: `/api/**`, `/dwr/**`, the back-end UI |
+| `{{managementURL}}` | `management.port` (8090) | The management connector, which serves `/dotmgt/*` and is not reachable on the main port |
+
+Override either with `-D` on the Maven command line, for example `-Dtomcat.port=8081 -Dmanagement.port=8091`. Both properties are host ports published by the container, so they must be free on the machine: a local run fails to start the container if something already holds 8090 (or 8080) unless you override the property. Running several stacks side by side needs a distinct value of each port per stack.
+
 ### Maven Configuration
 ```xml
 <plugin>

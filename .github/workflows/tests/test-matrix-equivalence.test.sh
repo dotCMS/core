@@ -64,9 +64,11 @@ run_script() {
     case " $pairs " in *" $name=true "*) value=true ;; esac
     sed -i.bak "s/\${{ inputs\.$name }}/$value/" "$body"
   done
-  # The script at BASE_REF can read an input that has since been removed from the workflow;
-  # its test type no longer exists in test-matrix.yml, so the removed input is always false.
-  sed -i.bak 's/\${{ inputs\.[A-Za-z_-]* }}/false/g' "$body"
+  # The script at BASE_REF can read an input that has since been removed from the workflow
+  # (karate); its test type no longer exists in test-matrix.yml, so it is always false. Only
+  # the removed names are listed, so an input the loop above forgot stays unsubstituted and
+  # fails the run instead of being silently treated as false.
+  sed -i.bak 's/\${{ inputs\.karate }}/false/g' "$body"
   (cd "$(dirname "$config")" && OPENSEARCH_PHASE="$phase" node -e '
     const fs = require("fs");
     const out = {};
