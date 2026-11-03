@@ -112,19 +112,28 @@ test('add a form to a page, then add it again @critical', async ({ page }) => {
     await uve.addForm(0, form.name);
     const createdResponse = await created;
     expect(createdResponse.status()).toBe(200);
-    const widgetIdentifier: string = (await createdResponse.json()).entity.content.identifier;
-    widgetIdentifiers.push(widgetIdentifier);
 
-    await expect(uve.contentlet(widgetIdentifier)).toHaveCount(1);
+    // The widget's identifier is read from the page, not from the response body. Chromium drops the
+    // body of these responses within milliseconds, so `response.json()` fails with "No data found
+    // for resource with given identifier" however early it is called.
+    const placed = uve.container(0).locator('[data-dot-object="contentlet"]');
+    await expect(placed).toHaveCount(1);
+    const widgetIdentifier = await placed.getAttribute('data-dot-identifier');
+    expect(widgetIdentifier).toBeTruthy();
+    widgetIdentifiers.push(widgetIdentifier as string);
+
+    await expect(uve.contentlet(widgetIdentifier as string)).toHaveCount(1);
     expect(formRequests).toEqual(['GET', 'POST']);
 
-    // Again, in the other container: the GET finds the widget and nothing is created.
+    // Again, in the other container: the GET finds the widget and nothing is created. Placing the
+    // same identifier a second time is what shows the GET found it.
     const found = formResponse('GET');
     await uve.addForm(1, form.name);
-    const foundResponse = await found;
-    expect(foundResponse.status()).toBe(200);
-    expect((await foundResponse.json()).entity.content.identifier).toBe(widgetIdentifier);
+    expect((await found).status()).toBe(200);
 
-    await expect(uve.contentlet(widgetIdentifier)).toHaveCount(2);
+    await expect(uve.contentlet(widgetIdentifier as string)).toHaveCount(2);
+    await expect(
+        uve.container(1).locator(`[data-dot-identifier="${widgetIdentifier}"]`)
+    ).toHaveCount(1);
     expect(formRequests).toEqual(['GET', 'POST', 'GET']);
 });
