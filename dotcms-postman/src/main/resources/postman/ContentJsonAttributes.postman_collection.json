@@ -605,13 +605,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test('Property is saved', function () {",
-                  "    pm.expect(pm.response.json().entity).to.include('DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE saved/updated');",
-                  "});"
+                  "// Newman runs with bail: true, so a failed assertion would skip the cleanup that restores",
+                  "// DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE. Keep this request assertion-free: stash what it returned and",
+                  "// check it in the last cleanup request, after the property is restored.",
+                  "pm.collectionVariables.set('stash_turnOn', JSON.stringify({ status: pm.response.code, text: pm.response.text() }));"
                 ]
               }
             }
@@ -655,13 +652,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test('The identifier matches the created content', function () {",
-                  "    pm.expect(pm.response.json().entity.identifier).to.eql(pm.collectionVariables.get('newContentId'));",
-                  "});"
+                  "// Newman runs with bail: true, so a failed assertion would skip the cleanup that restores",
+                  "// DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE. Keep this request assertion-free: stash what it returned and",
+                  "// check it in the last cleanup request, after the property is restored.",
+                  "pm.collectionVariables.set('stash_byIdentifier', JSON.stringify({ status: pm.response.code, text: pm.response.text() }));"
                 ]
               }
             }
@@ -698,13 +692,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test('The inode matches the created content', function () {",
-                  "    pm.expect(pm.response.json().entity.inode).to.eql(pm.collectionVariables.get('newContentInode'));",
-                  "});"
+                  "// Newman runs with bail: true, so a failed assertion would skip the cleanup that restores",
+                  "// DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE. Keep this request assertion-free: stash what it returned and",
+                  "// check it in the last cleanup request, after the property is restored.",
+                  "pm.collectionVariables.set('stash_byInode', JSON.stringify({ status: pm.response.code, text: pm.response.text() }));"
                 ]
               }
             }
@@ -741,13 +732,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});",
-                  "",
-                  "pm.test('Property is saved', function () {",
-                  "    pm.expect(pm.response.json().entity).to.include('DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE saved/updated');",
-                  "});"
+                  "// Newman runs with bail: true, so a failed assertion would skip the cleanup that restores",
+                  "// DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE. Keep this request assertion-free: stash what it returned and",
+                  "// check it in the last cleanup request, after the property is restored.",
+                  "pm.collectionVariables.set('stash_turnOff', JSON.stringify({ status: pm.response.code, text: pm.response.text() }));"
                 ]
               }
             }
@@ -791,13 +779,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 401', function () {",
-                  "    pm.response.to.have.status(401);",
-                  "});",
-                  "",
-                  "pm.test('Anonymous write is rejected', function () {",
-                  "    pm.expect(pm.response.text()).to.include('CONTENT_APIS_ALLOW_ANONYMOUS permission exceeded - system set to READ but WRITE was required');",
-                  "});"
+                  "// Newman runs with bail: true, so a failed assertion would skip the cleanup that restores",
+                  "// DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE. Keep this request assertion-free: stash what it returned and",
+                  "// check it in the last cleanup request, after the property is restored.",
+                  "pm.collectionVariables.set('stash_noCredentials', JSON.stringify({ status: pm.response.code, text: pm.response.text() }));"
                 ]
               }
             },
@@ -861,13 +846,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 401', function () {",
-                  "    pm.response.to.have.status(401);",
-                  "});",
-                  "",
-                  "pm.test('Wrong credentials are rejected', function () {",
-                  "    pm.expect(pm.response.text()).to.include('Authentication credentials are required');",
-                  "});"
+                  "// Newman runs with bail: true, so a failed assertion would skip the cleanup that restores",
+                  "// DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE. Keep this request assertion-free: stash what it returned and",
+                  "// check it in the last cleanup request, after the property is restored.",
+                  "pm.collectionVariables.set('stash_wrongCredentials', JSON.stringify({ status: pm.response.code, text: pm.response.text() }));"
                 ]
               }
             },
@@ -943,9 +925,10 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "pm.test('Status code is 200', function () {",
-                  "    pm.response.to.have.status(200);",
-                  "});"
+                  "// Newman runs with bail: true, so a failed assertion would skip the cleanup that restores",
+                  "// DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE. Keep this request assertion-free: stash what it returned and",
+                  "// check it in the last cleanup request, after the property is restored.",
+                  "pm.collectionVariables.set('stash_restore', JSON.stringify({ status: pm.response.code, text: pm.response.text() }));"
                 ]
               }
             },
@@ -1003,6 +986,76 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
+                  "// The assertions of every request that ran while DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE was changed. They run",
+                  "// here, after the property is restored, because a failed assertion earlier would have skipped the restore.",
+                  "const unstash = function (name) {",
+                  "    const raw = pm.collectionVariables.get('stash_' + name);",
+                  "    pm.collectionVariables.unset('stash_' + name);",
+                  "    const stashed = raw ? JSON.parse(raw) : { status: null, text: '' };",
+                  "    let json = {};",
+                  "    try { json = JSON.parse(stashed.text); } catch (e) { /* not JSON: the status assertion reports it */ }",
+                  "    return { status: stashed.status, text: stashed.text, entity: json.entity || {} };",
+                  "};",
+                  "const turnOn = unstash('turnOn');",
+                  "const byIdentifier = unstash('byIdentifier');",
+                  "const byInode = unstash('byInode');",
+                  "const turnOff = unstash('turnOff');",
+                  "const noCredentials = unstash('noCredentials');",
+                  "const wrongCredentials = unstash('wrongCredentials');",
+                  "const restore = unstash('restore');",
+                  "",
+                  "pm.test('Restore: status code is 200', function () {",
+                  "    pm.expect(restore.status).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('Turn on: status code is 200', function () {",
+                  "    pm.expect(turnOn.status).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('Turn on: property is saved', function () {",
+                  "    pm.expect(turnOn.entity).to.include('DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE saved/updated');",
+                  "});",
+                  "",
+                  "pm.test('By identifier: status code is 200', function () {",
+                  "    pm.expect(byIdentifier.status).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('The identifier matches the created content', function () {",
+                  "    pm.expect(byIdentifier.entity.identifier).to.eql(pm.collectionVariables.get('newContentId'));",
+                  "});",
+                  "",
+                  "pm.test('By inode: status code is 200', function () {",
+                  "    pm.expect(byInode.status).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('The inode matches the created content', function () {",
+                  "    pm.expect(byInode.entity.inode).to.eql(pm.collectionVariables.get('newContentInode'));",
+                  "});",
+                  "",
+                  "pm.test('Turn off: status code is 200', function () {",
+                  "    pm.expect(turnOff.status).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('Turn off: property is saved', function () {",
+                  "    pm.expect(turnOff.entity).to.include('DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE saved/updated');",
+                  "});",
+                  "",
+                  "pm.test('No credentials: status code is 401', function () {",
+                  "    pm.expect(noCredentials.status).to.eql(401);",
+                  "});",
+                  "",
+                  "pm.test('Anonymous write is rejected', function () {",
+                  "    pm.expect(noCredentials.text).to.include('CONTENT_APIS_ALLOW_ANONYMOUS permission exceeded - system set to READ but WRITE was required');",
+                  "});",
+                  "",
+                  "pm.test('Wrong credentials: status code is 401', function () {",
+                  "    pm.expect(wrongCredentials.status).to.eql(401);",
+                  "});",
+                  "",
+                  "pm.test('Wrong credentials are rejected', function () {",
+                  "    pm.expect(wrongCredentials.text).to.include('Authentication credentials are required');",
+                  "});",
+                  "",
                   "pm.test('Status code is 200', function () {",
                   "    pm.response.to.have.status(200);",
                   "});",

@@ -74,7 +74,7 @@
 									"});",
 									"",
 									"if (pm.response.json().entity.path === \"/application/containers/\") {",
-									"    pm.collectionVariables.set(\"folderToDelete\", \"/application/containers/banner\");",
+									"    pm.collectionVariables.set(\"folderToDelete\", \"/application/containers/ftm-\" + pm.collectionVariables.get(\"ftmSuffix\"));",
 									"}",
 									"console.log(\"folder to delete at cleanup:\", pm.collectionVariables.get(\"folderToDelete\"));"
 								]
@@ -99,112 +99,6 @@
 								"application",
 								"containers"
 							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Remove leftover banner folder (make sure it exists)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"pm.test(\"Banner folder exists (created now, or 409 because an earlier run left it)\", function () {",
-									"    pm.expect(pm.response.code).to.be.oneOf([200, 409]);",
-									"});"
-								]
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/assets/folders",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"assets",
-								"folders"
-							]
-						},
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"assetPath\": \"//default/application/containers/banner/\",\n  \"data\": {\n    \"title\": \"application/containers/banner\",\n    \"showOnMenu\": false,\n    \"sortOrder\": 1,\n    \"defaultAssetType\": \"FileAsset\"\n  }\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"description": "Creates the banner folder if it is missing so the next request can always delete it; the banner container code points at a fixed path, so a folder left by an earlier run must go."
-					},
-					"response": []
-				},
-				{
-					"name": "Delete leftover banner folder",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"type": "text/javascript",
-								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"pm.test(\"No errors in the results\", function () {",
-									"    const results = (pm.response.json().entity || {}).results || [];",
-									"    const errors = [];",
-									"    results.forEach(result => Object.keys(result).forEach(key => {",
-									"        if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
-									"    }));",
-									"    pm.expect(errors).to.eql([]);",
-									"});"
-								]
-							}
-						}
-					],
-					"request": {
-						"method": "DELETE",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json",
-								"type": "text"
-							}
-						],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/folder/default",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"folder",
-								"default"
-							]
-						},
-						"body": {
-							"mode": "raw",
-							"raw": "[\"/application/containers/banner\"]",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
 						}
 					},
 					"response": []
@@ -259,7 +153,7 @@
 						},
 						"body": {
 							"mode": "raw",
-							"raw": "[\"/application/containers/banner\"]",
+							"raw": "[\"/application/containers/ftm-{{ftmSuffix}}\"]",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -635,7 +529,7 @@
 						},
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"title\": \"FtmContainer{{ftmSuffix}}\",\n  \"friendlyName\": \"My test container.\",\n  \"maxContentlets\": 10,\n  \"notes\": \"Notes\",\n  \"containerStructures\": [\n    {\n      \"structureId\": \"{{contentTypeId}}\",\n      \"code\": \"<div class=\\\"contentlet-title\\\">$!{dotContentMap.title}</div>\"\n    },\n    {\n      \"structureId\": \"{{bannerContentTypeId}}\",\n      \"code\": \"#dotParse(\\\"//default/application/containers/banner/banner.vtl\\\")\"\n    }\n  ]\n}",
+							"raw": "{\n  \"title\": \"FtmContainer{{ftmSuffix}}\",\n  \"friendlyName\": \"My test container.\",\n  \"maxContentlets\": 10,\n  \"notes\": \"Notes\",\n  \"containerStructures\": [\n    {\n      \"structureId\": \"{{contentTypeId}}\",\n      \"code\": \"<div class=\\\"contentlet-title\\\">$!{dotContentMap.title}</div>\"\n    },\n    {\n      \"structureId\": \"{{bannerContentTypeId}}\",\n      \"code\": \"#dotParse(\\\"//default/application/containers/ftm-{{ftmSuffix}}/banner.vtl\\\")\"\n    }\n  ]\n}",
 							"options": {
 								"raw": {
 									"language": "json"

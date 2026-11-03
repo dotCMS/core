@@ -2790,9 +2790,9 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});"
+									"// Newman runs with bail: true, so a failed assertion here would skip the deletes of the two config overrides.",
+									"// Keep this request assertion-free: stash its status and assert it in the last delete.",
+									"pm.collectionVariables.set('storePwdStatus', pm.response.code);"
 								]
 							}
 						}
@@ -2831,9 +2831,9 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});"
+									"// Newman runs with bail: true, so a failed assertion here would skip the deletes of the two config overrides.",
+									"// Keep this request assertion-free: stash its status and assert it in the last delete.",
+									"pm.collectionVariables.set('storeUrlStatus', pm.response.code);"
 								]
 							}
 						}
@@ -2906,9 +2906,9 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
-									"    pm.response.to.have.status(200);",
-									"});"
+									"// Newman runs with bail: true, so a failed assertion here would skip the deletes of the two config overrides.",
+									"// Keep this request assertion-free: stash its status and assert it in the last delete.",
+									"pm.collectionVariables.set('deletePwdStatus', pm.response.code);"
 								]
 							}
 						}
@@ -2948,7 +2948,22 @@
 							"script": {
 								"type": "text/javascript",
 								"exec": [
-									"pm.test(\"Status code is 200\", function () {",
+									"// Everything that ran while the overrides existed is asserted here, after both were deleted.",
+									"const stashedStatuses = {};",
+									"['storePwdStatus', 'storeUrlStatus', 'deletePwdStatus'].forEach(function (name) {",
+									"    stashedStatuses[name] = pm.collectionVariables.get(name);",
+									"    pm.collectionVariables.unset(name);",
+									"});",
+									"pm.test(\"Storing the _PWD override answered 200\", function () {",
+									"    pm.expect(stashedStatuses.storePwdStatus).to.eql(200);",
+									"});",
+									"pm.test(\"Storing the _DB_URL override answered 200\", function () {",
+									"    pm.expect(stashedStatuses.storeUrlStatus).to.eql(200);",
+									"});",
+									"pm.test(\"Deleting the _PWD override answered 200\", function () {",
+									"    pm.expect(stashedStatuses.deletePwdStatus).to.eql(200);",
+									"});",
+									"pm.test(\"Deleting the _DB_URL override answered 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"// The assertions on the GET /api/v1/jvm response that was read before the deletes.",
