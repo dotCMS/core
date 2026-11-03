@@ -58,6 +58,7 @@ class ContainerResourceTest {
     private static final String IDENTIFIER = "c0ffee00-0000-4000-8000-000000000001";
     private static final String INODE = "c0ffee00-0000-4000-8000-000000000002";
     private static final String LIVE_INODE = "c0ffee00-0000-4000-8000-000000000003";
+    private static final String OTHER_INODE = "c0ffee00-0000-4000-8000-000000000004";
     private static final String CONTENT_TITLE = "Quarterly Results Draft";
     private static final long REQUEST_LANGUAGE_ID = 1L;
 
@@ -319,6 +320,35 @@ class ContainerResourceTest {
         verify(velocityUtil, never()).merge(anyString(), any());
     }
 
+    /**
+     * Given a caller served live content while a Time Machine date is set, and a working version
+     * that rendering resolves in preview mode from another variant than the live one served
+     * When the contentlet is rendered into a container by identifier
+     * Then that working version is the one read as the caller, and a caller without READ on it is
+     * forbidden
+     */
+    @Test
+    void containerContent_byIdentifier_timeMachine_readsTheWorkingVersionRenderingResolves() throws Exception {
+        givenIdentifierShorty();
+        when(request.getAttribute(PageResource.TM_DATE)).thenReturn("4102444800000");
+        when(variantWebAPI.getContentletVersionInfoByFallback(REQUEST_LANGUAGE_ID, IDENTIFIER,
+                PageMode.LIVE, systemUser)).thenReturn(versionInfo(LIVE_INODE));
+        final ContentletVersionInfo otherVariant = versionInfo(null);
+        otherVariant.setVariant("experiment-variant");
+        otherVariant.setWorkingInode(OTHER_INODE);
+        when(variantWebAPI.getContentletVersionInfoByFallback(REQUEST_LANGUAGE_ID, IDENTIFIER,
+                PageMode.PREVIEW_MODE, systemUser)).thenReturn(otherVariant);
+        when(contentletAPI.find(LIVE_INODE, user, true)).thenReturn(contentlet);
+        when(contentletAPI.find(OTHER_INODE, user, true))
+                .thenThrow(new DotSecurityException("no READ on " + CONTENT_TITLE));
+
+        assertThrows(ForbiddenException.class,
+                () -> resource.containerContent(request, response, CONTAINER_ID, IDENTIFIER, null));
+
+        verify(contentletAPI).find(OTHER_INODE, user, true);
+        verify(velocityUtil, never()).merge(anyString(), any());
+    }
+
     private void givenIdentifierShorty() {
         when(shortyAPI.getShorty(IDENTIFIER)).thenReturn(Optional.of(
                 new ShortyId(IDENTIFIER, IDENTIFIER, ShortType.IDENTIFIER, ShortType.CONTENTLET)));
@@ -351,6 +381,7 @@ class ContainerResourceTest {
     private static ContentletVersionInfo versionInfo(final String liveInode) {
         final ContentletVersionInfo info = new ContentletVersionInfo();
         info.setIdentifier(IDENTIFIER);
+        info.setLang(REQUEST_LANGUAGE_ID);
         info.setVariant(VariantAPI.DEFAULT_VARIANT.name());
         info.setWorkingInode(INODE);
         info.setLiveInode(liveInode);

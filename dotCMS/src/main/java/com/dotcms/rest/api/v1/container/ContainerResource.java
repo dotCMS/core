@@ -402,7 +402,7 @@ public class ContainerResource implements Serializable {
      * <p>
      * While a Time Machine date is set, the container can render the working version of content
      * scheduled to be published by that date, so a user served live content must be able to read
-     * the working version too.
+     * the working version too: the one rendering resolves in preview mode, for the language served.
      *
      * @param request    the current request, which carries the language, variant and Time Machine date
      * @param identifier the contentlet's identifier
@@ -431,9 +431,15 @@ public class ContainerResource implements Serializable {
         if (null == contentlet) {
             throw new ResourceNotFoundException("Can't find contentlet:" + SecurityUtils.sanitizeForLogging(identifier));
         }
-        if (mode.showLive && isTimeMachineOn(request) && !inode.equals(served.getWorkingInode())) {
-            // Time Machine can make the container render the working version instead of the live one
-            this.checkReadPermission(served.getWorkingInode(), user);
+        if (mode.showLive && isTimeMachineOn(request)) {
+            // Time Machine can make the container render the working version instead of the live
+            // one, and rendering resolves that version again, in preview mode
+            final ContentletVersionInfo working = WebAPILocator.getVariantWebAPI()
+                    .getContentletVersionInfoByFallback(served.getLang(), identifier,
+                            PageMode.PREVIEW_MODE, APILocator.systemUser());
+            if (!inode.equals(working.getWorkingInode())) {
+                this.checkReadPermission(working.getWorkingInode(), user);
+            }
         }
         return contentlet;
     }
