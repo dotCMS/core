@@ -13,13 +13,22 @@ import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.util.IntegrationTestInitService;
 import com.liferay.portal.util.WebKeys;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestWrapper;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.Part;
 import org.apache.velocity.context.Context;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -173,6 +182,70 @@ public class SecureIntrospectorRenderTest {
         final ServletRequestWrapper templateRequest = (ServletRequestWrapper) ctx.get("request");
         assertSame(request, templateRequest.getRequest());
         assertTrue(templateRequest.isWrapperFor(request));
+    }
+
+    /**
+     * Regression: templates still read the request's parameter map through the wrapper, by key and
+     * by iterating its keys. That the container's own map class stays readable is covered by
+     * {@code SecureIntrospectorImplTest}, since Tomcat's classes are not on this module's classpath.
+     */
+    @Test
+    public void parameter_map_still_renders() throws Exception {
+        final Map<String, String[]> parameters = new HashMap<>();
+        parameters.put("q", new String[] {"dotcms"});
+        final HttpServletRequest request = new HttpServletRequestWrapper(containerRequest()) {
+            @Override
+            public Map<String, String[]> getParameterMap() {
+                return parameters;
+            }
+        };
+        final Context ctx = VelocityUtil.getWebContext(request, new MockHttpResponse());
+
+        final String rendered = VelocityUtil.eval("$request.getParameterMap().get('q').get(0)"
+                + "|#foreach($key in $request.getParameterMap().keySet())$key#end", ctx);
+
+        assertEquals("dotcms|q", rendered.trim());
+    }
+
+    /**
+     * A template can read an uploaded part but cannot write it to a file or delete it.
+     */
+    @Test
+    public void uploaded_part_cannot_be_written_or_deleted() throws Exception {
+        final RecordingPart part = new RecordingPart();
+        final HttpServletRequest request = new HttpServletRequestWrapper(containerRequest()) {
+            @Override
+            public Part getPart(final String name) {
+                return "upload".equals(name) ? part : null;
+            }
+        };
+        final Context ctx = VelocityUtil.getWebContext(request, new MockHttpResponse());
+
+        final String rendered = VelocityUtil.eval(
+                "$request.getPart('upload').write('/tmp/dotcms-template-part')"
+                        + "|$request.getPart('upload').delete()"
+                        + "|$request.getPart('upload').getSubmittedFileName()", ctx);
+
+        assertEquals("write calls; rendered: " + rendered, 0, part.writes.get());
+        assertEquals("delete calls; rendered: " + rendered, 0, part.deletes.get());
+        assertTrue("part name must still render; rendered: " + rendered, rendered.trim().endsWith("|photo.png"));
+    }
+
+    /** An uploaded part that counts write and delete calls instead of touching the file system. */
+    public static class RecordingPart implements Part {
+        final AtomicInteger writes = new AtomicInteger();
+        final AtomicInteger deletes = new AtomicInteger();
+
+        @Override public InputStream getInputStream() { return new ByteArrayInputStream(new byte[0]); }
+        @Override public String getContentType() { return "image/png"; }
+        @Override public String getName() { return "upload"; }
+        @Override public String getSubmittedFileName() { return "photo.png"; }
+        @Override public long getSize() { return 0; }
+        @Override public void write(final String fileName) { writes.incrementAndGet(); }
+        @Override public void delete() { deletes.incrementAndGet(); }
+        @Override public String getHeader(final String name) { return null; }
+        @Override public Collection<String> getHeaders(final String name) { return List.of(); }
+        @Override public Collection<String> getHeaderNames() { return List.of(); }
     }
 
     /**

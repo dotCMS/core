@@ -247,6 +247,45 @@ public class SecureIntrospectorImplTest {
         assertDenied(org.apache.catalina.session.StandardSessionFacade.class, "setAttribute");
         // The request a forwarded page render receives from the dispatcher (package-private class).
         assertDenied(Class.forName("org.apache.catalina.core.ApplicationHttpRequest"), "getSession");
+        // $request.startAsync() hands back the container's async context, whose getRequest() is raw.
+        assertDenied(org.apache.catalina.core.AsyncContextImpl.class, "getRequest");
+        assertDenied(Class.forName("org.apache.catalina.core.ApplicationDispatcher"), "forward");
+        assertDenied(org.apache.catalina.core.ApplicationContextFacade.class, "getRequestDispatcher");
+        assertDenied(org.apache.catalina.core.ApplicationPushBuilder.class, "push");
+        assertDenied(org.apache.catalina.realm.GenericPrincipal.class, "getPassword");
+    }
+
+    /**
+     * A template may not write an uploaded part to a file or delete it, whichever implementation
+     * backs the part, and may not call setLocked on the container's parameter map.
+     */
+    @Test
+    public void uploaded_parts_and_the_parameter_map_cannot_be_changed() {
+        assertDenied(org.apache.catalina.core.ApplicationPart.class, "write");
+        assertDenied(org.apache.catalina.core.ApplicationPart.class, "delete");
+        assertDenied(TemplatePart.class, "write");
+        assertDenied(TemplatePart.class, "delete");
+        assertDenied(org.apache.catalina.util.ParameterMap.class, "setLocked");
+    }
+
+    /**
+     * Container value objects a template reaches through the wrapped request, such as the parameter
+     * map of a forwarded page render or an uploaded part, stay readable.
+     */
+    @Test
+    public void container_value_objects_stay_readable() {
+        assertAllowed(org.apache.catalina.util.ParameterMap.class, "get");
+        assertAllowed(org.apache.catalina.util.ParameterMap.class, "keySet");
+        assertAllowed(org.apache.catalina.util.ParameterMap.class, "entrySet");
+        assertAllowed(org.apache.catalina.util.ParameterMap.class, "isLocked");
+        assertAllowed(org.apache.catalina.core.ApplicationPart.class, "getSubmittedFileName");
+        assertAllowed(org.apache.catalina.core.ApplicationPart.class, "getName");
+        assertAllowed(org.apache.catalina.core.ApplicationPart.class, "getSize");
+        assertAllowed(TemplatePart.class, "getSubmittedFileName");
+    }
+
+    /** An uploaded part that is not the container's own implementation. */
+    private abstract static class TemplatePart implements javax.servlet.http.Part {
     }
 
     /**
