@@ -52,6 +52,13 @@ describe('DotImageEditorFullscreenToggleComponent', () => {
         );
     });
 
+    /** Dialog header controls are gray (secondary), never the primary blue. */
+    it('should be gray (secondary)', () => {
+        expect(
+            spectator.query(byTestId('image-editor-fullscreen-btn'))?.querySelector('button')
+        ).toHaveClass('p-button-secondary');
+    });
+
     it('should show the "enter full screen" icon while windowed', () => {
         const icon = spectator
             .query(byTestId('image-editor-fullscreen-btn'))
