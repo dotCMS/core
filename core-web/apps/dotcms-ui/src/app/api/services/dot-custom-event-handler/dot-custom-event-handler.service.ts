@@ -118,7 +118,7 @@ export class DotCustomEventHandlerService {
     private editContentlet($event: CustomEvent): void {
         const { inode, contentType } = $event.detail.data;
 
-        this.#openInSidePanel({ mode: 'edit', inode, contentType });
+        this.openContent({ mode: 'edit', inode, contentType });
     }
 
     /**
@@ -126,7 +126,7 @@ export class DotCustomEventHandlerService {
      * the contentlet to learn its type.
      */
     private editHost($event: CustomEvent): void {
-        this.#openInSidePanel({ mode: 'edit', inode: $event.detail.data.inode });
+        this.openContent({ mode: 'edit', inode: $event.detail.data.inode });
     }
 
     /**
@@ -138,7 +138,7 @@ export class DotCustomEventHandlerService {
         const { url, contentType, folderPath } = $event.detail.data;
         const languageId = languageOf(url);
 
-        this.#openInSidePanel({
+        this.openContent({
             mode: 'new',
             contentType,
             folderPath,
@@ -148,20 +148,21 @@ export class DotCustomEventHandlerService {
 
     /** The Sites portlet asked to create a site. The JSP's `url` is ignored. */
     private createHost(): void {
-        this.#openInSidePanel({ mode: 'new', contentType: 'Host' });
+        this.openContent({ mode: 'new', contentType: 'Host' });
     }
 
     /**
-     * Opens a request in the side panel for the portlet that asked (#38303, R11). The portlet is
-     * the one current when the event arrived: the request names it, and every save and the close
-     * reload its list.
+     * Opens a request in the side panel for the current legacy portlet (#38303, R11): for the
+     * portlet's events, and for what the portlet's URL names on load (`IframePortletLegacyComponent`,
+     * FR-049). The request names the portlet current now, every save and the close reload its list,
+     * and the panel is written to its URL like on every surface but the page editor (FR-044).
      *
      * Nothing opens until `DotSidePanelHostComponent` has registered its injector, which it does
      * before any portlet can send an event; a request before then is logged as an error.
      *
      * @param request What to open, without the portlet.
      */
-    #openInSidePanel(request: DotEditContentRequest): void {
+    openContent(request: DotEditContentRequest): void {
         const injector = this.#panelInjector;
 
         if (!injector) {
@@ -184,7 +185,8 @@ export class DotCustomEventHandlerService {
             {
                 injector,
                 saved: reload,
-                closed: reload
+                closed: reload,
+                url: {}
             }
         );
     }

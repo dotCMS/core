@@ -12,7 +12,6 @@ import {
     signal,
     untracked
 } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
 
 import { map, switchMap, takeUntil, tap } from 'rxjs/operators';
 
@@ -22,13 +21,14 @@ import {
     DotContentEditorChoice,
     DotContentletEditUrlService,
     DotContentletService,
+    DotContentSearchService,
     DotHttpErrorManagerService
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
 import { DotSidePanelRef, DotSidePanelService } from '@dotcms/ui';
+import { DOT_PANEL_URL_PARAM, isDotIdentifier } from '@dotcms/utils';
 
 import { DotPanelUrlStateService } from './url/dot-panel-url-state.service';
-import { DOT_PANEL_URL_PARAM } from './url/read-panel-url-intent';
 
 import { loadDotEditContentSidePanel } from '../components/dot-edit-content-side-panel/load-dot-edit-content-side-panel';
 import { loadDotLegacyEditorSidePanel } from '../components/dot-legacy-editor-side-panel/load-dot-legacy-editor-side-panel';
@@ -59,10 +59,11 @@ export interface DotEditContentOpenOptions extends DotEditContentPanelHandlers {
     url?: DotEditContentUrlOption;
 }
 
-/** How a panel is written to the surface's URL. */
+/**
+ * How a panel is written to the surface's URL. Every surface but the page editor passes one, most
+ * of them empty (`url: {}`): the panel's params go beside the surface's own, whatever its route.
+ */
 export interface DotEditContentUrlOption {
-    /** The surface's route. */
-    route: ActivatedRoute;
     /**
      * Params written beside the panel's own and cleared with them. Not passed on to the panels
      * stacked from inside this one.
@@ -91,6 +92,11 @@ interface DotResolvedRequest {
 /** The panel events a surface can handle, by the output name both panels use for each. */
 const HANDLED_OUTPUTS = ['saved', 'languageChanged', 'pageEditorRequested', 'deleted'] as const;
 
+/** Shape of the `/api/content/_search` answer the working version is read from. */
+interface DotContentSearchEntity {
+    jsonObjectView: { contentlets: DotCMSContentlet[] };
+}
+
 /**
  * Opens content in the side panel, in whichever editor its content type uses (#38303). Every
  * surface that edits or creates content goes through here, with one request shape, and hears back
@@ -103,6 +109,7 @@ export class DotEditContentOpenerService {
     readonly #editUrl = inject(DotContentletEditUrlService);
     readonly #actionUrl = inject(DotActionUrlService);
     readonly #contentlets = inject(DotContentletService);
+    readonly #contentSearch = inject(DotContentSearchService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
     readonly #urlState = inject(DotPanelUrlStateService);
 
@@ -115,6 +122,10 @@ export class DotEditContentOpenerService {
      * Pass a signal to keep the heading and the panel's request following it while the panel stays
      * open; the editor itself is chosen once, from the request as it is now. `options.editor` skips
      * that choice and shows the legacy editor.
+     *
+     * An edit may name its content by `identifier` and `languageId` instead of `inode`, as a URL
+     * does: the opener finds the working version in that language, or in any language when there is
+     * none in that one, and that version is what opens.
      *
      * With `options.url` the panel is written to the surface's URL: a create at once, an edit as soon
      * as its identifier and language are known, which may take fetching the contentlet; the URL
@@ -163,12 +174,16 @@ export class DotEditContentOpenerService {
 
         ref.closed.subscribe(() => options.closed?.());
 
-        // An edit with no title is fetched for its heading: the legacy JSP events and the Publishing
-        // Queue name the type and no title. The URL needs the identifier of an edit, so with the
-        // option a request that lacks it is fetched even when it names its content type.
+        // An edit named only by identifier is looked up. An edit with no title is fetched for its
+        // heading: the legacy JSP events and the Publishing Queue name the type and no title. The
+        // URL needs the identifier of an edit, so with the option a request that lacks it is fetched
+        // even when it names its content type.
         const fetch =
             initial.mode === 'edit' &&
-            (!initial.contentType || !initial.title || (!!url && !initial.identifier));
+            (!initial.inode ||
+                !initial.contentType ||
+                !initial.title ||
+                (!!url && !initial.identifier));
 
         this.#fetchContentlet(initial, fetch)
             .pipe(
@@ -218,18 +233,58 @@ export class DotEditContentOpenerService {
     }
 
     /**
-     * The contentlet an edit needs fetched before anything else: when it names no content type, no
-     * title for the heading, or no identifier for the URL.
+     * The contentlet an edit needs fetched before anything else: when it names no inode, no content
+     * type, no title for the heading, or no identifier for the URL.
      *
      * @param request A request that passed {@link isOpenable}.
      * @param fetch Whether to fetch it.
-     * @returns The contentlet, or `null` when none was needed; errors when the fetch is refused.
+     * @returns The contentlet, or `null` when none was needed; errors when the fetch is refused or
+     * finds nothing.
      */
     #fetchContentlet(
         request: DotEditContentRequest,
         fetch: boolean
     ): Observable<DotCMSContentlet | null> {
-        return fetch ? this.#contentlets.getContentletByInode(request.inode as string) : of(null);
+        if (!fetch) {
+            return of(null);
+        }
+
+        return request.inode
+            ? this.#contentlets.getContentletByInode(request.inode)
+            : this.#workingVersion(request.identifier as string, request.languageId);
+    }
+
+    /**
+     * The working version of content named by identifier: in `languageId`, or in any language when
+     * it has none in that one, so a link to a language the content lacks still opens. Content
+     * Drive's lookup, moved here so every surface opening from a URL shares it (#38303, FR-049).
+     *
+     * @param identifier An identifier-shaped value: it reaches a Lucene query.
+     * @param languageId The language asked for, when one was.
+     * @returns The version; errors with a 404 when the content has no working version.
+     */
+    #workingVersion(identifier: string, languageId?: number): Observable<DotCMSContentlet> {
+        const anyLanguage = `+identifier:${identifier} +working:true`;
+        const search = (query: string): Observable<DotCMSContentlet | null> =>
+            this.#contentSearch
+                .get<DotContentSearchEntity>({ query, limit: 1 })
+                .pipe(map((entity) => entity?.jsonObjectView?.contentlets?.[0] ?? null));
+
+        const found$ = languageId
+            ? search(`${anyLanguage} +languageId:${languageId}`).pipe(
+                  switchMap((version) => (version ? of(version) : search(anyLanguage)))
+              )
+            : search(anyLanguage);
+
+        return found$.pipe(
+            map((version) => {
+                if (!version) {
+                    throw new HttpErrorResponse({ status: HttpStatusCode.NotFound });
+                }
+
+                return version;
+            })
+        );
     }
 
     /**
@@ -290,7 +345,7 @@ export class DotEditContentOpenerService {
                 this.open(event.request, {
                     injector: event.injector ?? options.injector,
                     saved: event.onSaved,
-                    url: options.url && { route: options.url.route }
+                    url: options.url && {}
                 })
         };
 
@@ -439,17 +494,24 @@ class DotPanelUrlTracker {
 }
 
 /**
- * Whether a request names something to open: an inode to edit, or a content type to create.
+ * Whether a request names something to open: an inode to edit, or an identifier to look the
+ * working version up by, or a content type to create. The identifier reaches a Lucene query, so
+ * only an identifier-shaped value counts.
  *
  * @param request The request.
  */
 function isOpenable(request: DotEditContentRequest): boolean {
-    return request.mode === 'edit' ? !!request.inode : !!request.contentType;
+    if (request.mode !== 'edit') {
+        return !!request.contentType;
+    }
+
+    return !!request.inode || isDotIdentifier(request.identifier);
 }
 
 /**
  * Fills what an edit request left out from the contentlet fetched for it, keeping everything the
- * request did say.
+ * request did say. An edit named only by identifier opens the version that was found, so its inode
+ * and language are that version's, even when the request asked for a language it lacks.
  *
  * @param request The request.
  * @param contentlet The contentlet fetched for it, if one was.
@@ -463,12 +525,15 @@ function withContentlet(
         return request;
     }
 
+    const found = !request.inode;
+
     return {
         ...request,
+        inode: request.inode ?? contentlet.inode,
         contentType: request.contentType ?? contentlet.contentType,
         identifier: request.identifier ?? contentlet.identifier,
         // `||`, as the fetch rule reads it: an empty title is no heading.
         title: request.title || contentlet.title,
-        languageId: request.languageId ?? contentlet.languageId
+        languageId: found ? contentlet.languageId : (request.languageId ?? contentlet.languageId)
     };
 }

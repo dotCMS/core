@@ -11,10 +11,10 @@ import {
     DotLanguage,
     DotSite
 } from '@dotcms/dotcms-models';
-import type { DotPanelUrlIntent } from '@dotcms/edit-content';
 import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { DotUploadBaseType, DotUploadSelection, DotUploadSelectorPayload } from '@dotcms/ui';
+import type { DotPanelUrlIntent } from '@dotcms/utils';
 
 import { DIALOG_TYPE } from './constants';
 

@@ -3,6 +3,7 @@ import { BehaviorSubject, Subject } from 'rxjs';
 import { AsyncPipe } from '@angular/common';
 import {
     Component,
+    Injector,
     OnDestroy,
     OnInit,
     inject,
@@ -10,7 +11,7 @@ import {
     ChangeDetectionStrategy
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterModule, UrlSegment } from '@angular/router';
+import { ActivatedRoute, Params, RouterModule, UrlSegment } from '@angular/router';
 
 import {
     distinctUntilChanged,
@@ -30,13 +31,68 @@ import {
 } from '@dotcms/data-access';
 import { LoggerService } from '@dotcms/dotcms-js';
 import { UI_STORAGE_KEY } from '@dotcms/dotcms-models';
+import type { DotEditContentRequest } from '@dotcms/edit-content';
 import { GlobalStore } from '@dotcms/store';
 import { DotNotLicenseComponent } from '@dotcms/ui';
-import { DotLoadingIndicatorService } from '@dotcms/utils';
+import { DotLoadingIndicatorService, isDotIdentifier, readPanelUrlIntent } from '@dotcms/utils';
 
 import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
+import { clearPanelUrl } from '../../../../../api/util/open-edit-content-panel';
 import { IframeComponent } from '../iframe-component/iframe.component';
+
+/**
+ * The legacy portlet's create link carries the folder beside the panel params
+ * (`/c/:id/new/:contentType?folder=<inode>` redirects here with it). Content Drive's folder is its
+ * `path`, so the key is this portlet's own.
+ */
+const FOLDER_PARAM = 'folder';
+
+/** What a portlet URL asks the side panel to show, keyed so the same URL is told apart. */
+interface DotUrlPanel {
+    /** The same for the same panel, whatever else the URL carries. */
+    key: string;
+    /** What to open; absent when the URL names nothing, or names two panels. */
+    request?: DotEditContentRequest;
+    /** The URL names two panels: open neither, and clear them. */
+    conflict?: boolean;
+}
+
+/**
+ * Reads what a portlet URL asks the side panel to show (#38303, FR-049): an edit by identifier and
+ * language, or a create with the folder an inode-shaped `folder` names.
+ *
+ * @param params The route's query params.
+ */
+function panelFromUrl(params: Params): DotUrlPanel {
+    const intent = readPanelUrlIntent(params);
+
+    if (intent.kind === 'edit') {
+        const { identifier, languageId } = intent;
+
+        return {
+            key: `edit:${identifier}:${languageId ?? ''}`,
+            request: { mode: 'edit', identifier, ...(languageId ? { languageId } : {}) }
+        };
+    }
+
+    if (intent.kind === 'create') {
+        const folder = params[FOLDER_PARAM];
+        // It reaches the legacy create screen's URL, so only an inode-shaped value is used.
+        const folderInode = typeof folder === 'string' && isDotIdentifier(folder) ? folder : null;
+
+        return {
+            key: `create:${intent.contentType}:${folderInode ?? ''}`,
+            request: {
+                mode: 'new',
+                contentType: intent.contentType,
+                ...(folderInode ? { folderInode } : {})
+            }
+        };
+    }
+
+    return intent.kind === 'conflict' ? { key: 'conflict', conflict: true } : { key: 'none' };
+}
 
 @Component({
     selector: 'dot-iframe-porlet',
@@ -57,6 +113,10 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     readonly #siteChange$ = toObservable(this.#globalStore.siteDetails);
     private dotEventsSocket = inject(DotEventsSocket);
     private dotIframeService = inject(DotIframeService);
+    readonly #injector = inject(Injector);
+
+    /** Whether the panel params in the URL are being followed; from the first access granted on. */
+    #followingPanelUrl = false;
 
     canAccessPortlet: boolean;
     url: BehaviorSubject<string> = new BehaviorSubject('');
@@ -91,6 +151,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
             .subscribe((canAccessPortlet: boolean) => {
                 if (canAccessPortlet) {
                     this.setIframeSrc();
+                    this.#followPanelUrl();
                 }
 
                 this.canAccessPortlet = canAccessPortlet;
@@ -133,6 +194,37 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
         } else {
             this.setUrl(this.url.getValue());
         }
+    }
+
+    /**
+     * Opens what the portlet's URL names in the side panel (#38303, FR-049), on load and on every
+     * router navigation that changes it: a deep link redirected here, a pasted link, Forward to an
+     * entry that names a panel. The panel opens through the same path as the portlet's own events,
+     * so it is written to the URL and reloads the portlet the same way. `Location` writes, which
+     * is how the panel URL service writes, never arrive here.
+     *
+     * A URL whose panel did not change opens nothing again. A URL naming two panels opens neither,
+     * and loses both with the create's folder.
+     */
+    #followPanelUrl(): void {
+        if (this.#followingPanelUrl) {
+            return;
+        }
+
+        this.#followingPanelUrl = true;
+        this.route.queryParams
+            .pipe(
+                map(panelFromUrl),
+                distinctUntilChanged((previous, next) => previous.key === next.key),
+                takeUntil(this.destroy$)
+            )
+            .subscribe(({ request, conflict }) => {
+                if (request) {
+                    this.dotCustomEventHandlerService.openContent(request);
+                } else if (conflict) {
+                    void clearPanelUrl(this.#injector, [FOLDER_PARAM]);
+                }
+            });
     }
 
     private setIframeSrc(): void {

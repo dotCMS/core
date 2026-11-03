@@ -5,12 +5,13 @@ import {
     ElementRef,
     HostListener,
     inject,
+    Injector,
     signal,
     viewChild,
     ChangeDetectionStrategy
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { RouterOutlet } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 
 import { LazyLoadEvent, MenuItem, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -44,6 +45,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotAddToBundleComponent } from '@dotcms/ui';
+import { readPanelUrlIntent } from '@dotcms/utils';
 
 import { DotCreatePageDialogComponent } from './dot-create-page-dialog/dot-create-page-dialog.component';
 import { DotPageFavoritesPanelComponent } from './dot-page-favorites-panel/dot-page-favorites-panel.component';
@@ -51,6 +53,8 @@ import { DotPagesTableComponent } from './dot-pages-table/dot-pages-table.compon
 import { DotPageActionsService } from './services/dot-page-actions.service';
 import { DotPageListService } from './services/dot-page-list.service';
 import { DotCMSPagesStore } from './store/store';
+
+import { clearPanelUrl } from '../../api/util/open-edit-content-panel';
 
 export interface DotActionsMenuEventParams {
     originalEvent: MouseEvent;
@@ -92,7 +96,6 @@ type SavePageEventData = {
     templateUrl: './dot-pages.component.html',
     imports: [
         MenuModule,
-        RouterOutlet,
         ProgressSpinnerModule,
         DotAddToBundleComponent,
         DotPageFavoritesPanelComponent,
@@ -113,6 +116,8 @@ export class DotPagesComponent {
     readonly #dotPageActionsService = inject(DotPageActionsService);
     readonly #element = inject(ElementRef);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #route = inject(ActivatedRoute);
+    readonly #injector = inject(Injector);
 
     readonly #dotCMSPagesStore = inject(DotCMSPagesStore);
     readonly #globalStore = inject(GlobalStore);
@@ -134,6 +139,32 @@ export class DotPagesComponent {
 
     constructor() {
         this.listenSavePageEvent();
+        this.#openFromUrl();
+    }
+
+    /**
+     * Opens what the URL names, once, on load (#38303, FR-049): a shared link or a refresh reopens
+     * the panel that was open, through the same path as the Edit action. A URL naming two panels
+     * opens neither, and loses both.
+     */
+    #openFromUrl(): void {
+        const intent = readPanelUrlIntent(this.#route.snapshot.queryParams);
+        const refresh = () => this.#refreshPages();
+
+        if (intent.kind === 'edit') {
+            const { identifier, languageId } = intent;
+            this.#dotPageActionsService.openContent(
+                { mode: 'edit', identifier, ...(languageId ? { languageId } : {}) },
+                refresh
+            );
+        } else if (intent.kind === 'create') {
+            this.#dotPageActionsService.openContent(
+                { mode: 'new', contentType: intent.contentType },
+                refresh
+            );
+        } else if (intent.kind === 'conflict') {
+            void clearPanelUrl(this.#injector);
+        }
     }
 
     /**
@@ -270,10 +301,6 @@ export class DotPagesComponent {
                     type: DotMessageType.SIMPLE_MESSAGE
                 });
             });
-    }
-
-    protected getPages(): void {
-        this.#dotCMSPagesStore.getPages({ offset: 0 });
     }
 
     /**

@@ -5,8 +5,8 @@ import { DotEditContentDeepLinkComponent } from './dot-edit-content-deep-link/do
 import { DotWorkflowTaskComponent } from './dot-workflow-task/dot-workflow-task.component';
 
 /**
- * `/c/:id/:asset`: a workflow task for the Workflow portlet, otherwise a deep link that opens the
- * content in the side panel over the portlet (#38303).
+ * `/c/:id/:asset`: a workflow task for the Workflow portlet, otherwise a deep link that redirects
+ * to the portlet's URL with the side panel params, and the portlet opens the panel (#38303).
  */
 @Component({
     selector: 'dot-portlet-detail',

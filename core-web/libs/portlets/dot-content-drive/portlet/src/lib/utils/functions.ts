@@ -15,9 +15,8 @@ import {
     LOAD_MORE_NODE_TYPE,
     DotFolderBean
 } from '@dotcms/dotcms-models';
-import { readPanelUrlIntent } from '@dotcms/edit-content';
 import { DotFolderTreeNodeData, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
-import { isDotIdentifier } from '@dotcms/utils';
+import { isDotIdentifier, readPanelUrlIntent } from '@dotcms/utils';
 
 import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 

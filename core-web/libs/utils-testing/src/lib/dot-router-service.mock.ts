@@ -43,7 +43,6 @@ export class MockDotRouterService {
     replaceQueryParams = vi.fn();
     getPortletId = vi.fn().mockReturnValue('test');
     goToEditContentType = vi.fn();
-    goToEditContentlet = vi.fn();
     goToEditPage = vi.fn();
     goToEditTask = vi.fn();
     goToForgotPassword = vi.fn();

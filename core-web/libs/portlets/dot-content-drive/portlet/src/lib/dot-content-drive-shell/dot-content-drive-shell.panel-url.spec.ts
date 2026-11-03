@@ -1,6 +1,6 @@
 import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/vitest';
 import { NEVER, of, Subject } from 'rxjs';
-import { Mock, beforeEach, describe, expect, it, vi } from 'vitest';
+import { Mock, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Location, PopStateEvent } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
@@ -43,7 +43,11 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
-import { DotSourceEditorRequest } from '@dotcms/edit-content';
+import {
+    DotSourceEditorRequest,
+    loadDotLegacyEditorSidePanel,
+    loadDotSourceEditorSidePanel
+} from '@dotcms/edit-content';
 import { GlobalStore } from '@dotcms/store';
 import { DotSidePanelConfig, DotSidePanelRef, DotSidePanelService } from '@dotcms/ui';
 import {
@@ -160,6 +164,13 @@ describe('DotContentDriveShellComponent — the open panel in the URL', () => {
     let location: ReturnType<typeof createLocationDouble>;
     let filters: WritableSignal<Record<string, unknown>>;
     let sourceEditor: WritableSignal<DotSourceEditorRequest | null>;
+
+    // Edit Code and the switch to the old editor load their editors' modules (Monaco among them).
+    // Loaded once up front, the tests' own loads resolve from the module cache; otherwise a load can
+    // still be pending when the file ends, and the worker reports it as an unhandled error.
+    beforeAll(async () => {
+        await Promise.all([loadDotSourceEditorSidePanel(), loadDotLegacyEditorSidePanel()]);
+    });
 
     const createComponent = createComponentFactory({
         component: DotContentDriveShellComponent,

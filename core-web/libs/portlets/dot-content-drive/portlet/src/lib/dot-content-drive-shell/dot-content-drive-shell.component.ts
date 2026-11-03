@@ -416,7 +416,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
      * followed by the close that refreshes. A language switch only moves the URL, which is the
      * opener's, so it has no handler here.
      *
-     * The panel is written to the URL by the opener, with Content Drive's route and no extra params:
+     * The panel is written to the URL by the opener, with no extra params:
      * the folder a create lands in is already in Content Drive's own `path` param (#38303, FR-044).
      *
      * `editor` and `url` are getters, read each time the panel opens, so "switch to the old editor"
@@ -428,7 +428,6 @@ export class DotContentDriveShellComponent implements OnDestroy {
      */
     #editPanelBinding(): DotEditContentPanelBinding {
         const forceLegacyEditor = this.#navigationService.$forceLegacyEditor;
-        const route = this.#route;
 
         return {
             saved: () => this.onEditPanelSaved(),
@@ -438,7 +437,7 @@ export class DotContentDriveShellComponent implements OnDestroy {
                 return forceLegacyEditor() ? 'legacy' : undefined;
             },
             get url(): DotEditContentUrlOption {
-                return forceLegacyEditor() ? { route, inPlace: true } : { route };
+                return forceLegacyEditor() ? { inPlace: true } : {};
             }
         };
     }

@@ -1,8 +1,11 @@
-import { isDotIdentifier } from '@dotcms/utils';
+import { isDotIdentifier } from '../dot-utils';
 
 /**
  * The query params that name an open side panel, the same on every surface (#38303, FR-044).
  * Content Drive's names, kept so the links authors already share keep opening.
+ *
+ * In `@dotcms/utils`, not beside the opener in `@dotcms/edit-content`, so a screen of the admin app
+ * can read its URL without loading the editor library, which the app loads only on demand.
  */
 export const DOT_PANEL_URL_PARAM = {
     /** Identifier of the content open for editing. */
