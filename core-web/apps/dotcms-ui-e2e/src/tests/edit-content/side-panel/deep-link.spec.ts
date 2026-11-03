@@ -8,9 +8,10 @@ import { uniqueSuffix } from '@utils/utils';
 import { SidePanel } from './helpers/side-panel';
 
 /**
- * #38303, US2: a content link opened on its own (`#/c/content/<inode>`, `#/c/content/new/<type>`)
- * renders the content portlet with the side panel open over it, and closing the panel leaves the
- * author on the portlet, at its own address.
+ * #38303, US2 and US7: a content link opened on its own (`#/c/content/<inode>`,
+ * `#/c/content/new/<type>`) ends on the content portlet's own address with the panel params
+ * (FR-049), with the side panel open over the portlet. Closing the panel leaves the author on the
+ * portlet, at its own address, with no panel named.
  */
 
 /** Where closing the panel leaves the author: the content portlet's own address. */
@@ -21,6 +22,7 @@ test.describe('Content links open the side panel over the content portlet', () =
     let typeName: string;
     let typeVariable: string;
     let inode: string;
+    let identifier: string;
     let title: string;
 
     test.beforeEach(async ({ request }) => {
@@ -39,6 +41,7 @@ test.describe('Content links open the side panel over the content portlet', () =
             title
         });
         inode = contentlet.inode;
+        identifier = contentlet.identifier;
     });
 
     test.afterEach(async ({ request }) => {
@@ -59,6 +62,10 @@ test.describe('Content links open the side panel over the content portlet', () =
         await expect(page.locator(iFramesLocators.main_iframe)).toBeVisible({ timeout: 20000 });
         await sidePanel.expectOpen();
         await expect(sidePanel.title).toContainText(title);
+        // The path form is gone: the portlet's URL names the panel.
+        await expect(page).toHaveURL(
+            new RegExp(`/dotAdmin/#/c/content\\?.*editContent=${identifier}.*editContentLang=1`)
+        );
 
         await sidePanel.close();
         await sidePanel.expectClosed();
@@ -77,6 +84,9 @@ test.describe('Content links open the side panel over the content portlet', () =
         // A create has no title yet, so the panel is headed with the type's name.
         await expect(sidePanel.title).toContainText(typeName);
         await expect(sidePanel.front.getByTestId('title')).toHaveValue('');
+        await expect(page).toHaveURL(
+            new RegExp(`/dotAdmin/#/c/content\\?.*createContent=${typeVariable}`)
+        );
 
         await sidePanel.close();
         await sidePanel.expectClosed();

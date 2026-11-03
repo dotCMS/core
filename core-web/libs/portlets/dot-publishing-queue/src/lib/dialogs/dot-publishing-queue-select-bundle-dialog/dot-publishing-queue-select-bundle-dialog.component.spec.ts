@@ -459,6 +459,14 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
             expect(service.getBundleAssets).toHaveBeenCalledWith('bundle-1');
         });
 
+        // The opener writes the panel to the portlet's URL; on load the portlet reopens it over the
+        // list, without the dialog (#38303, FR-044).
+        it('asks the opener to write the panel to the URL', () => {
+            clickRow(0);
+
+            expect(openOptions().url).toEqual({});
+        });
+
         it('never opens a new tab', () => {
             clickRow(0);
 

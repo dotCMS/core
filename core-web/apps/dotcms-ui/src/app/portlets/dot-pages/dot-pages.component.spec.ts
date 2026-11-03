@@ -7,6 +7,7 @@ import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output, signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { ActivatedRoute, Params } from '@angular/router';
 
 import { LazyLoadEvent, MenuItem, MessageService } from 'primeng/api';
 import { Toast } from 'primeng/toast';
@@ -18,6 +19,9 @@ import {
     DotMessageSeverity,
     DotMessageType
 } from '@dotcms/dotcms-models';
+// The service that owns the panel params; the app also lazy-loads the library's routes (#38303).
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { DotPanelUrlStateService } from '@dotcms/edit-content';
 import { GlobalStore } from '@dotcms/store';
 import { DotAddToBundleComponent } from '@dotcms/ui';
 
@@ -165,7 +169,9 @@ describe('DotPagesComponent', () => {
                 MockProvider(DotMessageDisplayService, mockDotMessageDisplayService),
                 MockProvider(DotEventsService, mockDotEventsService),
                 MockProvider(DotPageActionsService, mockDotPageActionsService),
-                { provide: GlobalStore, useValue: mockGlobalStore }
+                { provide: GlobalStore, useValue: mockGlobalStore },
+                // A URL that names no panel (#38303); the load-time cases have their own describe.
+                { provide: ActivatedRoute, useValue: { snapshot: { queryParams: {} } } }
             ]
         });
 
@@ -398,5 +404,118 @@ describe('DotPagesComponent', () => {
                 })
             );
         });
+    });
+});
+
+/**
+ * #38303 (FR-049) — the Pages portlet reads what its URL names once, on load, and opens it through
+ * the same path as the Edit action, so a shared link or a refresh reopens the panel that was open.
+ * Own describe: the route has to name the panel before the component is built.
+ */
+describe('DotPagesComponent — the panel named in the URL', () => {
+    const IDENTIFIER = '3f0c8e5a-7b2d-4c1e-9a6f-0d4b8e2c1a57';
+
+    let openContent: Mock;
+    let clear: Mock;
+    let getPages: Mock;
+
+    const createComponent = createComponentFactory({
+        component: DotPagesComponent,
+        imports: [DotPagesComponent],
+        providers: [MessageService],
+        detectChanges: false
+    });
+
+    MockInstance.scope();
+
+    /** Builds the portlet on a URL with these query params. */
+    const mount = async (queryParams: Params): Promise<void> => {
+        MockInstance(DotPagesTableComponent, () => ({ contextMenu: signal(undefined) }));
+        TestBed.overrideComponent(DotPagesComponent, {
+            set: {
+                imports: [
+                    CommonModule,
+                    Toast,
+                    TieredMenuStubComponent,
+                    MockComponent(DotPageFavoritesPanelComponent),
+                    MockComponent(DotPagesTableComponent),
+                    MockComponent(DotCreatePageDialogComponent),
+                    MockComponent(DotAddToBundleComponent)
+                ]
+            }
+        });
+
+        openContent = vi.fn();
+        clear = vi.fn();
+        getPages = vi.fn();
+
+        createComponent({
+            providers: [
+                {
+                    provide: DotCMSPagesStore,
+                    useValue: {
+                        favoritePages: signal([]),
+                        $isFavoritePagesLoading: signal(false),
+                        pages: signal([]),
+                        $isPagesLoading: signal(false),
+                        $totalRecords: signal(0),
+                        $showBundleDialog: signal(false),
+                        $assetIdentifier: signal(''),
+                        getPages
+                    }
+                },
+                MockProvider(DotRouterService, { goToEditPage: vi.fn() }),
+                MockProvider(DotMessageDisplayService, { push: vi.fn() }),
+                MockProvider(DotEventsService, { listen: vi.fn().mockReturnValue(of()) }),
+                MockProvider(DotPageActionsService, {
+                    getItems: vi.fn().mockReturnValue(of([])),
+                    openContent
+                } as Partial<DotPageActionsService>),
+                { provide: GlobalStore, useValue: { systemConfig: signal({ languages: [] }) } },
+                { provide: ActivatedRoute, useValue: { snapshot: { queryParams } } },
+                { provide: DotPanelUrlStateService, useValue: { clear, register: vi.fn() } }
+            ]
+        }).detectChanges();
+
+        // The panel URL service is reached on demand, as the admin app loads the library.
+        await vi.dynamicImportSettled();
+    };
+
+    it('opens the version the URL names, by identifier and language, refreshing the listing', async () => {
+        await mount({ editContent: IDENTIFIER, editContentLang: '2' });
+
+        expect(openContent).toHaveBeenCalledTimes(1);
+        const [request, refresh] = openContent.mock.calls[0];
+        expect(request).toEqual({ mode: 'edit', identifier: IDENTIFIER, languageId: 2 });
+
+        refresh();
+
+        // The same refresh Edit gets: the listing on the page the author is on.
+        expect(getPages).toHaveBeenCalledWith();
+    });
+
+    it('opens a create of the content type the URL names', async () => {
+        await mount({ createContent: 'htmlpageasset' });
+
+        expect(openContent).toHaveBeenCalledTimes(1);
+        expect(openContent.mock.calls[0][0]).toEqual({
+            mode: 'new',
+            contentType: 'htmlpageasset'
+        });
+    });
+
+    it('opens nothing for a URL that names no panel', async () => {
+        await mount({});
+
+        expect(openContent).not.toHaveBeenCalled();
+        expect(clear).not.toHaveBeenCalled();
+    });
+
+    // A URL naming two panels opens neither, and loses both.
+    it('opens nothing for a URL that names two panels, and clears them', async () => {
+        await mount({ editContent: IDENTIFIER, createContent: 'htmlpageasset' });
+
+        expect(openContent).not.toHaveBeenCalled();
+        expect(clear).toHaveBeenCalledTimes(1);
     });
 });

@@ -107,4 +107,44 @@ describe('appRoutes', () => {
             expect(queryToolRoutes[0].data?.['reuseRoute']).toBeUndefined();
         });
     });
+
+    describe('Publishing Queue portlet', () => {
+        const publishingQueueRoutes = allRoutes.filter(
+            (route) => route.path === 'publishing-queue-beta'
+        );
+
+        it('should be registered exactly once', () => {
+            expect(publishingQueueRoutes).toHaveLength(1);
+        });
+
+        it('should not force `reuseRoute: false` on its route', () => {
+            // Same rule as the Query Tool: no path params, so the flag only rebuilt the page on
+            // browser Back, discarding the side panel open over the list and its prompt (#38303,
+            // FR-047).
+            expect(publishingQueueRoutes[0].data?.['reuseRoute']).toBeUndefined();
+        });
+    });
+
+    /**
+     * The path deep links redirect to the portlet's URL with the panel params (#38303, FR-049).
+     * Velocity emits `/dotAdmin/#/c/content/<inode>` and workflow emails `/c/workflow/<task>`, so
+     * the `/c/:id` children stay; the Pages ones were added by this work and nothing emits them.
+     */
+    describe('deep links', () => {
+        const legacyPortlet = allRoutes.find((route) => route.path === ':id' && route.children);
+
+        it.each([':asset', 'new/:contentType', 'new'])(
+            'should keep the `/c/:id/%s` child',
+            (path) => {
+                expect(legacyPortlet?.children?.map((child) => child.path)).toContain(path);
+            }
+        );
+
+        it('should leave Pages a single route, with no deep-link children', async () => {
+            const { dotPagesRoutes } = await import('./portlets/dot-pages/dot-pages.routes');
+
+            expect(dotPagesRoutes).toHaveLength(1);
+            expect(dotPagesRoutes[0].children ?? []).toEqual([]);
+        });
+    });
 });

@@ -14,12 +14,12 @@ import {
     signal
 } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute } from '@angular/router';
 
 import {
     DotActionUrlService,
     DotContentletEditUrlService,
     DotContentletService,
+    DotContentSearchService,
     DotHttpErrorManagerService,
     DotMessageService
 } from '@dotcms/data-access';
@@ -104,6 +104,7 @@ describe('DotEditContentOpenerService', () => {
     let resolveEditor: Mock;
     let getCreateContentletUrl: Mock;
     let getContentletByInode: Mock;
+    let searchContent: Mock;
     let handleError: Mock;
     let injector: Injector;
 
@@ -117,6 +118,7 @@ describe('DotEditContentOpenerService', () => {
             mockProvider(DotContentletEditUrlService, { resolveEditor: vi.fn() }),
             mockProvider(DotActionUrlService, { getCreateContentletUrl: vi.fn() }),
             mockProvider(DotContentletService, { getContentletByInode: vi.fn() }),
+            mockProvider(DotContentSearchService, { get: vi.fn() }),
             mockProvider(DotHttpErrorManagerService, { handle: vi.fn() }),
             mockProvider(DotPanelUrlStateService, { register: vi.fn(), update: vi.fn() })
         ]
@@ -129,6 +131,7 @@ describe('DotEditContentOpenerService', () => {
         getCreateContentletUrl = spectator.inject(DotActionUrlService)
             .getCreateContentletUrl as Mock;
         getContentletByInode = spectator.inject(DotContentletService).getContentletByInode as Mock;
+        searchContent = spectator.inject(DotContentSearchService).get as Mock;
         handleError = spectator.inject(DotHttpErrorManagerService).handle as Mock;
         injector = TestBed.inject(Injector);
 
@@ -182,6 +185,142 @@ describe('DotEditContentOpenerService', () => {
             expect(open).not.toHaveBeenCalled();
             expect(handleError).toHaveBeenCalledTimes(1);
             expect(ref.isClosed).toBe(true);
+        });
+    });
+
+    /**
+     * A URL names content by `editContent` and `editContentLang`, never by inode, so a surface
+     * opening from a URL hands the opener the identifier and the language. The opener finds the
+     * working version itself, with Content Drive's two-step lookup, and goes on as for an edit by
+     * inode (#38303, FR-049).
+     */
+    describe('an edit named by its identifier', () => {
+        const IDENTIFIER = '3f0c8e5a-7b2d-4c1e-9a6f-0d4b8e2c1a57';
+
+        /** What `/api/content/_search` answers: the matching working versions, at most one. */
+        const searchResult = (...contentlets: DotCMSContentlet[]) =>
+            of({ jsonObjectView: { contentlets } });
+
+        const SPANISH = createFakeContentlet({
+            inode: 'es-inode',
+            identifier: IDENTIFIER,
+            contentType: 'Blog',
+            languageId: 2,
+            title: 'Mi entrada'
+        });
+
+        const ENGLISH = createFakeContentlet({
+            inode: 'en-inode',
+            identifier: IDENTIFIER,
+            contentType: 'Blog',
+            languageId: 1,
+            title: 'My post'
+        });
+
+        it('opens the working version in the language the request names, as an edit by inode', async () => {
+            searchContent.mockReturnValue(searchResult(SPANISH));
+
+            const ref = spectator.service.open(
+                { mode: 'edit', identifier: IDENTIFIER, languageId: 2 },
+                { injector }
+            );
+            const { config, component } = await lastOpen();
+
+            expect(ref.isClosed).toBe(false);
+            expect(handleError).not.toHaveBeenCalled();
+            expect(searchContent).toHaveBeenCalledTimes(1);
+            expect(searchContent).toHaveBeenCalledWith({
+                query: `+identifier:${IDENTIFIER} +working:true +languageId:2`,
+                limit: 1
+            });
+            expect(component).toBe(NewEditorStub);
+            expect(input<DotEditContentRequest>(config, 'request')).toEqual(
+                expect.objectContaining({
+                    mode: 'edit',
+                    inode: 'es-inode',
+                    identifier: IDENTIFIER,
+                    contentType: 'Blog',
+                    languageId: 2,
+                    title: 'Mi entrada'
+                })
+            );
+        });
+
+        // A link to content with no version in that language still opens.
+        it('falls back to the working version in any language when it has none in that one', async () => {
+            searchContent
+                .mockReturnValueOnce(searchResult())
+                .mockReturnValueOnce(searchResult(ENGLISH));
+
+            spectator.service.open(
+                { mode: 'edit', identifier: IDENTIFIER, languageId: 2 },
+                { injector }
+            );
+            const { config } = await lastOpen();
+
+            expect(searchContent).toHaveBeenCalledTimes(2);
+            expect(searchContent).toHaveBeenLastCalledWith({
+                query: `+identifier:${IDENTIFIER} +working:true`,
+                limit: 1
+            });
+            // The version that opened, not the one asked for.
+            expect(input<DotEditContentRequest>(config, 'request')).toEqual(
+                expect.objectContaining({ inode: 'en-inode', languageId: 1 })
+            );
+        });
+
+        it('looks up any language at once when the request names none', async () => {
+            searchContent.mockReturnValue(searchResult(ENGLISH));
+
+            spectator.service.open({ mode: 'edit', identifier: IDENTIFIER }, { injector });
+            await lastOpen();
+
+            expect(searchContent).toHaveBeenCalledTimes(1);
+            expect(searchContent).toHaveBeenCalledWith({
+                query: `+identifier:${IDENTIFIER} +working:true`,
+                limit: 1
+            });
+        });
+
+        it('shows the standard error and closes the panel when nothing matches', () => {
+            searchContent.mockReturnValue(searchResult());
+
+            const ref = spectator.service.open(
+                { mode: 'edit', identifier: IDENTIFIER, languageId: 2 },
+                { injector }
+            );
+
+            expect(handleError).toHaveBeenCalledTimes(1);
+            expect(ref.isClosed).toBe(true);
+        });
+
+        // The identifier reaches a Lucene query.
+        it('refuses an identifier that is not one, without searching', () => {
+            const ref = spectator.service.open(
+                { mode: 'edit', identifier: `${IDENTIFIER} OR +working:true` },
+                { injector }
+            );
+
+            expect(searchContent).not.toHaveBeenCalled();
+            expect(handleError).toHaveBeenCalledTimes(1);
+            expect(ref.isClosed).toBe(true);
+        });
+
+        it('names the version that opened in the URL', () => {
+            const register = spectator.inject(DotPanelUrlStateService).register as Mock;
+            resolveEditor.mockReturnValue(NEVER);
+            searchContent.mockReturnValue(searchResult(SPANISH));
+
+            spectator.service.open(
+                { mode: 'edit', identifier: IDENTIFIER, languageId: 2 },
+                { injector, url: {} }
+            );
+
+            expect(register).toHaveBeenCalledTimes(1);
+            expect(register.mock.calls[0][1]).toEqual({
+                editContent: IDENTIFIER,
+                editContentLang: '2'
+            });
         });
     });
 
@@ -520,7 +659,6 @@ describe('DotEditContentOpenerService', () => {
      * it to the surface's URL; the surface never writes the URL itself (#38303, FR-044 to FR-050).
      */
     describe('the panel in the URL', () => {
-        const route = { snapshot: { queryParams: {} } } as unknown as ActivatedRoute;
         let register: Mock;
         let update: Mock;
 
@@ -544,7 +682,7 @@ describe('DotEditContentOpenerService', () => {
         it('registers an edit that names its identifier and language at once, with them', () => {
             resolveEditor.mockReturnValue(NEVER);
 
-            const ref = spectator.service.open(EDIT_REQUEST, { injector, url: { route } });
+            const ref = spectator.service.open(EDIT_REQUEST, { injector, url: {} });
 
             expect(register).toHaveBeenCalledTimes(1);
             expect(registered(0).ref === ref).toBe(true);
@@ -557,7 +695,7 @@ describe('DotEditContentOpenerService', () => {
 
             const ref = spectator.service.open(
                 { mode: 'edit', inode: 'host-inode' },
-                { injector, url: { route } }
+                { injector, url: {} }
             );
 
             expect(register).not.toHaveBeenCalled();
@@ -594,7 +732,7 @@ describe('DotEditContentOpenerService', () => {
 
             spectator.service.open(
                 { mode: 'edit', inode: 'abc', contentType: 'Blog' },
-                { injector, url: { route } }
+                { injector, url: {} }
             );
 
             expect(getContentletByInode).toHaveBeenCalledWith('abc');
@@ -610,7 +748,7 @@ describe('DotEditContentOpenerService', () => {
 
             const ref = spectator.service.open(CREATE_REQUEST, {
                 injector,
-                url: { route, extraParams: { folder: 'f-1' } }
+                url: { extraParams: { folder: 'f-1' } }
             });
 
             expect(register).toHaveBeenCalledTimes(1);
@@ -640,7 +778,7 @@ describe('DotEditContentOpenerService', () => {
             const ref = spectator.service.open(EDIT_REQUEST, {
                 injector,
                 languageChanged,
-                url: { route }
+                url: {}
             });
             const { config } = await lastOpen();
 
@@ -656,7 +794,7 @@ describe('DotEditContentOpenerService', () => {
         it("names the new content in place of the create on the create's first save, and only then", async () => {
             const ref = spectator.service.open(
                 { ...CREATE_REQUEST, contentType: 'Blog' },
-                { injector, url: { route } }
+                { injector, url: {} }
             );
             const { config } = await lastOpen();
             const saved = createFakeContentlet({
@@ -675,7 +813,7 @@ describe('DotEditContentOpenerService', () => {
         });
 
         it("leaves the URL as it is when an edit's content is saved in the language it names", async () => {
-            spectator.service.open(EDIT_REQUEST, { injector, url: { route } });
+            spectator.service.open(EDIT_REQUEST, { injector, url: {} });
             const { config } = await lastOpen();
 
             config.outputs?.['saved'](
@@ -688,7 +826,7 @@ describe('DotEditContentOpenerService', () => {
         // Switching to a language the content lacks reports no language: the new translation's
         // first save is the first the URL hears of it. Content Drive did this itself until #38303.
         it('names the language of a new translation in place when it is first saved', async () => {
-            const ref = spectator.service.open(EDIT_REQUEST, { injector, url: { route } });
+            const ref = spectator.service.open(EDIT_REQUEST, { injector, url: {} });
             const { config } = await lastOpen();
 
             config.outputs?.['saved'](
@@ -707,7 +845,7 @@ describe('DotEditContentOpenerService', () => {
 
         // Related content opened in place inside the panel saves under another identifier.
         it('leaves the URL as it is when other content is saved inside the panel', async () => {
-            spectator.service.open(EDIT_REQUEST, { injector, url: { route } });
+            spectator.service.open(EDIT_REQUEST, { injector, url: {} });
             const { config } = await lastOpen();
 
             config.outputs?.['saved'](
@@ -726,7 +864,7 @@ describe('DotEditContentOpenerService', () => {
 
             const ref = spectator.service.open(EDIT_REQUEST, {
                 injector,
-                url: { route, inPlace: true }
+                url: { inPlace: true }
             });
 
             expect(register).toHaveBeenCalledTimes(1);
@@ -747,7 +885,7 @@ describe('DotEditContentOpenerService', () => {
                     })
                 )
             );
-            spectator.service.open(EDIT_REQUEST, { injector, url: { route, inPlace: true } });
+            spectator.service.open(EDIT_REQUEST, { injector, url: { inPlace: true } });
             const { config: first } = await lastOpen();
 
             first.outputs?.['openContent']({ request: { mode: 'edit', inode: 'rel-1' } } as never);
@@ -768,7 +906,7 @@ describe('DotEditContentOpenerService', () => {
                     })
                 )
             );
-            spectator.service.open(EDIT_REQUEST, { injector, url: { route } });
+            spectator.service.open(EDIT_REQUEST, { injector, url: {} });
             const { config: first } = await lastOpen();
 
             first.outputs?.['openContent']({ request: { mode: 'edit', inode: 'rel-1' } } as never);
