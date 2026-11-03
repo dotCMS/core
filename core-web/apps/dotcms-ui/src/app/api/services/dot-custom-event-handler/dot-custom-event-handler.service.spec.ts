@@ -607,6 +607,40 @@ describe('DotCustomEventHandlerService', () => {
                 expect(reloadData).toHaveBeenCalledTimes(2);
                 expect(reloadData).toHaveBeenCalledWith(PORTLET_ID);
             });
+
+            // The Workflow Tasks detail views its task again once the task list behind it has
+            // reloaded (#38303, FR-025a).
+            it("should run the caller's saved and closed after reloading the portlet", async () => {
+                const reloadData = vi.spyOn(dotIframeService, 'reloadData');
+                const saved = vi.fn();
+                const closed = vi.fn();
+                const contentlet = createFakeContentlet({ inode: 'saved-inode' });
+
+                (
+                    service as unknown as {
+                        openContent: (
+                            r: DotEditContentRequest,
+                            after: Pick<DotEditContentOpenOptions, 'saved' | 'closed'>
+                        ) => void;
+                    }
+                ).openContent(
+                    { mode: 'edit', inode: '123', contentType: 'Blog' },
+                    { saved, closed }
+                );
+                await vi.dynamicImportSettled();
+
+                openOptions().saved?.(contentlet);
+                expect(saved).toHaveBeenCalledWith(contentlet);
+                expect(reloadData.mock.invocationCallOrder[0]).toBeLessThan(
+                    saved.mock.invocationCallOrder[0]
+                );
+
+                openOptions().closed?.();
+                expect(closed).toHaveBeenCalledTimes(1);
+                expect(reloadData.mock.invocationCallOrder[1]).toBeLessThan(
+                    closed.mock.invocationCallOrder[0]
+                );
+            });
         });
 
         // The opener picks the editor per content type; the global flag swap is gone.
