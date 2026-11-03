@@ -3,22 +3,18 @@ import { ActivatedRoute, Params, Router } from '@angular/router';
 
 import { take } from 'rxjs/operators';
 
-import {
-    DotContentletService,
-    DotHttpErrorManagerService,
-    DotRouterService
-} from '@dotcms/data-access';
+import { DotContentletService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DOT_PANEL_URL_PARAM } from '@dotcms/utils';
 
 /**
- * A path deep link to content (`/c/:id/:asset`, `/c/:id/new/:contentType`) redirects to the
- * portlet's own URL with the side panel params, replacing the path form in history (#38303,
- * FR-049). The portlet then opens the panel as it does for any URL that names one, so a link is
- * not a second way to open a panel. Velocity and old bookmarks still emit the path form, so the
- * routes stay.
+ * A path deep link to content (`/c/:id/:asset`, `/c/:id/new/:contentType`, `/pages/:asset`,
+ * `/pages/new/:contentType`) redirects to its portlet's own URL with the side panel params,
+ * replacing the path form in history (#38303, FR-026, FR-049). The portlet then opens the panel as
+ * it does for any URL that names one, so a link is not a second way to open a panel. Velocity,
+ * workflow emails and old bookmarks still emit the path form, so the routes stay.
  *
- * The portlet is the one `DotRouterService.currentPortlet` names. Its own query params survive the
- * redirect.
+ * The portlet is the route's parent: `/c/<id>` for a legacy portlet, `/pages` for Pages. Its own
+ * query params survive the redirect.
  */
 @Component({
     selector: 'dot-edit-content-deep-link',
@@ -27,7 +23,6 @@ import { DOT_PANEL_URL_PARAM } from '@dotcms/utils';
 export class DotEditContentDeepLinkComponent implements OnInit {
     readonly #route = inject(ActivatedRoute);
     readonly #router = inject(Router);
-    readonly #dotRouterService = inject(DotRouterService);
     readonly #contentletService = inject(DotContentletService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
 
@@ -68,14 +63,15 @@ export class DotEditContentDeepLinkComponent implements OnInit {
     }
 
     /**
-     * Goes to the portlet's URL with these panel params, in place of the path form.
+     * Goes to the portlet's URL, the route's parent, with these panel params, in place of the path
+     * form.
      *
      * @param queryParams The panel params, when there is a panel to name.
      */
     #redirect(queryParams?: Params): void {
-        const { id } = this.#dotRouterService.currentPortlet;
-
-        void this.#router.navigate(['/c', id], {
+        // `.` is the parent route's own URL; empty commands would keep the path the link came in on.
+        void this.#router.navigate(['.'], {
+            relativeTo: this.#route.parent,
             ...(queryParams ? { queryParams } : {}),
             queryParamsHandling: 'merge',
             replaceUrl: true
