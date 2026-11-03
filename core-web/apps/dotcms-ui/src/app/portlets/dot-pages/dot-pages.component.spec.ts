@@ -1,6 +1,6 @@
 import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { MockComponent, MockInstance, MockProvider } from 'ng-mocks';
-import { of, Subject } from 'rxjs';
+import { BehaviorSubject, of, Subject } from 'rxjs';
 import { Mock, Mocked, vi } from 'vitest';
 
 import { CommonModule } from '@angular/common';
@@ -171,7 +171,10 @@ describe('DotPagesComponent', () => {
                 MockProvider(DotPageActionsService, mockDotPageActionsService),
                 { provide: GlobalStore, useValue: mockGlobalStore },
                 // A URL that names no panel (#38303); the load-time cases have their own describe.
-                { provide: ActivatedRoute, useValue: { snapshot: { queryParams: {} } } }
+                {
+                    provide: ActivatedRoute,
+                    useValue: { snapshot: { queryParams: {} }, queryParams: of({}) }
+                }
             ]
         });
 
@@ -408,13 +411,17 @@ describe('DotPagesComponent', () => {
 });
 
 /**
- * #38303 (FR-049) — the Pages portlet reads what its URL names once, on load, and opens it through
- * the same path as the Edit action, so a shared link or a refresh reopens the panel that was open.
- * Own describe: the route has to name the panel before the component is built.
+ * #38303 (FR-026, FR-049) — the Pages portlet opens what its URL names through the same path as the
+ * Edit action, so a shared link or a refresh reopens the panel that was open: on load, and when a
+ * `/pages/<inode>` or `/pages/new/<type>` link redirects here after the portlet was built, the way
+ * the legacy portlets follow theirs. Own describe: the route has to name the panel before the
+ * component is built.
  */
 describe('DotPagesComponent — the panel named in the URL', () => {
     const IDENTIFIER = '3f0c8e5a-7b2d-4c1e-9a6f-0d4b8e2c1a57';
 
+    let spectator: Spectator<DotPagesComponent>;
+    let queryParams$: BehaviorSubject<Params>;
     let openContent: Mock;
     let clear: Mock;
     let getPages: Mock;
@@ -448,8 +455,9 @@ describe('DotPagesComponent — the panel named in the URL', () => {
         openContent = vi.fn();
         clear = vi.fn();
         getPages = vi.fn();
+        queryParams$ = new BehaviorSubject<Params>(queryParams);
 
-        createComponent({
+        spectator = createComponent({
             providers: [
                 {
                     provide: DotCMSPagesStore,
@@ -472,10 +480,14 @@ describe('DotPagesComponent — the panel named in the URL', () => {
                     openContent
                 } as Partial<DotPageActionsService>),
                 { provide: GlobalStore, useValue: { systemConfig: signal({ languages: [] }) } },
-                { provide: ActivatedRoute, useValue: { snapshot: { queryParams } } },
+                {
+                    provide: ActivatedRoute,
+                    useValue: { snapshot: { queryParams }, queryParams: queryParams$ }
+                },
                 { provide: DotPanelUrlStateService, useValue: { clear, register: vi.fn() } }
             ]
-        }).detectChanges();
+        });
+        spectator.detectChanges();
 
         // The panel URL service is reached on demand, as the admin app loads the library.
         await vi.dynamicImportSettled();
@@ -517,5 +529,30 @@ describe('DotPagesComponent — the panel named in the URL', () => {
 
         expect(openContent).not.toHaveBeenCalled();
         expect(clear).toHaveBeenCalledTimes(1);
+    });
+
+    /**
+     * `/pages/<inode>` builds the portlet first, then its deep-link child redirects to
+     * `/pages?editContent=…`; the route is reused, so the params arrive after the portlet was built.
+     */
+    it('opens what a deep link redirects here with, after the portlet was built, once', async () => {
+        await mount({});
+
+        queryParams$.next({ editContent: IDENTIFIER, editContentLang: '2' });
+        queryParams$.next({ editContent: IDENTIFIER, editContentLang: '2', mId: 'a1b2' });
+
+        expect(openContent).toHaveBeenCalledTimes(1);
+        expect(openContent.mock.calls[0][0]).toEqual({
+            mode: 'edit',
+            identifier: IDENTIFIER,
+            languageId: 2
+        });
+    });
+
+    // The deep-link children render in the portlet, then redirect.
+    it('renders an outlet for its deep-link children', async () => {
+        await mount({});
+
+        expect(spectator.query('router-outlet')).not.toBeNull();
     });
 });
