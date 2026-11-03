@@ -408,22 +408,21 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
      * Lists the containers that use the content type and deletes it only when the user picks Delete.
      */
     private showContainersInUseDialog(item: DotCMSContentType, containers: DotContainer[]): void {
-        this.dialogService
-            .open(DotContentTypeInUseDialogComponent, {
-                header: this.dotMessageService.get('message.structure.cantdelete'),
-                closable: true,
-                closeOnEscape: true,
-                width: '40rem',
-                contentStyle: { 'max-height': '500px', overflow: 'auto' },
-                baseZIndex: 10000,
-                data: containers
-            })
-            .onClose.pipe(take(1))
-            .subscribe((confirmed: boolean) => {
-                if (confirmed === true) {
-                    this.removeContentType(item);
-                }
-            });
+        const ref = this.dialogService.open(DotContentTypeInUseDialogComponent, {
+            header: this.dotMessageService.get('message.structure.cantdelete'),
+            closable: true,
+            closeOnEscape: true,
+            width: '40rem',
+            contentStyle: { 'max-height': '500px', overflow: 'auto' },
+            baseZIndex: 10000,
+            data: containers
+        });
+
+        ref?.onClose.pipe(take(1)).subscribe((confirmed: boolean | undefined) => {
+            if (confirmed === true) {
+                this.removeContentType(item);
+            }
+        });
     }
 
     private removeContentType(item: DotCMSContentType): void {

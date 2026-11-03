@@ -578,7 +578,6 @@ describe('DotContentTypesPortletComponent', () => {
             defaultType: false,
             fixed: false,
             folder: 'SYSTEM_FOLDER',
-            host: null,
             owner: '123',
             system: false
         };
@@ -590,6 +589,7 @@ describe('DotContentTypesPortletComponent', () => {
         let dialogService: DialogService;
         let dotDialogService: DotAlertConfirmService;
         let getByContentType: ReturnType<typeof vi.fn>;
+        let loadCurrentPage: ReturnType<typeof vi.fn>;
 
         const answerDialogWith = (confirmed: boolean | undefined): void => {
             vi.spyOn(dialogService, 'open').mockReturnValue({
@@ -606,7 +606,11 @@ describe('DotContentTypesPortletComponent', () => {
             dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
             vi.spyOn(dotDialogService, 'confirm');
             vi.spyOn(crudService, 'delete').mockReturnValue(of(mockContentType));
-            vi.spyOn(comp.$listing(), 'loadCurrentPage');
+            const listing = comp.$listing();
+            if (!listing) {
+                throw new Error('the listing table did not render');
+            }
+            loadCurrentPage = vi.spyOn(listing, 'loadCurrentPage');
             getByContentType = vi.mocked(TestBed.inject(DotContainersService).getByContentType);
         });
 
@@ -631,7 +635,7 @@ describe('DotContentTypesPortletComponent', () => {
             );
             expect(crudService.delete).toHaveBeenCalledTimes(1);
             expect(crudService.delete).toHaveBeenCalledWith('v1/contenttype/id', '1234567890');
-            expect(comp.$listing().loadCurrentPage).toHaveBeenCalledTimes(1);
+            expect(loadCurrentPage).toHaveBeenCalledTimes(1);
         });
 
         it('should not delete the content type when the in-use dialog is cancelled', () => {
