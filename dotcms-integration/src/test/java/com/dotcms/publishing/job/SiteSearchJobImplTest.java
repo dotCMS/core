@@ -73,6 +73,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -131,32 +132,42 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
 
         PublishFactory.publishAsset(template, systemUser, false, false);
 
-        //Create Contentlet in English
-        final Contentlet contentlet1 = new ContentletDataGen(contentGenericId)
+        publishPageWithContent(site, folder, "our-page");
+    }
+
+    /**
+     * Publishes a default-language content in the given folder and a page named {@code pageName}
+     * that shows it through the shared container and template.
+     *
+     * @param pageSite   the site the content belongs to
+     * @param pageFolder the folder the content and the page are created in
+     * @param pageName   the URL, friendly name and title of the page
+     * @return the published page
+     */
+    private static HTMLPageAsset publishPageWithContent(final Host pageSite, final Folder pageFolder,
+            final String pageName) throws DotDataException, DotSecurityException {
+        final Contentlet contentlet = new ContentletDataGen(contentGenericId)
                 .languageId(defaultLang)
-                .folder(folder)
-                .host(site)
+                .folder(pageFolder)
+                .host(pageSite)
                 .setProperty("title", "content1")
                 .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
                 .nextPersisted();
 
-        contentlet1.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        contentlet1.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
-        contentlet1.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-        contentletAPI.publish(contentlet1, systemUser, false);
+        contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        contentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+        contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+        contentletAPI.publish(contentlet, systemUser, false);
 
-        final String pageName = "our-page";
-
-        final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder, template).languageId(1)
+        final HTMLPageAsset page = new HTMLPageDataGen(pageFolder, template).languageId(defaultLang)
                 .pageURL(pageName)
                 .friendlyName(pageName)
                 .title(pageName).nextPersisted();
-        final String uuid = UUIDGenerator.generateUuid();
-        final MultiTree multiTree = new MultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(), contentlet1.getIdentifier() ,uuid,0);
+        final MultiTree multiTree = new MultiTree(page.getIdentifier(), container.getIdentifier(),
+                contentlet.getIdentifier(), UUIDGenerator.generateUuid(), 0);
         APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
-
-        HTMLPageDataGen.publish(pageEnglishVersion);
-
+        HTMLPageDataGen.publish(page);
+        return page;
     }
 
     /**
@@ -367,6 +378,13 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
 
         deleteAllSiteSearchIndices();
 
+        // This test publishes (and only at its very end unpublishes) a page of its own, so it crawls a
+        // site of its own: a failure part way through must not leave an extra page in the shared site
+        // that the other tests count.
+        final Host incrementalSite = new SiteDataGen().nextPersisted();
+        final Folder incrementalFolder = new FolderDataGen().site(incrementalSite).nextPersisted();
+        publishPageWithContent(incrementalSite, incrementalFolder, "our-page");
+
         final long timeMillis1 = System.currentTimeMillis();
         final String newIndexAlias = IndexType.SITE_SEARCH.getPrefix() + "_alias_" + timeMillis1;
         final String jobId = UUIDUtil.uuid();
@@ -381,7 +399,7 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         jobDataMap.put(SiteSearchJobImpl.QUARTZ_JOB_NAME, jobName);
         jobDataMap.put(SiteSearchJobImpl.INCLUDE_EXCLUDE, "all");
         jobDataMap.put(SiteSearchJobImpl.LANG_TO_INDEX, new String[]{Long.toString(defaultLang)});
-        jobDataMap.put(SiteSearchJobImpl.INDEX_HOST, site.getIdentifier());
+        jobDataMap.put(SiteSearchJobImpl.INDEX_HOST, incrementalSite.getIdentifier());
 
         final JobDetail jobDetail1 = Mockito.mock(JobDetail.class);
         Mockito.when(jobDetail1.getJobDataMap()).thenReturn(jobDataMap);
@@ -444,30 +462,9 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
                     return search2.getTotalResults() >= 1;
                 });
 
-        //Create Contentlet in English
-        final Contentlet contentlet1 = new ContentletDataGen(contentGenericId)
-                .languageId(defaultLang)
-                .folder(folder)
-                .host(site)
-                .setProperty("title", "content1")
-                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
-                .nextPersisted();
-
-        contentlet1.setIndexPolicy(IndexPolicy.WAIT_FOR);
-        contentlet1.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
-        contentlet1.setBoolProperty(Contentlet.IS_TEST_MODE, true);
-        contentletAPI.publish(contentlet1, systemUser, false);
-
         final String pageName = RandomStringUtils.randomAlphabetic(20);
-
-        final HTMLPageAsset pageEnglishVersion = new HTMLPageDataGen(folder, template).languageId(defaultLang)
-                .pageURL(pageName)
-                .friendlyName(pageName)
-                .title(pageName).nextPersisted();
-        final String uuid = UUIDGenerator.generateUuid();
-        final MultiTree multiTree = new MultiTree(pageEnglishVersion.getIdentifier(), container.getIdentifier(), contentlet1.getIdentifier() ,uuid,0);
-        APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
-        HTMLPageDataGen.publish(pageEnglishVersion);
+        final HTMLPageAsset pageEnglishVersion =
+                publishPageWithContent(incrementalSite, incrementalFolder, pageName);
 
         //Next Run should run completely incrementally
         final JobExecutionContext incrementalContext2 = Mockito.mock(JobExecutionContext.class);
@@ -482,7 +479,17 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
         final SiteSearchAudit siteSearchAudit3 = recentAudits.get(0);
 
         //Now we make sure the page is now part of Site-search search results.
-        await().atMost(30, TimeUnit.SECONDS)
+        // The window is named so a miss can be told apart from slow indexing: a page versioned in the
+        // same second as the window start, after it, is the case the incremental crawl used to drop.
+        final Object pageVersionTs = APILocator.getVersionableAPI()
+                .getContentletVersionInfo(pageEnglishVersion.getIdentifier(), defaultLang)
+                .map(info -> info.getVersionTs().getTime()).orElse(null);
+        final String thirdCrawl = String.format(
+                "page %s (versionTs %s ms) found by crawl incremental=%s, window [%s, %s] ms",
+                pageName, pageVersionTs, siteSearchAudit3.isIncremental(),
+                Optional.ofNullable(siteSearchAudit3.getStartDate()).map(Date::getTime).orElse(null),
+                Optional.ofNullable(siteSearchAudit3.getEndDate()).map(Date::getTime).orElse(null));
+        await(thirdCrawl).atMost(30, TimeUnit.SECONDS)
                 .pollInterval(2, TimeUnit.SECONDS)
                 .until(() -> {
                     final SiteSearchResults search3 = siteSearchAPI.search(siteSearchAudit3.getIndexName(), pageName, 0, 10);
