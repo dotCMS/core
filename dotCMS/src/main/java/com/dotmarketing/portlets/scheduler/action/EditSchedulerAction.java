@@ -11,6 +11,7 @@ import com.dotmarketing.portal.struts.DotPortletAction;
 import com.dotmarketing.portlets.scheduler.struts.SchedulerForm;
 import com.dotmarketing.quartz.CronScheduledTask;
 import com.dotmarketing.quartz.QuartzUtils;
+import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.Validator;
@@ -113,7 +114,7 @@ public class EditSchedulerAction extends DotPortletAction {
 						
 						if (scheduler != null) {
 							_populateForm(form, scheduler);
-							schedulerForm.setMap(scheduler.getProperties());
+							schedulerForm.setMap(withoutScheduledBy(scheduler.getProperties()));
 						}
 						
 						String redirect = req.getParameter("referrer");
@@ -175,7 +176,7 @@ public class EditSchedulerAction extends DotPortletAction {
 			if (scheduler != null) {
 				_populateForm(form, scheduler);
 				SchedulerForm schedulerForm = (SchedulerForm) form;
-				schedulerForm.setMap(scheduler.getProperties());
+				schedulerForm.setMap(withoutScheduledBy(scheduler.getProperties()));
 				schedulerForm.setEditMode(true);
 				if (!UtilMethods.isSet(scheduler.getCronExpression())) {
 					SessionMessages.add(req, "message", "message.Scheduler.jobExpired");
@@ -271,6 +272,19 @@ public class EditSchedulerAction extends DotPortletAction {
 		
 	}
 
+	/**
+	 * Schedules the job described by the form, or updates it when it already exists. The id of the
+	 * user saving it is recorded under {@link ScheduledTask#SCHEDULED_BY_USER_ID}, so jobs that act on
+	 * content run with that user's permissions.
+	 *
+	 * @param req    the request with the job's schedule and parameters
+	 * @param res    the response
+	 * @param config the portlet configuration
+	 * @param form   the {@link SchedulerForm} with the job's name, group, class and parameters
+	 * @param user   the user saving the job
+	 * @return {@code true} once the job is scheduled
+	 * @throws Exception if the job cannot be scheduled
+	 */
 	public static boolean _saveScheduler(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user) throws Exception {
 		boolean result = false;
 		SchedulerForm schedulerForm = (SchedulerForm) form;
@@ -408,6 +422,13 @@ public class EditSchedulerAction extends DotPortletAction {
 			cronExpression =  cronSecondsField + " " + cronMinutesField + " " + cronHoursField + " " + cronDaysOfMonthField + " " + cronMonthsField + " " + cronDaysOfWeekField + " " + cronYearsField;
 		}	
 
+		// Recorded on every save, so the job runs as whoever saved it last; a submitted value is ignored
+		if (user != null) {
+			properties.put(ScheduledTask.SCHEDULED_BY_USER_ID, user.getUserId());
+		} else {
+			properties.remove(ScheduledTask.SCHEDULED_BY_USER_ID);
+		}
+
 		CronScheduledTask job = new CronScheduledTask();
 		job.setJobName(schedulerForm.getJobName());
 		job.setJobGroup(schedulerForm.getJobGroup());
@@ -430,6 +451,22 @@ public class EditSchedulerAction extends DotPortletAction {
 		SessionMessages.add(req, "message", "message.Scheduler.saved");
 		
 		return true;
+	}
+
+	/**
+	 * Returns a copy of the job properties without {@link ScheduledTask#SCHEDULED_BY_USER_ID}, so the
+	 * edit form only lists the parameters people set. The value is recorded again when the job is saved.
+	 *
+	 * @param properties the job properties
+	 * @return the properties to show in the form, or {@code null} when there are none
+	 */
+	private static Map<String, Object> withoutScheduledBy(final Map<String, Object> properties) {
+		if (properties == null) {
+			return null;
+		}
+		final Map<String, Object> visible = new HashMap<>(properties);
+		visible.remove(ScheduledTask.SCHEDULED_BY_USER_ID);
+		return visible;
 	}
 
 	private void _deleteScheduler(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form , User user) throws Exception {

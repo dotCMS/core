@@ -3,6 +3,7 @@ package com.dotmarketing.quartz.job;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
@@ -19,6 +20,7 @@ import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.quartz.ScheduledTask;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -123,6 +125,13 @@ public class ContentImportThread implements Job{
 			}
 			Logger.debug(this, "Structure:"+structureName+" - PATH:"+path+" - LOGPATH:"+logPath);
 
+			final User user = getImportUser(context);
+			if (user == null) {
+				Logger.warn(this, "The import job '" + context.getJobDetail().getName()
+						+ "' has no active user to run as. Save the job again in the Scheduler to run it with your user.");
+				return;
+			}
+
 			File file = new File(path);
 
 			if(file.exists()){
@@ -166,7 +175,7 @@ public class ContentImportThread implements Job{
 
 									Logger.debug(this, "Beginning File Import");
 									byte[] bytes = getBytesFromFile(tempFile);
-									importFile(bytes, structureName, keyfields, false, APILocator.getUserAPI().getSystemUser());
+									importFile(bytes, structureName, keyfields, false, user);
 									Logger.debug(this, "File imported");
 									/**
 									 * move the file to the complete location folder
@@ -206,7 +215,7 @@ public class ContentImportThread implements Job{
 
 						Logger.debug(this, "Beginning File Import");
 						byte[] bytes = getBytesFromFile(file);
-						importFile(bytes, structureName, keyfields, false, APILocator.getUserAPI().getSystemUser());
+						importFile(bytes, structureName, keyfields, false, user);
 						Logger.debug(this, "File imported");
 						/**
 						 * move the file to the complete location folder
@@ -233,6 +242,28 @@ public class ContentImportThread implements Job{
 			Logger.info(this,"The ContentImportThread Job End successfully"+(String)context.getJobDetail().getName());
 		} catch (Exception e) {
 			Logger.error(this, e.toString());
+		}
+	}
+
+	/**
+	 * Returns the user the import runs as: the user who saved the job in the Scheduler, recorded under
+	 * {@link ScheduledTask#SCHEDULED_BY_USER_ID}. Content is created and updated with that user's
+	 * permissions.
+	 *
+	 * @param context the job execution context
+	 * @return the user, or {@code null} when the job has no active user recorded
+	 */
+	private User getImportUser(final JobExecutionContext context) {
+		final String userId = (String) context.getMergedJobDataMap().get(ScheduledTask.SCHEDULED_BY_USER_ID);
+		if (!UtilMethods.isSet(userId)) {
+			return null;
+		}
+		try {
+			final User user = APILocator.getUserAPI().loadUserById(userId);
+			return user != null && user.isActive() ? user : null;
+		} catch (final Exception e) {
+			Logger.debug(this, () -> "Could not load the user " + userId + ": " + e.getMessage());
+			return null;
 		}
 	}
 
@@ -745,7 +776,12 @@ public class ContentImportThread implements Job{
 				{
 					conAPI.checkin(cont, new ArrayList<>(categories), new ArrayList<>(), user, false);
 					APILocator.getVersionableAPI().setWorking(cont);
-					APILocator.getVersionableAPI().setLive(cont);
+					// The content is published only for a user who can publish it; otherwise it stays as a working version
+					if (APILocator.getPermissionAPI().doesUserHavePermission(cont, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+						APILocator.getVersionableAPI().setLive(cont);
+					} else {
+						myOutput.println("Line #" + lineNumber + ": saved as a working version, the user cannot publish it.");
+					}
 				}
 
 				if (isNew)
