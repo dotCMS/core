@@ -24,6 +24,7 @@ import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
 import com.dotcms.variant.VariantAPI;
 import com.dotcms.variant.business.web.VariantWebAPI;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -69,9 +70,11 @@ class ContainerResourceTest {
     private final HttpServletRequest request = mock(HttpServletRequest.class);
     private final HttpServletResponse response = mock(HttpServletResponse.class);
     private final User user = mock(User.class);
+    private final User systemUser = mock(User.class);
     private final Contentlet contentlet = mock(Contentlet.class);
 
     private MockedStatic<WebAPILocator> webApiLocator;
+    private MockedStatic<APILocator> apiLocator;
     private ContainerResource resource;
 
     @BeforeEach
@@ -90,6 +93,8 @@ class ContainerResourceTest {
                 .thenThrow(new AssertionError("the contentlet must not be rendered"));
         webApiLocator.when(WebAPILocator::getLanguageWebAPI).thenReturn(languageWebAPI);
         webApiLocator.when(WebAPILocator::getVariantWebAPI).thenReturn(variantWebAPI);
+        apiLocator = mockStatic(APILocator.class);
+        apiLocator.when(APILocator::systemUser).thenReturn(systemUser);
 
         resource = new ContainerResource(webResource, mock(PaginationUtil.class), mock(FormAPI.class),
                 mock(ContainerAPI.class), mock(VersionableAPI.class), velocityUtil, shortyAPI,
@@ -99,6 +104,7 @@ class ContainerResourceTest {
     @AfterEach
     void tearDown() {
         webApiLocator.close();
+        apiLocator.close();
     }
 
     /**
@@ -168,7 +174,7 @@ class ContainerResourceTest {
     @Test
     void containerContent_byIdentifier_withoutAnyVersion_isNotFound() throws Exception {
         givenIdentifierShorty();
-        when(variantWebAPI.getContentletVersionInfoByFallback(anyLong(), eq(IDENTIFIER), any(), eq(user)))
+        when(variantWebAPI.getContentletVersionInfoByFallback(anyLong(), eq(IDENTIFIER), any(), eq(systemUser)))
                 .thenThrow(new ResourceNotFoundException("no version"));
 
         assertThrows(ResourceNotFoundException.class,
@@ -181,13 +187,14 @@ class ContainerResourceTest {
      * Given a caller served live content in a language other than the default one
      * When a contentlet is rendered into a container by identifier
      * Then the version resolved for that language and mode, as rendering resolves it, is the one
-     * read on behalf of the caller, and a caller without READ on it is forbidden
+     * read on behalf of the caller, and a caller without READ on it is forbidden rather than told
+     * the content does not exist
      */
     @Test
     void containerContent_byIdentifier_readsTheVersionResolvedForTheRequest() throws Exception {
         givenIdentifierShorty();
         givenRequestLanguage(2L);
-        when(variantWebAPI.getContentletVersionInfoByFallback(2L, IDENTIFIER, PageMode.LIVE, user))
+        when(variantWebAPI.getContentletVersionInfoByFallback(2L, IDENTIFIER, PageMode.LIVE, systemUser))
                 .thenReturn(versionInfo(LIVE_INODE));
         when(contentletAPI.find(LIVE_INODE, user, true))
                 .thenThrow(new DotSecurityException("no READ on " + CONTENT_TITLE));
@@ -258,7 +265,7 @@ class ContainerResourceTest {
         givenIdentifierShorty();
         givenBackendCaller();
         when(variantWebAPI.getContentletVersionInfoByFallback(REQUEST_LANGUAGE_ID, IDENTIFIER,
-                PageMode.EDIT_MODE, user)).thenReturn(versionInfo(LIVE_INODE));
+                PageMode.EDIT_MODE, systemUser)).thenReturn(versionInfo(LIVE_INODE));
         when(contentletAPI.find(INODE, user, true))
                 .thenThrow(new DotSecurityException("no READ on " + CONTENT_TITLE));
 
@@ -280,7 +287,7 @@ class ContainerResourceTest {
         givenBackendCaller();
         when(request.getHeader("X-Requested-With")).thenReturn("XMLHttpRequest");
         when(variantWebAPI.getContentletVersionInfoByFallback(REQUEST_LANGUAGE_ID, IDENTIFIER,
-                PageMode.LIVE, user)).thenReturn(versionInfo(LIVE_INODE));
+                PageMode.LIVE, systemUser)).thenReturn(versionInfo(LIVE_INODE));
         when(contentletAPI.find(LIVE_INODE, user, true))
                 .thenThrow(new DotSecurityException("no READ on " + CONTENT_TITLE));
 
@@ -337,7 +344,7 @@ class ContainerResourceTest {
     }
 
     private void givenServedVersion(final ContentletVersionInfo info) {
-        when(variantWebAPI.getContentletVersionInfoByFallback(anyLong(), eq(IDENTIFIER), any(), eq(user)))
+        when(variantWebAPI.getContentletVersionInfoByFallback(anyLong(), eq(IDENTIFIER), any(), eq(systemUser)))
                 .thenReturn(info);
     }
 

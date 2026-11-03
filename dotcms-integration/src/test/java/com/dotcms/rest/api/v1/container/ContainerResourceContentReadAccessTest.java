@@ -13,8 +13,10 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
@@ -27,12 +29,14 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -395,6 +399,39 @@ public class ContainerResourceContentReadAccessTest {
 
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
         verify(velocityUtil).merge(anyString(), any());
+    }
+
+    /**
+     * Given a page whose own content lists include one for the container,
+     * When a contentlet is rendered into that container with the page as context,
+     * Then the page's list for that container is dropped, so only the requested contentlet is
+     * rendered, and the page's lists for other containers are left alone.
+     */
+    @Test
+    public void containerContent_withPageContext_rendersOnlyTheRequestedContentlet() throws Exception {
+        final HTMLPageAsset page = new HTMLPageDataGen(site,
+                new TemplateDataGen().site(site).nextPersisted()).nextPersisted();
+        final String pageListForContainer = "contentletList" + systemContainer.getIdentifier()
+                + "1" + MultiTree.DOT_PERSONALIZATION_DEFAULT;
+        final String pageListForOtherContainer = "contentletList" + "another-container"
+                + "1" + MultiTree.DOT_PERSONALIZATION_DEFAULT;
+        final ChainedContext context = mock(ChainedContext.class);
+        // What merging the page leaves in the context
+        when(context.getKeys()).thenReturn(
+                new Object[]{pageListForContainer, pageListForOtherContainer, "dotPageContent"});
+        final VelocityUtil velocityUtil = velocityUtil(context);
+        final User admin = TestUserUtils.getAdminUser();
+
+        final Response response = resourceFor(admin, velocityUtil).containerContent(requestFor(admin),
+                response(), Container.SYSTEM_CONTAINER, readableContentWithDraft.getIdentifier(),
+                page.getInode());
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        verify(context).remove(pageListForContainer);
+        verify(context, never()).remove(pageListForOtherContainer);
+        verify(context, never()).remove("dotPageContent");
+        verify(context).put("contentletList" + systemContainer.getIdentifier()
+                + Container.LEGACY_RELATION_TYPE, List.of(readableContentWithDraft.getIdentifier()));
     }
 
     /**

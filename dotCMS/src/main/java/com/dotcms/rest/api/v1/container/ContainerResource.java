@@ -420,8 +420,10 @@ public class ContainerResource implements Serializable {
             throws DotDataException, DotSecurityException {
 
         final long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+        // Resolved as the system user so that a denial below answers 403, not the 404 the
+        // fallback turns it into; when the user can read the content, the version is the same.
         final ContentletVersionInfo served = WebAPILocator.getVariantWebAPI()
-                .getContentletVersionInfoByFallback(languageId, identifier, mode, user);
+                .getContentletVersionInfoByFallback(languageId, identifier, mode, APILocator.systemUser());
         final String inode = mode.showLive ? served.getLiveInode() : served.getWorkingInode();
         final Contentlet contentlet = served.isDeleted() || !UtilMethods.isSet(inode)
                 ? null
@@ -885,6 +887,9 @@ public class ContainerResource implements Serializable {
 
         if (UtilMethods.isSet(pageInode)) {
             loadPageContext(user, pageInode, mode, context);
+            // The page's own content lists would win over the one below; only the requested
+            // contentlet is rendered.
+            removeContentLists(context, container.getIdentifier());
         } else {
             context.put("dotPageContent", Boolean.TRUE);
         }
@@ -896,6 +901,23 @@ public class ContainerResource implements Serializable {
 
         final VelocityResourceKey key = new VelocityResourceKey(container, Container.LEGACY_RELATION_TYPE, mode);
         return velocityUtil.merge(key.path, context);
+    }
+
+    /**
+     * Removes from the context the content lists that a page defines for the given container, so
+     * the container renders only the list this resource puts in the context.
+     *
+     * @param context     the Velocity context the page was merged into
+     * @param containerId the identifier of the container being rendered
+     */
+    private static void removeContentLists(final org.apache.velocity.context.Context context,
+                                           final String containerId) {
+        final String prefix = "contentletList" + containerId;
+        for (final Object key : context.getKeys()) {
+            if (key.toString().startsWith(prefix)) {
+                context.remove(key);
+            }
+        }
     }
 
     private void loadPageContext(User user, String pageInode, PageMode mode,
