@@ -128,7 +128,8 @@ describe('appRoutes', () => {
     /**
      * The path deep links redirect to the portlet's URL with the panel params (#38303, FR-049).
      * Velocity emits `/dotAdmin/#/c/content/<inode>` and workflow emails `/c/workflow/<task>`, so
-     * the `/c/:id` children stay; the Pages ones were added by this work and nothing emits them.
+     * the `/c/:id` children stay. `/pages/<inode>` and `/pages/new/<type>` were on main too, and
+     * FR-026 covers every `/<portlet>/<inode>` link, so they stay as well (T158).
      */
     describe('deep links', () => {
         const legacyPortlet = allRoutes.find((route) => route.path === ':id' && route.children);
@@ -140,11 +141,18 @@ describe('appRoutes', () => {
             }
         );
 
-        it('should leave Pages a single route, with no deep-link children', async () => {
-            const { dotPagesRoutes } = await import('./portlets/dot-pages/dot-pages.routes');
+        it.each([':asset', 'new/:contentType'])(
+            'should keep the `/pages/%s` child, redirecting through the deep-link component',
+            async (path) => {
+                const { dotPagesRoutes } = await import('./portlets/dot-pages/dot-pages.routes');
+                const { DotEditContentDeepLinkComponent } =
+                    await import('./portlets/dot-porlet-detail/dot-edit-content-deep-link/dot-edit-content-deep-link.component');
 
-            expect(dotPagesRoutes).toHaveLength(1);
-            expect(dotPagesRoutes[0].children ?? []).toEqual([]);
-        });
+                expect(dotPagesRoutes).toHaveLength(1);
+                const child = dotPagesRoutes[0].children?.find((route) => route.path === path);
+                expect(child, `the /pages/${path} child`).toBeDefined();
+                expect(await child?.loadComponent?.()).toBe(DotEditContentDeepLinkComponent);
+            }
+        );
     });
 });
