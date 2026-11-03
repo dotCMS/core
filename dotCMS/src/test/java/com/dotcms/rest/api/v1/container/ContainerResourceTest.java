@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
@@ -18,11 +19,13 @@ import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.v1.page.PageResource;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.util.PaginationUtil;
-import com.dotcms.variant.VariantAPI;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
+import com.dotcms.variant.VariantAPI;
+import com.dotcms.variant.business.web.VariantWebAPI;
 import com.dotmarketing.business.VersionableAPI;
+import com.dotmarketing.business.web.LanguageWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
@@ -30,13 +33,15 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.form.business.FormAPI;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.util.PageMode;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
-import java.util.List;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.velocity.exception.ResourceNotFoundException;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockedStatic;
@@ -52,19 +57,21 @@ class ContainerResourceTest {
     private static final String IDENTIFIER = "c0ffee00-0000-4000-8000-000000000001";
     private static final String INODE = "c0ffee00-0000-4000-8000-000000000002";
     private static final String LIVE_INODE = "c0ffee00-0000-4000-8000-000000000003";
-    private static final String OTHER_INODE = "c0ffee00-0000-4000-8000-000000000004";
     private static final String CONTENT_TITLE = "Quarterly Results Draft";
+    private static final long REQUEST_LANGUAGE_ID = 1L;
 
     private final WebResource webResource = mock(WebResource.class);
     private final ShortyIdAPI shortyAPI = mock(ShortyIdAPI.class);
     private final ContentletAPI contentletAPI = mock(ContentletAPI.class);
     private final VelocityUtil velocityUtil = mock(VelocityUtil.class);
-    private final VersionableAPI versionableAPI = mock(VersionableAPI.class);
+    private final VariantWebAPI variantWebAPI = mock(VariantWebAPI.class);
+    private final LanguageWebAPI languageWebAPI = mock(LanguageWebAPI.class);
     private final HttpServletRequest request = mock(HttpServletRequest.class);
     private final HttpServletResponse response = mock(HttpServletResponse.class);
     private final User user = mock(User.class);
     private final Contentlet contentlet = mock(Contentlet.class);
 
+    private MockedStatic<WebAPILocator> webApiLocator;
     private ContainerResource resource;
 
     @BeforeEach
@@ -74,10 +81,24 @@ class ContainerResourceTest {
         when(webResource.init(request, response, true)).thenReturn(initData);
         when(contentlet.getIdentifier()).thenReturn(IDENTIFIER);
         when(contentlet.getInode()).thenReturn(INODE);
+        givenRequestLanguage(REQUEST_LANGUAGE_ID);
+
+        // Rendering resolves the current site through WebAPILocator; fail fast there instead of
+        // reaching for a database the unit environment does not have.
+        webApiLocator = mockStatic(WebAPILocator.class);
+        webApiLocator.when(WebAPILocator::getHostWebAPI)
+                .thenThrow(new AssertionError("the contentlet must not be rendered"));
+        webApiLocator.when(WebAPILocator::getLanguageWebAPI).thenReturn(languageWebAPI);
+        webApiLocator.when(WebAPILocator::getVariantWebAPI).thenReturn(variantWebAPI);
 
         resource = new ContainerResource(webResource, mock(PaginationUtil.class), mock(FormAPI.class),
-                mock(ContainerAPI.class), versionableAPI, velocityUtil, shortyAPI,
+                mock(ContainerAPI.class), mock(VersionableAPI.class), velocityUtil, shortyAPI,
                 contentletAPI, mock(ContainerDependenciesHelper.class));
+    }
+
+    @AfterEach
+    void tearDown() {
+        webApiLocator.close();
     }
 
     /**
@@ -88,21 +109,13 @@ class ContainerResourceTest {
     @Test
     void containerContent_byIdentifier_withoutReadPermission_isForbidden() throws Exception {
         givenIdentifierShorty();
-        when(versionableAPI.findContentletVersionInfos(IDENTIFIER))
-                .thenReturn(List.of(versionInfo(LIVE_INODE)));
+        givenServedVersion(versionInfo(LIVE_INODE));
         // Any lookup made on behalf of the caller is denied
         when(contentletAPI.find(anyString(), eq(user), anyBoolean()))
                 .thenThrow(new DotSecurityException("no READ on " + CONTENT_TITLE));
 
-        // Rendering resolves the current site through WebAPILocator; fail fast here instead of
-        // reaching for a database the unit environment does not have.
-        try (MockedStatic<WebAPILocator> webApiLocator = mockStatic(WebAPILocator.class)) {
-            webApiLocator.when(WebAPILocator::getHostWebAPI)
-                    .thenThrow(new AssertionError("the contentlet must not be rendered"));
-
-            assertThrows(ForbiddenException.class,
-                    () -> resource.containerContent(request, response, CONTAINER_ID, IDENTIFIER, null));
-        }
+        assertThrows(ForbiddenException.class,
+                () -> resource.containerContent(request, response, CONTAINER_ID, IDENTIFIER, null));
 
         verify(velocityUtil, never()).merge(anyString(), any());
     }
@@ -114,8 +127,7 @@ class ContainerResourceTest {
      */
     @Test
     void containerContent_byInode_withoutReadPermission_isForbidden() throws Exception {
-        when(shortyAPI.getShorty(INODE)).thenReturn(Optional.of(
-                new ShortyId(INODE, INODE, ShortType.INODE, ShortType.CONTENTLET)));
+        givenInodeShorty();
         when(contentletAPI.find(eq(INODE), eq(user), anyBoolean()))
                 .thenThrow(new DotSecurityException("no READ on " + CONTENT_TITLE));
 
@@ -132,8 +144,7 @@ class ContainerResourceTest {
      */
     @Test
     void containerContent_forbidden_messageDoesNotIncludeContentDetails() throws Exception {
-        when(shortyAPI.getShorty(INODE)).thenReturn(Optional.of(
-                new ShortyId(INODE, INODE, ShortType.INODE, ShortType.CONTENTLET)));
+        givenInodeShorty();
         when(contentletAPI.find(eq(INODE), eq(user), anyBoolean()))
                 .thenThrow(new DotSecurityException("Contentlet [name: " + CONTENT_TITLE
                         + ", identifier: " + IDENTIFIER + ", inode: " + INODE + "]"));
@@ -150,14 +161,15 @@ class ContainerResourceTest {
     }
 
     /**
-     * Given an identifier that has no contentlet version at all
+     * Given an identifier with no version for the request's language and variant, nor any fallback
      * When it is rendered into a container
      * Then the request answers not found and nothing is rendered
      */
     @Test
     void containerContent_byIdentifier_withoutAnyVersion_isNotFound() throws Exception {
         givenIdentifierShorty();
-        when(versionableAPI.findContentletVersionInfos(IDENTIFIER)).thenReturn(List.of());
+        when(variantWebAPI.getContentletVersionInfoByFallback(anyLong(), eq(IDENTIFIER), any(), eq(user)))
+                .thenThrow(new ResourceNotFoundException("no version"));
 
         assertThrows(ResourceNotFoundException.class,
                 () -> resource.containerContent(request, response, CONTAINER_ID, IDENTIFIER, null));
@@ -166,17 +178,17 @@ class ContainerResourceTest {
     }
 
     /**
-     * Given a caller served live content, and a contentlet whose first version found has no live
-     * version while another one is live
-     * When it is rendered into a container by identifier
-     * Then that live version is the one read on behalf of the caller, and a caller without READ on
-     * it is forbidden
+     * Given a caller served live content in a language other than the default one
+     * When a contentlet is rendered into a container by identifier
+     * Then the version resolved for that language and mode, as rendering resolves it, is the one
+     * read on behalf of the caller, and a caller without READ on it is forbidden
      */
     @Test
-    void containerContent_byIdentifier_liveVersionInAnotherLanguage_isReadAsTheCaller() throws Exception {
+    void containerContent_byIdentifier_readsTheVersionResolvedForTheRequest() throws Exception {
         givenIdentifierShorty();
-        when(versionableAPI.findContentletVersionInfos(IDENTIFIER))
-                .thenReturn(List.of(versionInfo(null), versionInfo(LIVE_INODE)));
+        givenRequestLanguage(2L);
+        when(variantWebAPI.getContentletVersionInfoByFallback(2L, IDENTIFIER, PageMode.LIVE, user))
+                .thenReturn(versionInfo(LIVE_INODE));
         when(contentletAPI.find(LIVE_INODE, user, true))
                 .thenThrow(new DotSecurityException("no READ on " + CONTENT_TITLE));
 
@@ -188,19 +200,37 @@ class ContainerResourceTest {
     }
 
     /**
-     * Given a caller served live content, and a contentlet with no live version in any language
+     * Given a caller served live content, and a contentlet with no live version
      * When it is rendered into a container by identifier
      * Then the request answers not found and nothing is rendered
      */
     @Test
     void containerContent_byIdentifier_withoutLiveVersion_isNotFound() throws Exception {
         givenIdentifierShorty();
-        when(versionableAPI.findContentletVersionInfos(IDENTIFIER)).thenReturn(List.of(versionInfo(null)));
+        givenServedVersion(versionInfo(null));
 
         assertThrows(ResourceNotFoundException.class,
                 () -> resource.containerContent(request, response, CONTAINER_ID, IDENTIFIER, null));
 
         verify(velocityUtil, never()).merge(anyString(), any());
+    }
+
+    /**
+     * Given a contentlet whose resolved version is archived
+     * When it is rendered into a container by identifier
+     * Then the request answers not found and the archived version is never read
+     */
+    @Test
+    void containerContent_byIdentifier_archived_isNotFound() throws Exception {
+        givenIdentifierShorty();
+        final ContentletVersionInfo archived = versionInfo(LIVE_INODE);
+        archived.setDeleted(true);
+        givenServedVersion(archived);
+
+        assertThrows(ResourceNotFoundException.class,
+                () -> resource.containerContent(request, response, CONTAINER_ID, IDENTIFIER, null));
+
+        verify(contentletAPI, never()).find(anyString(), any(), anyBoolean());
     }
 
     /**
@@ -210,60 +240,12 @@ class ContainerResourceTest {
      */
     @Test
     void containerContent_byUnknownInode_isNotFound() throws Exception {
-        when(shortyAPI.getShorty(INODE)).thenReturn(Optional.of(
-                new ShortyId(INODE, INODE, ShortType.INODE, ShortType.CONTENTLET)));
+        givenInodeShorty();
 
-        try (MockedStatic<WebAPILocator> webApiLocator = mockStatic(WebAPILocator.class)) {
-            webApiLocator.when(WebAPILocator::getHostWebAPI)
-                    .thenThrow(new AssertionError("the contentlet must not be rendered"));
-
-            assertThrows(ResourceNotFoundException.class,
-                    () -> resource.containerContent(request, response, CONTAINER_ID, INODE, null));
-        }
+        assertThrows(ResourceNotFoundException.class,
+                () -> resource.containerContent(request, response, CONTAINER_ID, INODE, null));
 
         verify(velocityUtil, never()).merge(anyString(), any());
-    }
-
-    /**
-     * Given a contentlet whose first version found is archived, and another version that is not
-     * When it is rendered into a container by identifier
-     * Then the archived version is never read; the other one is read as the caller
-     */
-    @Test
-    void containerContent_byIdentifier_archivedVersionIsSkipped() throws Exception {
-        givenIdentifierShorty();
-        final ContentletVersionInfo archived = versionInfo(OTHER_INODE);
-        archived.setDeleted(true);
-        when(versionableAPI.findContentletVersionInfos(IDENTIFIER))
-                .thenReturn(List.of(archived, versionInfo(LIVE_INODE)));
-        when(contentletAPI.find(LIVE_INODE, user, true))
-                .thenThrow(new DotSecurityException("no READ on " + CONTENT_TITLE));
-
-        assertThrows(ForbiddenException.class,
-                () -> resource.containerContent(request, response, CONTAINER_ID, IDENTIFIER, null));
-
-        verify(contentletAPI, never()).find(eq(OTHER_INODE), any(), anyBoolean());
-    }
-
-    /**
-     * Given a contentlet with a version in another variant listed before its DEFAULT variant version
-     * When it is rendered into a container by identifier
-     * Then the DEFAULT variant version is the one read as the caller
-     */
-    @Test
-    void containerContent_byIdentifier_defaultVariantIsPreferred() throws Exception {
-        givenIdentifierShorty();
-        final ContentletVersionInfo otherVariant = versionInfo(OTHER_INODE);
-        otherVariant.setVariant("experiment-variant");
-        when(versionableAPI.findContentletVersionInfos(IDENTIFIER))
-                .thenReturn(List.of(otherVariant, versionInfo(LIVE_INODE)));
-        when(contentletAPI.find(LIVE_INODE, user, true))
-                .thenThrow(new DotSecurityException("no READ on " + CONTENT_TITLE));
-
-        assertThrows(ForbiddenException.class,
-                () -> resource.containerContent(request, response, CONTAINER_ID, IDENTIFIER, null));
-
-        verify(contentletAPI, never()).find(eq(OTHER_INODE), any(), anyBoolean());
     }
 
     /**
@@ -274,10 +256,9 @@ class ContainerResourceTest {
     @Test
     void containerContent_byIdentifier_backendCaller_readsWorkingVersion() throws Exception {
         givenIdentifierShorty();
-        when(user.isBackendUser()).thenReturn(true);
-        when(request.getAttribute(WebKeys.USER)).thenReturn(user);
-        when(versionableAPI.findContentletVersionInfos(IDENTIFIER))
-                .thenReturn(List.of(versionInfo(LIVE_INODE)));
+        givenBackendCaller();
+        when(variantWebAPI.getContentletVersionInfoByFallback(REQUEST_LANGUAGE_ID, IDENTIFIER,
+                PageMode.EDIT_MODE, user)).thenReturn(versionInfo(LIVE_INODE));
         when(contentletAPI.find(INODE, user, true))
                 .thenThrow(new DotSecurityException("no READ on " + CONTENT_TITLE));
 
@@ -285,6 +266,28 @@ class ContainerResourceTest {
                 () -> resource.containerContent(request, response, CONTAINER_ID, IDENTIFIER, null));
 
         verify(contentletAPI, never()).find(eq(LIVE_INODE), any(), anyBoolean());
+    }
+
+    /**
+     * Given a back-end caller whose request renders live content (an XHR request), and a contentlet
+     * whose working and live versions differ
+     * When it is rendered into a container by identifier
+     * Then the live version, the one rendered, is the one read as the caller
+     */
+    @Test
+    void containerContent_byIdentifier_backendCallerServedLive_readsLiveVersion() throws Exception {
+        givenIdentifierShorty();
+        givenBackendCaller();
+        when(request.getHeader("X-Requested-With")).thenReturn("XMLHttpRequest");
+        when(variantWebAPI.getContentletVersionInfoByFallback(REQUEST_LANGUAGE_ID, IDENTIFIER,
+                PageMode.LIVE, user)).thenReturn(versionInfo(LIVE_INODE));
+        when(contentletAPI.find(LIVE_INODE, user, true))
+                .thenThrow(new DotSecurityException("no READ on " + CONTENT_TITLE));
+
+        assertThrows(ForbiddenException.class,
+                () -> resource.containerContent(request, response, CONTAINER_ID, IDENTIFIER, null));
+
+        verify(contentletAPI, never()).find(eq(INODE), any(), anyBoolean());
     }
 
     /**
@@ -298,19 +301,13 @@ class ContainerResourceTest {
     void containerContent_byIdentifier_timeMachine_requiresReadOnWorkingVersion() throws Exception {
         givenIdentifierShorty();
         when(request.getAttribute(PageResource.TM_DATE)).thenReturn("4102444800000");
-        when(versionableAPI.findContentletVersionInfos(IDENTIFIER))
-                .thenReturn(List.of(versionInfo(LIVE_INODE)));
+        givenServedVersion(versionInfo(LIVE_INODE));
         when(contentletAPI.find(LIVE_INODE, user, true)).thenReturn(contentlet);
         when(contentletAPI.find(INODE, user, true))
                 .thenThrow(new DotSecurityException("no READ on " + CONTENT_TITLE));
 
-        try (MockedStatic<WebAPILocator> webApiLocator = mockStatic(WebAPILocator.class)) {
-            webApiLocator.when(WebAPILocator::getHostWebAPI)
-                    .thenThrow(new AssertionError("the contentlet must not be rendered"));
-
-            assertThrows(ForbiddenException.class,
-                    () -> resource.containerContent(request, response, CONTAINER_ID, IDENTIFIER, null));
-        }
+        assertThrows(ForbiddenException.class,
+                () -> resource.containerContent(request, response, CONTAINER_ID, IDENTIFIER, null));
 
         verify(velocityUtil, never()).merge(anyString(), any());
     }
@@ -318,6 +315,30 @@ class ContainerResourceTest {
     private void givenIdentifierShorty() {
         when(shortyAPI.getShorty(IDENTIFIER)).thenReturn(Optional.of(
                 new ShortyId(IDENTIFIER, IDENTIFIER, ShortType.IDENTIFIER, ShortType.CONTENTLET)));
+    }
+
+    private void givenInodeShorty() {
+        when(shortyAPI.getShorty(INODE)).thenReturn(Optional.of(
+                new ShortyId(INODE, INODE, ShortType.INODE, ShortType.CONTENTLET)));
+    }
+
+    private void givenBackendCaller() {
+        when(user.isBackendUser()).thenReturn(true);
+        when(request.getAttribute(WebKeys.USER)).thenReturn(user);
+        // What PageMode.setPageMode stores on a real request for a back-end user
+        when(request.getAttribute(com.dotmarketing.util.WebKeys.PAGE_MODE_PARAMETER))
+                .thenReturn(PageMode.EDIT_MODE);
+    }
+
+    private void givenRequestLanguage(final long languageId) {
+        final Language language = mock(Language.class);
+        when(language.getId()).thenReturn(languageId);
+        when(languageWebAPI.getLanguage(request)).thenReturn(language);
+    }
+
+    private void givenServedVersion(final ContentletVersionInfo info) {
+        when(variantWebAPI.getContentletVersionInfoByFallback(anyLong(), eq(IDENTIFIER), any(), eq(user)))
+                .thenReturn(info);
     }
 
     private static ContentletVersionInfo versionInfo(final String liveInode) {

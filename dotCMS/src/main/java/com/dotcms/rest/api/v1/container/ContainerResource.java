@@ -33,7 +33,6 @@ import com.dotcms.util.pagination.OrderDirection;
 import com.dotcms.uuid.shorty.ShortType;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
-import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
@@ -84,7 +83,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -140,7 +138,6 @@ public class ContainerResource implements Serializable {
     private final VelocityUtil   velocityUtil;
     private final ShortyIdAPI    shortyAPI;
     private final ContentletAPI  contentletAPI;
-    private final VersionableAPI versionableAPI;
     private final ContainerDependenciesHelper dependenciesHelper;
 
     public ContainerResource() {
@@ -162,7 +159,7 @@ public class ContainerResource implements Serializable {
      * @param paginationUtil     the {@link PaginationUtil} used by the listing endpoint
      * @param formAPI            the {@link FormAPI} that resolves forms rendered into containers
      * @param containerAPI       the {@link ContainerAPI} that loads and saves containers
-     * @param versionableAPI     the {@link VersionableAPI} that reads the working and live versions of contentlets
+     * @param versionableAPI     the {@link VersionableAPI} (kept for callers that still pass it)
      * @param velocityUtil       the {@link VelocityUtil} that renders container content
      * @param shortyAPI          the {@link ShortyIdAPI} that resolves short and long ids
      * @param contentletAPI      the {@link ContentletAPI} that loads contentlets
@@ -186,7 +183,6 @@ public class ContainerResource implements Serializable {
         this.velocityUtil   = velocityUtil;
         this.shortyAPI      = shortyAPI;
         this.contentletAPI  = contentletAPI;
-        this.versionableAPI = versionableAPI;
         this.dependenciesHelper = dependenciesHelper;
     }
 
@@ -318,9 +314,10 @@ public class ContainerResource implements Serializable {
      * <p>
      * The contentlet can be given by inode or by identifier. Either way it is rendered only when
      * the calling {@link User} can read it; otherwise the request answers 403 with a generic
-     * message. By identifier, the version the caller is served is the one checked: the working
-     * version for back-end users, the live version for anyone else (404 when there is none). By
-     * inode, that exact version is checked.
+     * message. By identifier, the version checked is the one the container renders: the request's
+     * language and variant, with the same fallbacks, in the working version for back-end users in
+     * edit mode and the live version otherwise (404 when there is none). By inode, that exact
+     * version is checked.
      *
      * @param req          the current request
      * @param res          the current response
@@ -361,9 +358,11 @@ public class ContainerResource implements Serializable {
         final User user               = initData.getUser();
         final PageMode mode           = PageMode.EDIT_MODE;
 
-        // Back-end users are served EDIT_MODE (working versions); any other user stays in LIVE.
-        // The inode route keeps checking the given inode with the EDIT_MODE flags, as before.
-        final PageMode servedMode = PageMode.setPageMode(req, PageMode.EDIT_MODE);
+        // Rendering reads the mode back from the request: EDIT_MODE for back-end users unless the
+        // request asks for another one, LIVE for anyone else. The inode route keeps checking the
+        // given inode with the EDIT_MODE flags, as before.
+        PageMode.setPageMode(req, PageMode.EDIT_MODE);
+        final PageMode servedMode = PageMode.get(req);
 
         final ShortyId contentShorty = this.shortyAPI
             .getShorty(contentletId)
@@ -392,21 +391,22 @@ public class ContainerResource implements Serializable {
     }
 
     /**
-     * Finds the version of a contentlet that the given user is served, by identifier, checking
-     * that the user can read it.
+     * Finds the version of a contentlet that the container renders, by identifier, checking that
+     * the given user can read it.
      * <p>
-     * Archived versions are not served. Back-end users in edit mode are served a working version;
-     * any other user a live version. The DEFAULT variant is preferred. Permissions granted to
-     * front-end roles, including CMS Anonymous, count towards READ; the permission API only applies
-     * CMS Anonymous to live versions, so it never opens a working version.
+     * The version is resolved as rendering resolves it: the request's language and current variant,
+     * falling back to the DEFAULT variant and to the default language. Archived content is not
+     * served. In edit mode the working version is checked; otherwise the live one. Permissions
+     * granted to front-end roles, including CMS Anonymous, count towards READ; the permission API
+     * only applies CMS Anonymous to live versions, so it never opens a working version.
      * <p>
      * While a Time Machine date is set, the container can render the working version of content
      * scheduled to be published by that date, so a user served live content must be able to read
      * the working version too.
      *
-     * @param request    the current request, which may carry a Time Machine date
+     * @param request    the current request, which carries the language, variant and Time Machine date
      * @param identifier the contentlet's identifier
-     * @param mode       the {@link PageMode} the user is served in
+     * @param mode       the {@link PageMode} the container renders in
      * @param user       the {@link User} making the request
      * @return the readable {@link Contentlet}
      * @throws DotDataException          if the contentlet cannot be loaded
@@ -419,22 +419,19 @@ public class ContainerResource implements Serializable {
                                                           final User user)
             throws DotDataException, DotSecurityException {
 
-        final Optional<ContentletVersionInfo> served = this.versionableAPI.findContentletVersionInfos(identifier).stream()
-                .filter(info -> !info.isDeleted())
-                .sorted(Comparator.comparing(
-                        (ContentletVersionInfo info) -> !VariantAPI.DEFAULT_VARIANT.name().equals(info.getVariant())))
-                .filter(info -> UtilMethods.isSet(mode.showLive ? info.getLiveInode() : info.getWorkingInode()))
-                .findFirst();
-        final Contentlet contentlet = served.isPresent()
-                ? this.contentletAPI.find(mode.showLive ? served.get().getLiveInode() : served.get().getWorkingInode(), user, true)
-                : null;
+        final long languageId = WebAPILocator.getLanguageWebAPI().getLanguage(request).getId();
+        final ContentletVersionInfo served = WebAPILocator.getVariantWebAPI()
+                .getContentletVersionInfoByFallback(languageId, identifier, mode, user);
+        final String inode = mode.showLive ? served.getLiveInode() : served.getWorkingInode();
+        final Contentlet contentlet = served.isDeleted() || !UtilMethods.isSet(inode)
+                ? null
+                : this.contentletAPI.find(inode, user, true);
         if (null == contentlet) {
             throw new ResourceNotFoundException("Can't find contentlet:" + SecurityUtils.sanitizeForLogging(identifier));
         }
-        if (mode.showLive && isTimeMachineOn(request)
-                && !served.get().getLiveInode().equals(served.get().getWorkingInode())) {
+        if (mode.showLive && isTimeMachineOn(request) && !inode.equals(served.getWorkingInode())) {
             // Time Machine can make the container render the working version instead of the live one
-            this.checkReadPermission(served.get().getWorkingInode(), user);
+            this.checkReadPermission(served.getWorkingInode(), user);
         }
         return contentlet;
     }
