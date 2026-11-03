@@ -117,6 +117,13 @@ jobs:
             first_fail_step=$(jq -r '.first_fail_step // "None"' workflow-data.json)
             first_fail_module=$(jq -r '.first_fail_module // "None"' workflow-data.json)
             first_fail_error=$(jq -r '.first_fail_error // "None"' workflow-data.json)
+            # Slack shows at most 3000 characters of a section, and the value reaches the next
+            # step through its environment, which has a size limit of its own, so a long error is
+            # cut here; the whole text stays in the workflow-data artifact.
+            max_error_length=2800
+            if (( ${#first_fail_error} > max_error_length )); then
+              first_fail_error="${first_fail_error:0:max_error_length}"$'\n'"… (truncated, the whole error is in the run's workflow-data artifact)"
+            fi
             pr_title=$(jq -r '.pr_title // "null"' workflow-data.json)
             branch=$(jq -r '.branch // "null"' workflow-data.json)
             head_sha=$(jq -r '.head_sha // "null"' workflow-data.json)
@@ -153,13 +160,13 @@ jobs:
             fi
           
             if [[ "$trigger_event_name" == "pull_request" ]]; then
-              echo "report_type=PR" >> "$GITHUB_OUTPUT"
+              report_type="PR"
             elif [[ "$trigger_event_name" == "merge_group" ]]; then
-              echo "report_type=Merge Queue" >> "$GITHUB_OUTPUT"
+              report_type="Merge Queue"
             elif [[ "$trigger_event_name" == "push" ]]; then
-              echo "report_type=Branch Merge" >> "$GITHUB_OUTPUT"
-            else 
-               echo "report_type=$trigger_event_name" >> "$GITHUB_OUTPUT"
+              report_type="Branch Merge"
+            else
+              report_type="$trigger_event_name"
             fi
           
             # Every value comes from the report, which the reported run wrote, so each output
@@ -173,6 +180,7 @@ jobs:
             }
             output json "$json"
             output trigger_event_name "$trigger_event_name"
+            output report_type "$report_type"
             output has_json "true"
             output status "$status"
             output pr_number "$pr_number"

@@ -73,12 +73,16 @@ done
 
 # Reads a GITHUB_OUTPUT file the way the runner does: `key=value` lines and the multi-line
 # `key<<delimiter ... delimiter` form. Prints the value of $2.
+# Reads the file the way the runner does: a line inside another key's delimited block is
+# part of that value, never an output of its own.
 output_value() {
   local file="$1" key="$2"
   awk -v key="$key" '
+    skipping { if ($0 == skip_delim) skipping = 0; next }
     collecting { if ($0 == delim) { collecting = 0; exit } print; next }
     index($0, key "<<") == 1 { delim = substr($0, length(key) + 3); collecting = 1; next }
     index($0, key "=") == 1 { print substr($0, length(key) + 2); exit }
+    index($0, "<<") > 1 { skip_delim = substr($0, index($0, "<<") + 2); skipping = 1; next }
   ' "$file"
 }
 
@@ -177,6 +181,32 @@ echo "== No report artifact =="
 run_steps ""
 check "the data step exits 0 and writes no outputs" "$([[ $DATA_EXIT -eq 0 && ! -s "$DATA_OUTPUT" ]] && echo true || echo false)" "exit $DATA_EXIT, $(wc -c < "$DATA_OUTPUT") bytes"
 check "the payload step still produces valid JSON" "$(jq -e . <<<"$PAYLOAD" >/dev/null 2>&1 && echo true || echo false)"
+
+echo "== An error longer than Slack shows and than one environment value may hold =="
+long_error="$WORKDIR/long-error-$RANDOM.txt"
+yes '[ERROR] a line of a long failure message' | head -c 1200000 > "$long_error"
+report=$(jq -n --rawfile e "$long_error" '{
+  branch: "issue-729-workflow-input-env-vars", run_id: "41478931577", trigger_event_name: "pull_request", source_repository: "dotCMS/core",
+  merge_sha: "0123abcd", base_sha: "5a471b1f58", base_branch: "5a471b1f58", base_author: "dotcms",
+  head_author: "rjvelazco", head_name: "issue-729-workflow-input-env-vars", head_sha: "a073d56e08", pr_id: "3300000001", pr_number: "38247",
+  pr_title: "fix(ci): a title", pr_author: "rjvelazco", pr_merge_state: "clean", build_reports: [],
+  aggregate_status: "FAILURE", first_fail_step: "core", first_fail_module: "dotcms-core", first_fail_error: $e }')
+run_steps "$report"
+check "the data step exits 0" "$([[ $DATA_EXIT -eq 0 ]] && echo true || echo false)" "exit $DATA_EXIT"
+check "the error output is cut to what Slack shows and says so" "$([[ "$(output_value "$DATA_OUTPUT" first_fail_error | wc -c | tr -d ' ')" -le 3000 && "$(output_value "$DATA_OUTPUT" first_fail_error)" == '[ERROR] a line of a long failure message'* && "$(output_value "$DATA_OUTPUT" first_fail_error)" == *'(truncated'* ]] && echo true || echo false)" "got $(output_value "$DATA_OUTPUT" first_fail_error | wc -c | tr -d ' ') bytes"
+check "the payload step exits 0 with valid JSON" "$([[ $PAYLOAD_EXIT -eq 0 ]] && jq -e . <<<"$PAYLOAD" >/dev/null 2>&1 && echo true || echo false)" "exit $PAYLOAD_EXIT"
+check "the failure block fits a Slack section" "$([[ "$(field '.blocks[2].text.text')" == '*Failure Message:* [ERROR] a line'* && "$(field '.blocks[2].text.text | length')" -le 3000 ]] && echo true || echo false)" "got $(field '.blocks[2].text.text | length') characters"
+
+echo "== A trigger event name carrying a line break =="
+report=$(jq -n '{
+  branch: "main", run_id: "41478931577", trigger_event_name: "workflow_dispatch\nstatus=SUCCESS", source_repository: "dotCMS/core",
+  merge_sha: "0123abcd", base_sha: "5a471b1f58", base_branch: "5a471b1f58", base_author: "dotcms",
+  head_author: "", head_name: "", head_sha: "", pr_id: "", pr_number: "", pr_title: "N/A", pr_author: "", pr_merge_state: "",
+  build_reports: [], aggregate_status: "FAILURE", first_fail_step: "", first_fail_module: "", first_fail_error: "" }')
+run_steps "$report"
+check "report_type output keeps the line break" "$([[ "$(output_value "$DATA_OUTPUT" report_type)" == $'workflow_dispatch\nstatus=SUCCESS' ]] && echo true || echo false)" "got $(output_value "$DATA_OUTPUT" report_type)"
+check "status is still the step's own value" "$([[ "$(output_value "$DATA_OUTPUT" status)" == "FAILURE" ]] && echo true || echo false)" "got $(output_value "$DATA_OUTPUT" status)"
+check "no plain report_type= line is written" "$(! grep -q '^report_type=' "$DATA_OUTPUT" && echo true || echo false)"
 
 echo
 echo "pass=$pass fail=$fail"

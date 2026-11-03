@@ -170,6 +170,33 @@ check "branch is the ref after its last slash" "$([[ "$(field .branch)" == "main
 check "pr_title is N/A" "$([[ "$(field .pr_title)" == "N/A" ]] && echo true || echo false)"
 check "pr fields are empty strings" "$([[ "$(field '.pr_number + .head_name + .head_sha')" == "" ]] && echo true || echo false)"
 
+echo "== Two failing modules in one step, and an error larger than one command-line argument =="
+pr_event
+reports="$WORKDIR/reports-$RANDOM"
+mkdir -p "$reports/build-reports-cli/target" "$reports/build-reports-core/target" "$reports/build-reports-web/target"
+long_error="$WORKDIR/long-error-$RANDOM.txt"
+yes '[ERROR] a line of a long failure message' | head -c 1200000 > "$long_error"
+long_error_length=$(wc -c < "$long_error" | tr -d ' ')
+jq -n '{projectReports: [{name: "dotcms-cli", status: "SUCCESS", error: null}]}' > "$reports/build-reports-cli/target/build-report.json"
+jq -n --rawfile e "$long_error" '{projectReports: [{name: "dotcms-core", status: "FAILURE", error: $e}, {name: "dotcms-integration", status: "FAILURE", error: "the later failure"}]}' > "$reports/build-reports-core/target/build-report.json"
+jq -n '{projectReports: [{name: "dotcms-core-web", status: "FAILURE", error: "a failure in a later step"}]}' > "$reports/build-reports-web/target/build-report.json"
+export BUILD_STEP_REPORTS_DIR="$reports"
+run_step
+check "the step exits 0" "$([[ $RUN_EXIT -eq 0 ]] && echo true || echo false)" "exit $RUN_EXIT: $(tail -2 "$(dirname "$REPORT")/log")"
+check "the first failing module of the first failing step is named" "$([[ "$(field '.first_fail_step + "/" + .first_fail_module')" == "core/dotcms-core" ]] && echo true || echo false)" "got $(field '.first_fail_step + "/" + .first_fail_module')"
+check "the whole error text is carried" "$([[ "$(field '.first_fail_error | length')" == "$long_error_length" ]] && echo true || echo false)" "got $(field '.first_fail_error | length') of $long_error_length"
+check "all three reports are listed in name order" "$([[ "$(field '[.build_reports[].step_name] | join(",")')" == "cli,core,web" ]] && echo true || echo false)" "got $(field '[.build_reports[].step_name]')"
+
+echo "== A build report that is not JSON =="
+pr_event
+reports="$WORKDIR/reports-$RANDOM"
+mkdir -p "$reports/build-reports-core/target"
+printf 'not json' > "$reports/build-reports-core/target/build-report.json"
+export BUILD_STEP_REPORTS_DIR="$reports"
+run_step
+check "the step fails" "$([[ $RUN_EXIT -ne 0 ]] && echo true || echo false)" "exit $RUN_EXIT"
+check "no report and no working file is left in the workspace" "$([[ ! -e "$REPORT" ]] && ! compgen -G "$(dirname "$REPORT")/workflow-*.json" >/dev/null && echo true || echo false)" "left: $(ls "$(dirname "$REPORT")" | tr '\n' ' ')"
+
 echo
 echo "pass=$pass fail=$fail"
 [[ $fail -eq 0 ]]

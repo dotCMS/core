@@ -149,10 +149,6 @@ jobs:
           # Output the final results
           echo "Final status - Cancelled: $cancelled, Failure: $failure"
           
-          AGGREGATE_STATUS="SUCCESS"
-          FIRST_FAIL_STEP=""
-          FIRST_FAIL_MODULE=""
-          
           if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
             echo "Creating workflow data for pull request ${PR_TITLE}"
             BRANCH="${HEAD_REF}"
@@ -164,7 +160,26 @@ jobs:
           
           BRANCH="${BRANCH##*/}"
           
-          # base_branch has always carried the base sha; kept so the report keeps its shape
+          # The build reports are listed in name order and handed to jq as files: a module's
+          # error text can be longer than one command-line argument may be, so it never passes
+          # through the shell, and the report names the first failing module of the first
+          # failing step.
+          reports_dir="${BUILD_STEP_REPORTS_DIR:-/tmp/build-step-reports}"
+          build_reports=()
+          for build_report in "$reports_dir/build-reports-"*/target/build-report.json; do
+            if [[ -e "$build_report" ]]; then build_reports+=("$build_report"); fi
+          done
+          if (( ${#build_reports[@]} == 0 )); then
+            echo "No build report files found."
+          else
+            echo "Build report files found: ${#build_reports[@]}"
+          fi
+          
+          # The report is written in one pass to a file outside the workspace and moved in once
+          # it is complete, so a failure half-way leaves nothing behind to upload.
+          # base_branch has always carried the base sha; kept so the report keeps its shape.
+          workflow_data=$(mktemp)
+          trap 'rm -f "$workflow_data"' EXIT
           jq -n \
             --arg branch "$BRANCH" \
             --arg run_id "$GITHUB_RUN_ID" \
@@ -181,78 +196,43 @@ jobs:
             --arg pr_title "$PR_TITLE" \
             --arg pr_author "$PR_AUTHOR" \
             --arg pr_merge_state "$PR_MERGE_STATE" \
-            '{
-              branch: $branch,
-              run_id: $run_id,
-              trigger_event_name: $trigger_event_name,
-              source_repository: $source_repository,
-              merge_sha: $merge_sha,
-              base_sha: $base_sha,
-              base_branch: $base_sha,
-              base_author: $base_author,
-              head_author: $head_author,
-              head_name: $head_name,
-              head_sha: $head_sha,
-              pr_id: $pr_id,
-              pr_number: $pr_number,
-              pr_title: $pr_title,
-              pr_author: $pr_author,
-              pr_merge_state: $pr_merge_state
-            }' > workflow-header.json
-          
-          reports_dir="${BUILD_STEP_REPORTS_DIR:-/tmp/build-step-reports}"
-          echo '[]' > workflow-reports.json
-          total_reports=$(find "$reports_dir"/build-reports-*/target -name build-report.json 2>/dev/null | wc -l)
-          
-          if [ "$total_reports" -eq "0" ]; then
-            echo "No build report files found."
-          else
-            for build_report in "$reports_dir/build-reports-"*/target/build-report.json; do
-              step_name=$(basename "$(dirname "$(dirname "$build_report")")" | sed 's/build-reports-//')
-              jq --arg step_name "$step_name" '.step_name = $step_name' "$build_report" > workflow-report.json
-              jq -s '.[0] + [.[1]]' workflow-reports.json workflow-report.json > workflow-reports.next.json
-              mv workflow-reports.next.json workflow-reports.json
-              # If the aggregate status is still SUCCESS, check if this module failed
-              if [[ "$AGGREGATE_STATUS" == "SUCCESS" ]]; then
-                # Loop over each projectReport
-                length=$(jq '.projectReports | length' "$build_report")
-                for (( i=0; i<length; i++ )); do
-                status=$(jq -r ".projectReports[$i].status" "$build_report")
-                if [[ "$status" == "FAILURE" ]]; then
-                  AGGREGATE_STATUS="FAILURE"
-                  FIRST_FAIL_STEP="$step_name"
-                  FIRST_FAIL_MODULE="$(jq -r ".projectReports[$i].name" "$build_report")"
-                  FIRST_FAIL_ERROR="$(jq -r ".projectReports[$i].error" "$build_report")"
-                fi
-                done
-              fi
-            done
-          fi
-          
-          if [[ "$AGGREGATE_STATUS" == "SUCCESS" ]]; then
-            if [[ "$cancelled" == "true" ]]; then
-              echo "Setting cancelled status from job status"
-              AGGREGATE_STATUS="CANCELLED"
-            elif [[ "$failure" == "true" ]]; then
-              echo "Setting failure status from job status"
-              AGGREGATE_STATUS="FAILURE"
-            fi
-          fi
-          
-          jq -n \
-            --slurpfile header workflow-header.json \
-            --slurpfile reports workflow-reports.json \
-            --arg aggregate_status "$AGGREGATE_STATUS" \
-            --arg first_fail_step "$FIRST_FAIL_STEP" \
-            --arg first_fail_module "$FIRST_FAIL_MODULE" \
-            --arg first_fail_error "${FIRST_FAIL_ERROR:-}" \
-            '$header[0]
-              + { build_reports: $reports[0], aggregate_status: $aggregate_status }
+            --arg cancelled "$cancelled" \
+            --arg failure "$failure" \
+            '[inputs | .step_name = (input_filename | (capture("build-reports-(?<name>[^/]+)/target/build-report\\.json$").name // .))] as $reports
+            | ([$reports[] as $r | ($r.projectReports // [])[] | select(.status == "FAILURE")
+                | {step: $r.step_name, module: .name, error: (.error | tostring)}] | first) as $first_fail
+            | (if $first_fail != null then "FAILURE"
+               elif $cancelled == "true" then "CANCELLED"
+               elif $failure == "true" then "FAILURE"
+               else "SUCCESS" end) as $aggregate_status
+            | {
+                branch: $branch,
+                run_id: $run_id,
+                trigger_event_name: $trigger_event_name,
+                source_repository: $source_repository,
+                merge_sha: $merge_sha,
+                base_sha: $base_sha,
+                base_branch: $base_sha,
+                base_author: $base_author,
+                head_author: $head_author,
+                head_name: $head_name,
+                head_sha: $head_sha,
+                pr_id: $pr_id,
+                pr_number: $pr_number,
+                pr_title: $pr_title,
+                pr_author: $pr_author,
+                pr_merge_state: $pr_merge_state,
+                build_reports: $reports,
+                aggregate_status: $aggregate_status
+              }
               + (if $aggregate_status == "FAILURE"
-                 then { first_fail_step: $first_fail_step, first_fail_module: $first_fail_module, first_fail_error: $first_fail_error }
-                 else {} end)' > workflow-data.json
-          rm -f workflow-header.json workflow-reports.json workflow-report.json
-         
+                 then { first_fail_step: ($first_fail.step // ""), first_fail_module: ($first_fail.module // ""), first_fail_error: ($first_fail.error // "") }
+                 else {} end)' \
+            "${build_reports[@]}" < /dev/null > "$workflow_data"
+          mv "$workflow_data" workflow-data.json
+          
+          AGGREGATE_STATUS=$(jq -r '.aggregate_status' workflow-data.json)
+          echo "Aggregate status: ${AGGREGATE_STATUS}"
           echo "aggregate_status=${AGGREGATE_STATUS}" >> "$GITHUB_OUTPUT"
       # Upload the final workflow data report as an artifact
       - name: Upload workflow data
