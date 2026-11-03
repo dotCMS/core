@@ -1166,6 +1166,16 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
     return transactionalSave(newFields, newFieldVariables, contentType);
   }
 
+  /**
+   * Persists the content type with its fields and field variables in one transaction. When the
+   * save changes the type's publish or expire date var, {@link IdentifierDateJob} is scheduled to
+   * copy the new dates onto the identifiers of the type's contentlets.
+   *
+   * @param newFields         the fields to save with the type
+   * @param newFieldVariables the field variables to save with the type
+   * @param contentTypeToSave the content type to persist
+   * @return the saved content type
+   */
   @WrapInTransaction
   private ContentType transactionalSave(final List<Field> newFields,
                                         final List<FieldVariable> newFieldVariables,
@@ -1188,11 +1198,12 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
     if (oldType != null) {
 
-      final ContentType oldOldType = oldType;
       if (fireUpdateIdentifiers(oldType.expireDateVar(), contentTypeToSave.expireDateVar())
               || fireUpdateIdentifiers(oldType.publishDateVar(),
               contentTypeToSave.publishDateVar())) {
-        IdentifierDateJob.triggerJobImmediately(oldOldType, user);
+        // The job copies the type's publish/expire date vars onto each identifier, so it must get
+        // the saved type: the previous one still has the old (possibly empty) date vars.
+        IdentifierDateJob.triggerJobImmediately(contentTypeToSave, user);
       }
       perms.resetPermissionReferences(contentTypeToSave);
     }
