@@ -2,26 +2,35 @@ package com.dotcms.util.pagination;
 
 import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContainerAsFileDataGen;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.exception.ExceptionUtil;
+import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.ContentletBaseTest;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerView;
+import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
+import org.apache.commons.beanutils.BeanUtils;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -204,6 +213,69 @@ public class ContainerPaginatorTest extends ContentletBaseTest {
     }
 
     /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: A Container used a Content Type in an earlier version, and its current version uses a
+     * different Content Type only.
+     * Expected Result: Filtering by the first Content Type does not return that Container.
+     */
+    @Test
+    public void getItems_byContentType_skipsContainersThatOnlyUsedItInAnOlderVersion() throws Exception {
+        final ContentTypeUsage usage = new ContentTypeUsage();
+        try {
+            usage.create();
+            usage.grantRead(usage.firstContainer);
+            usage.grantRead(usage.secondContainer);
+            usage.saveNewVersionWithout(usage.secondContainer);
+
+            assertEquals(Set.of(usage.firstContainer.getIdentifier()), usage.identifiersFound());
+        } finally {
+            usage.cleanUp();
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: A file-based Container that uses a Content Type cannot be loaded, because its
+     * {@code container.vtl} exists only in a language other than the default one.
+     * Expected Result: Filtering by that Content Type fails instead of returning a list without that
+     * Container, and listing Containers without a Content Type still works.
+     */
+    @Test
+    public void getItems_byContentTypeWhenAFileContainerCannotBeLoaded_fails() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().host(defaultHost).nextPersisted();
+        final Language otherLanguage = new LanguageDataGen().nextPersisted();
+        final ContainerAsFileDataGen fileContainerGen = new ContainerAsFileDataGen().host(defaultHost)
+                .ignoreDefaultContentTypes().contentType(contentType, "$!{body}");
+        final FileAssetContainer fileContainer = fileContainerGen.nextPersisted();
+        final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        try {
+            moveToLanguage(fileContainer.getIdentifier(), otherLanguage.getId());
+
+            assertThrows(DotRuntimeException.class, () -> new ContainerPaginator().getItems(
+                    APILocator.systemUser(), "", 40, 0, "title", OrderDirection.ASC,
+                    Map.of(ContainerPaginator.CONTENT_TYPE, contentType.id())));
+            new ContainerPaginator().getItems(APILocator.systemUser(), "", 40, 0, "title", OrderDirection.ASC,
+                    Map.of());
+        } finally {
+            moveToLanguage(fileContainer.getIdentifier(), defaultLanguageId);
+            APILocator.getFolderAPI().delete(APILocator.getFolderAPI().find(
+                            fileContainerGen.getMetaData().getFolder(), APILocator.systemUser(), false),
+                    APILocator.systemUser(), false);
+            ContentTypeDataGen.remove(contentType);
+            LanguageDataGen.remove(otherLanguage);
+        }
+    }
+
+    /** Moves every version of a Contentlet to the given language, and flushes the caches that hold it. */
+    private static void moveToLanguage(final String identifier, final long languageId) throws DotDataException {
+        new DotConnect().executeUpdate("update contentlet set language_id = ? where identifier = ?",
+                languageId, identifier);
+        new DotConnect().executeUpdate("update contentlet_version_info set lang = ? where identifier = ?",
+                languageId, identifier);
+        CacheLocator.getCacheAdministrator().flushAll();
+    }
+
+    /**
      * A Content Type used by two Containers, and a back-end user who can read the Content Type. Each
      * Container starts with an individual permission for a separate role only, so it does not inherit any
      * permission from its Site and the user can read it only when {@link #grantRead} is called.
@@ -240,6 +312,18 @@ public class ContainerPaginatorTest extends ContentletBaseTest {
 
         void grantRead(final Container container) throws DotDataException, DotSecurityException {
             savePermission(container, readerRole);
+        }
+
+        /** Saves a new working version of the Container that uses only the Page Content Type. */
+        void saveNewVersionWithout(final Container container) throws Exception {
+            final Container nextVersion = new Container();
+            BeanUtils.copyProperties(nextVersion, container);
+            nextVersion.setInode(null);
+            final ContainerStructure pageUsage = new ContainerStructure();
+            pageUsage.setStructureId(APILocator.getContentTypeAPI(APILocator.systemUser())
+                    .find("htmlpageasset").id());
+            pageUsage.setCode("$!{title}");
+            containerAPI.save(nextVersion, List.of(pageUsage), defaultHost, APILocator.systemUser(), false);
         }
 
         Set<String> identifiersFound() {

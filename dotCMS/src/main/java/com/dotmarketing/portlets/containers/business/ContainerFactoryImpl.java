@@ -646,6 +646,10 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	 * @param searchParams Query parameters used to filter the expected Containers.
 	 *
 	 * @return The sorted list of {@link Container} objects based on the search parameters.
+	 *
+	 * @throws DotRuntimeException When a Content Type filter is set and the File-based Containers cannot be
+	 *                             loaded. Without that filter, a loading error is logged and an empty list is
+	 *                             returned.
 	 **/
 	private Collection<? extends Permissionable> findFolderAssetContainers(final User user, final ContainerAPI.SearchParams searchParams) {
 
@@ -710,6 +714,13 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 			return containers;
 		} catch (final Exception e) {
+			if (UtilMethods.isSet(searchParams.contentTypeIdOrVar())) {
+				// Callers filtering by Content Type use the result to find where the type is used, so a list
+				// missing the File-based Containers is not a valid answer
+				throw new DotRuntimeException(String.format(
+						"File-based Containers using Content Type '%s' could not be loaded",
+						searchParams.contentTypeIdOrVar()), e);
+			}
 			Logger.warn(this, String.format("An error occurred when finding File-based Containers for Site '%s': %s",
 					searchParams.siteId(), e.getMessage()), e);
 			return Collections.emptyList();
@@ -899,7 +910,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 								" where asset.inode = inode.inode and asset.identifier = identifier.id")
 						.append(
 								" and exists (select * from container_structures cs where cs.container_id = asset.identifier")
-						.append(" and cs.structure_id = ? ) ");
+						.append(" and cs.structure_id = ?")
+						// Only the working or live version counts, not older versions that used the type
+						.append(" and cs.container_inode in (vinfo.working_inode, vinfo.live_inode) ) ");
 				// Validate that inode is a valid UUID
 				final String inode = foundContentType.inode();
 				if (!UtilMethods.isSet(inode) || !UUIDUtil.isUUID(inode)) {
