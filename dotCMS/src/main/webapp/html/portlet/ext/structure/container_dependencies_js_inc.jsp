@@ -18,11 +18,15 @@
 
     /**
      * Deletes the content type when no container uses it; otherwise lists the containers in the
-     * dependencies dialog. Values are written as text.
+     * dependencies dialog. Values are written as text. A response without the container list or its
+     * total is treated as a failure, so the type is not deleted.
      */
     function handleDepResponse(data) {
-        var containers = data.entity || [];
-        var total = data.pagination ? data.pagination.totalEntries : containers.length;
+        if (!data || !Array.isArray(data.entity) || !data.pagination) {
+            throw new Error('Unexpected containers response');
+        }
+        var containers = data.entity;
+        var total = data.pagination.totalEntries;
 
         if (total != 0) {
             var table = document.createElement('table');

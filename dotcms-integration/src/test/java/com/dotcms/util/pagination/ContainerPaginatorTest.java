@@ -1,5 +1,6 @@
 package com.dotcms.util.pagination;
 
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -7,6 +8,7 @@ import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
@@ -29,6 +31,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 /**
  *
@@ -165,6 +169,41 @@ public class ContainerPaginatorTest extends ContentletBaseTest {
     }
 
     /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: Two Containers use a Content Type, and a back-end user has no permission on that
+     * Content Type.
+     * Expected Result: Filtering by that Content Type fails with a permission error.
+     */
+    @Test
+    public void getItems_byContentTypeTheUserCannotRead_failsWithPermissionError() throws Exception {
+        final ContentTypeUsage usage = new ContentTypeUsage();
+        try {
+            usage.create();
+            final User outsider = usage.createOutsider();
+
+            final PaginationException error = assertThrows(PaginationException.class,
+                    () -> usage.search(outsider, usage.contentType.id()));
+            assertTrue(ExceptionUtil.causedBy(error, DotSecurityException.class));
+        } finally {
+            usage.cleanUp();
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: No Content Type exists with the requested variable.
+     * Expected Result: Filtering by it fails with a not-found error.
+     */
+    @Test
+    public void getItems_byUnknownContentType_failsWithNotFoundError() {
+        final PaginationException error = assertThrows(PaginationException.class,
+                () -> new ContainerPaginator().getItems(APILocator.systemUser(), "", 40, 0, "title",
+                        OrderDirection.ASC,
+                        Map.of(ContainerPaginator.CONTENT_TYPE, "unknownType" + System.currentTimeMillis())));
+        assertTrue(ExceptionUtil.causedBy(error, NotFoundInDbException.class));
+    }
+
+    /**
      * A Content Type used by two Containers, and a back-end user who can read the Content Type. Each
      * Container starts with an individual permission for a separate role only, so it does not inherit any
      * permission from its Site and the user can read it only when {@link #grantRead} is called.
@@ -178,6 +217,7 @@ public class ContainerPaginatorTest extends ContentletBaseTest {
         private ContentType contentType;
         private Container firstContainer;
         private Container secondContainer;
+        private User outsider;
 
         void create() throws DotDataException, DotSecurityException {
             ownerRole = new RoleDataGen().nextPersisted();
@@ -214,6 +254,19 @@ public class ContainerPaginatorTest extends ContentletBaseTest {
                     .collect(Collectors.toSet());
         }
 
+        /** Creates a back-end user with no permission on the Content Type or its Containers. */
+        User createOutsider() throws DotDataException {
+            outsider = new UserDataGen()
+                    .roles(APILocator.getRoleAPI().loadBackEndUserRole())
+                    .nextPersisted();
+            return outsider;
+        }
+
+        void search(final User user, final String contentTypeIdOrVar) {
+            new ContainerPaginator().getItems(user, "", 40, 0, "title", OrderDirection.ASC,
+                    Map.of(ContainerPaginator.CONTENT_TYPE, contentTypeIdOrVar));
+        }
+
         private static void savePermission(final Permissionable permissionable, final Role role)
                 throws DotDataException, DotSecurityException {
             permissionAPI.save(new Permission(permissionable.getPermissionId(), role.getId(),
@@ -229,6 +282,8 @@ public class ContainerPaginatorTest extends ContentletBaseTest {
             removeIfCreated(failures, secondContainer, ContainerDataGen::remove);
             removeIfCreated(failures, firstContainer, ContainerDataGen::remove);
             removeIfCreated(failures, contentType, ContentTypeDataGen::remove);
+            removeIfCreated(failures, outsider, user -> APILocator.getUserAPI()
+                    .delete(user, TestUserUtils.getAdminUser(), APILocator.systemUser(), false));
             removeIfCreated(failures, reader, user -> APILocator.getUserAPI()
                     .delete(user, TestUserUtils.getAdminUser(), APILocator.systemUser(), false));
             removeIfCreated(failures, ownerRole, RoleDataGen::remove);
