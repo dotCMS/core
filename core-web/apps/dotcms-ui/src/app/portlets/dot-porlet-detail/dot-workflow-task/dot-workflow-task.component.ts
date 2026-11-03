@@ -24,10 +24,7 @@ export class DotWorkflowTaskComponent implements OnInit {
     private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
 
     ngOnInit() {
-        this.dotWorkflowTaskDetailService.view({
-            header: this.dotMessageService.get('workflow.task.dialog.header'),
-            id: this.route.snapshot.params.asset
-        });
+        this.#viewTask();
     }
 
     /**
@@ -41,16 +38,46 @@ export class DotWorkflowTaskComponent implements OnInit {
     }
 
     /**
-     * Handle custom event from the dot-workflow-task-detail
+     * Handles an event the task detail JSP sent: its close events close the dialog, its "Edit
+     * Content" opens the content in the side panel, and every other event goes to
+     * `DotCustomEventHandlerService`.
      *
-     * @param CustomEvent $event
-     * @memberof DotWorkflowTaskComponent
+     * @param $event The detail's `ng-event`.
      */
     onCustomEvent($event: CustomEvent): void {
-        if (['edit-task-executed-workflow', 'close'].includes($event.detail.name)) {
+        const { name, data } = $event.detail;
+
+        if (['edit-task-executed-workflow', 'close'].includes(name)) {
             this.onCloseWorkflowTaskEditor();
+        } else if (name === 'edit-contentlet') {
+            this.#editContent(data);
         } else {
             this.dotCustomEventHandlerService.handle($event);
         }
+    }
+
+    /**
+     * The detail's "Edit Content" (`view_workflow_task.jsp`, `doEdit`) opens the content in the
+     * side panel, above the dialog and written to the task's URL (#38303, FR-025a). Once the panel
+     * saves or closes, after the task list behind the dialog reloads, the task is viewed again so
+     * the detail shows the content's current step.
+     *
+     * @param data The content's inode and content type, as the detail sent them.
+     */
+    #editContent({ inode, contentType }: { inode: string; contentType: string }): void {
+        const viewTask = () => this.#viewTask();
+
+        this.dotCustomEventHandlerService.openContent(
+            { mode: 'edit', inode, contentType },
+            { saved: viewTask, closed: viewTask }
+        );
+    }
+
+    /** Shows the route's task in the dialog, or loads it again when it is shown already. */
+    #viewTask(): void {
+        this.dotWorkflowTaskDetailService.view({
+            header: this.dotMessageService.get('workflow.task.dialog.header'),
+            id: this.route.snapshot.params.asset
+        });
     }
 }
