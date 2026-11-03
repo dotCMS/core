@@ -70,6 +70,30 @@ public class VariantWebAPIImpl implements VariantWebAPI{
         return currentVariantName;
     }
 
+    /**
+     * A variant is a version axis of a content item, so which variant a request resolves on is the
+     * server's to decide. Only a back-end user's request names its own.
+     *
+     * @param user the {@link User} the request is served for, or null when there is none
+     * @return true when the request may name its own variant
+     */
+    @Override
+    public boolean selectsVariant(final User user) {
+        return null != user && user.isBackendUser();
+    }
+
+    /**
+     * Returns the variant the current request resolves on for the given user.
+     *
+     * @param user the {@link User} the request is served for, or null when there is none
+     * @return the variant the request names when {@link #selectsVariant(User)} holds, otherwise
+     * {@link VariantAPI#DEFAULT_VARIANT}
+     */
+    @Override
+    public String currentVariantId(final User user) {
+        return selectsVariant(user) ? currentVariantId() : VariantAPI.DEFAULT_VARIANT.name();
+    }
+
     private static void setSessionAttributeIfNeeded(final HttpServletRequest request,
             final String currentVariantName) {
 

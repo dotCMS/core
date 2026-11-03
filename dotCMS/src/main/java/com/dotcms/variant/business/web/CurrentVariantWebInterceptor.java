@@ -6,6 +6,8 @@ import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.dotcms.variant.VariantAPI;
 import com.dotmarketing.business.web.WebAPILocator;
+import com.liferay.portal.model.User;
+import com.liferay.portal.util.PortalUtil;
 import com.dotmarketing.util.LoginMode;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
@@ -55,11 +57,10 @@ public class CurrentVariantWebInterceptor implements WebInterceptor {
      */
     @Override
     public Result intercept(final HttpServletRequest request, final HttpServletResponse response) throws IOException {
-        // A caller whose session cannot be read is treated as not logged into the back end
-        final boolean backEndCaller = Try.of(
-                () -> WebAPILocator.getUserWebAPI().isLoggedToBackend(request)).getOrElse(false);
+        // A caller whose user cannot be read is treated as having none
+        final User user = Try.of(() -> PortalUtil.getUser(request)).getOrNull();
 
-        if (!backEndCaller) {
+        if (!WebAPILocator.getVariantWebAPI().selectsVariant(user)) {
             return Result.NEXT;
         }
 

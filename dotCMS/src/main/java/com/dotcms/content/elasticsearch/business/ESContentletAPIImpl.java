@@ -1654,8 +1654,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
         // someone remembered.
         if (user == null || !user.isBackendUser()) {
             buffy.append(" +live:true ");
+            // Lowercased with the same call the indexer applies to every String value it writes
+            // (ESMappingAPIImpl), because variant is a keyword field with no normalizer and the
+            // raw-search paths inject this clause without passing it through query translation.
             buffy.append(" +").append(ESMappingConstants.VARIANT).append(":")
-                    .append(VariantAPI.DEFAULT_VARIANT.name()).append(" ");
+                    .append(VariantAPI.DEFAULT_VARIANT.name().toLowerCase()).append(" ");
         }
 
 

@@ -17,6 +17,23 @@ public interface VariantWebAPI {
     String currentVariantId();
 
     /**
+     * Whether the given user decides which variant their request resolves on.
+     *
+     * @param user the {@link User} the request is served for, or null when there is none
+     * @return true when the request may name its own variant
+     */
+    boolean selectsVariant(final User user);
+
+    /**
+     * Returns the variant the current request resolves on for the given user: the one the request
+     * names when {@link #selectsVariant(User)} holds, the default variant otherwise.
+     *
+     * @param user the {@link User} the request is served for, or null when there is none
+     * @return the variant name to resolve the request on
+     */
+    String currentVariantId(final User user);
+
+    /**
      * Return the {@link com.dotcms.variant.model.Variant} and {@link com.dotmarketing.portlets.languagesmanager.model.Language}
      * to render a specific {@link com.dotcms.content.model.Contentlet} according to the versions that
      * this has.

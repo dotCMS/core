@@ -41,7 +41,6 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
-import com.dotcms.variant.VariantAPI;
 import com.dotcms.util.CloseUtils;
 import com.dotcms.util.DownloadUtil;
 import com.dotcms.util.SecurityUtils;
@@ -727,9 +726,7 @@ public class BinaryExporterServlet extends HttpServlet {
 			final String identifier, final long languageId, final User user)
 			throws DotDataException, DotSecurityException {
 
-		final String currentVariantId = null != user && user.isBackendUser()
-				? WebAPILocator.getVariantWebAPI().currentVariantId()
-				: VariantAPI.DEFAULT_VARIANT.name();
+		final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId(user);
 
 		final Contentlet contentletByIdentifier = contentAPI.findContentletByIdentifier(
 				identifier, pageMode.showLive, languageId, currentVariantId, user,
