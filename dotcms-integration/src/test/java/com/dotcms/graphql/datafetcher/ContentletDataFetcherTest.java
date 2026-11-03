@@ -34,9 +34,10 @@ import org.junit.Test;
  * Covers the scope {@link ContentletDataFetcher} applies to the query it runs.
  *
  * <p>The fetcher hands the caller's Lucene query to {@code ContentletAPI.searchPaginated} after
- * prepending a type clause, and the search layer adds {@code +live:true} for a caller without
- * back-end access. Nothing in that path names a variant, so the version axis a content item is
- * stored on is decided entirely by the caller's own query text.
+ * prepending a type clause, and the search layer adds {@code +live:true} and the default-variant
+ * clause for a caller without back-end access. The fetcher also drops any variant term such a
+ * caller wrote, so that a query naming a variant is answered on the default one rather than
+ * answered with nothing.
  *
  * <p>These tests pin the scope a front-end caller must get: content versioned on a named variant
  * belongs to that variant's audience, so a query arriving without back-end access resolves on the
@@ -52,6 +53,8 @@ public class ContentletDataFetcherTest extends IntegrationTestBase {
     private static Variant variant;
     private static Contentlet onDefaultVariant;
     private static Contentlet onNamedVariant;
+    private static Contentlet onBothVariants;
+    private static Contentlet onBothVariantsNamedVersion;
     private static User limitedBackEndUser;
 
     /**
@@ -70,6 +73,15 @@ public class ContentletDataFetcherTest extends IntegrationTestBase {
         onDefaultVariant = publishedItem(null);
         onNamedVariant = publishedItem(variant);
 
+        // A third item lives on both axes at once. It is the only fixture that can tell a query
+        // that was scoped from a query that was emptied: scoped, it answers with the default
+        // version; emptied, it answers with nothing.
+        onBothVariants = publishedItem(null);
+        onBothVariantsNamedVersion = ContentletDataGen.createNewVersion(onBothVariants, variant,
+                Map.of());
+        onBothVariantsNamedVersion.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        ContentletDataGen.publish(onBothVariantsNamedVersion);
+
         // The back-end role is granted too, so the control below can use a user who holds it
         // without holding the administrator role: an administrator never reaches the scope at all.
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -79,7 +91,8 @@ public class ContentletDataFetcherTest extends IntegrationTestBase {
                             contentType.getPermissionId(), role.getId(),
                             PermissionAPI.PERMISSION_READ, true),
                     contentType, APILocator.systemUser(), false);
-            for (final Contentlet contentlet : List.of(onDefaultVariant, onNamedVariant)) {
+            for (final Contentlet contentlet : List.of(onDefaultVariant, onNamedVariant,
+                    onBothVariants)) {
                 permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
                                 contentlet.getPermissionId(), role.getId(),
                                 PermissionAPI.PERMISSION_READ, true),
@@ -91,7 +104,8 @@ public class ContentletDataFetcherTest extends IntegrationTestBase {
 
     @AfterClass
     public static void cleanUp() throws Exception {
-        for (final Contentlet contentlet : List.of(onNamedVariant, onDefaultVariant)) {
+        for (final Contentlet contentlet : List.of(onNamedVariant, onDefaultVariant,
+                onBothVariants)) {
             ContentletDataGen.remove(contentlet);
         }
         ContentTypeDataGen.remove(contentType);
@@ -142,6 +156,30 @@ public class ContentletDataFetcherTest extends IntegrationTestBase {
                         + "its query resolves on", List.of(),
                 identifiersFromSearch("+identifier:" + onNamedVariant.getIdentifier()
                         + " +variant:" + variant.name()));
+    }
+
+    /**
+     * Given: an item that has a live version on both the default variant and the named one.
+     * When: an anonymous caller asks for it and names the variant in its own query text.
+     * Then: it gets the default version back, not the named one and not an empty answer.
+     *
+     * <p>This is the difference between taking the caller's variant term out of the query and
+     * merely contradicting it. Contradicting it is enough to keep the named version away, and the
+     * search layer does exactly that for every path; but a caller that asked for a variant would
+     * then get nothing at all, which takes the content away from a front end that forwards the
+     * variant name it was routed with. Dropping the term leaves the question the caller actually
+     * asked and answers it on the default variant.
+     */
+    @Test
+    public void test_search_anonymousCallerNamingTheVariant_answersWithTheDefaultVersion()
+            throws Exception {
+        final List<String> inodes = inodesFromSearch("+identifier:"
+                + onBothVariants.getIdentifier() + " +variant:" + variant.name());
+
+        assertEquals("a caller that named a variant must still be answered, on the default "
+                        + "variant", List.of(onBothVariants.getInode()), inodes);
+        assertFalse("the version stored on the named variant must not be the one answered with",
+                inodes.contains(onBothVariantsNamedVersion.getInode()));
     }
 
     /**
@@ -212,20 +250,46 @@ public class ContentletDataFetcherTest extends IntegrationTestBase {
     }
 
     /**
+     * Runs the untyped search root field as the anonymous user, asking for inodes rather than
+     * identifiers, so the version that answered can be told apart.
+     *
+     * @param query the Lucene query to run
+     * @return the inodes the query returned
+     */
+    private static List<String> inodesFromSearch(final String query) throws Exception {
+        return valuesFrom(GraphqlQueryRunner.executeAndExpectSuccess(
+                String.format("{ search(query: \"%s\") { inode } }", query), anonymous),
+                "search", "inode");
+    }
+
+    /**
      * Reads the identifier of every row a root field returned.
      *
      * @param data the data map of an execution result
      * @param field the root field the rows sit under
      * @return the identifiers, in the order the query returned them
      */
-    @SuppressWarnings("unchecked")
     private static List<String> identifiersFrom(final Map<String, Object> data,
             final String field) {
+        return valuesFrom(data, field, "identifier");
+    }
+
+    /**
+     * Reads one field out of every row a root field returned.
+     *
+     * @param data the data map of an execution result
+     * @param field the root field the rows sit under
+     * @param key the row field to read
+     * @return the values, in the order the query returned them
+     */
+    @SuppressWarnings("unchecked")
+    private static List<String> valuesFrom(final Map<String, Object> data, final String field,
+            final String key) {
         final Object rows = data.get(field);
         assertTrue("the root field " + field + " returned nothing at all: " + data,
                 rows instanceof List);
         return ((List<Map<String, Object>>) rows).stream()
-                .map(row -> String.valueOf(row.get("identifier"))).collect(
+                .map(row -> String.valueOf(row.get(key))).collect(
                         java.util.stream.Collectors.toList());
     }
 }
