@@ -147,7 +147,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.rest.api.v1.cluster.ClusterNodesResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.system.ConfigurationHelperTest.class,
         com.dotcms.rest.api.v1.container.ContainerResourceDependenciesIntegrationTest.class,
-        com.dotmarketing.startup.runonce.Task261023RemoveContainersLegacyPortletFromLayoutsTest.class,
+        com.dotmarketing.startup.runonce.Task261103RemoveContainersLegacyPortletFromLayoutsTest.class,
         com.dotmarketing.portlets.templates.business.TemplateAPIFindUsingContainerTest.class,
         com.dotmarketing.startup.runonce.Task261028RemoveSearchLegacyPortletsFromLayoutsTest.class,
         UserDeletionCacheInvalidationTest.class,
