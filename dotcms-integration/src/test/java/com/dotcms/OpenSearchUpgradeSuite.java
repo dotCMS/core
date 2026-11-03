@@ -18,6 +18,7 @@ import com.dotcms.content.index.opensearch.OSClientConfigTest;
 import com.dotcms.content.index.opensearch.OSClientProviderIntegrationTest;
 import com.dotcms.content.index.opensearch.OSSearchAPIImplIntegrationTest;
 import com.dotcms.content.index.opensearch.OSSiteSearchAPIIntegrationTest;
+import com.dotcms.content.index.opensearch.OSTrailingBackslashQueryTest;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchDualWriteRouterIT;
 import com.dotcms.junit.MainBaseSuite;
 import org.junit.runner.RunWith;
@@ -61,6 +62,7 @@ import org.junit.runners.Suite.SuiteClasses;
         OSSearchAPIImplIntegrationTest.class,
         OSSiteSearchAPIIntegrationTest.class,
         SiteSearchDualWriteRouterIT.class,
+        OSTrailingBackslashQueryTest.class,
 })
 public class OpenSearchUpgradeSuite {
 }

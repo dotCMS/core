@@ -10,7 +10,6 @@ public enum PortletID {
 
     CALENDAR,
     CATEGORIES,
-    CATEGORIES_LEGACY("categories-legacy"),
     CONFIGURATION, 
     CONFIGURATION_BETA("configuration-beta"),
     CONTAINERS,

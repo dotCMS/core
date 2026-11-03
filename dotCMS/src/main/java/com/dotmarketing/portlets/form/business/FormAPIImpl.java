@@ -2,6 +2,7 @@ package com.dotmarketing.portlets.form.business;
 
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
+import com.dotcms.contenttype.exception.NotFoundInDbException;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 import com.google.common.annotations.VisibleForTesting;
@@ -15,6 +16,7 @@ import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.ajax.ContentletAjax;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
@@ -29,6 +31,8 @@ import com.liferay.portal.model.User;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 
@@ -176,17 +180,37 @@ public class FormAPIImpl implements FormAPI {
 	@Override
 	public Contentlet getFormContent(final String formId) {
 		try {
-			final User systemUser = userAPI.getSystemUser();
-			final String luceneQuery = "+structureName:" + FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + " +" +
-					FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + "." + FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME + ":" + formId;
-
-			final List<Contentlet> listContentlet = conAPI.search(luceneQuery, 1, 0, null,
-					systemUser, false);
-
-			return listContentlet.isEmpty() ? null : listContentlet.get(0);
+			return findWidget(formId, userAPI.getSystemUser());
 		} catch(final DotDataException | DotSecurityException e) {
 			throw new DotRuntimeException(e);
 		}
+	}
+
+	/**
+	 * Finds the widget of the form the given id or variable names, among the widgets the user can
+	 * read. The form is resolved first and its own id is searched for, so the value passed in is
+	 * never part of the search query.
+	 *
+	 * @param formId the form's content type id or variable
+	 * @param user   the user the widget is read for
+	 * @return the widget, or {@code null} when no content type has that id or variable, or the form
+	 *         has no widget the user can read
+	 * @throws DotDataException     if the content type or the widgets cannot be read
+	 * @throws DotSecurityException if the user cannot run the search
+	 */
+	private Contentlet findWidget(final String formId, final User user)
+			throws DotDataException, DotSecurityException {
+		final ContentType form;
+		try {
+			form = APILocator.getContentTypeAPI(userAPI.getSystemUser()).find(formId);
+		} catch (final NotFoundInDbException e) {
+			return null;
+		}
+		final String luceneQuery = "+structureName:" + FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + " +" +
+				FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME + "." + FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME + ":(" + form.id() + " " + form.variable() + ")";
+
+		final List<Contentlet> widgets = conAPI.search(luceneQuery, 1, 0, null, user, false);
+		return widgets.isEmpty() ? null : widgets.get(0);
 	}
 
 	@Override
@@ -252,6 +276,69 @@ public class FormAPIImpl implements FormAPI {
 			throw new DotRuntimeException(e);
 		}
 
+	}
+
+	@Override
+	@CloseDBIfOpened
+	public Contentlet getFormContent(final String formId, final User user)
+			throws DotDataException, DotSecurityException {
+		return findWidget(formId, user);
+	}
+
+	@Override
+	@WrapInTransaction
+	public Contentlet createDefaultFormContent(final String formId, final User user)
+			throws DotDataException, DotSecurityException {
+		final User systemUser = userAPI.getSystemUser();
+
+		Structure formWidget = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME);
+		if (!UtilMethods.isSet(formWidget.getInode())) {
+			createFormWidgetInstanceStructure();
+			formWidget = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(FormAPI.FORM_WIDGET_STRUCTURE_NAME_VELOCITY_VAR_NAME);
+		}
+
+		final ContentType form = APILocator.getContentTypeAPI(user).find(formId);
+		final Field codeField = formWidget.getFieldVar(FormAPI.FORM_WIDGET_CODE_VELOCITY_VAR_NAME);
+
+		Contentlet widget = new Contentlet();
+		widget.setStructureInode(formWidget.getInode());
+		widget.setProperty(FormAPI.FORM_WIDGET_FORM_ID_FIELD_VELOCITY_VAR_NAME, form.id());
+		widget.setProperty(FormAPI.FORM_WIDGET_CODE_VELOCITY_VAR_NAME, codeField.getDefaultValue());
+		widget.setStringProperty(FormAPI.FORM_WIDGET_TITLE_VELOCITY_VAR_NAME, form.name());
+		widget.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+		// The widget is looked up by searching the index, so it is only returned once it can be
+		// found there; otherwise a second request right after this one would create another.
+		widget.setIndexPolicy(IndexPolicy.WAIT_FOR);
+
+		widget = conAPI.checkin(widget, user, false);
+		widget.setIndexPolicy(IndexPolicy.WAIT_FOR);
+		conAPI.publish(widget, user, false);
+
+		// Setting up who may see and change the new widget is part of creating it, not something
+		// the user is asked to have permission for. The permissions the widget inherits are copied
+		// onto it first, so roles the form does not name keep them, its creator included, and so do
+		// roles locked against permission changes. Visitors are then set to read it, and every other
+		// role the form names is set to read, edit and publish it exactly as far as it may with the
+		// form, which removes what that role inherited when it may do none of the three.
+		perAPI.permissionIndividually(perAPI.findParentPermissionable(widget), widget, systemUser);
+		final Role anonymous = APILocator.getRoleAPI().loadCMSAnonymousRole();
+		perAPI.save(new Permission(widget.getPermissionId(), anonymous.getId(),
+				PermissionAPI.PERMISSION_READ, true), widget, systemUser, false);
+		final int widgetPermissions = PermissionAPI.PERMISSION_READ + PermissionAPI.PERMISSION_EDIT
+				+ PermissionAPI.PERMISSION_PUBLISH;
+		final Set<String> onWidget = perAPI.getPermissions(widget, true, true).stream()
+				.map(Permission::getRoleId).collect(Collectors.toSet());
+		for (final Permission onForm : perAPI.getPermissions(form, true)) {
+			final Role role = APILocator.getRoleAPI().loadRoleById(onForm.getRoleId());
+			final int granted = onForm.getPermission() & widgetPermissions;
+			if (role.isEditPermissions() && !anonymous.getId().equals(role.getId())
+					&& (granted > 0 || onWidget.contains(role.getId()))) {
+				perAPI.save(new Permission(widget.getPermissionId(), role.getId(), granted, true),
+						widget, systemUser, false);
+			}
+		}
+
+		return widget;
 	}
 
 }

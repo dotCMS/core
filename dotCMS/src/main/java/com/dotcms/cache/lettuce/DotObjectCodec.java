@@ -1,7 +1,8 @@
 package com.dotcms.cache.lettuce;
 
-import java.io.ByteArrayInputStream;
+import com.dotcms.cache.CacheObjectInputFilter;
 import java.io.ByteArrayOutputStream;
+import java.io.InvalidClassException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
@@ -25,6 +26,14 @@ public class DotObjectCodec<K,V> implements RedisCodec<K, V> {
         return (K)charset.decode(bytes).toString();
     }
 
+    /**
+     * Reads a value back from Redis. Only the classes allowed by {@link CacheObjectInputFilter} are
+     * deserialized; any other class ends in a {@link DecodeException} without a stack trace, since
+     * the filter already logs each class once and the caller treats it as a miss.
+     *
+     * @param bytes the serialized value
+     * @return the value
+     */
     @Override
     public V decodeValue(final ByteBuffer bytes) {
 
@@ -34,11 +43,14 @@ public class DotObjectCodec<K,V> implements RedisCodec<K, V> {
             final byte[] data = new byte[bytes.remaining()];
             bytes.get(data);
 
-            try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(data))) {
+            try (ObjectInputStream in = CacheObjectInputFilter.newObjectInputStream(data)) {
 
                 final Object o = in.readObject();
                 return (V) o;
             }
+        } catch (final InvalidClassException e) {
+
+            throw new DecodeException(e.getMessage(), e, false, false);
         } catch (Exception e) {
 
             throw new DecodeException(e);

@@ -502,8 +502,10 @@ public class ApiTokenResource implements Serializable {
 
         token = this.tokenApi.persistApiToken(token, requestingUser);
         final String jwt = this.tokenApi.getJWT(token, requestingUser);
-        SecurityLogger.logInfo(this.getClass(), "API token issued for user: " + forUser.getUserId()
-                + " by: " + requestingUser.getUserId() + " ip: " + request.getRemoteAddr());
+        // The JWT is only returned here, so this entry records every time a token's JWT is handed out
+        SecurityLogger.logInfo(this.getClass(), "API token issued, id: " + token.getId()
+                + " for user: " + forUser.getUserId() + " by: " + requestingUser.getUserId()
+                + " ip: " + request.getRemoteAddr());
         return Response.ok(new ResponseEntityMapView(Map.of("token", token, "jwt", jwt)))
                 .build(); // 200
     }
@@ -712,80 +714,6 @@ public class ApiTokenResource implements Serializable {
     private Client getRestClient() {
         return RestClientBuilder.newClient();
     }
-
-    /**
-     * Get a JWT issued from a token
-     * @param request
-     * @param response
-     * @param tokenId
-     * @return
-     */
-    @GET
-    @Path("/{tokenId}/jwt")
-    @JSONP
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "getJwtFromApiTokenV1",
-            summary = "Generates a new JWT for an existing token",
-            description = "Returns a JSON web token. This overwrites the JWT value associated with the " +
-                    "specified token object.",
-            tags = {"API Token"},
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "JSON web token successfully created",
-                            content = @Content(mediaType = "application/json",
-                                              schema = @Schema(implementation = ResponseEntityJwtView.class),
-                                    examples = {
-                                            @ExampleObject(
-                                                    value = "{\n" +
-                                                            "    \"entity\": {\n" +
-                                                            "        \"jwt\": \"string\"\n" +
-                                                            "    },\n" +
-                                                            "    \"errors\": [],\n" +
-                                                            "    \"i18nMessagesMap\": {},\n" +
-                                                            "    \"messages\": [],\n" +
-                                                            "    \"pagination\": null,\n" +
-                                                            "    \"permissions\": []\n" +
-                                                            "}"
-                                            )
-                                    }
-                            )
-                    ),
-                    @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "401", description = "Invalid user"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden"),
-                    @ApiResponse(responseCode = "404", description = "Token not found"),
-                    @ApiResponse(responseCode = "500", description = "Unexpected server error")
-            }
-    )
-    public final Response getJwtFromApiToken(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
-            @PathParam("tokenId") @Parameter(
-                    required = true,
-                    description = "Identifier of API token to receive a new JWT.",
-                    schema = @Schema(type = "string")
-            ) final String tokenId) {
-
-        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, "users");
-        final User user = initDataObject.getUser();
-        final Optional<ApiToken> optToken = tokenApi.findApiToken(tokenId);
-
-        if (optToken.isEmpty()) {
-
-            return ExceptionMapperUtil.createResponse(new DotStateException("token id not found"), Response.Status.NOT_FOUND);
-        }
-
-        final ApiToken token = optToken.get();
-        if(token.isExpired() || token.isRevoked()) {
-
-            return ExceptionMapperUtil.createResponse(new DotStateException("token not valid"), Response.Status.BAD_REQUEST);
-        }
-
-        SecurityLogger.logInfo(this.getClass(), "Revealing token to user: " + user.getUserId() + " from: " + request.getRemoteAddr() + " token:"  + token );
-        final String jwt = tokenApi.getJWT(token, user);
-        return Response.ok(new ResponseEntityMapView(Map.of("jwt", jwt))).build(); // 200
-    }
-
-
 
     /**
      * Gives the user a new login token id through {@link UserAPI#invalidateLoginTokens(String)}, so
