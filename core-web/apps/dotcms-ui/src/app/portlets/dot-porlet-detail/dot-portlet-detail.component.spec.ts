@@ -102,7 +102,7 @@ describe('DotPortletDetailComponent', () => {
                 DotDownloadBundleDialogComponent
             ]
         }).overrideComponent(DotPortletDetailComponent, {
-            // The deep link opens a side panel on init; its own spec covers that.
+            // The deep link redirects on init; its own spec covers that.
             remove: { imports: [DotEditContentDeepLinkComponent] },
             add: { imports: [MockComponent(DotEditContentDeepLinkComponent)] }
         });

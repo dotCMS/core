@@ -744,7 +744,9 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
                 closed: () => {
                     reload();
                     this.#focusRowAfterReload(asset.asset);
-                }
+                },
+                // In the portlet's URL: on load the portlet reopens the panel over the list (#38303).
+                url: {}
             }
         );
     }
