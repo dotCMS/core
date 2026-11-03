@@ -21,9 +21,10 @@ env:
 jobs:
   link-pr-to-issue:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
-    # The job only reads the PR and patches its body; nothing else is needed.
+    # The job reads the PR and the issue and patches the PR body; nothing else is needed.
     permissions:
       pull-requests: write
+      issues: read
     # The inputs reach the shell through the environment, never by expression substitution
     # inside the script: a branch name is free text chosen by whoever opened the PR, and an
     # expression is pasted into the script before bash parses it.
@@ -78,7 +79,7 @@ jobs:
           [[ "${pr_body}" == 'null' ]] && pr_body=
           [[ -n "${pr_body}" ]] && pr_body="${pr_body}"$'\n\n'
           pr_body="${pr_body}This PR fixes: #${issue_number}"
-          echo "pr_body=${pr_body}"
+          echo "Linking PR [${PR_NUMBER}] to issue [${issue_number}]"
           
           gh api \
             --method PATCH \

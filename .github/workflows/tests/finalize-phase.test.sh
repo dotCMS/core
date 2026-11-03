@@ -3,7 +3,8 @@
 # Behaviour tests for the "Prepare workflow data" step in cicd_comp_finalize-phase.yml.
 #
 # The step is extracted from the workflow itself and executed with the GitHub API (curl)
-# stubbed, so the shell that ships is the shell under test. Every event value reaches the
+# stubbed, the way the runner executes a step with no `shell:` (`bash -e`), so the shell that
+# ships is the shell under test. Every event value reaches the
 # step through the environment, the way the job's `env:` block hands it over on the runner,
 # so the extracted text must not carry any `${{ }}` expression: a branch name or a PR title
 # is free text chosen by whoever opened the PR, and these cases include values with quotes
@@ -83,8 +84,8 @@ run_step() {
     export GITHUB_REPOSITORY="dotCMS/core" GITHUB_RUN_ID="41478931577" GITHUB_SHA="0123abcd"
     export BUILD_STEP_REPORTS_DIR="${BUILD_STEP_REPORTS_DIR:-$dir/no-reports}"
     curl() { printf '%s' "${FIXTURE_JOBS:-{\"jobs\":[]\}}"; }
-    # shellcheck disable=SC1090
-    source "$WORKDIR/step.sh"
+    export -f curl
+    bash -e "$WORKDIR/step.sh"
   ) > "$dir/log" 2>&1
   RUN_EXIT=$?
 }

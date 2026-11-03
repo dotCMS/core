@@ -2,8 +2,9 @@
 #
 # Behaviour tests for the "Link PR to Issue" step in issue_comp_link-pr-to-issue.yml.
 #
-# The step is extracted from the workflow itself and executed with `gh` stubbed, so the
-# shell that ships is the shell under test. The inputs reach the step through the
+# The step is extracted from the workflow itself and executed with `gh` stubbed, the way the
+# runner executes a `shell: bash` step (`bash --noprofile --norc -eo pipefail`), so the shell
+# that ships is the shell under test. The inputs reach the step through the
 # environment (PR_NUMBER, PR_BRANCH, VALIDATE_MERGE), the same way the job's `env:` block
 # hands them over on the runner, so the extracted text must not carry any `${{ }}`
 # expression: a branch name is free text chosen by whoever opened the PR, and these cases
@@ -80,7 +81,7 @@ link_case() {
   rm -f "$marker" "$patch"
   (
     export GITHUB_REPOSITORY="dotCMS/core" GH_TOKEN="stub-token"
-    export PR_NUMBER=38247 PR_BRANCH="$branch" VALIDATE_MERGE="$validate"
+    export PR_NUMBER="${FIXTURE_PR_NUMBER:-38247}" PR_BRANCH="$branch" VALIDATE_MERGE="$validate"
     export MARKER="$marker" PATCH_FILE="$patch"
     export FIXTURE_BODY="$fixture_body" FIXTURE_MERGED="$fixture_merged"
     # Stub of `gh api`: the PR read, the issue read and the PR body PATCH.
@@ -96,17 +97,18 @@ link_case() {
         esac
       done
       case "$method:$path" in
+        GET:*/pulls/404) echo "gh: Not Found (HTTP 404)" >&2; return 1 ;;
         GET:*/pulls/*)
           jq -n --arg b "$FIXTURE_BODY" --argjson m "$FIXTURE_MERGED" \
             '{merged: $m, body: (if $b == "null" then null else $b end)}' ;;
-        GET:*/issues/999) return 1 ;;
+        GET:*/issues/999) echo "gh: Not Found (HTTP 404)" >&2; return 1 ;;
         GET:*/issues/*) jq -n --arg n "${path##*/}" '{number: ($n | tonumber)}' ;;
         PATCH:*) printf '%s' "$body" > "$PATCH_FILE" ;;
         *) echo "unexpected gh call: $method $path" >&2; return 1 ;;
       esac
     }
-    # shellcheck disable=SC1090
-    source "$WORKDIR/step.sh"
+    export -f gh
+    bash --noprofile --norc -eo pipefail "$WORKDIR/step.sh"
   ) > "$log" 2>&1
   local got_exit=$?
   local got_body=''
@@ -141,8 +143,15 @@ echo "== Merge validation =="
 link_case "unmerged PR is refused when validate_merge is on" "issue-123-unmerged" 1 '' "Some description" false true
 link_case "unmerged PR is linked when validate_merge is off" "issue-123-unmerged" 0 $'Some description\n\nThis PR fixes: #123' "Some description" false false
 
-echo "== Issue lookup =="
-link_case "an issue the API cannot find" "issue-999-missing" 3 ''
+echo "== API failures stop the step before anything is patched =="
+# The step runs under -e, so a failed read ends it at the read itself: exit 1, no PATCH.
+link_case "an issue the API cannot find" "issue-999-missing" 1 ''
+FIXTURE_PR_NUMBER=404 link_case "a PR the API cannot read" "issue-123-unreadable-pr" 1 ''
+unset FIXTURE_PR_NUMBER
+
+echo "== Input checks =="
+FIXTURE_PR_NUMBER='38247; touch "$MARKER"' link_case "a PR number that is not a number" "issue-123-bad-number" 1 ''
+unset FIXTURE_PR_NUMBER
 
 echo
 echo "pass=$pass fail=$fail"

@@ -90,9 +90,18 @@ jobs:
           fail-on-error: true
           list-tests: 'failed'
 
-      # Process workflow data
+      # Process workflow data. Tested by .github/workflows/tests/post-workflow-reporting.test.sh,
+      # which extracts this step and the next by id, so both must stay free of `${{ }}`
+      # expressions; the values they need come in through `env:`.
       - name: Get Workflow Data
         id: workflow-data
+        env:
+          REPORTER_CONCLUSION: ${{ steps.test-reporter.outputs.conclusion }}
+          REPORTER_PASSED: ${{ steps.test-reporter.outputs.passed }}
+          REPORTER_FAILED: ${{ steps.test-reporter.outputs.failed }}
+          REPORTER_SKIPPED: ${{ steps.test-reporter.outputs.skipped }}
+          REPORTER_ELAPSED: ${{ steps.test-reporter.outputs.time }}
+          REPORTER_RUN_HTML_URL: ${{ steps.test-reporter.outputs.runHtmlUrl }}
         run: |
           if [[ ! -e "workflow-data.json" ]]
           then
@@ -100,169 +109,157 @@ jobs:
           else
             jq . workflow-data.json
             json=$(jq -c '.' workflow-data.json)
-            trigger_event_name=$(echo $json | jq -r '.trigger_event_name // "null"')
-            status=$(echo $json | jq -r '.aggregate_status // "null"')
-            pr_number=$(echo $json | jq -r '.pr_number // "null"')
-            pr_author=$(echo $json | jq -r '.pr_author // "null"')
-            run_id=$(echo $json | jq -r '.run_id // "null"')
-            first_fail_step=$(echo $json | jq -r '.first_fail_step // "None"')
-            first_fail_module=$(echo $json | jq -r '.first_fail_module // "None"')
-            first_fail_error=$(echo $json | jq -r '.first_fail_error // "None"')
-            pr_title=$(echo $json | jq -r '.pr_title // "null"')
-            branch=$(echo $json | jq -r '.branch // "null"')
-            head_sha=$(echo $json | jq -r '.head_sha // "null"')
-            head_author=$(echo $json | jq -r '.head_author // "null"')
-            head_name=$(echo $json | jq -r '.head_name // "null"')
-            source_repository=$(echo $json | jq -r '.source_repository // "null"')
+            trigger_event_name=$(jq -r '.trigger_event_name // "null"' workflow-data.json)
+            status=$(jq -r '.aggregate_status // "null"' workflow-data.json)
+            pr_number=$(jq -r '.pr_number // "null"' workflow-data.json)
+            pr_author=$(jq -r '.pr_author // "null"' workflow-data.json)
+            run_id=$(jq -r '.run_id // "null"' workflow-data.json)
+            first_fail_step=$(jq -r '.first_fail_step // "None"' workflow-data.json)
+            first_fail_module=$(jq -r '.first_fail_module // "None"' workflow-data.json)
+            first_fail_error=$(jq -r '.first_fail_error // "None"' workflow-data.json)
+            pr_title=$(jq -r '.pr_title // "null"' workflow-data.json)
+            branch=$(jq -r '.branch // "null"' workflow-data.json)
+            head_sha=$(jq -r '.head_sha // "null"' workflow-data.json)
+            head_author=$(jq -r '.head_author // "null"' workflow-data.json)
+            head_name=$(jq -r '.head_name // "null"' workflow-data.json)
+            source_repository=$(jq -r '.source_repository // "null"' workflow-data.json)
             action_run_url="https://github.com/$source_repository/actions/runs/$run_id"
             pr_number_url="https://github.com/$source_repository/pull/$pr_number"
             branch_url="https://github.com/$source_repository/tree/$branch"
             commit_id_url="https://github.com/$source_repository/pull/$pr_number/commits/$head_sha"
             test_results_url="https://github.com/$source_repository/pull/${pr_number}/checks"
-            if [[ -z "${{ steps.test-reporter.outputs.conclusion }}" ]]; then
+            if [[ -z "${REPORTER_CONCLUSION}" ]]; then
               test_conclusion="Not Run"
               test_passed=0
               test_failed=0
               test_skipped=0
               test_elapsed=0
             else
-              test_conclusion=${{ steps.test-reporter.outputs.conclusion }}
-              test_passed=${{ steps.test-reporter.outputs.passed }}
-              test_failed=${{ steps.test-reporter.outputs.failed }}
-              test_skipped=${{ steps.test-reporter.outputs.skipped }}
-              test_elapsed=${{ steps.test-reporter.outputs.time }}
-              test_results_url=${{ steps.test-reporter.outputs.runHtmlUrl }}
+              test_conclusion="${REPORTER_CONCLUSION}"
+              test_passed="${REPORTER_PASSED}"
+              test_failed="${REPORTER_FAILED}"
+              test_skipped="${REPORTER_SKIPPED}"
+              test_elapsed="${REPORTER_ELAPSED}"
+              test_results_url="${REPORTER_RUN_HTML_URL}"
             fi
           
           
             if [[ "$status" == "SUCCESS" ]]; then
-              echo "status_icon=✅" >> $GITHUB_OUTPUT
+              echo "status_icon=✅" >> "$GITHUB_OUTPUT"
             elif [[ "$status" == "CANCELLED" ]]; then
-              echo "status_icon=🚫" >> $GITHUB_OUTPUT
+              echo "status_icon=🚫" >> "$GITHUB_OUTPUT"
             else
-              echo "status_icon=❌" >> $GITHUB_OUTPUT
+              echo "status_icon=❌" >> "$GITHUB_OUTPUT"
             fi
           
             if [[ "$trigger_event_name" == "pull_request" ]]; then
-              echo "report_type=PR" >> $GITHUB_OUTPUT
+              echo "report_type=PR" >> "$GITHUB_OUTPUT"
             elif [[ "$trigger_event_name" == "merge_group" ]]; then
-              echo "report_type=Merge Queue" >> $GITHUB_OUTPUT
+              echo "report_type=Merge Queue" >> "$GITHUB_OUTPUT"
             elif [[ "$trigger_event_name" == "push" ]]; then
-              echo "report_type=Branch Merge" >> $GITHUB_OUTPUT
+              echo "report_type=Branch Merge" >> "$GITHUB_OUTPUT"
             else 
-               echo "report_type=$trigger_event_name" >> $GITHUB_OUTPUT
+               echo "report_type=$trigger_event_name" >> "$GITHUB_OUTPUT"
             fi
           
-
-            echo "json=$json" >> $GITHUB_OUTPUT
-            echo "trigger_event_name=$trigger_event_name" >> $GITHUB_OUTPUT
-            echo "has_json=true" >> $GITHUB_OUTPUT
-            echo "status=$status" >> $GITHUB_OUTPUT
-            echo "pr_number=$pr_number" >> $GITHUB_OUTPUT
-            echo "pr_author=$pr_author" >> $GITHUB_OUTPUT
-            echo "run_id=$run_id" >> $GITHUB_OUTPUT
-            echo "first_fail_step=$first_fail_step" >> $GITHUB_OUTPUT
-            echo "first_fail_module=$first_fail_module" >> $GITHUB_OUTPUT
-            echo "first_fail_error=$first_fail_error" >> $GITHUB_OUTPUT
-            echo "pr_title=$pr_title" >> $GITHUB_OUTPUT
-            echo "branch=$branch" >> $GITHUB_OUTPUT
-            echo "head_sha=$head_sha" >> $GITHUB_OUTPUT
-            echo "head_author=$head_author" >> $GITHUB_OUTPUT
-            echo "head_name=$head_name" >> $GITHUB_OUTPUT
-            echo "source_repository=$source_repository" >> $GITHUB_OUTPUT
-            echo "action_run_url=$action_run_url" >> $GITHUB_OUTPUT
-            echo "pr_number_url=$pr_number_url" >> $GITHUB_OUTPUT
-            echo "branch_url=$branch_url" >> $GITHUB_OUTPUT
-            echo "commit_id_url=$commit_id_url" >> $GITHUB_OUTPUT
-            echo "test_results_url=$test_results_url" >> $GITHUB_OUTPUT
-            echo "test_conclusion=$test_conclusion" >> $GITHUB_OUTPUT
-            echo "test_passed=$test_passed" >> $GITHUB_OUTPUT
-            echo "test_failed=$test_failed" >> $GITHUB_OUTPUT
-            echo "test_skipped=$test_skipped" >> $GITHUB_OUTPUT
-            echo "test_elapsed=$test_elapsed" >> $GITHUB_OUTPUT
+            # The failing module's error is Maven output and can span lines, so it goes out in
+            # the multi-line form; the delimiter is random so the text can never close it early.
+            delimiter="ghadelimiter_$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')"
+            {
+              echo "first_fail_error<<${delimiter}"
+              echo "$first_fail_error"
+              echo "${delimiter}"
+              echo "json=$json"
+              echo "trigger_event_name=$trigger_event_name"
+              echo "has_json=true"
+              echo "status=$status"
+              echo "pr_number=$pr_number"
+              echo "pr_author=$pr_author"
+              echo "run_id=$run_id"
+              echo "first_fail_step=$first_fail_step"
+              echo "first_fail_module=$first_fail_module"
+              echo "pr_title=$pr_title"
+              echo "branch=$branch"
+              echo "head_sha=$head_sha"
+              echo "head_author=$head_author"
+              echo "head_name=$head_name"
+              echo "source_repository=$source_repository"
+              echo "action_run_url=$action_run_url"
+              echo "pr_number_url=$pr_number_url"
+              echo "branch_url=$branch_url"
+              echo "commit_id_url=$commit_id_url"
+              echo "test_results_url=$test_results_url"
+              echo "test_conclusion=$test_conclusion"
+              echo "test_passed=$test_passed"
+              echo "test_failed=$test_failed"
+              echo "test_skipped=$test_skipped"
+              echo "test_elapsed=$test_elapsed"
+            } >> "$GITHUB_OUTPUT"
           
           fi
-      # Prepare Slack message payload
+      # Prepare the Slack message payload. The title, branch name, authors and error text are
+      # free text from the reported run, so the JSON is built with jq and never by hand.
       - name: Prepare Slack Message Payload
         id: prepare-slack-message
+        env:
+          STATUS: ${{ steps.workflow-data.outputs.status }}
+          STATUS_ICON: ${{ steps.workflow-data.outputs.status_icon }}
+          REPORT_TYPE: ${{ steps.workflow-data.outputs.report_type }}
+          PR_NUMBER: ${{ steps.workflow-data.outputs.pr_number }}
+          PR_TITLE: ${{ steps.workflow-data.outputs.pr_title }}
+          PR_AUTHOR: ${{ steps.workflow-data.outputs.pr_author }}
+          PR_NUMBER_URL: ${{ steps.workflow-data.outputs.pr_number_url }}
+          BRANCH: ${{ steps.workflow-data.outputs.branch }}
+          BRANCH_URL: ${{ steps.workflow-data.outputs.branch_url }}
+          RUN_ID: ${{ steps.workflow-data.outputs.run_id }}
+          ACTION_RUN_URL: ${{ steps.workflow-data.outputs.action_run_url }}
+          FIRST_FAIL_STEP: ${{ steps.workflow-data.outputs.first_fail_step }}
+          FIRST_FAIL_MODULE: ${{ steps.workflow-data.outputs.first_fail_module }}
+          FIRST_FAIL_ERROR: ${{ steps.workflow-data.outputs.first_fail_error }}
+          HEAD_SHA: ${{ steps.workflow-data.outputs.head_sha }}
+          HEAD_AUTHOR: ${{ steps.workflow-data.outputs.head_author }}
+          HEAD_NAME: ${{ steps.workflow-data.outputs.head_name }}
+          COMMIT_ID_URL: ${{ steps.workflow-data.outputs.commit_id_url }}
+          TEST_CONCLUSION: ${{ steps.workflow-data.outputs.test_conclusion }}
+          TEST_PASSED: ${{ steps.workflow-data.outputs.test_passed }}
+          TEST_FAILED: ${{ steps.workflow-data.outputs.test_failed }}
+          TEST_SKIPPED: ${{ steps.workflow-data.outputs.test_skipped }}
+          TEST_ELAPSED: ${{ steps.workflow-data.outputs.test_elapsed }}
+          TEST_RESULTS_URL: ${{ steps.workflow-data.outputs.test_results_url }}
         run: |
-          payload=$(cat <<EOF
-          {
-              "text": "Github Action ${{ steps.workflow-data.outputs.status }} for ${{ steps.workflow-data.outputs.report_type }} #${{ steps.workflow-data.outputs.pr_number || steps.workflow-data.outputs.branch }}",
-              "blocks": [
-                {
-                  "type": "header",
-                  "text": {
-                    "type": "plain_text",
-                    "text": "${{ steps.workflow-data.outputs.status_icon }} Github Action ${{ steps.workflow-data.outputs.status }} for ${{ steps.workflow-data.outputs.report_type }} #${{ steps.workflow-data.outputs.pr_number || steps.workflow-data.outputs.branch }}",
-                    "emoji": true
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Action Run ID:* <${{ steps.workflow-data.outputs.action_run_url }} | ${{ steps.workflow-data.outputs.run_id }}> \n*Failure Step:* ${{ steps.workflow-data.outputs.first_fail_step }} \n*Failure Module:* ${{ steps.workflow-data.outputs.first_fail_module }}"
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Failure Message:* ${{ steps.workflow-data.outputs.first_fail_error }}"
-                  }
-                },
-                {
-                  "type": "divider"
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*${{ steps.workflow-data.outputs.report_type }} Details:* \nAuthor: ${{ steps.workflow-data.outputs.pr_author }} \nName: <${{ steps.workflow-data.outputs.pr_number_url || steps.workflow-data.outputs.branch_url }} | ${{ steps.workflow-data.outputs.pr_title || steps.workflow-data.outputs.branch }}> \nNumber: #${{ steps.workflow-data.outputs.pr_number || steps.workflow-data.outputs.branch }} \nBranch: <${{ steps.workflow-data.outputs.branch_url }} | ${{ steps.workflow-data.outputs.branch }}>"
-                  }
-                },
-                {
-                  "type": "divider"
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Commit Details:* \nID: <${{ steps.workflow-data.outputs.commit_id_url }} | #${{ steps.workflow-data.outputs.head_sha }}> \nAuthor: ${{ steps.workflow-data.outputs.head_author }} \nName: ${{ steps.workflow-data.outputs.head_name }}"
-                  }
-                },
-                {
-                  "type": "divider"
-                },
-                {
-                  "type": "header",
-                  "text": {
-                    "type": "plain_text",
-                    "text": "🧪 Test Results = ${{ steps.workflow-data.outputs.test_conclusion }}",
-                    "emoji": true
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "*Passed:* ${{ steps.workflow-data.outputs.test_passed }} \n*Failed:* ${{ steps.workflow-data.outputs.test_failed }} \n*Skipped:* ${{ steps.workflow-data.outputs.test_skipped }} \n*Elapsed Time:* ${{ steps.workflow-data.outputs.test_elapsed }}"
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "🔍 <${{ steps.workflow-data.outputs.test_results_url }} | View Test Results>"
-                  }
-                }
+          # A PR report names the PR; a branch report falls back to the branch, as before
+          subject="${PR_NUMBER:-$BRANCH}"
+          subject_url="${PR_NUMBER_URL:-$BRANCH_URL}"
+          subject_name="${PR_TITLE:-$BRANCH}"
+          
+          payload=$(jq -n -c \
+            --arg text "Github Action ${STATUS} for ${REPORT_TYPE} #${subject}" \
+            --arg header "${STATUS_ICON} Github Action ${STATUS} for ${REPORT_TYPE} #${subject}" \
+            --arg run "*Action Run ID:* <${ACTION_RUN_URL} | ${RUN_ID}> \n*Failure Step:* ${FIRST_FAIL_STEP} \n*Failure Module:* ${FIRST_FAIL_MODULE}" \
+            --arg failure "*Failure Message:* ${FIRST_FAIL_ERROR}" \
+            --arg details "*${REPORT_TYPE} Details:* \nAuthor: ${PR_AUTHOR} \nName: <${subject_url} | ${subject_name}> \nNumber: #${subject} \nBranch: <${BRANCH_URL} | ${BRANCH}>" \
+            --arg commit "*Commit Details:* \nID: <${COMMIT_ID_URL} | #${HEAD_SHA}> \nAuthor: ${HEAD_AUTHOR} \nName: ${HEAD_NAME}" \
+            --arg tests_header "🧪 Test Results = ${TEST_CONCLUSION}" \
+            --arg tests "*Passed:* ${TEST_PASSED} \n*Failed:* ${TEST_FAILED} \n*Skipped:* ${TEST_SKIPPED} \n*Elapsed Time:* ${TEST_ELAPSED}" \
+            --arg tests_link "🔍 <${TEST_RESULTS_URL} | View Test Results>" \
+            '{
+              text: $text,
+              blocks: [
+                { type: "header", text: { type: "plain_text", text: $header, emoji: true } },
+                { type: "section", text: { type: "mrkdwn", text: $run } },
+                { type: "section", text: { type: "mrkdwn", text: $failure } },
+                { type: "divider" },
+                { type: "section", text: { type: "mrkdwn", text: $details } },
+                { type: "divider" },
+                { type: "section", text: { type: "mrkdwn", text: $commit } },
+                { type: "divider" },
+                { type: "header", text: { type: "plain_text", text: $tests_header, emoji: true } },
+                { type: "section", text: { type: "mrkdwn", text: $tests } },
+                { type: "section", text: { type: "mrkdwn", text: $tests_link } }
               ]
-          }
-          EOF
-          )
-          echo "payload=$(echo $payload | jq -c .)" >> $GITHUB_OUTPUT
-          echo "payload=$payload"
+            }')
+          echo "payload=${payload}" >> "$GITHUB_OUTPUT"
+          echo "payload=${payload}"
       # Send Slack notification
       - name: Post to Slack
         if: steps.workflow-data.outputs.has_json == 'true' && github.repository == 'dotcms/core' && ( steps.workflow-data.outputs.status == 'FAILURE' || ( github.event_name == 'workflow_call' && inputs.slack-only-on-failure == false ) )
@@ -277,5 +274,7 @@ jobs:
         # secrets.GITHUB_TOKEN is not available in composite workflows so it needs to be passed in.
       - name: Check API Rate Limit
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" https://api.github.com/rate_limit || true
+          curl -s -H "Authorization: token ${GITHUB_TOKEN}" https://api.github.com/rate_limit || true

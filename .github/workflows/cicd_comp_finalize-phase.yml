@@ -30,6 +30,11 @@ jobs:
     name: Prepare Report Data
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     if: always()
+    # Reads the run's jobs and downloads the build reports by run id; uploading the report
+    # needs no token permission.
+    permissions:
+      actions: read
+      contents: read
     outputs:
       aggregate_status: ${{ steps.prepare-workflow-data.outputs.aggregate_status }}
     steps:
@@ -261,11 +266,15 @@ jobs:
     needs: prepare-report-data
     if: always()
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    permissions:
+      contents: read
     steps:
       # Check the final status and fail the workflow if not successful
       - name: Check Final Status
+        env:
+          AGGREGATE_STATUS: ${{ needs.prepare-report-data.outputs.aggregate_status }}
         run: |
-          if [ "${{ needs.prepare-report-data.outputs.aggregate_status }}" != "SUCCESS" ]; then
+          if [ "${AGGREGATE_STATUS}" != "SUCCESS" ]; then
             echo "One or more jobs failed or cancelled!"
             exit 1
           fi
@@ -275,5 +284,7 @@ jobs:
       # secrets.GITHUB_TOKEN is not available in composite workflows so it needs to be passed in.
       - name: Check API Rate Limit
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN}}" https://api.github.com/rate_limit || true
+          curl -s -H "Authorization: token ${GITHUB_TOKEN}" https://api.github.com/rate_limit || true
