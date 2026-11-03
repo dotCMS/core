@@ -201,19 +201,27 @@ public String getGravatar(String postedBy){
     }
 
     function doEdit(){
+        <%if(contentlet.getStructure().getName().equals("Event")){%>
+        // Calendar events keep the legacy editor's own screen, inside this dialog.
         window.location="<portlet:actionURL windowState="<%= WindowState.MAXIMIZED.toString() %>">
-        <%if(contentlet.getStructure().getName().equals("Event")){%>s
             <portlet:param name="struts_action" value="/ext/calendar/edit_event" />
+            <portlet:param name="inode" value="<%= String.valueOf(contentlet.getInode()) %>" />
+            <portlet:param name="cmd" value="edit" />
+            <portlet:param name="referer" value="<%= referer %>" />
+            </portlet:actionURL>";
         <%}else{%>
-            <portlet:param name="struts_action" value="/ext/contentlet/edit_contentlet" />
+        // The admin opens the content in its side panel, above this dialog, and loads this task
+        // again once the panel saves or closes (#38303).
+        var customEvent = document.createEvent("CustomEvent");
+        customEvent.initCustomEvent("ng-event", false, false,  {
+            name: "edit-contentlet",
+            data: {
+                inode: "<%= contentlet.getInode() %>",
+                contentType: "<%= contentlet.getContentType().variable() %>"
+            }
+        });
+        document.dispatchEvent(customEvent);
         <%}%>
-        <portlet:param name="inode" value="<%= String.valueOf(contentlet.getInode()) %>" />
-        <portlet:param name="cmd" value="edit" />
-        <portlet:param name="referer" value="<%= referer %>" />
-        </portlet:actionURL>";
-
-
-
     }
 
 

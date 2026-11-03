@@ -12,7 +12,7 @@ import {
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService, DotUiColors } from '@dotcms/dotcms-js';
 import { DotContentCompareEvent } from '@dotcms/dotcms-models';
-import type { DotEditContentRequest } from '@dotcms/edit-content';
+import type { DotEditContentOpenOptions, DotEditContentRequest } from '@dotcms/edit-content';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
 import { openEditContentPanel } from '../../util/open-edit-content-panel';
@@ -31,7 +31,11 @@ export interface DotCMSEditPageEvent {
 }
 
 /**
- * Handle Custom events
+ * Handles the `ng-event` custom events the legacy JSP screens send to the admin. Two senders: the
+ * legacy portlets (`IframePortletLegacyComponent`), and the Workflow Tasks detail dialog
+ * (`DotWorkflowTaskComponent`), which passes on every event but its own close events and
+ * `edit-contentlet`. Its "Edit Content" sends that one, and the detail opens it itself through
+ * {@link openContent}, so it can view its task again after the panel (#38303, FR-025a).
  *
  * @export
  * @class DotCustomEventHandlerService
@@ -153,16 +157,22 @@ export class DotCustomEventHandlerService {
 
     /**
      * Opens a request in the side panel for the current legacy portlet (#38303, R11): for the
-     * portlet's events, and for what the portlet's URL names on load (`IframePortletLegacyComponent`,
-     * FR-049). The request names the portlet current now, every save and the close reload its list,
-     * and the panel is written to its URL like on every surface but the page editor (FR-044).
+     * portlet's events, for what the portlet's URL names on load (`IframePortletLegacyComponent`,
+     * FR-049), and for the Workflow Tasks detail's "Edit Content" (`DotWorkflowTaskComponent`,
+     * FR-025a). The request names the portlet current now, every save and the close reload its
+     * list, and the panel is written to its URL like on every surface but the page editor (FR-044).
      *
      * Nothing opens until `DotSidePanelHostComponent` has registered its injector, which it does
      * before any portlet can send an event; a request before then is logged as an error.
      *
      * @param request What to open, without the portlet.
+     * @param after The caller's own `saved` and `closed`, run after the portlet's list reloads: the
+     * Workflow Tasks detail views its task again in them.
      */
-    openContent(request: DotEditContentRequest): void {
+    openContent(
+        request: DotEditContentRequest,
+        after: Pick<DotEditContentOpenOptions, 'saved' | 'closed'> = {}
+    ): void {
         const injector = this.#panelInjector;
 
         if (!injector) {
@@ -184,8 +194,14 @@ export class DotCustomEventHandlerService {
             { ...request, portletId },
             {
                 injector,
-                saved: reload,
-                closed: reload,
+                saved: (contentlet) => {
+                    reload();
+                    after.saved?.(contentlet);
+                },
+                closed: () => {
+                    reload();
+                    after.closed?.();
+                },
                 url: {}
             }
         );
