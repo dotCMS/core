@@ -120,17 +120,6 @@
     </portlet>
 
     <portlet>
-        <portlet-name>content-types</portlet-name>
-        <display-name>Structures</display-name>
-        <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>
-        <init-param>
-            <name>view-action</name>
-            <value>/ext/structure/view_structure</value>
-        </init-param>
-        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
-    </portlet>
-
-    <portlet>
         <portlet-name>users</portlet-name>
         <display-name>User Admin</display-name>
         <portlet-class>com.liferay.portlet.StrutsPortlet</portlet-class>

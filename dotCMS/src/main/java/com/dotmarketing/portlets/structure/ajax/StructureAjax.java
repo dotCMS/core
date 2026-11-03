@@ -24,7 +24,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.structure.business.FieldAPI;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
@@ -634,68 +633,6 @@ public class StructureAjax {
 		return null;
 	}
 
-	/**
-	 * Lists the containers that use a content type, shown before the type is deleted. A user who
-	 * cannot read the content type, or an unknown content type, gets no containers and a size of
-	 * zero, and the containers are not looked up. The containers are looked up with the inode of
-	 * the content type that was loaded for the READ check. A failure to load the content type is
-	 * thrown, not answered with a size of zero, because the delete dialog reads zero as "no
-	 * container uses this type". The cause is logged, and the exception carries a fixed message,
-	 * as DWR sends the message to the page.
-	 *
-	 * @param structureInode inode of the content type
-	 * @return a map with the {@code containers} list and its {@code size}
-	 * @throws DotDataException when the content type or the containers cannot be loaded
-	 */
-	public Map<Object,Object> checkDependencies(String structureInode) throws DotDataException{
-
-		WebContext ctx = WebContextFactory.get();
-		HttpServletRequest request = ctx.getHttpServletRequest();
-
-		Map<Object,Object> result = new HashMap<>();
-		List<Map<String,String>> containersList = new ArrayList<>();
-		final ContentType readableType;
-		try {
-			readableType = loadReadableType(loggedInUser(), structureInode);
-		} catch (final DotDataException e) {
-			Logger.error(StructureAjax.class,
-					"The content type could not be loaded to list the containers that use it", e);
-			throw new DotDataException("The content type could not be loaded");
-		}
-		if (null == readableType) {
-			result.put("containers", containersList);
-			result.put("size", 0);
-			return result;
-		}
-
-		// checking if there are containers using this structure
-		List<Container> containers=APILocator.getContainerAPI().findContainersForStructure(readableType.inode(), true);
-		Map<String, Container> containersInUse = new HashMap<>();		
-		
-		for(Container c : containers) {
-			try {
-				containersInUse.put(c.getIdentifier(), c);
-			} catch (Exception e) {
-			}
- 		}
-		
-		for(Container c : containersInUse.values()){
-			String hostTitle = "";
-			try {
-				hostTitle = APILocator.getHostAPI().findParentHost(c, PortalUtil.getUser(request), false).getTitle();
-			} catch (Exception e) {}
-			Map<String,String> containerMap = new HashMap<>();
-			containerMap.put("title", hostTitle + " : " + c.getTitle());
-			containerMap.put("identifier", c.getIdentifier());
-			containerMap.put("inode", c.getInode());
-			containersList.add(containerMap);
-		}
-		
-		result.put("containers", containersList);
-		result.put("size",containersList.size());		
-		return result;
-	}
-	
 	public void setSelectedStructure(String StructureVelocityVarName){
 		WebContext ctx = WebContextFactory.get();
 		HttpServletRequest request = ctx.getHttpServletRequest();
@@ -705,7 +642,7 @@ public class StructureAjax {
 	/**
 	 * Returns the user of the current DWR request as resolved by {@link UserWebAPI}, or
 	 * {@code null} when nobody is logged in. {@link #fetchByIdentity(String)},
-	 * {@link #checkDependencies(String)}, {@link #getStructureFields(String)},
+	 * {@link #getStructureFields(String)},
 	 * {@link #getSearchableStructureFields(String)} and the four field option readers use it, so a
 	 * request without a user gets the same empty answer from them as a type the user cannot read,
 	 * and no security log line is written for it. The other methods resolve their user themselves;
@@ -754,9 +691,8 @@ public class StructureAjax {
 
 	/**
 	 * Loads a content type the user may read, like {@link #findReadableType(User, String)}, but a
-	 * failure to load the type is thrown to the caller instead of answering {@code null}. Used
-	 * where an empty answer would be taken as a fact about the type, such as "no container uses
-	 * it".
+	 * failure to load the type is thrown to the caller instead of answering {@code null}. Used by
+	 * {@link #findReadableType(User, String)}, which logs the failure and answers {@code null}.
 	 *
 	 * @return the content type, or {@code null} for no user, a blank or unknown id, or a type the
 	 *         user cannot read
