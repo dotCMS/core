@@ -1,7 +1,7 @@
 import { TemplateBuilderPage } from '@pages';
 import { expect, test } from '@playwright/test';
 import { createPage, getPageTemplateIdentifier, Page as PageContentlet } from '@requests/pages';
-import { createTemplate, deleteTemplate, getTemplate } from '@requests/templates';
+import { archiveTemplate, createTemplate, deleteTemplate, getTemplate } from '@requests/templates';
 
 /**
  * Regression coverage for dotCMS/core#36197 — the UVE Layout tab lost container/content
@@ -110,11 +110,18 @@ test.afterEach(async ({ request }) => {
     // getPageTemplateIdentifier doc comment) — always resolve whatever the page currently
     // references rather than assuming the creation-time identifier still applies. Best
     // effort: teardown must not turn an already-failing test into a confusing second error.
+    // A template must be archived before it can be deleted; without that step the delete
+    // call still answers 200 but leaves the template behind.
+    const removeTemplate = async (identifier: string) => {
+        await archiveTemplate(request, [identifier]);
+        await deleteTemplate(request, [identifier]);
+    };
+
     try {
         const currentIdentifier = await getPageTemplateIdentifier(request, pageContentlet.url);
-        await deleteTemplate(request, [currentIdentifier]);
+        await removeTemplate(currentIdentifier);
     } catch {
-        await deleteTemplate(request, [templateIdentifier]).catch(() => undefined);
+        await removeTemplate(templateIdentifier).catch(() => undefined);
     }
 });
 
