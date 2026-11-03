@@ -8,10 +8,17 @@ export interface DotEditContentRequest {
     /** Edit an existing contentlet, or create one of a content type. */
     mode: 'edit' | 'new';
 
-    /** The working version to edit. Required for `edit`. */
+    /**
+     * The working version to edit. An `edit` names it, or names `identifier` instead (a URL names
+     * content that way): the opener then finds the working version in `languageId`, or in any
+     * language when there is none in that one.
+     */
     inode?: string;
 
-    /** The contentlet identifier. Optional; the opener fills it from the fetched contentlet. */
+    /**
+     * The contentlet identifier. Optional when `inode` is given; the opener fills it from the
+     * fetched contentlet.
+     */
     identifier?: string;
 
     /**

@@ -1,4 +1,4 @@
-import { DestroyRef } from '@angular/core';
+import { DestroyRef, Injector } from '@angular/core';
 
 import type { DotEditContentOpenOptions, DotEditContentRequest } from '@dotcms/edit-content';
 import type { DotSidePanelRef } from '@dotcms/ui';
@@ -26,4 +26,23 @@ export async function openEditContentPanel(
     }
 
     return options.injector.get(DotEditContentOpenerService).open(request, options);
+}
+
+/**
+ * Removes every side panel param, and `extraKeys`, from the URL in place, through
+ * `DotPanelUrlStateService` (#38303, FR-049). For a screen whose URL names more than one panel on
+ * load: it opens none of them. Loads `@dotcms/edit-content` on demand, as {@link
+ * openEditContentPanel} does; reading the URL needs no library, `readPanelUrlIntent` is in
+ * `@dotcms/utils`.
+ *
+ * @param injector The screen's injector.
+ * @param extraKeys Params of the screen's own that go with the panel params.
+ */
+export async function clearPanelUrl(
+    injector: Injector,
+    extraKeys: readonly string[] = []
+): Promise<void> {
+    const { DotPanelUrlStateService } = await import('@dotcms/edit-content');
+
+    injector.get(DotPanelUrlStateService).clear(extraKeys);
 }

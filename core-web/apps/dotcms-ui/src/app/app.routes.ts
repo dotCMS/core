@@ -226,10 +226,13 @@ const PORTLETS_ANGULAR: Route[] = [
         loadChildren: () => import('@dotcms/portlets/dot-tags/portlet').then((m) => m.dotTagsRoutes)
     },
     {
+        // Deliberately NO `data: { reuseRoute: false }`, as for the Query Tool below: no path
+        // params, so the flag only ever rebuilt the page on browser Back, which the router answers
+        // with a navigation (`onSameUrlNavigation: 'reload'`), discarding the side panel open over
+        // the list and its unsaved-changes prompt (#38303).
         path: 'publishing-queue-beta',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
-        data: { reuseRoute: false },
         loadChildren: () =>
             import('@dotcms/portlets/dot-publishing-queue/portlet').then(
                 (m) => m.dotPublishingQueueRoutes
@@ -324,7 +327,8 @@ const PORTLETS_IFRAME = [
                 path: ':id',
                 children: [
                     {
-                        // A create deep link opens the side panel over the portlet (#38303).
+                        // A create deep link redirects to the portlet's URL with `createContent`,
+                        // and the portlet opens the side panel (#38303).
                         loadComponent: () =>
                             import('@portlets/dot-porlet-detail/dot-edit-content-deep-link/dot-edit-content-deep-link.component').then(
                                 (m) => m.DotEditContentDeepLinkComponent

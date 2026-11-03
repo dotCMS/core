@@ -17,8 +17,7 @@ import {
 import { filter, take } from 'rxjs/operators';
 
 import { DotSidePanelRef } from '@dotcms/ui';
-
-import { DOT_PANEL_URL_PARAM } from './read-panel-url-intent';
+import { DOT_PANEL_URL_PARAM } from '@dotcms/utils';
 
 /** An open panel written to the URL, and the params that name it. */
 interface DotPanelUrlEntry {

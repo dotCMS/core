@@ -28,6 +28,7 @@ import {
     PermissionsType,
     UserPermissions
 } from '@dotcms/dotcms-models';
+import type { DotEditContentRequest } from '@dotcms/edit-content';
 import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
@@ -153,19 +154,27 @@ export class DotPageActionsService {
         return {
             label: this.#dotMessageService.get('Edit'),
             command: () =>
-                void openEditContentPanel(
-                    {
-                        mode: 'edit',
-                        inode,
-                        identifier,
-                        contentType,
-                        languageId,
-                        title,
-                        portletId: 'pages'
-                    },
-                    { injector: this.#injector, saved: refresh, closed: refresh }
+                this.openContent(
+                    { mode: 'edit', inode, identifier, contentType, languageId, title },
+                    refresh
                 )
         };
+    }
+
+    /**
+     * Opens content in the side panel over the Pages listing, in whichever editor its type uses,
+     * and keeps the panel in the portlet's URL (#38303, FR-044). The Edit action opens through
+     * here, and so does the portlet on load, for what its URL names (FR-049), so both open the same
+     * panel with the same refresh.
+     *
+     * @param request What to open, without the portlet.
+     * @param refresh Refreshes the listing; called on every save and when the panel closes.
+     */
+    openContent(request: DotEditContentRequest, refresh?: () => void): void {
+        void openEditContentPanel(
+            { ...request, portletId: 'pages' },
+            { injector: this.#injector, saved: refresh, closed: refresh, url: {} }
+        );
     }
 
     /**

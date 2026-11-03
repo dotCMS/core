@@ -3,8 +3,8 @@ import {
     DotCMSBaseTypesContentTypes,
     DotSite
 } from '@dotcms/dotcms-models';
-import { DOT_PANEL_URL_PARAM } from '@dotcms/edit-content';
 import { CHIP_FILTER_SCROLL_HEIGHT, SYSTEM_HOST_ID } from '@dotcms/ui';
+import { DOT_PANEL_URL_PARAM } from '@dotcms/utils';
 
 import {
     DOT_CONTENT_DRIVE_SEARCH_SCOPE,

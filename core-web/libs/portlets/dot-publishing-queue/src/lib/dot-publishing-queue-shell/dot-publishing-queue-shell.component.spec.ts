@@ -87,6 +87,8 @@ describe('DotPublishingQueueShellComponent', () => {
         componentProviders: [
             DotPublishingQueueStore,
             ConfirmationService,
+            // The shell's own, for a panel reopened from the URL; its describe below checks it.
+            MessageService,
             mockProvider(DialogService, { open: vi.fn().mockReturnValue(dialogRef) })
         ],
         providers: [
@@ -279,7 +281,7 @@ describe('DotPublishingQueueShellComponent — the panel named in the URL', () =
 
     const createComponent = createComponentFactory({
         component: DotPublishingQueueShellComponent,
-        componentProviders: [DotPublishingQueueStore, ConfirmationService],
+        // No `componentProviders`: the shell's own providers apply, its MessageService among them.
         providers: shellProviders(),
         schemas: [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA],
         detectChanges: false
