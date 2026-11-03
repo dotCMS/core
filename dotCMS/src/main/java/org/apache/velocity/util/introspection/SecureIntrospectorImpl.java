@@ -40,6 +40,9 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.servlet.ServletRequestWrapper;
+import javax.servlet.ServletResponseWrapper;
+
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 
@@ -99,6 +102,8 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
     /**
      * Determine which methods and classes to prevent from executing.  Always blocks
      * methods wait() and notify().  Always allows methods on Number, Boolean, and String.
+     * Blocks getRequest() on servlet request wrappers and getResponse() on servlet response
+     * wrappers, and every method on the servlet container's own classes.
      * Prohibits method calls on classes related to reflection and system operations.
      * For the complete list, see the properties <code>introspector.restrict.classes</code>
      * and <code>introspector.restrict.packages</code>.
@@ -154,6 +159,19 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
          */
         if (ClassLoader.class.isAssignableFrom(clazz) ||
                 Thread.class.isAssignableFrom(clazz))
+        {
+            return false;
+        }
+
+        /**
+         * Templates receive the request and response through dotCMS wrappers, which decide what a
+         * template may read or change. Unwrapping one would hand the template the object underneath
+         * (the container's own request or another wrapper that writes straight through to it), so
+         * the servlet API unwrap accessors are refused. Java code is unaffected and keeps unwrapping
+         * normally, for example when a RequestDispatcher includes or forwards.
+         */
+        if (("getRequest".equals(methodName) && ServletRequestWrapper.class.isAssignableFrom(clazz))
+                || ("getResponse".equals(methodName) && ServletResponseWrapper.class.isAssignableFrom(clazz)))
         {
             return false;
         }
@@ -348,10 +366,12 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
 
     /**
      * Package prefixes of servlet-container internals, embedded script interpreters and the
-     * alternate reflection and naming APIs. Matched against the class itself.
+     * alternate reflection and naming APIs. Matched against the class itself. The
+     * {@code org.apache.catalina.} prefix covers the container's own request, response and session
+     * objects, which templates only ever reach through dotCMS wrappers.
      */
     private static final String[] RESTRICTED_RUNTIME_PREFIXES = {
-            "org.apache.tomcat.",
+            "org.apache.tomcat.", "org.apache.catalina.",
             "bsh.", "com.dotcms.repackage.bsh.",
             "groovy.lang.", "org.codehaus.groovy.", "org.mozilla.javascript.",
             "jdk.nashorn.", "org.openjdk.nashorn.", "org.graalvm.polyglot.",

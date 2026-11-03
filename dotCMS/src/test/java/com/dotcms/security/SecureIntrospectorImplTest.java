@@ -15,6 +15,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import javax.servlet.ServletRequestWrapper;
+import javax.servlet.ServletResponseWrapper;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpServletResponseWrapper;
 import com.dotmarketing.util.Config;
 import org.apache.velocity.util.introspection.SecureIntrospectorImpl;
 import org.junit.Test;
@@ -226,6 +232,66 @@ public class SecureIntrospectorImplTest {
     public void ordinary_types_are_not_runtime_restricted() {
         assertAllowed(HashMap.class, "get");
         assertAllowed(ArrayList.class, "size");
+    }
+
+    /**
+     * No method on the servlet container's own request, response or session objects may be called
+     * from a template. Templates receive dotCMS's wrappers instead, which decide what a template
+     * may read or change.
+     */
+    @Test
+    public void container_request_response_and_session_objects_are_denied() throws Exception {
+        assertDenied(org.apache.catalina.connector.RequestFacade.class, "getSession");
+        assertDenied(org.apache.catalina.connector.RequestFacade.class, "setAttribute");
+        assertDenied(org.apache.catalina.connector.ResponseFacade.class, "setHeader");
+        assertDenied(org.apache.catalina.session.StandardSessionFacade.class, "setAttribute");
+        // The request a forwarded page render receives from the dispatcher (package-private class).
+        assertDenied(Class.forName("org.apache.catalina.core.ApplicationHttpRequest"), "getSession");
+    }
+
+    /**
+     * A template may not unwrap a servlet request or response wrapper: the object underneath could
+     * be the container's own request or another wrapper that writes straight through to it.
+     */
+    @Test
+    public void servlet_wrapper_unwrap_accessors_are_denied() {
+        assertDenied(ServletRequestWrapper.class, "getRequest");
+        assertDenied(HttpServletRequestWrapper.class, "getRequest");
+        assertDenied(TemplateRequestWrapper.class, "getRequest");
+        assertDenied(ServletResponseWrapper.class, "getResponse");
+        assertDenied(HttpServletResponseWrapper.class, "getResponse");
+        assertDenied(TemplateResponseWrapper.class, "getResponse");
+    }
+
+    /**
+     * The rest of a wrapper's methods stay callable, and a {@code getRequest()} on a type that is not
+     * a servlet wrapper (such as the Velocity view context) is unaffected.
+     */
+    @Test
+    public void ordinary_servlet_wrapper_methods_stay_allowed() {
+        assertAllowed(TemplateRequestWrapper.class, "getParameter");
+        assertAllowed(TemplateRequestWrapper.class, "getSession");
+        assertAllowed(TemplateRequestWrapper.class, "getAttribute");
+        assertAllowed(TemplateRequestWrapper.class, "setAttribute");
+        assertAllowed(TemplateRequestWrapper.class, "getRequestURI");
+        assertAllowed(TemplateResponseWrapper.class, "setHeader");
+        assertAllowed(TemplateResponseWrapper.class, "sendRedirect");
+        assertAllowed(org.apache.velocity.tools.view.context.ChainedContext.class, "getRequest");
+        assertAllowed(org.apache.velocity.tools.view.context.ChainedContext.class, "getResponse");
+    }
+
+    /** A dotCMS-style request wrapper, standing in for the wrappers templates receive. */
+    private static class TemplateRequestWrapper extends HttpServletRequestWrapper {
+        TemplateRequestWrapper(final HttpServletRequest request) {
+            super(request);
+        }
+    }
+
+    /** A dotCMS-style response wrapper, standing in for the wrappers templates receive. */
+    private static class TemplateResponseWrapper extends HttpServletResponseWrapper {
+        TemplateResponseWrapper(final HttpServletResponse response) {
+            super(response);
+        }
     }
 
     private void assertDeniedIfPresent(final String className, final String method) {
