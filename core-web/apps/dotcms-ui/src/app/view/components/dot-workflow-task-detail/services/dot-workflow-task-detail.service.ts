@@ -11,6 +11,12 @@ export interface DotTaskAction {
     id: string;
 }
 
+/** The task the dialog shows, and how many times it has been viewed again since its first view. */
+interface DotTaskView {
+    id: string;
+    reload?: number;
+}
+
 /**
  * Handle the url and events for add and edit workflow tasks components
  *
@@ -21,11 +27,11 @@ export interface DotTaskAction {
 export class DotWorkflowTaskDetailService {
     private dotMenuService = inject(DotMenuService);
 
-    private data: BehaviorSubject<DotTaskAction> = new BehaviorSubject(null);
+    private data: BehaviorSubject<DotTaskView> = new BehaviorSubject(null);
     private _header: BehaviorSubject<string> = new BehaviorSubject('');
 
     get viewUrl$(): Observable<string> {
-        return this.data.pipe(mergeMap((action: DotTaskAction) => this.getViewUrl(action)));
+        return this.data.pipe(mergeMap((view: DotTaskView) => this.getViewUrl(view)));
     }
 
     get header$(): Observable<string> {
@@ -33,10 +39,13 @@ export class DotWorkflowTaskDetailService {
     }
 
     /**
-     * Set data to edit a workflow task
+     * Shows a workflow task in the dialog. Viewing the task the dialog already shows loads it
+     * again: its URL gains a reload count the task screen ignores, since the dialog's iframe
+     * reloads only when its URL changes. The task component does this after its content is saved
+     * or closed in the side panel, so the detail shows the content's current step (#38303,
+     * FR-025a).
      *
-     * @param DotTaskAction action
-     * @memberof DotWorkflowTaskDetailService
+     * @param action The task, and the dialog's header.
      */
     view(action: DotTaskAction): void {
         this.setData(action);
@@ -51,8 +60,13 @@ export class DotWorkflowTaskDetailService {
         this.data.next(null);
     }
 
-    private getViewUrl(action: DotTaskAction): Observable<string> {
-        return action === null
+    /**
+     * The task screen's URL for a view, with the reload count when the task is viewed again.
+     *
+     * @param view The task to show, or `null` for none.
+     */
+    private getViewUrl(view: DotTaskView): Observable<string> {
+        return view === null
             ? of('')
             : this.dotMenuService.getDotMenuId('workflow').pipe(
                   map((portletId: string) => {
@@ -65,19 +79,29 @@ export class DotWorkflowTaskDetailService {
                           `&p_p_mode=view`,
                           `&_workflow_struts_action=/ext/workflows/edit_workflow_task`,
                           `&_workflow_cmd=view`,
-                          `&_workflow_taskId=${action.id}`
+                          `&_workflow_taskId=${view.id}`,
+                          view.reload ? `&_workflow_reload=${view.reload}` : ''
                       ].join('');
                   })
               );
     }
 
+    /**
+     * Shows the task, counting a view of the task already shown as a reload.
+     *
+     * @param action The task, and the dialog's header.
+     */
     private setData(action: DotTaskAction): void {
         if (action.header) {
             this._header.next(action.header);
         }
 
+        const shown = this.data.getValue();
+        const reload = shown && shown.id === action.id ? (shown.reload ?? 0) + 1 : 0;
+
         this.data.next({
-            id: action.id
+            id: action.id,
+            ...(reload ? { reload } : {})
         });
     }
 }
