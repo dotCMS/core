@@ -343,6 +343,57 @@
 					"response": []
 				},
 				{
+					"name": "Form Content Not Created By A Read",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"A read does not create the form content\", function () {",
+									"    pm.response.to.have.status(404);",
+									"});"
+								],
+								"type": "text/javascript",
+								"id": "9dcdbb5d-f475-4f72-8756-5b98b772b259"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers/form/{{addFormInsidePage_formId}}?containerId={{addFormInsidePage_ContainerId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers",
+								"form",
+								"{{addFormInsidePage_formId}}"
+							],
+							"query": [
+								{
+									"key": "containerId",
+									"value": "{{addFormInsidePage_ContainerId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Create Form Content",
 					"event": [
 						{
@@ -361,6 +412,63 @@
 									""
 								],
 								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/containers/form/{{addFormInsidePage_formId}}?containerId={{addFormInsidePage_ContainerId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"containers",
+								"form",
+								"{{addFormInsidePage_formId}}"
+							],
+							"query": [
+								{
+									"key": "containerId",
+									"value": "{{addFormInsidePage_ContainerId}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Read Created Form Content",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"",
+									"pm.test(\"Status code should be ok 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Returns the form content created before\", function () {",
+									"    pm.expect(jsonData.entity.content.identifier).to.eql(pm.collectionVariables.get(\"addFormInsidePage_CONTENT_Id\"));",
+									"});"
+								],
+								"type": "text/javascript",
+								"id": "eee78ca4-43c9-4e52-8743-5f49faa4691e"
 							}
 						}
 					],

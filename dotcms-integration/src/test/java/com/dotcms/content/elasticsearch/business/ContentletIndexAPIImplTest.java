@@ -10,6 +10,7 @@ import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.content.index.IndexTag;
 import com.dotcms.content.index.IndexTimestamp;
@@ -21,6 +22,7 @@ import com.dotcms.contenttype.model.field.DateTimeField;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -29,17 +31,22 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
+import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.ContainerStructure;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.MultiTree;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.common.reindex.ReindexEntry;
@@ -77,6 +84,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.TimeUnit;
+import javax.servlet.http.HttpServletRequest;
 import java.util.stream.Collectors;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.awaitility.Awaitility;
@@ -84,6 +92,7 @@ import org.awaitility.core.ConditionTimeoutException;
 import org.jetbrains.annotations.Nullable;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.Mockito;
 
 /**
  * @author Jonathan Gamba Date: 4/18/13
@@ -1393,5 +1402,59 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         // DotRuntimeException), so assert the common RuntimeException rather than a vendor type.
         assertThrows(RuntimeException.class,
                 () -> indexAPI.getIndexDocumentCount("invalidIndexName"));
+    }
+
+    /**
+     * Method to test: {@link ContentletIndexAPIImpl#mapEntry(ReindexEntry)}
+     * Given scenario: a contentlet with a Story Block that references a contentlet only a
+     * given role can read is mapped for the index while an anonymous request is set in the
+     * current thread, as when a front-end request triggers the reindex.
+     * Expected result: the document holds the reference as stored, with its data, so what is
+     * indexed does not depend on the user of the request that triggered it.
+     */
+    @Test
+    public void mapEntry_storyBlockReferences_areMappedAsStoredWhateverTheRequestUser() throws Exception {
+        final long language = APILocator.getLanguageAPI().getDefaultLanguage().getId();
+        final String title = "indexed reference " + System.currentTimeMillis();
+        final Contentlet referenced = ContentletDataGen.publish(new ContentletDataGen(
+                APILocator.getContentTypeAPI(APILocator.systemUser()).find("webPageContent"))
+                .languageId(language)
+                .setProperty("title", title)
+                .setProperty("body", "body")
+                .nextPersisted());
+        // Only a new role may read it, which overrides what it inherited (anonymous included)
+        final Role readers = new RoleDataGen().name("indexedReferenceReaders" + System.currentTimeMillis())
+                .nextPersisted();
+        APILocator.getPermissionAPI().save(new Permission(referenced.getPermissionId(), readers.getId(),
+                PermissionAPI.PERMISSION_READ, true), referenced, APILocator.systemUser(), false);
+        final ContentType carrierType = new ContentTypeDataGen().nextPersisted();
+        final Field storyBlockField = new FieldDataGen().type(StoryBlockField.class).defaultValue(null)
+                .contentTypeId(carrierType.id()).nextPersisted();
+        final Contentlet carrier = ContentletDataGen.publish(new ContentletDataGen(carrierType.id())
+                .languageId(language)
+                .setProperty(storyBlockField.variable(), APILocator.getStoryBlockAPI().addContentlet(
+                        "{\"type\":\"doc\",\"content\":[]}", referenced).toString())
+                .nextPersisted());
+        final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+        try {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(
+                    new MockAttributeRequest(Mockito.mock(HttpServletRequest.class)));
+
+            final List<ContentletIndexAPIImpl.MappedDocument> documents = new ContentletIndexAPIImpl()
+                    .mapEntry(ReindexEntry.builder().id(0L)
+                            .identToIndex(carrier.getIdentifier()).priority(0).build());
+
+            assertFalse("the carrier must be mapped", documents.isEmpty());
+            for (final ContentletIndexAPIImpl.MappedDocument document : documents) {
+                assertTrue("the indexed Story Block must keep the reference's stored data",
+                        String.valueOf(document.contentlet().get(storyBlockField.variable())).contains(title));
+            }
+        } finally {
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
+            ContentletDataGen.destroy(carrier);
+            ContentletDataGen.destroy(referenced);
+            ContentTypeDataGen.remove(carrierType);
+            APILocator.getRoleAPI().delete(readers);
+        }
     }
 }

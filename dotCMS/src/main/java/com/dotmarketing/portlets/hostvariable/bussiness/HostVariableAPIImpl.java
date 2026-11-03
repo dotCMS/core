@@ -17,6 +17,7 @@ import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -165,10 +166,11 @@ public class HostVariableAPIImpl implements HostVariableAPI {
 	}
 
 	/**
-	 * Retrieves a list of unique site variables from the given list of site variables.
+	 * Retrieves a list of unique site variables from the given list of site variables, in the order they were given,
+	 * so the list save processes them in a predictable order.
 	 *
 	 * @param siteVariables The list of site variables.
-	 * @return A new ArrayList containing only the unique site variables based on their keys.
+	 * @return A new list containing the first variable given for each key, in the given order.
 	 */
 	private List<HostVariable> getUniqueSiteVariables(List<HostVariable> siteVariables) {
 
@@ -176,7 +178,8 @@ public class HostVariableAPIImpl implements HostVariableAPI {
 				collect(Collectors.toMap(
 						HostVariable::getKey, // key is the HostVariable's `key`
 						hostVariable -> hostVariable,  // value is the HostVariable itself
-						(existing, replacement) -> existing)) // if there's a conflict, keep the existing
+						(existing, replacement) -> existing, // if there's a conflict, keep the existing
+						LinkedHashMap::new)) // keep the given order
 				.values()
 		);
 	}

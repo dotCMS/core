@@ -40,6 +40,20 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!-- log4j: pin above the version log4j-slf4j2-impl pulls in transitively -->
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-bom</artifactId>
+                <version>2.25.5</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- jsoup: pin above the version Tika pulls in transitively -->
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>1.23.2</version>
+            </dependency>
             <dependency>
                 <groupId>org.bouncycastle</groupId>
                 <artifactId>bcjmail-jdk18on</artifactId>
@@ -74,7 +88,6 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j2-impl</artifactId>
-            <version>2.20.0</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -160,6 +173,7 @@
                             com.dotcms.tika;version=0,
                             com.dotmarketing.osgi;version=0,
                             org.osgi.framework;version=0,
+                            org.osgi.framework.wiring;version=0,
                             com.dotmarketing.filters;version=0,
                             com.dotmarketing.util;version=0,
                             com.dotmarketing.exception;version=0
@@ -168,6 +182,13 @@
                         <Embed-Directory>lib</Embed-Directory>
                         <Embed-Dependency>*;scope=compile|runtime</Embed-Dependency>
                         <Embed-Transitive>true</Embed-Transitive>
+                        <!-- Embedded jars (log4j 2.25+) carry OSGi bundle annotations: Bundle-Activator,
+                             capabilities and package exports. Only our own classes may contribute
+                             headers, and the computed Export-Package is dropped, so this bundle keeps
+                             a single activator and exports nothing, as before. Include-Resource and
+                             Private-Package are the plugin defaults for -removeheaders. -->
+                        <_bundleannotations>com.dotcms.*</_bundleannotations>
+                        <_removeheaders>Include-Resource,Private-Package,Export-Package</_removeheaders>
                     </instructions>
                 </configuration>
             </plugin>
