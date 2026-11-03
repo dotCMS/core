@@ -1,13 +1,28 @@
-import { ChangeDetectionStrategy, Component, effect, inject, untracked } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    effect,
+    inject,
+    Injector,
+    untracked
+} from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { ToastModule } from 'primeng/toast';
 
 import { take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { PublishAuditStatus } from '@dotcms/dotcms-models';
+import {
+    DotEditContentOpenerService,
+    DotEditContentRequest,
+    DotPanelUrlStateService,
+    readPanelUrlIntent
+} from '@dotcms/edit-content';
 
 import { DotPublishingQueueToolbarComponent } from '../components/dot-publishing-queue-toolbar/dot-publishing-queue-toolbar.component';
 import { DotPublishingQueueAssetListDialogHeaderComponent } from '../dialogs/dot-publishing-queue-asset-list-dialog/dot-publishing-queue-asset-list-dialog-header.component';
@@ -34,10 +49,19 @@ const EDITABLE_ASSET_STATUSES = new Set<PublishAuditStatus | null>([
     selector: 'dot-publishing-queue-shell',
     imports: [
         ConfirmDialogModule,
+        ToastModule,
         DotPublishingQueueToolbarComponent,
         DotPublishingQueueTableComponent
     ],
-    providers: [DotPublishingQueueStore, DialogService, ConfirmationService],
+    providers: [
+        DotPublishingQueueStore,
+        DialogService,
+        ConfirmationService,
+        // A panel reopened over the list from the URL lives under this component's injector, and
+        // its editor needs PrimeNG's MessageService. The admin root provides none (one there would
+        // hide the page editor's), so the panel toasts through this one, in this template (#38303).
+        MessageService
+    ],
     templateUrl: './dot-publishing-queue-shell.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0 block' }
@@ -47,6 +71,11 @@ export class DotPublishingQueueShellComponent {
     readonly #dialogService = inject(DialogService);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #route = inject(ActivatedRoute);
+    readonly #opener = inject(DotEditContentOpenerService);
+    readonly #panelUrl = inject(DotPanelUrlStateService);
+    /** The shell's injector: a panel reopened over the list closes with the portlet. */
+    readonly #injector = inject(Injector);
 
     #detailRef: DynamicDialogRef | null = null;
     #uploadRef: DynamicDialogRef | null = null;
@@ -63,6 +92,41 @@ export class DotPublishingQueueShellComponent {
             const bundleId = this.#store.detailBundleId();
             untracked(() => this.#syncDetail(bundleId));
         });
+
+        this.#openFromUrl();
+    }
+
+    /**
+     * Opens what the URL names, once, on load (#38303, FR-049). A row opened from the asset list or
+     * the bundle wizard wrote its panel to the URL; a refresh or a shared link reopens it over the
+     * list, without the dialog it came from. A URL naming two panels opens neither, and loses both.
+     */
+    #openFromUrl(): void {
+        const intent = readPanelUrlIntent(this.#route.snapshot.queryParams);
+
+        if (intent.kind === 'edit') {
+            const { identifier, languageId } = intent;
+            this.#openOverList({ mode: 'edit', identifier, ...(languageId ? { languageId } : {}) });
+        } else if (intent.kind === 'create') {
+            this.#openOverList({ mode: 'new', contentType: intent.contentType });
+        } else if (intent.kind === 'conflict') {
+            this.#panelUrl.clear();
+        }
+    }
+
+    /**
+     * Opens content in the side panel over the list, written to the URL; every save and the close
+     * reload the list.
+     *
+     * @param request What to open, without the portlet.
+     */
+    #openOverList(request: DotEditContentRequest): void {
+        const reload = () => this.#store.refresh();
+
+        this.#opener.open(
+            { ...request, portletId: 'publishing-queue' },
+            { injector: this.#injector, saved: reload, closed: reload, url: {} }
+        );
     }
 
     openSelectBundle(): void {

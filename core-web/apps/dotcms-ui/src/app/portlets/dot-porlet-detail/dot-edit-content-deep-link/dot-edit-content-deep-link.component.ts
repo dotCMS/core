@@ -1,106 +1,84 @@
-import { Component, Injector, OnDestroy, OnInit, inject } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Component, OnInit, inject } from '@angular/core';
+import { ActivatedRoute, Params, Router } from '@angular/router';
 
-import { MessageService } from 'primeng/api';
-import { ToastModule } from 'primeng/toast';
+import { take } from 'rxjs/operators';
 
-import { DotIframeService, DotRouterService } from '@dotcms/data-access';
-import type { DotEditContentRequest } from '@dotcms/edit-content';
-import type { DotSidePanelRef } from '@dotcms/ui';
-
-import { openEditContentPanel } from '../../../api/util/open-edit-content-panel';
+import {
+    DotContentletService,
+    DotHttpErrorManagerService,
+    DotRouterService
+} from '@dotcms/data-access';
+import { DOT_PANEL_URL_PARAM } from '@dotcms/utils';
 
 /**
- * A deep link to content (`/c/:id/:asset`, `/c/:id/new/:contentType`, `/pages/:asset`,
- * `/pages/new/:contentType`) opens the side panel over the portlet it belongs to (#38303, R11). The
- * links keep their paths, so bookmarks and the menu's redirects keep working; the route only opens
- * the panel and goes back to the portlet when it closes.
+ * A path deep link to content (`/c/:id/:asset`, `/c/:id/new/:contentType`) redirects to the
+ * portlet's own URL with the side panel params, replacing the path form in history (#38303,
+ * FR-049). The portlet then opens the panel as it does for any URL that names one, so a link is
+ * not a second way to open a panel. Velocity and old bookmarks still emit the path form, so the
+ * routes stay.
  *
- * The portlet is the one `DotRouterService.currentPortlet` names: its id goes on the request and to
- * the iframe reload, and its URL without the asset segments is where closing the panel returns.
- *
- * The panel lives under this component's injector, and its editor needs PrimeNG's `MessageService`.
- * The admin root provides none (one there would hide the page editor's), so this component provides
- * its own and renders its toast (#38303).
+ * The portlet is the one `DotRouterService.currentPortlet` names. Its own query params survive the
+ * redirect.
  */
 @Component({
     selector: 'dot-edit-content-deep-link',
-    imports: [ToastModule],
-    providers: [MessageService],
-    templateUrl: './dot-edit-content-deep-link.component.html'
+    template: ''
 })
-export class DotEditContentDeepLinkComponent implements OnInit, OnDestroy {
+export class DotEditContentDeepLinkComponent implements OnInit {
     readonly #route = inject(ActivatedRoute);
     readonly #router = inject(Router);
     readonly #dotRouterService = inject(DotRouterService);
-    readonly #dotIframeService = inject(DotIframeService);
-    readonly #injector = inject(Injector);
-
-    /** The panel this route opened, once the editor has loaded. */
-    #panel: DotSidePanelRef | null = null;
-
-    /** Set when the route is left, so the panel closing with it does not navigate back. */
-    #leaving = false;
+    readonly #contentletService = inject(DotContentletService);
+    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
 
     /**
-     * Opens the panel for the route: an edit for `:asset`, a create for `:contentType` (in the
-     * folder `?folder` names). Every save reloads the portlet; closing the panel returns to it.
+     * Redirects for what the path names: content by inode, named in the URL by its identifier and
+     * language, which this looks up; or a content type to create, in the folder `?folder` names.
      */
     ngOnInit(): void {
-        const { id: portletId, url } = this.#dotRouterService.currentPortlet;
-        const returnUrl = parentPortletUrl(url);
-        const reload = () => {
-            if (portletId) {
-                this.#dotIframeService.reloadData(portletId);
-            }
-        };
+        const { asset, contentType } = this.#route.snapshot.params;
 
-        void openEditContentPanel(
-            { ...this.#request(), portletId },
-            {
-                injector: this.#injector,
-                saved: reload,
-                closed: () => {
-                    if (this.#leaving) {
-                        return;
-                    }
+        if (!asset) {
+            const folder = this.#route.snapshot.queryParams['folder'];
 
-                    this.#router.navigate([returnUrl], { queryParamsHandling: 'preserve' });
-                    reload();
+            this.#redirect({
+                [DOT_PANEL_URL_PARAM.CREATE_CONTENT]: contentType,
+                ...(folder ? { folder } : {})
+            });
+
+            return;
+        }
+
+        this.#contentletService
+            .getContentletByInode(asset)
+            .pipe(take(1))
+            .subscribe({
+                next: ({ identifier, languageId }) =>
+                    this.#redirect({
+                        [DOT_PANEL_URL_PARAM.EDIT_CONTENT]: identifier,
+                        [DOT_PANEL_URL_PARAM.EDIT_CONTENT_LANG]: String(languageId)
+                    }),
+                // A bad inode, a deleted contentlet or no permission: the standard error, and the
+                // portlet without a panel.
+                error: (error) => {
+                    this.#httpErrorManager.handle(error);
+                    this.#redirect();
                 }
-            }
-        ).then((panel) => (this.#panel = panel));
+            });
     }
 
     /**
-     * The route is being left (the author went elsewhere): the panel goes with it, without sending
-     * the author back to the portlet. A panel still loading is never opened.
+     * Goes to the portlet's URL with these panel params, in place of the path form.
+     *
+     * @param queryParams The panel params, when there is a panel to name.
      */
-    ngOnDestroy(): void {
-        this.#leaving = true;
-        this.#panel?.close();
+    #redirect(queryParams?: Params): void {
+        const { id } = this.#dotRouterService.currentPortlet;
+
+        void this.#router.navigate(['/c', id], {
+            ...(queryParams ? { queryParams } : {}),
+            queryParamsHandling: 'merge',
+            replaceUrl: true
+        });
     }
-
-    /** What the route names: an inode to edit, or a content type to create. */
-    #request(): DotEditContentRequest {
-        const { asset, contentType } = this.#route.snapshot.params;
-        const folderInode = this.#route.snapshot.queryParams['folder'];
-
-        return asset
-            ? { mode: 'edit', inode: asset }
-            : { mode: 'new', contentType, ...(folderInode ? { folderInode } : {}) };
-    }
-}
-
-/**
- * The portlet a deep link belongs to: its URL without the query and without the asset segments
- * (`/c/content/abc` → `/c/content`, `/pages/new/Blog?folder=x` → `/pages`).
- *
- * @param url The deep link's full URL.
- */
-function parentPortletUrl(url: string): string {
-    const segments = url.split('?')[0].split('/');
-    const createIndex = segments.lastIndexOf('new');
-
-    return segments.slice(0, createIndex > 0 ? createIndex : -1).join('/');
 }

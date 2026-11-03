@@ -24,8 +24,10 @@ export type {
 } from './lib/opener/inject-edit-content-panel';
 // The open panel in the surface's URL (#38303, FR-044 to FR-050): the opener writes it when a
 // surface passes the `url` option; the surface reads it once on load with `readPanelUrlIntent`.
-export { DOT_PANEL_URL_PARAM, readPanelUrlIntent } from './lib/opener/url/read-panel-url-intent';
-export type { DotPanelUrlIntent } from './lib/opener/url/read-panel-url-intent';
+// The URL reader lives in @dotcms/utils so the admin app can read a URL without this library;
+// re-exported here so a surface that opens content imports everything from one place.
+export { DOT_PANEL_URL_PARAM, readPanelUrlIntent } from '@dotcms/utils';
+export type { DotPanelUrlIntent } from '@dotcms/utils';
 export {
     DotPanelUrlStateService,
     type DotPanelUrlRegisterOptions

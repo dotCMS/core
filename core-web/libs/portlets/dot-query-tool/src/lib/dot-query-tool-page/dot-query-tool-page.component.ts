@@ -227,7 +227,7 @@ export class DotQueryToolPageComponent implements OnInit {
         injectEditContentPanel(this.$editRequest, {
             saved: () => this.onEditPanelSaved(),
             closed: () => this.onEditPanelClosed(),
-            url: { route: this.#route }
+            url: {}
         });
     }
 
