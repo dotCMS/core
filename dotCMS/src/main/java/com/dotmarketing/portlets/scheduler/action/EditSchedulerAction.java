@@ -5,6 +5,7 @@ import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portal.struts.DotPortletAction;
@@ -33,6 +34,9 @@ import org.apache.commons.beanutils.BeanUtils;
  */
 
 public class EditSchedulerAction extends DotPortletAction {
+
+	/** Request attribute with the name of the user a job runs as, shown in the edit form. */
+	static final String SCHEDULED_BY_ATTRIBUTE = "scheduledByUserName";
 
 	public void processAction(ActionMapping mapping, ActionForm form, PortletConfig config, ActionRequest req, ActionResponse res)
 		throws Exception {
@@ -115,6 +119,7 @@ public class EditSchedulerAction extends DotPortletAction {
 						if (scheduler != null) {
 							_populateForm(form, scheduler);
 							schedulerForm.setMap(withoutScheduledBy(scheduler.getProperties()));
+							setScheduledByAttribute(req, scheduler);
 						}
 						
 						String redirect = req.getParameter("referrer");
@@ -177,6 +182,7 @@ public class EditSchedulerAction extends DotPortletAction {
 				_populateForm(form, scheduler);
 				SchedulerForm schedulerForm = (SchedulerForm) form;
 				schedulerForm.setMap(withoutScheduledBy(scheduler.getProperties()));
+				setScheduledByAttribute(req, scheduler);
 				schedulerForm.setEditMode(true);
 				if (!UtilMethods.isSet(scheduler.getCronExpression())) {
 					SessionMessages.add(req, "message", "message.Scheduler.jobExpired");
@@ -467,6 +473,29 @@ public class EditSchedulerAction extends DotPortletAction {
 		final Map<String, Object> visible = new HashMap<>(properties);
 		visible.remove(ScheduledTask.SCHEDULED_BY_USER_ID);
 		return visible;
+	}
+
+	/**
+	 * Puts the name of the user the job runs as, recorded under {@link ScheduledTask#SCHEDULED_BY_USER_ID},
+	 * in the {@link #SCHEDULED_BY_ATTRIBUTE} request attribute so the edit form can show it. The user id
+	 * is shown when the user cannot be loaded, and nothing is set when the job has no user recorded.
+	 *
+	 * @param req       the request
+	 * @param scheduler the job being edited
+	 */
+	private static void setScheduledByAttribute(final ActionRequest req, final CronScheduledTask scheduler) {
+		final Object userId = scheduler.getProperties() == null ? null
+				: scheduler.getProperties().get(ScheduledTask.SCHEDULED_BY_USER_ID);
+		if (!UtilMethods.isSet(userId)) {
+			return;
+		}
+		String name = userId.toString();
+		try {
+			name = APILocator.getUserAPI().loadUserById(userId.toString()).getFullName();
+		} catch (final Exception e) {
+			Logger.debug(EditSchedulerAction.class, () -> "Could not load the user " + userId + ": " + e.getMessage());
+		}
+		req.setAttribute(SCHEDULED_BY_ATTRIBUTE, name);
 	}
 
 	private void _deleteScheduler(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form , User user) throws Exception {

@@ -3,6 +3,7 @@ package com.dotmarketing.quartz.job;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.repackage.com.csvreader.CsvReader;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.cache.FieldsCache;
@@ -10,6 +11,7 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -125,7 +127,14 @@ public class ContentImportThread implements Job{
 			}
 			Logger.debug(this, "Structure:"+structureName+" - PATH:"+path+" - LOGPATH:"+logPath);
 
-			final User user = getImportUser(context);
+			final User user;
+			try {
+				user = getImportUser(context);
+			} catch (final DotDataException | DotSecurityException e) {
+				Logger.error(this, "Could not load the user of the import job '" + context.getJobDetail().getName()
+						+ "', the import is skipped for this run: " + e.getMessage(), e);
+				return;
+			}
 			if (user == null) {
 				Logger.warn(this, "The import job '" + context.getJobDetail().getName()
 						+ "' has no active user to run as. Save the job again in the Scheduler to run it with your user.");
@@ -251,9 +260,12 @@ public class ContentImportThread implements Job{
 	 * permissions.
 	 *
 	 * @param context the job execution context
-	 * @return the user, or {@code null} when the job has no active user recorded
+	 * @return the user, or {@code null} when the job has no user recorded, or the recorded user no
+	 *         longer exists or is not active
+	 * @throws DotDataException     if the user cannot be loaded
+	 * @throws DotSecurityException if the user cannot be loaded
 	 */
-	private User getImportUser(final JobExecutionContext context) {
+	private User getImportUser(final JobExecutionContext context) throws DotDataException, DotSecurityException {
 		final String userId = (String) context.getMergedJobDataMap().get(ScheduledTask.SCHEDULED_BY_USER_ID);
 		if (!UtilMethods.isSet(userId)) {
 			return null;
@@ -261,8 +273,8 @@ public class ContentImportThread implements Job{
 		try {
 			final User user = APILocator.getUserAPI().loadUserById(userId);
 			return user != null && user.isActive() ? user : null;
-		} catch (final Exception e) {
-			Logger.debug(this, () -> "Could not load the user " + userId + ": " + e.getMessage());
+		} catch (final NoSuchUserException e) {
+			Logger.debug(this, () -> "The user " + userId + " of the import job no longer exists");
 			return null;
 		}
 	}

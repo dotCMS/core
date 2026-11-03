@@ -323,6 +323,13 @@ function deleteSchedule(form) {
 									<option><%= c %></option>
 								 <% } %>
 							</select>
+							<% final String scheduledBy = (String) request.getAttribute("scheduledByUserName"); %>
+							<div class="hint-text">
+								<% if (UtilMethods.isSet(scheduledBy)) { %>
+									<%= LanguageUtil.get(pageContext, "scheduler.job.runs-as") %>: <%= Xss.encodeForHTML(scheduledBy) %>.
+								<% } %>
+								<%= LanguageUtil.get(pageContext, "scheduler.job.runs-as-saving-user") %>
+							</div>
 						<%} else {%>
 							<input type="hidden" name="javaClass" value="<%= schedulerForm.getJavaClass() %>">
 						<%}%>

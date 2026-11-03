@@ -122,6 +122,42 @@ public class ContentImportThreadTest extends IntegrationTestBase {
         assertTrue("The file should be left for the next run", csv.exists());
     }
 
+    /**
+     * Method to test: {@link ContentImportThread#execute(JobExecutionContext)}
+     * Given: a job whose recorded user was deactivated after saving it
+     * Expected: no content is created and the file stays where it is
+     */
+    @Test
+    public void test_execute_userNotActive_shouldNotImport() throws Exception {
+        final ContentType contentType = newContentType();
+        final User user = newUserWithPermissions(contentType,
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH);
+        user.setActive(false);
+        APILocator.getUserAPI().save(user, systemUser, false);
+        final String title = "imported-" + UUID.randomUUID();
+
+        final File csv = runImport(contentType, title, user.getUserId());
+
+        assertTrue(findByTitle(contentType, title).isEmpty());
+        assertTrue("The file should be left for the next run", csv.exists());
+    }
+
+    /**
+     * Method to test: {@link ContentImportThread#execute(JobExecutionContext)}
+     * Given: a job whose recorded user no longer exists
+     * Expected: no content is created and the file stays where it is
+     */
+    @Test
+    public void test_execute_userNotFound_shouldNotImport() throws Exception {
+        final ContentType contentType = newContentType();
+        final String title = "imported-" + UUID.randomUUID();
+
+        final File csv = runImport(contentType, title, "user-" + UUID.randomUUID());
+
+        assertTrue(findByTitle(contentType, title).isEmpty());
+        assertTrue("The file should be left for the next run", csv.exists());
+    }
+
     private static ContentType newContentType() {
         return new ContentTypeDataGen()
                 .host(new SiteDataGen().nextPersisted())
