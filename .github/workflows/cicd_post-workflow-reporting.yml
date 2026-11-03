@@ -162,39 +162,41 @@ jobs:
                echo "report_type=$trigger_event_name" >> "$GITHUB_OUTPUT"
             fi
           
-            # The failing module's error is Maven output and can span lines, so it goes out in
-            # the multi-line form; the delimiter is random so the text can never close it early.
-            delimiter="ghadelimiter_$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')"
-            {
-              echo "first_fail_error<<${delimiter}"
-              echo "$first_fail_error"
-              echo "${delimiter}"
-              echo "json=$json"
-              echo "trigger_event_name=$trigger_event_name"
-              echo "has_json=true"
-              echo "status=$status"
-              echo "pr_number=$pr_number"
-              echo "pr_author=$pr_author"
-              echo "run_id=$run_id"
-              echo "first_fail_step=$first_fail_step"
-              echo "first_fail_module=$first_fail_module"
-              echo "pr_title=$pr_title"
-              echo "branch=$branch"
-              echo "head_sha=$head_sha"
-              echo "head_author=$head_author"
-              echo "head_name=$head_name"
-              echo "source_repository=$source_repository"
-              echo "action_run_url=$action_run_url"
-              echo "pr_number_url=$pr_number_url"
-              echo "branch_url=$branch_url"
-              echo "commit_id_url=$commit_id_url"
-              echo "test_results_url=$test_results_url"
-              echo "test_conclusion=$test_conclusion"
-              echo "test_passed=$test_passed"
-              echo "test_failed=$test_failed"
-              echo "test_skipped=$test_skipped"
-              echo "test_elapsed=$test_elapsed"
-            } >> "$GITHUB_OUTPUT"
+            # Every value comes from the report, which the reported run wrote, so each output
+            # goes out in the delimited form: a line break inside a value then stays inside it
+            # instead of starting another output. The delimiter is random so the value can never
+            # close it early.
+            output() {
+              local delimiter
+              delimiter="ghadelimiter_$(od -An -N16 -tx1 /dev/urandom | tr -d ' \n')"
+              printf '%s<<%s\n%s\n%s\n' "$1" "${delimiter}" "$2" "${delimiter}" >> "$GITHUB_OUTPUT"
+            }
+            output json "$json"
+            output trigger_event_name "$trigger_event_name"
+            output has_json "true"
+            output status "$status"
+            output pr_number "$pr_number"
+            output pr_author "$pr_author"
+            output run_id "$run_id"
+            output first_fail_step "$first_fail_step"
+            output first_fail_module "$first_fail_module"
+            output first_fail_error "$first_fail_error"
+            output pr_title "$pr_title"
+            output branch "$branch"
+            output head_sha "$head_sha"
+            output head_author "$head_author"
+            output head_name "$head_name"
+            output source_repository "$source_repository"
+            output action_run_url "$action_run_url"
+            output pr_number_url "$pr_number_url"
+            output branch_url "$branch_url"
+            output commit_id_url "$commit_id_url"
+            output test_results_url "$test_results_url"
+            output test_conclusion "$test_conclusion"
+            output test_passed "$test_passed"
+            output test_failed "$test_failed"
+            output test_skipped "$test_skipped"
+            output test_elapsed "$test_elapsed"
           
           fi
       # Prepare the Slack message payload. The title, branch name, authors and error text are
@@ -232,30 +234,55 @@ jobs:
           subject_url="${PR_NUMBER_URL:-$BRANCH_URL}"
           subject_name="${PR_TITLE:-$BRANCH}"
           
+          # The texts are composed inside the jq filter so the line breaks are JSON escapes and
+          # the values are only ever data
           payload=$(jq -n -c \
-            --arg text "Github Action ${STATUS} for ${REPORT_TYPE} #${subject}" \
-            --arg header "${STATUS_ICON} Github Action ${STATUS} for ${REPORT_TYPE} #${subject}" \
-            --arg run "*Action Run ID:* <${ACTION_RUN_URL} | ${RUN_ID}> \n*Failure Step:* ${FIRST_FAIL_STEP} \n*Failure Module:* ${FIRST_FAIL_MODULE}" \
-            --arg failure "*Failure Message:* ${FIRST_FAIL_ERROR}" \
-            --arg details "*${REPORT_TYPE} Details:* \nAuthor: ${PR_AUTHOR} \nName: <${subject_url} | ${subject_name}> \nNumber: #${subject} \nBranch: <${BRANCH_URL} | ${BRANCH}>" \
-            --arg commit "*Commit Details:* \nID: <${COMMIT_ID_URL} | #${HEAD_SHA}> \nAuthor: ${HEAD_AUTHOR} \nName: ${HEAD_NAME}" \
-            --arg tests_header "🧪 Test Results = ${TEST_CONCLUSION}" \
-            --arg tests "*Passed:* ${TEST_PASSED} \n*Failed:* ${TEST_FAILED} \n*Skipped:* ${TEST_SKIPPED} \n*Elapsed Time:* ${TEST_ELAPSED}" \
-            --arg tests_link "🔍 <${TEST_RESULTS_URL} | View Test Results>" \
+            --arg status "${STATUS}" \
+            --arg status_icon "${STATUS_ICON}" \
+            --arg report_type "${REPORT_TYPE}" \
+            --arg subject "${subject}" \
+            --arg subject_url "${subject_url}" \
+            --arg subject_name "${subject_name}" \
+            --arg pr_author "${PR_AUTHOR}" \
+            --arg branch "${BRANCH}" \
+            --arg branch_url "${BRANCH_URL}" \
+            --arg run_id "${RUN_ID}" \
+            --arg action_run_url "${ACTION_RUN_URL}" \
+            --arg first_fail_step "${FIRST_FAIL_STEP}" \
+            --arg first_fail_module "${FIRST_FAIL_MODULE}" \
+            --arg first_fail_error "${FIRST_FAIL_ERROR}" \
+            --arg head_sha "${HEAD_SHA}" \
+            --arg head_author "${HEAD_AUTHOR}" \
+            --arg head_name "${HEAD_NAME}" \
+            --arg commit_id_url "${COMMIT_ID_URL}" \
+            --arg test_conclusion "${TEST_CONCLUSION}" \
+            --arg test_passed "${TEST_PASSED}" \
+            --arg test_failed "${TEST_FAILED}" \
+            --arg test_skipped "${TEST_SKIPPED}" \
+            --arg test_elapsed "${TEST_ELAPSED}" \
+            --arg test_results_url "${TEST_RESULTS_URL}" \
             '{
-              text: $text,
+              text: "Github Action \($status) for \($report_type) #\($subject)",
               blocks: [
-                { type: "header", text: { type: "plain_text", text: $header, emoji: true } },
-                { type: "section", text: { type: "mrkdwn", text: $run } },
-                { type: "section", text: { type: "mrkdwn", text: $failure } },
+                { type: "header", text: { type: "plain_text", emoji: true,
+                    text: "\($status_icon) Github Action \($status) for \($report_type) #\($subject)" } },
+                { type: "section", text: { type: "mrkdwn",
+                    text: "*Action Run ID:* <\($action_run_url) | \($run_id)> \n*Failure Step:* \($first_fail_step) \n*Failure Module:* \($first_fail_module)" } },
+                { type: "section", text: { type: "mrkdwn",
+                    text: "*Failure Message:* \($first_fail_error)" } },
                 { type: "divider" },
-                { type: "section", text: { type: "mrkdwn", text: $details } },
+                { type: "section", text: { type: "mrkdwn",
+                    text: "*\($report_type) Details:* \nAuthor: \($pr_author) \nName: <\($subject_url) | \($subject_name)> \nNumber: #\($subject) \nBranch: <\($branch_url) | \($branch)>" } },
                 { type: "divider" },
-                { type: "section", text: { type: "mrkdwn", text: $commit } },
+                { type: "section", text: { type: "mrkdwn",
+                    text: "*Commit Details:* \nID: <\($commit_id_url) | #\($head_sha)> \nAuthor: \($head_author) \nName: \($head_name)" } },
                 { type: "divider" },
-                { type: "header", text: { type: "plain_text", text: $tests_header, emoji: true } },
-                { type: "section", text: { type: "mrkdwn", text: $tests } },
-                { type: "section", text: { type: "mrkdwn", text: $tests_link } }
+                { type: "header", text: { type: "plain_text", emoji: true,
+                    text: "🧪 Test Results = \($test_conclusion)" } },
+                { type: "section", text: { type: "mrkdwn",
+                    text: "*Passed:* \($test_passed) \n*Failed:* \($test_failed) \n*Skipped:* \($test_skipped) \n*Elapsed Time:* \($test_elapsed)" } },
+                { type: "section", text: { type: "mrkdwn",
+                    text: "🔍 <\($test_results_url) | View Test Results>" } }
               ]
             }')
           echo "payload=${payload}" >> "$GITHUB_OUTPUT"

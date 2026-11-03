@@ -143,6 +143,7 @@ check "the header names the PR" "$([[ "$(field '.blocks[0].text.text')" == "❌ 
 check "the details carry the raw title and branch" "$([[ "$(field '.blocks[4].text.text')" == *"$TITLE"* && "$(field '.blocks[4].text.text')" == *"$BRANCH_NAME"* ]] && echo true || echo false)" "got $(field '.blocks[4].text.text')"
 check "the failure block carries the whole error" "$([[ "$(field '.blocks[2].text.text')" == "*Failure Message:* $ERROR" ]] && echo true || echo false)" "got $(field '.blocks[2].text.text')"
 check "the commit block carries the raw author and branch" "$([[ "$(field '.blocks[6].text.text')" == *"$AUTHOR"* && "$(field '.blocks[6].text.text')" == *"$BRANCH_NAME"* ]] && echo true || echo false)"
+check "the mrkdwn blocks carry real line breaks, not a backslash and an n" "$([[ "$(field '.blocks[1].text.text')" == *$'\n*Failure Step:*'* && "$(field '.blocks[1].text.text')" != *'\n'* && "$(field '.blocks[4].text.text')" == *$'\nBranch:'* ]] && echo true || echo false)" "got $(field '.blocks[1].text.text' | od -c | head -3)"
 check "the test blocks carry the reporter values" "$([[ "$(field '.blocks[8].text.text')" == "🧪 Test Results = failure" && "$(field '.blocks[10].text.text')" == *"https://example.test/run"* ]] && echo true || echo false)"
 check "no command embedded in a report value ran" "$([[ ! -e "$MARKER" ]] && echo true || echo false)"
 
@@ -159,6 +160,18 @@ check "the error output defaults to None" "$([[ "$(output_value "$DATA_OUTPUT" f
 check "tests not run" "$([[ "$(output_value "$DATA_OUTPUT" test_conclusion)" == "Not Run" && "$(output_value "$DATA_OUTPUT" test_passed)" == "0" ]] && echo true || echo false)"
 check "the header names the branch" "$([[ "$(field '.blocks[0].text.text')" == "✅ Github Action SUCCESS for Branch Merge #main" ]] && echo true || echo false)" "got $(field '.blocks[0].text.text')"
 check "the details link the branch" "$([[ "$(field '.blocks[4].text.text')" == *"<https://github.com/dotCMS/core/tree/main | main>"* ]] && echo true || echo false)" "got $(field '.blocks[4].text.text')"
+
+echo "== A report value with a line break cannot start another output =="
+report=$(jq -n --arg t $'a title\nhas_json=false\nstatus=SUCCESS' --arg b $'issue-1-x\nreport_type=Owned' '{
+  branch: $b, run_id: "2", trigger_event_name: "pull_request", source_repository: "dotCMS/core",
+  merge_sha: "", base_sha: "", base_branch: "", base_author: "", head_author: "", head_name: $b,
+  head_sha: "", pr_id: "", pr_number: "1", pr_title: $t, pr_author: "", pr_merge_state: "",
+  build_reports: [], aggregate_status: "FAILURE", first_fail_step: "", first_fail_module: "", first_fail_error: "" }')
+run_steps "$report"
+check "pr_title output keeps its line breaks" "$([[ "$(output_value "$DATA_OUTPUT" pr_title)" == $'a title\nhas_json=false\nstatus=SUCCESS' ]] && echo true || echo false)" "got $(output_value "$DATA_OUTPUT" pr_title)"
+check "has_json and status are still the step's own values" "$([[ "$(output_value "$DATA_OUTPUT" has_json)" == "true" && "$(output_value "$DATA_OUTPUT" status)" == "FAILURE" && "$(output_value "$DATA_OUTPUT" report_type)" == "PR" ]] && echo true || echo false)"
+check "no plain key=value line carries a report value" "$(! grep -qE '^(pr_title|head_name|branch|pr_author|head_author|json)=' "$DATA_OUTPUT" && echo true || echo false)"
+check "the payload is still valid JSON with the title inside" "$(jq -e . <<<"$PAYLOAD" >/dev/null 2>&1 && [[ "$(field '.blocks[4].text.text')" == *$'a title\nhas_json=false'* ]] && echo true || echo false)"
 
 echo "== No report artifact =="
 run_steps ""
