@@ -33,6 +33,25 @@ export async function getWorkflowStepId(
 }
 
 /**
+ * Returns the id of a contentlet's workflow task, which every fired workflow action creates or
+ * updates, given the contentlet's inode. It is the last segment of the task's route in the
+ * Workflow Tasks portlet (`#/c/workflow/<taskId>`).
+ * Uses GET /api/v1/workflow/status/{inode}.
+ */
+export async function getWorkflowTaskId(
+    request: APIRequestContext,
+    inode: string
+): Promise<string> {
+    const response = await request.get(`/api/v1/workflow/status/${inode}`, {
+        headers: authHeaders()
+    });
+    expect(response.status()).toBe(200);
+    const data = await response.json();
+
+    return data.entity.task.id as string;
+}
+
+/**
  * Creates a workflow action in the given scheme/step.
  * POST /api/v1/workflow/actions
  */

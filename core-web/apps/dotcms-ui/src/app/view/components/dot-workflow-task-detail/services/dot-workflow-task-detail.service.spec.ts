@@ -59,6 +59,22 @@ describe('DotWorkflowTaskDetailService', () => {
             });
         }));
 
+    // The task component views its task again after the content is saved or closed in the side
+    // panel (#38303, FR-025a); the dialog's iframe reloads only when its URL changes.
+    it('should give the same task a new URL when it is viewed again, so the dialog reloads', () => {
+        const urls: string[] = [];
+        service.viewUrl$.subscribe((url: string) => urls.push(url));
+
+        service.view({ id: '999' });
+        service.view({ id: '999' });
+
+        const [first, again] = urls.slice(-2);
+        expect(again).not.toEqual(first);
+        expect(again).toContain('&_workflow_struts_action=/ext/workflows/edit_workflow_task');
+        expect(again).toContain('&_workflow_cmd=view');
+        expect(again).toContain('&_workflow_taskId=999');
+    });
+
     it('should clear url and undbind', () => {
         service.viewUrl$.subscribe((url: string) => {
             expect(url).toEqual('');
