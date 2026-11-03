@@ -3280,6 +3280,12 @@ public class ContentletAPITest extends ContentletBaseTest {
         APILocator.getStructureAPI().delete(testStructure, user);
     }
 
+    /**
+     * Method to test: {@link ContentletAPI#delete(Contentlet, User, boolean)}
+     * Given scenario: unarchived content deleted with the "don't validate me" flag set
+     * Expected result: the content is deleted and can no longer be found by inode. If it is still
+     * visible after the wait, the failure reports the cache, database and reindex queue state.
+     */
     @Test
     public void delete_GivenUnarchivedContentAndDontValidateMeInTrue_ShouldDeleteSuccessfully()
             throws Exception {

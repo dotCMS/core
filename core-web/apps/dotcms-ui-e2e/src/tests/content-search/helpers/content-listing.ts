@@ -95,9 +95,15 @@ export class ContentListingHelper {
             .poll(
                 () =>
                     this.frame.locator('body').evaluate(() => {
-                        const timer = (window as unknown as { t?: { isRunning: boolean } }).t;
+                        const timer = (
+                            window as unknown as {
+                                t?: { isRunning?: boolean; onTick?: unknown };
+                            }
+                        ).t;
 
-                        return timer ? !timer.isRunning : false;
+                        // Only the listing's dojox timer has onTick and isRunning; any other
+                        // global `t` must not count as "settled".
+                        return typeof timer?.onTick === 'function' && timer.isRunning === false;
                     }),
                 { timeout: 10000, message: 'the delayed search-box autofocus timer never ticked' }
             )

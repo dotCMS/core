@@ -368,6 +368,14 @@ public class SiteSearchJobImplTest extends IntegrationTestBase {
 
     }
 
+    /**
+     * Method to test: {@link SiteSearchJobImpl} incremental crawl
+     * Given scenario: a site of the test's own with published pages is crawled, a new page is
+     * published and crawled incrementally, then a page is unpublished and crawled again
+     * Expected result: the new page is picked up by the incremental crawl and the unpublished page
+     * is gone from the index. The test owns its site, so nothing it publishes is seen by the other
+     * crawl tests in this class.
+     */
     @Test
     public void Test_Incremental_Job_Test_Pages_Are_Found_Create_And_Publish_New_Page_Test_Changes_Are_Picked_Unpublish_Then_Verify_Page_Is_Gone()
     throws DotPublishingException, JobExecutionException, DotDataException, IOException, DotSecurityException {
