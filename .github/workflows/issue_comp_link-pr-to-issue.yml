@@ -21,33 +21,47 @@ env:
 jobs:
   link-pr-to-issue:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    # The job only reads the PR and patches its body; nothing else is needed.
+    permissions:
+      pull-requests: write
+    # The inputs reach the shell through the environment, never by expression substitution
+    # inside the script: a branch name is free text chosen by whoever opened the PR, and an
+    # expression is pasted into the script before bash parses it.
+    env:
+      PR_NUMBER: ${{ inputs.pr_number }}
+      PR_BRANCH: ${{ inputs.pr_branch }}
+      VALIDATE_MERGE: ${{ inputs.validate_merge }}
     steps:
       - run: echo 'GitHub context'
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
 
+      # Tested by .github/workflows/tests/link-pr-to-issue.test.sh, which extracts this step by
+      # its id and runs it with `gh` stubbed, so the script must stay free of `${{ }}` expressions.
       - name: Link PR to Issue
+        id: link_pr_to_issue
         continue-on-error: true
         shell: bash
         run: |
+          [[ ! "${PR_NUMBER}" =~ ^[0-9]+$ ]] && echo "PR number [${PR_NUMBER}] is not a number" && exit 1
+
           pr_json=$(\
             gh api \
               --method GET \
-              repos/${{ github.repository }}/pulls/${{ inputs.pr_number }} \
+              "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" \
             | jq -c -r \
           )
           
           pr_merged=$(echo "${pr_json}" | jq '.merged')
-          [[ "${{ inputs.validate_merge }}" == 'true' && "${pr_merged}" != 'true' ]] && echo "PR [${{ inputs.pr_number }}] is not merged" && exit 1
+          [[ "${VALIDATE_MERGE}" == 'true' && "${pr_merged}" != 'true' ]] && echo "PR [${PR_NUMBER}] is not merged" && exit 1
           echo "pr_merged=${pr_merged}"
           
-          pr_branch=${{ inputs.pr_branch }}
           issue_number=
-          if [[ ${pr_branch} =~ ^[0-9]+- ]]; then
-            issue_number=${pr_branch%%-*}
-          elif [[ ${pr_branch} =~ ^issue-[0-9]+- ]]; then
-            issue_number=${pr_branch#*-}
-            issue_number=${issue_number%%-*}
+          if [[ "${PR_BRANCH}" =~ ^[0-9]+- ]]; then
+            issue_number="${PR_BRANCH%%-*}"
+          elif [[ "${PR_BRANCH}" =~ ^issue-[0-9]+- ]]; then
+            issue_number="${PR_BRANCH#*-}"
+            issue_number="${issue_number%%-*}"
           fi
           [[ -z "${issue_number}" ]] && echo 'Issue number could not be resolved' && exit 2
           echo "issue_number=${issue_number}"
@@ -55,7 +69,7 @@ jobs:
           issue_json=$(\
             gh api \
               --method GET \
-              repos/${{ github.repository }}/issues/${issue_number} \
+              "repos/${GITHUB_REPOSITORY}/issues/${issue_number}" \
           )
           fetched_issue_number=$(echo "${issue_json}" | jq -r '.number')
           [[ -z "${fetched_issue_number}" ]] && echo "Issue [${issue_number}] could not be resolved" && exit 3
@@ -70,5 +84,5 @@ jobs:
             --method PATCH \
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            /repos/${{ github.repository }}/pulls/${{ inputs.pr_number }} \
+            "/repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}" \
             -f "body=${pr_body}"
