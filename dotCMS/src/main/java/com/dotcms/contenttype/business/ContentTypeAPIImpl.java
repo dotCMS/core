@@ -1169,7 +1169,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
   /**
    * Persists the content type with its fields and field variables in one transaction. When the
    * save changes the type's publish or expire date var, {@link IdentifierDateJob} is scheduled to
-   * copy the new dates onto the identifiers of the type's contentlets.
+   * copy the new dates onto the identifiers of the type's contentlets. The job is scheduled after
+   * the transaction commits, so it never runs against a save that rolls back or has not committed.
    *
    * @param newFields         the fields to save with the type
    * @param newFieldVariables the field variables to save with the type
@@ -1202,8 +1203,12 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
               || fireUpdateIdentifiers(oldType.publishDateVar(),
               contentTypeToSave.publishDateVar())) {
         // The job copies the type's publish/expire date vars onto each identifier, so it must get
-        // the saved type: the previous one still has the old (possibly empty) date vars.
-        IdentifierDateJob.triggerJobImmediately(contentTypeToSave, user);
+        // the saved type: the previous one still has the old (possibly empty) date vars. It runs
+        // on a Quartz thread, so it is scheduled only after this transaction commits; otherwise it
+        // could start before the type and its fields are committed, or act on a save that rolls back.
+        final ContentType typeForDateJob = contentTypeToSave;
+        HibernateUtil.addCommitListener(
+                () -> IdentifierDateJob.triggerJobImmediately(typeForDateJob, user));
       }
       perms.resetPermissionReferences(contentTypeToSave);
     }
