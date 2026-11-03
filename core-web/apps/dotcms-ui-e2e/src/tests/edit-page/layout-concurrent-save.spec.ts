@@ -23,6 +23,10 @@ import { createTemplate, deleteTemplate, getTemplate } from '@requests/templates
 
 const SYSTEM_CONTAINER = 'SYSTEM_CONTAINER';
 
+// Mirrors DEBOUNCE_TIME in edit-ema-layout.component.ts: an edit does not send the layout
+// save (and so does not lock the canvas) until the builder has been idle this long.
+const LAYOUT_SAVE_DEBOUNCE_MS = 5000;
+
 // TemplateResource requires `theme` to resolve to a real Folder via FolderAPI.find
 // (dotCMS/.../rest/api/v1/template/TemplateResource.java, ~line 587 — "theme must be a
 // folder identifier"). Theme.SYSTEM_THEME is a synthetic, non-persisted sentinel (never a
@@ -153,8 +157,13 @@ test('editing during an in-flight layout save does not lose container content @c
 
     // Check the overlay first — confirms the deletion click really flipped
     // #layoutSaveInFlight (i.e. a save was genuinely triggered), independent of whether
-    // our route pattern below actually matches the request.
-    await expect(templateBuilder.getOverlay()).toBeVisible({ timeout: 6000 });
+    // our route pattern below actually matches the request. The overlay only appears when
+    // the debounce fires, so the wait must outlast the debounce itself: the previous flat
+    // 6 s left about 1 s for the edit to reach the debounce and for the lock to render,
+    // and failed about 1 run in 10 locally.
+    await expect(templateBuilder.getOverlay()).toBeVisible({
+        timeout: LAYOUT_SAVE_DEBOUNCE_MS + 10_000
+    });
 
     // Poll layoutPostCount rather than asserting it immediately: the DOM update above and
     // the network request reaching Playwright's routing layer travel through different
