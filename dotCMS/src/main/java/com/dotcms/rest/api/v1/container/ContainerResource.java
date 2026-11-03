@@ -18,7 +18,8 @@ import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.rest.api.v1.page.ResponseEntityPaginatedArrayListMapView;
 import com.dotcms.rest.exception.ConflictException;
 import com.dotcms.rest.exception.ForbiddenException;
-import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.exception.ExceptionUtil;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.JsonUtil;
 import com.dotcms.util.PaginationUtil;
@@ -193,12 +194,17 @@ public class ContainerResource implements Serializable {
      * <li>direction: asc for upward order and desc for downward order</li>
      * <li>host: filter by host's id</li>
      * <li>system: If the System Container object must be returned, set to {@code true}. Otherwise, set to {@code false}.</li>
+     * <li>archive: If archived Containers must be returned, set to {@code true}.</li>
+     * <li>content_type: only return the Containers that use this content type (id or variable name)</li>
      * </ul>
      *
      * Url example: v1/container?filter=test&page=2&orderby=title
      *
-     * @param httpRequest
-     * @return
+     * <p>Only the Containers the user can read are returned. A content type the user cannot read
+     * answers 403, and an unknown content type answers 404.</p>
+     *
+     * @param httpRequest the HTTP request
+     * @return the page of Containers, or the error response described above
      */
     @GET
     @JSONP
@@ -217,6 +223,7 @@ public class ContainerResource implements Serializable {
                     @ApiResponse(responseCode = "400", description = "Bad request - Invalid parameters"),
                     @ApiResponse(responseCode = "401", description = "Unauthorized - User not authenticated"),
                     @ApiResponse(responseCode = "403", description = "Forbidden - User lacks required permissions"),
+                    @ApiResponse(responseCode = "404", description = "Not found - The content type does not exist"),
                     @ApiResponse(responseCode = "500", description = "Internal server error")
             }
     )
@@ -249,8 +256,12 @@ public class ContainerResource implements Serializable {
                     extraParams);
 
         } catch (final Exception e) {
-            Logger.error(this, e.getMessage(), e);
-            return ExceptionMapperUtil.createResponse(e, Response.Status.INTERNAL_SERVER_ERROR);
+            // A content type the user cannot read, or one that does not exist, is a client error
+            if (!ExceptionUtil.causedBy(e, ExceptionUtil.SECURITY_EXCEPTIONS)
+                    && !ExceptionUtil.causedBy(e, ExceptionUtil.NOT_FOUND_EXCEPTIONS)) {
+                Logger.error(this, e.getMessage(), e);
+            }
+            return ResponseUtil.mapExceptionResponse(e);
         }
     }
 

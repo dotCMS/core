@@ -5967,6 +5967,8 @@ paths:
           description: Unauthorized - User not authenticated
         "403":
           description: Forbidden - User lacks required permissions
+        "404":
+          description: Not found - The content type does not exist
         "500":
           description: Internal server error
       summary: Retrieves a paginated list of Containers
