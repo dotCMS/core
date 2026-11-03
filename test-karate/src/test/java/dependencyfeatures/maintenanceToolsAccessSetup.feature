@@ -6,7 +6,7 @@ Feature: Users, role and layout for the Maintenance tool access tests
 
   Scenario: Create the users, the role and the layout
     * def suffix = java.util.UUID.randomUUID().toString().replace('-', '').substring(0, 12)
-    * def password = 'Pw' + suffix
+    * def password = 'Maint-Pw-' + suffix + '-Aa1!'
     * def maintenanceEmail = 'maintenance' + suffix + '@dotcms.com'
     * def backendEmail = 'backend' + suffix + '@dotcms.com'
     * def frontendEmail = 'frontend' + suffix + '@dotcms.com'

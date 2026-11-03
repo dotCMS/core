@@ -36,6 +36,7 @@ import com.dotcms.contenttype.model.field.LineDividerField;
 import com.dotcms.contenttype.model.field.MultiSelectField;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.field.RowField;
+import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.contenttype.model.field.TabDividerField;
 import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -6128,6 +6129,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
             contentlet = applyNullProperties(contentlet);
             contentlet = SET_DEFAULT_VALUES.get() && isNewContent? setDefaultValues(contentlet):contentlet;
+            if (!isNewContent) {
+                restoreStoryBlockReferenceData(contentlet, contentType, workingContentletInode);
+            }
 
             //This is executed first hand to create the inode-contentlet relationship.
             if (InodeUtils.isSet(existingInode)) {
@@ -9328,6 +9332,37 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
+     * Fills back the Story Block references that arrive with only the keys that identify them,
+     * taking their data from the version being replaced. An editor gets references like that when
+     * it cannot read them, and saving the document as it got it must not drop the data stored with
+     * them. See
+     * {@link com.dotcms.contenttype.business.StoryBlockAPI#restoreReferenceData(Object, Supplier)}.
+     *
+     * @param contentlet    The Contentlet being saved, modified in place.
+     * @param contentType   The Contentlet's content type.
+     * @param previousInode The inode of the version being replaced; it is only read from the
+     *                      database when a reference needs it.
+     */
+    private void restoreStoryBlockReferenceData(final Contentlet contentlet, final ContentType contentType,
+                                                final String previousInode) {
+        if (!contentType.hasStoryBlockFields() || !InodeUtils.isSet(previousInode)) {
+            return;
+        }
+        final Lazy<Optional<Contentlet>> previous = Lazy.of(() -> contentFactory.findInDb(previousInode, true));
+        for (final com.dotcms.contenttype.model.field.Field field : contentType.fields(StoryBlockField.class)) {
+            final Object submitted = contentlet.get(field.variable());
+            if (null == submitted) {
+                continue;
+            }
+            final Object restored = APILocator.getStoryBlockAPI().restoreReferenceData(submitted,
+                    () -> previous.get().map(stored -> stored.get(field.variable())).orElse(null));
+            if (restored != submitted) {
+                contentlet.setProperty(field.variable(), restored);
+            }
+        }
+    }
+
+    /**
      * @param content
      * @return
      * @throws DotSecurityException
@@ -10741,48 +10776,24 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
-     * Counts the documents in the index that match the given query, restricted by the roles the
-     * caller holds. The clauses are appended as text, so the query is normalized first for every
-     * caller, administrators included.
+     * Counts the documents in the index that match the given query and that the caller is allowed
+     * to read.
      * <p>
-     * Only {@link #addPermissionsToQuery(StringBuffer, User, List, boolean)} is applied here, so
-     * the count is not narrowed by category read permissions the way
-     * {@link #applyPermissionsToQuery(String, User, boolean)} narrows a search, and it can come
-     * out higher than the number of results the same query returns.
+     * The query is narrowed by {@link #applyPermissionsToQuery(String, User, boolean)}, the same
+     * method the search path uses, so the count and the search agree on what the caller may see.
      *
      * @param luceneQuery the query written by the caller
      * @param user the {@link User} the count is run for, or {@code null} for an anonymous caller
      * @param respectFrontendRoles whether the anonymous and logged-in-site roles grant read as well
-     * @return how many documents match the query and are granted to one of the caller's roles
+     * @return how many documents match the query and are readable by the caller
      * @throws DotDataException if the count cannot be read from the index
      * @throws DotSecurityException if no user is given and front-end roles are not respected
      */
     @Override
-    public long indexCount(String luceneQuery, User user, boolean respectFrontendRoles)
-            throws DotDataException, DotSecurityException {
-        boolean isAdmin = false;
-        List<Role> roles = new ArrayList<>();
-        if (user == null && !respectFrontendRoles) {
-            throw new DotSecurityException(
-                    "You must specify a user if you are not respecting frontend roles");
-        }
-        if (user != null) {
-            if (!APILocator.getRoleAPI()
-                    .doesUserHaveRole(user, APILocator.getRoleAPI().loadCMSAdminRole())) {
-                roles = APILocator.getRoleAPI().loadRolesForUser(user.getUserId());
-            } else {
-                isAdmin = true;
-            }
-        }
-        final StringBuffer buffy = new StringBuffer(luceneQuery);
-        balanceTrailingEscape(buffy);
-
-        // Permissions in the query
-        if (!isAdmin) {
-            addPermissionsToQuery(buffy, user, roles, respectFrontendRoles);
-        }
-
-        return contentFactory.indexCount(buffy.toString());
+    public long indexCount(final String luceneQuery, final User user,
+            final boolean respectFrontendRoles) throws DotDataException, DotSecurityException {
+        return contentFactory.indexCount(
+                applyPermissionsToQuery(luceneQuery, user, respectFrontendRoles));
     }
 
     @CloseDBIfOpened

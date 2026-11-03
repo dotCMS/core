@@ -29,6 +29,18 @@ public interface FeatureFlagName {
      */
     String FEATURE_FLAG_EXPERIMENTS_PORTLET = "FEATURE_FLAG_EXPERIMENTS_PORTLET";
 
+    /**
+     * Lets a template hand {@code $xslttool} a URL as the XML to transform, instead of a document
+     * stored in dotCMS. Off by default: the tool is meant to transform content that already lives
+     * in the instance, and the remote fetch is deprecated.
+     *
+     * <p>When it is turned on the download is performed by the platform's outbound HTTP client
+     * ({@link com.dotcms.http.CircuitBreakerUrl}) and follows its network policy, timeouts and size
+     * limits. Turning this off does not affect stylesheets or XML files that are stored in dotCMS,
+     * which is how the tool is normally used.
+     */
+    String FEATURE_FLAG_XSLT_REMOTE_XML = "FEATURE_FLAG_XSLT_REMOTE_XML";
+
     String FEATURE_FLAG_TELEMETRY_CORE_ENABLED = "FEATURE_FLAG_TELEMETRY_CORE_ENABLED";
 
     String FEATURE_FLAG_CONTENT_ANALYTICS = "FEATURE_FLAG_CONTENT_ANALYTICS";

@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Integration tests for the Shorty ID API class.
@@ -454,6 +455,12 @@ public class ShortyIdApiTest {
         DbConnectionFactory.closeSilently();
     }
 
+    /**
+     * Checks that a shorty lookup made while the database pool is exhausted returns nothing and
+     * is not cached as a 404, so the same lookups succeed once connections are released. The
+     * reindex queue is drained first: a reindex batch caught by the exhausted pool used to leave
+     * its rows queued and stall the suite's indexer check for 60 seconds.
+     */
     @Test
     public void test404CacheWhenDBDown() throws DotDataException, DotSecurityException {
         final ShortyIdAPI api = APILocator.getShortyAPI();
@@ -466,6 +473,10 @@ public class ShortyIdApiTest {
         final String shortyIdentifier = api.shortify(con.getIdentifier());;
         Optional<ShortyId> shorty;
 
+        // Let the reindex worker finish the content just saved before taking every connection.
+        // A batch in flight when the pool runs dry fails and its rows wait out the worker's pause.
+        assertTrue("Reindex queue should drain before the pool is exhausted",
+                TestDataUtils.waitForEmptyQueue());
         try {
             exhaustDBConnections();
 
