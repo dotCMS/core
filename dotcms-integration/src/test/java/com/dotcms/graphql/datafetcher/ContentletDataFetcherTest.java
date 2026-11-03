@@ -1,6 +1,7 @@
 package com.dotcms.graphql.datafetcher;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
@@ -8,6 +9,8 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.graphql.business.GraphqlQueryRunner;
 import com.dotcms.util.IntegrationTestInitService;
@@ -49,6 +52,7 @@ public class ContentletDataFetcherTest extends IntegrationTestBase {
     private static Variant variant;
     private static Contentlet onDefaultVariant;
     private static Contentlet onNamedVariant;
+    private static User limitedBackEndUser;
 
     /**
      * Builds one content type holding two live items: one on the default variant and one on a
@@ -66,18 +70,23 @@ public class ContentletDataFetcherTest extends IntegrationTestBase {
         onDefaultVariant = publishedItem(null);
         onNamedVariant = publishedItem(variant);
 
-        final Role anonymousRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
+        // The back-end role is granted too, so the control below can use a user who holds it
+        // without holding the administrator role: an administrator never reaches the scope at all.
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-        permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-                        contentType.getPermissionId(), anonymousRole.getId(),
-                        PermissionAPI.PERMISSION_READ, true),
-                contentType, APILocator.systemUser(), false);
-        for (final Contentlet contentlet : List.of(onDefaultVariant, onNamedVariant)) {
+        final Role backEndRole = TestUserUtils.getBackendRole();
+        for (final Role role : List.of(APILocator.getRoleAPI().loadCMSAnonymousRole(), backEndRole)) {
             permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
-                            contentlet.getPermissionId(), anonymousRole.getId(),
+                            contentType.getPermissionId(), role.getId(),
                             PermissionAPI.PERMISSION_READ, true),
-                    contentlet, APILocator.systemUser(), false);
+                    contentType, APILocator.systemUser(), false);
+            for (final Contentlet contentlet : List.of(onDefaultVariant, onNamedVariant)) {
+                permissionAPI.save(new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                                contentlet.getPermissionId(), role.getId(),
+                                PermissionAPI.PERMISSION_READ, true),
+                        contentlet, APILocator.systemUser(), false);
+            }
         }
+        limitedBackEndUser = new UserDataGen().roles(backEndRole).nextPersisted();
     }
 
     @AfterClass
@@ -137,16 +146,26 @@ public class ContentletDataFetcherTest extends IntegrationTestBase {
 
     /**
      * Given: the same two items.
-     * When: a back-end user runs the query that names the variant.
-     * Then: the item is returned, because the scope applies to callers without back-end access
-     * and must not take the variant away from the tooling that edits it.
+     * When: a user who holds the back-end role, and only that role, runs the query that names the
+     * variant.
+     * Then: the item is returned, because the scope applies to callers without back-end access and
+     * must not take the variant away from the tooling that edits it.
+     *
+     * <p>The caller is deliberately not an administrator. An administrator is answered before the
+     * scope is reached at all, so a control using one would stay green even if the scope were
+     * narrowed to exclude every back-end user who is not an administrator.
      */
     @Test
-    public void test_search_backEndUser_stillReachesTheNamedVariant() throws Exception {
+    public void test_limitedBackEndUser_stillReachesTheNamedVariant() throws Exception {
+        assertFalse("fixture problem: the caller is an administrator, which is answered before the "
+                + "scope is reached", limitedBackEndUser.isAdmin());
+        assertTrue("fixture problem: the caller does not hold the back-end role",
+                limitedBackEndUser.isBackendUser());
+
         final List<String> found = identifiersFrom(GraphqlQueryRunner.executeAndExpectSuccess(
                 String.format("{ search(query: \"+identifier:%s +variant:%s\") { identifier } }",
                         onNamedVariant.getIdentifier(), variant.name()),
-                APILocator.systemUser()), "search");
+                limitedBackEndUser), "search");
         assertEquals("a back-end caller must still reach the named variant",
                 List.of(onNamedVariant.getIdentifier()), found);
     }
