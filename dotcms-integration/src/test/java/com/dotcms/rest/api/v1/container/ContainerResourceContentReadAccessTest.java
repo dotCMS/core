@@ -14,6 +14,7 @@ import static org.mockito.Mockito.when;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TemplateDataGen;
@@ -37,6 +38,7 @@ import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
@@ -306,6 +308,30 @@ public class ContainerResourceContentReadAccessTest {
                         Container.SYSTEM_CONTAINER, unpublishedAnonymousReadableContent.getIdentifier(), null));
 
         verify(velocityUtil, never()).merge(anyString(), any());
+    }
+
+    /**
+     * Given a front-end user asking for a language the contentlet has no version in, and a
+     * contentlet whose default-language version was never published,
+     * When the user renders it into the system container by identifier,
+     * Then the request answers not found and nothing is rendered.
+     */
+    @Test
+    public void containerContent_byIdentifier_frontendUser_otherLanguage_unpublishedDefault_isNotFound() {
+        final Language language = new LanguageDataGen().nextPersisted();
+        try {
+            final VelocityUtil velocityUtil = velocityUtil();
+            final HttpServletRequest request = requestFor(frontendUserWithoutAccess);
+            when(request.getParameter("language_id")).thenReturn(String.valueOf(language.getId()));
+
+            assertThrows(ResourceNotFoundException.class, () -> resourceFor(frontendUserWithoutAccess, velocityUtil)
+                    .containerContent(request, response(),
+                            Container.SYSTEM_CONTAINER, unpublishedAnonymousReadableContent.getIdentifier(), null));
+
+            verify(velocityUtil, never()).merge(anyString(), any());
+        } finally {
+            LanguageDataGen.remove(language, true);
+        }
     }
 
     /**
