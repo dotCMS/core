@@ -3,7 +3,7 @@ import { expect, Response, test } from '@playwright/test';
 import { deleteContentlets } from '@requests/contentlets';
 import { ContentType, createContentType, deleteContentType } from '@requests/contentType';
 import { createPage, Page as PageContentlet } from '@requests/pages';
-import { createTemplate, deleteTemplate } from '@requests/templates';
+import { createTemplate, removeTemplate } from '@requests/templates';
 
 /**
  * Adding a form to a page in the UVE.
@@ -86,7 +86,7 @@ test.afterEach(async ({ request }) => {
     // Best effort: teardown must not turn an already-failing test into a second error.
     await deleteContentlets(request, widgetIdentifiers).catch(() => undefined);
     await deleteContentlets(request, [pageContentlet.identifier]).catch(() => undefined);
-    await deleteTemplate(request, [templateIdentifier]).catch(() => undefined);
+    await removeTemplate(request, templateIdentifier).catch(() => undefined);
     await deleteContentType(request, form.id).catch(() => undefined);
 });
 
@@ -118,11 +118,11 @@ test('add a form to a page, then add it again @critical', async ({ page }) => {
     // for resource with given identifier" however early it is called.
     const placed = uve.container(0).locator('[data-dot-object="contentlet"]');
     await expect(placed).toHaveCount(1);
-    const widgetIdentifier = await placed.getAttribute('data-dot-identifier');
-    expect(widgetIdentifier).toBeTruthy();
-    widgetIdentifiers.push(widgetIdentifier as string);
+    await expect(placed).toHaveAttribute('data-dot-identifier', /.+/);
+    const widgetIdentifier = (await placed.getAttribute('data-dot-identifier')) as string;
+    widgetIdentifiers.push(widgetIdentifier);
 
-    await expect(uve.contentlet(widgetIdentifier as string)).toHaveCount(1);
+    await expect(uve.contentlet(widgetIdentifier)).toHaveCount(1);
     expect(formRequests).toEqual(['GET', 'POST']);
 
     // Again, in the other container: the GET finds the widget and nothing is created. Placing the
@@ -131,7 +131,7 @@ test('add a form to a page, then add it again @critical', async ({ page }) => {
     await uve.addForm(1, form.name);
     expect((await found).status()).toBe(200);
 
-    await expect(uve.contentlet(widgetIdentifier as string)).toHaveCount(2);
+    await expect(uve.contentlet(widgetIdentifier)).toHaveCount(2);
     await expect(
         uve.container(1).locator(`[data-dot-identifier="${widgetIdentifier}"]`)
     ).toHaveCount(1);
