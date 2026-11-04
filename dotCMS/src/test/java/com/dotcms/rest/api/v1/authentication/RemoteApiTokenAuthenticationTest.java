@@ -406,6 +406,7 @@ public class RemoteApiTokenAuthenticationTest extends UnitTestBase {
                     requestTo(TOKEN_URL).route.startsWith(BASE_URL));
         }
 
+        /** Verifies ordinary JSON login without adding a console-access requirement. */
         private void assertLoginRequest() {
             final RecordedRequest login = requestTo(LOGIN_URL);
             final Object body = login.entity.getEntity();
