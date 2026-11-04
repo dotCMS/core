@@ -7,11 +7,16 @@ not read `X-Forwarded-For`, `X-Real-IP`, `Forwarded` or similar headers itself; 
 any value in them.
 
 Some existing code does read the raw header. The request header conditionlet
-(`RequestHeaderConditionlet`) can compare a rule against `X-Forwarded-For` as sent, the temporary
+(`RequestHeaderConditionlet`) can compare a rule against `X-Forwarded-For`, the temporary
 file request fingerprint (`TempFileAPI.getRequestFingerprint`) includes it, and
-`RequestUtil.createStatelessRequest` copies it onto the request copy. The valve settings below
-do not change what those paths see, so a value read there is whatever the client or the proxies
-put in the header, not a resolved client address.
+`RequestUtil.createStatelessRequest` copies it onto the request copy. None of them treats the
+header as the client address. When the connection comes from an internal or trusted proxy, the
+valve removes the entries it used to resolve the client address before these paths read the
+header, so they see only what is left to the left of the resolved address, usually nothing or
+only entries the client sent itself. When the connection comes from any other address, the
+header reaches them unchanged. Either way the value is one the client controls: a rule that
+should act on the client's address belongs in the location-based conditionlets, not in a
+request header condition on `X-Forwarded-For`.
 
 Behind a load balancer the connecting address is the load balancer's, so Tomcat's
 `RemoteIpValve` (declared in `dotCMS/src/main/resources/container/tomcat9/conf/server.xml`)
