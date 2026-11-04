@@ -1,18 +1,21 @@
 import { BundleAssetView } from '@dotcms/dotcms-models';
 
-/** A bundle asset that opens in the content editor: a contentlet naming its inode and its type. */
+/**
+ * A bundle asset that opens in the content editor: a contentlet naming its inode and its type's
+ * variable.
+ */
 export type EditableContentletAsset = BundleAssetView & {
     inode: string;
-    content_type_name: string;
+    content_type_variable: string;
 };
 
 /**
  * Whether a bundle asset opens in the side panel's content editor (#38303). Only contentlets do,
- * and only with an inode and a content type; templates, languages, containers and the like stay
- * plain rows.
+ * and only with an inode and their content type's variable, which the opener looks the type up by
+ * (its display name finds nothing); templates, languages, containers and the like stay plain rows.
  *
  * @param asset A row of `/api/bundle/{id}/assets`.
  */
 export function isEditableContentlet(asset: BundleAssetView): asset is EditableContentletAsset {
-    return asset.type === 'contentlet' && !!asset.inode && !!asset.content_type_name;
+    return asset.type === 'contentlet' && !!asset.inode && !!asset.content_type_variable;
 }
