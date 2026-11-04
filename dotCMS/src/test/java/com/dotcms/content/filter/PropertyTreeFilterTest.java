@@ -12,6 +12,7 @@ import com.dotcms.contenttype.model.field.KeyValueField;
 import com.dotcms.contenttype.model.field.StoryBlockField;
 import com.dotcms.util.JsonUtil;
 import com.dotmarketing.util.Config;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.liferay.portal.model.User;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -58,11 +59,11 @@ class PropertyTreeFilterTest {
 
     /**
      * Given a contentlet with user properties, related content holding more of them and a Key/Value field
-     * with a key named {@code owner}, when it is filtered, then the user properties are removed at every depth
-     * and the Key/Value value is kept as stored.
+     * with a key named {@code owner}, when it is filtered, then the user properties are sent as the placeholder at
+     * every depth and the Key/Value value is kept as stored.
      */
     @Test
-    void removesUserPropertiesAtEveryDepthAndKeepsCustomerFieldValues() {
+    void replacesUserPropertiesAtEveryDepthAndKeepsCustomerFieldValues() {
         final Map<String, Object> related = content("rel-1");
         related.put("lockedBy", Map.of("userId", "dotcms.org.1"));
         final Map<String, Object> contentlet = content("abc-1");
@@ -71,11 +72,11 @@ class PropertyTreeFilterTest {
 
         final Map<?, ?> filtered = (Map<?, ?>) PropertyTreeFilter.filter(contentlet, anonymousFilter(), FIELD_TYPES);
 
-        assertFalse(filtered.containsKey("modUser"));
-        assertFalse(filtered.containsKey("ownerUserName"));
+        assertEquals(ContentFieldFilter.USER_PROPERTY_PLACEHOLDER, filtered.get("modUser"));
+        assertEquals(ContentFieldFilter.USER_PROPERTY_PLACEHOLDER, filtered.get("ownerUserName"));
         assertEquals(Map.of("owner", "customer-value"), filtered.get("meta"));
         final Map<?, ?> filteredRelated = (Map<?, ?>) ((List<?>) filtered.get("rel")).get(0);
-        assertFalse(filteredRelated.containsKey("lockedBy"));
+        assertEquals(ContentFieldFilter.USER_PROPERTY_PLACEHOLDER, filteredRelated.get("lockedBy"));
         assertEquals("abc-1", filtered.get("identifier"));
         assertTrue(contentlet.containsKey("modUser"), "the input must not be changed");
     }
@@ -83,10 +84,10 @@ class PropertyTreeFilterTest {
     /**
      * Given a Story Block value held as JSON text, and its {@code _raw} copy, that embed a contentlet with
      * user properties (one key written with a character code), when it is filtered, then the embedded user
-     * properties are removed and the rest of the Story Block is kept.
+     * properties are sent as the placeholder and the rest of the Story Block is kept.
      */
     @Test
-    void removesUserPropertiesOfContentEmbeddedInStoryBlockText() throws Exception {
+    void replacesUserPropertiesOfContentEmbeddedInStoryBlockText() throws Exception {
         final String storyBlock = "{\"type\":\"doc\",\"content\":[{\"type\":\"dotContent\",\"attrs\":{\"data\":"
                 + "{\"identifier\":\"emb-1\",\"contentType\":\"Product\",\"title\":\"Helmet\","
                 + "\"modUser\":\"dotcms.org.1\",\"own\\u0065r\":\"dotcms.org.1\",\"modUserName\":\"Admin User\"}}}]}";
@@ -99,7 +100,9 @@ class PropertyTreeFilterTest {
         for (final String key : List.of("body", "body_raw")) {
             final String text = (String) filtered.get(key);
             assertFalse(text.contains("dotcms.org.1") || text.contains("Admin User"), key + ": " + text);
-            assertEquals("Helmet", JsonUtil.JSON_MAPPER.readTree(text).at("/content/0/attrs/data/title").asText());
+            final JsonNode data = JsonUtil.JSON_MAPPER.readTree(text).at("/content/0/attrs/data");
+            assertEquals("Helmet", data.get("title").asText());
+            assertEquals(ContentFieldFilter.USER_PROPERTY_PLACEHOLDER, data.get("modUser").asText());
         }
     }
 

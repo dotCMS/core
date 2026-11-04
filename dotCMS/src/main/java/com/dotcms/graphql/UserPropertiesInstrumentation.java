@@ -20,8 +20,9 @@ import java.util.Set;
 
 /**
  * Keeps user properties out of the GraphQL results returned to callers who are neither CMS administrators
- * nor back-end users: the {@code _map} field and Story Block fields lose them, the lock owner of a
- * {@code DotPage} resolves to {@code null}, and searches whose query or sort names one return a field error.
+ * nor back-end users: in the {@code _map} field, Story Block fields and the lock owner of a {@code DotPage},
+ * a value that is set is sent as {@link ContentFieldFilter#USER_PROPERTY_PLACEHOLDER}, and searches whose
+ * query or sort names one return a field error.
  * Results for back-end callers, and fields of customer content types, are left unchanged.
  *
  * @author hassandotcms
@@ -69,10 +70,10 @@ public class UserPropertiesInstrumentation extends SimpleInstrumentation {
                                 .message(filter.searchRejectedMessage()).build())
                         .build();
             }
-            if (pageLock) {
-                return null;
-            }
             final Object result = dataFetcher.get(environment);
+            if (pageLock) {
+                return ContentFieldFilter.userPropertyValue(result);
+            }
             if (storyBlock) {
                 return PropertyTreeFilter.filter(result, filter, PropertyTreeFilter.storedContentTypes());
             }

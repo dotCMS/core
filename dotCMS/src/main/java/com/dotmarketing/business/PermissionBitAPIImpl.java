@@ -50,7 +50,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -2096,16 +2095,18 @@ public class PermissionBitAPIImpl implements PermissionAPI {
 	/**
 	 * Builds the payload of the event sent to every connected session when the permissions of a site
 	 * change. It carries only what receivers need to tell which site changed, its identifier and host
-	 * name, not the whole {@link Host}.
+	 * name, not the whole {@link Host}. A missing site, identifier or host name is sent as an empty value.
 	 *
 	 * @param site the {@link Host} whose permissions changed
 	 * @return the event payload
 	 */
 	private static Payload sitePermissionsPayload(final Host site) {
-		final Map<String, Object> data = new LinkedHashMap<>();
-		data.put("identifier", site.getIdentifier());
-		data.put("hostname", site.getHostname());
-		return new Payload(data, Visibility.GLOBAL, (String) null);
+		if (null == site) {
+			return new Payload(Map.of(), Visibility.GLOBAL, (String) null);
+		}
+		return new Payload(Map.of(
+				"identifier", Objects.toString(site.getIdentifier(), ""),
+				"hostname", Objects.toString(site.getHostname(), "")), Visibility.GLOBAL, (String) null);
 	}
 
 }

@@ -25,9 +25,9 @@ import java.util.Set;
 /**
  * Filters a JSON-like response tree ({@link java.util.Map}, {@link java.util.Collection},
  * {@link com.dotmarketing.util.json.JSONObject}, {@link com.dotmarketing.util.json.JSONArray} and
- * scalars) for one caller. Every object loses the user properties the given
- * {@link ContentFieldFilter} hides, and objects that are contentlets also get the configured content
- * property lists. The values of a contentlet's JSON, Key/Value and Custom fields are customer data and
+ * scalars) for one caller. In every object, the user properties the given {@link ContentFieldFilter}
+ * replaces are sent as {@link ContentFieldFilter#USER_PROPERTY_PLACEHOLDER}, and objects that are
+ * contentlets also get the configured content property lists. The values of a contentlet's JSON, Key/Value and Custom fields are customer data and
  * are left as they are. A Story Block value held as JSON text, and its {@code _raw} copy, is read and
  * filtered the same way, since it carries the data of the contentlets embedded in it. The result is a copy;
  * the input tree is never changed.
@@ -136,8 +136,8 @@ public final class PropertyTreeFilter {
     }
 
     /**
-     * Copies an object without the user properties to hide. A contentlet also gets the configured content
-     * property lists, and the values of its JSON, Key/Value and Custom fields are copied as they are.
+     * Copies an object with the values of the user properties replaced. A contentlet also gets the configured
+     * content property lists, and the values of its JSON, Key/Value and Custom fields are copied as they are.
      *
      * @param object the object to copy
      * @param filter the caller's filter
@@ -146,18 +146,17 @@ public final class PropertyTreeFilter {
      */
     private static Map<?, ?> copyObject(final Map<?, ?> object, final ContentFieldFilter filter,
                                         final FieldTypes fieldTypes) {
-        final Set<String> userProperties = filter.userPropertiesToHide();
+        final Set<String> userProperties = filter.userProperties();
         final String contentType = isContentlet(object) ? contentTypeOf(object) : null;
         final boolean jsonObject = object instanceof JSONObject;
         final JSONObject jsonCopy = jsonObject ? new JSONObject() : null;
         final Map<Object, Object> mapCopy = jsonObject ? null : new LinkedHashMap<>();
         object.forEach((key, value) -> {
             final String name = String.valueOf(key);
-            if (userProperties.contains(name.toLowerCase(Locale.ROOT))) {
-                return;
-            }
             final Object copiedValue;
-            if (isCustomerValue(contentType, name, fieldTypes)) {
+            if (userProperties.contains(name.toLowerCase(Locale.ROOT))) {
+                copiedValue = ContentFieldFilter.userPropertyValue(value);
+            } else if (isCustomerValue(contentType, name, fieldTypes)) {
                 copiedValue = value;
             } else if (value instanceof String && isStoryBlock(contentType, name, fieldTypes)) {
                 copiedValue = copyStoryBlockText((String) value, filter, fieldTypes);

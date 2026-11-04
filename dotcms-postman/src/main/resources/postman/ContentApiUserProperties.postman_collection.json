@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "efc25317-0ce6-49b6-b539-4524f169486a",
     "name": "ContentApiUserProperties",
-    "description": "Content API responses to anonymous callers leave out user properties (owner, modUser, publishUser, lockedBy and their names), including those of content embedded in a Story Block; searches on them are refused, key/value field values are kept, and administrators still get them. The content type and content are created and deleted by this collection.",
+    "description": "Content API responses to anonymous callers send user properties (owner, modUser, publishUser, lockedBy and their names) as <redacted>, including those of content embedded in a Story Block; searches on them are refused, key/value field values are kept, and administrators still get them. The content type and content are created and deleted by this collection.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -641,7 +641,7 @@
       "response": []
     },
     {
-      "name": "Anonymous - legacy content by id - no user properties",
+      "name": "Anonymous - legacy content by id - user properties redacted",
       "event": [
         {
           "listen": "prerequest",
@@ -659,10 +659,11 @@
             "type": "text/javascript",
             "exec": [
               "const userKeys = [\"owner\", \"ownerUserName\", \"modUser\", \"modUserName\", \"publishUser\", \"publishUserName\", \"lockedBy\", \"lockedByName\"];",
-              "const missing = (object) => userKeys.filter((key) => Object.prototype.hasOwnProperty.call(object, key));",
+              "const missing = (object) => userKeys.filter((key) => object[key] != null && object[key] !== '<redacted>');",
               "const content = pm.response.json().contentlets[0];",
               "pm.test('200', () => pm.response.to.have.status(200));",
-              "pm.test('no user properties', () => pm.expect(missing(content)).to.be.empty);",
+              "pm.test('user properties sent as <redacted>', () => pm.expect(missing(content)).to.be.empty);",
+              "pm.test('keys kept', () => pm.expect(content.modUser).to.eql('<redacted>'));",
               "pm.test('content properties kept', () => pm.expect(content.title).to.eql('user-properties-check'));",
               "pm.test('key/value field values kept as stored', () => pm.expect(JSON.stringify(content.meta)).to.include('customer-value'));"
             ]
@@ -696,7 +697,7 @@
       "response": []
     },
     {
-      "name": "Anonymous - content by id - no user properties",
+      "name": "Anonymous - content by id - user properties redacted",
       "event": [
         {
           "listen": "prerequest",
@@ -714,10 +715,11 @@
             "type": "text/javascript",
             "exec": [
               "const userKeys = [\"owner\", \"ownerUserName\", \"modUser\", \"modUserName\", \"publishUser\", \"publishUserName\", \"lockedBy\", \"lockedByName\"];",
-              "const missing = (object) => userKeys.filter((key) => Object.prototype.hasOwnProperty.call(object, key));",
+              "const missing = (object) => userKeys.filter((key) => object[key] != null && object[key] !== '<redacted>');",
               "const content = pm.response.json().entity;",
               "pm.test('200', () => pm.response.to.have.status(200));",
-              "pm.test('no user properties', () => pm.expect(missing(content)).to.be.empty);",
+              "pm.test('user properties sent as <redacted>', () => pm.expect(missing(content)).to.be.empty);",
+              "pm.test('keys kept', () => pm.expect(content.modUser).to.eql('<redacted>'));",
               "pm.test('content properties kept', () => pm.expect(content.title).to.eql('user-properties-check'));"
             ]
           }
@@ -750,7 +752,7 @@
       "response": []
     },
     {
-      "name": "Anonymous - GraphQL content map - no user properties",
+      "name": "Anonymous - GraphQL content map - user properties redacted",
       "event": [
         {
           "listen": "prerequest",
@@ -770,11 +772,11 @@
             "type": "text/javascript",
             "exec": [
               "const userKeys = [\"owner\", \"ownerUserName\", \"modUser\", \"modUserName\", \"publishUser\", \"publishUserName\", \"lockedBy\", \"lockedByName\"];",
-              "const missing = (object) => userKeys.filter((key) => Object.prototype.hasOwnProperty.call(object, key));",
+              "const missing = (object) => userKeys.filter((key) => object[key] != null && object[key] !== '<redacted>');",
               "pm.test('200', () => pm.response.to.have.status(200));",
               "const rows = pm.response.json().data.search;",
               "pm.test('content returned', () => pm.expect(rows).to.not.be.empty);",
-              "pm.test('no user properties', () => rows.forEach((row) => pm.expect(missing(row._map)).to.be.empty));"
+              "pm.test('user properties sent as <redacted>', () => rows.forEach((row) => pm.expect(missing(row._map)).to.be.empty));"
             ]
           }
         }
@@ -1001,7 +1003,7 @@
       "response": []
     },
     {
-      "name": "Anonymous - legacy content search - no user properties",
+      "name": "Anonymous - legacy content search - user properties redacted",
       "event": [
         {
           "listen": "prerequest",
@@ -1019,15 +1021,15 @@
             "type": "text/javascript",
             "exec": [
               "const userKeys = [\"owner\", \"ownerUserName\", \"modUser\", \"modUserName\", \"publishUser\", \"publishUserName\", \"lockedBy\", \"lockedByName\"];",
-              "// Every user property key anywhere in the response, except inside the customer Key/Value field 'meta'",
+              "// Every user property anywhere in the response with a value other than <redacted>, except inside the customer Key/Value field 'meta'",
               "const userKeysIn = (node) => { const hits = []; (function walk(x) {",
               "    if (Array.isArray(x)) { x.forEach(walk); return; }",
-              "    if (x && typeof x === 'object') { Object.keys(x).forEach((k) => { if (userKeys.includes(k)) { hits.push(k); } if (k !== 'meta') { walk(x[k]); } }); }",
+              "    if (x && typeof x === 'object') { Object.keys(x).forEach((k) => { if (userKeys.includes(k) && x[k] != null && x[k] !== '<redacted>') { hits.push(k); } if (k !== 'meta') { walk(x[k]); } }); }",
               "})(node); return hits; };",
               "pm.test('200', () => pm.response.to.have.status(200));",
               "const found = pm.response.json().entity.jsonObjectView.contentlets;",
               "pm.test('content returned', () => pm.expect(found).to.not.be.empty);",
-              "pm.test('no user properties', () => pm.expect(userKeysIn(found)).to.be.empty);"
+              "pm.test('user properties sent as <redacted>', () => pm.expect(userKeysIn(found)).to.be.empty);"
             ]
           }
         }
@@ -1067,7 +1069,7 @@
       "response": []
     },
     {
-      "name": "Anonymous - content search - no user properties",
+      "name": "Anonymous - content search - user properties redacted",
       "event": [
         {
           "listen": "prerequest",
@@ -1085,15 +1087,15 @@
             "type": "text/javascript",
             "exec": [
               "const userKeys = [\"owner\", \"ownerUserName\", \"modUser\", \"modUserName\", \"publishUser\", \"publishUserName\", \"lockedBy\", \"lockedByName\"];",
-              "// Every user property key anywhere in the response, except inside the customer Key/Value field 'meta'",
+              "// Every user property anywhere in the response with a value other than <redacted>, except inside the customer Key/Value field 'meta'",
               "const userKeysIn = (node) => { const hits = []; (function walk(x) {",
               "    if (Array.isArray(x)) { x.forEach(walk); return; }",
-              "    if (x && typeof x === 'object') { Object.keys(x).forEach((k) => { if (userKeys.includes(k)) { hits.push(k); } if (k !== 'meta') { walk(x[k]); } }); }",
+              "    if (x && typeof x === 'object') { Object.keys(x).forEach((k) => { if (userKeys.includes(k) && x[k] != null && x[k] !== '<redacted>') { hits.push(k); } if (k !== 'meta') { walk(x[k]); } }); }",
               "})(node); return hits; };",
               "pm.test('200', () => pm.response.to.have.status(200));",
               "const found = pm.response.json().entity.jsonObjectView.contentlets;",
               "pm.test('content returned', () => pm.expect(found).to.not.be.empty);",
-              "pm.test('no user properties', () => pm.expect(userKeysIn(found)).to.be.empty);"
+              "pm.test('user properties sent as <redacted>', () => pm.expect(userKeysIn(found)).to.be.empty);"
             ]
           }
         }
@@ -1134,7 +1136,7 @@
       "response": []
     },
     {
-      "name": "Anonymous - Elasticsearch search - no user properties",
+      "name": "Anonymous - Elasticsearch search - user properties redacted",
       "event": [
         {
           "listen": "prerequest",
@@ -1152,15 +1154,15 @@
             "type": "text/javascript",
             "exec": [
               "const userKeys = [\"owner\", \"ownerUserName\", \"modUser\", \"modUserName\", \"publishUser\", \"publishUserName\", \"lockedBy\", \"lockedByName\"];",
-              "// Every user property key anywhere in the response, except inside the customer Key/Value field 'meta'",
+              "// Every user property anywhere in the response with a value other than <redacted>, except inside the customer Key/Value field 'meta'",
               "const userKeysIn = (node) => { const hits = []; (function walk(x) {",
               "    if (Array.isArray(x)) { x.forEach(walk); return; }",
-              "    if (x && typeof x === 'object') { Object.keys(x).forEach((k) => { if (userKeys.includes(k)) { hits.push(k); } if (k !== 'meta') { walk(x[k]); } }); }",
+              "    if (x && typeof x === 'object') { Object.keys(x).forEach((k) => { if (userKeys.includes(k) && x[k] != null && x[k] !== '<redacted>') { hits.push(k); } if (k !== 'meta') { walk(x[k]); } }); }",
               "})(node); return hits; };",
               "pm.test('200', () => pm.response.to.have.status(200));",
               "const found = pm.response.json().contentlets;",
               "pm.test('content returned', () => pm.expect(found).to.not.be.empty);",
-              "pm.test('no user properties', () => pm.expect(userKeysIn(found)).to.be.empty);"
+              "pm.test('user properties sent as <redacted>', () => pm.expect(userKeysIn(found)).to.be.empty);"
             ]
           }
         }
@@ -1200,7 +1202,7 @@
       "response": []
     },
     {
-      "name": "Front-end user - content by id - no user properties",
+      "name": "Front-end user - content by id - user properties redacted",
       "event": [
         {
           "listen": "test",
@@ -1208,14 +1210,14 @@
             "type": "text/javascript",
             "exec": [
               "const userKeys = [\"owner\", \"ownerUserName\", \"modUser\", \"modUserName\", \"publishUser\", \"publishUserName\", \"lockedBy\", \"lockedByName\"];",
-              "// Every user property key anywhere in the response, except inside the customer Key/Value field 'meta'",
+              "// Every user property anywhere in the response with a value other than <redacted>, except inside the customer Key/Value field 'meta'",
               "const userKeysIn = (node) => { const hits = []; (function walk(x) {",
               "    if (Array.isArray(x)) { x.forEach(walk); return; }",
-              "    if (x && typeof x === 'object') { Object.keys(x).forEach((k) => { if (userKeys.includes(k)) { hits.push(k); } if (k !== 'meta') { walk(x[k]); } }); }",
+              "    if (x && typeof x === 'object') { Object.keys(x).forEach((k) => { if (userKeys.includes(k) && x[k] != null && x[k] !== '<redacted>') { hits.push(k); } if (k !== 'meta') { walk(x[k]); } }); }",
               "})(node); return hits; };",
               "pm.test('200', () => pm.response.to.have.status(200));",
               "pm.test('content returned', () => pm.expect(pm.response.json().entity.title).to.eql('user-properties-check'));",
-              "pm.test('no user properties', () => pm.expect(userKeysIn(pm.response.json())).to.be.empty);"
+              "pm.test('user properties sent as <redacted>', () => pm.expect(userKeysIn(pm.response.json())).to.be.empty);"
             ]
           }
         }
@@ -1254,7 +1256,7 @@
       "response": []
     },
     {
-      "name": "Front-end user - page JSON - no user properties",
+      "name": "Front-end user - page JSON - user properties redacted",
       "event": [
         {
           "listen": "test",
@@ -1262,14 +1264,14 @@
             "type": "text/javascript",
             "exec": [
               "const userKeys = [\"owner\", \"ownerUserName\", \"modUser\", \"modUserName\", \"publishUser\", \"publishUserName\", \"lockedBy\", \"lockedByName\"];",
-              "// Every user property key anywhere in the response, except inside the customer Key/Value field 'meta'",
+              "// Every user property anywhere in the response with a value other than <redacted>, except inside the customer Key/Value field 'meta'",
               "const userKeysIn = (node) => { const hits = []; (function walk(x) {",
               "    if (Array.isArray(x)) { x.forEach(walk); return; }",
-              "    if (x && typeof x === 'object') { Object.keys(x).forEach((k) => { if (userKeys.includes(k)) { hits.push(k); } if (k !== 'meta') { walk(x[k]); } }); }",
+              "    if (x && typeof x === 'object') { Object.keys(x).forEach((k) => { if (userKeys.includes(k) && x[k] != null && x[k] !== '<redacted>') { hits.push(k); } if (k !== 'meta') { walk(x[k]); } }); }",
               "})(node); return hits; };",
               "pm.test('200', () => pm.response.to.have.status(200));",
               "pm.test('page returned', () => pm.expect(pm.response.json().entity.page.title).to.not.be.empty);",
-              "pm.test('no user properties', () => pm.expect(userKeysIn(pm.response.json())).to.be.empty);"
+              "pm.test('user properties sent as <redacted>', () => pm.expect(userKeysIn(pm.response.json())).to.be.empty);"
             ]
           }
         }
@@ -1621,10 +1623,10 @@
             "type": "text/javascript",
             "exec": [
               "const userKeys = [\"owner\", \"ownerUserName\", \"modUser\", \"modUserName\", \"publishUser\", \"publishUserName\", \"lockedBy\", \"lockedByName\"];",
-              "// Every user property key anywhere in the response, except inside the customer Key/Value field 'meta'",
+              "// Every user property anywhere in the response with a value other than <redacted>, except inside the customer Key/Value field 'meta'",
               "const userKeysIn = (node) => { const hits = []; (function walk(x) {",
               "    if (Array.isArray(x)) { x.forEach(walk); return; }",
-              "    if (x && typeof x === 'object') { Object.keys(x).forEach((k) => { if (userKeys.includes(k)) { hits.push(k); } if (k !== 'meta') { walk(x[k]); } }); }",
+              "    if (x && typeof x === 'object') { Object.keys(x).forEach((k) => { if (userKeys.includes(k) && x[k] != null && x[k] !== '<redacted>') { hits.push(k); } if (k !== 'meta') { walk(x[k]); } }); }",
               "})(node); return hits; };",
               "pm.test('200', () => pm.response.to.have.status(200));",
               "pm.test('user properties present', () => pm.expect(userKeysIn(pm.response.json())).to.not.be.empty);"

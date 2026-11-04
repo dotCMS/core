@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -89,8 +90,9 @@ public final class ContentFieldFilter {
     public static final String FIELDS_TO_HIDE_PROPERTY = "CONTENT_API_FIELDS_TO_HIDE";
 
     /**
-     * Whether the {@link #USER_PROPERTIES} are removed from what non-back-end callers receive. A permanent
-     * setting, not a feature flag. Default: on, as shipped in {@code dotmarketing-config.properties}.
+     * Whether the values of the {@link #USER_PROPERTIES} are replaced with {@link #USER_PROPERTY_PLACEHOLDER} in
+     * what non-back-end callers receive. A permanent setting, not a feature flag. Default: on, as shipped in
+     * {@code dotmarketing-config.properties}.
      */
     public static final String HIDE_USER_PROPERTIES_PROPERTY = "CONTENT_API_HIDE_USER_PROPERTIES";
 
@@ -101,6 +103,9 @@ public final class ContentFieldFilter {
     public static final Set<String> USER_PROPERTIES = Set.of(
             "owner", "ownerusername", "moduser", "modusername", "publishuser", "publishusername",
             "lockedby", "lockedbyname", "pushedby", "wfcreatedby", "wfassign");
+
+    /** The value sent in place of a user property, so clients still find the key. */
+    public static final String USER_PROPERTY_PLACEHOLDER = "<redacted>";
 
     /** Keys of a search body whose text values name an index field. */
     private static final Set<String> FIELD_NAME_KEYS = Set.of("field", "fields", "default_field", "path", "sort");
@@ -169,8 +174,9 @@ public final class ContentFieldFilter {
      * Returns the filter that applies to the given user. CMS administrators and back-end users get a
      * filter that changes nothing, and so does everyone when neither property is set and the
      * {@link #HIDE_USER_PROPERTIES_PROPERTY} setting is off. Anonymous callers, front-end users and a
-     * {@code null} user get the configured filter. When the setting is on, the {@link #USER_PROPERTIES}
-     * are added to the properties to remove, so they are removed even when they are also listed to mask.
+     * {@code null} user get the configured filter. When the setting is on, the values of the
+     * {@link #USER_PROPERTIES} are replaced with {@link #USER_PROPERTY_PLACEHOLDER}, also when they are listed
+     * to mask; a user property listed to hide is still removed.
      *
      * @param user the {@link User} the content is being returned to
      * @return the filter to apply to that user's content
@@ -182,25 +188,21 @@ public final class ContentFieldFilter {
         if ((toMask.isEmpty() && toHide.isEmpty() && !hideUserProperties) || isTrusted(user)) {
             return NO_OP;
         }
-        if (!hideUserProperties) {
-            return new ContentFieldFilter(toMask, toHide, Set.of(), user);
-        }
-        final Set<String> hidden = new LinkedHashSet<>(toHide);
-        hidden.addAll(USER_PROPERTIES);
-        return new ContentFieldFilter(toMask, Collections.unmodifiableSet(hidden), USER_PROPERTIES, user);
+        return new ContentFieldFilter(toMask, toHide, hideUserProperties ? USER_PROPERTIES : Set.of(), user);
     }
 
     /**
      * Tells whether this filter changes anything.
      *
-     * @return {@code true} when there is at least one property to mask or hide
+     * @return {@code true} when there is at least one property to mask, hide or replace
      */
     public boolean isActive() {
-        return !fieldsToMask.isEmpty() || !fieldsToHide.isEmpty();
+        return !fieldsToMask.isEmpty() || !fieldsToHide.isEmpty() || !userProperties.isEmpty();
     }
 
     /**
-     * Removes the hidden properties from the given content map and masks the masked ones, in place.
+     * Removes the hidden properties from the given content map, replaces the values of the user properties
+     * that are set with {@link #USER_PROPERTY_PLACEHOLDER} and masks the masked properties, in place.
      * Works on any map whose keys are property names, including a {@link JSONObject}.
      *
      * @param contentMap the contentlet map that is about to be returned; may be {@code null}
@@ -217,6 +219,8 @@ public final class ContentFieldFilter {
             final String name = String.valueOf(key).toLowerCase(Locale.ROOT);
             if (fieldsToHide.contains(name)) {
                 map.remove(key);
+            } else if (userProperties.contains(name)) {
+                map.put(key, userPropertyValue(map.get(key)));
             } else if (fieldsToMask.contains(name)) {
                 map.put(key, maskValue(map.get(key)));
             }
@@ -237,8 +241,7 @@ public final class ContentFieldFilter {
         if (!isActive()) {
             return true;
         }
-        final Set<String> restricted = new LinkedHashSet<>(fieldsToMask);
-        restricted.addAll(fieldsToHide);
+        final Set<String> restricted = restrictedProperties();
         if (queryReferences(luceneQuery, restricted) || sortReferences(sortBy, restricted)) {
             SecurityLogger.logInfo(ContentFieldFilter.class,
                     () -> "Search on a masked or hidden content property refused for user: "
@@ -263,8 +266,7 @@ public final class ContentFieldFilter {
             return true;
         }
         final Optional<JsonNode> body = readSearchBody(jsonBody);
-        final Set<String> restricted = new LinkedHashSet<>(fieldsToMask);
-        restricted.addAll(fieldsToHide);
+        final Set<String> restricted = restrictedProperties();
         // A body that cannot be read is refused: the search engine may accept a looser syntax than this check
         final boolean allowed = body.isPresent() && !jsonReferences(body.get(), null, restricted);
         if (!allowed) {
@@ -295,24 +297,36 @@ public final class ContentFieldFilter {
     }
 
     /**
-     * Returns the {@link #USER_PROPERTIES} this filter removes from every object of a response, kept apart
-     * from the configured content property lists, which apply to contentlets only.
+     * Returns the {@link #USER_PROPERTIES} whose values this filter replaces in every object of a response,
+     * kept apart from the configured content property lists, which apply to contentlets only.
      *
-     * @return lower-cased property names; empty when the user properties are not hidden for this caller
+     * @return lower-cased property names; empty when the user properties are sent as they are to this caller
      */
-    public Set<String> userPropertiesToHide() {
+    public Set<String> userProperties() {
         return userProperties;
     }
 
     /**
-     * Returns every property this filter masks or removes: the configured lists and, when they are
-     * hidden, the {@link #USER_PROPERTIES}.
+     * Returns what a user property is sent as: {@link #USER_PROPERTY_PLACEHOLDER} when it is set, so the
+     * key keeps its place, and the value itself when it is {@code null}, so an unset value still reads as unset.
+     *
+     * @param value the value of the user property; may be {@code null}
+     * @return the value to send
+     */
+    public static Object userPropertyValue(final Object value) {
+        return null == value || value == JSONObject.NULL ? value : USER_PROPERTY_PLACEHOLDER;
+    }
+
+    /**
+     * Returns every property this filter masks, removes or replaces: the configured lists and, when they are
+     * replaced, the {@link #USER_PROPERTIES}.
      *
      * @return lower-cased property names; empty when this filter changes nothing
      */
     public Set<String> restrictedProperties() {
-        final Set<String> restricted = new LinkedHashSet<>(fieldsToMask);
+        final Set<String> restricted = new HashSet<>(fieldsToMask);
         restricted.addAll(fieldsToHide);
+        restricted.addAll(userProperties);
         return Collections.unmodifiableSet(restricted);
     }
 
