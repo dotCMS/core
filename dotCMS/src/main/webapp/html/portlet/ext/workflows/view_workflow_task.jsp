@@ -213,6 +213,8 @@ public String getGravatar(String postedBy){
         // The admin opens the content in its side panel, above this dialog, and loads this task
         // again once the panel saves or closes (#38303).
         var customEvent = document.createEvent("CustomEvent");
+        // Not escaped: the inode is a server-generated UUID and the variable a validated content
+        // type variable, so neither can carry a quote or a script.
         customEvent.initCustomEvent("ng-event", false, false,  {
             name: "edit-contentlet",
             data: {

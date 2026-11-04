@@ -32,6 +32,11 @@ export interface InPlaceNavigationRequest {
 export interface EditContentIdentity {
     /** Inode of existing content to edit. */
     inode?: string;
+    /**
+     * Identifier of the content to edit. A surface that asked for it by identifier alone (a link)
+     * knows its panel by this, since the opener found the inode (#38303, FR-050).
+     */
+    identifier?: string;
     /** Content type id/variable to create new content for. */
     contentTypeId?: string;
     /** Optional pre-fill path for a Host-or-Folder field. */

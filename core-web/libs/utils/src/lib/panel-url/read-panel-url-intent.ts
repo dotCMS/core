@@ -53,10 +53,11 @@ export function readPanelUrlIntent(queryParams: Record<string, unknown>): DotPan
         return typeof value === 'string' && value.length > 0 ? value : undefined;
     };
 
+    // Trimmed, as `isDotIdentifier` tests it: the value reaches a Lucene query.
     const readUuid = (key: string): string | undefined => {
         const value = read(key);
 
-        return isDotIdentifier(value) ? value : undefined;
+        return isDotIdentifier(value) ? value?.trim() : undefined;
     };
 
     const identifier = readUuid(DOT_PANEL_URL_PARAM.EDIT_CONTENT);
@@ -88,4 +89,26 @@ export function readPanelUrlIntent(queryParams: Record<string, unknown>): DotPan
     }
 
     return { kind: 'none' };
+}
+
+/**
+ * The same for the same panel, whatever else the URL carries. A surface that follows its URL on
+ * every router navigation opens a panel once by comparing these: an app navigation that changes
+ * only the surface's own params still carries the panel params the router last saw, which may name
+ * a panel already open or one the author closed.
+ *
+ * @param intent What a URL asks to open.
+ * @returns A key naming that panel.
+ */
+export function panelUrlIntentKey(intent: DotPanelUrlIntent): string {
+    switch (intent.kind) {
+        case 'edit':
+            return `edit:${intent.identifier}:${intent.languageId ?? ''}`;
+        case 'create':
+            return `create:${intent.contentType}`;
+        case 'editCode':
+            return `editCode:${intent.inode}`;
+        default:
+            return intent.kind;
+    }
 }

@@ -185,9 +185,16 @@ export class DotEditContentOpenerService {
                 !initial.title ||
                 (!!url && !initial.identifier));
 
+        // An edit that names its identifier is in the URL before any lookup, in the language it asked
+        // for: a link to content that cannot be opened then closes a panel the URL names, and that
+        // close takes the params out of the URL.
+        if (initial.mode === 'edit' && initial.identifier) {
+            url?.register(ref, initial);
+        }
+
         this.#fetchContentlet(initial, fetch)
             .pipe(
-                tap((contentlet) => url?.register(ref, withContentlet(initial, contentlet))),
+                tap((contentlet) => url?.found(ref, withContentlet(initial, contentlet))),
                 switchMap((contentlet) => this.#resolve(initial, contentlet, options.editor)),
                 takeUntil(ref.closed)
             )
@@ -259,12 +266,13 @@ export class DotEditContentOpenerService {
      * it has none in that one, so a link to a language the content lacks still opens. Content
      * Drive's lookup, moved here so every surface opening from a URL shares it (#38303, FR-049).
      *
-     * @param identifier An identifier-shaped value: it reaches a Lucene query.
+     * @param identifier An identifier-shaped value: it reaches a Lucene query, trimmed, as
+     * `isDotIdentifier` tested it.
      * @param languageId The language asked for, when one was.
      * @returns The version; errors with a 404 when the content has no working version.
      */
     #workingVersion(identifier: string, languageId?: number): Observable<DotCMSContentlet> {
-        const anyLanguage = `+identifier:${identifier} +working:true`;
+        const anyLanguage = `+identifier:${identifier.trim()} +working:true`;
         const search = (query: string): Observable<DotCMSContentlet | null> =>
             this.#contentSearch
                 .get<DotContentSearchEntity>({ query, limit: 1 })
@@ -401,10 +409,34 @@ class DotPanelUrlTracker {
     }
 
     /**
-     * Writes the panel to the URL. An edit whose identifier is still unknown is not written.
+     * What the request names is known, after any lookup: names it. A panel registered before the
+     * lookup (an edit that named its identifier) is renamed in place when the version found is in
+     * another language than the one asked for; any other panel is registered now.
      *
      * @param ref The panel.
      * @param request The request, completed from the contentlet fetched for it.
+     */
+    found(ref: DotSidePanelRef, request: DotEditContentRequest): void {
+        if (!this.#ref) {
+            this.register(ref, request);
+
+            return;
+        }
+
+        if (
+            request.mode === 'edit' &&
+            request.identifier &&
+            (request.identifier !== this.#identifier || request.languageId !== this.#languageId)
+        ) {
+            this.#rename(request.identifier, request.languageId);
+        }
+    }
+
+    /**
+     * Writes the panel to the URL. An edit whose identifier is still unknown is not written.
+     *
+     * @param ref The panel.
+     * @param request The request, as far as it is known.
      */
     register(ref: DotSidePanelRef, request: DotEditContentRequest): void {
         if (request.mode === 'new') {

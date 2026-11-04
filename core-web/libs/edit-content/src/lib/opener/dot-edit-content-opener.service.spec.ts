@@ -302,7 +302,8 @@ describe('DotEditContentOpenerService', () => {
         it('names the panel in the URL before the lookup, so a refused link leaves no params', () => {
             const register = spectator.inject(DotPanelUrlStateService).register as Mock;
             const lookup = new Subject<unknown>();
-            searchContent.mockReturnValue(lookup);
+            // Nothing in the language asked for, then nothing in any language.
+            searchContent.mockReturnValueOnce(lookup).mockReturnValueOnce(searchResult());
 
             const ref = spectator.service.open(
                 { mode: 'edit', identifier: IDENTIFIER, languageId: 2 },

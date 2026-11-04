@@ -5,6 +5,7 @@ import { Injectable, inject } from '@angular/core';
 import {
     Event as RouterEvent,
     NavigationCancel,
+    NavigationCancellationCode,
     NavigationEnd,
     NavigationError,
     NavigationSkipped,
@@ -37,10 +38,16 @@ export interface DotPanelUrlRegisterOptions {
     inPlace?: boolean;
 }
 
-/** Whether a router event ends a navigation, however it ended. */
+/**
+ * Whether a router event ends the navigation that answers a Back, however it ended. Not a cancel
+ * because a newer navigation superseded it (a second Back pressed before the first one's ended):
+ * that newer navigation is still running, and its own `replaceState` would undo a restore written
+ * now, so the wait goes on until it ends.
+ */
 const endsNavigation = (event: RouterEvent): boolean =>
     event instanceof NavigationEnd ||
-    event instanceof NavigationCancel ||
+    (event instanceof NavigationCancel &&
+        event.code !== NavigationCancellationCode.SupersededByNewNavigation) ||
     event instanceof NavigationError ||
     event instanceof NavigationSkipped;
 

@@ -341,14 +341,15 @@ const PORTLETS_IFRAME = [
                         pathMatch: 'full' as const
                     },
                     {
+                        // No `reuseRoute: false`: `/c/workflow/<task>` keeps its side panel in the
+                        // URL (#38303, FR-025a), and Back with that panel open is a query-only
+                        // navigation that the flag would answer by rebuilding the task dialog
+                        // under the panel. The task and the portlet detail follow their params.
                         loadComponent: () =>
                             import('@portlets/dot-porlet-detail/dot-portlet-detail.component').then(
                                 (m) => m.DotPortletDetailComponent
                             ),
-                        path: ':asset',
-                        data: {
-                            reuseRoute: false
-                        }
+                        path: ':asset'
                     }
                 ],
                 resolve: {

@@ -1,11 +1,9 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { EMPTY } from 'rxjs';
 
 import { DOCUMENT, Location } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
-    DestroyRef,
     effect,
     inject,
     OnInit,
@@ -13,9 +11,8 @@ import {
     untracked,
     viewChild
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Params, UrlSerializer, UrlTree } from '@angular/router';
 
 import { MenuItem, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -31,11 +28,10 @@ import { TableModule } from 'primeng/table';
 import { TabsModule } from 'primeng/tabs';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { catchError, take } from 'rxjs/operators';
+import { take } from 'rxjs/operators';
 
 import {
     DotContentletEditUrlService,
-    DotContentSearchService,
     DotCurrentUserService,
     DotGlobalMessageService,
     DotMessageService
@@ -111,18 +107,14 @@ export class DotQueryToolPageComponent implements OnInit {
     readonly #globalMessage = inject(DotGlobalMessageService);
     readonly #clipboard = inject(DotClipboardUtil);
     readonly #document = inject(DOCUMENT);
-    readonly #router = inject(Router);
     readonly #route = inject(ActivatedRoute);
     readonly #location = inject(Location);
+    readonly #urlSerializer = inject(UrlSerializer);
     readonly #editUrlResolver = inject(DotContentletEditUrlService);
-    readonly #contentSearch = inject(DotContentSearchService);
     readonly #panelUrl = inject(DotPanelUrlStateService);
-    readonly #destroyRef = inject(DestroyRef);
 
     /** Keyboard shortcut shown in the Run button tooltip (`⌘ + Enter` / `Ctrl + Enter`). */
     readonly runShortcutLabel = getDotMonacoRunShortcutLabel(this.#document.defaultView?.navigator);
-
-    #lastSyncedUrl: string | null = null;
 
     /** The content open in the side panel, or `null` when it is closed. */
     readonly $editRequest = signal<DotEditContentRequest | null>(null);
@@ -132,27 +124,38 @@ export class DotQueryToolPageComponent implements OnInit {
     // of the inputs means typing in the param fields never touches the URL — only
     // an actually-executed search updates the shareable address bar — and the
     // user's browser back stack is never polluted (replaceState, not pushState).
+    //
+    // Built from the URL the address bar holds (`Location`), not the router's tree, and changing
+    // only the search's own params: the open side panel's params are written with `Location` too,
+    // the router never sees them, and a save reruns the search while the panel stays open
+    // (#38303, FR-044). Content Drive's URL effect does the same.
     readonly updateQueryParamsEffect = effect(() => {
         const status = this.store.status();
         if (status !== ComponentStatus.LOADED && status !== ComponentStatus.ERROR) return;
         // Read inputs untracked so this effect re-runs only on status transitions.
         untracked(() => {
-            const queryParams: Record<string, string | number | null> = {
+            const owned: Record<string, string | null> = {
                 q: this.store.query() || null,
-                offset: this.store.offset() !== DEFAULT_OFFSET ? this.store.offset() : null,
-                limit: this.store.limit() !== DEFAULT_LIMIT ? this.store.limit() : null,
+                offset: this.store.offset() !== DEFAULT_OFFSET ? String(this.store.offset()) : null,
+                limit: this.store.limit() !== DEFAULT_LIMIT ? String(this.store.limit()) : null,
                 sort: this.store.sort() || null,
                 userId: this.store.userId() || null
             };
-            const url = this.#router
-                .createUrlTree([], {
-                    relativeTo: this.#route,
-                    queryParams,
-                    queryParamsHandling: 'merge'
-                })
-                .toString();
-            if (url === this.#lastSyncedUrl || url === this.#router.url) return;
-            this.#lastSyncedUrl = url;
+            const current = this.#urlSerializer.parse(this.#location.path(true));
+            const queryParams: Params = { ...current.queryParams };
+
+            for (const [key, value] of Object.entries(owned)) {
+                if (value === null) {
+                    delete queryParams[key];
+                } else {
+                    queryParams[key] = value;
+                }
+            }
+
+            const url = this.#urlSerializer.serialize(
+                new UrlTree(current.root, queryParams, current.fragment)
+            );
+            if (url === this.#urlSerializer.serialize(current)) return;
             this.#location.replaceState(url);
         });
     });
@@ -319,9 +322,12 @@ export class DotQueryToolPageComponent implements OnInit {
         this.$editRequest.set(toEditRequest(contentlet));
     }
 
-    /** Re-runs the search after a save so the results table reflects the edited content. */
+    /**
+     * Re-runs the search after a save so the results table reflects the edited content. Nothing
+     * runs when there is no query: a link opens a panel over a page that ran no search.
+     */
     onEditPanelSaved(): void {
-        this.store.runSearch();
+        this.#rerunSearch();
     }
 
     /**
@@ -329,8 +335,15 @@ export class DotQueryToolPageComponent implements OnInit {
      * legacy editor reports no save (FR-017), and clear the request.
      */
     onEditPanelClosed(): void {
-        this.store.runSearch();
+        this.#rerunSearch();
         this.$editRequest.set(null);
+    }
+
+    /** Reruns what is shown, with the guard {@link onRun} applies: an empty query runs nothing. */
+    #rerunSearch(): void {
+        if (this.store.query().trim()) {
+            this.store.runSearch();
+        }
     }
 
     /**
@@ -338,46 +351,26 @@ export class DotQueryToolPageComponent implements OnInit {
      * that was stacked over a result's panel when the link was copied, since a link names only the
      * front panel. A link naming more than one panel opens nothing and loses the panel params.
      * Edit Source never opens from here.
+     *
+     * An edit is asked for by identifier and language: the opener finds the working version, falls
+     * back to any language, and shows the standard error for content that cannot be opened, which
+     * also takes the panel params out of the URL (FR-050).
      */
     #openFromUrl(): void {
         const intent = readPanelUrlIntent(this.#route.snapshot.queryParams);
 
         if (intent.kind === 'edit') {
-            this.#resolveAndOpenByIdentifier(intent.identifier, intent.languageId);
+            const { identifier, languageId } = intent;
+            this.$editRequest.set({
+                mode: 'edit',
+                identifier,
+                ...(languageId ? { languageId } : {})
+            });
         } else if (intent.kind === 'create') {
             this.$editRequest.set({ mode: 'new', contentType: intent.contentType });
         } else if (intent.kind === 'conflict') {
             this.#panelUrl.clear();
         }
-    }
-
-    /**
-     * Resolves a shared `?editContent=` identifier to its working contentlet and opens the panel on
-     * it, with the same request a click on that result would open.
-     *
-     * @param identifier The identifier the link names, already checked to be identifier-shaped.
-     * @param languageId The language the link names: an identifier has one version per language.
-     */
-    #resolveAndOpenByIdentifier(identifier: string, languageId: number | undefined): void {
-        const language = languageId ? ` +languageId:${languageId}` : '';
-
-        this.#contentSearch
-            .get<{ jsonObjectView: { contentlets: DotCMSContentlet[] } }>({
-                query: `+identifier:${identifier}${language} +working:true`,
-                limit: 1
-            })
-            .pipe(
-                catchError(() => EMPTY),
-                takeUntilDestroyed(this.#destroyRef)
-            )
-            .subscribe((entity) => {
-                const contentlet = entity?.jsonObjectView?.contentlets?.[0];
-                if (!contentlet?.inode) {
-                    return;
-                }
-
-                this.$editRequest.set(toEditRequest({ ...contentlet, identifier }));
-            });
     }
 
     useExample(query: string): void {

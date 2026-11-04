@@ -1,5 +1,8 @@
-import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
+
+import { distinctUntilChanged, map } from 'rxjs/operators';
 
 import { DotMessageService, DotRouterService, DotIframeService } from '@dotcms/data-access';
 
@@ -22,9 +25,28 @@ export class DotWorkflowTaskComponent implements OnInit {
     private route = inject(ActivatedRoute);
     private dotIframeService = inject(DotIframeService);
     private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
+    readonly #destroyRef = inject(DestroyRef);
 
+    /** The task the route names. */
+    #taskId = '';
+
+    /**
+     * Shows the task the route names, and the next one a navigation names: the route is reused
+     * across tasks (no `reuseRoute: false`, so Back with this task's side panel open does not
+     * rebuild the dialog under the panel, #38303). A navigation that keeps the task shows nothing
+     * again.
+     */
     ngOnInit() {
-        this.#viewTask();
+        this.route.params
+            .pipe(
+                map((params) => params['asset'] as string),
+                distinctUntilChanged(),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((taskId) => {
+                this.#taskId = taskId;
+                this.#viewTask();
+            });
     }
 
     /**
@@ -77,7 +99,7 @@ export class DotWorkflowTaskComponent implements OnInit {
     #viewTask(): void {
         this.dotWorkflowTaskDetailService.view({
             header: this.dotMessageService.get('workflow.task.dialog.header'),
-            id: this.route.snapshot.params.asset
+            id: this.#taskId
         });
     }
 }
