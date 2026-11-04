@@ -331,14 +331,18 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
      * reload the active bundle's assets (FR-017).
      */
     describe('asset row click → opens content editor', () => {
-        /** A contentlet row and a template row, as `/api/bundle/{id}/assets` returns them. */
+        /**
+         * A contentlet row and a template row, as `/api/bundle/{id}/assets` returns them. The
+         * type's display name is not its variable: the opener looks the type up by its variable.
+         */
         const ROW_ASSETS = [
             {
                 asset: 'a1',
                 title: 'Spring Sale Landing',
                 type: 'contentlet',
                 inode: 'i1',
-                content_type_name: 'Blog'
+                content_type_name: 'Blog Post',
+                content_type_variable: 'Blog'
             },
             { asset: 't1', title: 'Main template', type: 'template' }
         ];

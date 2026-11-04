@@ -17,7 +17,10 @@ export interface BundleAssetView {
     title: string;
     type: string;
     inode?: string;
+    /** The content type's display name, for showing. */
     content_type_name?: string;
+    /** The content type's variable, the name the content type API knows it by. */
+    content_type_variable?: string;
     language_code?: string;
     country_code?: string;
     operation?: number;
