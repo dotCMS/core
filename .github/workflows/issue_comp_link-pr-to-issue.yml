@@ -27,6 +27,7 @@ jobs:
           GITHUB_CONTEXT: ${{ toJson(github) }}
 
       - name: Link PR to Issue
+        id: link_pr_to_issue
         continue-on-error: true
         shell: bash
         run: |
@@ -52,18 +53,38 @@ jobs:
           [[ -z "${issue_number}" ]] && echo 'Issue number could not be resolved' && exit 2
           echo "issue_number=${issue_number}"
           
-          issue_json=$(\
-            gh api \
-              --method GET \
-              repos/${{ github.repository }}/issues/${issue_number} \
-          )
-          fetched_issue_number=$(echo "${issue_json}" | jq -r '.number')
-          [[ -z "${fetched_issue_number}" ]] && echo "Issue [${issue_number}] could not be resolved" && exit 3
-          
           pr_body=$(echo "${pr_json}" | jq -r '.body')
           [[ "${pr_body}" == 'null' ]] && pr_body=
+
+          # The branch number names no repository. When the body closes issue N of
+          # another repository (owner/repo#N or its issue URL, the forms
+          # issue_comp_link-issue-to-pr.yml accepts), the branch means that issue: keep
+          # the repository, because a bare #N resolves to whatever item in this
+          # repository has that number (#37845).
+          closing_kw='(close[ds]?|fix(e[ds])?|resolve[ds]?)(:)?[[:space:]]+'
+          issue_repo=$(echo "${pr_body}" \
+            | grep -oiE "${closing_kw}([a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+#|https://github\.com/[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+/issues/)${issue_number}([^0-9]|\$)" \
+            | grep -oiE "[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+(#|/issues/)${issue_number}" \
+            | sed -E 's@(#|/[^/]+/)[0-9]+$@@' \
+            | grep -vixF "${GITHUB_REPOSITORY}" | head -1) || true
+
+          if [[ -n "${issue_repo}" ]]; then
+            # Not looked up here: the token cannot read a private repository.
+            issue_ref="${issue_repo}#${issue_number}"
+          else
+            issue_json=$(\
+              gh api \
+                --method GET \
+                repos/${{ github.repository }}/issues/${issue_number} \
+            )
+            fetched_issue_number=$(echo "${issue_json}" | jq -r '.number')
+            [[ -z "${fetched_issue_number}" ]] && echo "Issue [${issue_number}] could not be resolved" && exit 3
+            issue_ref="#${issue_number}"
+          fi
+          echo "issue_ref=${issue_ref}"
+
           [[ -n "${pr_body}" ]] && pr_body="${pr_body}"$'\n\n'
-          pr_body="${pr_body}This PR fixes: #${issue_number}"
+          pr_body="${pr_body}This PR fixes: ${issue_ref}"
           echo "pr_body=${pr_body}"
           
           gh api \

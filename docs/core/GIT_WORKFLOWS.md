@@ -46,6 +46,7 @@ the merge otherwise. Use one of these:
 
 | Form | Effect on merge |
 |---|---|
+| Issue linked in the PR's Development section (sidebar) | Issue is **closed** |
 | `Fixes #123`, `Closes #123`, `Resolves #123` | Issue is **closed** |
 | `Fixes org/repo#123`, or the full issue URL | Cross-repo issue is closed |
 | `Refs #123`, `Part of #123`, `Related to #123`, `Contributes to #123` | Issue **stays open** |
@@ -59,9 +60,21 @@ Spec-Kit PR 1 carries the spec for an issue that PR 2 does the work for, so a cl
 there would retire the issue while the implementation is still unwritten. A closing keyword
 anywhere in the body always outranks a non-closing reference.
 
+A Development-section link outranks every form in the body and title, including a closing
+keyword for a different issue, and one to another repository's issue is handled as cross-repo.
+A link removed from the sidebar no longer counts. Changing these links does not re-run the
+check, so push a commit or edit the description afterwards.
+
 If the body and title carry no reference at all, the check falls back to the branch name and
 appends `This PR fixes: #N` to the body — writing the closing keyword for you. Spell out
 `Refs #N` when you do not want that, or end the PR title with `(#N)`.
+
+After merge, `.github/workflows/issue_comp_link-pr-to-issue.yml` also appends
+`This PR fixes: #N`, with `N` taken from the branch name. A branch named after an issue in
+another repository (`issue-123-…` for `org/repo#123`) needs the body to close it in the
+cross-repo form, `Fixes org/repo#123` or the full issue URL. The line then keeps the
+repository (`This PR fixes: org/repo#123`) instead of pointing at this repository's
+unrelated `#123`.
 
 ### Commit and PR Title Strategy
 
