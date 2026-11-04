@@ -87,13 +87,16 @@ export function injectEditContentPanel(
         // Read here, on every open, so a getter on the binding can change the editor between opens.
         const { closed, editor, ...handlers } = binding;
 
-        const ref = opener.open(current, {
+        // Declared before the call: a refused request closes, and reports it, inside `open`.
+        let ref: DotSidePanelRef | null = null;
+
+        ref = opener.open(current, {
             ...handlers,
             editor,
             injector,
             closed: () => {
-                // Only a panel this surface still shows reports its close. Nothing is showing yet
-                // when a refused request closes during `open`, so `ref` is never read before then.
+                // Only a panel this surface still shows reports its close. A refused request was
+                // never shown; the check below reports it.
                 const showing = panel();
 
                 if (showing && showing === ref) {

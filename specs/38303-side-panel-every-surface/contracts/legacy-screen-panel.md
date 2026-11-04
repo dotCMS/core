@@ -91,18 +91,18 @@ How it maps the editor's events:
 | `ng-event` name | Action |
 |---|---|
 | `save-page` | clear dirty; fetch `payload.contentletInode`; emit `saved` |
-| `close` with `data.redirectUrl` | emit `pageEditorRequested({ url, languageId })` |
+| `close` with `data.redirectUrl` | emit `pageEditorRequested({ url, languageId })`; close (the editor is done, and a surface that opens no page editor still refreshes on `closed`) |
 | `close` otherwise | close the panel (→ `closed`) |
-| `deleted-page` | emit `deleted`; close |
-| window hook `ngEditContentletEvents.next({ name: 'deleted-contenlet' })` (not an `ng-event`; the panel assigns the hook object on the iframe window at every load) | emit `deleted`; the `close` that follows closes the panel |
+| `deleted-page` | emit `deleted` unless the hook already reported this load's delete; close |
+| window hook `ngEditContentletEvents.next({ name: 'deleted-contenlet' })` (not an `ng-event`; the panel assigns the hook object on the iframe window at every load) | emit `deleted`, once per load: for a page the editor calls the hook and then sends `deleted-page` (`edit_contentlet_js_inc.jsp:706-724`), one delete; the `close` or `deleted-page` that follows closes the panel |
 | `edit-contentlet-data-updated` | dirty = payload |
 | `workflow-wizard` | `DotWorkflowEventHandlerService.open(data)` (root instance) |
 | `compare-contentlet` | `DotEventsService.notify('compare-contentlet', data)` (root compare dialog) |
 | `push-publish` | `DotPushPublishDialogService.open(data)` |
-| `edit-contentlet` | emit `openContent({ request: { mode: 'edit', inode, contentType } })` |
-| `create-contentlet` | emit `openContent({ request: { mode: 'new', contentType, folderPath } })` |
+| `edit-contentlet` | emit `openContent({ request: { mode: 'edit', inode, contentType }, injector })`, with the panel's own injector, so the stacked panel belongs to this one |
+| `create-contentlet` | emit `openContent({ request: { mode: 'new', contentType, folderPath }, injector })`, the same way |
 | anything else | ignored |
 
 On each iframe load: read `lang` from the iframe location and emit `languageChanged` when it differs; if a `getVersionBack` was in flight, read `inode` from the iframe location, fetch, emit `saved`.
 
-It keeps the `DotIframeService.ran()` subscription so the workflow wizard's `saveAssignCallBackAngular` and the compare dialog's `getVersionBack` reach the editor; a call for a function the editor does not define is ignored, as today.
+It keeps the `DotIframeService.ran()` subscription so the workflow wizard's `saveAssignCallBackAngular` and the compare dialog's `getVersionBack` reach the editor; a call for a function the editor does not define is ignored, as today. Every legacy editor defines both, and a block editor inside one can stack a second, so only the panel in front answers (the last entry of `DotSidePanelService.panels` is its own ref): the one the author is using.

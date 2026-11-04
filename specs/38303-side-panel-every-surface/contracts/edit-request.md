@@ -61,10 +61,6 @@ export interface DotEditContentRequest {
         isParent: boolean;
     };
 }
-
-/** Narrowed shapes the opener produces after validation, so the panels never re-check. */
-export type DotEditContentEditRequest = DotEditContentRequest & { mode: 'edit'; inode: string };
-export type DotEditContentCreateRequest = DotEditContentRequest & { mode: 'new'; contentType: string };
 ```
 
 ## Validation (in the opener)
@@ -74,6 +70,7 @@ export type DotEditContentCreateRequest = DotEditContentRequest & { mode: 'new';
 | `mode === 'edit'` and no `inode` | Standard error message through `DotHttpErrorManagerService`; nothing opens |
 | `mode === 'new'` and no `contentType` | Same |
 | `mode === 'edit'`, no `contentType` | The opener fetches the contentlet by inode first (`DotContentletService.getContentletByInode`), then resolves the editor from its `contentType` |
+| `mode === 'edit'`, a `contentType` but no `title` | The opener fetches the contentlet by inode the same way, so the heading is its title rather than the type's name (the legacy JSP events and the Publishing Queue name the type and no title) |
 
 ## Who builds it
 

@@ -21,10 +21,10 @@ export interface DotEditContentPanelEvents {
     /** The author switched language inside the editor; the panel stays open in the new language. */
     languageChanged: (languageId: number) => void;
 
-    /** Close the panel and open the page editor at this URL and language. */
+    /** Open the page editor at this URL and language. The panel closes right after, so `closed` follows. */
     pageEditorRequested: (request: DotPageEditorRequest) => void;
 
-    /** The content was removed from inside the editor. Always followed by `closed`. Never preceded by `saved` for the delete. */
+    /** The content was removed from inside the editor. Once per delete, always followed by `closed`. Never preceded by `saved` for the delete. */
     deleted: () => void;
 
     /** The panel closed, for any reason. Emitted exactly once. */
@@ -42,7 +42,7 @@ export type DotEditContentPanelHandlers = Partial<DotEditContentPanelEvents>;
 | `saved` carries a full `DotCMSContentlet` from both editors | The new editor's host already emits one. For the legacy editor, the panel fetches by the saved inode (`save-page` payload `contentletInode`) before emitting |
 | A restored version is a `saved` | New editor: `history.feature.ts` `restoreVersion` calls `host.reportSaved` after `bringBack`. Legacy: after `getVersionBack`, the panel reads the restored inode from the iframe's `?inode=` on reload, fetches, emits |
 | A workflow action is reported through the same events | Legacy: the editor saves and sends `save-page`, or sends `close`/`deleted-page` when the action removed the content. New editor: `workflowActionSuccess` → `reportSaved`, as today |
-| `deleted` is never a `saved` | New editor: `OverlayEditContentHost` suppresses `reportSaved` after `leaveDeletedContent`, as today. Legacy: the panel sets `iframeWindow.ngEditContentletEvents = { next: (e) => … }` on every iframe load; the editor calls it with `deleted-contenlet` (`edit_contentlet_js_inc.jsp:716-720`) when the saved content no longer exists, and sends `deleted-page` for a page; both map to `deleted`, never to `saved`. The generic `close` that follows maps to `closed` |
+| `deleted` is never a `saved` | New editor: `OverlayEditContentHost` suppresses `reportSaved` after `leaveDeletedContent`, as today. Legacy: the panel sets `iframeWindow.ngEditContentletEvents = { next: (e) => … }` on every iframe load; the editor calls it with `deleted-contenlet` (`edit_contentlet_js_inc.jsp:716-720`) when the saved content no longer exists, and sends `deleted-page` for a page; both map to `deleted`, never to `saved`, and a page's hook-then-`deleted-page` is one `deleted`. The `close` or `deleted-page` that follows closes the panel, and that maps to `closed` |
 | `closed` exactly once | Taken from `DotSidePanelRef.closed`, which emits once and completes |
 
 ## Surfaces refresh on `closed` as well as on `saved`

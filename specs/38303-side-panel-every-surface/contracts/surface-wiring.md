@@ -22,9 +22,9 @@ One row per surface the spec names. "Request" is what it builds (edit-request.md
 | Block editors inside the new editor | `libs/edit-content/src/lib/fields/dot-edit-content-block-editor/`, `libs/new-block-editor/.../toolbar.component.ts`, `libs/block-editor/.../dot-bubble-menu.component.ts` | via `host.openContent` | nothing (the block keeps its own data) | | | `window.parent` navigation, confirm prompts, `relationshipReturnValue` writes, `ContentletEditUrlService` |
 | Block editors inside the legacy editor | `apps/dotcms-block-editor/src/main.ts`, the legacy editor panel | `ng-event` `edit-contentlet` → `openContent` → stacked panel | nothing | | | same as above |
 
-## Root providers added
+## Where panels toast
 
-`MainComponentLegacyComponent` (`apps/dotcms-ui/src/app/view/components/main-legacy/`) provides PrimeNG `MessageService` and mounts `<p-toast />` beside `<dot-side-panel-outlet />`, so panels opened with the root injector (custom events, deep links) have a toast target. Surfaces that already provide their own `MessageService` (Query Tool, Content Drive, UVE route, Publishing Queue shell) keep toasting in their own `<p-toast>`.
+A panel resolves PrimeNG `MessageService` through the injector it was opened with, never through where the outlet sits: the outlet creates the content under `Injector.create({ parent: config.injector })` with that injector's environment injector (`dot-side-panel-content.directive.ts`). So a panel must be opened with an injector under a component that provides `MessageService` and renders a `<p-toast />`. The root `Injector` a root service gets from `inject(Injector)` reaches neither, whatever the admin root provides: `MainComponentLegacyComponent` (`apps/dotcms-ui/src/app/view/components/main-legacy/`) provides one and mounts `<p-toast />` beside `<dot-side-panel-outlet />`, and a panel opened with the root injector still finds no `MessageService` (the first workflow action in it throws `NullInjectorError`). Surfaces that open with their own injector and already provide one (Query Tool, Content Drive, UVE route, Publishing Queue shell) toast in their own `<p-toast>`. The panels the legacy JSP events open get theirs from `DotSidePanelHostComponent` (layer 5), whose injector the custom-event handler opens them with.
 
 ## Deleted (FR-043)
 
