@@ -3,12 +3,19 @@ package com.dotcms.util.xstream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.contains;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.times;
 
 import com.acme.publishing.AcmeProbe;
 import com.dotcms.publisher.pusher.PushPublisher;
+import com.dotcms.repackage.probe.RepackagedProbe;
 import com.dotcms.publishing.XMLSerializerUtil;
+import com.dotcms.publishing.manifest.CSVManifestBuilder;
 import com.thoughtworks.xstream.XStream;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.SecurityLogger;
 import com.thoughtworks.xstream.security.ForbiddenClassException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -16,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.After;
 import org.junit.Test;
+import org.mockito.MockedStatic;
 
 /**
  * Verifies that the {@link XStream} instances handed out by {@link XStreamHandler} only
@@ -263,5 +271,136 @@ public class XStreamHandlerTest {
         final AcmeProbe restored = (AcmeProbe) after.fromXML(after.toXML(original));
 
         assertEquals("without-a-restart", restored.getName());
+    }
+
+    /**
+     * A refusal is the one thing an administrator has to act on, and the place they see it is
+     * the failed bundle in the Push Publishing portlet, which shows the exception's message.
+     * That message therefore has to name both the type that was refused and the property that
+     * would let it through, not just the type.
+     */
+    @Test
+    public void testFromXML_whenTypeRefused_messageShouldNameTypeAndProperty() {
+        final XStream xstream = XStreamHandler.newXStreamInstance();
+        try {
+            xstream.fromXML(xmlFor("java.beans.EventHandler"));
+            fail("Expected java.beans.EventHandler to be refused by the trusted list");
+        } catch (Exception e) {
+            assertTrue("The message should name the refused type, was: " + e.getMessage(),
+                    e.getMessage().contains("java.beans.EventHandler"));
+            assertTrue("The message should name the property to set, was: " + e.getMessage(),
+                    e.getMessage().contains(XStreamHandler.TRUSTED_LIST_EXTRA_PATTERNS_PROPERTY));
+        }
+    }
+
+    /**
+     * The exclusion has to reach anonymous types too. XStream's wildcard skips them by default,
+     * which keeps the allow list conservative but leaves the exclusion short: an anonymous type
+     * inside a shaded library would match neither side and land on XStream's own defaults,
+     * where anything that is a map, a collection, a number, a throwable or a reflective member
+     * is allowed unconditionally — and the probe here is a map.
+     *
+     * <p>The element name is written the way XStream writes it, with {@code $} escaped as
+     * {@code _-}, because {@code $} is not legal in an XML name.</p>
+     */
+    @Test
+    public void testFromXML_whenAnonymousTypeInExcludedPackage_shouldRefuse() {
+        final String className = RepackagedProbe.anonymousType().getName();
+        final XStream xstream = XStreamHandler.newXStreamInstance();
+        try {
+            xstream.fromXML(xmlFor(className.replace("$", "_-")));
+            fail("Expected " + className + " to be refused: it sits inside an excluded package");
+        } catch (ForbiddenClassException e) {
+            assertTrue(e.getMessage().contains(className));
+        }
+    }
+
+    /**
+     * A document can also name a type as the value of a {@code <java-class>} element rather
+     * than as an element name, which is how a {@link Class} held in a field is written. That
+     * path has to be checked against the trusted list as well, otherwise the list governs only
+     * half of the ways a document can name a type.
+     */
+    @Test
+    public void testFromXML_whenClassReferenceOutsideTrustedList_shouldRefuse() {
+        final XStream xstream = XStreamHandler.newXStreamInstance();
+        try {
+            xstream.fromXML("<java-class>java.lang.Runtime</java-class>");
+            fail("Expected the java.lang.Runtime reference to be refused by the trusted list");
+        } catch (ForbiddenClassException e) {
+            assertTrue(e.getMessage().contains("java.lang.Runtime"));
+        }
+    }
+
+    /**
+     * The same path must keep working for a type the trusted list does cover: the bundle's
+     * configuration holds the publishers as a list of {@link Class}, written exactly this way.
+     */
+    @Test
+    public void testFromXML_whenClassReferenceInsideTrustedList_shouldResolve() {
+        final XStream xstream = XStreamHandler.newXStreamInstance();
+
+        final Object resolved =
+                xstream.fromXML("<java-class>" + PushPublisher.class.getName() + "</java-class>");
+
+        assertEquals(PushPublisher.class, resolved);
+    }
+
+    /**
+     * Reads a document naming a type the trusted list does not cover, and swallows the refusal
+     * that read is expected to raise.
+     *
+     * @param xstream the instance to read with, reused across calls on purpose
+     * @param className fully qualified name of the type the document asks for
+     */
+    private void refuse(final XStream xstream, final String className) {
+        try {
+            xstream.fromXML(xmlFor(className));
+            fail("Expected " + className + " to be refused by the trusted list");
+        } catch (ForbiddenClassException e) {
+            //Expected. What this helper's callers assert on is what the refusal recorded.
+        }
+    }
+
+    /**
+     * XStream remembers a refusal by element name, so the second document naming the same type
+     * never reaches the mapper this handler wraps. The audit entry has to be written anyway: a
+     * serializer is held for the life of the JVM, so recording only the first refusal would mean
+     * an import failing this afternoon left its trace this morning and nowhere else.
+     */
+    @Test
+    public void testFromXML_whenSameTypeRefusedTwice_shouldRecordBothRefusals() {
+        final XStream xstream = XStreamHandler.newXStreamInstance();
+
+        try (MockedStatic<SecurityLogger> securityLogger = mockStatic(SecurityLogger.class)) {
+            refuse(xstream, "java.beans.EventHandler");
+            refuse(xstream, "java.beans.EventHandler");
+
+            securityLogger.verify(() -> SecurityLogger.logWarn(eq(XStreamHandler.class),
+                    contains("java.beans.EventHandler")), times(2));
+        }
+    }
+
+    /**
+     * The bundle's configuration holds the manifest builder in a field that is not transient, so
+     * whatever state that builder is in when {@code bundle.xml} is written ends up in the
+     * document the receiver reads back.
+     *
+     * <p>The only state it can be in there is this one. {@code bundle.xml} is written on the
+     * branch taken when the builder has no manifest file yet, and the file handle and the file
+     * are set together, so the open writer the builder holds later is always still null. The
+     * document therefore carries the metadata map and nothing else, and the trusted list has to
+     * cover it.</p>
+     */
+    @Test
+    public void testFromXML_whenConfigCarriesManifestBuilder_shouldResolve() {
+        final XStream xstream = XStreamHandler.newXStreamInstance();
+        final CSVManifestBuilder builder = new CSVManifestBuilder();
+        builder.addMetadata(CSVManifestBuilder.BUNDLE_ID_METADATA_NAME, "a-bundle-id");
+        builder.addMetadata(CSVManifestBuilder.OPERATION_METADATA_NAME, "PUBLISH");
+
+        final Object resolved = xstream.fromXML(xstream.toXML(builder));
+
+        assertEquals(CSVManifestBuilder.class, resolved.getClass());
     }
 }
