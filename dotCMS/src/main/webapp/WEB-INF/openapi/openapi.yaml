@@ -15185,7 +15185,7 @@ paths:
         "404":
           content:
             application/json: {}
-          description: User not found
+          description: User or individual role not found
       summary: Get user permissions
       tags:
       - Permissions
