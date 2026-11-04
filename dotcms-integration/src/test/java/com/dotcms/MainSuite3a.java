@@ -127,6 +127,7 @@ import org.junit.runners.Suite;
     com.dotcms.rendering.velocity.viewtools.XsltToolTest.class,
         PublisherQueueJobTest.class,
         ContentToStringUtilTest.class,
+    com.dotcms.enterprise.publishing.remote.BundleTrustedListRoundTripTest.class,
         CacheResourceIntegrationTest.class,
         InodeExistenceCheckIntegrationTest.class,
         SecretsStoreWipeRegressionTest.class,
