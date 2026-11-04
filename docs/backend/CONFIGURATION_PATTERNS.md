@@ -191,3 +191,8 @@ dotCMS/src/main/resources/my-feature.properties  # Bad
 - Add general properties to `dotmarketing-config.properties`
 - Add domain-specific properties to existing specialized files
 - Document environment variable names in comments
+## Search admission and transport limits
+
+Search reads use positive startup concurrency/deadline settings in the existing cluster configuration
+file. Excess work is rejected without queuing, and overload is never cached as missing content.
+See [Search admission](SEARCH_ADMISSION.md) for the property table and operational trade-offs.

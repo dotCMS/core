@@ -84,6 +84,12 @@ public abstract class OSClientConfig {
         return Duration.ofSeconds(10);
     }
 
+    /** Maximum connection-pool lease wait. Defaults to 100 milliseconds. */
+    @Value.Default
+    public Duration connectionRequestTimeout() {
+        return Duration.ofMillis(100);
+    }
+
     /**
      * Socket timeout
      */
@@ -120,6 +126,14 @@ public abstract class OSClientConfig {
      */
     @Value.Check
     protected void check() {
+        if (connectionTimeout().isZero() || connectionTimeout().isNegative()
+                || socketTimeout().isZero() || socketTimeout().isNegative()
+                || connectionRequestTimeout().isZero() || connectionRequestTimeout().isNegative()
+                || maxConnections() <= 0 || maxConnectionsPerRoute() <= 0
+                || maxConnectionsPerRoute() > maxConnections()) {
+            throw new IllegalArgumentException("OpenSearch timeouts and pool limits must be positive; "
+                    + "the per-route limit must not exceed the total limit");
+        }
         if (endpoints().isEmpty()) {
             throw new IllegalArgumentException("At least one endpoint must be specified");
         }

@@ -2,6 +2,8 @@ package com.dotcms.rendering.velocity.servlet;
 
 import static com.dotmarketing.util.WebKeys.LOGIN_MODE_PARAMETER;
 
+import com.dotcms.content.index.SearchRequestFailure;
+import com.dotcms.content.index.SearchUnavailableException;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.business.CloseDB;
@@ -195,6 +197,10 @@ public class VelocityServlet extends HttpServlet {
             // Eat this, client disconnect noise
             Logger.debug(this, ()-> "IllegalStateException" + state.toString());
         } catch (Exception e) {
+            if (SearchUnavailableException.find(e) != null) {
+                SearchRequestFailure.respond(response);
+                return;
+            }
             Logger.warnAndDebug(this.getClass(), e.getMessage(),e);
             if(!response.isCommitted()) {
                 response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Exception Error on template");

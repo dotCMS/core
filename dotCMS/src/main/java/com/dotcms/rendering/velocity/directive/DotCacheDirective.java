@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.directive;
 
+import com.dotcms.content.index.SearchRequestFailure;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotmarketing.util.Logger;
 import java.io.IOException;
@@ -39,6 +40,8 @@ public class DotCacheDirective extends Directive {
 
     private static final String REFRESH="refresh";
 
+    /** Caches a block only when all of its searches completed successfully. */
+    @Override
     public boolean render(InternalContextAdapter context, Writer writer, Node node)
                     throws IOException, ResourceNotFoundException, ParseErrorException, MethodInvocationException {
 
@@ -75,6 +78,7 @@ public class DotCacheDirective extends Directive {
 
         final StringWriter blockContent = new StringWriter();
         node.jjtGetChild(2).render(context, blockContent);
+        SearchRequestFailure.check();
         writer.write(blockContent.toString());
         CacheLocator.getBlockDirectiveCache().add(key, Map.of(BlockDirectiveCache.PAGE_CONTENT_KEY, blockContent.toString()),
                 Duration.ofSeconds(ttl));

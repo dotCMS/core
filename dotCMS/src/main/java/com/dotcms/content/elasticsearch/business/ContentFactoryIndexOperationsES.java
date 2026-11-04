@@ -2,6 +2,8 @@ package com.dotcms.content.elasticsearch.business;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 
+import com.dotcms.content.index.SearchUnavailableException;
+import com.dotcms.content.elasticsearch.util.AdmittedElasticsearch;
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.ContentFactoryIndexOperations;
@@ -36,7 +38,6 @@ import org.elasticsearch.action.search.SearchPhaseExecutionException;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.ShardSearchFailure;
-import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.core.CountRequest;
 import org.elasticsearch.client.core.CountResponse;
 import org.elasticsearch.common.unit.TimeValue;
@@ -127,9 +128,9 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
     }
 
     /**
-     * if enabled SearchRequests are executed and then cached
-     * @param searchRequest
-     * @return
+     * Returns cached hits or executes an admitted search. Temporary failures are never cached.
+     * @param searchRequest the complete result-affecting request
+     * @return complete successful search hits
      */
      private SearchHits cachedIndexSearch(final SearchRequest searchRequest) {
 
@@ -141,7 +142,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
             APILocator.getRequestCostAPI()
                     .incrementCost(Price.ES_QUERY, ContentFactoryIndexOperationsES.class, "cachedIndexSearch",
                             new Object[]{searchRequest});
-            SearchResponse response = RestHighLevelClientProvider.getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT);
+            SearchResponse response = AdmittedElasticsearch.search(RestHighLevelClientProvider.getInstance().getClient(), searchRequest);
             SearchHits hits  = response.getHits();
             if(shouldQueryCache()) {
                 queryCache.put(searchRequest, hits);
@@ -164,6 +165,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
             Logger.warnAndDebug(ContentFactoryIndexOperationsES.class, e);
             throw new DotRuntimeException(e);
         } catch (final Exception e) {
+            SearchUnavailableException.rethrow(e);
             if(ExceptionUtil.causedBy(e, IllegalStateException.class)) {
                 ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
             }
@@ -190,9 +192,9 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
     }
 
     /**
-     * if enabled CountRequest are executed and then cached
-     * @param countRequest
-     * @return
+     * Returns a cached count or executes an admitted count. Overload is never cached as minus one.
+     * @param countRequest the complete count request
+     * @return the successful count
      */
     @RequestCost(Price.ES_CACHE)
     public Long cachedIndexCount(final CountRequest countRequest) {
@@ -207,7 +209,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
                     new Object[]{countRequest});
 
 
-            final CountResponse response = RestHighLevelClientProvider.getInstance().getClient().count(countRequest, RequestOptions.DEFAULT);
+            final CountResponse response = AdmittedElasticsearch.count(RestHighLevelClientProvider.getInstance().getClient(), countRequest);
             final long count = response.getCount();
             if(shouldQueryCache()) {
                 queryCache.put(countRequest, count);
@@ -229,6 +231,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
             Logger.warnAndDebug(ContentFactoryIndexOperationsES.class, e);
             throw new DotRuntimeException(e);
         } catch (final Exception e) {
+            SearchUnavailableException.rethrow(e);
             if(ExceptionUtil.causedBy(e, IllegalStateException.class)) {
                 ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
             }
@@ -254,6 +257,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
                 return com.dotcms.content.index.domain.SearchHits.empty();
             }
         } catch (Exception e) {
+            SearchUnavailableException.rethrow(e);
             Logger.error(this, "Can't get indices information.", e);
             return com.dotcms.content.index.domain.SearchHits.empty();
         }
@@ -342,6 +346,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
                     .map(map -> map.get("inode").toString()).collect(
                             Collectors.toList());
         } catch (Exception e) {
+            SearchUnavailableException.rethrow(e);
             throw new ElasticsearchException(e.getMessage(), e);
         }
     }
@@ -492,6 +497,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
             Logger.warnAndDebug(ContentFactoryIndexOperationsES.class, e);
             throw new DotRuntimeException(e);
         } catch (final Exception e) {
+            SearchUnavailableException.rethrow(e);
             if (ExceptionUtil.causedBy(e, IllegalStateException.class)) {
                 ContentletFactory.rebuildRestHighLevelClientIfNeeded(e);
             }

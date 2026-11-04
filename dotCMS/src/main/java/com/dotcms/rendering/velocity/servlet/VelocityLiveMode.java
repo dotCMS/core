@@ -1,9 +1,11 @@
 package com.dotcms.rendering.velocity.servlet;
 
-import com.dotcms.cost.RequestCost;
-import com.dotcms.cost.RequestPrices.Price;
 import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
 
+import com.dotcms.content.index.SearchRequestFailure;
+import com.dotcms.content.index.SearchUnavailableException;
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.rendering.util.HtmlMinifier;
@@ -107,6 +109,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
         serve(response.getOutputStream());
     }
 
+    /** Serves a live page, keeping temporary search failures out of the page cache. */
     @Override
     public final void serve(final OutputStream out) throws DotDataException, IOException, DotSecurityException {
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
@@ -209,6 +212,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
                 }
             }
         } catch (Throwable t) {
+            SearchUnavailableException.rethrow(t);
             Logger.warn(this.getClass(),
                     "Error while trying to render page:" + cacheParameters.getKey() + ":" + t.getMessage());
             Logger.debug(this.getClass(), "--- ", t);
@@ -285,6 +289,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
         if (!HtmlMinifier.isEnabled()) {
             this.getTemplate(htmlPage, mode).merge(context, out);
+            SearchRequestFailure.check();
             return;
         }
 
@@ -299,6 +304,7 @@ public class VelocityLiveMode extends VelocityModeHandler {
         // it twice per render buys nothing.
         final StringBuilderWriter merged = new StringBuilderWriter(MERGE_BUFFER_INITIAL_CAPACITY);
         this.getTemplate(htmlPage, mode).merge(context, merged);
+        SearchRequestFailure.check();
         Try.run(() -> out.write(HtmlMinifier.minifyBestEffort(merged.toString())))
                 .getOrElseThrow(DotRuntimeException::new);
     }

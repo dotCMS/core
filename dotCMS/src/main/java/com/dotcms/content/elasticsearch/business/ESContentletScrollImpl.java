@@ -3,6 +3,7 @@ package com.dotcms.content.elasticsearch.business;
 import static com.dotcms.content.elasticsearch.business.ContentFactoryIndexOperationsES.addBuilderSort;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 
+import com.dotcms.content.elasticsearch.util.AdmittedElasticsearch;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.index.domain.SearchHit;
@@ -22,11 +23,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import org.elasticsearch.action.search.ClearScrollRequest;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.search.SearchScrollRequest;
-import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
@@ -92,7 +91,7 @@ class ESContentletScrollImpl implements IndexContentletScroll {
                     .scroll(TimeValue.timeValueMinutes(SCROLL_KEEP_ALIVE_MINUTES.get()));
 
             // Execute initial search
-            final SearchResponse response = esClient.search(searchRequest, RequestOptions.DEFAULT);
+            final SearchResponse response = AdmittedElasticsearch.search(esClient, searchRequest);
             this.scrollId = response.getScrollId();
             final org.elasticsearch.search.SearchHits esSearchHits = response.getHits();
 
@@ -118,6 +117,7 @@ class ESContentletScrollImpl implements IndexContentletScroll {
         });
     }
 
+    /** Returns the next bounded batch, preserving the latest cleanup identifier. */
     @Override
     public List<ContentletSearch> nextBatch() throws DotDataException {
         // On the first call, return the cached first batch
@@ -138,7 +138,8 @@ class ESContentletScrollImpl implements IndexContentletScroll {
             final SearchScrollRequest scrollRequest = new SearchScrollRequest(scrollId)
                     .scroll(TimeValue.timeValueMinutes(SCROLL_KEEP_ALIVE_MINUTES.get()));
 
-            final SearchResponse response = esClient.scroll(scrollRequest, RequestOptions.DEFAULT);
+            final SearchResponse response = AdmittedElasticsearch.scroll(esClient, scrollRequest);
+            this.scrollId = response.getScrollId();
             final org.elasticsearch.search.SearchHits esSearchHits = response.getHits();
 
             // Convert to domain SearchHits
@@ -174,17 +175,11 @@ class ESContentletScrollImpl implements IndexContentletScroll {
         return hasMoreResults;
     }
 
+    /** Clears the server-side scroll without blocking the caller on cleanup I/O. */
     @Override
     public void close() {
         if (scrollId != null && esClient != null) {
-            Try.run(() -> {
-                final ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
-                clearScrollRequest.addScrollId(scrollId);
-                esClient.clearScroll(clearScrollRequest, RequestOptions.DEFAULT);
-                Logger.debug(this.getClass(), () -> "Cleared scroll context: " + scrollId);
-            }).onFailure(e ->
-                    Logger.error(this.getClass(), "Error clearing scroll context: " + e.getMessage(), e)
-            );
+            AdmittedElasticsearch.clearScroll(esClient, scrollId);
             scrollId = null;
         }
     }

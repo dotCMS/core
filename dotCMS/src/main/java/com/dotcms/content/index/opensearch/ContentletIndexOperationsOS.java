@@ -528,11 +528,12 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
         }
     }
 
+    /** Counts documents under the engine's shared search admission and deadline limits. */
     @Override
     public long getIndexDocumentCount(final String indexName) {
         try {
             final OpenSearchClient client = getClientProvider().getClient();
-            final CountResponse response = client.count(
+            final CountResponse response = AdmittedOpenSearch.count(client,
                     CountRequest.of(r -> r.index(indexName)));
             return response.count();
         } catch (final Exception e) {

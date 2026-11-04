@@ -1,5 +1,6 @@
 package com.dotcms.rendering.velocity.viewtools.content.util;
 
+import com.dotcms.content.index.SearchUnavailableException;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
 import com.dotcms.content.elasticsearch.business.ESMappingAPIImpl;
@@ -320,6 +321,7 @@ public class ContentUtils {
 				ret.addAll(contentlets);
 			} 
 			catch (Throwable e) {
+                SearchUnavailableException.rethrow(e);
 				String msg = e.getMessage();
 				msg=(msg==null && e.getStackTrace().length>0)?e.getStackTrace()[0].toString() : msg;
 				msg = (msg!=null && msg.contains("\n")) ? msg.substring(0,msg.indexOf("\n")) : msg;

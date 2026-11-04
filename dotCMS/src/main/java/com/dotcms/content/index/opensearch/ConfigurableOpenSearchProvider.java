@@ -1,6 +1,10 @@
 package com.dotcms.content.index.opensearch;
 
 import com.dotcms.content.index.IndexConfigHelper;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Metrics;
+import java.util.concurrent.atomic.AtomicReference;
+import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManager;
 import com.dotcms.content.index.opensearch.ImmutableOSClientConfig.Builder;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
@@ -37,6 +41,8 @@ import java.util.List;
 class ConfigurableOpenSearchProvider {
 
     private static final String OS_ENDPOINTS = "OS_ENDPOINTS";
+    private static final AtomicReference<PoolingAsyncClientConnectionManager> METRICS_POOL =
+            new AtomicReference<>();
 
     private static final String BASIC_AUTH_TYPE = "BASIC";
     private static final String JWT_AUTH_TYPE = "JWT";
@@ -150,6 +156,8 @@ class ConfigurableOpenSearchProvider {
         int maxConnectionsPerRoute = IndexConfigHelper.getInt(OSIndexProperty.MAX_CONNECTIONS_PER_ROUTE, 50);
 
         builder.connectionTimeout(java.time.Duration.ofMillis(connectionTimeout))
+               .connectionRequestTimeout(java.time.Duration.ofMillis(
+                       IndexConfigHelper.getInt(OSIndexProperty.CONNECTION_REQUEST_TIMEOUT, 100)))
                .socketTimeout(java.time.Duration.ofMillis(socketTimeout))
                .maxConnections(maxConnections)
                .maxConnectionsPerRoute(maxConnectionsPerRoute);
@@ -246,6 +254,8 @@ class ConfigurableOpenSearchProvider {
             OSClientConfig config) {
         org.apache.hc.client5.http.config.RequestConfig requestConfig =
             org.apache.hc.client5.http.config.RequestConfig.custom()
+                .setConnectionRequestTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(
+                        config.connectionRequestTimeout().toMillis()))
                 .setConnectTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(config.connectionTimeout().toMillis()))
                 .setResponseTimeout(org.apache.hc.core5.util.Timeout.ofMilliseconds(config.socketTimeout().toMillis()))
                 .build();
@@ -280,7 +290,26 @@ class ConfigurableOpenSearchProvider {
                 + ", trustSelfSigned=" + config.trustSelfSigned() + ")");
         }
 
-        httpClientBuilder.setConnectionManager(connManagerBuilder.build());
+        final PoolingAsyncClientConnectionManager manager = connManagerBuilder.build();
+        httpClientBuilder.setConnectionManager(manager);
+        registerPoolMetrics(manager);
+    }
+
+    /** Pool gauges follow the latest shared transport when a client is rebuilt. */
+    private static void registerPoolMetrics(final PoolingAsyncClientConnectionManager manager) {
+        METRICS_POOL.set(manager);
+        Gauge.builder("dotcms.search.connections.leased", METRICS_POOL,
+                        pool -> pool.get().getTotalStats().getLeased())
+                .tag("engine", "opensearch").register(Metrics.globalRegistry);
+        Gauge.builder("dotcms.search.connections.pending", METRICS_POOL,
+                        pool -> pool.get().getTotalStats().getPending())
+                .tag("engine", "opensearch").register(Metrics.globalRegistry);
+        Gauge.builder("dotcms.search.connections.available", METRICS_POOL,
+                        pool -> pool.get().getTotalStats().getAvailable())
+                .tag("engine", "opensearch").register(Metrics.globalRegistry);
+        Gauge.builder("dotcms.search.connections.max", METRICS_POOL,
+                        pool -> pool.get().getTotalStats().getMax())
+                .tag("engine", "opensearch").register(Metrics.globalRegistry);
     }
 
     private boolean needsTls(OSClientConfig config) {

@@ -4,6 +4,7 @@ import static java.nio.charset.StandardCharsets.US_ASCII;
 import static java.util.regex.Pattern.CASE_INSENSITIVE;
 import static javax.crypto.Cipher.DECRYPT_MODE;
 
+import com.dotcms.content.index.SearchAdmission;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -121,6 +122,7 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
         return credentialsProvider;
     }
 
+    /** Builds the shared transport with explicit, finite timeouts and connection limits. */
     private RestClientBuilder getClientBuilder(final BasicCredentialsProvider credentialsProvider) {
         final String esAuthType = getESAuthType();
         
@@ -148,8 +150,20 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
                     "Initializing Elastic RestHighLevelClient using an unsecured http connection");
         }
 
+        final int maxConnections = SearchAdmission.positiveProperty("ES_MAX_CONNECTIONS", 30);
+        final int maxPerRoute = SearchAdmission.positiveProperty("ES_MAX_CONNECTIONS_PER_ROUTE", 10);
+        final int connectTimeout = SearchAdmission.positiveProperty("ES_CONNECTION_TIMEOUT", 1000);
+        final int socketTimeout = SearchAdmission.positiveProperty("ES_SOCKET_TIMEOUT", 30000);
+        final int leaseTimeout = SearchAdmission.positiveProperty("ES_CONNECTION_REQUEST_TIMEOUT", 100);
+        if (maxPerRoute > maxConnections) {
+            throw new IllegalArgumentException("ES_MAX_CONNECTIONS_PER_ROUTE must not exceed ES_MAX_CONNECTIONS");
+        }
         final RestClientBuilder clientBuilder = RestClient
                 .builder(esEndpoints)
+                .setRequestConfigCallback(requestConfig -> requestConfig
+                        .setConnectTimeout(connectTimeout)
+                        .setSocketTimeout(socketTimeout)
+                        .setConnectionRequestTimeout(leaseTimeout))
                 .setHttpClientConfigCallback((httpClientBuilder) -> {
                     
                     
@@ -167,7 +181,8 @@ public class DotRestHighLevelClientProvider extends RestHighLevelClientProvider 
                             throw new DotRuntimeException(e);
                         }
                     }
-                    httpClientBuilder
+                    httpClientBuilder.setMaxConnTotal(maxConnections)
+                            .setMaxConnPerRoute(maxPerRoute)
                             .setDefaultCredentialsProvider(credentialsProvider);
                     httpClientBuilder.setHostnameVerifier(AllowAllHostnameVerifier.INSTANCE);
                     

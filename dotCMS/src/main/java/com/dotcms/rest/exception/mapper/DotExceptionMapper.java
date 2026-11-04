@@ -1,5 +1,6 @@
 package com.dotcms.rest.exception.mapper;
 
+import com.dotcms.content.index.SearchUnavailableException;
 import javax.ws.rs.core.Response;
 import com.dotmarketing.util.SecurityLogger;
 
@@ -13,8 +14,12 @@ public abstract class DotExceptionMapper<T extends Throwable>
 
     protected DotExceptionMapper() {}
 
+    /** Handles overload without per-request stack traces or query-bearing diagnostic messages. */
     @Override
     public Response toResponse(final T exception) {
+        if (SearchUnavailableException.find(exception) != null) {
+            return ExceptionMapperUtil.createSearchUnavailableResponse();
+        }
         SecurityLogger.logInfo(DotSecurityExceptionMapper.class, exception.getMessage());
 
         return ExceptionMapperUtil.createResponse(exception, this.getErrorKey(),  this.getErrorStatus());

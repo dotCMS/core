@@ -11,6 +11,8 @@ package com.dotcms.enterprise.publishing.sitesearch;
 
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 
+import com.dotcms.content.elasticsearch.util.AdmittedElasticsearch;
+import com.dotcms.content.index.SearchUnavailableException;
 import com.dotcms.content.elasticsearch.business.*;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.IndexAPI;
@@ -148,10 +150,11 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         try {
             final CountRequest countRequest =
                     new CountRequest(indexApi.getNameWithClusterIDPrefix(indexName));
-            final CountResponse response = RestHighLevelClientProvider.getInstance().getClient()
-                    .count(countRequest, RequestOptions.DEFAULT);
+            final CountResponse response = AdmittedElasticsearch.count(
+                    RestHighLevelClientProvider.getInstance().getClient(), countRequest);
             return response.getCount();
         } catch (final Exception e) {
+            SearchUnavailableException.rethrow(e);
             Logger.warn(this, String.format(
                     "Site Search document count failed for ES index '%s': %s", indexName, e.getMessage()));
             return -1L;
@@ -212,6 +215,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         return indices;
     }
 
+    /** Searches the active Site Search index without absorbing temporary backend failures. */
     @Override
     public SiteSearchResults search(String query, int start, int rows) throws ElasticsearchException{
         SiteSearchResults results = new SiteSearchResults();
@@ -230,6 +234,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 
         }
         catch(Exception e){
+            SearchUnavailableException.rethrow(e);
             results.setError(e.getMessage());
 
 
@@ -241,6 +246,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 
     }
 
+    /** Searches one Site Search index under the shared search admission and deadline limits. */
     @Override
     public SiteSearchResults search(String indexName, String query, int offset, int limit) {
         if(!UtilMethods.isSet(query)){
@@ -301,8 +307,8 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
             request.source(searchSourceBuilder);
 
             try{
-                resp = RestHighLevelClientProvider.getInstance().getClient()
-                        .search(request, RequestOptions.DEFAULT);
+                resp = AdmittedElasticsearch.search(
+                        RestHighLevelClientProvider.getInstance().getClient(), request);
                 results.setTook(resp.getTook().toString());
             }catch (SearchPhaseExecutionException e) {
                 if(e.getMessage().contains("-order_dotraw] in order to sort on")){
@@ -356,6 +362,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
             }
 
         } catch (Exception e) {
+            SearchUnavailableException.rethrow(e);
             Logger.error(ESContentFactoryImpl.class, e.getMessage(), e);
             results.setError(e.getMessage());
         }
@@ -682,6 +689,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         scheduleTask(config);
     }
 
+    /** Retrieves aggregations under the same bounded budget as ordinary Site Search queries. */
     @Override
     public Map<String, Aggregation> getAggregations ( String indexName, String query ) throws DotDataException {
 
@@ -708,7 +716,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
             request.source(SearchSourceBuilderUtil.getSearchSourceBuilder(query)
                     .timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS)));
 
-            final SearchResponse response = client.search(request, RequestOptions.DEFAULT);
+            final SearchResponse response = AdmittedElasticsearch.search(client, request);
             return Aggregation.from(response.getAggregations());
         } catch ( ElasticsearchException | IOException e ) {
             Logger.error( this.getClass(), "Error getting aggregations for query.\n" + e.getMessage(), e );
@@ -717,6 +725,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     }
 
 
+    /** Retrieves facets under the same bounded budget as ordinary Site Search queries. */
     @Override
     public Map<String, Aggregation> getFacets ( String indexName, String query ) throws DotDataException {
 
@@ -743,7 +752,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
             request.source(SearchSourceBuilderUtil.getSearchSourceBuilder(query)
                     .timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS)));
 
-            final SearchResponse response = client.search(request, RequestOptions.DEFAULT);
+            final SearchResponse response = AdmittedElasticsearch.search(client, request);
             return Aggregation.from(response.getAggregations());
         } catch ( ElasticsearchException | IOException e ) {
             Logger.error( this.getClass(), "Error getting Facets for query.\n"  + e.getMessage(), e );
