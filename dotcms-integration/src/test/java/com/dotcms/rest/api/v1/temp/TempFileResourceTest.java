@@ -573,7 +573,7 @@ public class TempFileResourceTest {
     public void test_TempResource_uploadFileByURL_success() throws Exception {
         final byte[] body = "not really a picture, but a non-empty body".getBytes(StandardCharsets.UTF_8);
         final HttpServer server = HttpServer.create(
-                new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
+                new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0), 0);
         server.createContext("/", exchange -> {
             exchange.getResponseHeaders().add("Content-Type", "image/jpeg");
             exchange.sendResponseHeaders(200, body.length);
@@ -605,7 +605,7 @@ public class TempFileResourceTest {
             throws Exception {
         final AtomicInteger hits = new AtomicInteger();
         final HttpServer server = HttpServer.create(
-                new InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 0);
+                new InetSocketAddress(InetAddress.getByName("127.0.0.1"), 0), 0);
         server.createContext("/", exchange -> {
             hits.incrementAndGet();
             final byte[] body = "internal".getBytes(StandardCharsets.UTF_8);
