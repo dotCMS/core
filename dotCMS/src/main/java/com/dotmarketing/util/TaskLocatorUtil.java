@@ -275,6 +275,7 @@ import com.dotmarketing.startup.runonce.Task260826CreateSystemEventCursorTable;
 import com.dotmarketing.startup.runonce.Task261028RemoveSearchLegacyPortletsFromLayouts;
 import com.dotmarketing.startup.runonce.Task261030RemoveContentTypesLegacyPortletFromLayouts;
 import com.dotmarketing.startup.runonce.Task261103RemoveContainersLegacyPortletFromLayouts;
+import com.dotmarketing.startup.runonce.Task261104CreateLoginLockoutTable;
 import com.google.common.collect.ImmutableList;
 
 import java.util.ArrayList;
@@ -623,6 +624,7 @@ public class TaskLocatorUtil {
         .add(Task261028RemoveSearchLegacyPortletsFromLayouts.class)
         .add(Task261030RemoveContentTypesLegacyPortletFromLayouts.class)
         .add(Task261103RemoveContainersLegacyPortletFromLayouts.class)
+        .add(Task261104CreateLoginLockoutTable.class)
         .build();
 
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
