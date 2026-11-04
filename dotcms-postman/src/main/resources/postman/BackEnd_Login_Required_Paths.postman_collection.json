@@ -762,12 +762,12 @@
               "basic": [
                 {
                   "key": "username",
-                  "value": "{{user}}",
+                  "value": "admin@dotcms.com",
                   "type": "string"
                 },
                 {
                   "key": "password",
-                  "value": "{{password}}",
+                  "value": "admin",
                   "type": "string"
                 }
               ]
@@ -781,7 +781,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\"user\": \"{{user}}\", \"password\": \"{{password}}\", \"expirationDays\": 1}"
+              "raw": "{\"user\": \"admin@dotcms.com\", \"password\": \"admin\", \"expirationDays\": 1}"
             },
             "url": "{{serverURL}}/api/v1/authentication/api-token"
           }
