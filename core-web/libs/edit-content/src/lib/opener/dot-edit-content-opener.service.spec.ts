@@ -463,8 +463,9 @@ describe('DotEditContentOpenerService', () => {
 
             const first = spectator.service.open(EDIT_REQUEST, { injector });
             const { config: firstConfig } = await lastOpen();
+            // With a title, so nothing is fetched: an edit without one is fetched for its heading.
             firstConfig.outputs?.['openContent']({
-                request: { mode: 'edit', inode: 'rel-1', contentType: 'Banner' }
+                request: { mode: 'edit', inode: 'rel-1', contentType: 'Banner', title: 'Related' }
             } as never);
             await lastOpen();
 
