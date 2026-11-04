@@ -813,3 +813,45 @@ for (const [file, actor, creation, count] of [
   if (actor === 'editor') assert.ok(authenticated.some((r) =>
     r.node.event.some((e) => /status\(403\)/.test(eventCode(e)))), 'Keep the permission denial assertion');
 });
+
+test('management port denials accept generic HTML or plain 404, never health data', () => {
+  const denials = requests.filter((r) => r.file === 'ManagementEndpoints.postman_collection.json' &&
+    r.node.event?.some((e) => eventCode(e).includes('generic not-found response')));
+  assert.equal(denials.length, 7, 'Keep all management path denial checks');
+  for (const request of denials) {
+    const code = request.node.event.filter((e) => e.listen === 'test').map(eventCode).join('\n');
+    for (const [body, passes] of [
+      ['404', true], ['<html>dotCMS: Page not found (404 error)</html>', true],
+      ['alive', false], ['ready', false], ['{"status":"UP"}', false],
+    ]) {
+      const run = () => vm.runInNewContext(code, { pm: {
+        test: (name, callback) => callback(),
+        response: { text: () => body, to: { have: { status: (code) => assert.equal(code, 404) } } },
+        expect: (actual) => ({ to: { eql: (expected) => assert.equal(actual, expected) } }),
+      } });
+      if (passes) run(); else assert.throws(run, /AssertionError/);
+    }
+  }
+});
+
+test('time-machine banner previews explicitly create only their required browser sessions', () => {
+  const collection = JSON.parse(readFileSync(path.join(root, 'GraphQLTimeMachine.postman_collection.json'), 'utf8'));
+  const items = collection.item.find((i) => i.name === 'Time Machine').item;
+  const logins = items.filter((i) => i.name.startsWith('Log in for the '));
+  assert.equal(logins.length, 3);
+  for (const login of logins) {
+    const index = items.indexOf(login);
+    assert.equal(items[index - 1].request.url.raw, '{{serverURL}}/api/v1/logout');
+    assert.equal(login.request.method, 'POST');
+    assert.equal(login.request.auth.type, 'noauth');
+    assert.equal(login.request.url, '{{serverURL}}/api/v1/authentication');
+    assert.deepEqual(JSON.parse(login.request.body.raw), {
+      userId: 'admin@dotcms.com', password: 'admin', backEndLogin: true,
+    });
+    assert.match(login.event.map(eventCode).join('\n'), /JSESSIONID=/);
+    assert.match(items[index + 1].request.url.raw, /\/api\/v1\/page\/render\//);
+    assert.match(items[index + 2].request.url.raw, /\/dA\/.*\/image$/);
+    assert.equal(items[index + 2].request.auth.type, 'noauth', 'The image follows the explicit preview session');
+    assert.match(items[index + 2].event.map(eventCode).join('\n'), /Content-Length/);
+  }
+});

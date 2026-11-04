@@ -1776,6 +1776,45 @@
 					"response": []
 				},
 				{
+					"name": "Log in for the live banner preview",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Session login succeeds', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Session login sets JSESSIONID for the image preview', function () {",
+									"    const cookies = pm.response.headers.filter(h => h.key.toLowerCase() === 'set-cookie').map(h => h.value).join(';');",
+									"    pm.expect(cookies).to.include('JSESSIONID=');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"userId\": \"admin@dotcms.com\", \"password\": \"admin\", \"backEndLogin\": true}"
+						},
+						"url": "{{serverURL}}/api/v1/authentication",
+						"description": "The banner image servlet reads the time-machine date from a browser session. Establish that session explicitly with JSON login; Bearer authentication deliberately does not create one."
+					},
+					"response": []
+				},
+				{
 					"name": "No publish date shows the live versions",
 					"event": [
 						{
@@ -1933,6 +1972,45 @@
 								"logout"
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "Log in for the current-date banner preview",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Session login succeeds', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Session login sets JSESSIONID for the image preview', function () {",
+									"    const cookies = pm.response.headers.filter(h => h.key.toLowerCase() === 'set-cookie').map(h => h.value).join(';');",
+									"    pm.expect(cookies).to.include('JSESSIONID=');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"userId\": \"admin@dotcms.com\", \"password\": \"admin\", \"backEndLogin\": true}"
+						},
+						"url": "{{serverURL}}/api/v1/authentication",
+						"description": "The banner image servlet reads the time-machine date from a browser session. Establish that session explicitly with JSON login; Bearer authentication deliberately does not create one."
 					},
 					"response": []
 				},
@@ -2223,6 +2301,45 @@
 								"logout"
 							]
 						}
+					},
+					"response": []
+				},
+				{
+					"name": "Log in for the future banner preview",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test('Session login succeeds', function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test('Session login sets JSESSIONID for the image preview', function () {",
+									"    const cookies = pm.response.headers.filter(h => h.key.toLowerCase() === 'set-cookie').map(h => h.value).join(';');",
+									"    pm.expect(cookies).to.include('JSESSIONID=');",
+									"});"
+								]
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"userId\": \"admin@dotcms.com\", \"password\": \"admin\", \"backEndLogin\": true}"
+						},
+						"url": "{{serverURL}}/api/v1/authentication",
+						"description": "The banner image servlet reads the time-machine date from a browser session. Establish that session explicitly with JSON login; Bearer authentication deliberately does not create one."
 					},
 					"response": []
 				},
