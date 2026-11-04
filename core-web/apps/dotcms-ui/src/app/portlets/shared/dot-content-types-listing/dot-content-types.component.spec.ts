@@ -1,27 +1,21 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
+import { createComponentFactory, Spectator } from '@openng/spectator/vitest';
 import { Observable, Subject, throwError as observableThrowError, of } from 'rxjs';
 import { vi } from 'vitest';
 
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
-import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
-import { ReactiveFormsModule } from '@angular/forms';
-import { By } from '@angular/platform-browser';
-import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { Injectable } from '@angular/core';
+import { fakeAsync } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { ConfirmationService, SelectItem } from 'primeng/api';
+import { ConfirmationService } from 'primeng/api';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import {
     DotAlertConfirmService,
     DotContainersService,
     DotContentTypeService,
-    DotContentTypesInfoService,
     DotCrudService,
     DotFormatDateService,
     DotHttpErrorHandled,
@@ -37,11 +31,7 @@ import {
     ResponseView,
     StringUtils
 } from '@dotcms/dotcms-js';
-import {
-    DotCMSContentType,
-    DotContainer,
-    DotCopyContentTypeDialogFormFields
-} from '@dotcms/dotcms-models';
+import { DotCMSContentType, DotContainer } from '@dotcms/dotcms-models';
 import {
     dotcmsContentTypeBasicMock,
     MockDotMessageService,
@@ -49,45 +39,53 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotContentTypeInUseDialogComponent } from './components/dot-content-type-in-use-dialog/dot-content-type-in-use-dialog.component';
-import { DotContentTypeStore } from './dot-content-type.store';
 import { DotContentTypesPortletComponent } from './dot-content-types.component';
 
-import { DotListingDataTableComponent } from '../../../view/components/dot-listing-data-table/dot-listing-data-table.component';
+import { DotBaseTypeSelectorComponent } from '../../../view/components/dot-base-type-selector/dot-base-type-selector.component';
 
 const DELETE_MENU_ITEM_INDEX = 4;
 const ADD_TO_MENU_INDEX = 2;
 const ADD_TO_BUNDLE_MENU_ITEM_INDEX = 1;
 
-@Injectable()
-class MockDotContentTypeService {
-    getAllContentTypes() {}
-}
+const messageServiceMock = new MockDotMessageService({
+    'contenttypes.form.label.description': 'Description',
+    'contenttypes.fieldname.last_edit_date': 'Last',
+    'contenttypes.fieldname.entries': 'Entries',
+    'contenttypes.fieldname.structure.name': 'Content Type Name',
+    'contenttypes.content.variable': 'Variable Name',
+    mod_date: 'Last Edit Date',
+    'contenttypes.action.delete': 'Delete',
+    'contenttypes.action.cancel': 'Cancel',
+    'message.structure.cantdelete': 'Delete Content Type',
+    'message.contenttypes.in_use.header': 'Delete {0}',
+    'contenttypes.content.push_publish': 'Push Publish',
+    'contenttypes.content.add_to_bundle': 'Add to bundle',
+    'contenttypes.content.add_to_menu': 'Add to Menu',
+    'contenttypes.content.copy': 'Copy',
+    'contenttypes.content.form': 'Form',
+    'contenttypes.content.widget': 'Widget',
+    'contenttypes.content.content': 'Content'
+});
 
-@Component({
-    selector: 'dot-dot-content-type-copy-dialog',
-    template: '',
-    standalone: false
-})
-class MockDotContentTypeCloneDialogComponent {
-    @Input()
-    isVisibleDialog = false;
-    @Input()
-    isSaving = false;
-    @Output() cancelBtn = new EventEmitter<boolean>();
+const mockContentType: DotCMSContentType = {
+    ...dotcmsContentTypeBasicMock,
+    clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
+    id: '1234567890',
+    name: 'Nuevo',
+    variable: 'Nuevo',
+    defaultType: false,
+    fixed: false,
+    folder: 'SYSTEM_FOLDER',
+    host: null,
+    owner: '123',
+    system: false
+};
 
-    @Output()
-    validFormFields = new EventEmitter<DotCopyContentTypeDialogFormFields>();
-}
-
-@Component({
-    selector: 'dot-base-type-selector',
-    template: '',
-    standalone: false
-})
-class MockDotBaseTypeSelectorComponent {
-    @Input() value: SelectItem;
-    @Output() selected = new EventEmitter<string>();
-}
+const baseContentTypes = [
+    { name: 'CONTENT', label: 'Content', types: [] },
+    { name: 'WIDGET', label: 'Widget', types: [] },
+    { name: 'FORM', label: 'Form', types: [] }
+];
 
 @Injectable()
 class MockDotLicenseService {
@@ -106,36 +104,6 @@ class MockDotHttpErrorManagerService {
     }
 }
 
-@Injectable()
-class MockDotContentTypeStore {}
-
-@Component({
-    selector: 'dot-add-to-bundle ',
-    template: ``,
-    standalone: false
-})
-class MockDotAddToBundleComponent {
-    @Input() assetIdentifier: string;
-    @Output() cancel = new EventEmitter<boolean>();
-}
-
-@Component({
-    selector: 'dot-portlet-base',
-    template: '<ng-content></ng-content>'
-})
-class MockDotPortletBaseComponent {
-    @Input() boxed = true;
-}
-
-@Component({
-    selector: 'dot-add-to-menu',
-    template: ''
-})
-class MockDotAddToMenuComponent {
-    @Input() contentType;
-    @Output() cancel = new EventEmitter<boolean>();
-}
-
 Object.defineProperty(window, 'matchMedia', {
     writable: true,
     value: vi.fn().mockImplementation((query) => ({
@@ -151,112 +119,74 @@ Object.defineProperty(window, 'matchMedia', {
 });
 
 describe('DotContentTypesPortletComponent', () => {
-    let comp: DotContentTypesPortletComponent;
-    let fixture: ComponentFixture<DotContentTypesPortletComponent>;
-    let de: DebugElement;
+    let spectator: Spectator<DotContentTypesPortletComponent>;
     let crudService: DotCrudService;
-    let router: ActivatedRoute;
-    let dotContentletService: DotContentTypeService;
+    let route: ActivatedRoute;
+    let dotContentTypeService: DotContentTypeService;
     let pushPublishService: PushPublishService;
     let dotLicenseService: DotLicenseService;
-    let baseTypesSelector: MockDotBaseTypeSelectorComponent;
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dotPushPublishDialogService: DotPushPublishDialogService;
 
-    beforeEach(() => {
-        const messageServiceMock = new MockDotMessageService({
-            'contenttypes.form.label.description': 'Description',
-            'contenttypes.fieldname.last_edit_date': 'Last',
-            'contenttypes.fieldname.entries': 'Entries',
-            'contenttypes.fieldname.structure.name': 'Content Type Name',
-            'contenttypes.content.variable': 'Variable Name',
-            mod_date: 'Last Edit Date',
-            'contenttypes.action.delete': 'Delete',
-            'contenttypes.action.cancel': 'Cancel',
-            'message.structure.cantdelete': 'Delete Content Type',
-            'message.contenttypes.in_use.header': 'Delete {0}',
-            'contenttypes.content.push_publish': 'Push Publish',
-            'contenttypes.content.add_to_bundle': 'Add to bundle',
-            'contenttypes.content.add_to_menu': 'Add to Menu',
-            'contenttypes.content.copy': 'Copy',
-            'contenttypes.content.form': 'Form',
-            'contenttypes.content.widget': 'Widget',
-            'contenttypes.content.content': 'Content'
-        });
-
-        TestBed.configureTestingModule({
-            declarations: [
-                MockDotBaseTypeSelectorComponent,
-                MockDotAddToBundleComponent,
-                MockDotContentTypeCloneDialogComponent
-            ],
-            imports: [
-                DotContentTypesPortletComponent,
-                RouterTestingModule.withRoutes([
-                    { path: 'test', component: DotContentTypesPortletComponent }
-                ]),
-                BrowserAnimationsModule,
-                DotListingDataTableComponent,
-                ReactiveFormsModule,
-                MockDotPortletBaseComponent,
-                MockDotAddToMenuComponent
-            ],
-            providers: [
-                provideHttpClient(),
-                provideHttpClientTesting(),
-                DotContentTypesInfoService,
-                DotCrudService,
-                DotAlertConfirmService,
-                DotFormatDateService,
-                DotPushPublishDialogService,
-                DotAlertConfirmService,
-                ConfirmationService,
-                LoggerService,
-                StringUtils,
-                { provide: DotContentTypeService, useClass: MockDotContentTypeService },
-                { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: PushPublishService, useClass: MockPushPublishService },
-                { provide: DotLicenseService, useClass: MockDotLicenseService },
-                {
-                    provide: DotHttpErrorManagerService,
-                    useClass: MockDotHttpErrorManagerService
-                },
-                { provide: DotContentTypeStore, useClass: MockDotContentTypeStore },
-                { provide: DotContainersService, useValue: { getByContentType: vi.fn() } }
-            ]
-        }).compileComponents();
-
-        fixture = TestBed.createComponent(DotContentTypesPortletComponent);
-        comp = fixture.componentInstance;
-        de = fixture.debugElement;
-        router = de.injector.get(ActivatedRoute);
-        crudService = fixture.debugElement.injector.get(DotCrudService);
-        dotContentletService = fixture.debugElement.injector.get(DotContentTypeService);
-        pushPublishService = fixture.debugElement.injector.get(PushPublishService);
-        dotLicenseService = fixture.debugElement.injector.get(DotLicenseService);
-        dotHttpErrorManagerService = fixture.debugElement.injector.get(DotHttpErrorManagerService);
-
-        dotPushPublishDialogService = fixture.debugElement.injector.get(
-            DotPushPublishDialogService
-        );
-
-        vi.spyOn(dotContentletService, 'getAllContentTypes').mockReturnValue(
-            of([
-                { name: 'CONTENT', label: 'Content', types: [] },
-                { name: 'WIDGET', label: 'Widget', types: [] },
-                { name: 'FORM', label: 'Form', types: [] }
+    const createComponent = createComponentFactory({
+        component: DotContentTypesPortletComponent,
+        imports: [
+            RouterTestingModule.withRoutes([
+                { path: 'test', component: DotContentTypesPortletComponent }
             ])
-        );
+        ],
+        providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            DotAlertConfirmService,
+            DotFormatDateService,
+            DotPushPublishDialogService,
+            ConfirmationService,
+            LoggerService,
+            StringUtils,
+            { provide: DotMessageService, useValue: messageServiceMock },
+            { provide: PushPublishService, useClass: MockPushPublishService },
+            { provide: DotLicenseService, useClass: MockDotLicenseService },
+            {
+                provide: DotHttpErrorManagerService,
+                useClass: MockDotHttpErrorManagerService
+            },
+            {
+                provide: DotContainersService,
+                useFactory: () => ({ getByContentType: vi.fn() })
+            }
+        ],
+        detectChanges: false
     });
 
-    it('should display a listing-data-table.component', fakeAsync(() => {
-        fixture.detectChanges();
-        tick(1);
-        fixture.detectChanges();
-        const listingDataTable = fixture.debugElement.query(By.css('dot-listing-data-table'));
-        expect('v1/contenttype').toEqual(listingDataTable.nativeElement.getAttribute('url'));
+    beforeEach(() => {
+        spectator = createComponent();
+        route = spectator.inject(ActivatedRoute);
+        crudService = spectator.inject(DotCrudService, true);
+        dotContentTypeService = spectator.inject(DotContentTypeService, true);
+        pushPublishService = spectator.inject(PushPublishService);
+        dotLicenseService = spectator.inject(DotLicenseService);
+        dotHttpErrorManagerService = spectator.inject(DotHttpErrorManagerService);
+        dotPushPublishDialogService = spectator.inject(DotPushPublishDialogService);
 
-        const columns = comp.contentTypeColumns;
+        vi.spyOn(dotContentTypeService, 'getAllContentTypes').mockReturnValue(of(baseContentTypes));
+        vi.mocked(spectator.inject(DotContainersService).getByContentType).mockReset();
+    });
+
+    /**
+     * The listing is behind `@if (showTable)`, which the component flips in a deferred callback.
+     */
+    const renderListing = (): void => {
+        spectator.detectChanges();
+        spectator.tick(1);
+    };
+
+    it('should display a listing-data-table.component', fakeAsync(() => {
+        renderListing();
+
+        expect(spectator.query('dot-listing-data-table')).toHaveAttribute('url', 'v1/contenttype');
+
+        const columns = spectator.component.contentTypeColumns;
         expect(5).toEqual(columns.length);
 
         /*
@@ -281,23 +211,9 @@ describe('DotContentTypesPortletComponent', () => {
     }));
 
     it('should remove the content type on click command function', () => {
-        fixture.detectChanges();
+        spectator.detectChanges();
 
-        const mockContentType: DotCMSContentType = {
-            ...dotcmsContentTypeBasicMock,
-            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-            id: '1234567890',
-            name: 'Nuevo',
-            variable: 'Nuevo',
-            defaultType: false,
-            fixed: false,
-            folder: 'SYSTEM_FOLDER',
-            host: null,
-            owner: '123',
-            system: false
-        };
-
-        const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
+        const dotDialogService = spectator.inject(DotAlertConfirmService);
         vi.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
@@ -308,16 +224,16 @@ describe('DotContentTypesPortletComponent', () => {
         // for the `$listing()` viewChild on success, and that viewChild lives behind
         // `@if (showTable)` — which the component only flips in a deferred callback. An
         // unrendered table left it undefined, and the resulting throw sat inside a
-        // subscribe handler, where rxjs reports it asynchronously and Jest dropped it.
-        comp.showTable = true;
-        fixture.detectChanges();
+        // subscribe handler, where rxjs reports it asynchronously and the runner dropped it.
+        spectator.component.showTable = true;
+        spectator.detectChanges();
 
-        const getByContentType = vi.mocked(TestBed.inject(DotContainersService).getByContentType);
+        const getByContentType = vi.mocked(spectator.inject(DotContainersService).getByContentType);
         getByContentType.mockReturnValue(of({ containers: [], total: 0 }));
-        const dialogService = fixture.debugElement.injector.get(DialogService);
+        const dialogService = spectator.inject(DialogService, true);
         vi.spyOn(dialogService, 'open');
 
-        comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
+        spectator.component.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
 
         expect(getByContentType).toHaveBeenCalledWith(mockContentType.id);
         expect(dialogService.open).not.toHaveBeenCalled();
@@ -326,9 +242,9 @@ describe('DotContentTypesPortletComponent', () => {
     });
 
     it('should have remove, push publish, Copy and Add to bundle actions to the list item', () => {
-        fixture.detectChanges();
+        spectator.detectChanges();
 
-        expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
+        expect(spectator.component.rowActions.map((action) => action.menuItem.label)).toEqual([
             'Push Publish',
             'Add to bundle',
             'Add to Menu',
@@ -340,9 +256,9 @@ describe('DotContentTypesPortletComponent', () => {
     it('should have ONLY remove action because is community license', () => {
         vi.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(false));
 
-        fixture.detectChanges();
+        spectator.detectChanges();
         expect(
-            comp.rowActions.map((action) => {
+            spectator.component.rowActions.map((action) => {
                 return {
                     label: action.menuItem.label,
                     icon: action.menuItem.icon
@@ -358,9 +274,9 @@ describe('DotContentTypesPortletComponent', () => {
 
     it('should have remove and add to bundle actions if is not community license and no publish environments are created', () => {
         vi.spyOn(pushPublishService, 'getEnvironments').mockReturnValue(of([]));
-        fixture.detectChanges();
+        spectator.detectChanges();
 
-        expect(comp.rowActions.map((action) => action.menuItem.label)).toEqual([
+        expect(spectator.component.rowActions.map((action) => action.menuItem.label)).toEqual([
             'Add to bundle',
             'Add to Menu',
             'Copy',
@@ -369,27 +285,14 @@ describe('DotContentTypesPortletComponent', () => {
     });
 
     it('should open push publish dialog', () => {
-        fixture.detectChanges();
+        spectator.detectChanges();
         vi.spyOn(dotPushPublishDialogService, 'open');
-        const mockContentType: DotCMSContentType = {
-            ...dotcmsContentTypeBasicMock,
-            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-            id: '1234567890',
-            name: 'Nuevo',
-            variable: 'Nuevo',
-            defaultType: false,
-            fixed: false,
-            folder: 'SYSTEM_FOLDER',
-            host: null,
-            owner: '123',
-            system: false
-        };
 
-        expect(de.query(By.css('p-dialog'))).toBeNull();
+        expect(spectator.query('p-dialog')).toBeNull();
 
-        comp.rowActions[0].menuItem.command(mockContentType);
-        fixture.detectChanges();
-        expect(de.query(By.css('p-dialog'))).toBeDefined();
+        spectator.component.rowActions[0].menuItem.command(mockContentType);
+        spectator.detectChanges();
+        expect(spectator.query('p-dialog')).toBeDefined();
         expect(dotPushPublishDialogService.open).toHaveBeenCalledWith({
             assetIdentifier: mockContentType.id,
             title: 'Push Publish'
@@ -397,76 +300,44 @@ describe('DotContentTypesPortletComponent', () => {
     });
 
     it('should open add to bundle dialog', fakeAsync(() => {
-        fixture.detectChanges();
-        tick(1);
-        fixture.detectChanges();
-        const mockContentType: DotCMSContentType = {
-            ...dotcmsContentTypeBasicMock,
-            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-            id: '1234567890',
-            name: 'Nuevo',
-            variable: 'Nuevo',
-            defaultType: false,
-            fixed: false,
-            folder: 'SYSTEM_FOLDER',
-            host: null,
-            owner: '123',
-            system: false
-        };
-        expect(comp.addToBundleIdentifier).not.toBeDefined();
+        renderListing();
+        expect(spectator.component.addToBundleIdentifier).not.toBeDefined();
 
-        comp.rowActions[ADD_TO_BUNDLE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
+        spectator.component.rowActions[ADD_TO_BUNDLE_MENU_ITEM_INDEX].menuItem.command(
+            mockContentType
+        );
 
-        // Verify the component state was updated correctly
-        expect(comp.addToBundleIdentifier).toEqual(mockContentType.id);
+        expect(spectator.component.addToBundleIdentifier).toEqual(mockContentType.id);
     }));
 
     it('should open Add to Menu dialog', fakeAsync(() => {
-        fixture.detectChanges();
-        tick(1);
-        fixture.detectChanges();
-        const mockContentType: DotCMSContentType = {
-            ...dotcmsContentTypeBasicMock,
-            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-            id: '1234567890',
-            name: 'Nuevo',
-            variable: 'Nuevo',
-            defaultType: false,
-            fixed: false,
-            folder: 'SYSTEM_FOLDER',
-            host: null,
-            owner: '123',
-            system: false
-        };
-        expect(comp.addToMenuContentType).not.toBeDefined();
+        renderListing();
+        expect(spectator.component.addToMenuContentType).not.toBeDefined();
 
-        comp.rowActions[ADD_TO_MENU_INDEX].menuItem.command(mockContentType);
+        spectator.component.rowActions[ADD_TO_MENU_INDEX].menuItem.command(mockContentType);
 
-        // Verify the component state was updated correctly
-        expect(comp.addToMenuContentType).toEqual(mockContentType);
+        expect(spectator.component.addToMenuContentType).toEqual(mockContentType);
     }));
 
-    it('should populate the actionHeaderOptions based on a call to dotContentletService', () => {
-        fixture.detectChanges();
-        expect(dotContentletService.getAllContentTypes).toHaveBeenCalled();
-        expect(comp.actionHeaderOptions.primary.model.length).toEqual(3);
+    it('should populate the actionHeaderOptions based on a call to dotContentTypeService', () => {
+        spectator.detectChanges();
+        expect(dotContentTypeService.getAllContentTypes).toHaveBeenCalled();
+        expect(spectator.component.actionHeaderOptions.primary.model.length).toEqual(3);
     });
 
     it('should not set primary command in the header options', () => {
-        fixture.detectChanges();
-        expect(comp.actionHeaderOptions.primary.command).toBe(undefined);
+        spectator.detectChanges();
+        expect(spectator.component.actionHeaderOptions.primary.command).toBe(undefined);
     });
 
     it('should emit changes in base types selector', fakeAsync(() => {
-        fixture.detectChanges();
-        tick(1);
-        fixture.detectChanges();
-        baseTypesSelector = de.query(By.css('dot-base-type-selector')).componentInstance;
-        vi.spyOn(comp, 'changeBaseTypeSelector');
+        renderListing();
+        const baseTypesSelector = spectator.query(DotBaseTypeSelectorComponent);
+        vi.spyOn(spectator.component, 'changeBaseTypeSelector');
         baseTypesSelector.selected.emit('test');
 
-        expect(comp.changeBaseTypeSelector).toHaveBeenCalledWith('test');
-        expect(comp.changeBaseTypeSelector).toHaveBeenCalledTimes(1);
+        expect(spectator.component.changeBaseTypeSelector).toHaveBeenCalledWith('test');
+        expect(spectator.component.changeBaseTypeSelector).toHaveBeenCalledTimes(1);
     }));
 
     it('should handle error if is not possible delete the content type', () => {
@@ -479,43 +350,31 @@ describe('DotContentTypesPortletComponent', () => {
             }
         };
 
-        fixture.detectChanges();
+        spectator.detectChanges();
 
-        const mockContentType: DotCMSContentType = {
-            ...dotcmsContentTypeBasicMock,
-            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-            id: '1234567890',
-            name: 'Nuevo',
-            variable: 'Nuevo',
-            defaultType: false,
-            fixed: false,
-            folder: 'SYSTEM_FOLDER',
-            host: null,
-            owner: '123',
-            system: false
-        };
-
-        const dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
+        const dotDialogService = spectator.inject(DotAlertConfirmService);
         vi.spyOn(dotDialogService, 'confirm').mockImplementation((conf) => {
             conf.accept();
         });
 
         vi.spyOn(dotHttpErrorManagerService, 'handle');
         vi.spyOn(crudService, 'delete').mockReturnValue(observableThrowError(forbiddenError));
-        vi.mocked(TestBed.inject(DotContainersService).getByContentType).mockReturnValue(
+        vi.mocked(spectator.inject(DotContainersService).getByContentType).mockReturnValue(
             of({ containers: [], total: 0 })
         );
-        comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
+        spectator.component.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
 
-        fixture.detectChanges();
+        spectator.detectChanges();
 
-        expect<any>(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(forbiddenError);
+        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
+            forbiddenError as unknown as HttpErrorResponse
+        );
     });
 
     it('should show remove option', () => {
-        fixture.detectChanges();
+        spectator.detectChanges();
 
-        const shouldShow = comp.rowActions[DELETE_MENU_ITEM_INDEX].shouldShow({
+        const shouldShow = spectator.component.rowActions[DELETE_MENU_ITEM_INDEX].shouldShow({
             fixed: false,
             defaultType: false
         });
@@ -524,8 +383,8 @@ describe('DotContentTypesPortletComponent', () => {
     });
 
     it('should not show remove option if content type is defaultType', () => {
-        fixture.detectChanges();
-        const shouldShow = comp.rowActions[DELETE_MENU_ITEM_INDEX].shouldShow({
+        spectator.detectChanges();
+        const shouldShow = spectator.component.rowActions[DELETE_MENU_ITEM_INDEX].shouldShow({
             fixed: false,
             defaultType: true
         });
@@ -533,57 +392,44 @@ describe('DotContentTypesPortletComponent', () => {
     });
 
     it('should not show Add To Menu option if content type is HOST', () => {
-        fixture.detectChanges();
-        const shouldShow = comp.rowActions[ADD_TO_MENU_INDEX].shouldShow({
+        spectator.detectChanges();
+        const shouldShow = spectator.component.rowActions[ADD_TO_MENU_INDEX].shouldShow({
             variable: 'Host'
         });
         expect(shouldShow).toBeFalsy();
     });
 
     it('should show Add to Menu option', () => {
-        fixture.detectChanges();
-        expect(comp.rowActions[ADD_TO_MENU_INDEX].menuItem.label).toBe('Add to Menu');
+        spectator.detectChanges();
+        expect(spectator.component.rowActions[ADD_TO_MENU_INDEX].menuItem.label).toBe(
+            'Add to Menu'
+        );
     });
 
     describe('filterBy', () => {
         beforeEach(() => {
-            router.data = of({
+            route.data = of({
                 filterBy: 'FORM'
             });
         });
 
         it('should not display base types selector', fakeAsync(() => {
-            fixture.detectChanges();
-            tick(1);
-            fixture.detectChanges();
-            const dotBaseTypeSelector = de.query(By.css('dot-base-type-selector'));
-            expect(dotBaseTypeSelector).toBeNull();
+            renderListing();
+            expect(spectator.query(DotBaseTypeSelectorComponent)).toBeNull();
         }));
 
         it('should set filterBy params', fakeAsync(() => {
-            fixture.detectChanges();
-            tick(1);
-            fixture.detectChanges();
-            expect(comp.filterBy).toBe('Form');
-            expect(comp.$listing().paginatorService.extraParams.get('type')).toBe('Form');
-            expect(comp.actionHeaderOptions.primary.model).toBe(null);
-            expect(comp.actionHeaderOptions.primary.command).toBeDefined();
+            renderListing();
+            expect(spectator.component.filterBy).toBe('Form');
+            expect(spectator.component.$listing().paginatorService.extraParams.get('type')).toBe(
+                'Form'
+            );
+            expect(spectator.component.actionHeaderOptions.primary.model).toBe(null);
+            expect(spectator.component.actionHeaderOptions.primary.command).toBeDefined();
         }));
     });
 
     describe('delete with containers using the content type', () => {
-        const mockContentType: DotCMSContentType = {
-            ...dotcmsContentTypeBasicMock,
-            clazz: 'com.dotcms.contenttype.model.type.ImmutableSimpleContentType',
-            id: '1234567890',
-            name: 'Nuevo',
-            variable: 'Nuevo',
-            defaultType: false,
-            fixed: false,
-            folder: 'SYSTEM_FOLDER',
-            owner: '123',
-            system: false
-        };
         const containers = [
             { identifier: 'a', title: 'A' },
             { identifier: 'b', title: 'B' }
@@ -601,20 +447,20 @@ describe('DotContentTypesPortletComponent', () => {
         };
 
         beforeEach(() => {
-            fixture.detectChanges();
-            comp.showTable = true;
-            fixture.detectChanges();
+            spectator.detectChanges();
+            spectator.component.showTable = true;
+            spectator.detectChanges();
 
-            dialogService = fixture.debugElement.injector.get(DialogService);
-            dotDialogService = fixture.debugElement.injector.get(DotAlertConfirmService);
+            dialogService = spectator.inject(DialogService, true);
+            dotDialogService = spectator.inject(DotAlertConfirmService);
             vi.spyOn(dotDialogService, 'confirm');
             vi.spyOn(crudService, 'delete').mockReturnValue(of(mockContentType));
-            const listing = comp.$listing();
+            const listing = spectator.component.$listing();
             if (!listing) {
                 throw new Error('the listing table did not render');
             }
             loadCurrentPage = vi.spyOn(listing, 'loadCurrentPage');
-            getByContentType = vi.mocked(TestBed.inject(DotContainersService).getByContentType);
+            getByContentType = vi.mocked(spectator.inject(DotContainersService).getByContentType);
         });
 
         it('should warn about the containers using the content type and delete it on Delete', () => {
@@ -623,7 +469,9 @@ describe('DotContentTypesPortletComponent', () => {
             answerDialogWith(true);
 
             // When: the Delete row action runs
-            comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
+            spectator.component.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(
+                mockContentType
+            );
 
             // Then: the dialog lists the containers, the content type is deleted and the list reloads
             expect(dotDialogService.confirm).not.toHaveBeenCalled();
@@ -648,7 +496,9 @@ describe('DotContentTypesPortletComponent', () => {
             answerDialogWith(false);
 
             // When: the Delete row action runs
-            comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
+            spectator.component.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(
+                mockContentType
+            );
 
             // Then: nothing is deleted
             expect(dialogService.open).toHaveBeenCalledTimes(1);
@@ -661,7 +511,9 @@ describe('DotContentTypesPortletComponent', () => {
             answerDialogWith(undefined);
 
             // When: the Delete row action runs
-            comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
+            spectator.component.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(
+                mockContentType
+            );
 
             // Then: no confirm is shown and nothing is deleted
             expect(dialogService.open).toHaveBeenCalledTimes(1);
@@ -684,17 +536,23 @@ describe('DotContentTypesPortletComponent', () => {
             vi.spyOn(dotHttpErrorManagerService, 'handle');
 
             // When: the Delete row action runs
-            comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
+            spectator.component.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(
+                mockContentType
+            );
 
             // Then: the error is handled and nothing is shown or deleted
-            expect<any>(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
-            expect<any>(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(forbiddenError);
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(
+                forbiddenError as unknown as HttpErrorResponse
+            );
             expect(dotDialogService.confirm).not.toHaveBeenCalled();
             expect(dialogService.open).not.toHaveBeenCalled();
             expect(crudService.delete).not.toHaveBeenCalled();
 
             // And: a later Delete looks the containers up again
-            comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
+            spectator.component.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(
+                mockContentType
+            );
 
             expect(getByContentType).toHaveBeenCalledTimes(2);
         });
@@ -706,8 +564,12 @@ describe('DotContentTypesPortletComponent', () => {
             answerDialogWith(true);
 
             // When: the Delete row action runs twice before the lookup answers
-            comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
-            comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
+            spectator.component.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(
+                mockContentType
+            );
+            spectator.component.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(
+                mockContentType
+            );
 
             // Then: only one lookup is sent
             expect(getByContentType).toHaveBeenCalledTimes(1);
@@ -721,7 +583,9 @@ describe('DotContentTypesPortletComponent', () => {
             expect(crudService.delete).toHaveBeenCalledTimes(1);
 
             // And: once the lookup is over, a later Delete looks the containers up again
-            comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
+            spectator.component.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(
+                mockContentType
+            );
 
             expect(getByContentType).toHaveBeenCalledTimes(2);
         });
