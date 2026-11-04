@@ -11,6 +11,8 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
+import { ZIndexUtils } from 'primeng/utils';
+
 import { DotIframeService, DotRouterService, DotUiColorsService } from '@dotcms/data-access';
 import { LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
@@ -160,6 +162,44 @@ describe('DotIframeDialogComponent', () => {
                     const mockEvent = fakeEvent();
                     dotIframeDe?.triggerEventHandler('charge', { ...mockEvent });
                     expect(mockEvent.target.contentWindow.focus).toHaveBeenCalledTimes(1);
+                });
+
+                /**
+                 * A side panel opened from inside the dialog sits above it (the Workflow Tasks
+                 * detail's Edit Content, #38303). The detail reloads behind the panel after each
+                 * save; pulling the keyboard into its iframe then sent the next Escape there, where
+                 * it closed the dialog instead of the panel.
+                 */
+                describe('with a layer above the dialog', () => {
+                    let layer: HTMLElement;
+
+                    beforeEach(() => {
+                        layer = document.createElement('div');
+                        ZIndexUtils.set('modal', layer, 5000);
+                    });
+
+                    // Shared global stack: leaving the entry behind would leak into later tests.
+                    afterEach(() => ZIndexUtils.clear(layer));
+
+                    it('keeps the focus out of the iframe when it loads', () => {
+                        const mockEvent = fakeEvent();
+
+                        dotIframeDe?.triggerEventHandler('charge', { ...mockEvent });
+
+                        expect(mockEvent.target.contentWindow.focus).not.toHaveBeenCalled();
+                    });
+
+                    it('hands an Escape from inside the iframe to the page and stays open', () => {
+                        const heard = vi.fn();
+                        document.addEventListener('keydown', heard);
+
+                        dotIframeDe?.triggerEventHandler('keyWasDown', { key: 'Escape' });
+                        document.removeEventListener('keydown', heard);
+
+                        expect(component.show).toBe(true);
+                        expect(heard).toHaveBeenCalledTimes(1);
+                        expect((heard.mock.calls[0][0] as KeyboardEvent).key).toBe('Escape');
+                    });
                 });
             });
 
