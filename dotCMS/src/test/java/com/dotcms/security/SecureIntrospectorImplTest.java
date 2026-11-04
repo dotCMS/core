@@ -258,19 +258,68 @@ public class SecureIntrospectorImplTest {
     }
 
     /**
+     * {@code upgrade} (the container constructs the handler class and switches the connection)
+     * and {@code authenticate} (drives the container's authentication and writes to the response)
+     * are refused on any request, including the dotCMS wrapper and other wrappers.
+     */
+    @Test
+    public void request_upgrade_and_authenticate_are_denied() {
+        assertDenied(VelocityRequestWrapper.class, "upgrade");
+        assertDenied(VelocityRequestWrapper.class, "authenticate");
+        assertDenied(HttpServletRequest.class, "upgrade");
+        assertDenied(HttpServletRequest.class, "authenticate");
+        assertDenied(TemplateRequestWrapper.class, "upgrade");
+        assertDenied(TemplateRequestWrapper.class, "authenticate");
+    }
+
+    /**
+     * The servlet-context, async-context, CDI and expression-language types are matched through
+     * the class hierarchy, so an implementation outside every restricted package is still denied.
+     * These local subclasses live in this test's package, which no prefix covers.
+     */
+    @Test
+    public void container_service_types_are_denied_through_the_hierarchy() {
+        assertDenied(TemplateServletContext.class, "getAttribute");
+        assertDenied(TemplateAsyncContext.class, "getRequest");
+        assertDenied(TemplateBeanManager.class, "createInstance");
+        assertDenied(TemplateELContext.class, "getELResolver");
+        assertDenied(TemplateExpressionFactory.class, "createValueExpression");
+    }
+
+    /** A servlet context implemented outside the container's packages. */
+    private abstract static class TemplateServletContext implements ServletContext {
+    }
+
+    /** An async context implemented outside the container's packages. */
+    private abstract static class TemplateAsyncContext implements javax.servlet.AsyncContext {
+    }
+
+    /** A CDI bean manager implemented outside the CDI container's packages. */
+    private abstract static class TemplateBeanManager implements javax.enterprise.inject.spi.BeanManager {
+    }
+
+    /** An expression-language context implemented outside the EL packages. */
+    private abstract static class TemplateELContext extends javax.el.ELContext {
+    }
+
+    /** An expression factory implemented outside the EL packages. */
+    private abstract static class TemplateExpressionFactory extends javax.el.ExpressionFactory {
+    }
+
+    /**
      * The servlet context and the CDI, expression-language and JSP container objects reachable
      * from it must be denied, including implementations reached only through their hierarchy.
      */
     @Test
     public void servlet_context_and_container_service_types_are_denied() {
         assertDenied(ServletContext.class, "getAttribute");
-        assertDeniedIfPresent("org.apache.catalina.core.ApplicationContextFacade", "getAttribute");
-        assertDeniedIfPresent("javax.enterprise.inject.spi.BeanManager", "createInstance");
-        assertDeniedIfPresent("org.jboss.weld.manager.BeanManagerImpl", "getContextId");
-        assertDeniedIfPresent("javax.el.ExpressionFactory", "createValueExpression");
-        assertDeniedIfPresent("javax.el.ELContext", "getELResolver");
-        assertDeniedIfPresent("org.jboss.weld.module.web.el.WeldExpressionFactory", "createValueExpression");
-        assertDeniedIfPresent("org.apache.jasper.runtime.JspApplicationContextImpl", "getExpressionFactory");
+        assertDenied(org.apache.catalina.core.ApplicationContextFacade.class, "getAttribute");
+        assertDenied(javax.enterprise.inject.spi.BeanManager.class, "createInstance");
+        assertDenied(org.jboss.weld.manager.BeanManagerImpl.class, "getContextId");
+        assertDenied(javax.el.ExpressionFactory.class, "createValueExpression");
+        assertDenied(javax.el.ELContext.class, "getELResolver");
+        assertDenied(org.jboss.weld.module.web.el.WeldExpressionFactory.class, "createValueExpression");
+        assertDenied(org.apache.jasper.runtime.JspApplicationContextImpl.class, "getExpressionFactory");
     }
 
     /**
