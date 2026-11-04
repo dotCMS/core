@@ -201,8 +201,9 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
 
         /**
          * Servlet-container internals, embedded script interpreters and the alternate
-         * reflection, naming and process APIs. These can construct or run arbitrary code, so no
-         * method on them may be called from a template.
+         * reflection, naming, process and desktop/OS-integration APIs. These can construct or
+         * run arbitrary code, or launch external programs, so no method on them may be called
+         * from a template.
          */
         if (isRestrictedRuntimeType(clazz))
         {
@@ -411,10 +412,10 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
 
     /**
      * Types whose implementations may live in other packages: Tomcat's InstanceManager, JNDI
-     * contexts, script engine factories, the JDK's ProcessHandle, the servlet and async contexts,
-     * the CDI BeanManager, and the expression-language context and expression factory (both the
-     * javax and jakarta namespaces). Matched anywhere in the class hierarchy, so an implementation
-     * is caught whatever package it is in.
+     * contexts, script engine factories, the JDK's ProcessHandle, the desktop/OS-integration API,
+     * the servlet and async contexts, the CDI BeanManager, and the expression-language context and
+     * expression factory (both the javax and jakarta namespaces). Matched anywhere in the class
+     * hierarchy, so an implementation is caught whatever package it is in.
      */
     private static final Set<String> RESTRICTED_RUNTIME_TYPES = Set.of(
             "org.apache.tomcat.InstanceManager",
@@ -422,6 +423,7 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
             "javax.script.ScriptEngineFactory",
             "java.lang.ProcessHandle",
             "java.lang.ProcessHandle$Info",
+            "java.awt.Desktop",
             "javax.servlet.ServletContext",
             "javax.servlet.AsyncContext",
             "javax.enterprise.inject.spi.BeanManager",
@@ -514,7 +516,7 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
     /**
      * Determines whether method execution on the given class is restricted because it is a
      * servlet-container internal, an embedded script interpreter, or an alternate reflection,
-     * naming or process API.
+     * naming, process or desktop/OS-integration API.
      *
      * @param clazz class a method is about to be resolved on
      * @return {@code true} if the class is a restricted runtime type (deny), {@code false} otherwise
