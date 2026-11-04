@@ -85,14 +85,8 @@ jobs:
         STEP 1 — Read the SDK breaking-change categories reference:
           cat docs/core/SDK_BREAKING_CHANGE_CATEGORIES.md
 
-        STEP 2 — Get the full PR diff. The checkout holds only the PR merge commit, so
-          fetch the base commit first, then diff it against HEAD. Run these two commands,
-          one at a time, exactly as written:
-          git fetch --depth=1 origin ${{ github.event.pull_request.base.sha }}
-          git diff ${{ github.event.pull_request.base.sha }} HEAD
-          If either command fails, the diff is unavailable: add no label, post this
-          comment, and stop:
-          gh pr comment ${{ github.event.pull_request.number }} --body "SDK breaking-change check could not read the PR diff (run https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}). No label was added; a human must check SDK compatibility."
+        STEP 2 — Get the full PR diff:
+          git diff ${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}
 
         STEP 3 — Analyze the diff against EVERY category in the reference document.
           Focus on: GraphQL schema surface reachable via the page API's graphql.page /
@@ -125,10 +119,7 @@ jobs:
         Removing that label is a human-only decision.
 
         Be specific: quote actual file names and code lines, not generic descriptions.
-      # The executor checks out the PR merge commit at fetch-depth 1, so a diff
-      # between the base and head shas fails (#38420). The fetch rule lets STEP 2
-      # pull the base commit; the diff is then `<base.sha> HEAD`.
-      claude_args: '--allowedTools "Bash(git fetch --depth=1 origin ${{ github.event.pull_request.base.sha }}),Bash(git diff*),Bash(git log*),Bash(cat docs/core/SDK_BREAKING_CHANGE_CATEGORIES.md),Bash(gh pr comment*),Bash(gh pr edit*)"'
+      claude_args: '--allowedTools "Bash(git diff*),Bash(git log*),Bash(cat docs/core/SDK_BREAKING_CHANGE_CATEGORIES.md),Bash(gh pr comment*),Bash(gh pr edit*)"'
       timeout_minutes: 15
       runner: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
       enable_mention_detection: false
