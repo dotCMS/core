@@ -48,6 +48,10 @@ on:
         required: false
         type: boolean
         default: false
+      unlogged-experiment:
+        description: 'Run matched logged/unlogged integration and Postman jobs (disposable databases only)'
+        type: boolean
+        default: false
       opensearch_phase:
         description: >-
           ES->OS migration phase(s) to fan the integration suites out under. Same format and
@@ -91,15 +95,27 @@ jobs:
       has-tests: ${{ steps.generate-matrix.outputs.has-tests }}
       opensearch_phase: ${{ inputs.opensearch_phase }}
     steps:
-      # This job only reads .github/test-matrix.yml from HEAD, so fetch that one file:
+      # Fetch the matrix and the small opt-in experiment guardrails:
       # depth 1, no blobs up front (the filter), and only the one path materialized.
       - name: Checkout test matrix config
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           filter: blob:none
-          sparse-checkout: .github/test-matrix.yml
+          sparse-checkout: |
+            .github/test-matrix.yml
+            .github/workflows/cicd_comp_test-matrix.yml
+            environments/test-unlogged
+            dotcms-postman/prepare-unlogged.js
+            dotcms-postman/prepare-unlogged.test.js
           sparse-checkout-cone-mode: false
+
+      - name: Check UNLOGGED experiment guardrails
+        if: inputs.unlogged-experiment
+        run: |
+          bash environments/test-unlogged/self-test.sh
+          node --test dotcms-postman/prepare-unlogged.test.js environments/test-unlogged/matrix.test.cjs
+          python3 -m unittest discover -s environments/test-unlogged -p 'test_*.py'
 
       # yq (mikefarah, v4) is preinstalled on the ubuntu runner images, so this needs no
       # Docker image pull.
@@ -132,7 +148,8 @@ jobs:
               'karate': ${{ inputs.karate }},
               'integration': ${{ inputs.integration }},
               'e2e': ${{ inputs.e2e }},
-              'skip-runner-cleanup': ${{ inputs.skip-runner-cleanup }}
+              'skip-runner-cleanup': ${{ inputs.skip-runner-cleanup }},
+              'unlogged-experiment': ${{ inputs.unlogged-experiment }}
             };
 
             // ES->OS migration phases to sweep. The input accepts a single phase ('2'),
@@ -225,6 +242,21 @@ jobs:
               }
             }
             
+            // Experiment only: same checkout, suites, runners and retries; no cached test execution.
+            if (inputs['unlogged-experiment']) {
+              const paired = matrix.flatMap(entry => {
+                if (!['integration', 'postman'].includes(entry.test_type)) return [entry];
+                return ['logged', 'unlogged'].map(mode => ({
+                  ...entry,
+                  database_mode: mode,
+                  maven_args: `${entry.maven_args} -Dmaven.build.cache.enabled=false${mode === 'unlogged' ? ' -Ptest-unlogged' : ''}`,
+                  name: `${entry.name} [${mode}]`,
+                  stage_name: `${entry.stage_name} - ${mode}`,
+                }));
+              });
+              matrix.splice(0, matrix.length, ...paired);
+            }
+
             console.log(`Generated matrix with ${matrix.length} test configurations`);
 
             // A run that asked for everything must test something. This is what let the

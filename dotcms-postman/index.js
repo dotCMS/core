@@ -24,6 +24,7 @@
  */
 
 const fs = require("fs");
+const { prepareUnlogged } = require("./prepare-unlogged");
 const path = require("path");
 const yargs = require("yargs/yargs");
 const { hideBin } = require("yargs/helpers");
@@ -444,7 +445,7 @@ async function main() {
 
   const jwt = await fetchJWT(serverUrl);
 
-  console.log(`Got jwt: ${jwt}`);
+  prepareUnlogged();
   // Ensure results directory exists
   if (!fs.existsSync(postmanTestsResultsDir)) {
     fs.mkdirSync(postmanTestsResultsDir, { recursive: true });

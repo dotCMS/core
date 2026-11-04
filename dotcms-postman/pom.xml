@@ -206,6 +206,41 @@
     </build>
 
     <profiles>
+        <!-- Disposable test databases only: the marker is written only on first container init. -->
+        <profile>
+            <id>test-unlogged</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.fabric8</groupId>
+                        <artifactId>docker-maven-plugin</artifactId>
+                        <configuration>
+                            <imagesMap>
+                                <database>
+                                    <run>
+                                        <volumes>
+                                            <bind combine.children="append">
+                                                <volume>${project.basedir}/../environments/test-unlogged/zz-allow-disposable.sh:/docker-entrypoint-initdb.d/zz-allow-disposable.sh:ro</volume>
+                                            </bind>
+                                        </volumes>
+                                    </run>
+                                </database>
+                            </imagesMap>
+                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <configuration>
+                            <environmentVariables>
+                                <TEST_UNLOGGED_CONTAINER>${docker.run.context}_database</TEST_UNLOGGED_CONTAINER>
+                                <TEST_UNLOGGED_SQL>${project.basedir}/../environments/test-unlogged/convert.sql</TEST_UNLOGGED_SQL>
+                            </environmentVariables>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
 </project>

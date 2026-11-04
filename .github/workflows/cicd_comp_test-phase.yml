@@ -207,6 +207,10 @@ jobs:
           # Make the parity tests assert native capability instead of skipping it.
           echo "DOT_TEST_REQUIRE_LIBVIPS=true" >> "$GITHUB_ENV"
 
+      - name: Start database experiment sample
+        if: matrix.database_mode != ''
+        run: echo "BENCHMARK_STARTED=$(date +%s)" >> "$GITHUB_ENV"
+
       - name: Run ${{ matrix.name }}
         uses: ./.github/actions/core-cicd/maven-job
         with:
@@ -226,3 +230,19 @@ jobs:
           docker-io-username: ${{ secrets.DOCKER_USERNAME }}
           docker-io-token: ${{ secrets.DOCKER_TOKEN }}
           pre-pull-images: ${{ matrix.docker_images }}
+
+      - name: Verify executed counts and record database experiment sample
+        if: always() && matrix.database_mode != ''
+        env:
+          DATABASE_MODE: ${{ matrix.database_mode }}
+          BENCHMARK_STAGE: ${{ matrix.stage_name }}
+          BENCHMARK_STATUS: ${{ job.status }}
+          TEST_MODULE: ${{ matrix.test_type == 'integration' && 'dotcms-integration' || 'dotcms-postman' }}
+        run: python3 environments/test-unlogged/report.py "$TEST_MODULE/target/failsafe-reports"
+
+      - name: Upload database experiment sample
+        if: always() && matrix.database_mode != ''
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: unlogged-benchmark-${{ matrix.stage_name }}
+          path: unlogged-benchmark.json

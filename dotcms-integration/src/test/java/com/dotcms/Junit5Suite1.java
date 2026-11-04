@@ -33,6 +33,7 @@ import com.dotcms.rest.api.v1.content.dotimport.ContentImportResourceIntegration
 import com.dotcms.rest.api.v1.job.JobQueueDomainQueuesBypassIntegrationTest;
 import com.dotcms.rest.api.v1.job.JobQueueHelperIntegrationTest;
 import com.dotmarketing.portlets.folders.business.FolderDeleteKeepsFilesOnRollbackIT;
+import org.junit.platform.suite.api.ConfigurationParameter;
 import org.junit.platform.suite.api.SelectClasses;
 import org.junit.platform.suite.api.Suite;
 
@@ -49,12 +50,14 @@ import org.junit.platform.suite.api.Suite;
  * {@code **}{@code /Junit5Suite*.java}, dotcms-integration/pom.xml), and each becomes its own CI job.
  */
 @Suite
+@ConfigurationParameter(key = "dotcms.test.suite", value = "Junit5Suite1")
 @SelectClasses({
         JobQueueManagerAPICDITest.class,
         PostgresJobQueueIntegrationTest.class,
         com.dotmarketing.factories.PublishAssetPermissionIT.class,
         com.dotmarketing.portlets.links.action.PublishLinksActionIT.class,
         com.dotmarketing.portal.struts.PublishWebAssetActionIT.class,
+        com.dotcms.junit.UnloggedSuiteExtensionTest.class,
         JobQueueManagerAPIIntegrationTest.class,
         JobQueueDomainQueuesBypassIntegrationTest.class,
         JobQueueHelperIntegrationTest.class,

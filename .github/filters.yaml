@@ -46,6 +46,7 @@ backend: &backend
   - 'dotCMS/src/main/webapp/WEB-INF/*'
   - 'dotCMS/src/main/webapp/WEB-INF/!(messages)/**'
   - 'dotcms-integration/**'
+  - 'environments/test-unlogged/**'
   - 'independent-projects/**'
   - 'maven-plugins/**'
   - 'osgi-base/**'
