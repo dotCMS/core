@@ -517,8 +517,6 @@ public class JsResource {
 
         try {
 
-            ScriptingUtil.getInstance().validateBodyMap(bodyMap, httpMethod);
-
             final WebResource.InitBuilder initBuilder = new WebResource.InitBuilder(this.webResource)
                     .requestAndResponse(request, response);
             if (UtilMethods.isSet(folderName) && AnonymousAccess.scriptingEndpointsAllowAnonymous()) {
@@ -534,6 +532,8 @@ public class JsResource {
                 Logger.debug(this, () -> "Rejected Javascript endpoint request: " + e.getMessage());
                 return ResponseUtil.mapExceptionResponse(e);
             }
+
+            ScriptingUtil.getInstance().validateBodyMap(bodyMap, httpMethod);
 
             final User user = initDataObject.getUser();
             final DotJSONCache cache = DotJSONCacheFactory.getCache(httpMethod);

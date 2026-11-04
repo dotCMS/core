@@ -21,15 +21,15 @@ public final class ScriptingFileAttribute {
     /** Request attribute holding the scripting file. Created only by {@link #set}. */
     public static final String ATTRIBUTE = ScriptingFileAttribute.class.getName() + ".scriptingFile";
 
-    private record ScriptingFile(Contentlet contentlet) { }
+    private record ScriptingFile(String modUserId) { }
 
     private ScriptingFileAttribute() {
         // static utility
     }
 
     /**
-     * Records the file asset whose code the current request is about to run, so that the secrets
-     * check can use that file's last editor. Only callers running a stored file asset should use
+     * Captures the last editor of the file asset whose code the current request is about to run,
+     * so later mutations of the loaded content cannot change the secrets authorization. Only callers running a stored file asset should use
      * this; the {@code /dynamic} endpoints run caller-supplied code and must not.
      * <p>
      * Code evaluated on the fly inside the file, such as Velocity {@code #evaluate} or JavaScript
@@ -41,24 +41,24 @@ public final class ScriptingFileAttribute {
      * @param file    The file asset {@link Contentlet} holding the script.
      */
     public static void set(final HttpServletRequest request, final Contentlet file) {
-        request.setAttribute(ATTRIBUTE, new ScriptingFile(file));
+        request.setAttribute(ATTRIBUTE, new ScriptingFile(file.getModUser()));
     }
 
     /**
-     * Returns the scripting file bound to the request by {@link #set}, or {@code null} when none
+     * Returns the editor ID captured by {@link #set}, or {@code null} when none
      * was bound by Java code. A value that is not the wrapper type (for example a raw
      * {@link Contentlet} a template pushed through {@code setAttribute}) never counts.
      *
      * @param request The current HTTP request, may be {@code null}.
      *
-     * @return The bound scripting file, or {@code null}.
+     * @return The captured editor ID, or {@code null}.
      */
-    public static Contentlet get(final HttpServletRequest request) {
+    public static String get(final HttpServletRequest request) {
         if (null == request) {
             return null;
         }
         return request.getAttribute(ATTRIBUTE) instanceof ScriptingFile scriptingFile
-                ? scriptingFile.contentlet()
+                ? scriptingFile.modUserId()
                 : null;
     }
 }

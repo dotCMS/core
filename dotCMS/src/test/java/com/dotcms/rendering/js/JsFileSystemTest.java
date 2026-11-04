@@ -22,6 +22,9 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.Role;
+import com.dotmarketing.business.RoleAPI;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
@@ -1009,6 +1012,31 @@ public class JsFileSystemTest {
     }
 
     /**
+     * A working module saved by a non-scripting editor must not execute under a trusted entry
+     * file's secrets authority.
+     */
+    @Test
+    public void defaultSourceRefusesModuleSavedByNonScriptingEditor() throws Exception {
+        final Path binary = writeFile("module/untrusted.mjs", "export const v = 'UNTRUSTED';");
+        final Contentlet contentlet = fileAssetWithBinary(binary.toFile());
+        when(contentlet.getModUser()).thenReturn("untrusted-editor");
+        stubSiteBModule(contentlet);
+        final User editor = mock(User.class);
+        final UserAPI userAPI = mock(UserAPI.class);
+        when(userAPI.loadUserById(eq("untrusted-editor"), any(), eq(false))).thenReturn(editor);
+        apiLocator.when(APILocator::getUserAPI).thenReturn(userAPI);
+        final RoleAPI roleAPI = mock(RoleAPI.class);
+        when(roleAPI.loadRoleByKey(Role.SCRIPTING_DEVELOPER)).thenReturn(mock(Role.class));
+        apiLocator.when(APILocator::getRoleAPI).thenReturn(roleAPI);
+
+        assertThrows(IOException.class, () -> read(new JsFileSystem(), Paths.get(SITE_B_MODULE)));
+        verify(fileAssetAPI, never()).fromContentlet(contentlet);
+
+        when(roleAPI.doesUserHaveRole(eq(editor), any(Role.class))).thenReturn(true);
+        assertEquals("export const v = 'UNTRUSTED';", read(new JsFileSystem(), Paths.get(SITE_B_MODULE)));
+    }
+
+    /**
      * Stubs the content repository so that, looked up as the system user, site-b.test exists and its
      * {@code /application/js/a.mjs} identifier resolves to the given content.
      */
@@ -1033,11 +1061,25 @@ public class JsFileSystemTest {
     }
 
     /**
-     * Returns file content whose file asset, as given by the file asset API, has the given binary.
+     * Returns file content saved by an administrator whose file asset has the given binary.
+     *
+     * @param binary the module's binary file
+     * @return the mocked file content
+     * @throws Exception if the author lookup cannot be stubbed
      */
-    private Contentlet fileAssetWithBinary(final File binary) {
+    private Contentlet fileAssetWithBinary(final File binary) throws Exception {
         final Contentlet contentlet = mock(Contentlet.class);
         when(contentlet.isFileAsset()).thenReturn(true);
+        when(contentlet.getModUser()).thenReturn("trusted-module-editor");
+        final User editor = mock(User.class);
+        when(editor.isAdmin()).thenReturn(true);
+        final UserAPI userAPI = mock(UserAPI.class);
+        when(userAPI.loadUserById(eq("trusted-module-editor"), any(), eq(false))).thenReturn(editor);
+        apiLocator.when(APILocator::systemUser).thenReturn(mock(User.class));
+        apiLocator.when(APILocator::getUserAPI).thenReturn(userAPI);
+        final RoleAPI roleAPI = mock(RoleAPI.class);
+        when(roleAPI.loadRoleByKey(Role.SCRIPTING_DEVELOPER)).thenReturn(mock(Role.class));
+        apiLocator.when(APILocator::getRoleAPI).thenReturn(roleAPI);
         final FileAsset fileAsset = mock(FileAsset.class);
         when(fileAsset.getFileAsset()).thenReturn(binary);
         when(fileAssetAPI.fromContentlet(contentlet)).thenReturn(fileAsset);

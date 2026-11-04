@@ -621,8 +621,6 @@ public class VTLResource {
 
         try {
 
-            ScriptingUtil.getInstance().validateBodyMap(bodyMap, httpMethod);
-
             final WebResource.InitBuilder initBuilder = new WebResource.InitBuilder(this.webResource)
                     .requestAndResponse(request, response);
             if (!dynamic && AnonymousAccess.scriptingEndpointsAllowAnonymous()) {
@@ -638,6 +636,8 @@ public class VTLResource {
                 Logger.debug(this, () -> "Rejected VTL endpoint request: " + e.getMessage());
                 return ResponseUtil.mapExceptionResponse(e);
             }
+
+            ScriptingUtil.getInstance().validateBodyMap(bodyMap, httpMethod);
 
             final User user = initDataObject.getUser();
 

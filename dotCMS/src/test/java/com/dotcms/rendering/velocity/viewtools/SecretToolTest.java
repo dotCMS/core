@@ -41,6 +41,7 @@ public class SecretToolTest {
     private Context velocityContext;
     private HttpServletRequest request;
     private ViewContext viewContext;
+    private Contentlet scriptingFile;
 
     private MockedStatic<APILocator> mockedApiLocator;
     private MockedStatic<WebAPILocator> mockedWebApiLocator;
@@ -231,6 +232,22 @@ public class SecretToolTest {
     }
 
     /**
+     * Mutating a loaded file after Java binds it must not let a non-scripting editor borrow a
+     * Scripting Developer's authority.
+     */
+    @Test
+    public void canUserEvaluate_MutatedScriptingFileEditor_DoesNotGainRole() throws Exception {
+        final Role scriptingRole = anonymousRequestWithScriptingFileEditedBy("editor");
+        final User scripter = mock(User.class);
+        when(userAPI.loadUserById(eq("scripter"), any(), eq(true))).thenReturn(scripter);
+        when(roleAPI.doesUserHaveRole(scripter, scriptingRole)).thenReturn(true);
+        when(scriptingFile.getModUser()).thenReturn("scripter");
+
+        assertThrows(SecurityException.class, () -> secretTool.canUserEvaluate());
+        verify(userAPI, never()).loadUserById(eq("scripter"), any(), any(Boolean.class));
+    }
+
+    /**
      * Without a scripting file recorded by Java code the request user still decides, even when a
      * script has placed a raw Contentlet under the attribute name.
      */
@@ -315,6 +332,7 @@ public class SecretToolTest {
         when(roleAPI.loadRoleByKey(Role.SCRIPTING_DEVELOPER)).thenReturn(scriptingRole);
 
         final Contentlet file = mock(Contentlet.class);
+        scriptingFile = file;
         when(file.getModUser()).thenReturn(modUserId);
         ScriptingFileAttribute.set(request, file);
         final ArgumentCaptor<Object> attribute = ArgumentCaptor.forClass(Object.class);

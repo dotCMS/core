@@ -523,7 +523,7 @@ public class ApiTokenResource implements Serializable {
      * Requests an API token from a remote dotCMS instance on behalf of the authenticated admin.
      *
      * <p>The credential is exchanged for a session at the remote host first: a JSON login against
-     * {@code /api/v1/authentication} (with {@code backEndLogin}) must return a non-blank
+     * {@code /api/v1/authentication} (without requiring console access) must return a non-blank
      * {@code JSESSIONID} cookie, and only that cookie is forwarded to {@code /api/v1/apitoken}.
      * No Basic header is sent and client redirects are disabled so credentials cannot be replayed
      * elsewhere. A failed login or a login without a session cookie never reaches token issuance.
@@ -746,7 +746,7 @@ public class ApiTokenResource implements Serializable {
         payload.put("password", UtilMethods.isSet(formData.password())
                 ? new String(Base64.getDecoder().decode(formData.password()), java.nio.charset.StandardCharsets.UTF_8)
                 : "");
-        payload.put("backEndLogin", true);
+        payload.put("backEndLogin", false);
         return payload;
     }
 

@@ -413,7 +413,8 @@ public class RemoteApiTokenAuthenticationTest extends UnitTestBase {
             final Map<?, ?> payload = (Map<?, ?>) body;
             assertEquals("admin@dotcms.com", payload.get("userId"));
             assertEquals("password", payload.get("password"));
-            assertEquals(Boolean.TRUE, payload.get("backEndLogin"));
+            assertEquals("Remote token login must not require console access",
+                    Boolean.FALSE, payload.get("backEndLogin"));
             assertTrue("the login must be posted as JSON",
                     MediaType.APPLICATION_JSON_TYPE.equals(login.entity.getMediaType()));
         }

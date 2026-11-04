@@ -1134,6 +1134,12 @@ public  class WebResource {
             return this;
         }
 
+        /**
+         * Authenticates and authorizes the request, without copying credential-bearing paths into logs.
+         *
+         * @return the initialized request identity and parameters
+         * @throws SecurityException when authentication or authorization is refused
+         */
         public InitDataObject init() {
 
             response = (response == null ? new EmptyHttpResponse() : response);
@@ -1160,7 +1166,7 @@ public  class WebResource {
                 }
 
                 Logger.debug(InitBuilder.class,
-                        () -> request.getRequestURI()+" calling webResource.init(..) with AnonymousAccess set to `" + anonAccess + "`");
+                        () -> "Calling webResource.init(..) with AnonymousAccess set to `" + anonAccess + "`");
             }
 
             if(requireLicense){
@@ -1172,7 +1178,7 @@ public  class WebResource {
             try {
                 return webResource.init(this);
             } catch (final Exception e) {
-                 Logger.warnAndDebug(WebResource.class,"InitDataObject Error: uri:" + request.getRequestURI() + " err:" + e.getMessage() ,e);
+                 Logger.warnAndDebug(WebResource.class, "InitDataObject Error: " + e.getMessage(), e);
                  throw e;
             }
         }

@@ -195,9 +195,10 @@ public class SecretTool implements ViewTool {
 		final InternalContextAdapterImpl internalContextAdapter = new InternalContextAdapterImpl(context);
 		final String resourcePath = internalContextAdapter.getCurrentTemplateName();
 		Versionable versionable = null;
+		String modUserId = null;
 		if (!UtilMethods.isSet(resourcePath) || NO_TEMPLATE_NAME.equals(resourcePath)) {
-			// top-level code with no template name: only a scripting file recorded by Java code counts
-			versionable = ScriptingFileAttribute.get(this.request);
+			// top-level code with no template name: only an editor captured by Java code counts
+			modUserId = ScriptingFileAttribute.get(this.request);
 		} else {
 			String contentletInode = StringPool.BLANK;
 			try {
@@ -220,15 +221,18 @@ public class SecretTool implements ViewTool {
 			}
 		}
 
-		if (null == versionable) {
+		if (null != versionable) {
+			modUserId = versionable.getModUser();
+		}
+		if (!UtilMethods.isSet(modUserId)) {
 			return false;
 		}
 		try {
-			final User lastModifiedUser = APILocator.getUserAPI().loadUserById(versionable.getModUser(), APILocator.systemUser(), true);
+			final User lastModifiedUser = APILocator.getUserAPI().loadUserById(modUserId, APILocator.systemUser(), true);
 			return APILocator.getRoleAPI().doesUserHaveRole(lastModifiedUser, role);
 		} catch (final Exception e) {
 			Logger.warnAndDebug(SecretTool.class, String.format("Failed to check the last " +
-					"modification user '%s' of '%s': %s", versionable.getModUser(), resourcePath,
+					"modification user '%s' of '%s': %s", modUserId, resourcePath,
 					ExceptionUtil.getErrorMessage(e)), e);
 			return false;
 		}
