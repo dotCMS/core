@@ -302,7 +302,7 @@
 									"key": "json",
 									"type": "text",
 									"contentType": "application/json",
-									"value": "{\"contentlet\": {\"contentType\": \"Image\"}}"
+									"value": "{\"contentlet\": {\"contentType\": \"Image\", \"title\": \"draft.png\", \"hostFolder\": \"{{bannerFolderId}}\"}}"
 								}
 							]
 						}
@@ -375,7 +375,7 @@
 									"key": "json",
 									"type": "text",
 									"contentType": "application/json",
-									"value": "{\"contentlet\": {\"contentType\": \"Image\"}}"
+									"value": "{\"contentlet\": {\"contentType\": \"Image\", \"title\": \"java-image.png\", \"hostFolder\": \"{{bannerFolderId}}\"}}"
 								}
 							]
 						}
@@ -1821,7 +1821,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?language_id=1&mode=LIVE",
+							"raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=LIVE",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1833,6 +1833,10 @@
 								"{{pageUrl}}"
 							],
 							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
 								{
 									"key": "language_id",
 									"value": "1"
@@ -1983,7 +1987,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?language_id=1&mode=LIVE&publishDate={{currentDate}}",
+							"raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=LIVE&publishDate={{currentDate}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -1995,6 +1999,10 @@
 								"{{pageUrl}}"
 							],
 							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
 								{
 									"key": "language_id",
 									"value": "1"
@@ -2153,7 +2161,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?language_id=1&mode=LIVE&publishDate={{graceWindowDate}}",
+							"raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=LIVE&publishDate={{graceWindowDate}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2165,6 +2173,10 @@
 								"{{pageUrl}}"
 							],
 							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
 								{
 									"key": "language_id",
 									"value": "1"
@@ -2275,7 +2287,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?language_id=1&mode=LIVE&publishDate={{futureDate}}",
+							"raw": "{{serverURL}}/api/v1/page/render/{{pageUrl}}?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=LIVE&publishDate={{futureDate}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2287,6 +2299,10 @@
 								"{{pageUrl}}"
 							],
 							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
 								{
 									"key": "language_id",
 									"value": "1"
@@ -2422,7 +2438,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/{{urlMapContentOneUrl}}?language_id=1&mode=LIVE&publishDate={{currentDate}}",
+							"raw": "{{serverURL}}/api/v1/page/render/{{urlMapContentOneUrl}}?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=LIVE&publishDate={{currentDate}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2434,6 +2450,10 @@
 								"{{urlMapContentOneUrl}}"
 							],
 							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
 								{
 									"key": "language_id",
 									"value": "1"
@@ -2525,7 +2545,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/{{urlMapContentOneUrl}}?language_id=1&mode=LIVE&publishDate={{futureDate}}",
+							"raw": "{{serverURL}}/api/v1/page/render/{{urlMapContentOneUrl}}?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=LIVE&publishDate={{futureDate}}",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2537,6 +2557,10 @@
 								"{{urlMapContentOneUrl}}"
 							],
 							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
 								{
 									"key": "language_id",
 									"value": "1"
@@ -2643,7 +2667,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{ page(url: \"/{{pageUrl}}\") { containers { containerContentlets { contentlets { title } } } } }",
+								"query": "{ page(url: \"/{{pageUrl}}\" site: \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\") { containers { containerContentlets { contentlets { title } } } } }",
 								"variables": ""
 							}
 						},
@@ -2738,7 +2762,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{ page(url: \"/{{pageUrl}}\" publishDate: \"{{futureDate}}\") { containers { containerContentlets { contentlets { title } } } } }",
+								"query": "{ page(url: \"/{{pageUrl}}\" site: \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\" publishDate: \"{{futureDate}}\") { containers { containerContentlets { contentlets { title } } } } }",
 								"variables": ""
 							}
 						},
@@ -2811,7 +2835,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{serverURL}}/api/v1/page/render/{{urlUnpublishedContentMap}}?language_id=1&mode=LIVE",
+							"raw": "{{serverURL}}/api/v1/page/render/{{urlUnpublishedContentMap}}?host_id=8a7d5e23-da1e-420a-b4f0-471e7da8ea2d&language_id=1&mode=LIVE",
 							"host": [
 								"{{serverURL}}"
 							],
@@ -2823,6 +2847,10 @@
 								"{{urlUnpublishedContentMap}}"
 							],
 							"query": [
+								{
+									"key": "host_id",
+									"value": "8a7d5e23-da1e-420a-b4f0-471e7da8ea2d"
+								},
 								{
 									"key": "language_id",
 									"value": "1"
@@ -2926,7 +2954,7 @@
 						"body": {
 							"mode": "graphql",
 							"graphql": {
-								"query": "{ page(url: \"/{{urlUnpublishedContentMap}}\") { containers { containerContentlets { contentlets { title } } } } }",
+								"query": "{ page(url: \"/{{urlUnpublishedContentMap}}\" site: \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\") { containers { containerContentlets { contentlets { title } } } } }",
 								"variables": ""
 							}
 						},

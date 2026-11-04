@@ -110,7 +110,9 @@
                       "// string body is stored and read back as structured JSON, not the raw string.",
                       "pm.test('Body is normalized to a Story Block doc', function () {",
                       "    const body = pm.response.json().entity.body;",
-                      "    pm.expect(body.type).to.eql('doc');",
+                      "    // ContentTypeResourceTests imports a bundle that redefines webPageContent with a WYSIWYG body, which is why this",
+                      "    // collection runs first in its config.json group.",
+                      "    pm.expect(body.type, 'webPageContent.body must be a Story Block field (starter definition); an earlier collection may have replaced it').to.eql('doc');",
                       "    pm.expect(body.content[0].content[0].text).to.eql('This is my Test Generic Content');",
                       "});"
                     ]

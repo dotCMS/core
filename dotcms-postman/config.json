@@ -6,11 +6,11 @@
   {
     "name": "category-content",
     "collections": [
+      "ContentJsonAttributes.postman_collection",
       "Category.postman_collection",
       "ContentResourceV1.postman_collection",
       "ContentTypeResourceTests",
-      "Content_Resource.postman_collection",
-      "ContentJsonAttributes.postman_collection"
+      "Content_Resource.postman_collection"
     ]
   },
   {
