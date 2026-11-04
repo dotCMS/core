@@ -126,6 +126,7 @@ import org.junit.runners.Suite;
     com.dotmarketing.portlets.user.ajax.UserAjaxHasUserRolesIntegrationTest.class,
     com.dotcms.rest.api.v1.user.UserResourcePasswordIntegrationTest.class,
     com.dotcms.rendering.velocity.viewtools.XsltToolTest.class,
+    com.dotmarketing.portlets.htmlpageasset.business.render.page.PageViewSerializerRelatedContentTest.class,
         PublisherQueueJobTest.class,
         ContentToStringUtilTest.class,
         CacheResourceIntegrationTest.class,

@@ -32,6 +32,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.MultiTree;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -1140,6 +1141,92 @@ public class ContentResourceIntegrationTest {
                 if (user != null) {
                     UserDataGen.remove(user, true);
                 }
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentResource#getContent}
+     * <p>
+     * Given scenario: a parent related to a child is loaded through the Content API, then read
+     * through the endpoint with {@code depth=1}.
+     * <p>
+     * Expected result: the response lists the child under the relationship field, and the parent
+     * the Content API returns afterwards still has no value for that field.
+     */
+    @Test
+    public void test_getContent_withDepth_leavesContentFromTheApiUnchanged() throws Exception {
+
+        ContentType childContentType = null;
+        ContentType parentContentType = null;
+        Contentlet child = null;
+        Contentlet parent = null;
+        try {
+            childContentType = new ContentTypeDataGen()
+                    .fields(List.of(new FieldDataGen().name("Title").velocityVarName("title").next()))
+                    .nextPersisted();
+            parentContentType = new ContentTypeDataGen()
+                    .fields(List.of(
+                            new FieldDataGen().name("Title").velocityVarName("title").next(),
+                            new FieldDataGen().type(RelationshipField.class)
+                                    .name("Children")
+                                    .velocityVarName("children")
+                                    .relationType(childContentType.variable())
+                                    .values(String.valueOf(
+                                            RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal()))
+                                    .next()))
+                    .nextPersisted();
+            final com.dotcms.contenttype.model.field.Field relationshipField =
+                    parentContentType.fields(RelationshipField.class).get(0);
+            final Relationship relationship = APILocator.getRelationshipAPI()
+                    .getRelationshipFromField(relationshipField, systemUser);
+
+            child = new ContentletDataGen(childContentType.id())
+                    .setProperty("title", "Child").nextPersisted();
+            parent = new ContentletDataGen(parentContentType.id())
+                    .setProperty("title", "Parent").next();
+            parent.setIndexPolicy(IndexPolicy.FORCE);
+            parent = APILocator.getContentletAPI().checkin(parent,
+                    Map.of(relationship, List.of(child)), systemUser, false);
+
+            CacheLocator.getContentletCache().remove(parent.getInode());
+            final Contentlet loadedBefore = APILocator.getContentletAPI()
+                    .find(parent.getInode(), systemUser, false);
+            assertFalse(loadedBefore.getMap().containsKey(relationshipField.variable()));
+
+            final Response endpointResponse = new ContentResource().getContent(
+                    createAuthenticatedRequest(), mock(HttpServletResponse.class),
+                    parent.getIdentifier(),
+                    String.valueOf(parent.getLanguageId()),
+                    "DEFAULT",
+                    1);
+
+            assertEquals(Status.OK.getStatusCode(), endpointResponse.getStatus());
+            @SuppressWarnings("unchecked")
+            final Map<String, Object> contentletMap =
+                    ((ResponseEntityView<Map<String, Object>>) endpointResponse.getEntity()).getEntity();
+            @SuppressWarnings("unchecked")
+            final List<Map<String, Object>> related =
+                    (List<Map<String, Object>>) contentletMap.get(relationshipField.variable());
+            assertNotNull(related);
+            assertEquals(1, related.size());
+            assertEquals(child.getIdentifier(), related.get(0).get("identifier"));
+
+            final Contentlet loadedAfter = APILocator.getContentletAPI()
+                    .find(parent.getInode(), systemUser, false);
+            assertFalse(loadedAfter.getMap().containsKey(relationshipField.variable()));
+        } finally {
+            if (null != parent) {
+                ContentletDataGen.remove(parent);
+            }
+            if (null != child) {
+                ContentletDataGen.remove(child);
+            }
+            if (null != parentContentType) {
+                ContentTypeDataGen.remove(parentContentType);
+            }
+            if (null != childContentType) {
+                ContentTypeDataGen.remove(childContentType);
             }
         }
     }
