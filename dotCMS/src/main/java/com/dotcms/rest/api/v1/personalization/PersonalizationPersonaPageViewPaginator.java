@@ -41,6 +41,20 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
 
   }
 
+  /**
+   * Returns the personas of the site, each flagged with whether the page has content personalized
+   * for it. The page is looked up by identifier in any language, archived versions included.
+   *
+   * @param user        the user making the request
+   * @param filter      text to narrow the personas by
+   * @param limit       maximum number of personas to return
+   * @param offset      number of personas to skip
+   * @param orderBy     field to order by
+   * @param direction   sort direction
+   * @param extraParams must hold the page identifier, the site identifier and whether to respect
+   *                    front-end roles
+   * @return one page of personas with their personalization flag
+   */
   @Override
   public PaginatedArrayList<PersonalizationPersonaPageView> getItems(final User user, final String filter, int limit, int offset,
       final String orderBy, final OrderDirection direction, final Map<String, Object> extraParams) {
@@ -60,7 +74,7 @@ public class PersonalizationPersonaPageViewPaginator implements PaginatorOrdered
           offset, orderByString, user, respectFrontEndRoles);
 
       final IHTMLPage page = APILocator.getHTMLPageAssetAPI().fromContentlet(
-              APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageId));
+              APILocator.getContentletAPI().findContentletByIdentifierAnyLanguage(pageId, true));
 
       final String currentVariantId = WebAPILocator.getVariantWebAPI().currentVariantId();
       final Set<String> personaTagPerPage = this.multiTreeAPI.getPersonalizationsForPage(page, currentVariantId);

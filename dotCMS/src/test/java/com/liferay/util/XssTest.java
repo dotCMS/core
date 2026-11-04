@@ -89,6 +89,26 @@ public class XssTest {
         assertEquals("", Xss.encodeForJavaScript(null));
     }
 
+    @Test
+    public void encodeForJavaScript_encodesScriptElementDelimiters() {
+        // The delimiters of a script element are written as backslash sequences inside a quoted JS literal
+        final String result = Xss.encodeForJavaScript("</script>x'y");
+        assertFalse("'/' must be encoded so no '</' sequence survives", result.contains("</"));
+        assertTrue("'/' must be written as a backslash sequence", result.contains("\\/"));
+        assertFalse("single quote must be encoded", result.contains("'"));
+    }
+
+    @Test
+    public void encodeForJavaScript_encodesQuotesLineBreaksAndCommentDelimiters() {
+        // Double quotes, line breaks and HTML comment delimiters are written as sequences a JS literal keeps on one line
+        final String result = Xss.encodeForJavaScript("a\"b\nc\rd<!--e-->f");
+        assertFalse("double quote must be encoded", result.contains("\""));
+        assertFalse("line feed must be encoded", result.contains("\n"));
+        assertFalse("carriage return must be encoded", result.contains("\r"));
+        assertFalse("'<!--' must not survive", result.contains("<!--"));
+        assertFalse("'-->' must not survive", result.contains("-->"));
+    }
+
     // -------------------------------------------------------------------------
     // encodeForURL
     // -------------------------------------------------------------------------

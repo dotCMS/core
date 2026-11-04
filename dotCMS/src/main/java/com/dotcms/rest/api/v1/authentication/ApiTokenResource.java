@@ -16,13 +16,12 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.SecurityLogger;
-import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 import io.swagger.v3.oas.annotations.Hidden;
@@ -469,8 +468,17 @@ public class ApiTokenResource implements Serializable {
             throw new DotSecurityException("User should be Admin");
         }
 
+        // null and 0.0.0.0/0 are the only ways to ask for a token without an IP restriction; any
+        // other value must be a valid CIDR, otherwise the caller would get an unrestricted token
+        // while believing it is pinned to a network
         final String netmaskStr = formData.network!=null && !"0.0.0.0/0".equals(formData.network)? formData.network:null;
-        final String netmask    = Try.of(()->new SubnetUtils(netmaskStr).getInfo().getCidrSignature()).getOrNull();
+        final String netmask    = netmaskStr == null ? null
+                : Try.of(()->new SubnetUtils(netmaskStr).getInfo().getCidrSignature()).getOrNull();
+        if (netmaskStr != null && netmask == null) {
+
+            return ExceptionMapperUtil.createResponse(new DotStateException("Invalid network: " + netmaskStr
+                    + " (expected CIDR notation, e.g. 10.0.0.0/8)"), Response.Status.BAD_REQUEST);
+        }
         final Map<String, Object> claims = formData.claims;
         final int expirationSeconds      = formData.expirationSeconds;
 
@@ -494,8 +502,10 @@ public class ApiTokenResource implements Serializable {
 
         token = this.tokenApi.persistApiToken(token, requestingUser);
         final String jwt = this.tokenApi.getJWT(token, requestingUser);
-        SecurityLogger.logInfo(this.getClass(), "API token issued for user: " + forUser.getUserId()
-                + " by: " + requestingUser.getUserId() + " ip: " + request.getRemoteAddr());
+        // The JWT is only returned here, so this entry records every time a token's JWT is handed out
+        SecurityLogger.logInfo(this.getClass(), "API token issued, id: " + token.getId()
+                + " for user: " + forUser.getUserId() + " by: " + requestingUser.getUserId()
+                + " ip: " + request.getRemoteAddr());
         return Response.ok(new ResponseEntityMapView(Map.of("token", token, "jwt", jwt)))
                 .build(); // 200
     }
@@ -706,79 +716,10 @@ public class ApiTokenResource implements Serializable {
     }
 
     /**
-     * Get a JWT issued from a token
-     * @param request
-     * @param response
-     * @param tokenId
-     * @return
+     * Gives the user a new login token id through {@link UserAPI#invalidateLoginTokens(String)}, so
+     * the login tokens issued to that user so far are rejected. API tokens are not changed.
+     * Administrators only.
      */
-    @GET
-    @Path("/{tokenId}/jwt")
-    @JSONP
-    @NoCache
-    @Produces(MediaType.APPLICATION_JSON)
-    @Operation(operationId = "getJwtFromApiTokenV1",
-            summary = "Generates a new JWT for an existing token",
-            description = "Returns a JSON web token. This overwrites the JWT value associated with the " +
-                    "specified token object.",
-            tags = {"API Token"},
-            responses = {
-                    @ApiResponse(responseCode = "200", description = "JSON web token successfully created",
-                            content = @Content(mediaType = "application/json",
-                                              schema = @Schema(implementation = ResponseEntityJwtView.class),
-                                    examples = {
-                                            @ExampleObject(
-                                                    value = "{\n" +
-                                                            "    \"entity\": {\n" +
-                                                            "        \"jwt\": \"string\"\n" +
-                                                            "    },\n" +
-                                                            "    \"errors\": [],\n" +
-                                                            "    \"i18nMessagesMap\": {},\n" +
-                                                            "    \"messages\": [],\n" +
-                                                            "    \"pagination\": null,\n" +
-                                                            "    \"permissions\": []\n" +
-                                                            "}"
-                                            )
-                                    }
-                            )
-                    ),
-                    @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "401", description = "Invalid user"),
-                    @ApiResponse(responseCode = "403", description = "Forbidden"),
-                    @ApiResponse(responseCode = "404", description = "Token not found"),
-                    @ApiResponse(responseCode = "500", description = "Unexpected server error")
-            }
-    )
-    public final Response getJwtFromApiToken(@Context final HttpServletRequest request,
-            @Context final HttpServletResponse response,
-            @PathParam("tokenId") @Parameter(
-                    required = true,
-                    description = "Identifier of API token to receive a new JWT.",
-                    schema = @Schema(type = "string")
-            ) final String tokenId) {
-
-        final InitDataObject initDataObject = this.webResource.init(null, true, request, true, "users");
-        final User user = initDataObject.getUser();
-        final Optional<ApiToken> optToken = tokenApi.findApiToken(tokenId);
-
-        if (optToken.isEmpty()) {
-
-            return ExceptionMapperUtil.createResponse(new DotStateException("token id not found"), Response.Status.NOT_FOUND);
-        }
-
-        final ApiToken token = optToken.get();
-        if(token.isExpired() || token.isRevoked()) {
-
-            return ExceptionMapperUtil.createResponse(new DotStateException("token not valid"), Response.Status.BAD_REQUEST);
-        }
-
-        SecurityLogger.logInfo(this.getClass(), "Revealing token to user: " + user.getUserId() + " from: " + request.getRemoteAddr() + " token:"  + token );
-        final String jwt = tokenApi.getJWT(token, user);
-        return Response.ok(new ResponseEntityMapView(Map.of("jwt", jwt))).build(); // 200
-    }
-
-
-
     @PUT
     @Path("/users/{userId}/revoke")
     @JSONP
@@ -816,14 +757,12 @@ public class ApiTokenResource implements Serializable {
 
         if (APILocator.getRoleAPI().doesUserHaveRole(initDataObject.getUser(), APILocator.getRoleAPI().loadCMSAdminRole())) {
 
-            final User user      = initDataObject.getUser();
             final User userToken = APILocator.getUserAPI().loadUserById(userId);
 
             if (null != userToken) {
 
                 SecurityLogger.logInfo(this.getClass(), "Revoking token " + userId + " from " + request.getRemoteAddr() + " ");
-                userToken.setSkinId(UUIDGenerator.generateUuid()); // setting a new id will invalidate the token
-                APILocator.getUserAPI().save(userToken, user, PageMode.get(request).respectAnonPerms); // this will invalidate
+                APILocator.getUserAPI().invalidateLoginTokens(userToken.getUserId());
                 return Response.ok(new ResponseEntityMapView(Map.of("revoked", userId)))
                         .build(); // 200
             }
@@ -839,6 +778,11 @@ public class ApiTokenResource implements Serializable {
                 "No token");
     }
 
+    /**
+     * Gives every user a new login token id through {@link UserAPI#invalidateLoginTokens(String)},
+     * so all login tokens issued so far are rejected. API tokens are not changed. Administrators
+     * only.
+     */
     @PUT
     @Path("/users/revoke")
     @JSONP
@@ -884,7 +828,6 @@ public class ApiTokenResource implements Serializable {
 
         if (APILocator.getRoleAPI().doesUserHaveRole(initDataObject.getUser(), APILocator.getRoleAPI().loadCMSAdminRole())) {
 
-            final User user                 = initDataObject.getUser();
             final List<User>   usersToken   = APILocator.getUserAPI().findAllUsers();
             final List<String> userTokenIds = new ArrayList<>();
             if (null != usersToken && !usersToken.isEmpty()) {
@@ -892,8 +835,7 @@ public class ApiTokenResource implements Serializable {
                 for (final User userToken: usersToken) {
 
                     SecurityLogger.logInfo(this.getClass(), "Revoking token " + userToken.getUserId() + " from " + request.getRemoteAddr() + " ");
-                    userToken.setSkinId(UUIDGenerator.generateUuid()); // setting a new id will invalidate the token
-                    APILocator.getUserAPI().save(userToken, user, PageMode.get(request).respectAnonPerms); // this will invalidate
+                    APILocator.getUserAPI().invalidateLoginTokens(userToken.getUserId());
                     userTokenIds.add( userToken.getUserId());
                 }
 

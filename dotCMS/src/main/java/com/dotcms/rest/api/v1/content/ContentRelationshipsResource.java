@@ -102,11 +102,14 @@ public class ContentRelationshipsResource {
             description = "Retrieves content with relationships based on query parameters, identifier, or inode. This endpoint is deprecated - use /v1/content with depth parameter instead."
     )
     @ApiResponses(value = {
-        @ApiResponse(responseCode = "200", 
-                    description = "Content with relationships retrieved successfully",
+        @ApiResponse(responseCode = "200",
+                    description = "Content with relationships retrieved successfully. Related content the caller cannot read is not included, and an identifier or inode that matches no content returns an empty array",
                     content = @Content(mediaType = "application/json",
                                       schema = @Schema(type = "object", description = "Content with relationships in JSON format including contentlets and their related content"))),
-        @ApiResponse(responseCode = "401", 
+        @ApiResponse(responseCode = "400",
+                    description = "Bad request - the content or its related content could not be loaded",
+                    content = @Content(mediaType = "application/json")),
+        @ApiResponse(responseCode = "401",
                     description = "Unauthorized - authentication required",
                     content = @Content(mediaType = "application/json")),
         @ApiResponse(responseCode = "500", 
@@ -128,21 +131,19 @@ public class ContentRelationshipsResource {
         try {
             final List<Contentlet> cons = this.contentRelationshipsHelper.getRelatedContent
                     (request, user, paramsMap);
-            final String relatedContents = this.contentRelationshipsHelper.contentsAsJson(cons);
+            final String relatedContents = this.contentRelationshipsHelper.contentsAsJson(cons, user);
             final Response.ResponseBuilder builder = Response.ok(relatedContents, MediaType
                     .APPLICATION_JSON);
 
             res = builder.build();
-        } catch (JSONException e) {
-            final String errorMsg = "An error occurred when generating the JSON response (" + e
-                    .getMessage() + ")";
+        } catch (final JSONException e) {
             Logger.error(this, e.getMessage(), e);
-            res = ExceptionMapperUtil.createResponse(null, errorMsg);
-        } catch (DotDataException e) {
-            final String errorMsg = "An error occurred when accessing the content information ("
-                    + e.getMessage() + ")";
+            res = ExceptionMapperUtil.createResponse(null,
+                    "An error occurred when generating the JSON response");
+        } catch (final DotDataException e) {
             Logger.error(this, e.getMessage(), e);
-            res = ExceptionMapperUtil.createResponse(null, errorMsg);
+            res = ExceptionMapperUtil.createResponse(null,
+                    "An error occurred when accessing the content information");
         }
         return res;
     }

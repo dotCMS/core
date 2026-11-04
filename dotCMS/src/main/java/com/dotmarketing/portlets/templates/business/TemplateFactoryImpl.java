@@ -750,6 +750,22 @@ public class TemplateFactoryImpl implements TemplateFactory {
 		return TransformerLocator.createTemplateTransformer(dc.loadObjectResults()).asList();
 	}
 
+	@Override
+	public List<Template> findWorkingTemplatesPage(final int offset, final int limit) throws DotDataException {
+		final String sql = "select asset.*, identifier.* from " + Type.TEMPLATE.getTableName()
+				+ " asset, inode, identifier, " + Type.TEMPLATE.getVersionTableName() + " versioninfo"
+				+ " where asset.inode = inode.inode and asset.identifier = identifier.id"
+				+ " and versioninfo.identifier = asset.identifier"
+				+ " and asset.inode = versioninfo.working_inode"
+				+ " order by asset.inode";
+
+		return TransformerLocator.createTemplateTransformer(new DotConnect()
+				.setSQL(sql)
+				.setStartRow(offset)
+				.setMaxRows(limit)
+				.loadObjectResults()).asList();
+	}
+
 	/**
 	 * Get a template based on a folder (non-db) A folder could be considered as a template if:
 	 * 1) Is under /application/templates

@@ -369,7 +369,8 @@ value='<%=(request.getParameter("wysiwyg")!=null)? request.getParameter("wysiwyg
 						<select dojoType="dijit.form.FilteringSelect" autocomplete="false" name="target" id="target" value="<%= UtilMethods.isSet(linkForm.getTarget()) ? linkForm.getTarget() : "_self" %>">
 							<option value="_self"><%= LanguageUtil.get(pageContext, "Same-Window") %></option>
 							<option value="_blank"><%= LanguageUtil.get(pageContext, "New-Window") %></option>
-							<option value="_top"><%= LanguageUtil.get(pageContext, "Parent-Window") %></option>
+							<option value="_parent"><%= LanguageUtil.get(pageContext, "Parent-Window") %></option>
+							<option value="_top"><%= LanguageUtil.get(pageContext, "Top-Window") %></option>
 						</select>
 					</dd>
 				</dl>

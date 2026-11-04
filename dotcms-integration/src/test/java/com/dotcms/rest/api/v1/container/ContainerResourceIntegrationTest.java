@@ -2,10 +2,13 @@ package com.dotcms.rest.api.v1.container;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.rest.InitDataObject;
@@ -56,34 +59,37 @@ public class ContainerResourceIntegrationTest {
     private final HttpServletRequest request = mock(HttpServletRequest.class);
     private final ShortyIdAPI shortyAPI = mock(ShortyIdAPI.class);
     private final ContentletAPI contentletAPI = mock(ContentletAPI.class);
-    private final User user = mock(User.class);
+    private User user;
     private final HttpServletResponse response = mock(HttpServletResponse.class);
     private final ChainedContext context = mock(ChainedContext.class);
     private final HttpSession session = mock(HttpSession.class);
     private final Contentlet formContent = mock(Contentlet.class);
 
     private final String containerId = "1";
-    private final String formId = "2";
+    private String formId;
     private final Container container = mock(Container.class);
     private final ShortyId shortyId = new ShortyId("2", "1234567", ShortType.IDENTIFIER, ShortType.IDENTIFIER);
 
     @Before
     public void init() throws Exception, SecurityException {
+        IntegrationTestInitService.getInstance().init();
+        // The form endpoints load the form as the caller, so both are real.
+        user = TestUserUtils.getAdminUser();
+        formId = TestDataUtils.getFormLikeContentType().id();
+
         final InitDataObject initData = mock(InitDataObject.class);
 
         when(request.getSession()).thenReturn(session);
         when(initData.getUser()).thenReturn(user);
-        when(webResource.init(request, response, true)).thenReturn(initData);
+        when(webResource.init(any(WebResource.InitBuilder.class))).thenReturn(initData);
         when(velocityUtil.getContext(request, response)).thenReturn(context);
-        when(formAPI.getFormContent(formId)).thenReturn(formContent);
+        when(formAPI.getFormContent(formId, user)).thenReturn(formContent);
         when(shortyAPI.getShorty(containerId)).thenReturn(Optional.of(shortyId));
         when(container.getIdentifier()).thenReturn(containerId);
         when(formContent.getIdentifier()).thenReturn(formId);
 
         containerResource = new ContainerResource(webResource, paginationUtil, formAPI, containerAPI, versionableAPI,
-                velocityUtil, shortyAPI, contentletAPI);
-
-        IntegrationTestInitService.getInstance().init();
+                velocityUtil, shortyAPI, contentletAPI, mock(ContainerDependenciesHelper.class));
     }
 
     @Test

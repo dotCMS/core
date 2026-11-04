@@ -1,10 +1,14 @@
+import { fetchRemoteFile } from './remote-file';
+
 import {
     AbortError,
     HttpError,
     NetworkError,
     PolicyError,
     RuntimeError,
-    ValidationError
+    TimeoutError,
+    ValidationError,
+    isDotCMSError
 } from '../sandbox/errors';
 
 /** Whether `err` is fetch's abort rejection (a DOMException named "AbortError"). */
@@ -231,70 +235,6 @@ async function readBinaryResponse(
     };
 }
 
-/**
- * Validates a user-supplied file URL before fetching it, to mitigate SSRF.
- * Sandbox code can put any string in `desc.url`, and the fetch runs on the
- * host with host network access — so we restrict it to public http(s) targets
- * and reject loopback, link-local, and private (RFC 1918 / unique-local) hosts.
- *
- * KNOWN LIMITATION (DNS rebinding): this validates the literal hostname/IP in the URL, not
- * the address it ultimately resolves to. A hostname that resolves to a private/link-local/
- * metadata IP at fetch time bypasses this check. `redirect: 'error'` blocks the redirect
- * vector, but not rebinding. This matches the package threat model — capability confinement
- * for trusted code generators, not adversarial isolation. A consumer accepting genuinely
- * untrusted file URLs must front this with a hardened fetcher that resolves and pins the IP.
- */
-function assertSafeRemoteUrl(rawUrl: string): URL {
-    let parsed: URL;
-    try {
-        parsed = new URL(rawUrl);
-    } catch {
-        throw new ValidationError(`Invalid file URL: "${rawUrl}"`);
-    }
-
-    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
-        throw new ValidationError(`File URL must use http(s); got "${parsed.protocol}"`);
-    }
-
-    const host = parsed.hostname.toLowerCase().replace(/^\[|\]$/g, '');
-
-    // Block obvious metadata / loopback hostnames.
-    if (
-        host === 'localhost' ||
-        host.endsWith('.localhost') ||
-        host === 'metadata.google.internal'
-    ) {
-        throw new ValidationError(`File URL host "${host}" is not allowed`);
-    }
-
-    // IPv4 private / loopback / link-local / unspecified ranges.
-    const ipv4 = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
-    if (ipv4) {
-        const [a, b] = ipv4.slice(1).map(Number);
-        const isPrivate =
-            a === 0 || // 0.0.0.0/8 (unspecified)
-            a === 10 || // 10.0.0.0/8
-            a === 127 || // 127.0.0.0/8 (loopback)
-            (a === 169 && b === 254) || // 169.254.0.0/16 (link-local, incl. cloud metadata)
-            (a === 172 && b >= 16 && b <= 31) || // 172.16.0.0/12
-            (a === 192 && b === 168); // 192.168.0.0/16
-        if (isPrivate) {
-            throw new ValidationError(`File URL resolves to a private/loopback address: "${host}"`);
-        }
-    }
-
-    // IPv6 loopback (::1), unspecified (::) and unique-local (fc00::/7) / link-local (fe80::/10).
-    if (host.includes(':')) {
-        if (host === '::1' || host === '::' || /^f[cd]/.test(host) || /^fe[89ab]/.test(host)) {
-            throw new ValidationError(
-                `File URL resolves to a private/loopback IPv6 address: "${host}"`
-            );
-        }
-    }
-
-    return parsed;
-}
-
 async function resolveFileDescriptor(
     desc: FileFieldDescriptor,
     signal?: AbortSignal
@@ -308,31 +248,30 @@ async function resolveFileDescriptor(
         return new Blob([new Uint8Array(binary)], { type: desc.type });
     }
     if (desc.url) {
-        const safeUrl = assertSafeRemoteUrl(desc.url);
         const controller = new AbortController();
-        const timer = setTimeout(() => controller.abort(), REMOTE_FILE_FETCH_TIMEOUT_MS);
-        // If the surrounding execution is aborted, also abort this nested fetch.
-        const onParentAbort = () => controller.abort();
+        const timer = setTimeout(
+            () =>
+                controller.abort(
+                    new TimeoutError(
+                        `Download of "${desc.url}" timed out after ${REMOTE_FILE_FETCH_TIMEOUT_MS} ms`,
+                        REMOTE_FILE_FETCH_TIMEOUT_MS
+                    )
+                ),
+            REMOTE_FILE_FETCH_TIMEOUT_MS
+        );
+        // If the surrounding execution is aborted, or already was, also abort this nested
+        // download, with the same reason.
+        const onParentAbort = () => controller.abort(signal?.reason);
         signal?.addEventListener('abort', onParentAbort, { once: true });
+        if (signal?.aborted) {
+            onParentAbort();
+        }
         try {
-            const response = await fetch(safeUrl.toString(), {
-                signal: controller.signal,
-                redirect: 'error' // a redirect could escape the SSRF guard
+            return await fetchRemoteFile(desc.url, {
+                type: desc.type,
+                maxBytes: MAX_REMOTE_FILE_BYTES,
+                signal: controller.signal
             });
-            if (!response.ok) {
-                throw new HttpError(
-                    response.status,
-                    response.statusText,
-                    `Failed to fetch file from "${desc.url}"`
-                );
-            }
-            const buffer = await response.arrayBuffer();
-            if (buffer.byteLength > MAX_REMOTE_FILE_BYTES) {
-                throw new ValidationError(
-                    `Remote file "${desc.url}" exceeds the ${MAX_REMOTE_FILE_BYTES}-byte limit`
-                );
-            }
-            return new Blob([buffer], { type: desc.type });
         } finally {
             clearTimeout(timer);
             signal?.removeEventListener('abort', onParentAbort);
@@ -518,8 +457,9 @@ export async function requestCore(
         emit(response.status, true);
         return result;
     } catch (err) {
-        // Normalize fetch's AbortError (a DOMException with name "AbortError") into our typed one.
-        if (isAbortError(err)) {
+        // Normalize fetch's AbortError (a DOMException with name "AbortError") into our typed one;
+        // the SDK's own errors (a download that timed out, for instance) pass through unchanged.
+        if (isAbortError(err) && !isDotCMSError(err)) {
             const aborted = new AbortError(`Request ${method} ${urlPath} was aborted`);
             emit(undefined, false, aborted.code);
             throw aborted;
