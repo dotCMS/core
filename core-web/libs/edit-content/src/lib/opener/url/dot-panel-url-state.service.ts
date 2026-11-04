@@ -68,7 +68,12 @@ const PANEL_PARAMS: readonly string[] = Object.values(DOT_PANEL_URL_PARAM);
  * sets `onSameUrlNavigation: 'reload'`), and that navigation ends with a `replaceState` of the URL
  * Back landed on. So the params are put back once that navigation is over, or a restore would be
  * overwritten while the prompt is open (FR-047). A Back that lands on another path has left the
- * surface: nothing is put back, nothing is asked to close, and the panel goes with the surface.
+ * surface: nothing is put back and nothing is asked to close through its guard.
+ *
+ * Any navigation that ends on another path has left the surface, Back or not: every panel
+ * registered there closes, front first, without its guard, and nothing is written to the other
+ * screen's URL. A navigation that stays on the path (a param popped by Back, the surface's own
+ * query change) closes nothing.
  *
  * The URL is read from and written to `Location` only. The surface's own params are read from
  * `Location` rather than the router, which does not see URLs written with `replaceState` (the
@@ -157,8 +162,8 @@ export class DotPanelUrlStateService {
     }
 
     /**
-     * Listens to Back and Forward, once. A root service lives as long as the app, so the
-     * subscription needs no teardown.
+     * Listens to Back and Forward, and to the router's navigations, once. A root service lives as
+     * long as the app, so the subscriptions need no teardown.
      */
     #listen(): void {
         if (this.#listening) {
@@ -167,6 +172,28 @@ export class DotPanelUrlStateService {
 
         this.#listening = true;
         this.#location.subscribe((event) => this.#onHistoryMove(event));
+        this.#router.events
+            .pipe(filter((event): event is NavigationEnd => event instanceof NavigationEnd))
+            .subscribe(({ urlAfterRedirects }) => this.#closeLeftBehind(urlAfterRedirects));
+    }
+
+    /**
+     * A navigation ended on `url`. Every panel opened on another path has lost its surface, however
+     * the author left it (Back, the menu, a link in a legacy portlet's frame), so it closes, front
+     * first, without its guard: the navigation has already happened. Nothing is written, since
+     * the URL is another screen's now ({@link #remove}). A panel opened under its surface's injector
+     * would go with it anyway; the legacy portlets' panels, opened under the app-level side panel
+     * host's injector, would not.
+     *
+     * @param url The URL the navigation ended on, after redirects.
+     */
+    #closeLeftBehind(url: string): void {
+        const path = this.#pathOf(url);
+        const leftBehind = this.#entries.filter((entry) => entry.path !== path).reverse();
+
+        for (const { ref } of leftBehind) {
+            ref.close();
+        }
     }
 
     /**
@@ -207,7 +234,8 @@ export class DotPanelUrlStateService {
 
     /**
      * Forgets a closed panel. When it was in front, the URL names the panel underneath again, or
-     * no panel, in place. Not when Back has left the surface: the URL is another screen's then.
+     * no panel, in place. Not when the author has left the surface: the URL is another screen's
+     * then.
      */
     #remove(entry: DotPanelUrlEntry): void {
         const index = this.#entries.indexOf(entry);
