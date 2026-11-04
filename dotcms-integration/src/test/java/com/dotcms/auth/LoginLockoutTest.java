@@ -77,17 +77,23 @@ public class LoginLockoutTest {
     private static final String OTHER_ADDRESS = "198.51.100.20";
     private static final String THIRD_ADDRESS = "192.0.2.30";
     private static Object delayEnabledBefore;
+    private static String basicAuthBefore;
 
+    /** Enables password compatibility only for these password-lockout tests. */
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
         delayEnabledBefore = Config.getStringProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, "true");
+        basicAuthBefore = Config.getStringProperty("ALLOW_BASIC_AUTH", null);
+        Config.setProperty("ALLOW_BASIC_AUTH", "ALL");
         // The per-attempt sleep is not under test and would make each case take tens of seconds.
         Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, false);
     }
 
+    /** Restores authentication policy and delays for the remaining suite. */
     @AfterClass
     public static void restore() {
+        Config.setProperty("ALLOW_BASIC_AUTH", basicAuthBefore);
         Config.setProperty(WebKeys.AUTH_FAILED_ATTEMPTS_DELAY_STRATEGY_ENABLED, delayEnabledBefore);
     }
 
