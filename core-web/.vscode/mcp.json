@@ -2,8 +2,8 @@
     "servers": {
         "nx-mcp": {
             "type": "stdio",
-            "command": "npx",
-            "args": ["-y", "nx-mcp@0.25.0"]
+            "command": "pnpm",
+            "args": ["dlx", "nx-mcp@0.25.0"]
         }
     }
 }
