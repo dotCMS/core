@@ -7,7 +7,7 @@ Main admin UI application for dotCMS (`/dotAdmin`). **Angular 21.2.1** with stan
 
 | Layer             | Technology                             | Notes                                                                                                       |
 | ----------------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| Component library | **PrimeNG**                            | Use `p-`* components (e.g. `p-button`, `p-select`, `p-dialog`) — check the PrimeNG MCP server for API/props |
+| Component library | **PrimeNG**                            | Use `p-`* components (e.g. `p-button`, `p-select`, `p-dialog`) — check the installed types in `node_modules/primeng/types/` for API/props |
 | Utility CSS       | **Tailwind CSS**                       | Use Tailwind utilities for layout, spacing, and typography                                                  |
 | Global styles     | `libs/dotcms-scss/angular/styles.scss` | Imported as a global stylesheet in the build                                                                |
 

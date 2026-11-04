@@ -5,11 +5,6 @@
       "command": "npx",
       "args": ["-y", "nx-mcp@latest"]
     },
-    "primeng": {
-      "type": "stdio",
-      "command": "npx",
-      "args": ["-y", "@primeng/mcp"]
-    },
     "angular-cli": {
       "type": "stdio",
       "command": "npx",
