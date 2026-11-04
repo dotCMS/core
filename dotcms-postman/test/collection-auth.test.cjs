@@ -212,6 +212,30 @@ test('API token access checks retain the limited actor using its newly issued JW
   }
 });
 
+test('response metadata keeps distinct valid, deleted and anonymous token audiences', () => {
+  const file = 'ResponseMetaHeaders.postman_collection.json';
+  const collection = JSON.parse(readFileSync(path.join(root, file), 'utf8'));
+  assert.equal(collection.item.length, 6);
+  const steps = collection.item.map((item) => item.name);
+  const create = steps.indexOf('Create an API token');
+  const valid = steps.indexOf('Valid API token gets both version headers');
+  const remove = steps.indexOf('Delete the API token');
+  const deleted = steps.indexOf('Deleted API token gets none of the version headers');
+  assert.ok(create >= 0 && create < valid && valid < remove && remove < deleted);
+  for (const index of [valid, deleted]) {
+    const r = find(file, steps[index]);
+    assert.equal(r.auth.type, 'bearer');
+    assert.equal(value(r.auth, 'token'), '{{responseMetaHeadersJwt}}');
+    assert.equal(r.node.protocolProfileBehavior.disableCookies, true);
+    assert.equal(manualAuth(r).length, 0);
+  }
+  assert.equal(value(find(file, steps[remove]).auth, 'token'), '{{jwt}}');
+  const anonymous = find(file, 'No credentials gets none of the headers');
+  assert.equal(anonymous.auth.type, 'noauth');
+  assert.equal(manualAuth(anonymous).length, 0);
+  assert.equal(anonymous.node.protocolProfileBehavior.disableCookies, true);
+});
+
 test('collection/folder/request scripts do not silently bootstrap or send Basic', () => {
   const violations = scripts.filter(({ event }) =>
     /["'`]Basic\s|["']?\btype["']?\s*:\s*["']basic["']/i.test(eventCode(event)));
