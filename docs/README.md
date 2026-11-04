@@ -33,6 +33,7 @@ Descriptions say **when to load** the doc, not what it contains.
 | [APPS_CONFIGURATION.md](backend/APPS_CONFIGURATION.md) | Deciding who may change or read Apps configuration, or using its legacy delegation feature flag |
 | [DATABASE_PATTERNS.md](backend/DATABASE_PATTERNS.md) | Writing SQL, using `DotConnect`, or reasoning about transactions |
 | [SECURITY_BACKEND.md](backend/SECURITY_BACKEND.md) | Input validation, auth, SQL/XSS prevention, secure logging on the backend specifically |
+| [CLIENT_ADDRESS_RESOLUTION.md](backend/CLIENT_ADDRESS_RESOLUTION.md) | Using the client's address (API token networks, logs, rules), or setting which proxies' `X-Forwarded-For` is believed |
 | [LOGIN_LOCKOUT.md](backend/LOGIN_LOCKOUT.md) | Working on login lockout, configuring it, or unlocking a locked-out user (support runbook) |
 | [VIRTUAL_THREADS.md](backend/VIRTUAL_THREADS.md) | Deciding whether a workload belongs on a virtual thread — socket I/O yes, file I/O no |
 | [JANDEX_METADATA_SCANNING.md](backend/JANDEX_METADATA_SCANNING.md) | Looking up classes or annotations at runtime — prefer this over reflection |
@@ -77,7 +78,7 @@ Descriptions say **when to load** the doc, not what it contains.
 | [INTEGRATION_TESTS.md](testing/INTEGRATION_TESTS.md) | Writing or running an integration test — **includes the MainSuite registration rule: an unregistered test is silently never run in CI** |
 | [BACKEND_UNIT_TESTS.md](testing/BACKEND_UNIT_TESTS.md) | Writing a unit test in `:dotcms-core` — Surefire, Mockito setup, naming (there is no category/tag mechanism) |
 | [E2E_TESTS.md](testing/E2E_TESTS.md) | Working on the Playwright suite in `core-web/apps/dotcms-ui-e2e` |
-| [API_TESTING.md](testing/API_TESTING.md) | Writing API tests — Postman (`dotcms-postman/`) and Karate (`test-karate/`) |
+| [API_TESTING.md](testing/API_TESTING.md) | Writing API tests — Postman (`dotcms-postman/`) |
 | [PERFORMANCE_TESTS.md](testing/PERFORMANCE_TESTS.md) | Load testing with JMeter (`test-jmeter/`) or the Kubernetes analytics suite |
 | [test-cases/README.md](test-cases/README.md) | Looking for the manual/feature test-suite index |
 

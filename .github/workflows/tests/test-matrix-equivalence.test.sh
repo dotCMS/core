@@ -70,11 +70,16 @@ run_script() {
   local script="$1" config="$2" pairs="$3" phase="$4" body="$WORKDIR/body.js" name value
   cp "$script" "$body"
   # Every input the script reads; one the case does not name keeps its workflow default, false.
-  for name in run-all-tests jvm_unit_test cli frontend postman karate integration e2e skip-runner-cleanup tiered-jit-experiment; do
+  for name in run-all-tests jvm_unit_test cli frontend postman integration e2e skip-runner-cleanup tiered-jit-experiment; do
     value=false
     case " $pairs " in *" $name=true "*) value=true ;; esac
     sed -i.bak "s/\${{ inputs\.$name }}/$value/" "$body"
   done
+  # The script at BASE_REF can read an input that has since been removed from the workflow
+  # (karate); its test type no longer exists in test-matrix.yml, so it is always false. Only
+  # the removed names are listed, so an input the loop above forgot stays unsubstituted and
+  # fails the run instead of being silently treated as false.
+  sed -i.bak 's/\${{ inputs\.karate }}/false/g' "$body"
   (cd "$(dirname "$config")" && OPENSEARCH_PHASE="$phase" node -e '
     const fs = require("fs");
     const out = {};
@@ -114,26 +119,26 @@ else
       bad "$name" "old and new matrix differ"
     fi
   done <<'CASES'
-run-all-tests with every selector on, cleanup kept|run-all-tests=true jvm_unit_test=true cli=true frontend=true postman=true karate=true integration=true e2e=true skip-runner-cleanup=false|
-run-all-tests with every selector on, cleanup skippable|run-all-tests=true jvm_unit_test=true cli=true frontend=true postman=true karate=true integration=true e2e=true skip-runner-cleanup=true|
-PR with frontend only|jvm_unit_test=false cli=false frontend=true postman=false karate=false integration=false e2e=false skip-runner-cleanup=true|
-PR with jvm and cli only|jvm_unit_test=true cli=true frontend=false postman=false karate=false integration=false e2e=false skip-runner-cleanup=true|
-PR with backend changes (full PR set)|jvm_unit_test=true cli=true frontend=true postman=true karate=true integration=true e2e=true skip-runner-cleanup=true|
-merge queue|jvm_unit_test=true cli=true frontend=true postman=true karate=true integration=true e2e=false skip-runner-cleanup=true|
+run-all-tests with every selector on, cleanup kept|run-all-tests=true jvm_unit_test=true cli=true frontend=true postman=true integration=true e2e=true skip-runner-cleanup=false|
+run-all-tests with every selector on, cleanup skippable|run-all-tests=true jvm_unit_test=true cli=true frontend=true postman=true integration=true e2e=true skip-runner-cleanup=true|
+PR with frontend only|jvm_unit_test=false cli=false frontend=true postman=false integration=false e2e=false skip-runner-cleanup=true|
+PR with jvm and cli only|jvm_unit_test=true cli=true frontend=false postman=false integration=false e2e=false skip-runner-cleanup=true|
+PR with backend changes (full PR set)|jvm_unit_test=true cli=true frontend=true postman=true integration=true e2e=true skip-runner-cleanup=true|
+merge queue|jvm_unit_test=true cli=true frontend=true postman=true integration=true e2e=false skip-runner-cleanup=true|
 nothing enabled (trunk push)|run-all-tests=false e2e=false skip-runner-cleanup=true|
-run-all-tests but integration explicitly off|run-all-tests=true jvm_unit_test=true cli=true frontend=true postman=true karate=true integration=false e2e=false skip-runner-cleanup=false|
+run-all-tests but integration explicitly off|run-all-tests=true jvm_unit_test=true cli=true frontend=true postman=true integration=false e2e=false skip-runner-cleanup=false|
 opensearch phase all (sweep)|run-all-tests=false integration=true e2e=false skip-runner-cleanup=false|all
-opensearch phase 2 on a PR|jvm_unit_test=true integration=true postman=true karate=true cli=true frontend=true e2e=false skip-runner-cleanup=true|2
-opensearch phase comma list|run-all-tests=true jvm_unit_test=true cli=true frontend=true postman=true karate=true integration=true e2e=false skip-runner-cleanup=false|1,3
-opensearch phase none|run-all-tests=true jvm_unit_test=true cli=true frontend=true postman=true karate=true integration=true e2e=false skip-runner-cleanup=false|none
-opensearch phase zero|run-all-tests=true jvm_unit_test=true cli=true frontend=true postman=true karate=true integration=true e2e=false skip-runner-cleanup=false|0
-opensearch phase garbage|run-all-tests=true jvm_unit_test=true cli=true frontend=true postman=true karate=true integration=true e2e=false skip-runner-cleanup=false|banana
+opensearch phase 2 on a PR|jvm_unit_test=true integration=true postman=true cli=true frontend=true e2e=false skip-runner-cleanup=true|2
+opensearch phase comma list|run-all-tests=true jvm_unit_test=true cli=true frontend=true postman=true integration=true e2e=false skip-runner-cleanup=false|1,3
+opensearch phase none|run-all-tests=true jvm_unit_test=true cli=true frontend=true postman=true integration=true e2e=false skip-runner-cleanup=false|none
+opensearch phase zero|run-all-tests=true jvm_unit_test=true cli=true frontend=true postman=true integration=true e2e=false skip-runner-cleanup=false|0
+opensearch phase garbage|run-all-tests=true jvm_unit_test=true cli=true frontend=true postman=true integration=true e2e=false skip-runner-cleanup=false|banana
 CASES
 
   # Guard against a harness that agrees with itself by producing nothing: the full
   # PR case must carry the integration suites and no OS-phase suffix.
   probe="$(run_script "$WORKDIR/new.js" "$WORKDIR/config.json" \
-    "jvm_unit_test=true cli=true frontend=true postman=true karate=true integration=true e2e=true skip-runner-cleanup=true" "")"
+    "jvm_unit_test=true cli=true frontend=true postman=true integration=true e2e=true skip-runner-cleanup=true" "")"
   if sed -n 1p <<<"$probe" | jq -e '[.include[].name] | any(startswith("Integration Tests")) and (any(test("OS Phase")) | not)' >/dev/null 2>&1; then
     ok "harness probe: full PR matrix has integration suites and no OS phase fan-out"
   else
@@ -151,7 +156,7 @@ fi
 
 echo "== Every caller selects the same tests as before"
 
-SELECTION='^(run-all-tests|jvm_unit_test|cli|frontend|postman|karate|integration|e2e|opensearch_phase|skip-runner-cleanup)$'
+SELECTION='^(run-all-tests|jvm_unit_test|cli|frontend|postman|integration|e2e|opensearch_phase|skip-runner-cleanup)$'
 selection_of() { yq -o=json -I0 "(.jobs.$2.with // {}) | to_entries | map(select(.key | test(\"$SELECTION\"))) | sort_by(.key)" "$1"; }
 
 for caller in $CALLERS; do
@@ -252,8 +257,8 @@ done <<'CASES'
 run-all-tests alone (the nightly call before #38336)|run-all-tests=true e2e=false skip-runner-cleanup=false||fail
 run-all-tests alone (the trunk dispatch call before #38336)|run-all-tests=true e2e=false skip-runner-cleanup=true||fail
 run-all-tests alone under a phase sweep|run-all-tests=true e2e=false|all|fail
-PR with no tests selected|jvm_unit_test=false cli=false frontend=false postman=false karate=false integration=false e2e=false skip-runner-cleanup=true||quiet-empty
-PR with no tests selected, OpenSearch phase none|jvm_unit_test=false cli=false frontend=false postman=false karate=false integration=false e2e=false skip-runner-cleanup=true|none|quiet-empty
+PR with no tests selected|jvm_unit_test=false cli=false frontend=false postman=false integration=false e2e=false skip-runner-cleanup=true||quiet-empty
+PR with no tests selected, OpenSearch phase none|jvm_unit_test=false cli=false frontend=false postman=false integration=false e2e=false skip-runner-cleanup=true|none|quiet-empty
 trunk push|run-all-tests=false e2e=false skip-runner-cleanup=true||quiet-empty
 CASES
 

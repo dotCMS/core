@@ -39,9 +39,13 @@ const summaryResults = {
 
 // Default configurations
 const defaultServerUrl = "http://localhost:8080";
+const defaultManagementUrl = "http://localhost:8090";
 const defaultPostmanTestsDir = "src/main/resources/postman"; // Default directory
 const defaultConfigFilePath = "config.json"; // Default config file path
 const defaultPostmanTestsResultsDir = "target/failsafe-reports"; // Default results directory
+
+// URL of the management port (/dotmgt/*), exposed to every collection as {{managementURL}}. Set once in main().
+let managementUrl = defaultManagementUrl;
 
 /**
  * Fetches a JWT token from the DotCMS server for authentication.
@@ -161,6 +165,7 @@ async function runNewman(
     const envVars = [
       { key: "serverURL", value: serverUrl || "http://localhost:8080" },
       { key: "jwt", value: jwt || "" },
+      { key: "managementURL", value: managementUrl },
     ];
 
     // Add additional configuration for Node.js 22 compatibility
@@ -388,6 +393,7 @@ async function processAllCollections(
  *
  * Command line options:
  * - serverUrl (-s): URL of the DotCMS server
+ * - managementUrl (-m): URL of the DotCMS management port
  * - postmanTestsDir (-d): Directory containing Postman collections
  * - configFilePath (-c): Path to the configuration JSON file
  * - postmanTestsResultsDir (-r): Directory for storing test results
@@ -407,6 +413,12 @@ async function main() {
       alias: "s",
       describe: "URL of the server to connect to",
       default: defaultServerUrl,
+      type: "string",
+    })
+    .option("managementUrl", {
+      alias: "m",
+      describe: "URL of the server's management port (/dotmgt/*)",
+      default: defaultManagementUrl,
       type: "string",
     })
     .option("postmanTestsDir", {
@@ -435,6 +447,7 @@ async function main() {
 
   const groupname = argv._[0];
   const serverUrl = argv.serverUrl;
+  managementUrl = argv.managementUrl;
   const postmanTestsDir = path.resolve(__dirname, argv.postmanTestsDir);
   const configFilePath = path.resolve(__dirname, argv.configFilePath);
   const postmanTestsResultsDir = path.resolve(
