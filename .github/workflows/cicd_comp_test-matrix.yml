@@ -40,10 +40,6 @@ on:
         required: false
         type: boolean
         default: false
-      karate:
-        required: false
-        type: boolean
-        default: false
       integration:
         required: false
         type: boolean
@@ -129,7 +125,6 @@ jobs:
               'cli': ${{ inputs.cli }},
               'frontend': ${{ inputs.frontend }}, 
               'postman': ${{ inputs.postman }},
-              'karate': ${{ inputs.karate }},
               'integration': ${{ inputs.integration }},
               'e2e': ${{ inputs.e2e }},
               'skip-runner-cleanup': ${{ inputs.skip-runner-cleanup }}
@@ -174,7 +169,7 @@ jobs:
                 
                 // Build Maven args
                 if (testEntry.test_class) {
-                  // For integration/karate tests with test_class
+                  // For integration tests with test_class
                   testEntry.maven_args = `${testEntry.base_maven_args} -Dit.test=${testEntry.test_class}`;
                 } else if (testEntry.collection) {
                   // For postman tests with collection
@@ -233,7 +228,7 @@ jobs:
               core.setFailed('run-all-tests is true but the test matrix is empty. A selector input '
                 + 'that is not passed defaults to false, and a false selector turns its test type '
                 + 'off even under run-all-tests, so the caller must pass every selector it wants '
-                + 'run (jvm_unit_test, cli, frontend, postman, karate, integration, e2e) as true.');
+                + 'run (jvm_unit_test, cli, frontend, postman, integration, e2e) as true.');
               return;
             }
 

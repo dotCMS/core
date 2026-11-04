@@ -1,0 +1,1276 @@
+{
+  "info": {
+    "_postman_id": "ad232a1a-2485-4d37-87c4-00620629cf8d",
+    "name": "ContentJsonAttributes",
+    "description": "Content JSON attributes (audit fields, Story Block body normalization, validation errors, anonymous and wrong-credential writes) and retrieval of newly created content by identifier and inode with DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE on. Moved from the Karate features CheckingJSONAttributes and CreateNewContents.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.environment.get('jwt')) {",
+          "    const serverURL = pm.environment.get('serverURL');",
+          "    const username = pm.environment.get('user');",
+          "    const password = pm.environment.get('password');",
+          "    const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+          "    pm.sendRequest({",
+          "        url: `${serverURL}/api/v1/apitoken`,",
+          "        method: 'POST',",
+          "        header: {",
+          "            'accept': '*/*',",
+          "            'content-type': 'application/json',",
+          "            'Authorization': `Basic ${basicAuth}`",
+          "        },",
+          "        body: {",
+          "            mode: 'raw',",
+          "            raw: JSON.stringify({",
+          "                'expirationSeconds': 7200,",
+          "                'userId': 'dotcms.org.1',",
+          "                'network': '0.0.0.0/0',",
+          "                'claims': {'label': 'postman-tests'}",
+          "            })",
+          "        }",
+          "    }, function (err, response) {",
+          "        if (err) {",
+          "            console.log('Error generating JWT:', err);",
+          "        } else {",
+          "            pm.environment.set('jwt', response.json().entity.jwt);",
+          "        }",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "Checking JSON Attributes",
+      "item": [
+        {
+          "name": "Checking Content Audit Attributes",
+          "item": [
+            {
+              "name": "Create a content type with a Story Block body",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// This collection owns the type it checks Story Block normalization against, so a collection that redefines",
+                      "// webPageContent (ContentTypeResourceTests imports a bundle with a WYSIWYG body) cannot change the result.",
+                      "pm.collectionVariables.set('jsonAttrsContentType', 'JsonAttrsStoryBlock' + Date.now());"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Content type is created and its id is captured', function () {",
+                      "    const type = pm.response.json().entity[0];",
+                      "    pm.expect(type.id, 'id of the created content type').to.be.a('string').and.not.empty;",
+                      "    pm.collectionVariables.set('jsonAttrsContentTypeId', type.id);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/contenttype",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "contenttype"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n  \"name\": \"{{jsonAttrsContentType}}\",\n  \"variable\": \"{{jsonAttrsContentType}}\",\n  \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n  \"folder\": \"SYSTEM_FOLDER\",\n  \"workflow\": [\n    \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n  ],\n  \"fields\": [\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n      \"dataType\": \"SYSTEM\",\n      \"name\": \"Site\",\n      \"variable\": \"contentHost\",\n      \"required\": true,\n      \"sortOrder\": 1\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n      \"dataType\": \"TEXT\",\n      \"name\": \"Title\",\n      \"variable\": \"title\",\n      \"required\": true,\n      \"indexed\": true,\n      \"listed\": true,\n      \"sortOrder\": 2\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableStoryBlockField\",\n      \"dataType\": \"LONG_TEXT\",\n      \"name\": \"Body\",\n      \"variable\": \"body\",\n      \"sortOrder\": 3\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Creating Test Generic Content",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Content is created and its identifier is captured', function () {",
+                      "    const firstResult = pm.response.json().entity.results[0];",
+                      "    const key = Object.keys(firstResult)[0];",
+                      "    pm.expect(firstResult[key].identifier, 'identifier of the created content').to.be.a('string').and.not.empty;",
+                      "    pm.collectionVariables.set('jsonAttrsContentId', firstResult[key].identifier);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "workflow",
+                    "actions",
+                    "default",
+                    "fire",
+                    "PUBLISH"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"contentlet\": [\n    {\n      \"contentType\": \"{{jsonAttrsContentType}}\",\n      \"title\": \"Test Generic Content\",\n      \"contentHost\": \"default\",\n      \"body\": \"This is my Test Generic Content\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Retrieving Test Generic Content",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Content type, title and host name are returned', function () {",
+                      "    const entity = pm.response.json().entity;",
+                      "    pm.expect(entity.contentType).to.eql(pm.collectionVariables.get('jsonAttrsContentType'));",
+                      "    pm.expect(entity.title).to.eql('Test Generic Content');",
+                      "    pm.expect(entity.hostName).to.eql('default');",
+                      "});",
+                      "",
+                      "pm.test('Audit attributes are present and not null', function () {",
+                      "    const entity = pm.response.json().entity;",
+                      "    [\"creationDate\", \"owner\", \"ownerUserName\", \"modDate\", \"modUser\", \"modUserName\", \"publishDate\", \"publishUser\", \"publishUserName\"].forEach(function (attribute) {",
+                      "        pm.expect(entity[attribute], \"The '\" + attribute + \"' attribute must be present and not null\")",
+                      "            .to.exist;",
+                      "    });",
+                      "});",
+                      "",
+                      "// Story Block fields are normalized to a Tiptap/ProseMirror doc on save (#36002): a plain",
+                      "// string body is stored and read back as structured JSON, not the raw string.",
+                      "pm.test('Body is normalized to a Story Block doc', function () {",
+                      "    const body = pm.response.json().entity.body;",
+                      "    pm.expect(body.type).to.eql('doc');",
+                      "    pm.expect(body.content[0].content[0].text).to.eql('This is my Test Generic Content');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/content/{{jsonAttrsContentId}}",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "content",
+                    "{{jsonAttrsContentId}}"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Cleanup - Destroy Test Generic Content",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "pm.collectionVariables.unset('jsonAttrsContentId');"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/DESTROY",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "workflow",
+                    "actions",
+                    "default",
+                    "fire",
+                    "DESTROY"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"contentlet\": {\n    \"identifier\": \"{{jsonAttrsContentId}}\"\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Cleanup - Delete the Story Block content type",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "pm.collectionVariables.unset('jsonAttrsContentTypeId');"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/contenttype/id/{{jsonAttrsContentTypeId}}",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "contenttype",
+                    "id",
+                    "{{jsonAttrsContentTypeId}}"
+                  ]
+                }
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Validations",
+          "item": [
+            {
+              "name": "Creating Test Generic Content without parameters",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "// Every result is keyed by the contentlet's identifier (or '{}' when there is none), so",
+                      "// collect the error message of whatever key each result carries.",
+                      "pm.test('Errors contain: Content Type does not exist', function () {",
+                      "    const errors = [];",
+                      "    pm.response.json().entity.results.forEach(function (result) {",
+                      "        Object.keys(result).forEach(function (key) {",
+                      "            if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+                      "        });",
+                      "    });",
+                      "    pm.expect(errors).to.include(\"Content Type does not exist\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "workflow",
+                    "actions",
+                    "default",
+                    "fire",
+                    "PUBLISH"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"contentlet\": [\n    {}\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Creating Test Generic Content - No title and no body",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "// Every result is keyed by the contentlet's identifier (or '{}' when there is none), so",
+                      "// collect the error message of whatever key each result carries.",
+                      "pm.test('Errors contain: Contentlet with ID \\'Unknown/New\\' [\\'\\'] has invalid/missing field(s). - Fields: [REQUIRED]: Title (title), Body (body)', function () {",
+                      "    const errors = [];",
+                      "    pm.response.json().entity.results.forEach(function (result) {",
+                      "        Object.keys(result).forEach(function (key) {",
+                      "            if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+                      "        });",
+                      "    });",
+                      "    pm.expect(errors).to.include(\"Contentlet with ID 'Unknown/New' [''] has invalid/missing field(s). - Fields: [REQUIRED]: Title (title), Body (body)\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "workflow",
+                    "actions",
+                    "default",
+                    "fire",
+                    "PUBLISH"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"contentlet\": [\n    {\n      \"contentType\": \"webPageContent\",\n      \"contentHost\": \"default\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Creating Test Generic Content - Empty title and no body",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "// Every result is keyed by the contentlet's identifier (or '{}' when there is none), so",
+                      "// collect the error message of whatever key each result carries.",
+                      "pm.test('Errors contain: Contentlet with ID \\'Unknown/New\\' [\\'\\'] has invalid/missing field(s). - Fields: [REQUIRED]: Title (title), Body (body)', function () {",
+                      "    const errors = [];",
+                      "    pm.response.json().entity.results.forEach(function (result) {",
+                      "        Object.keys(result).forEach(function (key) {",
+                      "            if (result[key] && result[key].errorMessage) { errors.push(result[key].errorMessage); }",
+                      "        });",
+                      "    });",
+                      "    pm.expect(errors).to.include(\"Contentlet with ID 'Unknown/New' [''] has invalid/missing field(s). - Fields: [REQUIRED]: Title (title), Body (body)\");",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "workflow",
+                    "actions",
+                    "default",
+                    "fire",
+                    "PUBLISH"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"contentlet\": [\n    {\n      \"contentType\": \"webPageContent\",\n      \"title\": \"\",\n      \"contentHost\": \"default\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Retrieving Test Generic Content - Wrong ID",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 404', function () {",
+                      "    pm.response.to.have.status(404);",
+                      "});",
+                      "",
+                      "pm.test('Message says the contentlet does not exist', function () {",
+                      "    pm.expect(pm.response.json().message).to.include('The contentlet wrongID and language 1 does not exist');",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/content/wrongID",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "content",
+                    "wrongID"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Creating Test Generic Content - No auth",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 401', function () {",
+                      "    pm.response.to.have.status(401);",
+                      "});",
+                      "",
+                      "pm.test('Anonymous write is rejected', function () {",
+                      "    pm.expect(pm.response.text()).to.include('CONTENT_APIS_ALLOW_ANONYMOUS permission exceeded');",
+                      "});"
+                    ]
+                  }
+                },
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Karate ran these requests with `configure cookies = null`. Newman keeps a cookie jar, so end any",
+                      "// session an earlier request opened; otherwise the server could authenticate this request from it.",
+                      "pm.sendRequest({ url: pm.environment.get('serverURL') + '/api/v1/logout', method: 'GET' }, function (err) {",
+                      "    if (err) { console.log('Logout failed:', err); }",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "workflow",
+                    "actions",
+                    "default",
+                    "fire",
+                    "PUBLISH"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"contentlet\": [\n    {\n      \"contentType\": \"webPageContent\",\n      \"title\": \"Test Generic Content\",\n      \"contentHost\": \"default\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Create New Contents",
+      "item": [
+        {
+          "name": "Create content to read back (newContent.feature)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Content is created with no errors', function () {",
+                  "    const json = pm.response.json();",
+                  "    pm.expect(json.errors).to.eql([]);",
+                  "    pm.expect(json.entity.title).to.include(pm.collectionVariables.get('newContentKey'));",
+                  "    pm.collectionVariables.set('newContentId', json.entity.identifier);",
+                  "    pm.collectionVariables.set('newContentInode', json.entity.inode);",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set('newContentKey', 'SucessRequest' + new Date().toISOString().slice(0, 19));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workflow",
+                "actions",
+                "default",
+                "fire",
+                "PUBLISH"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentlet\": {\n    \"stInode\": \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n    \"languageId\": 1,\n    \"key\": \"{{newContentKey}}\",\n    \"value\": \"{{newContentKey}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remember the current DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// The property may not exist yet (404): remember that separately from its value, so the cleanup deletes",
+                  "// a property that did not exist but restores one that existed with an empty value.",
+                  "pm.test('Status code is 200 or 404', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
+                  "});",
+                  "pm.collectionVariables.set('originalDefaultContentToDefaultLanguageMissing', String(pm.response.code === 404));",
+                  "pm.collectionVariables.set('originalDefaultContentToDefaultLanguage', pm.response.code === 200 ? String(pm.response.json().entity) : '');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/system-table/DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-table",
+                "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Turn on DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Newman runs with bail: true, so a failed assertion would skip the cleanup that restores",
+                  "// DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE. Keep this request assertion-free: stash what it returned and",
+                  "// check it in the last cleanup request, after the property is restored.",
+                  "pm.collectionVariables.set('stash_turnOn', JSON.stringify({ status: pm.response.code, text: pm.response.text() }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/system-table",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-table"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"key\": \"DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE\",\n  \"value\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify content retrieval by identifier with default language",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Newman runs with bail: true, so a failed assertion would skip the cleanup that restores",
+                  "// DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE. Keep this request assertion-free: stash what it returned and",
+                  "// check it in the last cleanup request, after the property is restored.",
+                  "pm.collectionVariables.set('stash_byIdentifier', JSON.stringify({ status: pm.response.code, text: pm.response.text() }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/content/{{newContentId}}?language=2",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "content",
+                "{{newContentId}}"
+              ],
+              "query": [
+                {
+                  "key": "language",
+                  "value": "2"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify content retrieval by inode with default language",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Newman runs with bail: true, so a failed assertion would skip the cleanup that restores",
+                  "// DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE. Keep this request assertion-free: stash what it returned and",
+                  "// check it in the last cleanup request, after the property is restored.",
+                  "pm.collectionVariables.set('stash_byInode', JSON.stringify({ status: pm.response.code, text: pm.response.text() }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/content/{{newContentInode}}?language=2",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "content",
+                "{{newContentInode}}"
+              ],
+              "query": [
+                {
+                  "key": "language",
+                  "value": "2"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Turn off DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Newman runs with bail: true, so a failed assertion would skip the cleanup that restores",
+                  "// DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE. Keep this request assertion-free: stash what it returned and",
+                  "// check it in the last cleanup request, after the property is restored.",
+                  "pm.collectionVariables.set('stash_turnOff', JSON.stringify({ status: pm.response.code, text: pm.response.text() }));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/system-table",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-table"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"key\": \"DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE\",\n  \"value\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify authentication requirements for content update - No Credentials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Newman runs with bail: true, so a failed assertion would skip the cleanup that restores",
+                  "// DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE. Keep this request assertion-free: stash what it returned and",
+                  "// check it in the last cleanup request, after the property is restored.",
+                  "pm.collectionVariables.set('stash_noCredentials', JSON.stringify({ status: pm.response.code, text: pm.response.text() }));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Karate ran these requests with `configure cookies = null`. Newman keeps a cookie jar, so end any",
+                  "// session an earlier request opened; otherwise the server could authenticate this request from it.",
+                  "pm.sendRequest({ url: pm.environment.get('serverURL') + '/api/v1/logout', method: 'GET' }, function (err) {",
+                  "    if (err) { console.log('Logout failed:', err); }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workflow",
+                "actions",
+                "default",
+                "fire",
+                "PUBLISH"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentlet\": {\n    \"stInode\": \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n    \"languageId\": 1,\n    \"identifier\": \"{{newContentId}}\",\n    \"key\": \"UpdatedKey\",\n    \"value\": \"Updatedvalue\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify authentication requirements for content update - Wrong Credentials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Newman runs with bail: true, so a failed assertion would skip the cleanup that restores",
+                  "// DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE. Keep this request assertion-free: stash what it returned and",
+                  "// check it in the last cleanup request, after the property is restored.",
+                  "pm.collectionVariables.set('stash_wrongCredentials', JSON.stringify({ status: pm.response.code, text: pm.response.text() }));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Karate ran these requests with `configure cookies = null`. Newman keeps a cookie jar, so end any",
+                  "// session an earlier request opened; otherwise the server could authenticate this request from it.",
+                  "pm.sendRequest({ url: pm.environment.get('serverURL') + '/api/v1/logout', method: 'GET' }, function (err) {",
+                  "    if (err) { console.log('Logout failed:', err); }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workflow",
+                "actions",
+                "default",
+                "fire",
+                "PUBLISH"
+              ]
+            },
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "admin@dotcms.com",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "admin1",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentlet\": {\n    \"stInode\": \"f4d7c1b8-2c88-4071-abf1-a5328977b07d\",\n    \"languageId\": 1,\n    \"identifier\": \"{{newContentId}}\",\n    \"key\": \"UpdatedKey\",\n    \"value\": \"Updatedvalue\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cleanup - Restore DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Newman runs with bail: true, so a failed assertion would skip the cleanup that restores",
+                  "// DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE. Keep this request assertion-free: stash what it returned and",
+                  "// check it in the last cleanup request, after the property is restored.",
+                  "pm.collectionVariables.set('stash_restore', JSON.stringify({ status: pm.response.code, text: pm.response.text() }));"
+                ]
+              }
+            },
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Property did not exist before this collection: delete it. An existing empty value is POSTed back as empty.",
+                  "if (pm.collectionVariables.get('originalDefaultContentToDefaultLanguageMissing') === 'true') {",
+                  "    pm.request.method = 'DELETE';",
+                  "    pm.request.url = pm.environment.get('serverURL') + '/api/v1/system-table/DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE';",
+                  "    pm.request.body.update('');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/system-table",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "system-table"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"key\": \"DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE\", \"value\": \"{{originalDefaultContentToDefaultLanguage}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cleanup - Destroy created content",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// The assertions of every request that ran while DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE was changed. They run",
+                  "// here, after the property is restored, because a failed assertion earlier would have skipped the restore.",
+                  "const unstash = function (name) {",
+                  "    const raw = pm.collectionVariables.get('stash_' + name);",
+                  "    pm.collectionVariables.unset('stash_' + name);",
+                  "    const stashed = raw ? JSON.parse(raw) : { status: null, text: '' };",
+                  "    let json = {};",
+                  "    try { json = JSON.parse(stashed.text); } catch (e) { /* not JSON: the status assertion reports it */ }",
+                  "    return { status: stashed.status, text: stashed.text, entity: json.entity || {} };",
+                  "};",
+                  "const turnOn = unstash('turnOn');",
+                  "const byIdentifier = unstash('byIdentifier');",
+                  "const byInode = unstash('byInode');",
+                  "const turnOff = unstash('turnOff');",
+                  "const noCredentials = unstash('noCredentials');",
+                  "const wrongCredentials = unstash('wrongCredentials');",
+                  "const restore = unstash('restore');",
+                  "",
+                  "pm.test('Restore: status code is 200', function () {",
+                  "    pm.expect(restore.status).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('Turn on: status code is 200', function () {",
+                  "    pm.expect(turnOn.status).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('Turn on: property is saved', function () {",
+                  "    pm.expect(turnOn.entity).to.include('DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE saved/updated');",
+                  "});",
+                  "",
+                  "pm.test('By identifier: status code is 200', function () {",
+                  "    pm.expect(byIdentifier.status).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('The identifier matches the created content', function () {",
+                  "    pm.expect(byIdentifier.entity.identifier).to.eql(pm.collectionVariables.get('newContentId'));",
+                  "});",
+                  "",
+                  "pm.test('By inode: status code is 200', function () {",
+                  "    pm.expect(byInode.status).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('The inode matches the created content', function () {",
+                  "    pm.expect(byInode.entity.inode).to.eql(pm.collectionVariables.get('newContentInode'));",
+                  "});",
+                  "",
+                  "pm.test('Turn off: status code is 200', function () {",
+                  "    pm.expect(turnOff.status).to.eql(200);",
+                  "});",
+                  "",
+                  "pm.test('Turn off: property is saved', function () {",
+                  "    pm.expect(turnOff.entity).to.include('DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE saved/updated');",
+                  "});",
+                  "",
+                  "pm.test('No credentials: status code is 401', function () {",
+                  "    pm.expect(noCredentials.status).to.eql(401);",
+                  "});",
+                  "",
+                  "pm.test('Anonymous write is rejected', function () {",
+                  "    pm.expect(noCredentials.text).to.include('CONTENT_APIS_ALLOW_ANONYMOUS permission exceeded - system set to READ but WRITE was required');",
+                  "});",
+                  "",
+                  "pm.test('Wrong credentials: status code is 401', function () {",
+                  "    pm.expect(wrongCredentials.status).to.eql(401);",
+                  "});",
+                  "",
+                  "pm.test('Wrong credentials are rejected', function () {",
+                  "    pm.expect(wrongCredentials.text).to.include('Authentication credentials are required');",
+                  "});",
+                  "",
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.collectionVariables.unset('newContentId');",
+                  "pm.collectionVariables.unset('newContentInode');"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/DESTROY",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "workflow",
+                "actions",
+                "default",
+                "fire",
+                "DESTROY"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentlet\": {\n    \"identifier\": \"{{newContentId}}\"\n  }\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "jsonAttrsContentId",
+      "value": ""
+    },
+    {
+      "key": "newContentKey",
+      "value": ""
+    },
+    {
+      "key": "newContentId",
+      "value": ""
+    },
+    {
+      "key": "newContentInode",
+      "value": ""
+    },
+    {
+      "key": "originalDefaultContentToDefaultLanguage",
+      "value": ""
+    },
+    {
+      "key": "jsonAttrsContentType",
+      "value": ""
+    },
+    {
+      "key": "jsonAttrsContentTypeId",
+      "value": ""
+    },
+    {
+      "key": "originalDefaultContentToDefaultLanguageMissing",
+      "value": ""
+    }
+  ]
+}

@@ -680,27 +680,6 @@ public class StructureAjax {
 	 */
 	@Nullable
 	private ContentType findReadableType(@Nullable final User user, final String typeInode) {
-		try {
-			return loadReadableType(user, typeInode);
-		} catch (final DotDataException e) {
-			Logger.warn(StructureAjax.class,
-					"The content type could not be loaded to check READ permission", e);
-			return null;
-		}
-	}
-
-	/**
-	 * Loads a content type the user may read, like {@link #findReadableType(User, String)}, but a
-	 * failure to load the type is thrown to the caller instead of answering {@code null}. Used by
-	 * {@link #findReadableType(User, String)}, which logs the failure and answers {@code null}.
-	 *
-	 * @return the content type, or {@code null} for no user, a blank or unknown id, or a type the
-	 *         user cannot read
-	 * @throws DotDataException when the content type cannot be loaded
-	 */
-	@Nullable
-	private ContentType loadReadableType(@Nullable final User user, final String typeInode)
-			throws DotDataException {
 		if (null == user || !UtilMethods.isSet(typeInode)) {
 			return null;
 		}
@@ -710,6 +689,10 @@ public class StructureAjax {
 			return null;
 		} catch (final DotSecurityException e) {
 			logReadDenied(user);
+			return null;
+		} catch (final DotDataException e) {
+			Logger.warn(StructureAjax.class,
+					"The content type could not be loaded to check READ permission", e);
 			return null;
 		}
 	}

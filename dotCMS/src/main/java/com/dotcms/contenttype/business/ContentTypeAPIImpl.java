@@ -373,6 +373,11 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
 
   }
 
+  /**
+   * {@inheritDoc}
+   * <p>When the user cannot read the content type, the {@link DotSecurityException} names the user
+   * and the content type by id only, as REST endpoints may return its message to the caller.</p>
+   */
   @Override
   @CloseDBIfOpened
   public ContentType find(final String inodeOrVar) throws DotSecurityException, DotDataException {
@@ -386,7 +391,8 @@ public class ContentTypeAPIImpl implements ContentTypeAPI {
       return type;
     }
 
-    throw new DotSecurityException("User " + user + " does not have READ permissions on ContentType " + type);
+    throw new DotSecurityException(String.format("User %s does not have READ permission on content type %s",
+            null == user ? "anonymous" : user.getUserId(), type.id()));
   }
 
   @CloseDBIfOpened

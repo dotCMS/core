@@ -657,8 +657,8 @@ class StructureAjaxTest {
 
     /**
      * Given: nobody is logged in
-     * When: fetchByIdentity, getStructureFields and getSearchableStructureFields are called
-     * for a content type
+     * When: fetchByIdentity, getStructureFields and getSearchableStructureFields are called for a
+     * content type
      * Then: each answers like a type the caller cannot read, the content type is not loaded and
      * nothing is written to the security log
      */

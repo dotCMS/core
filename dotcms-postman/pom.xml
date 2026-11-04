@@ -28,6 +28,10 @@
         <pnpm.install.args>install --frozen-lockfile</pnpm.install.args>
         <skip.npm.install>false</skip.npm.install>
         <postman.server.url>http://localhost:${tomcat.port}</postman.server.url>
+        <!-- Host port for the container's management connector (8090, mapped in parent/pom.xml).
+             ManagementEndpoints.postman_collection reaches /dotmgt/* through it. -->
+        <management.port>8090</management.port>
+        <postman.management.url>http://localhost:${management.port}</postman.management.url>
         <postman.collection.dir>src/main/resources/postman</postman.collection.dir>
         <wiremock.port>50505</wiremock.port>
         <wiremock.api.key>${ext.wiremock.api.key}</wiremock.api.key>
@@ -71,7 +75,7 @@
                         <configuration>
                             <skip>${postman.test.skip}</skip>
                             <!-- 'start' is the script name defined in package.json -->
-                            <commandlineArgs>run start --serverUrl=${postman.server.url} --postmanTestsDir=${postman.collection.dir} ${postman.collections}</commandlineArgs>
+                            <commandlineArgs>run start --serverUrl=${postman.server.url} --managementUrl=${postman.management.url} --postmanTestsDir=${postman.collection.dir} ${postman.collections}</commandlineArgs>
                         </configuration>
                     </execution>
                 </executions>

@@ -121,8 +121,8 @@ public class StructureAjaxIntegrationTest {
     }
 
     /**
-     * Removes the content types and the category, then deletes the test users,
-     * handing whatever they own to the admin user, and finally the owner role.
+     * Removes the content types and the category, then deletes the test users, handing whatever
+     * they own to the admin user, and finally the owner role.
      */
     @AfterClass
     public static void cleanUp() throws Exception {
