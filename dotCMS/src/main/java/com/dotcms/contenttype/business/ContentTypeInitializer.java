@@ -19,7 +19,6 @@ import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
-import com.dotmarketing.quartz.job.ResetPermissionsJob;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import io.vavr.Lazy;
@@ -139,6 +138,16 @@ public class ContentTypeInitializer implements DotInitializer {
         }
     }
 
+    /**
+     * Makes favorite pages readable and editable only by their owner. The content type gets CMS
+     * Owner permissions for itself and a row its contentlets inherit, since favorites are saved on
+     * the System Host and inherit from their content type. When either row is missing, the type's
+     * permissions are replaced with those two rows and the favorites' own rows are reset so they
+     * inherit them. Runs on every start, so it also repairs an existing install. Turned off with
+     * {@code DO_DEFAULT_PAGE_PERMISSIONS=false}.
+     *
+     * @param savedContentType the favorite page content type
+     */
     private void checkDefaultPermissions(final ContentType savedContentType) {
 
         if (doDefaultPagePermissions.get()) {
@@ -149,7 +158,8 @@ public class ContentTypeInitializer implements DotInitializer {
                 final int permissionType = PermissionAPI.PERMISSION_USE | PermissionAPI.PERMISSION_EDIT |
                         PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS;
                 final Role backendRole = APILocator.getRoleAPI().loadCMSOwnerRole();
-                if (!APILocator.getPermissionAPI().doesRoleHavePermission(savedContentType, permissionType, backendRole)) {
+                if (!APILocator.getPermissionAPI().doesRoleHavePermission(savedContentType, permissionType, backendRole)
+                        || !this.contentletsInheritPermission(savedContentType, permissionType, backendRole)) {
 
                     // remove all current permissions
                     APILocator.getPermissionAPI().removePermissions(savedContentType);
@@ -161,12 +171,36 @@ public class ContentTypeInitializer implements DotInitializer {
                     // this is the inheritance permission
                     newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), savedContentType.getPermissionId(),  backendRole.getId(), permissionType, true));
                     APILocator.getPermissionAPI().assignPermissions(newSetOfPermissions, savedContentType, APILocator.systemUser(), false);
-                    ResetPermissionsJob.triggerJobImmediately(savedContentType);
+                    // reset here rather than through ResetPermissionsJob, which needs a logged-in
+                    // request user and has none at startup
+                    APILocator.getPermissionAPI().resetPermissionsUnder(savedContentType);
                 }
             } catch (DotDataException | DotSecurityException e) {
 
                 Logger.error(this, "Favorite pages: " + e.getMessage(), e);
             }
         }
+    }
+
+    /**
+     * Tells whether the contentlets of a content type inherit the given permission bits for a
+     * role from it. Favorite pages are saved on the System Host, so without this row they inherit
+     * from the System Host instead, whatever the type's own permissions are.
+     *
+     * @param contentType    the content type the contentlets inherit from
+     * @param permissionType the permission bits the contentlets must inherit
+     * @param role           the role the bits are granted to
+     * @return {@code true} if a row the contentlets inherit grants every bit to the role
+     * @throws DotDataException if the permissions cannot be read
+     */
+    private boolean contentletsInheritPermission(final ContentType contentType, final int permissionType,
+                                                 final Role role) throws DotDataException {
+
+        final List<Permission> inheritable = APILocator.getPermissionAPI()
+                .getInheritablePermissions(contentType, true);
+        return null != inheritable && inheritable.stream().anyMatch(permission ->
+                Contentlet.class.getCanonicalName().equals(permission.getType())
+                        && role.getId().equals(permission.getRoleId())
+                        && (permission.getPermission() & permissionType) == permissionType);
     }
 }

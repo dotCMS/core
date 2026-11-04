@@ -332,6 +332,326 @@
 			"response": []
 		},
 		{
+			"name": "FireDotFavoriteAsTheDialogDoesWithLimitedUser",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"pm.test(\"The favorite is saved\", function () {",
+							"    const entity = pm.response.json().entity;",
+							"    pm.expect(entity.identifier).to.be.a('string').and.not.empty;",
+							"    pm.collectionVariables.set(\"dialogFavoriteId\", entity.identifier);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "Postman-Pass-2026!",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "mylimiteduser@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH?indexPolicy=WAIT_FOR",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"workflow",
+						"actions",
+						"default",
+						"fire",
+						"PUBLISH"
+					],
+					"query": [
+						{
+							"key": "indexPolicy",
+							"value": "WAIT_FOR"
+						}
+					]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"contentlet\": {\n        \"contentType\": \"dotFavoritePage\",\n        \"title\": \"Dialog favorite\",\n        \"url\": \"/dialog-favorite?language_id=1\",\n        \"order\": 1\n    }\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "invalidateSessionBeforeAnonymousReads",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/logout",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"logout"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "AnonymousCannotReadTheFavoriteById",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Anonymous gets no favorite from /api/v1/content\", function () {",
+							"    pm.expect(pm.response.code).to.not.eql(200);",
+							"    pm.expect(pm.response.text()).to.not.include(\"/dialog-favorite\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/content/{{dialogFavoriteId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"content",
+						"{{dialogFavoriteId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "AnonymousCannotReadTheFavoriteByLegacyId",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Anonymous gets no favorite from /api/content/id\", function () {",
+							"    pm.expect(pm.response.text()).to.not.include(\"/dialog-favorite\");",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/content/id/{{dialogFavoriteId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"content",
+						"id",
+						"{{dialogFavoriteId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "AnonymousCannotFindTheFavoriteByQuery",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Anonymous finds no favorite through /api/content/query\", function () {",
+							"    pm.response.to.have.status(200);",
+							"    pm.expect(pm.response.json().contentlets).to.have.lengthOf(0);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/content/query/+contentType:dotFavoritePage%20+identifier:{{dialogFavoriteId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"content",
+						"query",
+						"+contentType:dotFavoritePage%20+identifier:{{dialogFavoriteId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "AnonymousCannotFindTheFavoriteThroughGraphQL",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Anonymous finds no favorite through GraphQL search\", function () {",
+							"    pm.response.to.have.status(200);",
+							"    pm.expect(pm.response.json().data.search).to.have.lengthOf(0);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/graphql",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"graphql"
+					]
+				},
+				"body": {
+					"mode": "raw",
+					"raw": "{\"query\": \"query { search(query: \\\"+contentType:dotFavoritePage +identifier:{{dialogFavoriteId}}\\\") { identifier } }\"}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "OwnerReadsTheDialogFavorite",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"The owner reads the favorite\", function () {",
+							"    pm.response.to.have.status(200);",
+							"    pm.expect(pm.response.json().entity.identifier).to.eql(pm.collectionVariables.get(\"dialogFavoriteId\"));",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "password",
+							"value": "Postman-Pass-2026!",
+							"type": "string"
+						},
+						{
+							"key": "username",
+							"value": "mylimiteduser@dotcms.com",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/content/{{dialogFavoriteId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"content",
+						"{{dialogFavoriteId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
 			"name": "invalidateSessionAgain",
 			"event": [
 				{
@@ -395,6 +715,10 @@
 	"variable": [
 		{
 			"key": "firstLayoutId",
+			"value": ""
+		},
+		{
+			"key": "dialogFavoriteId",
 			"value": ""
 		}
 	]
