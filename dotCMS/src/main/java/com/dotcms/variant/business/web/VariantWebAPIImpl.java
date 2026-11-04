@@ -133,9 +133,10 @@ public class VariantWebAPIImpl implements VariantWebAPI{
      *
      * <p>Only terms the method can remove without changing the meaning of what is left are
      * removed: one sitting at the start of the query or after whitespace, outside quotes and
-     * outside parentheses. A term inside a group is left alone, because taking it out would leave
-     * the group malformed - it is the clause imposed further down the search path, not this
-     * method, that keeps such a query from reading another variant.
+     * outside parentheses, with an escaped character counting as neither. A term inside a group is
+     * left alone, because taking it out would leave the group malformed - it is the clause imposed
+     * further down the search path, not this method, that keeps such a query from reading another
+     * variant.
      *
      * @param query the Lucene query as the caller wrote it
      * @return the same query without the caller's variant terms
@@ -148,6 +149,23 @@ public class VariantWebAPIImpl implements VariantWebAPI{
 
         while (index < query.length()) {
             final char current = query.charAt(index);
+
+            if (current == '\\') {
+                // A backslash escapes whatever follows it, so neither character can open or close
+                // a phrase or a group. Taking the two in one step is what keeps this scan reading
+                // the query the way the search path reads it: counting an escaped quote as the end
+                // of a phrase would shift everything after it, and the caller's own text would be
+                // read as a term while a real term would be read as text.
+                kept.append(current);
+                index++;
+
+                if (index < query.length()) {
+                    kept.append(query.charAt(index));
+                    index++;
+                }
+
+                continue;
+            }
 
             if (current == '"') {
                 insideQuotes = !insideQuotes;

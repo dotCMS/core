@@ -117,4 +117,28 @@ public class VariantWebAPIImplTest {
                 variantWebAPI.scopeQueryToDefaultVariant("+(variant:one OR variant:two)",
                         frontEndUser()));
     }
+
+    /**
+     * Lucene writes a quote that belongs to a phrase as {@code \"}. Reading that as the end of the
+     * phrase would shift everything after it by one phrase, so a term the caller wrote after the
+     * phrase would be read as part of it and survive the drop.
+     */
+    @Test
+    public void testScopeQueryToDefaultVariant_WhenAPhraseHoldsAnEscapedQuote_ShouldStillDropTheTermAfterIt() {
+        assertEquals("+variant:default +title:\"he said \\\" ok\"",
+                variantWebAPI.scopeQueryToDefaultVariant(
+                        "+title:\"he said \\\" ok\" +variant:someVariant", frontEndUser()));
+    }
+
+    /**
+     * The same shift read the other way round: the field name sitting inside the phrase is the
+     * caller's data, and dropping it would hand back a phrase that no longer closes.
+     */
+    @Test
+    public void testScopeQueryToDefaultVariant_WhenAnEscapedQuotePrecedesTheFieldName_ShouldKeepThePhraseWhole() {
+        final String query = "+title:\"he said \\\" variant:someVariant\"";
+
+        assertEquals("+variant:default " + query,
+                variantWebAPI.scopeQueryToDefaultVariant(query, frontEndUser()));
+    }
 }
