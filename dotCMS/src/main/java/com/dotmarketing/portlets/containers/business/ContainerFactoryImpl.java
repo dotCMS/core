@@ -64,6 +64,10 @@ import java.util.stream.Collectors;
  */
 public class ContainerFactoryImpl implements ContainerFactory {
 
+	/** Files a File-based Container reads as its own code and settings, never as a Content Type. */
+	private static final Set<String> CONTAINER_OWN_FILE_NAMES = Set.of(FileAssetContainerUtil.CONTAINER_META_INFO,
+			FileAssetContainerUtil.CODE, FileAssetContainerUtil.PRE_LOOP, FileAssetContainerUtil.POST_LOOP);
+
 	static ContainerCache  containerCache       = CacheLocator.getContainerCache();
 	private final PermissionAPI  permissionAPI  = APILocator.getPermissionAPI();
 	private final FolderAPI      folderAPI      = APILocator.getFolderAPI();
@@ -1146,22 +1150,30 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	/**
 	 * Finds all container that have the contentTypeVarNameFileName as a vtl in their folders
 	 * (reference to the content type for the file asset containers)
-	 * Will include working content type but not archived
+	 * Will include working content type but not archived. A variable whose file name is one of the Container's
+	 * own files ({@code container.vtl}, {@code container_code.vtl}, {@code preloop.vtl}, {@code postloop.vtl}) matches
+	 * no folder, since those files are never read as Content Types.
 	 * @param contentTypeVarNameFileName {@link String}
 	 * @return List of Folder
 	 */
 	private List<Folder> findContainersAssetsByContentType(final String contentTypeVarNameFileName) {
 
+		final String contentTypeFileName = (contentTypeVarNameFileName + StringPool.PERIOD + "vtl").toLowerCase();
+		if (CONTAINER_OWN_FILE_NAMES.contains(contentTypeFileName)) {
+			return new ArrayList<>();
+		}
+
 		List<Contentlet>           containers = null;
 		final List<Folder>         folders    = new ArrayList<>();
 		final User 				   user       = APILocator.systemUser();
 
+		// nosemgrep: gitlab.find_sec_bugs.CUSTOM_INJECTION-2 -- fixed SQL text; the path and file name are bound with addParam, and the boolean literal comes from DbConnectionFactory
 		final StringBuilder sqlQuery = new StringBuilder("select cvi.working_inode as inode from contentlet_version_info cvi, identifier id where"
 				+ " id.parent_path like ? and lower(id.asset_name) = ? and cvi.identifier = id.id");
 		final List<Object> parameters = new ArrayList<>();
 		parameters.add(Constants.CONTAINER_FOLDER_PATH + StringPool.FORWARD_SLASH + StringPool.PERCENT);
 		// The file name is matched regardless of case, as the Content Type variable may differ in case
-		parameters.add((contentTypeVarNameFileName + StringPool.PERIOD + "vtl").toLowerCase());
+		parameters.add(contentTypeFileName);
 
 		sqlQuery.append(" and cvi.deleted = " + DbConnectionFactory.getDBFalse());
 

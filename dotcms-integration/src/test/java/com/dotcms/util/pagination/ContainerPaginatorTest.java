@@ -5,6 +5,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContainerAsFileDataGen;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.TestDataUtils;
@@ -27,9 +28,11 @@ import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerView;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
+import com.liferay.util.FileUtil;
 import org.apache.commons.beanutils.BeanUtils;
 import org.junit.Test;
 
@@ -40,6 +43,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
@@ -267,6 +271,69 @@ public class ContainerPaginatorTest extends ContentletBaseTest {
             ContentTypeDataGen.remove(unusedType);
             ContentTypeDataGen.remove(contentType);
             LanguageDataGen.remove(otherLanguage);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: A file-based Container has a {@code postloop.vtl} file, which holds the code shown after
+     * its contents, and a Content Type has {@code postloop} as its variable.
+     * Expected Result: Filtering by that Content Type does not return the Container, because the file is not
+     * a Content Type file.
+     */
+    @Test
+    public void getItems_byContentTypeNamedLikeAContainerFile_skipsContainersWithThatFile() throws Exception {
+        final ContentType postLoopType = new ContentTypeDataGen().host(defaultHost)
+                .velocityVarName("postloop").nextPersisted();
+        final ContentType usedType = new ContentTypeDataGen().host(defaultHost).nextPersisted();
+        final ContainerAsFileDataGen fileContainerGen = new ContainerAsFileDataGen().host(defaultHost)
+                .ignoreDefaultContentTypes().contentType(usedType, "$!{body}");
+        final FileAssetContainer fileContainer = fileContainerGen.nextPersisted();
+        final Folder containerFolder = APILocator.getFolderAPI().find(
+                fileContainerGen.getMetaData().getFolder(), APILocator.systemUser(), false);
+        try {
+            final java.io.File postLoop = java.io.File.createTempFile("postloop", ".vtl");
+            FileUtil.write(postLoop, "</div>");
+            new FileAssetDataGen(containerFolder, postLoop).host(defaultHost)
+                    .setProperty("title", "postloop.vtl")
+                    .setProperty("fileName", "postloop.vtl")
+                    .nextPersisted();
+
+            assertTrue(identifiersFoundBySystem(usedType).contains(fileContainer.getIdentifier()));
+            assertFalse(identifiersFoundBySystem(postLoopType).contains(fileContainer.getIdentifier()));
+        } finally {
+            APILocator.getFolderAPI().delete(containerFolder, APILocator.systemUser(), false);
+            ContentTypeDataGen.remove(usedType);
+            ContentTypeDataGen.remove(postLoopType);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: A file-based Container uses a Content Type, and a back-end user can read the Content
+     * Type but not the Container's {@code container.vtl}.
+     * Expected Result: Filtering by that Content Type returns the Container to an admin, but not to that user.
+     */
+    @Test
+    public void getItems_byContentType_returnsOnlyFileContainersTheUserCanRead() throws Exception {
+        final ContentTypeUsage usage = new ContentTypeUsage();
+        Folder containerFolder = null;
+        try {
+            usage.create();
+            final ContainerAsFileDataGen fileContainerGen = new ContainerAsFileDataGen().host(defaultHost)
+                    .ignoreDefaultContentTypes().contentType(usage.contentType, "$!{body}");
+            final FileAssetContainer fileContainer = fileContainerGen.nextPersisted();
+            containerFolder = APILocator.getFolderAPI().find(
+                    fileContainerGen.getMetaData().getFolder(), APILocator.systemUser(), false);
+            ContentTypeUsage.savePermission(fileContainerGen.getMetaData(), usage.ownerRole);
+
+            assertTrue(identifiersFoundBySystem(usage.contentType).contains(fileContainer.getIdentifier()));
+            assertFalse(usage.identifiersFound().contains(fileContainer.getIdentifier()));
+        } finally {
+            if (null != containerFolder) {
+                APILocator.getFolderAPI().delete(containerFolder, APILocator.systemUser(), false);
+            }
+            usage.cleanUp();
         }
     }
 
