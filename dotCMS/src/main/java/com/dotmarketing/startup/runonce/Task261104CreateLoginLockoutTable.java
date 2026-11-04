@@ -14,7 +14,7 @@ import java.sql.SQLException;
  * additive: nothing on {@code user_} changes, and an older release rolled back onto this schema never
  * reads the new table.
  */
-public class Task261015CreateLoginLockoutTable extends AbstractJDBCStartupTask {
+public class Task261104CreateLoginLockoutTable extends AbstractJDBCStartupTask {
 
     private static final String TABLE_NAME = "login_lockout";
 

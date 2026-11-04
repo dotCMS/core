@@ -16,7 +16,7 @@ import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.startup.runonce.Task261015CreateLoginLockoutTable;
+import com.dotmarketing.startup.runonce.Task261104CreateLoginLockoutTable;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.webdav.DotWebdavHelper;
@@ -699,7 +699,7 @@ public class LoginLockoutTest {
             final User countedAgain = APILocator.getUserAPI().loadUserById(user.getUserId());
             countedAgain.setFailedLoginAttempts(50);
             APILocator.getUserAPI().save(countedAgain, APILocator.systemUser(), false);
-            new Task261015CreateLoginLockoutTable().executeUpgrade();
+            new Task261104CreateLoginLockoutTable().executeUpgrade();
             DbConnectionFactory.closeSilently();
             CacheLocator.getUserCache().remove(user.getUserId());
             assertEquals(50, failedLoginAttempts(user));
