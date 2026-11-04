@@ -14,7 +14,14 @@ name: Test Matrix
 on:
   workflow_call:
     inputs:
+      # run-all-tests does NOT switch on a selector the caller leaves out. A workflow_call
+      # boolean that is not passed arrives as false, which is indistinguishable from an
+      # explicit false, and a false selector turns its type off. A caller that wants
+      # everything passes every selector it wants as true (nightly, trunk dispatch).
+      # What run-all-tests adds is a guarantee: if it is true and the matrix comes out
+      # empty, this job fails instead of the run silently testing nothing (#38336).
       run-all-tests:
+        description: 'The run must test something: fail if the matrix is empty. Does not enable selectors that are not passed.'
         type: boolean
         default: false
       jvm_unit_test:
@@ -219,7 +226,17 @@ jobs:
             }
             
             console.log(`Generated matrix with ${matrix.length} test configurations`);
-            
+
+            // A run that asked for everything must test something. This is what let the
+            // nightly run zero tests for weeks while reporting success (#38336).
+            if (inputs['run-all-tests'] && matrix.length === 0) {
+              core.setFailed('run-all-tests is true but the test matrix is empty. A selector input '
+                + 'that is not passed defaults to false, and a false selector turns its test type '
+                + 'off even under run-all-tests, so the caller must pass every selector it wants '
+                + 'run (jvm_unit_test, cli, frontend, postman, karate, integration, e2e) as true.');
+              return;
+            }
+
             // Output the matrix
             core.setOutput('matrix', JSON.stringify({ include: matrix }));
             core.setOutput('has-tests', matrix.length > 0 ? 'true' : 'false');
