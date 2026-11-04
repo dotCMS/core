@@ -217,7 +217,7 @@
 				"header": [],
 				"body": {
 					"mode": "raw",
-					"raw": "{\n    \"firstName\":\"LimitedTestName\",\n    \"lastName\":\"LimitedTestLastName\",\n    \"email\":\"mylimiteduser@dotcms.com\",\n    \"password\":\"dotcms123456\",\n    \"active\":true,\n    \"roles\":[\"DOTCMS_BACK_END_USER\"]\n}",
+					"raw": "{\n    \"firstName\":\"LimitedTestName\",\n    \"lastName\":\"LimitedTestLastName\",\n    \"email\":\"mylimiteduser@dotcms.com\",\n    \"password\":\"Postman-Pass-2026!\",\n    \"active\":true,\n    \"roles\":[\"DOTCMS_BACK_END_USER\"]\n}",
 					"options": {
 						"raw": {
 							"language": "json"
@@ -292,7 +292,7 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "dotcms123456",
+							"value": "Postman-Pass-2026!",
 							"type": "string"
 						},
 						{
