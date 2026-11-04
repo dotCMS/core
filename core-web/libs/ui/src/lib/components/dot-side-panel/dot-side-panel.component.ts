@@ -93,7 +93,7 @@ export class DotSidePanelComponent {
         const withdrawEscape = inject(DotKeyboardShortcutService).register({
             combination: 'escape',
             label: 'edit.content.side-panel.shortcut.close',
-            handler: () => this.#escape()
+            handler: (event) => this.#escape(event)
         });
 
         inject(DestroyRef).onDestroy(withdrawEscape);
@@ -122,15 +122,25 @@ export class DotSidePanelComponent {
     /**
      * Escape, as the panel handles it.
      *
+     * When the panel asks to close, the event goes no further: a PrimeNG dialog under the panel
+     * listens to the document's keydown itself and closes when it is the top of `ZIndexUtils`. The
+     * close destroys the drawer, which drops its entry, so a dialog listener later in the same
+     * event would find itself on top and close too, and one Escape would close two layers (#38303,
+     * US3 AC 3). The registry's own listener stays in the bubble phase, so anything inside the panel
+     * that handles Escape on its element (a field cancelling an edit) still gets it first.
+     *
+     * @param event The keydown.
      * @returns `true`: the key is consumed.
      */
-    #escape(): boolean {
-        // An overlay above owns the key. Consumed, not declined, so it cannot reach the portlet.
+    #escape(event: KeyboardEvent): boolean {
+        // An overlay above owns the key, and its own listener must still hear it. Consumed, not
+        // declined, so it cannot reach the portlet.
         if (hasOverlayAbove(this.$drawer()?.container)) {
             return true;
         }
 
         if (this.front()) {
+            event.stopImmediatePropagation();
             this.closeRequested.emit();
         }
 

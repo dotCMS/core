@@ -735,7 +735,8 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
             {
                 mode: 'edit',
                 inode: asset.inode,
-                contentType: asset.content_type_name,
+                // The variable: the opener looks the type up by it to choose the editor.
+                contentType: asset.content_type_variable,
                 portletId: 'publishing-queue'
             },
             {

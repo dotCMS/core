@@ -1,3 +1,4 @@
+import { DOCUMENT } from '@angular/common';
 import {
     Component,
     EventEmitter,
@@ -6,10 +7,13 @@ import {
     Output,
     SimpleChanges,
     ViewChild,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    inject
 } from '@angular/core';
 
 import { DialogModule, Dialog } from 'primeng/dialog';
+
+import { hasOverlayAbove } from '@dotcms/ui';
 
 import { IframeComponent } from '../_common/iframe/iframe-component/iframe.component';
 
@@ -21,6 +25,8 @@ import { IframeComponent } from '../_common/iframe/iframe-component/iframe.compo
     imports: [DialogModule, IframeComponent]
 })
 export class DotIframeDialogComponent implements OnChanges {
+    readonly #document = inject(DOCUMENT);
+
     @ViewChild('dialog', { static: true })
     dotDialog: Dialog;
 
@@ -60,28 +66,48 @@ export class DotIframeDialogComponent implements OnChanges {
     }
 
     /**
-     * Handle keydown event from the iframe window
+     * A keydown inside the dialog's iframe. Escape closes the dialog, unless a layer sits above it
+     * (a side panel opened from inside it, #38303): then the Escape is that layer's, so it is handed
+     * to the page, where the panel's Escape handling hears it, and the dialog stays open.
      *
-     * @param any $event
-     * @memberof DotIframeDialogComponent
+     * @param $event The keydown from the iframe's window.
      */
     onKeyDown($event: KeyboardEvent): void {
         this.keyWasDown.emit($event);
 
-        if ($event.key === 'Escape') {
-            this.onDialogHide();
+        if ($event.key !== 'Escape') {
+            return;
         }
+
+        if (this.#layerAbove()) {
+            this.#document.dispatchEvent(
+                new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
+            );
+
+            return;
+        }
+
+        this.onDialogHide();
     }
 
     /**
-     * Handle load event from the iframe window
+     * The iframe loaded: it takes the keyboard, unless a layer sits above the dialog. The Workflow
+     * Tasks detail reloads behind a side panel after each save; focusing it then would send the
+     * author's next Escape into the iframe instead of to the panel (#38303).
      *
-     * @param * $event
-     * @memberof DotIframeDialogComponent
+     * @param $event The iframe's load.
      */
     onLoad($event: { target: HTMLIFrameElement }): void {
-        $event.target.contentWindow.focus();
+        if (!this.#layerAbove()) {
+            $event.target.contentWindow.focus();
+        }
+
         this.charge.emit($event);
+    }
+
+    /** Whether an overlay (a side panel, another dialog) is stacked above this dialog. */
+    #layerAbove(): boolean {
+        return hasOverlayAbove(this.dotDialog?.container());
     }
 
     /**
