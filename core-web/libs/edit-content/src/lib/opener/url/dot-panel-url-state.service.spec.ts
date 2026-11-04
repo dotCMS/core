@@ -526,7 +526,6 @@ describe('DotPanelUrlStateService', () => {
                 expect(serviceReplaces(1)).toBe(0);
                 expect(location.go).not.toHaveBeenCalled();
             });
-
         });
 
         /**

@@ -983,7 +983,9 @@ describe('DotEditContentOpenerService', () => {
             const { config: first } = await lastOpen();
             resolveEditor.mockReturnValue(NEVER);
 
-            first.outputs?.['openContent']({ request: { mode: 'new', contentType: 'Blog' } } as never);
+            first.outputs?.['openContent']({
+                request: { mode: 'new', contentType: 'Blog' }
+            } as never);
 
             expect(register).toHaveBeenCalledTimes(2);
             expect(registered(1).params).toEqual({ createContent: 'Blog' });
@@ -999,7 +1001,9 @@ describe('DotEditContentOpenerService', () => {
 
             first.outputs?.['openContent']({ request: { mode: 'edit', inode: 'rel-1' } } as never);
             await lastOpen();
-            first.outputs?.['openContent']({ request: { mode: 'new', contentType: 'Blog' } } as never);
+            first.outputs?.['openContent']({
+                request: { mode: 'new', contentType: 'Blog' }
+            } as never);
             await lastOpen();
 
             expect(open).toHaveBeenCalledTimes(3);

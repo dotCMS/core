@@ -195,7 +195,11 @@ describe('DotEditContentSidePanelComponent', () => {
         const openSpy = vi.fn();
         spectator.output('openContent').subscribe(openSpy);
         const onSaved = vi.fn();
-        const request: DotEditContentRequest = { mode: 'edit', inode: 'inode-9', contentType: 'Blog' };
+        const request: DotEditContentRequest = {
+            mode: 'edit',
+            inode: 'inode-9',
+            contentType: 'Blog'
+        };
 
         openContent$.next({ request, onSaved, source: 'block-editor' });
 
@@ -468,7 +472,8 @@ describe('DotEditContentSidePanelComponent — form bridge frames when panels st
                                 useFactory: () => ({
                                     saved$: new Subject<DotCMSContentlet>(),
                                     left$: new Subject<void>(),
-                                    languageChanged$: new Subject<number>()
+                                    languageChanged$: new Subject<number>(),
+                                    openContent$: new Subject<DotOpenContentEvent>()
                                 })
                             }
                         ]

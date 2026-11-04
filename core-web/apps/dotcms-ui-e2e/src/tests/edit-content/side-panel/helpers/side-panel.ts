@@ -59,6 +59,18 @@ export class SidePanel {
         });
     }
 
+    /**
+     * Asserts the front panel ends up the topmost thing at its centre (see {@link isOnTop}).
+     * Polled: {@link expectOpen} passes on the drawer's first frame, while it is still sliding in
+     * and its centre is past the viewport's right edge, where nothing is hit. A dialog that really
+     * covers the panel covers it the whole time, so the check still fails then.
+     *
+     * @param message What the failure says.
+     */
+    async expectOnTop(message = 'the side panel is not on top'): Promise<void> {
+        await expect.poll(() => this.isOnTop(), { message, timeout: 5000 }).toBe(true);
+    }
+
     /** Asserts how many panels are open, stacked. */
     async expectCount(count: number): Promise<void> {
         await expect(this.all).toHaveCount(count, { timeout: 15000 });
