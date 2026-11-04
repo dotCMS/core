@@ -39,6 +39,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.quartz.QuartzUtils;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -77,10 +78,18 @@ public class PublisherTest extends IntegrationTestBase {
     private static final String TEST_DESCRIPTION = "testDescription";
     private static final String TEST_TITLE = "testTitle";
 
+    /**
+     * Initializes the test environment, starts the Quartz scheduler, and creates the filter used
+     * by the push publishing tests.
+     */
     @BeforeClass
     public static void prepare() throws Exception {
         //Setting web app environment
         IntegrationTestInitService.getInstance().init();
+        // The Quartz scheduler is not started by the test init. autoUnpublishContent needs it to
+        // run IdentifierDateJob, and used to get it only because an earlier class in the suite
+        // had started it.
+        QuartzUtils.startSchedulers();
         LicenseTestUtil.getLicense();
 
         createFilter();
@@ -478,16 +487,14 @@ public class PublisherTest extends IntegrationTestBase {
             //Check if the content type has the expire field (this should be immediate)
             assertTrue(contentType.expireDateVar().equals(expiresField.variable()));
 
-            //Explicitly trigger IdentifierDateJob to update identifier's SysExpireDate
-            //The automatic trigger (fireUpdateIdentifiers) should happen, but in test environments
-            //with Quartz job scheduling, we need to ensure the job runs synchronously
-            com.dotmarketing.quartz.job.IdentifierDateJob.triggerJobImmediately(contentType, APILocator.systemUser());
-
-            //Wait for IdentifierDateJob to complete and update the identifier's SysExpireDate
-            //This is needed because updatePublishExpireDates may rely on identifier dates for queries
+            //Saving the content type with a new expire date var schedules IdentifierDateJob itself
+            //(ContentTypeAPIImpl). Wait for that job to copy the date onto the identifier, because
+            //updatePublishExpireDates reads the expire date from the identifier. The job is not
+            //triggered a second time here: a second run raced the first, and the first run used to
+            //write null.
             final String contentletIdentifier = contentlet.getIdentifier();
             await("Identifier SysExpireDate should be updated by IdentifierDateJob")
-                    .atMost(30, SECONDS)  // Increased timeout for Quartz job execution
+                    .atMost(30, SECONDS)  // Quartz job execution
                     .pollInterval(500, MILLISECONDS)
                     .pollDelay(100, MILLISECONDS)
                     .untilAsserted(() -> {

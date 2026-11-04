@@ -49,6 +49,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.ZipUtil;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
@@ -130,6 +131,54 @@ public class ExportStarterUtil {
     /** Only 10,000,000 records of any given data type wil be exported. */
     private static final int MAX_EXPORTED_RECORDS = 10000000;
     private static final int EXPORTED_RECORDS_PAGE_SIZE = 1000;
+
+    /**
+     * Copies of the contentlet JSON mapper and of the REST mapper that leave the company's key out. The starter import
+     * generates a new key for the company, so the starter has no use for the current one. The shared mappers are not
+     * modified.
+     */
+    private static final Lazy<ObjectMapper> TABLE_DATA_MAPPER =
+            Lazy.of(() -> withoutCompanyKey(ContentletJsonHelper.INSTANCE.get().objectMapper()));
+    private static final Lazy<ObjectMapper> ADDITIONAL_DATA_MAPPER =
+            Lazy.of(() -> withoutCompanyKey(DotObjectMapperProvider.getInstance().getDefaultObjectMapper()));
+
+    /**
+     * Returns the object mapper that writes the records of the database tables into the starter. It writes them as
+     * the contentlet JSON mapper does, except for the company's key.
+     *
+     * @return the mapper for the table data files
+     */
+    static ObjectMapper tableDataMapper() {
+        return TABLE_DATA_MAPPER.get();
+    }
+
+    /**
+     * Returns the object mapper that writes the additional data files of the starter: the company, the users, the
+     * counters, the portlets, the variants and the experiments. It writes them as the REST mapper does, except for
+     * the company's key.
+     *
+     * @return the mapper for the additional data files
+     */
+    static ObjectMapper additionalDataMapper() {
+        return ADDITIONAL_DATA_MAPPER.get();
+    }
+
+    /**
+     * Returns a copy of a mapper that leaves the company's key out of every {@link Company} it writes.
+     *
+     * @param mapper the mapper to copy; it is not modified
+     * @return the copy
+     */
+    private static ObjectMapper withoutCompanyKey(final ObjectMapper mapper) {
+        return mapper.copy().addMixIn(Company.class, CompanyWithoutKey.class);
+    }
+
+    /**
+     * Leaves a company's key out of its JSON.
+     */
+    @JsonIgnoreProperties(value = {"key"}, ignoreUnknown = true)
+    private abstract static class CompanyWithoutKey {
+    }
 
     public File createStarterWithAssets() {
         throw new UnsupportedOperationException("This legacy Starter generation process is not supported anymore");
@@ -304,7 +353,7 @@ public class ExportStarterUtil {
         HibernateUtil hibernateUtil;
         DotConnect dc;
         List<?> resultList;
-        final ObjectMapper defaultObjectMapper = ContentletJsonHelper.INSTANCE.get().objectMapper();
+        final ObjectMapper defaultObjectMapper = tableDataMapper();
         try {
             Logger.debug(this, String.format("Retrieving data from tables: %s", dbTablesAsClasses));
             for (final Class<?> clazz : dbTablesAsClasses) {
@@ -414,7 +463,7 @@ public class ExportStarterUtil {
     @CloseDBIfOpened
     private List<FileEntry> getAdditionalDataAsJSON()  {
         final List<FileEntry> starterFiles = new ArrayList<>();
-        final ObjectMapper defaultObjectMapper = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
+        final ObjectMapper defaultObjectMapper = additionalDataMapper();
         try {
             List resultList = List.of(APILocator.getCompanyAPI().getDefaultCompany());
             String contentAsJson = defaultObjectMapper.writeValueAsString(resultList);

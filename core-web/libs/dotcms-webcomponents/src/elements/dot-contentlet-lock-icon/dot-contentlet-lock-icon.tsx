@@ -13,7 +13,8 @@ export class DotContentletLockIcon {
     render() {
         return (
             <Host style={{ '--mdc-icon-size': this.size }}>
-                <mwc-icon>{this.locked ? 'lock' : 'lock_open'}</mwc-icon>
+                {/* lock_open_right swings the shackle out, so unlocked reads differently from locked at 16px; lock_open only lifts it a pixel */}
+                <mwc-icon>{this.locked ? 'lock' : 'lock_open_right'}</mwc-icon>
             </Host>
         );
     }

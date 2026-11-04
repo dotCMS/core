@@ -41,6 +41,8 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
+import com.dotmarketing.portlets.workflows.model.WorkflowStep;
+import com.dotmarketing.portlets.workflows.model.WorkflowTask;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
@@ -51,6 +53,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -704,11 +707,114 @@ public class WebAssetHelperIntegrationTest {
             form.setAssetPath(path);
             form.setDetail(new FileUploadDetail(path, langString, live));
 
-            final WebAssetView assetInfo = webAssetHelper.saveUpdateAsset(request, form, APILocator.systemUser());
+            final WebAssetView assetInfo;
+            try {
+                assetInfo = webAssetHelper.saveUpdateAsset(request, form, APILocator.systemUser());
+            } catch (RuntimeException e) {
+                throw new AssertionError(describeWorkflowState(path, e), e);
+            }
             Assert.assertNotNull(assetInfo);
             Assert.assertTrue(assetInfo instanceof AssetView);
             AssetView assetView = (AssetView) assetInfo;
             Assert.assertEquals(live, assetView.live());
+        }
+    }
+
+    /**
+     * Builds the failure message used when saving an asset fails, so a rare workflow failure such as
+     * "The Workflow Action [...] is not available in the Workflow Step the content is currently in"
+     * explains itself. For every language of the asset it reports the versions' flags, the workflow
+     * task row read straight from the database, the task and steps the workflow API returns for the
+     * content (which come from caches), and the actions each of those steps offers. A disagreement
+     * between the database row and the cached values means a stale workflow cache; the schemes of
+     * the FileAsset content type show whether another test left a scheme or step assigned to it.
+     * It is only called once the save has already failed.
+     *
+     * @param path    the path of the asset that was being saved
+     * @param failure the exception thrown by the save
+     * @return the failure message
+     */
+    private static String describeWorkflowState(final String path, final RuntimeException failure) {
+
+        final StringBuilder message = new StringBuilder("Saving the asset at [").append(path)
+                .append("] failed with: ").append(failure);
+        try {
+            final User systemUser = APILocator.systemUser();
+            final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
+            message.append("; FileAsset schemes: ").append(workflowAPI.findSchemesForContentType(
+                    APILocator.getContentTypeAPI(systemUser).find("FileAsset")).stream()
+                    .map(scheme -> scheme.getName() + "/" + scheme.getId())
+                    .collect(Collectors.toList()));
+
+            final AssetVersionsView versionsView = (AssetVersionsView) WebAssetHelper.newInstance()
+                    .getAssetInfo(path, systemUser);
+            final String identifier = versionsView.versions().get(0).identifier();
+            final Set<Long> languagesSeen = new HashSet<>();
+            for (final Contentlet version : APILocator.getContentletAPI()
+                    .findAllVersions(new Identifier(identifier), systemUser, false)) {
+
+                message.append("; version inode=").append(version.getInode())
+                        .append(" languageId=").append(version.getLanguageId())
+                        .append(" working=").append(Try.of(version::isWorking).getOrNull())
+                        .append(" live=").append(Try.of(version::isLive).getOrNull())
+                        .append(" archived=").append(Try.of(version::isArchived).getOrNull());
+                if (languagesSeen.add(version.getLanguageId())) {
+                    describeWorkflowStateOfLanguage(message, workflowAPI, systemUser, version);
+                }
+            }
+        } catch (Exception e) {
+            message.append("; could not collect the workflow state: ").append(e);
+        }
+        return message.toString();
+    }
+
+    /**
+     * Appends the workflow state of one language of an asset to the failure message built by
+     * {@link #describeWorkflowState(String, RuntimeException)}: the task row in the database, the
+     * task and steps returned by the workflow API, and the actions of the steps involved.
+     *
+     * @param message     the message being built
+     * @param workflowAPI the workflow API
+     * @param systemUser  the user used to look up actions
+     * @param version     any version of the asset in the language to describe
+     * @throws Exception if the state cannot be read
+     */
+    private static void describeWorkflowStateOfLanguage(final StringBuilder message,
+            final WorkflowAPI workflowAPI, final User systemUser, final Contentlet version)
+            throws Exception {
+
+        final List<Map<String, Object>> taskRows = new DotConnect().setSQL(
+                        "select wt.status, ws.name as step_name, ws.scheme_id, wt.mod_date "
+                                + "from workflow_task wt left join workflow_step ws on ws.id = wt.status "
+                                + "where wt.webasset = ? and wt.language_id = ?")
+                .addParam(version.getIdentifier()).addParam(version.getLanguageId())
+                .loadObjectResults();
+        message.append("; languageId=").append(version.getLanguageId())
+                .append(" task row in the database=").append(taskRows);
+
+        final WorkflowTask cachedTask = workflowAPI.findTaskByContentlet(version);
+        message.append(" task from the workflow API=")
+                .append(null == cachedTask ? "none" : cachedTask.getStatus());
+
+        final Set<String> stepIds = new HashSet<>();
+        taskRows.forEach(row -> stepIds.add(String.valueOf(row.get("status"))));
+        if (null != cachedTask) {
+            stepIds.add(cachedTask.getStatus());
+        }
+        final List<WorkflowStep> steps = workflowAPI.findStepsByContentlet(version, false);
+        steps.forEach(step -> stepIds.add(step.getId()));
+        message.append(" steps from the workflow API=")
+                .append(steps.stream().map(WorkflowStep::getName).collect(Collectors.toList()));
+
+        for (final String stepId : stepIds) {
+            final WorkflowStep step = Try.of(() -> workflowAPI.findStep(stepId)).getOrNull();
+            if (null != step) {
+                message.append(" actions of step ").append(step.getName()).append("/")
+                        .append(stepId).append("=")
+                        .append(workflowAPI.findActions(step, systemUser).stream()
+                                .map(action -> action.getName() + "/" + action.getId())
+                                .collect(Collectors.toList()));
+            }
         }
     }
 
