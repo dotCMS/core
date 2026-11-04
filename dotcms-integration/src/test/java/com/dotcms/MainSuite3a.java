@@ -68,7 +68,9 @@ import org.junit.runners.Suite;
 @RunWith(MainBaseSuite.class)
 @Suite.SuiteClasses({
     RuleAPITest.class,
+    com.dotcms.variant.business.web.CurrentVariantWebInterceptorTest.class,
         DeterministicIdentifierAPITest.class,
+    com.dotcms.graphql.datafetcher.ContentletDataFetcherTest.class,
         CountPagesWithAllEndedExperimentsMetricTypeTest.class,
         CountPagesWithArchivedExperimentsMetricTypeTest.class,
         CountPagesWithDraftExperimentsMetricTypeTest.class,

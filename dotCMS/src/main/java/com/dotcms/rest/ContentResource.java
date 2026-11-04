@@ -15,6 +15,8 @@ import com.dotcms.rest.api.v1.content.LockStatusFields;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
+import com.dotcms.variant.business.web.VariantWebAPI;
+import com.dotmarketing.business.web.WebAPILocator;
 import com.dotcms.util.xstream.XStreamHandler;
 import com.dotcms.uuid.shorty.ShortyId;
 import com.dotcms.uuid.shorty.ShortyIdAPI;
@@ -254,9 +256,16 @@ public class ContentResource {
         if (!fieldFilter.allowsSearch(query, sort)) {
             throw new BadRequestException(fieldFilter.searchRejectedMessage());
         }
-        // The clause goes before the caller's query: after it, a query ending in an
-        // unbalanced escape would consume the space that separates the two.
-        String realQuery = query.contains("variant:") ? query : "+variant:default " + query;
+        // A caller that cannot name its own variant has its variant terms replaced by the default
+        // one, so a query that named a variant answers with the default version of that content
+        // rather than answering empty. A back-end caller keeps the long-standing default, which
+        // only applies when it named no variant at all. Either clause goes before the caller's
+        // query: after it, a query ending in an unbalanced escape would consume the space that
+        // separates the two.
+        final VariantWebAPI variantWebAPI = WebAPILocator.getVariantWebAPI();
+        String realQuery = variantWebAPI.selectsVariant(user)
+                ? (query.contains("variant:") ? query : "+variant:default " + query)
+                : variantWebAPI.scopeQueryToDefaultVariant(query, user);
         realQuery = processQuery(realQuery);
         final SearchView searchView = this.contentHelper.pullContent(request, response, realQuery,
                 userForPull, pageMode, offset, limit, sort, tmDate, render, user, depth,
@@ -907,8 +916,13 @@ public class ContentResource {
                     i++;
                 }
             } else if (queryPassed){
+                // A caller that cannot name its own variant has its variant terms replaced by the
+                // default one, so a query that named a variant answers with the default version of
+                // that content rather than answering empty.
+                final String scopedQuery = WebAPILocator.getVariantWebAPI()
+                        .scopeQueryToDefaultVariant(query, user);
                 contentlets = ContentUtils
-                        .pull(processQuery(query), offset, limit, orderBy, user, tmDate);
+                        .pull(processQuery(scopedQuery), offset, limit, orderBy, user, tmDate);
             }
         } catch (final DotSecurityException e) {
             Logger.debug(this, "Permission error: " + e.getMessage(), e);
