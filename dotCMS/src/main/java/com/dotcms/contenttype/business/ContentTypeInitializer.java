@@ -1,5 +1,6 @@
 package com.dotcms.contenttype.business;
 
+import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.config.DotInitializer;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
@@ -32,6 +33,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Initialiaze content types
@@ -43,6 +45,8 @@ public class ContentTypeInitializer implements DotInitializer {
     public static final String FAVORITE_PAGE_VAR_NAME = "dotFavoritePage";
 
     private static final String FAVORITE_PAGE_PERMISSIONS_LOCK = "favorite-page-permissions";
+    /** Seconds after the repair commits before the permission cache is cleared a second time. */
+    private static final long PERMISSION_CACHE_RECLEAR_SECONDS = 30;
 
     private static final Lazy<Boolean> doDefaultPagePermissions = Lazy.of(()->Config.getBooleanProperty("DO_DEFAULT_PAGE_PERMISSIONS", true));
 
@@ -155,7 +159,9 @@ public class ContentTypeInitializer implements DotInitializer {
      * {@code DO_DEFAULT_PAGE_PERMISSIONS=false}. The check and the repair run in one transaction
      * that first takes a database lock, so nodes starting together take turns: a node that finds
      * another node repairing waits for it to commit or roll back, then checks the rows it left and
-     * repairs them itself if they are still wrong.
+     * repairs them itself if they are still wrong. Once a repair commits, the permission cache is
+     * cleared, and cleared again a short time later so that rows a lookup read before the commit
+     * and cached after the first clear do not stay cached.
      *
      * @param savedContentType the favorite page content type
      */
@@ -172,6 +178,14 @@ public class ContentTypeInitializer implements DotInitializer {
                     // permission cache groups, the rows and the read decisions, now that the
                     // new rows are committed
                     CacheLocator.getPermissionCache().clearCache();
+                    // a lookup that read the old rows before the commit caches them with a plain
+                    // put once its query returns, which can land after the clear above; clear
+                    // again once such lookups have finished
+                    // prune: time-bounded, a lookup stalled longer than the delay can still cache
+                    // the old rows; fence the cache put itself if that is ever seen
+                    DotConcurrentFactory.getScheduledThreadPoolExecutor().schedule(
+                            () -> CacheLocator.getPermissionCache().clearCache(),
+                            PERMISSION_CACHE_RECLEAR_SECONDS, TimeUnit.SECONDS);
                     Logger.info(this, repair);
                 }
             } catch (final Throwable e) {
