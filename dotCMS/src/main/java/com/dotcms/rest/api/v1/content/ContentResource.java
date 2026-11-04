@@ -865,7 +865,8 @@ public class ContentResource {
      * @param languageId the language id
      * @param user the user
      * @param variantName variant name
-     * @return the contentlet object
+     * @return the matching contentlet, or empty when it cannot be found
+     * @throws DotSecurityException a generic denial when the user cannot read the contentlet
      */
     private Optional<Contentlet> resolveContentlet (final String inodeOrIdentifier,
                                                     final PageMode mode,
@@ -894,11 +895,8 @@ public class ContentResource {
         try {
             return Optional.ofNullable(contentletAPI.find(finalInode, user, mode.respectAnonPerms));
         } catch (final DotSecurityException e) {
-            // Propagate the permission denial so the caller answers 403. The previous
-            // Try.of(...).getOrNull() swallowed it and the caller answered 404 "does not exist",
-            // misreporting the refusal and hiding an access decision behind a missing-resource
-            // status (the count endpoint documented the same 403).
-            throw e;
+            // Keep the 403 without exposing unreadable content metadata in the message or cause.
+            throw new DotSecurityException("Content read forbidden");
         } catch (final Exception e) {
             // Preserve the previous swallowing behavior for every other failure: a miss.
             return Optional.empty();
