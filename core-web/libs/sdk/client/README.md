@@ -909,6 +909,15 @@ getCollection<T = DotCMSBasicContentlet>(
 | `language()`          | `number \| string`            | Set content language                                               |
 | `depth()`             | `number`                      | Set depth of related content                                       |
 | `includeSystemHost()` | -                             | Include content from the System Host alongside the configured site |
+| `variant()`           | `string`                      | Filter content by variant ID (see the note below)                  |
+
+> [!NOTE]
+> `variant()` only reaches a non-default variant when the request is authenticated with a
+> back-end user's token. An anonymous request, or one made with a front-end-only token, is
+> answered with the default variant's version of the content whatever variant it names — the
+> call does not fail and does not come back empty, so check the token before concluding the
+> filter is broken. Experiment variants of a **page** are not affected by this: those are
+> selected by the page rendering path, not by this builder.
 
 #### Example
 ```typescript
