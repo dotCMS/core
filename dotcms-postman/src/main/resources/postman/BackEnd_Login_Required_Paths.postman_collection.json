@@ -1,0 +1,838 @@
+{
+  "info": {
+    "_postman_id": "ad31eb71-5c1c-5452-afff-6856533cacdc",
+    "name": "BackEnd_Login_Required_Paths",
+    "description": "Anonymous requests for back-end paths are refused however the path is spelled (percent-encoded dot segments in either case, path parameters, repeated slashes, servlet paths without a trailing slash), while public paths and logged-in users keep working.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Anonymous back-end paths are refused",
+      "item": [
+        {
+          "name": "Open an anonymous session that holds a site",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('admin entry point answers', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 302]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": "{{serverURL}}/admin"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        },
+        {
+          "name": "Back-end JSP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('anonymous request is refused, not served', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/html/portlet/ext/contentlet/image_tools/index.jsp"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        },
+        {
+          "name": "Back-end JSP behind a lower-case encoded parent segment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('anonymous request is refused, not served', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/x/%2e%2e/html/portlet/ext/contentlet/image_tools/index.jsp"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        },
+        {
+          "name": "Back-end JSP behind an upper-case encoded parent segment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('anonymous request is refused, not served', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/x/%2E%2E/html/portlet/ext/contentlet/image_tools/index.jsp"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        },
+        {
+          "name": "Back-end JSP behind a lower-case encoded current segment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('anonymous request is refused, not served', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/%2e/html/portlet/ext/contentlet/image_tools/index.jsp"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        },
+        {
+          "name": "Back-end JSP behind an upper-case encoded current segment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('anonymous request is refused, not served', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/%2E/html/portlet/ext/contentlet/image_tools/index.jsp"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        },
+        {
+          "name": "Back-end JSP behind a public prefix and encoded parent segments",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('anonymous request is refused, not served', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/html/js/dojo/%2e%2e/%2e%2e/portlet/ext/contentlet/image_tools/index.jsp"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        },
+        {
+          "name": "Back-end JSP behind an encoded slash",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('anonymous request is refused, not served', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/x%2f%2e%2e/html/portlet/ext/contentlet/image_tools/index.jsp"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        },
+        {
+          "name": "Back-end JSP behind a path parameter on the first segment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('anonymous request is refused, not served', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/;jsessionid=1/html/portlet/ext/contentlet/image_tools/index.jsp"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        },
+        {
+          "name": "Back-end JSP with a trailing path parameter",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('anonymous request is refused, not served', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/html/portlet/ext/contentlet/image_tools/index.jsp;jsessionid=1"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        },
+        {
+          "name": "Back-end JSP with a double slash",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('anonymous request is refused, not served', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}//html/portlet/ext/contentlet/image_tools/index.jsp"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        },
+        {
+          "name": "Back-end JSP behind a current segment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('anonymous request is refused, not served', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/./html/portlet/ext/contentlet/image_tools/index.jsp"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        },
+        {
+          "name": "Back-end JSP behind a parent segment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('anonymous request is refused, not served', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/x/../html/portlet/ext/contentlet/image_tools/index.jsp"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        },
+        {
+          "name": "Tags servlet without a trailing slash",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('anonymous request is refused, not served', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/JSONTags?global=1"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        },
+        {
+          "name": "Tags servlet export without a trailing slash",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('anonymous request is refused, not served', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/JSONTags?global=1&action=export"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        },
+        {
+          "name": "Tags servlet with a trailing slash",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('anonymous request is refused, not served', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/JSONTags/?global=1"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        },
+        {
+          "name": "DWR without a trailing slash",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('anonymous request is refused, not served', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([400, 401, 403, 404]);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/dwr"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public paths stay public",
+      "item": [
+        {
+          "name": "Login page JSP",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('public path answers 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/html/portal/login.jsp"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        },
+        {
+          "name": "Dojo script",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('public path answers 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/html/js/dojo/custom-build/dojo/dojo.js"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        },
+        {
+          "name": "Login background image",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('public path answers 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/html/images/backgrounds/bg-1.jpg"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        },
+        {
+          "name": "Back-end application shell",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('public path answers 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/dotAdmin/"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        },
+        {
+          "name": "Public REST configuration",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('public path answers 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/api/v1/appconfiguration"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        }
+      ]
+    },
+    {
+      "name": "Logged-in users keep access",
+      "item": [
+        {
+          "name": "Get an admin token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('token issued', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    pm.collectionVariables.set('backendLoginToken', pm.response.json().entity.token);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "basic",
+              "basic": [
+                {
+                  "key": "username",
+                  "value": "{{user}}",
+                  "type": "string"
+                },
+                {
+                  "key": "password",
+                  "value": "{{password}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"user\": \"{{user}}\", \"password\": \"{{password}}\", \"expirationDays\": 1}"
+            },
+            "url": "{{serverURL}}/api/v1/authentication/api-token"
+          }
+        },
+        {
+          "name": "Back-end JSP for a logged-in admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('logged-in admin gets the page', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{backendLoginToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Referer",
+                "value": "{{serverURL}}/dotAdmin/"
+              }
+            ],
+            "url": "{{serverURL}}/html/portlet/ext/contentlet/image_tools/index.jsp"
+          },
+          "protocolProfileBehavior": {
+            "followRedirects": false,
+            "disableUrlEncoding": true
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "backendLoginToken",
+      "value": ""
+    }
+  ]
+}

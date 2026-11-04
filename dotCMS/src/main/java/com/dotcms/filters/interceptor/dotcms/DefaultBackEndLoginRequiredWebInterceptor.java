@@ -3,6 +3,7 @@ package com.dotcms.filters.interceptor.dotcms;
 import com.dotcms.filters.interceptor.Result;
 import com.dotcms.filters.interceptor.WebInterceptor;
 import com.google.common.annotations.VisibleForTesting;
+import com.dotcms.util.HttpRequestDataUtil;
 import com.dotcms.util.SecurityUtils;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
@@ -35,9 +36,10 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
 
     // \A -> The beginning of the input
     // All paths needs to be in lower case as the URI is lowercase before to be evaluated
-    private static final String DEFAULT_REQUIRED_URLS = "\\A/html/,\\A/c/,\\A/servlets/," +
-            "\\A/categoriesservlet/,\\A/dwr/,\\A/dotajaxdirector," +
-            "\\A/dotscheduledjobs,\\A/dotadmin/#/c/,\\A/jsontags/,\\A/edit/," +
+    // (/|$) -> a servlet mapped as /name/* also answers the bare /name
+    private static final String DEFAULT_REQUIRED_URLS = "\\A/html/,\\A/c(/|$),\\A/servlets/," +
+            "\\A/categoriesservlet(/|$),\\A/dwr(/|$),\\A/dotajaxdirector," +
+            "\\A/dotscheduledjobs,\\A/dotadmin/#/c/,\\A/jsontags(/|$),\\A/edit/," +
             "\\A/dotadmin/c/,\\A/servlet/";
 
     private UserWebAPI userWebAPI;
@@ -68,6 +70,17 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
         ALLOWED_SUB_PATHS = allowedPaths.split(",");
     }
 
+    /**
+     * Stops the chain with a 401 page when the request is not logged in to the back end, unless
+     * the path the container dispatches to starts with one of the allowed public sub-paths. The
+     * allow-list is matched against the dispatched path rather than the raw request URI, so a raw
+     * path that begins with a public prefix but resolves elsewhere is still checked.
+     *
+     * @param request the incoming request
+     * @param response the response, written to when the request is refused
+     * @return {@link Result#NEXT} to continue, or {@link Result#SKIP_NO_CHAIN} when refused
+     * @throws IOException if the 401 page cannot be written
+     */
     @Override
     public Result intercept(final HttpServletRequest request, HttpServletResponse response)
             throws IOException {
@@ -78,10 +91,11 @@ public class DefaultBackEndLoginRequiredWebInterceptor implements WebInterceptor
 
         //Verify if the requested url requires authentication
         final String requestedURI = request.getRequestURI();
-        if (null != requestedURI) {
+        final String dispatchPath = HttpRequestDataUtil.getDispatchPath(request);
+        if (null != dispatchPath) {
             for (final String allowedSubPath : ALLOWED_SUB_PATHS) {
 
-                if (requestedURI.toLowerCase().startsWith(allowedSubPath.toLowerCase())) {
+                if (dispatchPath.toLowerCase().startsWith(allowedSubPath.toLowerCase())) {
                     requiresAuthentication = false;
                     break;
                 }
