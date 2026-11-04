@@ -322,4 +322,28 @@ public class HttpRequestDataUtil {
 		return valueFromParam;
 	}
 
+	/**
+	 * Returns the path the servlet container dispatches this request to, relative to the context
+	 * path: the servlet path followed by the path info. The container has already percent-decoded
+	 * it, resolved {@code .} and {@code ..} segments, merged repeated slashes and removed
+	 * {@code ;name=value} path parameters, so it names the resource that will actually answer.
+	 * Filters that decide whether a request may proceed must match this path, not
+	 * {@link HttpServletRequest#getRequestURI()}, which is the raw path as the client sent it.
+	 * <p>
+	 * A request built outside a container (a mock with no servlet path) falls back to the request
+	 * URI.
+	 *
+	 * @param request the incoming request
+	 * @return the dispatched path, for example {@code /html/portlet/ext/index.jsp} or
+	 * {@code /api/v1/users}
+	 */
+	public static String getDispatchPath(final HttpServletRequest request) {
+		final String servletPath = request.getServletPath();
+		if (servletPath == null) {
+			return request.getRequestURI();
+		}
+		final String pathInfo = request.getPathInfo();
+		return pathInfo == null ? servletPath : servletPath + pathInfo;
+	}
+
 }

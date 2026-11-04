@@ -13,6 +13,7 @@ import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.test.ContentTypeBaseTest;
 
 import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.util.CollectionsUtils;
 import com.dotmarketing.beans.Host;
@@ -34,6 +35,7 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 import org.awaitility.core.ConditionTimeoutException;
 import org.junit.Test;
 
@@ -207,11 +209,11 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
         final Language defaultLanguage = languageAPI.getDefaultLanguage();
         
         //Creating multiple languages
-        final Language danish = new Language(System.currentTimeMillis(), "da", "DK ", "Danish", "Denmark");
-        languageAPI.saveLanguage(danish);
-
-        final Language german = new Language(System.currentTimeMillis(), "de", "DE", "German", "Germany");
-        languageAPI.saveLanguage(german);
+        //Ids come from LanguageDataGen, never from System.currentTimeMillis(): two languages saved
+        //in the same millisecond would share an id, the second save would overwrite the first, and
+        //the "German" versions below would land in the Danish language (3 related versions, not 4).
+        final Language danish = new LanguageDataGen().nextPersisted();
+        final Language german = new LanguageDataGen().nextPersisted();
         
         //Creating relationship and relating content
         final Relationship relationship = saveRelationship();
@@ -250,7 +252,9 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
         final List<Contentlet> contentletList = relationshipFactory.dbRelatedContentByParent(parentContentlet.getIdentifier(),relationship.getRelationTypeValue(),false,null);
 
         //Children must be returned in order
-        assertEquals(4, contentletList.size());
+        assertEquals("Expected 2 children x 2 language versions each; default lang=" + defaultLanguage.getId()
+                + ", danish=" + danish.getId() + ", german=" + german.getId() + ", returned (identifier/language/inode): "
+                + describe(contentletList), 4, contentletList.size());
         assertEquals(childInDefaultLanguage.getInode(), contentletList.get(0).getInode());
         assertEquals(childInGerman.getInode(), contentletList.get(1).getInode());
         assertEquals(childInDanish.getInode(), contentletList.get(2).getInode());
@@ -274,11 +278,11 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
         final Language defaultLanguage = languageAPI.getDefaultLanguage();
 
         //Creating multiple languages
-        final Language danish = new Language(System.currentTimeMillis(), "da", "DK ", "Danish", "Denmark");
-        languageAPI.saveLanguage(danish);
-
-        final Language german = new Language(System.currentTimeMillis(), "de", "DE", "German", "Germany");
-        languageAPI.saveLanguage(german);
+        //Ids come from LanguageDataGen, never from System.currentTimeMillis(): two languages saved
+        //in the same millisecond would share an id, the second save would overwrite the first, and
+        //the "German" versions below would land in the Danish language (3 related versions, not 4).
+        final Language danish = new LanguageDataGen().nextPersisted();
+        final Language german = new LanguageDataGen().nextPersisted();
 
         //Creating relationship and relating content
         final Relationship relationship = saveRelationship(RELATIONSHIP_CARDINALITY.MANY_TO_MANY.ordinal());
@@ -343,6 +347,19 @@ public class RelationshipFactoryImplTest extends ContentTypeBaseTest{
         assertEquals(parent2InGerman.getInode(), contentletList.get(3).getInode());
     }
     
+    /**
+     * Lists contentlets as identifier/language/inode, so a failed size assertion shows which
+     * related versions were actually returned.
+     *
+     * @param contentlets contentlets to describe
+     * @return a printable list of the contentlets
+     */
+    private static String describe(final List<Contentlet> contentlets) {
+        return contentlets.stream()
+                .map(c -> c.getIdentifier() + "/" + c.getLanguageId() + "/" + c.getInode())
+                .collect(Collectors.toList()).toString();
+    }
+
     private Relationship saveRelationship() throws DotSecurityException, DotDataException {
         return saveRelationship(RELATIONSHIP_CARDINALITY.ONE_TO_MANY.ordinal());
     }

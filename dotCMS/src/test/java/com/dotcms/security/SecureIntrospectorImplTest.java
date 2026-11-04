@@ -15,12 +15,16 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletRequestWrapper;
 import javax.servlet.ServletResponseWrapper;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpServletResponseWrapper;
+import javax.servlet.http.HttpSession;
+import com.dotcms.rendering.velocity.viewtools.VelocityRequestWrapper;
+import com.dotcms.rendering.velocity.viewtools.VelocitySessionWrapper;
 import com.dotmarketing.util.Config;
 import org.apache.velocity.util.introspection.SecureIntrospectorImpl;
 import org.junit.Test;
@@ -232,6 +236,108 @@ public class SecureIntrospectorImplTest {
     public void ordinary_types_are_not_runtime_restricted() {
         assertAllowed(HashMap.class, "get");
         assertAllowed(ArrayList.class, "size");
+    }
+
+    /**
+     * Templates may not unwrap the request or response handed to them, nor reach the servlet
+     * context or async context through a request or session.
+     */
+    @Test
+    public void request_and_session_cannot_be_unwrapped_to_container_objects() {
+        assertDenied(VelocityRequestWrapper.class, "getRequest");
+        assertDenied(HttpServletRequestWrapper.class, "getRequest");
+        assertDenied(HttpServletResponseWrapper.class, "getResponse");
+        assertDenied(HttpServletRequest.class, "getServletContext");
+        assertDenied(VelocityRequestWrapper.class, "getServletContext");
+        assertDenied(VelocityRequestWrapper.class, "getAsyncContext");
+        assertDenied(VelocityRequestWrapper.class, "startAsync");
+        assertDenied(HttpSession.class, "getServletContext");
+        assertDenied(VelocitySessionWrapper.class, "getServletContext");
+        assertDeniedIfPresent("org.apache.catalina.connector.RequestFacade", "getServletContext");
+        assertDeniedIfPresent("org.apache.catalina.session.StandardSessionFacade", "getServletContext");
+    }
+
+    /**
+     * {@code upgrade} (the container constructs the handler class and switches the connection)
+     * and {@code authenticate} (drives the container's authentication and writes to the response)
+     * are refused on any request, including the dotCMS wrapper and other wrappers.
+     */
+    @Test
+    public void request_upgrade_and_authenticate_are_denied() {
+        assertDenied(VelocityRequestWrapper.class, "upgrade");
+        assertDenied(VelocityRequestWrapper.class, "authenticate");
+        assertDenied(HttpServletRequest.class, "upgrade");
+        assertDenied(HttpServletRequest.class, "authenticate");
+        assertDenied(TemplateRequestWrapper.class, "upgrade");
+        assertDenied(TemplateRequestWrapper.class, "authenticate");
+    }
+
+    /**
+     * The servlet-context, async-context, CDI and expression-language types are matched through
+     * the class hierarchy, so an implementation outside every restricted package is still denied.
+     * These local subclasses live in this test's package, which no prefix covers.
+     */
+    @Test
+    public void container_service_types_are_denied_through_the_hierarchy() {
+        assertDenied(TemplateServletContext.class, "getAttribute");
+        assertDenied(TemplateAsyncContext.class, "getRequest");
+        assertDenied(TemplateBeanManager.class, "createInstance");
+        assertDenied(TemplateELContext.class, "getELResolver");
+        assertDenied(TemplateExpressionFactory.class, "createValueExpression");
+    }
+
+    /** A servlet context implemented outside the container's packages. */
+    private abstract static class TemplateServletContext implements ServletContext {
+    }
+
+    /** An async context implemented outside the container's packages. */
+    private abstract static class TemplateAsyncContext implements javax.servlet.AsyncContext {
+    }
+
+    /** A CDI bean manager implemented outside the CDI container's packages. */
+    private abstract static class TemplateBeanManager implements javax.enterprise.inject.spi.BeanManager {
+    }
+
+    /** An expression-language context implemented outside the EL packages. */
+    private abstract static class TemplateELContext extends javax.el.ELContext {
+    }
+
+    /** An expression factory implemented outside the EL packages. */
+    private abstract static class TemplateExpressionFactory extends javax.el.ExpressionFactory {
+    }
+
+    /**
+     * The servlet context and the CDI, expression-language and JSP container objects reachable
+     * from it must be denied, including implementations reached only through their hierarchy.
+     */
+    @Test
+    public void servlet_context_and_container_service_types_are_denied() {
+        assertDenied(ServletContext.class, "getAttribute");
+        assertDenied(org.apache.catalina.core.ApplicationContextFacade.class, "getAttribute");
+        assertDenied(javax.enterprise.inject.spi.BeanManager.class, "createInstance");
+        assertDenied(org.jboss.weld.manager.BeanManagerImpl.class, "getContextId");
+        assertDenied(javax.el.ExpressionFactory.class, "createValueExpression");
+        assertDenied(javax.el.ELContext.class, "getELResolver");
+        assertDenied(org.jboss.weld.module.web.el.WeldExpressionFactory.class, "createValueExpression");
+        assertDenied(org.apache.jasper.runtime.JspApplicationContextImpl.class, "getExpressionFactory");
+    }
+
+    /**
+     * Ordinary use of the request, response and session from templates keeps working.
+     */
+    @Test
+    public void ordinary_request_response_and_session_calls_are_allowed() {
+        assertAllowed(VelocityRequestWrapper.class, "getParameter");
+        assertAllowed(VelocityRequestWrapper.class, "getAttribute");
+        assertAllowed(VelocityRequestWrapper.class, "setAttribute");
+        assertAllowed(VelocityRequestWrapper.class, "getSession");
+        assertAllowed(VelocityRequestWrapper.class, "getRequestURI");
+        assertAllowed(VelocityRequestWrapper.class, "getHeader");
+        assertAllowed(VelocitySessionWrapper.class, "getAttribute");
+        assertAllowed(VelocitySessionWrapper.class, "setAttribute");
+        assertAllowed(VelocitySessionWrapper.class, "getId");
+        assertAllowed(HttpServletResponse.class, "setHeader");
+        assertAllowed(HttpServletResponse.class, "sendRedirect");
     }
 
     /**
