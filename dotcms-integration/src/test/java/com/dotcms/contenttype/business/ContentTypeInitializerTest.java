@@ -258,6 +258,135 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link ContentTypeInitializer#init()}
+     * Given Scenario: The favorite page content type already has its CMS Owner rows. A favorite is
+     * given its own rows, sharing it with another back-end user, and the initializer runs again,
+     * as on a later start.
+     * ExpectedResult: The favorite keeps its own rows and the other user can still read it.
+     */
+    @Test
+    public void test_init_keeps_own_rows_of_a_favorite_when_type_is_correct() throws Exception {
+
+        new ContentTypeInitializer().init();
+        assertSharedFavoriteSurvivesInit();
+    }
+
+    /**
+     * Method to test: {@link ContentTypeInitializer#init()}
+     * Given Scenario: The favorite page content type has both CMS Owner rows plus a READ row for
+     * CMS Anonymous its contentlets inherit, and a favorite has its own rows sharing it with
+     * another back-end user.
+     * ExpectedResult: The initializer removes the anonymous row from the type but leaves the
+     * favorite's own rows, so the other user can still read it.
+     */
+    @Test
+    public void test_init_keeps_own_rows_of_a_favorite_when_repairing_type_rows() throws Exception {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
+        final Role anonymousRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME);
+        permissionAPI.removePermissions(contentType);
+        permissionAPI.assignPermissions(List.of(
+                new Permission(contentType.getPermissionId(), cmsOwner.getId(), OWNER_BITS, true),
+                new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(),
+                        cmsOwner.getId(), OWNER_BITS, true),
+                new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(),
+                        anonymousRole.getId(), PermissionAPI.PERMISSION_READ, true)),
+                contentType, APILocator.systemUser(), false);
+
+        assertSharedFavoriteSurvivesInit();
+
+        final String anonymousRoleId = anonymousRole.getId();
+        Assert.assertTrue("The favorite page content type must not pass CMS Anonymous to its contentlets",
+                permissionAPI.getInheritablePermissions(contentType, true).stream()
+                        .noneMatch(permission -> anonymousRoleId.equals(permission.getRoleId())));
+    }
+
+    /**
+     * Method to test: {@link ContentTypeInitializer#init()}
+     * Given Scenario: The favorite page content type is in the state the starter ships, with no
+     * row its contentlets inherit, and an existing favorite has its own rows granting CMS
+     * Anonymous READ, as favorites saved before the repair may have.
+     * ExpectedResult: The first repair removes the favorite's own rows, so it inherits from the
+     * type and cannot be read anonymously.
+     */
+    @Test
+    public void test_first_init_resets_own_rows_of_existing_favorites() throws Exception {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME);
+        permissionAPI.removePermissions(contentType);
+        permissionAPI.save(new Permission(contentType.getPermissionId(), cmsOwner.getId(), OWNER_BITS, true),
+                contentType, APILocator.systemUser(), false);
+
+        final Contentlet favorite = new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                .nextPersisted();
+        try {
+
+            permissionAPI.assignPermissions(List.of(
+                    new Permission(favorite.getPermissionId(), cmsOwner.getId(), OWNER_BITS, true),
+                    new Permission(favorite.getPermissionId(),
+                            APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                            PermissionAPI.PERMISSION_READ, true)),
+                    favorite, APILocator.systemUser(), false);
+
+            new ContentTypeInitializer().init();
+
+            Assert.assertTrue("The first repair must remove the favorite's own rows: "
+                            + describePermissions(favorite, "favorite"),
+                    permissionAPI.getPermissions(favorite, true, true).isEmpty());
+            Assert.assertFalse("A favorite must not be readable anonymously",
+                    permissionAPI.doesUserHavePermission(favorite, PermissionAPI.PERMISSION_READ,
+                            APILocator.getUserAPI().getAnonymousUser(), true));
+        } finally {
+
+            ContentletDataGen.destroy(favorite);
+        }
+    }
+
+    /**
+     * Saves a favorite, gives it its own rows sharing it with another back-end user, runs the
+     * initializer and checks the rows and the shared read survive.
+     */
+    private static void assertSharedFavoriteSurvivesInit() throws Exception {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME);
+        final User sharedWith = new UserDataGen().active(true)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        final Contentlet favorite = new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
+                .nextPersisted();
+        try {
+
+            final String sharedRoleId = APILocator.getRoleAPI().getUserRole(sharedWith).getId();
+            permissionAPI.assignPermissions(List.of(
+                    new Permission(favorite.getPermissionId(), cmsOwner.getId(), OWNER_BITS, true),
+                    new Permission(favorite.getPermissionId(), sharedRoleId, PermissionAPI.PERMISSION_READ, true)),
+                    favorite, APILocator.systemUser(), false);
+
+            new ContentTypeInitializer().init();
+
+            Assert.assertTrue("The favorite must keep the row sharing it: " + describePermissions(favorite, "favorite"),
+                    permissionAPI.getPermissions(favorite, true, true).stream()
+                            .anyMatch(permission -> sharedRoleId.equals(permission.getRoleId())));
+            Assert.assertTrue("The user the favorite is shared with must read it",
+                    permissionAPI.doesUserHavePermission(favorite, PermissionAPI.PERMISSION_READ, sharedWith, true));
+        } finally {
+
+            ContentletDataGen.destroy(favorite);
+            UserDataGen.remove(sharedWith);
+        }
+    }
+
+    /**
      * Describes where a favorite's permissions come from, for a failure message: the favorite, the
      * permissions it resolves to, its own rows and its permission reference in the database.
      */

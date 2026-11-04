@@ -14,6 +14,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -144,9 +145,11 @@ public class ContentTypeInitializer implements DotInitializer {
      * Makes favorite pages readable and editable only by their owner. The content type gets CMS
      * Owner permissions for itself and a row its contentlets inherit, since favorites are saved on
      * the System Host and inherit from their content type. When either row is missing, or another
-     * role has a row on the type, the type's permissions are replaced with those two rows and the
-     * favorites' own rows are reset so they inherit them, in one transaction. Runs on every start,
-     * so it also repairs an existing install. Turned off with
+     * role has a row on the type, the type's permissions are replaced with those two rows. When the
+     * row the contentlets inherit was missing, which is the state before this repair first ran, the
+     * favorites' own rows are also reset so they inherit them, in the same transaction; later
+     * repairs leave rows added to individual favorites alone. Each repair is logged. Runs on every
+     * start, so it also repairs an existing install. Turned off with
      * {@code DO_DEFAULT_PAGE_PERMISSIONS=false}.
      *
      * @param savedContentType the favorite page content type
@@ -161,11 +164,16 @@ public class ContentTypeInitializer implements DotInitializer {
                 final int permissionType = PermissionAPI.PERMISSION_USE | PermissionAPI.PERMISSION_EDIT |
                         PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS;
                 final Role backendRole = APILocator.getRoleAPI().loadCMSOwnerRole();
+                final boolean contentletsInherit = this.contentletsInheritPermission(savedContentType, permissionType, backendRole);
                 if (!APILocator.getPermissionAPI().doesRoleHavePermission(savedContentType, permissionType, backendRole)
-                        || !this.contentletsInheritPermission(savedContentType, permissionType, backendRole)
+                        || !contentletsInherit
                         || !this.onlyRoleHasRows(savedContentType, backendRole)) {
 
-                    Logger.info(this, "Adding default permissions to the Favorite Page Content Type...");
+                    // Only a type this repair has not run on yet lacks the row favorites inherit;
+                    // its favorites may carry the old grants. Once it has run, a favorite's own
+                    // rows were added on purpose, so later repairs fix the type only.
+                    final boolean resetFavorites = !contentletsInherit;
+                    final int favoritesWithOwnRows = resetFavorites ? this.countFavoritesWithOwnRows(savedContentType) : 0;
                     final List<Permission> newSetOfPermissions = new ArrayList<>();
                     // this is the individual permission
                     newSetOfPermissions.add(new Permission(savedContentType.getPermissionId(), backendRole.getId(), permissionType, true));
@@ -178,11 +186,17 @@ public class ContentTypeInitializer implements DotInitializer {
                         APILocator.getPermissionAPI().assignPermissions(newSetOfPermissions, savedContentType, APILocator.systemUser(), false);
                         // reset here rather than through ResetPermissionsJob, which needs a logged-in
                         // request user and has none at startup
-                        APILocator.getPermissionAPI().resetPermissionsUnder(savedContentType);
+                        if (resetFavorites) {
+                            APILocator.getPermissionAPI().resetPermissionsUnder(savedContentType);
+                        }
                     });
-                    // the reset drops the favorites' cached rows but not the cached read decisions,
-                    // which other nodes of a cluster may hold; flushing the group reaches them
+                    // the repair drops the cached rows but not the cached read decisions, which
+                    // other nodes of a cluster may hold; flushing the group reaches them
                     CacheLocator.getPermissionCache().flushShortTermCache();
+                    Logger.info(this, resetFavorites
+                            ? "Favorite pages: reset the content type permissions to CMS Owner only and removed the own permissions of "
+                                    + favoritesWithOwnRows + " favorite(s)"
+                            : "Favorite pages: reset the content type permissions to CMS Owner only; favorites kept their own permissions");
                 }
             } catch (DotDataException | DotSecurityException e) {
 
@@ -211,6 +225,21 @@ public class ContentTypeInitializer implements DotInitializer {
                 Contentlet.class.getCanonicalName().equals(permission.getType())
                         && role.getId().equals(permission.getRoleId())
                         && (permission.getPermission() & permissionType) == permissionType);
+    }
+
+    /**
+     * Counts the contentlets of a content type that have permission rows of their own, which a
+     * reset of the permissions under the type removes.
+     *
+     * @param contentType the content type whose contentlets are counted
+     * @return how many of its contentlets have their own rows
+     * @throws DotDataException if the rows cannot be read
+     */
+    private int countFavoritesWithOwnRows(final ContentType contentType) throws DotDataException {
+
+        return new DotConnect().setSQL("select count(distinct inode_id) as total from permission where inode_id in"
+                        + " (select identifier from contentlet where structure_inode = ?)")
+                .addParam(contentType.inode()).getInt("total");
     }
 
     /**
