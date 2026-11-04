@@ -57,6 +57,7 @@ import com.dotmarketing.beans.PermissionableProxy;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.PermissionAPI.PermissionableType;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DotDataException;
@@ -3730,5 +3731,48 @@ public class ContentTypeAPIImplTest extends ContentTypeBaseTest {
             }
         }
     }
+
+
+	/**
+	 * Method to test: {@link ContentTypeAPI#find(String)}
+	 * Given Scenario: A back-end user without READ permission on a content type looks it up.
+	 * Expected Result: A {@link DotSecurityException} whose message names the user and the content type by
+	 * id only, without the content type's name or the user's email address.
+	 */
+	@Test
+	public void find_withoutReadPermission_messageHoldsOnlyIds() throws Exception {
+		final String typeName = "findWithoutReadType" + System.currentTimeMillis();
+		Role ownerRole = null;
+		User user = null;
+		ContentType type = null;
+		try {
+			ownerRole = new RoleDataGen().nextPersisted();
+			user = new UserDataGen().roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+			type = new ContentTypeDataGen().name(typeName).velocityVarName(typeName).nextPersisted();
+			// An individual permission for another role only, so the type inherits nothing the user could read
+			APILocator.getPermissionAPI().save(new Permission(type.getPermissionId(), ownerRole.getId(),
+					PermissionAPI.PERMISSION_READ, true), type, APILocator.systemUser(), false);
+
+			final String typeId = type.id();
+			final User reader = user;
+			final DotSecurityException denied = Assert.assertThrows(DotSecurityException.class,
+					() -> APILocator.getContentTypeAPI(reader).find(typeId));
+
+			assertTrue(denied.getMessage().contains(typeId));
+			assertTrue(denied.getMessage().contains(user.getUserId()));
+			assertFalse(denied.getMessage().contains(typeName));
+			assertFalse(denied.getMessage().contains(user.getEmailAddress()));
+		} finally {
+			if (null != type) {
+				ContentTypeDataGen.remove(type);
+			}
+			if (null != user) {
+				APILocator.getUserAPI().delete(user, APILocator.systemUser(), false);
+			}
+			if (null != ownerRole) {
+				RoleDataGen.remove(ownerRole);
+			}
+		}
+	}
 
 }

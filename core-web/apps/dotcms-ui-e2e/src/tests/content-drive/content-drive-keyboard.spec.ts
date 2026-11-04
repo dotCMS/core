@@ -3,6 +3,7 @@ import { type Page } from '@playwright/test';
 
 import { ContentDriveKeyboard } from './helpers/content-drive-keyboard';
 import { ContentDriveTree } from './helpers/content-drive-tree';
+import { reloadWhileBatchIsRunning } from './helpers/content-drive-upload-restore';
 
 import { type ContentDriveApiHelpers, expect, test } from '../../fixtures/content-drive.fixture';
 
@@ -148,8 +149,10 @@ test.describe('Content Drive Keyboard', () => {
      * thing stacked, which is also the shape the CI failure had.
      *
      * The toast is asserted on both sides of the keypress, so the test cannot pass because the
-     * batch finished before the key arrived. Six files, because the outcomes spec counts on being
-     * the only one that sends eight.
+     * batch finished before the key arrived. The batch is sent from a second tab while the reloaded
+     * page's read of the queue is held (see the helper), because a batch started in this page and
+     * followed by a reload was often over before the reloaded page read the queue. Six files,
+     * because the outcomes spec counts on being the only one that sends eight.
      */
     test('reaches the search shortcut while an upload status is showing @critical', async ({
         adminPage,
@@ -158,10 +161,12 @@ test.describe('Content Drive Keyboard', () => {
     }) => {
         const { drive } = await openSeededListing(adminPage, apiHelpers, testSuffix);
 
-        await drive.chooseGeneratedFilesForUpload(6, `keys-${testSuffix}`);
-        await drive.expectHandedToBackground();
-
-        await adminPage.reload();
+        await reloadWhileBatchIsRunning(
+            adminPage,
+            seededFolder(testSuffix),
+            6,
+            `keys-${testSuffix}`
+        );
         await drive.expectStatusToastContaining('Uploading 6 files');
 
         await adminPage.keyboard.press('/');

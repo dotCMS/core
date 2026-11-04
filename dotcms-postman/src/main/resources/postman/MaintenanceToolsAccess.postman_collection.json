@@ -1,0 +1,3881 @@
+{
+	"info": {
+		"_postman_id": "5d1c7a3e-6f0b-4c52-9a41-3b7e2f8d9c10",
+		"name": "Maintenance Tools Access",
+		"description": "Which roles can reach the Maintenance tool routes (cache, Redis, JVM information, sessions and threads): only CMS Administrators; everyone else gets 401. Also checks that the two retired DWR scripts are gone, that the JVM information and the cache listing hide secrets, and that the Maintenance page shows its System Info, Threads and Logged Users tabs only to a CMS Administrator.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Setup: a role whose only layout holds the Maintenance portlet, and three users",
+			"item": [
+				{
+					"name": "Create the role",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"roleName\": \"Maintenance only {{fixtureSuffix}}\",\n  \"roleKey\": \"maintenance-only-{{fixtureSuffix}}\",\n  \"canEditUsers\": true,\n  \"canEditPermissions\": false,\n  \"canEditLayouts\": true,\n  \"description\": \"Role whose only layout holds the Maintenance portlet\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/roles",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"roles"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Random suffix so the names never collide with other collections or an earlier run",
+									"const suffix = Array.from({length: 12}, () => Math.floor(Math.random() * 16).toString(16)).join('');",
+									"pm.collectionVariables.set('fixtureSuffix', suffix);",
+									"pm.collectionVariables.set('fixturePassword', 'Maint-Pw-' + suffix + '-Aa1!');",
+									"pm.collectionVariables.set('maintenanceEmail', 'maintenance' + suffix + '@dotcms.com');",
+									"pm.collectionVariables.set('backendEmail', 'backend' + suffix + '@dotcms.com');",
+									"pm.collectionVariables.set('frontendEmail', 'frontend' + suffix + '@dotcms.com');"
+								]
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"pm.test(\"The role id is returned\", function () {",
+									"    pm.expect(json.entity.id).to.be.a('string').and.not.empty;",
+									"});",
+									"pm.collectionVariables.set('roleId', json.entity.id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create the layout",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Maintenance only {{fixtureSuffix}}\",\n  \"icon\": \"settings\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/layouts",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"layouts"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"pm.test(\"The layout id is returned\", function () {",
+									"    pm.expect(json.entity.id).to.be.a('string').and.not.empty;",
+									"});",
+									"pm.collectionVariables.set('layoutId', json.entity.id);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Put the Maintenance portlet in the layout",
+					"request": {
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"portletIds\": [\n    \"maintenance\"\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/layouts/{{layoutId}}/portlets",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"layouts",
+								"{{layoutId}}",
+								"portlets"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Give the layout to the role",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"roleId\": \"{{roleId}}\",\n  \"layoutIds\": [\n    \"{{layoutId}}\"\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/roles/layouts",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"roles",
+								"layouts"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create the user who holds the Maintenance portlet",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Maintenance\",\n  \"lastName\": \"{{fixtureSuffix}}\",\n  \"email\": \"{{maintenanceEmail}}\",\n  \"password\": \"{{fixturePassword}}\",\n  \"active\": true,\n  \"roles\": [\n    \"DOTCMS_BACK_END_USER\"\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"pm.test(\"The user id is returned\", function () {",
+									"    pm.expect(json.entity.userID).to.be.a('string').and.not.empty;",
+									"});",
+									"pm.collectionVariables.set('maintenanceUserId', json.entity.userID);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Give the role to that user",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/roles/{{roleId}}/users/{{maintenanceUserId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"roles",
+								"{{roleId}}",
+								"users",
+								"{{maintenanceUserId}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create a back-end user without the role",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Backend\",\n  \"lastName\": \"{{fixtureSuffix}}\",\n  \"email\": \"{{backendEmail}}\",\n  \"password\": \"{{fixturePassword}}\",\n  \"active\": true,\n  \"roles\": [\n    \"DOTCMS_BACK_END_USER\"\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"pm.test(\"The user id is returned\", function () {",
+									"    pm.expect(json.entity.userID).to.be.a('string').and.not.empty;",
+									"});",
+									"pm.collectionVariables.set('backendUserId', json.entity.userID);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Create a front-end user",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"firstName\": \"Frontend\",\n  \"lastName\": \"{{fixtureSuffix}}\",\n  \"email\": \"{{frontendEmail}}\",\n  \"password\": \"{{fixturePassword}}\",\n  \"active\": true,\n  \"roles\": [\n    \"DOTCMS_FRONT_END_USER\"\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const json = pm.response.json();",
+									"pm.test(\"The user id is returned\", function () {",
+									"    pm.expect(json.entity.userID).to.be.a('string').and.not.empty;",
+									"});",
+									"pm.collectionVariables.set('frontendUserId', json.entity.userID);"
+								]
+							}
+						}
+					]
+				}
+			],
+			"description": "Runs once before the scenarios. All names carry a random suffix. The last folder deletes everything this one creates."
+		},
+		{
+			"name": "A caller who is not a CMS Administrator gets 401 from every Maintenance tool route",
+			"item": [
+				{
+					"name": "anonymous caller",
+					"item": [
+						{
+							"name": "GET /api/v1/caches",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "noauth"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/caches",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"caches"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/caches/provider/Caffeine%20Cache%20Provider/objects/userdotcmscache",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "noauth"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/caches/provider/Caffeine%20Cache%20Provider/objects/userdotcmscache",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"caches",
+										"provider",
+										"Caffeine%20Cache%20Provider",
+										"objects",
+										"userdotcmscache"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "DELETE /api/v1/caches/menucache",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"auth": {
+									"type": "noauth"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/caches/menucache",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"caches",
+										"menucache"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/redis/ping",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "noauth"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/redis/ping",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"redis",
+										"ping"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/redis/sample-key",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "noauth"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/redis/sample-key",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"redis",
+										"sample-key"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "DELETE /api/v1/redis/sample-key",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"auth": {
+									"type": "noauth"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/redis/sample-key",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"redis",
+										"sample-key"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/jvm",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "noauth"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/jvm",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"jvm"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/maintenance/_sessions",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "noauth"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/maintenance/_sessions",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"maintenance",
+										"_sessions"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/maintenance/_threads?hideSystem=true",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "noauth"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/maintenance/_threads?hideSystem=true",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"maintenance",
+										"_threads"
+									],
+									"query": [
+										{
+											"key": "hideSystem",
+											"value": "true"
+										}
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});"
+										]
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "front-end user",
+					"item": [
+						{
+							"name": "GET /api/v1/caches",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{frontendEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/caches",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"caches"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/caches/provider/Caffeine%20Cache%20Provider/objects/userdotcmscache",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{frontendEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/caches/provider/Caffeine%20Cache%20Provider/objects/userdotcmscache",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"caches",
+										"provider",
+										"Caffeine%20Cache%20Provider",
+										"objects",
+										"userdotcmscache"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "DELETE /api/v1/caches/menucache",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{frontendEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/caches/menucache",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"caches",
+										"menucache"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/redis/ping",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{frontendEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/redis/ping",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"redis",
+										"ping"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/redis/sample-key",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{frontendEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/redis/sample-key",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"redis",
+										"sample-key"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "DELETE /api/v1/redis/sample-key",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{frontendEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/redis/sample-key",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"redis",
+										"sample-key"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/jvm",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{frontendEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/jvm",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"jvm"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/maintenance/_sessions",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{frontendEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/maintenance/_sessions",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"maintenance",
+										"_sessions"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/maintenance/_threads?hideSystem=true",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{frontendEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/maintenance/_threads?hideSystem=true",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"maintenance",
+										"_threads"
+									],
+									"query": [
+										{
+											"key": "hideSystem",
+											"value": "true"
+										}
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Log out: end the session this caller started",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "noauth"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/logout",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"logout"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"The logout call answers 200 (it also does without a session, so this does not show a session ended)\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										]
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "back-end user",
+					"item": [
+						{
+							"name": "GET /api/v1/caches",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{backendEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/caches",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"caches"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/caches/provider/Caffeine%20Cache%20Provider/objects/userdotcmscache",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{backendEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/caches/provider/Caffeine%20Cache%20Provider/objects/userdotcmscache",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"caches",
+										"provider",
+										"Caffeine%20Cache%20Provider",
+										"objects",
+										"userdotcmscache"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "DELETE /api/v1/caches/menucache",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{backendEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/caches/menucache",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"caches",
+										"menucache"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/redis/ping",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{backendEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/redis/ping",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"redis",
+										"ping"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/redis/sample-key",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{backendEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/redis/sample-key",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"redis",
+										"sample-key"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "DELETE /api/v1/redis/sample-key",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{backendEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/redis/sample-key",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"redis",
+										"sample-key"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/jvm",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{backendEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/jvm",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"jvm"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/maintenance/_sessions",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{backendEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/maintenance/_sessions",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"maintenance",
+										"_sessions"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/maintenance/_threads?hideSystem=true",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{backendEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/maintenance/_threads?hideSystem=true",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"maintenance",
+										"_threads"
+									],
+									"query": [
+										{
+											"key": "hideSystem",
+											"value": "true"
+										}
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Log out: end the session this caller started",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "noauth"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/logout",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"logout"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"The logout call answers 200 (it also does without a session, so this does not show a session ended)\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										]
+									}
+								}
+							]
+						}
+					]
+				},
+				{
+					"name": "user who holds the Maintenance portlet but is not a CMS Administrator (also told why)",
+					"item": [
+						{
+							"name": "GET /api/v1/caches",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{maintenanceEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/caches",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"caches"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/caches/provider/Caffeine%20Cache%20Provider/objects/userdotcmscache",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{maintenanceEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/caches/provider/Caffeine%20Cache%20Provider/objects/userdotcmscache",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"caches",
+										"provider",
+										"Caffeine%20Cache%20Provider",
+										"objects",
+										"userdotcmscache"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "DELETE /api/v1/caches/menucache",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{maintenanceEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/caches/menucache",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"caches",
+										"menucache"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/redis/ping",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{maintenanceEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/redis/ping",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"redis",
+										"ping"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/redis/sample-key",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{maintenanceEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/redis/sample-key",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"redis",
+										"sample-key"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "DELETE /api/v1/redis/sample-key",
+							"request": {
+								"method": "DELETE",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{maintenanceEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/redis/sample-key",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"redis",
+										"sample-key"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/jvm",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{maintenanceEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/jvm",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"jvm"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/maintenance/_sessions",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{maintenanceEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/maintenance/_sessions",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"maintenance",
+										"_sessions"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "GET /api/v1/maintenance/_threads?hideSystem=true",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "basic",
+									"basic": [
+										{
+											"key": "password",
+											"value": "{{fixturePassword}}",
+											"type": "string"
+										},
+										{
+											"key": "username",
+											"value": "{{maintenanceEmail}}",
+											"type": "string"
+										}
+									]
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/maintenance/_threads?hideSystem=true",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"maintenance",
+										"_threads"
+									],
+									"query": [
+										{
+											"key": "hideSystem",
+											"value": "true"
+										}
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"Status code is 401\", function () {",
+											"    pm.response.to.have.status(401);",
+											"});",
+											"pm.test(\"The body says the user is not a CMS Administrator\", function () {",
+											"    pm.expect(pm.response.text()).to.include('is not a CMS Administrator');",
+											"});"
+										]
+									}
+								}
+							]
+						},
+						{
+							"name": "Log out: end the session this caller started",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"auth": {
+									"type": "noauth"
+								},
+								"url": {
+									"raw": "{{serverURL}}/api/v1/logout",
+									"host": [
+										"{{serverURL}}"
+									],
+									"path": [
+										"api",
+										"v1",
+										"logout"
+									]
+								}
+							},
+							"response": [],
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"type": "text/javascript",
+										"exec": [
+											"pm.test(\"The logout call answers 200 (it also does without a session, so this does not show a session ended)\", function () {",
+											"    pm.response.to.have.status(200);",
+											"});"
+										]
+									}
+								}
+							]
+						}
+					]
+				}
+			],
+			"description": "The cache, Redis, JVM information, session and thread routes answer only CMS Administrators."
+		},
+		{
+			"name": "A CMS Administrator reads the Maintenance tool routes",
+			"item": [
+				{
+					"name": "GET /api/v1/caches",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/caches",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"caches"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET /api/v1/redis/ping",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/redis/ping",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"redis",
+								"ping"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET /api/v1/jvm",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/jvm",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"jvm"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET /api/v1/maintenance/_sessions",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/maintenance/_sessions",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"maintenance",
+								"_sessions"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET /api/v1/maintenance/_threads?hideSystem=true",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/maintenance/_threads?hideSystem=true",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"maintenance",
+								"_threads"
+							],
+							"query": [
+								{
+									"key": "hideSystem",
+									"value": "true"
+								}
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			],
+			"description": "The Redis key read and the cache object listing are checked with their values in the folders below."
+		},
+		{
+			"name": "The DWR scripts of the Threads and Logged Users tabs are no longer served",
+			"item": [
+				{
+					"name": "Log in as admin to get a session",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"admin@dotcms.com\",\n  \"password\": \"admin\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/authentication",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"authentication"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"// The DWR plain call carries the session id as httpSessionId",
+									"let sessionId = pm.cookies.get('JSESSIONID');",
+									"if (!sessionId) {",
+									"    const setCookie = pm.response.headers.filter(h => h.key.toLowerCase() === 'set-cookie').map(h => h.value).join(';');",
+									"    const match = /JSESSIONID=([^;]+)/.exec(setCookie);",
+									"    sessionId = match ? match[1] : null;",
+									"}",
+									"pm.test(\"The login sets a JSESSIONID cookie\", function () {",
+									"    pm.expect(sessionId).to.be.a('string').and.not.empty;",
+									"});",
+									"pm.collectionVariables.set('sessionId', sessionId);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "POST /dwr/call/plaincall/ThreadMonitorTool.getSysProps.dwr answers with a SecurityException",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "text/plain",
+								"type": "text"
+							},
+							{
+								"key": "Referer",
+								"value": "{{serverURL}}/dotAdmin/",
+								"type": "text"
+							}
+						],
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "callCount=1\nwindowName=\npage=/dotAdmin/\nhttpSessionId={{sessionId}}\nscriptSessionId=maintenance\ninstanceId=maintenance\nc0-scriptName=ThreadMonitorTool\nc0-methodName=getSysProps\nc0-id=0\nbatchId=0",
+							"options": {
+								"raw": {
+									"language": "text"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/dwr/call/plaincall/ThreadMonitorTool.getSysProps.dwr",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dwr",
+								"call",
+								"plaincall",
+								"ThreadMonitorTool.getSysProps.dwr"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"The script answers with a SecurityException\", function () {",
+									"    pm.expect(pm.response.text()).to.include('java.lang.SecurityException');",
+									"});",
+									"pm.test(\"The script does not call the handler back\", function () {",
+									"    pm.expect(pm.response.text()).to.not.include('handleCallback');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "POST /dwr/call/plaincall/UserSessionAjax.getSessionList.dwr answers with a SecurityException",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "text/plain",
+								"type": "text"
+							},
+							{
+								"key": "Referer",
+								"value": "{{serverURL}}/dotAdmin/",
+								"type": "text"
+							}
+						],
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "callCount=1\nwindowName=\npage=/dotAdmin/\nhttpSessionId={{sessionId}}\nscriptSessionId=maintenance\ninstanceId=maintenance\nc0-scriptName=UserSessionAjax\nc0-methodName=getSessionList\nc0-id=0\nbatchId=0",
+							"options": {
+								"raw": {
+									"language": "text"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/dwr/call/plaincall/UserSessionAjax.getSessionList.dwr",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dwr",
+								"call",
+								"plaincall",
+								"UserSessionAjax.getSessionList.dwr"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"The script answers with a SecurityException\", function () {",
+									"    pm.expect(pm.response.text()).to.include('java.lang.SecurityException');",
+									"});",
+									"pm.test(\"The script does not call the handler back\", function () {",
+									"    pm.expect(pm.response.text()).to.not.include('handleCallback');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET /dwr/interface/ThreadMonitorTool.js is not implemented",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Referer",
+								"value": "{{serverURL}}/dotAdmin/",
+								"type": "text"
+							}
+						],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{serverURL}}/dwr/interface/ThreadMonitorTool.js",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dwr",
+								"interface",
+								"ThreadMonitorTool.js"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 501\", function () {",
+									"    pm.response.to.have.status(501);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET /dwr/interface/UserSessionAjax.js is not implemented",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Referer",
+								"value": "{{serverURL}}/dotAdmin/",
+								"type": "text"
+							}
+						],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{serverURL}}/dwr/interface/UserSessionAjax.js",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dwr",
+								"interface",
+								"UserSessionAjax.js"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 501\", function () {",
+									"    pm.response.to.have.status(501);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET /dwr/interface/CMSMaintenanceAjax.js is still served (a Maintenance script that is still registered)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Referer",
+								"value": "{{serverURL}}/dotAdmin/",
+								"type": "text"
+							}
+						],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{serverURL}}/dwr/interface/CMSMaintenanceAjax.js",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"dwr",
+								"interface",
+								"CMSMaintenanceAjax.js"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Log out: end the admin session",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"The logout call answers 200 (it also does without a session, so this does not show a session ended)\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "The JVM information hides values by name and the user part of URLs",
+			"item": [
+				{
+					"name": "Store a config override whose name ends in _PWD",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"key\": \"SAMPLE_{{fixtureSuffix}}_PWD\",\n  \"value\": \"value-{{fixtureSuffix}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/system-table/",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"system-table"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Newman runs with bail: true, so a failed assertion here would skip the deletes of the two config overrides.",
+									"// Keep this request assertion-free: stash its status and assert it in the last delete.",
+									"pm.collectionVariables.set('storePwdStatus', pm.response.code);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Store a config override that holds a URL with a password",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"key\": \"SAMPLE_{{fixtureSuffix}}_DB_URL\",\n  \"value\": \"jdbc:postgresql://dbuser:url-{{fixtureSuffix}}@db:5432/dotcms\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/system-table/",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"system-table"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Newman runs with bail: true, so a failed assertion here would skip the deletes of the two config overrides.",
+									"// Keep this request assertion-free: stash its status and assert it in the last delete.",
+									"pm.collectionVariables.set('storeUrlStatus', pm.response.code);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET /api/v1/jvm (checked after the two overrides are deleted)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/jvm",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"jvm"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Newman runs with bail: true, so a failed assertion here would skip the two deletes that follow.",
+									"// Keep this request assertion-free: stash what it returned, delete the rows, then check it in the last delete.",
+									"pm.collectionVariables.set('jvmStatus', pm.response.code);",
+									"pm.collectionVariables.set('jvmBody', pm.response.text());"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Delete the _PWD override",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"key\": \"SAMPLE_{{fixtureSuffix}}_PWD\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/system-table/_delete",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"system-table",
+								"_delete"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Newman runs with bail: true, so a failed assertion here would skip the deletes of the two config overrides.",
+									"// Keep this request assertion-free: stash its status and assert it in the last delete.",
+									"pm.collectionVariables.set('deletePwdStatus', pm.response.code);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Delete the _DB_URL override, then check the JVM response read before the deletes",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"key\": \"SAMPLE_{{fixtureSuffix}}_DB_URL\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/system-table/_delete",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"system-table",
+								"_delete"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"// Everything that ran while the overrides existed is asserted here, after both were deleted.",
+									"const stashedStatuses = {};",
+									"['storePwdStatus', 'storeUrlStatus', 'deletePwdStatus'].forEach(function (name) {",
+									"    stashedStatuses[name] = pm.collectionVariables.get(name);",
+									"    pm.collectionVariables.unset(name);",
+									"});",
+									"pm.test(\"Storing the _PWD override answered 200\", function () {",
+									"    pm.expect(stashedStatuses.storePwdStatus).to.eql(200);",
+									"});",
+									"pm.test(\"Storing the _DB_URL override answered 200\", function () {",
+									"    pm.expect(stashedStatuses.storeUrlStatus).to.eql(200);",
+									"});",
+									"pm.test(\"Deleting the _PWD override answered 200\", function () {",
+									"    pm.expect(stashedStatuses.deletePwdStatus).to.eql(200);",
+									"});",
+									"pm.test(\"Deleting the _DB_URL override answered 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"// The assertions on the GET /api/v1/jvm response that was read before the deletes.",
+									"const stashedStatus = pm.collectionVariables.get('jvmStatus');",
+									"const stashedBody = pm.collectionVariables.get('jvmBody');",
+									"pm.collectionVariables.unset('jvmStatus');",
+									"pm.collectionVariables.unset('jvmBody');",
+									"pm.test(\"GET /api/v1/jvm answered 200\", function () {",
+									"    pm.expect(stashedStatus).to.eql(200);",
+									"});",
+									"const json = JSON.parse(stashedBody);",
+									"const suffix = pm.collectionVariables.get('fixtureSuffix');",
+									"const passwordKey = 'SAMPLE_' + suffix + '_PWD';",
+									"const urlKey = 'SAMPLE_' + suffix + '_DB_URL';",
+									"const storedPassword = 'value-' + suffix;",
+									"const storedUrlPassword = 'url-' + suffix;",
+									"pm.test(\"A config override whose name says password is hidden\", function () {",
+									"    pm.expect(json.configOverrides[passwordKey]).to.eql('*****');",
+									"});",
+									"pm.test(\"The user part of a URL in a config override is hidden\", function () {",
+									"    pm.expect(json.configOverrides[urlKey]).to.eql('jdbc:postgresql://*****@db:5432/dotcms');",
+									"});",
+									"pm.test(\"An environment variable whose name says pass is hidden\", function () {",
+									"    // JVM_ENDPOINT_TEST_PASS is set on the dotCMS container in dotcms-postman/pom.xml",
+									"    pm.expect(json.environment.JVM_ENDPOINT_TEST_PASS).to.eql('*****');",
+									"});",
+									"pm.test(\"Neither stored secret appears anywhere in the response\", function () {",
+									"    const body = stashedBody;",
+									"    pm.expect(body.indexOf(storedPassword)).to.be.below(0);",
+									"    pm.expect(body.indexOf(storedUrlPassword)).to.be.below(0);",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "The cache object listing leaves out company keys and user passwords",
+			"item": [
+				{
+					"name": "Log in as admin so the company cache holds the company",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"admin@dotcms.com\",\n  \"password\": \"admin\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/authentication",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"authentication"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Log out: the rest of the folder uses the admin token, not the session",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"The logout call answers 200 (it also does without a session, so this does not show a session ended)\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET the companypool objects",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/caches/provider/Caffeine%20Cache%20Provider/objects/companypool",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"caches",
+								"provider",
+								"Caffeine%20Cache%20Provider",
+								"objects",
+								"companypool"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const companies = Object.values(pm.response.json().entity).filter(v => v !== null && typeof v === 'object');",
+									"pm.test(\"The listing holds at least one company\", function () {",
+									"    pm.expect(companies).to.not.be.empty;",
+									"});",
+									"pm.test(\"Every company has a companyId\", function () {",
+									"    companies.forEach(c => pm.expect(c.companyId).to.be.a('string'));",
+									"});",
+									"pm.test(\"No company shows its key\", function () {",
+									"    companies.forEach(c => pm.expect(c).to.not.have.property('key'));",
+									"});",
+									"pm.collectionVariables.set('companyId', companies.length ? companies[0].companyId : '');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET the same company through the single-object route",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/caches/provider/Caffeine%20Cache%20Provider/object/companypool/{{companyId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"caches",
+								"provider",
+								"Caffeine%20Cache%20Provider",
+								"object",
+								"companypool",
+								"{{companyId}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const company = pm.response.json().entity;",
+									"pm.test(\"It is the same company\", function () {",
+									"    pm.expect(company.companyId).to.eql(pm.collectionVariables.get('companyId'));",
+									"});",
+									"pm.test(\"It shows no key\", function () {",
+									"    pm.expect(company).to.not.have.property('key');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET the userdotcmscache objects",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/caches/provider/Caffeine%20Cache%20Provider/objects/userdotcmscache",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"caches",
+								"provider",
+								"Caffeine%20Cache%20Provider",
+								"objects",
+								"userdotcmscache"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const users = Object.values(pm.response.json().entity).filter(v => v !== null && typeof v === 'object');",
+									"pm.test(\"The listing holds at least one user\", function () {",
+									"    pm.expect(users).to.not.be.empty;",
+									"});",
+									"pm.test(\"No user shows a password\", function () {",
+									"    users.forEach(u => pm.expect(u).to.not.have.property('password'));",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "The Maintenance page renders the System Info, Threads and Logged Users tabs only for a CMS Administrator",
+			"item": [
+				{
+					"name": "Log in as admin, through a session as the back-end UI does",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"admin@dotcms.com\",\n  \"password\": \"admin\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/authentication",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"authentication"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET the menu as admin",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/menu",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"menu"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const items = [].concat(...pm.response.json().entity.map(menu => menu.menuItems || []));",
+									"const maintenance = items.find(i => i.id === 'maintenance');",
+									"pm.test(\"The menu holds the Maintenance portlet\", function () {",
+									"    pm.expect(maintenance, 'maintenance menu item').to.be.an('object');",
+									"});",
+									"const page = maintenance.url.indexOf('http') === 0 ? maintenance.url : pm.variables.get('serverURL') + maintenance.url;",
+									"pm.collectionVariables.set('adminPageUrl', page + '&in_frame=true&frame=detailFrame&container=true&angularCurrentPortlet=maintenance');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET the Maintenance page as admin: all four tabs",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Referer",
+								"value": "{{serverURL}}/dotAdmin/",
+								"type": "text"
+							}
+						],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{adminPageUrl}}",
+							"host": [
+								"{{adminPageUrl}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"The Cache tab is rendered\", function () {",
+									"    pm.expect(pm.response.text()).to.include('id=\"cache\"');",
+									"});",
+									"pm.test(\"The System Info tab is rendered\", function () {",
+									"    pm.expect(pm.response.text()).to.include('id=\"systemProps\"');",
+									"});",
+									"pm.test(\"The Threads tab is rendered\", function () {",
+									"    pm.expect(pm.response.text()).to.include('id=\"threads\"');",
+									"});",
+									"pm.test(\"The Logged Users tab is rendered\", function () {",
+									"    pm.expect(pm.response.text()).to.include('id=\"loggedusers\"');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Log out: end the admin session",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"The logout call answers 200 (it also does without a session, so this does not show a session ended)\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Log in as the user who holds only the Maintenance portlet",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"userId\": \"{{maintenanceEmail}}\",\n  \"password\": \"{{fixturePassword}}\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/authentication",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"authentication"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"// The DWR plain call carries the session id as httpSessionId",
+									"let sessionId = pm.cookies.get('JSESSIONID');",
+									"if (!sessionId) {",
+									"    const setCookie = pm.response.headers.filter(h => h.key.toLowerCase() === 'set-cookie').map(h => h.value).join(';');",
+									"    const match = /JSESSIONID=([^;]+)/.exec(setCookie);",
+									"    sessionId = match ? match[1] : null;",
+									"}",
+									"pm.test(\"The login sets a JSESSIONID cookie\", function () {",
+									"    pm.expect(sessionId).to.be.a('string').and.not.empty;",
+									"});",
+									"pm.collectionVariables.set('sessionId', sessionId);"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET the menu as that user",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/menu",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"menu"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"const items = [].concat(...pm.response.json().entity.map(menu => menu.menuItems || []));",
+									"const maintenance = items.find(i => i.id === 'maintenance');",
+									"pm.test(\"The menu holds the Maintenance portlet\", function () {",
+									"    pm.expect(maintenance, 'maintenance menu item').to.be.an('object');",
+									"});",
+									"const page = maintenance.url.indexOf('http') === 0 ? maintenance.url : pm.variables.get('serverURL') + maintenance.url;",
+									"pm.collectionVariables.set('maintenancePageUrl', page + '&in_frame=true&frame=detailFrame&container=true&angularCurrentPortlet=maintenance');"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "GET the Maintenance page as that user: Cache tab only",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Referer",
+								"value": "{{serverURL}}/dotAdmin/",
+								"type": "text"
+							}
+						],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{maintenancePageUrl}}",
+							"host": [
+								"{{maintenancePageUrl}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"The Cache tab is rendered\", function () {",
+									"    pm.expect(pm.response.text()).to.include('id=\"cache\"');",
+									"});",
+									"pm.test(\"The System Info tab is not rendered\", function () {",
+									"    pm.expect(pm.response.text()).to.not.include('id=\"systemProps\"');",
+									"});",
+									"pm.test(\"The Threads tab is not rendered\", function () {",
+									"    pm.expect(pm.response.text()).to.not.include('id=\"threads\"');",
+									"});",
+									"pm.test(\"The Logged Users tab is not rendered\", function () {",
+									"    pm.expect(pm.response.text()).to.not.include('id=\"loggedusers\"');",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Log out: end the session of the Maintenance-portlet user",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"auth": {
+							"type": "noauth"
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/logout",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"logout"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"The logout call answers 200 (it also does without a session, so this does not show a session ended)\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "Cleanup: remove the users, the role and the layout",
+			"item": [
+				{
+					"name": "Delete the Maintenance-portlet user",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/{{maintenanceUserId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"{{maintenanceUserId}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Delete the back-end user",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/{{backendUserId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"{{backendUserId}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Delete the front-end user",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users/{{frontendUserId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users",
+								"{{frontendUserId}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Take the layout away from the role",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"roleId\": \"{{roleId}}\",\n  \"layoutIds\": [\n    \"{{layoutId}}\"\n  ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/roles/layouts",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"roles",
+								"layouts"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Delete the layout",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/layouts/{{layoutId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"layouts",
+								"{{layoutId}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				},
+				{
+					"name": "Delete the role",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/roles/{{roleId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"roles",
+								"{{roleId}}"
+							]
+						}
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"type": "text/javascript",
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								]
+							}
+						}
+					]
+				}
+			],
+			"description": "Users go first: deleting a user reads the role cache that deleting a role clears."
+		}
+	],
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt}}",
+				"type": "string"
+			}
+		]
+	},
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					"// Runs outside the Maven runner have no jwt: fetch one for admin",
+					"if (!pm.environment.get('jwt')) {",
+					"    const basicAuth = btoa('admin@dotcms.com:admin');",
+					"    pm.sendRequest({",
+					"        url: `${pm.environment.get('serverURL')}/api/v1/apitoken`,",
+					"        method: 'POST',",
+					"        header: {'accept': '*/*', 'content-type': 'application/json', 'Authorization': `Basic ${basicAuth}`},",
+					"        body: {mode: 'raw', raw: JSON.stringify({expirationSeconds: 7200, userId: 'dotcms.org.1', network: '0.0.0.0/0', claims: {label: 'postman-tests'}})}",
+					"    }, function (err, response) {",
+					"        if (err) { console.log(err); } else { pm.environment.set('jwt', response.json().entity.jwt); }",
+					"    });",
+					"}"
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "fixtureSuffix",
+			"value": ""
+		},
+		{
+			"key": "fixturePassword",
+			"value": ""
+		},
+		{
+			"key": "maintenanceEmail",
+			"value": ""
+		},
+		{
+			"key": "backendEmail",
+			"value": ""
+		},
+		{
+			"key": "frontendEmail",
+			"value": ""
+		},
+		{
+			"key": "roleId",
+			"value": ""
+		},
+		{
+			"key": "layoutId",
+			"value": ""
+		},
+		{
+			"key": "maintenanceUserId",
+			"value": ""
+		},
+		{
+			"key": "backendUserId",
+			"value": ""
+		},
+		{
+			"key": "frontendUserId",
+			"value": ""
+		},
+		{
+			"key": "sessionId",
+			"value": ""
+		},
+		{
+			"key": "companyId",
+			"value": ""
+		},
+		{
+			"key": "adminPageUrl",
+			"value": ""
+		},
+		{
+			"key": "maintenancePageUrl",
+			"value": ""
+		}
+	]
+}

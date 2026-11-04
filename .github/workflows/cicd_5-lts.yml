@@ -90,7 +90,6 @@ jobs:
       jvm_unit_test: ${{ fromJSON(needs.initialize.outputs.filters).jvm_unit_test == 'true' }}
       integration: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
       postman: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
-      karate: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
       frontend: ${{ fromJSON(needs.initialize.outputs.filters).frontend == 'true' }}
       cli: ${{ fromJSON(needs.initialize.outputs.filters).cli == 'true' }}
       e2e: false
