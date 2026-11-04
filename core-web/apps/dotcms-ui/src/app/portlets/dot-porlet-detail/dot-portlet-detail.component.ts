@@ -1,5 +1,8 @@
-import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DestroyRef, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
+
+import { distinctUntilChanged, map } from 'rxjs/operators';
 
 import { DotEditContentDeepLinkComponent } from './dot-edit-content-deep-link/dot-edit-content-deep-link.component';
 import { DotWorkflowTaskComponent } from './dot-workflow-task/dot-workflow-task.component';
@@ -17,13 +20,26 @@ import { DotWorkflowTaskComponent } from './dot-workflow-task/dot-workflow-task.
 })
 export class DotPortletDetailComponent implements OnInit {
     private route = inject(ActivatedRoute);
+    readonly #destroyRef = inject(DestroyRef);
 
     isWorkflow = false;
     isContent = false;
 
+    /**
+     * Follows the portlet the parent route names. The route is reused across navigations (it has no
+     * `reuseRoute: false`, so Back with a task's side panel open does not rebuild the task dialog,
+     * #38303), so a change from `/c/workflow/<task>` to `/c/content/<inode>` keeps this component.
+     */
     ngOnInit() {
-        const currentPortlet: string = this.route.parent.snapshot.params.id;
-        this.isWorkflow = currentPortlet === 'workflow';
-        this.isContent = !this.isWorkflow;
+        this.route.parent.params
+            .pipe(
+                map((params) => params['id']),
+                distinctUntilChanged(),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((portlet) => {
+                this.isWorkflow = portlet === 'workflow';
+                this.isContent = !this.isWorkflow;
+            });
     }
 }
