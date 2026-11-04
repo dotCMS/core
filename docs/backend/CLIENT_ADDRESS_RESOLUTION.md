@@ -40,8 +40,11 @@ treats the braces as the end of the variable. In an environment variable either 
 
 ## Setting it behind a load balancer
 
-The default trusts any peer on a private network. That suits a deployment where the only thing
-that can reach dotCMS from a private address is its own load balancer or ingress. Where other
+The default trusts any peer on a private network, and any trusted peer can choose the address
+dotCMS records and checks API token network limits against, simply by sending
+`X-Forwarded-For`. That suits a deployment where the only thing that can reach dotCMS from a
+private address is its own load balancer or ingress, and the default is kept so that such
+deployments resolve the client address without extra configuration. Where other
 clients can connect from a private address (users on the same internal network, other workloads
 in the cluster, a Kubernetes service or layer-4 load balancer that rewrites the source address
 without adding `X-Forwarded-For`), narrow the list to the proxies you run:
