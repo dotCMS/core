@@ -64,6 +64,7 @@ import {
     DotDownloadBundleFormComponent,
     DotDownloadBundleFormValue
 } from '../../components/dot-download-bundle-form/dot-download-bundle-form.component';
+import { injectAssetRowFocusReturn } from '../../util/asset-row-focus.util';
 import { isEditableContentlet } from '../../util/editable-asset.util';
 
 type LoadStatus = 'init' | 'loading' | 'loaded' | 'error';
@@ -179,6 +180,11 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
     readonly $assets = signal<BundleAssetView[]>([]);
     readonly $assetsStatus = signal<LoadStatus>('init');
     readonly $assetsPage = signal(1);
+
+    /** Puts focus back on a row once the assets have reloaded after its panel closed (FR-039). */
+    readonly #focusRowAfterReload = injectAssetRowFocusReturn(
+        computed(() => this.$assetsStatus() !== 'loading')
+    );
 
     readonly assetsPerPage = ASSETS_PER_PAGE;
 
@@ -711,8 +717,8 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
 
     /**
      * Opens a contentlet row in the side panel over this dialog, in whichever editor its type uses
-     * (#38303, R12); closing the panel returns to the dialog on the same row. Every save, and the
-     * close, reload the bundle's assets (FR-017). Other rows do nothing.
+     * (#38303, R12). Every save, and the close, reload the bundle's assets (FR-017); the close also
+     * puts focus back on the row once the assets have reloaded (FR-039). Other rows do nothing.
      *
      * @param asset The clicked row.
      */
@@ -732,7 +738,14 @@ export class DotPublishingQueueSelectBundleDialogComponent implements OnInit {
                 contentType: asset.content_type_name,
                 portletId: 'publishing-queue'
             },
-            { injector: this.#injector, saved: reload, closed: reload }
+            {
+                injector: this.#injector,
+                saved: reload,
+                closed: () => {
+                    reload();
+                    this.#focusRowAfterReload(asset.asset);
+                }
+            }
         );
     }
 }

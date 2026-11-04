@@ -82,7 +82,7 @@ export interface DotEditContentRequest {
 | Query Tool | edit | `inode`, `identifier`, `contentType`, `languageId`, `title` |
 | Pages portlet | edit | `inode`, `identifier`, `contentType`, `languageId`, `title`, `portletId: 'pages'` |
 | Legacy JSP events (`edit-contentlet`, `edit-host`) | edit | `inode`, `contentType` when sent, `portletId: <the portlet current when the event arrived>` |
-| Legacy JSP events (`create-contentlet`, `create-host`) | new | `contentType` (`'Host'` for `create-host`), `folderPath` when sent, `portletId` as above. The JSP's `url` is ignored |
+| Legacy JSP events (`create-contentlet`, `create-host`) | new | `contentType` (`'Host'` for `create-host`), `folderPath` when sent, `languageId` from the `lang` param of the JSP's `url` when it has one (the content search and the Site Browser put the language they show there), `portletId` as above. The rest of the JSP's `url` is ignored |
 | Publishing Queue | edit | `inode`, `contentType` (`content_type_name`), `portletId: 'publishing-queue'` |
 | Deep links | edit, new | `inode` or `contentType` from the route, `folderInode` from the `folder` query param on a create, `portletId: <the parent portlet, e.g. 'content' or 'pages'>` |
 | Relationship field | edit, new | `inode`, `title` or `contentType`, `title`, `relationship` |

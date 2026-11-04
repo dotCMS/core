@@ -35,7 +35,7 @@ import { TabsModule } from 'primeng/tabs';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, filter, switchMap, take, tap } from 'rxjs/operators';
 
 import {
     DotContentletService,
@@ -58,9 +58,11 @@ import {
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
 import {
+    DotEditContentOpenerService,
     DotEditContentRequest,
     DotLegacyScreenEvent,
     DotLegacyScreenRequest,
+    DotOpenContentEvent,
     DotPageEditorRequest,
     DotSourceEditorRequest,
     injectEditContentPanel,
@@ -299,6 +301,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     private readonly messageService = inject(MessageService);
     private readonly window = inject(WINDOW);
     readonly #sidePanels = inject(DotSidePanelService);
+    readonly #opener = inject(DotEditContentOpenerService);
     readonly #injector = inject(Injector);
     private readonly dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
     private readonly dotCopyContentService = inject(DotCopyContentService);
@@ -336,6 +339,13 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * reload itself, since a headless page renders its own content.
      */
     #fromSdkEdit = false;
+
+    /**
+     * The open request edits the content the URL-mapped page shows (the toolbar's banner): a save
+     * that moves the content's URL loads the page at the new one. Any other edit, a pencil on a
+     * URL-mapped contentlet placed on another page included, keeps the author on this page.
+     */
+    #urlMapEdit = false;
 
     /**
      * The legacy (JSP) screen open in the generic legacy-screen side panel, or `null` while it is
@@ -1512,9 +1522,9 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     protected handleOpenFullEditor(): void {
-        // Use $contentletEditData (not editorSelected directly) so the dialog
+        // Use $contentletEditData (not editorSelected directly) so the side panel
         // always receives the freshest contentlet from the page asset. After
-        // a dialog save + pageReload(), the page asset is updated with a new
+        // a save + pageReload(), the page asset is updated with a new
         // inode, but editorSelected().payload still holds the stale one.
         // $contentletEditData looks up the contentlet by identifier from the
         // updated page asset, so it reflects the post-save version.
@@ -1537,16 +1547,24 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * @param contentlet The contentlet to edit.
      */
     openContentForEdit(contentlet: DotCMSContentlet): void {
-        this.#openContent(
-            this.#buildRequest({
-                mode: 'edit',
-                inode: contentlet.inode,
-                identifier: contentlet.identifier,
-                contentType: contentlet.contentType,
-                languageId: contentlet.languageId,
-                title: contentlet.title
-            })
-        );
+        this.#openContent(this.#editRequestFor(contentlet));
+    }
+
+    /**
+     * The edit request for a contentlet on this page, completed with the page's context.
+     *
+     * @param contentlet The contentlet to edit.
+     * @returns The request.
+     */
+    #editRequestFor(contentlet: DotCMSContentlet): DotEditContentRequest {
+        return this.#buildRequest({
+            mode: 'edit',
+            inode: contentlet.inode,
+            identifier: contentlet.identifier,
+            contentType: contentlet.contentType,
+            languageId: contentlet.languageId,
+            title: contentlet.title
+        });
     }
 
     /**
@@ -1568,27 +1586,39 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     /**
      * Opens a request in the Edit Content side panel.
      *
+     * A request that arrives while a panel is open is ignored. The open panel already chose its
+     * editor, and `injectEditContentPanel` does not reopen for a changed request, so the panel would
+     * re-render with another contentlet in the wrong editor, and a pending placement would be lost.
+     * The panel's mask covers the page, so only a headless page's SDK can ask then.
+     *
      * @param request What to open.
      * @param options `actionPayload`: where a create places its contentlet on the first save.
      * `fromSdk`: the request came from the SDK, whose edits also ask the client to reload.
+     * `urlMap`: the request edits the content the URL-mapped page shows.
      */
     #openContent(
         request: DotEditContentRequest,
         {
             actionPayload,
-            fromSdk = false
-        }: { actionPayload?: ActionPayload; fromSdk?: boolean } = {}
+            fromSdk = false,
+            urlMap = false
+        }: { actionPayload?: ActionPayload; fromSdk?: boolean; urlMap?: boolean } = {}
     ): void {
+        if (this.$editRequest()) {
+            return;
+        }
+
         this.#insertion = actionPayload ? { actionPayload, inserted: false } : null;
         this.#fromSdkEdit = fromSdk && request.mode === 'edit';
+        this.#urlMapEdit = urlMap && request.mode === 'edit';
         this.$editRequest.set(request);
     }
 
     /**
      * A save in the Edit Content panel. The first save of a create opened from a drop or the
      * content selector places the new contentlet where it was asked for; any later save, and a save
-     * of an SDK create, reloads the page. An edit loads the content's new URL when it maps to
-     * another one, else reloads (#38303, FR-021).
+     * of an SDK create, reloads the page. The URL-mapped content's edit loads the content's new URL
+     * when it maps to another one; any other edit reloads (#38303, FR-021).
      *
      * @param contentlet The saved contentlet, as the editor reports it.
      */
@@ -1643,15 +1673,16 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * After an edit is saved: a URL-mapped contentlet whose URL changed loads the page at its new
-     * URL; anything else reloads the page. The saved contentlet is complete, so nothing is fetched.
+     * After an edit is saved: the URL-mapped content's edit loads the page at the content's new
+     * URL when it moved; anything else reloads the page. The saved contentlet is complete, so
+     * nothing is fetched.
      *
      * @param contentlet The saved contentlet.
      */
     #reloadAfterEdit(contentlet: DotCMSContentlet): void {
         const urlMap = contentlet?.['URL_MAP_FOR_CONTENT'];
 
-        if (shouldNavigate(urlMap, this.uveStore.pageParams()?.url ?? '')) {
+        if (this.#urlMapEdit && shouldNavigate(urlMap, this.uveStore.pageParams()?.url ?? '')) {
             this.#pageApi.pageLoad({ url: urlMap });
 
             return;
@@ -1681,15 +1712,16 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         this.$editRequest.set(null);
         this.#insertion = null;
         this.#fromSdkEdit = false;
+        this.#urlMapEdit = false;
         this.#pageApi.pageReload();
     }
 
     /**
-     * Pencil button on the hover toolbar: open the full content editor
-     * dialog. If the contentlet appears on more than one page, prompt
-     * the user first ("edit on all pages" vs "this page only"). On
+     * Pencil button on the hover toolbar: open the contentlet in the Edit
+     * Content side panel. If the contentlet appears on more than one page,
+     * prompt the user first ("edit on all pages" vs "this page only"). On
      * "this page only", fork the contentlet via copyInPage so the
-     * other pages are unaffected, then open the dialog with the new copy.
+     * other pages are unaffected, then open the panel with the new copy.
      *
      * Reads the contentlet from the event payload, NOT from
      * editorSelected — pencil is intentionally stateless
@@ -1802,12 +1834,15 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Edits the content a URL-mapped page shows, as an ordinary edit request (#38303).
+     * Edits the content a URL-mapped page shows, as an ordinary edit request (#38303). It is the
+     * one edit whose save follows the content to its new URL when the save moves it.
      *
      * @param contentlet The URL-mapped contentlet.
      */
     protected editContentMap(contentlet: DotCMSURLContentMap): void {
-        this.openContentForEdit(contentlet as unknown as DotCMSContentlet);
+        this.#openContent(this.#editRequestFor(contentlet as unknown as DotCMSContentlet), {
+            urlMap: true
+        });
     }
 
     /**
@@ -1875,22 +1910,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Handle the error
-     *
-     * @private
-     * @param {HttpErrorResponse} error
-     * @return {*}
-     * @memberof EditEmaEditorComponent
-     */
-    private handlerError(error: HttpErrorResponse) {
-        // CHECK IF HAVE TO SET THE UVE TO ERROR
-        this.uveStore.setEditorState(EDITOR_STATE.ERROR);
-
-        return this.dotHttpErrorManagerService.handle(error).pipe(map(() => null));
-    }
-
-    /**
-     * Reloads the component from the dialog/sidebar.
+     * Reloads the page in the editor.
      */
     reloadPage() {
         this.uveStore.pageReload();
@@ -2036,6 +2056,8 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      *
      * A save loads the translation and keeps the panel open; the editor's redirect after a first
      * save closes it and loads that page. Closing reloads the page only once something was saved.
+     * Content a block editor in the form asks for stacks over the panel through the opener, under
+     * the panel's own injector, as it does over any legacy editor panel the opener opens.
      *
      * @param event The page and the language to translate it into.
      */
@@ -2071,7 +2093,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                     saved = false;
                     ref.close();
                     this.#pageApi.pageLoad({ url, language_id: String(languageId) });
-                }
+                },
+                openContent: (event: DotOpenContentEvent) =>
+                    this.#opener.open(event.request, {
+                        injector: event.injector ?? this.#injector,
+                        saved: event.onSaved
+                    })
             },
             injector: this.#injector
         });

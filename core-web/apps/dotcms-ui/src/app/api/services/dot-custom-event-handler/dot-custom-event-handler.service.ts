@@ -52,10 +52,11 @@ export class DotCustomEventHandlerService {
     private dotEventsService = inject(DotEventsService);
     private dotLicenseService = inject(DotLicenseService);
 
-    /** This service's own injector, until `DotSidePanelHostComponent` registers its own. */
-    readonly #injector = inject(Injector);
-
-    /** `DotSidePanelHostComponent`'s injector: the side panels this service opens live under it. */
+    /**
+     * `DotSidePanelHostComponent`'s injector: the side panels this service opens live under it.
+     * There is no fallback: the root injector has no `MessageService`, so a panel opened under it
+     * would fail inside.
+     */
     #panelInjector: Injector | null = null;
 
     private handlers: Record<string, ($event: CustomEvent) => void> = {
@@ -130,12 +131,19 @@ export class DotCustomEventHandlerService {
 
     /**
      * A legacy portlet asked to create content of a type, maybe in a folder. The JSP's `url` is
-     * ignored: the opener resolves the create screen itself.
+     * read for its `lang` only, the language the content search or the Site Browser shows; the
+     * opener resolves the create screen itself.
      */
     private createContentlet($event: CustomEvent): void {
-        const { contentType, folderPath } = $event.detail.data;
+        const { url, contentType, folderPath } = $event.detail.data;
+        const languageId = languageOf(url);
 
-        this.#openInSidePanel({ mode: 'new', contentType, folderPath });
+        this.#openInSidePanel({
+            mode: 'new',
+            contentType,
+            folderPath,
+            ...(languageId ? { languageId } : {})
+        });
     }
 
     /** The Sites portlet asked to create a site. The JSP's `url` is ignored. */
@@ -148,9 +156,22 @@ export class DotCustomEventHandlerService {
      * the one current when the event arrived: the request names it, and every save and the close
      * reload its list.
      *
+     * Nothing opens until `DotSidePanelHostComponent` has registered its injector, which it does
+     * before any portlet can send an event; a request before then is logged as an error.
+     *
      * @param request What to open, without the portlet.
      */
     #openInSidePanel(request: DotEditContentRequest): void {
+        const injector = this.#panelInjector;
+
+        if (!injector) {
+            console.error(
+                'DotCustomEventHandlerService: no side panel host has registered its injector, so the panel did not open (#38303)'
+            );
+
+            return;
+        }
+
         const portletId = this.dotRouterService.currentPortlet.id;
         const reload = () => {
             if (portletId) {
@@ -161,7 +182,7 @@ export class DotCustomEventHandlerService {
         void openEditContentPanel(
             { ...request, portletId },
             {
-                injector: this.#panelInjector ?? this.#injector,
+                injector,
                 saved: reload,
                 closed: reload
             }
@@ -209,5 +230,27 @@ export class DotCustomEventHandlerService {
      */
     private updateLicense(): void {
         this.dotLicenseService.updateLicense();
+    }
+}
+
+/**
+ * The language a legacy create URL names: the content search and the Site Browser append
+ * `&lang=<id>` for the language the portlet shows (`view_contentlets_js_inc.jsp`,
+ * `view_browser_js_inc.jsp`).
+ *
+ * @param url The `url` of a `create-contentlet` event, if it has one.
+ * @returns The language id, or `undefined` when the URL names none.
+ */
+function languageOf(url: unknown): number | undefined {
+    if (typeof url !== 'string' || !url) {
+        return undefined;
+    }
+
+    try {
+        const languageId = Number(new URL(url, window.location.origin).searchParams.get('lang'));
+
+        return Number.isInteger(languageId) && languageId > 0 ? languageId : undefined;
+    } catch {
+        return undefined;
     }
 }

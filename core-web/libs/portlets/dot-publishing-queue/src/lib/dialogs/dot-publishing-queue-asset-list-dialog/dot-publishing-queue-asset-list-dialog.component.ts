@@ -35,6 +35,7 @@ import { DotEditContentOpenerService } from '@dotcms/edit-content';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store';
+import { injectAssetRowFocusReturn } from '../../util/asset-row-focus.util';
 import { isEditableContentlet } from '../../util/editable-asset.util';
 
 /** Show the search input only when the bundle is big enough that scrolling alone is painful. */
@@ -72,6 +73,10 @@ export class DotPublishingQueueAssetListDialogComponent {
     readonly #opener = inject(DotEditContentOpenerService);
     /** The dialog's injector: a panel a row opens closes with the dialog. */
     readonly #injector = inject(Injector);
+    /** Puts focus back on a row once the list has reloaded after its panel closed (FR-039). */
+    readonly #focusRowAfterReload = injectAssetRowFocusReturn(
+        computed(() => this.store.assetListStatus() !== 'loading')
+    );
     /** Optional — present only when opened via DialogService. */
     readonly #dialogConfig = inject(DynamicDialogConfig, { optional: true });
     readonly #dialogRef = inject(DynamicDialogRef, { optional: true });
@@ -135,8 +140,8 @@ export class DotPublishingQueueAssetListDialogComponent {
 
     /**
      * Opens a contentlet row in the side panel over this dialog, in whichever editor its type uses
-     * (#38303, R12); closing the panel returns to the dialog on the same row. Every save, and the
-     * close, reload the asset list (FR-017). Other rows do nothing.
+     * (#38303, R12). Every save, and the close, reload the asset list (FR-017); the close also puts
+     * focus back on the row once the list has reloaded (FR-039). Other rows do nothing.
      *
      * @param asset The clicked row.
      */
@@ -154,7 +159,14 @@ export class DotPublishingQueueAssetListDialogComponent {
                 contentType: asset.content_type_name,
                 portletId: 'publishing-queue'
             },
-            { injector: this.#injector, saved: reload, closed: reload }
+            {
+                injector: this.#injector,
+                saved: reload,
+                closed: () => {
+                    reload();
+                    this.#focusRowAfterReload(asset.asset);
+                }
+            }
         );
     }
 
