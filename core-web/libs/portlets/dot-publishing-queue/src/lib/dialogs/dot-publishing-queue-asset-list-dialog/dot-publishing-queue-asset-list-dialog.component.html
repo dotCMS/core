@@ -58,10 +58,18 @@
             </ng-template>
 
             <ng-template pTemplate="body" let-asset>
+                <!-- A contentlet row opens with a click or Enter, and takes focus back when its
+                     panel closes (FR-039), so it is focusable. Enter on the row's own buttons is
+                     theirs. -->
                 <tr
                     class="group"
                     [class.cursor-pointer]="isEditableContentlet(asset)"
+                    [attr.tabindex]="isEditableContentlet(asset) ? 0 : null"
+                    [attr.data-pq-asset-row]="asset.asset"
                     (click)="onAssetRowClick(asset)"
+                    (keydown.enter)="
+                        $event.target === $event.currentTarget && onAssetRowClick(asset)
+                    "
                     data-testid="pq-asset-list-row">
                     <td data-testid="pq-asset-name">{{ asset.title }}</td>
                     <td data-testid="pq-asset-type">

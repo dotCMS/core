@@ -370,22 +370,34 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
 
         afterEach(() => windowOpen.mockRestore());
 
-        /** FR-039: closing the panel puts the author back on the row it opened from. */
-        it('returns focus to the row the panel opened from when it closes', () => {
-            const row = spectator.queryAll<HTMLElement>(byTestId('pq-select-bundle-asset-row'))[0];
+        /**
+         * FR-039: closing the panel puts the author back on the row it opened from. The close
+         * reloads the assets, which empties the table and renders new rows, so the focus lands on
+         * the new row for the same asset once the reload has rendered.
+         */
+        it('returns focus to the row the panel opened from once the assets have reloaded', () => {
+            const before = spectator.queryAll<HTMLElement>(
+                byTestId('pq-select-bundle-asset-row')
+            )[0];
+            service.getBundleAssets.mockReturnValue(of(ROW_ASSETS.map((asset) => ({ ...asset }))));
             clickRow(0);
             // The panel holds focus while it is open.
             (document.activeElement as HTMLElement | null)?.blur();
 
             openOptions().closed?.();
+            spectator.detectChanges();
 
-            expect(document.activeElement === row, 'the originating row has focus').toBe(true);
+            const row = spectator.queryAll<HTMLElement>(byTestId('pq-select-bundle-asset-row'))[0];
+            expect(service.getBundleAssets).toHaveBeenCalled();
+            expect(row === before, 'the reload rendered a new row').toBe(false);
+            expect(document.activeElement === row, 'the reloaded row has focus').toBe(true);
         });
 
         it('lets the keyboard reach a contentlet row and open it with Enter', () => {
             const row = spectator.queryAll<HTMLElement>(byTestId('pq-select-bundle-asset-row'))[0];
 
-            spectator.dispatchKeyboardEvent(row, 'keydown', 'Enter');
+            // A native event, as the browser sends it: the row checks it is the event's target.
+            row.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
             expect(row.getAttribute('tabindex')).toBe('0');
             expect(opened().mock.calls.length, 'Enter opens the row').toBe(1);
