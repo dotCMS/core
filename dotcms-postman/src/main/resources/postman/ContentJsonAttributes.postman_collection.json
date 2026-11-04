@@ -23,6 +23,69 @@
           "name": "Checking Content Audit Attributes",
           "item": [
             {
+              "name": "Create a content type with a Story Block body",
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// This collection owns the type it checks Story Block normalization against, so a collection that redefines",
+                      "// webPageContent (ContentTypeResourceTests imports a bundle with a WYSIWYG body) cannot change the result.",
+                      "pm.collectionVariables.set('jsonAttrsContentType', 'JsonAttrsStoryBlock' + Date.now());"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "",
+                      "pm.test('Content type is created and its id is captured', function () {",
+                      "    const type = pm.response.json().entity[0];",
+                      "    pm.expect(type.id, 'id of the created content type').to.be.a('string').and.not.empty;",
+                      "    pm.collectionVariables.set('jsonAttrsContentTypeId', type.id);",
+                      "});"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/contenttype",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "contenttype"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n  \"name\": \"{{jsonAttrsContentType}}\",\n  \"variable\": \"{{jsonAttrsContentType}}\",\n  \"host\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\",\n  \"folder\": \"SYSTEM_FOLDER\",\n  \"workflow\": [\n    \"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"\n  ],\n  \"fields\": [\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n      \"dataType\": \"SYSTEM\",\n      \"name\": \"Site\",\n      \"variable\": \"contentHost\",\n      \"required\": true,\n      \"sortOrder\": 1\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n      \"dataType\": \"TEXT\",\n      \"name\": \"Title\",\n      \"variable\": \"title\",\n      \"required\": true,\n      \"indexed\": true,\n      \"listed\": true,\n      \"sortOrder\": 2\n    },\n    {\n      \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableStoryBlockField\",\n      \"dataType\": \"LONG_TEXT\",\n      \"name\": \"Body\",\n      \"variable\": \"body\",\n      \"sortOrder\": 3\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "response": []
+            },
+            {
               "name": "Creating Test Generic Content",
               "event": [
                 {
@@ -69,7 +132,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"contentlet\": [\n    {\n      \"contentType\": \"webPageContent\",\n      \"title\": \"Test Generic Content\",\n      \"contentHost\": \"default\",\n      \"body\": \"This is my Test Generic Content\"\n    }\n  ]\n}",
+                  "raw": "{\n  \"contentlet\": [\n    {\n      \"contentType\": \"{{jsonAttrsContentType}}\",\n      \"title\": \"Test Generic Content\",\n      \"contentHost\": \"default\",\n      \"body\": \"This is my Test Generic Content\"\n    }\n  ]\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -93,7 +156,7 @@
                       "",
                       "pm.test('Content type, title and host name are returned', function () {",
                       "    const entity = pm.response.json().entity;",
-                      "    pm.expect(entity.contentType).to.eql('webPageContent');",
+                      "    pm.expect(entity.contentType).to.eql(pm.collectionVariables.get('jsonAttrsContentType'));",
                       "    pm.expect(entity.title).to.eql('Test Generic Content');",
                       "    pm.expect(entity.hostName).to.eql('default');",
                       "});",
@@ -110,9 +173,7 @@
                       "// string body is stored and read back as structured JSON, not the raw string.",
                       "pm.test('Body is normalized to a Story Block doc', function () {",
                       "    const body = pm.response.json().entity.body;",
-                      "    // ContentTypeResourceTests imports a bundle that redefines webPageContent with a WYSIWYG body, which is why this",
-                      "    // collection runs first in its config.json group.",
-                      "    pm.expect(body.type, 'webPageContent.body must be a Story Block field (starter definition); an earlier collection may have replaced it').to.eql('doc');",
+                      "    pm.expect(body.type).to.eql('doc');",
                       "    pm.expect(body.content[0].content[0].text).to.eql('This is my Test Generic Content');",
                       "});"
                     ]
@@ -184,6 +245,41 @@
                       "language": "json"
                     }
                   }
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Cleanup - Delete the Story Block content type",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test('Status code is 200', function () {",
+                      "    pm.response.to.have.status(200);",
+                      "});",
+                      "pm.collectionVariables.unset('jsonAttrsContentTypeId');"
+                    ]
+                  }
+                }
+              ],
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{serverURL}}/api/v1/contenttype/id/{{jsonAttrsContentTypeId}}",
+                  "host": [
+                    "{{serverURL}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "contenttype",
+                    "id",
+                    "{{jsonAttrsContentTypeId}}"
+                  ]
                 }
               },
               "response": []
@@ -568,15 +664,13 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "// The property may not exist yet (404): remember that, so the cleanup deletes it instead of restoring it.",
+                  "// The property may not exist yet (404): remember that separately from its value, so the cleanup deletes",
+                  "// a property that did not exist but restores one that existed with an empty value.",
                   "pm.test('Status code is 200 or 404', function () {",
                   "    pm.expect(pm.response.code).to.be.oneOf([200, 404]);",
                   "});",
-                  "if (pm.response.code === 200) {",
-                  "    pm.collectionVariables.set('originalDefaultContentToDefaultLanguage', String(pm.response.json().entity));",
-                  "} else {",
-                  "    pm.collectionVariables.set('originalDefaultContentToDefaultLanguage', '');",
-                  "}"
+                  "pm.collectionVariables.set('originalDefaultContentToDefaultLanguageMissing', String(pm.response.code === 404));",
+                  "pm.collectionVariables.set('originalDefaultContentToDefaultLanguage', pm.response.code === 200 ? String(pm.response.json().entity) : '');"
                 ]
               }
             }
@@ -939,8 +1033,8 @@
               "script": {
                 "type": "text/javascript",
                 "exec": [
-                  "// Property did not exist before this collection: delete it instead of POSTing an empty value.",
-                  "if (pm.collectionVariables.get('originalDefaultContentToDefaultLanguage') === '') {",
+                  "// Property did not exist before this collection: delete it. An existing empty value is POSTed back as empty.",
+                  "if (pm.collectionVariables.get('originalDefaultContentToDefaultLanguageMissing') === 'true') {",
                   "    pm.request.method = 'DELETE';",
                   "    pm.request.url = pm.environment.get('serverURL') + '/api/v1/system-table/DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE';",
                   "    pm.request.body.update('');",
@@ -1124,6 +1218,18 @@
     },
     {
       "key": "originalDefaultContentToDefaultLanguage",
+      "value": ""
+    },
+    {
+      "key": "jsonAttrsContentType",
+      "value": ""
+    },
+    {
+      "key": "jsonAttrsContentTypeId",
+      "value": ""
+    },
+    {
+      "key": "originalDefaultContentToDefaultLanguageMissing",
       "value": ""
     }
   ]
