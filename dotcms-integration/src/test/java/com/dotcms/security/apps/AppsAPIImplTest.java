@@ -1396,6 +1396,84 @@ public class AppsAPIImplTest {
         }
     }
 
+    /**
+     * Method to test: {@link AppsAPIImpl#importSecretsAndSave(Path, Key, User)}
+     * Given scenario: the instance has its own app installed under the key {@code dotema-config},
+     * and an export holds settings for it.
+     * Expected Results: the settings are imported. Only settings with no local descriptor are
+     * skipped as retired.
+     */
+    @Test
+    public void Test_Import_Keeps_Settings_Of_A_Local_App_That_Uses_The_Retired_Key()
+            throws DotDataException, DotSecurityException, IOException, EncryptorException,
+            AlreadyExistException {
+        final User admin = TestUserUtils.getAdminUser();
+        final AppsAPI api = APILocator.getAppsAPI();
+        final Host site = new SiteDataGen().nextPersisted();
+
+        final AppDescriptorDataGen localDataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false, true)
+                .withFileName("dotema-config.yml")
+                .withName("Local app")
+                .withDescription("local app")
+                .withExtraParameters(false);
+        final File localFile = localDataGen.nextPersistedDescriptor();
+        final String localKey = localDataGen.getKey();
+        try {
+            api.createAppDescriptor(localFile, admin);
+            api.saveSecrets(new AppSecrets.Builder().withKey(localKey)
+                    .withHiddenSecret("p1", "local-value").build(), site, admin);
+
+            final Key securityKey = AppsUtil.generateKey(RandomStringUtils.randomAlphanumeric(32));
+            final Path exportFile = api.exportSecrets(securityKey, false,
+                    ImmutableMap.of(site.getIdentifier(), ImmutableSet.of(localKey)), admin);
+            api.deleteSecrets(localKey, site, admin);
+
+            final int imported = api.importSecretsAndSave(exportFile, securityKey, admin);
+
+            assertEquals("the local app's settings should be imported", 1, imported);
+            final Optional<AppSecrets> localSecrets = api.getSecrets(localKey, site, admin);
+            assertTrue("the local app's settings should be imported", localSecrets.isPresent());
+            assertEquals("local-value", localSecrets.get().getSecrets().get("p1").getString());
+        } finally {
+            Try.run(() -> api.removeApp(localKey, admin, true));
+            localFile.delete();
+        }
+    }
+
+    /**
+     * Method to test: {@link AppsAPIImpl#exportSecrets(Key, boolean, Map, User)}
+     * Given scenario: a site still holds settings saved for the Edit Mode Anywhere app
+     * ({@code dotema-config}), which no longer has a descriptor, and an admin exports everything.
+     * Expected Results: the export leaves those settings out.
+     */
+    @Test
+    public void Test_Export_All_Leaves_Out_Edit_Mode_Anywhere_Settings_Left_In_The_Store()
+            throws DotDataException, DotSecurityException, IOException, EncryptorException {
+        final User admin = TestUserUtils.getAdminUser();
+        final AppsAPI api = APILocator.getAppsAPI();
+        final Host site = new SiteDataGen().nextPersisted();
+        final String leftoverKey = AppsUtil.internalKey("dotema-config", site);
+        final SecretsStore store = SecretsStore.INSTANCE.get();
+        store.saveValue(leftoverKey, AppsUtil.toJsonAsChars(new AppSecrets.Builder()
+                .withKey("dotema-config").withHiddenSecret("authenticationToken", "left-over")
+                .build()));
+        CacheLocator.getAppsCache().flushSecret();
+        try {
+            final Key securityKey = AppsUtil.generateKey(RandomStringUtils.randomAlphanumeric(32));
+            final Path exportFile = api.exportSecrets(securityKey, true, Map.of(), admin);
+
+            final List<AppSecrets> exportedForSite = AppsUtil.importSecrets(exportFile, securityKey)
+                    .getOrDefault(site.getIdentifier(), List.of());
+            assertTrue("the Edit Mode Anywhere settings should not be exported",
+                    exportedForSite.stream()
+                            .noneMatch(secrets -> "dotema-config".equalsIgnoreCase(secrets.getKey())));
+        } finally {
+            store.deleteValue(leftoverKey);
+            CacheLocator.getAppsCache().flushSecret();
+        }
+    }
+
     @DataProvider
     public static Object[] getTargetSitesTestCases() throws Exception {
         Try.run(() -> IntegrationTestInitService.getInstance().init());
