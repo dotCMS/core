@@ -22,13 +22,14 @@
      * total is treated as a failure, so the type is not deleted.
      */
     function handleDepResponse(data) {
-        if (!data || !Array.isArray(data.entity) || !data.pagination) {
+        if (!data || !Array.isArray(data.entity) || !data.pagination
+                || !Number.isInteger(data.pagination.totalEntries) || data.pagination.totalEntries < 0) {
             throw new Error('Unexpected containers response');
         }
         var containers = data.entity;
         var total = data.pagination.totalEntries;
 
-        if (total != 0) {
+        if (total !== 0) {
             var table = document.createElement('table');
             table.className = 'listingTable';
             var headerRow = table.createTHead().insertRow();
