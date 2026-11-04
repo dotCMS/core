@@ -1154,14 +1154,19 @@ export function getTargetUrl(
 }
 
 /**
- * Determines whether navigation to a new URL is necessary.
+ * Whether a URL is somewhere other than the current page.
  *
- * @param {string | undefined} targetUrl - The target URL for navigation.
- * @returns {boolean} - True if the current URL differs from the target URL and navigation is required.
+ * @param targetUrl The URL to go to. Anything but a non-empty string is nowhere: a saved
+ * contentlet's `URL_MAP_FOR_CONTENT` is `null` for a type with no detail page.
+ * @param currentUrl The current page's URL.
+ * @returns True when `targetUrl` is a URL and a different one from `currentUrl`.
  */
-export function shouldNavigate(targetUrl: string | undefined, currentUrl: string): boolean {
-    // Navigate if the target URL is defined and different from the current URL
-    return targetUrl !== undefined && !compareUrlPaths(targetUrl, currentUrl);
+export function shouldNavigate(targetUrl: unknown, currentUrl: string): boolean {
+    // Only a non-empty URL other than the current one is somewhere to go. A saved contentlet's
+    // `URL_MAP_FOR_CONTENT` is `null` for a type with no detail page (#38303).
+    return (
+        typeof targetUrl === 'string' && targetUrl !== '' && !compareUrlPaths(targetUrl, currentUrl)
+    );
 }
 
 /**
