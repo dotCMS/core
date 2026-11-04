@@ -25,13 +25,14 @@ package com.liferay.portal.pwd;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.PasswordGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.LocaleUtil;
-import com.liferay.util.PwdGenerator;
 import java.util.Locale;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.oro.text.perl.Perl5Util;
@@ -44,6 +45,8 @@ import org.apache.oro.text.perl.Perl5Util;
  */
 public class RegExpToolkit extends BasicToolkit {
 
+	private static final int MAX_GENERATE_ATTEMPTS = 20;
+
 	private String _pattern;
 	
     public RegExpToolkit () {
@@ -54,8 +57,37 @@ public class RegExpToolkit extends BasicToolkit {
         _pattern = pattern;
     }
 
+    /**
+     * Generates a random password that satisfies the password pattern configured in
+     * {@code passwords.regexptoolkit.pattern}. The pattern is read from the configuration, not from
+     * the pattern this instance was built with.
+     *
+     * The generator does not interpret the lookaheads of the pattern, so each candidate is validated
+     * against the configured pattern and regenerated up to {@link #MAX_GENERATE_ATTEMPTS} times. If no
+     * candidate is accepted, or the pattern has a length the generator cannot fill, a warning is
+     * logged and a password from the default generator is returned instead.
+     *
+     * @return a random password
+     */
     public String generate () {
-        return PwdGenerator.getPassword();
+        try {
+            final RegExpToolkit configured = new RegExpToolkit();
+            for (int attempt = 0; attempt < MAX_GENERATE_ATTEMPTS; attempt++) {
+                final String candidate =
+                        new PasswordGenerator.Builder().withRegExpToolkitValues().build().nextPassword();
+                if (configured.validate(candidate)) {
+                    return candidate;
+                }
+            }
+            Logger.warn(RegExpToolkit.class, "No generated password satisfied the configured pattern after "
+                    + MAX_GENERATE_ATTEMPTS + " attempts. Using the default password generator.");
+            return new PasswordGenerator.Builder().withDefaultValues().build().nextPassword();
+        } catch (final IllegalArgumentException e) {
+            // a pattern whose length the generator cannot fill with its per-group minimums
+            Logger.warn(RegExpToolkit.class, "Could not generate a password for the configured pattern ("
+                    + e.getMessage() + "). Using the default password generator.");
+            return new PasswordGenerator.Builder().withDefaultValues().build().nextPassword();
+        }
     }
 
     public boolean validate(String password) {

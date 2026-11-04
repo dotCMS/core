@@ -91,6 +91,8 @@ import org.junit.runners.Suite;
         SecondaryCategoryPermissionTest.class,
         RequestCostReportTest.class,
         OpenAIVisionAPIImplTest.class,
+        com.dotcms.rest.api.v1.container.ContainerResourceCallerPermissionTest.class,
+        com.dotcms.rest.api.v1.container.ContainerResourceContentReadAccessTest.class,
         ContentDriveBrowseScopeTest.class,
         ContentDriveFieldFilterTest.class,
         ContentDriveHelperContentletAPIComparisonTest.class,
