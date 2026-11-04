@@ -306,7 +306,10 @@ describe('OverlayEditContentHost', () => {
                 openContent$?: { subscribe: (next: (event: DotOpenContentEvent) => void) => void };
             };
 
-            expect(withStream.openContent$, 'the host hands stacked content to its panel').toBeDefined();
+            expect(
+                withStream.openContent$,
+                'the host hands stacked content to its panel'
+            ).toBeDefined();
             withStream.openContent$?.subscribe((event) => events.push(event));
 
             return events;

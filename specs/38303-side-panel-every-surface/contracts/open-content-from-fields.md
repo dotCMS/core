@@ -34,9 +34,9 @@ export interface EditContentHost {
 | Host | Edit request from a Relationship field | Create request | Edit request from a block editor |
 |---|---|---|---|
 | `RouterEditContentHost` (full-screen `#/content/:inode`) | `DotEditContentOpenerService.open` with the shell's injector; `saved` → `onSaved` | same | same |
-| `OverlayEditContentHost` (a panel) | `goToRelatedContent(current, target)` in place with a breadcrumb, as today; the field's row refreshes when the author navigates back | `open()` stacked, with the panel's injector; `saved` → `onSaved` | `open()` stacked, with the panel's injector |
+| `OverlayEditContentHost` (a panel) | `goToRelatedContent(current, target)` in place with a breadcrumb, as today; the field's row refreshes when the author navigates back | handed to the panel on `openContent$`; the panel emits it on its `openContent` output with its own injector, and the opener stacks it; `saved` → `onSaved` | same |
 
-The stacked panel is opened with the **hosting panel's** injector, not the field's, so a re-render of the form underneath does not close it (the outlet closes a panel when its opener's injector is destroyed), and it closes when the hosting panel does. When a panel hands the event on to the opener itself (the legacy editor panel), it puts its own injector on the event as `injector`, and the opener stacks under it; a field leaves `injector` unset.
+The stacked panel is opened with the **hosting panel's** injector, not the field's, so a re-render of the form underneath does not close it (the outlet closes a panel when its opener's injector is destroyed), and it closes when the hosting panel does. Both editor panels stack the same way: the panel hands the event to the opener on its `openContent` output and puts its own injector on it as `injector`; a field leaves `injector` unset. The overlay host never opens a panel itself, because only the opener knows whether the panel it stacks on is written to the URL, and the stacked panel is written exactly when that one is (opener-api.md step 6; QA of layer 8 found the new editor's stacked panels missing from the URL while the host opened them with no `url` option).
 
 ## Callers inside `edit-content`
 

@@ -98,7 +98,7 @@ test.describe('Workflow Tasks opens task content in the side panel over the task
         await detail.getByRole('menuitem', { name: 'Edit Content' }).click();
 
         await sidePanel.expectOpen();
-        expect(await sidePanel.isOnTop(), 'the side panel is not above the task dialog').toBe(true);
+        await sidePanel.expectOnTop('the side panel is not above the task dialog');
         await expect(taskDialog(page)).toBeVisible();
         await expect(page).toHaveURL(
             new RegExp(`/dotAdmin/#/c/workflow/${taskId}\\?.*editContent=${identifier}`)
@@ -143,7 +143,7 @@ test.describe('Workflow Tasks opens task content in the side panel over the task
         await sidePanel.expectOpen();
         await sidePanel.expectCount(1);
         await expect(sidePanel.title).toContainText(title);
-        expect(await sidePanel.isOnTop(), 'the side panel is not above the task dialog').toBe(true);
+        await sidePanel.expectOnTop('the side panel is not above the task dialog');
 
         await sidePanel.close();
         await sidePanel.expectClosed();

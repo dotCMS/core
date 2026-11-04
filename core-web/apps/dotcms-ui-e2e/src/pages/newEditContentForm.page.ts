@@ -1,4 +1,4 @@
-import { expect, type Locator, Page, type Request } from '@playwright/test';
+import { expect, type Locator, Page, type Request, type Route } from '@playwright/test';
 import { type Contentlet } from '@requests/contentlets';
 import { clickAddNewContentFromList, goToContentList } from '@utils/contentListingNavigation';
 
@@ -80,6 +80,10 @@ export class NewEditContentFormPage {
      *
      * The response is the only place a new contentlet's id shows up: content created from the
      * listing is edited in the side panel over it (#38303), and the address never changes.
+     *
+     * The fire goes out through `route.fetch()`, so its body is read in Node. Read from the
+     * browser it can already be gone, even inside a `waitForResponse` predicate: Chrome drops it
+     * and `json()` fails with `Protocol error (Network.getResponseBody)`.
      */
     async save(): Promise<Contentlet> {
         const saveButton = this.root.getByRole('button', { name: 'Save' });
@@ -88,15 +92,39 @@ export class NewEditContentFormPage {
 
         await expect(actionButton).toBeVisible();
 
-        const responsePromise = this.page.waitForResponse(
-            (response) => response.status() === 200 && isWorkflowFire(response.request())
-        );
-        await actionButton.click();
-        const { entity } = await (await responsePromise).json();
+        let entity: Contentlet | undefined;
+        const matchesFire = (url: URL) => url.pathname.startsWith('/api/v1/workflow/actions/');
+        const fire = async (route: Route) => {
+            if (!isWorkflowFire(route.request())) {
+                await route.fallback();
 
-        expect(entity?.inode, 'the workflow fire response carries no contentlet').toBeTruthy();
+                return;
+            }
 
-        return entity as Contentlet;
+            const response = await route.fetch();
+            const body = await response.json().catch(() => null);
+            await route.fulfill({ response });
+
+            if (response.status() === 200) {
+                entity = body?.entity;
+            }
+        };
+
+        await this.page.route(matchesFire, fire);
+
+        try {
+            await actionButton.click();
+            await expect
+                .poll(() => entity?.inode, {
+                    message: 'the workflow fire response carries no contentlet',
+                    timeout: 30000
+                })
+                .toBeTruthy();
+
+            return entity as Contentlet;
+        } finally {
+            await this.page.unroute(matchesFire, fire).catch(() => undefined);
+        }
     }
 
     /**
