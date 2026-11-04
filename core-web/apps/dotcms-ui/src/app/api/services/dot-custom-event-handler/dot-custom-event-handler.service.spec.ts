@@ -452,6 +452,26 @@ describe('DotCustomEventHandlerService', () => {
         });
 
         describe('create-contentlet', () => {
+            /**
+             * The content search and the Site Browser put the language the portlet shows on the
+             * create URL (`&lang=<id>`), and the create opens in it; the rest of the URL is ignored.
+             */
+            it('should create in the language the JSP url names', async () => {
+                await send('create-contentlet', {
+                    url: '/c/portal/layout?p_l_id=1&p_p_id=content&_content_cmd=new&lang=2',
+                    contentType: 'Blog',
+                    folderPath: 'default/'
+                });
+
+                expect(openedRequest()).toEqual({
+                    mode: 'new',
+                    contentType: 'Blog',
+                    folderPath: 'default/',
+                    languageId: 2,
+                    portletId: PORTLET_ID
+                });
+            });
+
             it('should open a create of the content type in the folder, ignoring the JSP url', async () => {
                 await send('create-contentlet', {
                     url: '/c/portal/layout?p_l_id=1&p_p_id=content&_content_cmd=new',
@@ -467,6 +487,8 @@ describe('DotCustomEventHandlerService', () => {
                     portletId: PORTLET_ID
                 });
                 expect(request).not.toHaveProperty('url');
+                // No `lang` on the url: the opener's default language applies.
+                expect(request).not.toHaveProperty('languageId');
             });
         });
 
@@ -535,6 +557,30 @@ describe('DotCustomEventHandlerService', () => {
             await send('edit-contentlet', { inode: '123', contentType: 'Blog' });
 
             expect(getKeys.mock.calls.length).toBe(0);
+        });
+    });
+
+    /**
+     * The root injector provides no `MessageService`, so a panel opened under it fails inside.
+     * `DotSidePanelHostComponent` registers before any portlet can send an event; until it has,
+     * nothing opens and the broken invariant is logged.
+     */
+    describe('before the side panel host registers its injector', () => {
+        it('should open nothing and log an error', async () => {
+            const open = TestBed.inject(DotEditContentOpenerService).open as Mock;
+            open.mockClear();
+            const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+            service.handle(
+                new CustomEvent('ng-event', {
+                    detail: { name: 'edit-contentlet', data: { inode: '123', contentType: 'Blog' } }
+                })
+            );
+            await vi.dynamicImportSettled();
+
+            expect(open.mock.calls.length).toBe(0);
+            expect(consoleError).toHaveBeenCalledTimes(1);
+            consoleError.mockRestore();
         });
     });
 });

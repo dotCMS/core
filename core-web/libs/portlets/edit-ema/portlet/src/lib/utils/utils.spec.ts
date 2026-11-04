@@ -37,7 +37,8 @@ import {
     isAssetPath,
     isNavigableHref,
     resolveClickedAnchor,
-    scrollIframeToFragment
+    scrollIframeToFragment,
+    shouldNavigate
 } from '.';
 
 import { DEFAULT_PERSONA, LAYOUT_URL, PERSONA_KEY } from '../shared/consts';
@@ -1181,6 +1182,28 @@ describe('utils functions', () => {
 
         it('should return false when the paths are not equal', () => {
             expect(compareUrlPaths('/test', '/test2')).toBe(false);
+        });
+    });
+
+    /**
+     * Whether a saved contentlet's URL map is somewhere else to go. The REST contentlet carries
+     * `URL_MAP_FOR_CONTENT: null` for a type with no detail page (#38303).
+     */
+    describe('shouldNavigate', () => {
+        it('should navigate to a URL other than the current one', () => {
+            expect(shouldNavigate('/blog/a-new-slug', '/blog/index')).toBe(true);
+        });
+
+        it('should not navigate to the current URL', () => {
+            expect(shouldNavigate('/blog/index', 'blog/index')).toBe(false);
+        });
+
+        it.each([
+            ['undefined', undefined],
+            ['null', null],
+            ['an empty string', '']
+        ])('should not navigate to %s', (_label, url) => {
+            expect(shouldNavigate(url, '/blog/index')).toBe(false);
         });
     });
 

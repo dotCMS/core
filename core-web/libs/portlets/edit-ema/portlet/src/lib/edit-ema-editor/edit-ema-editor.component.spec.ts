@@ -11,7 +11,7 @@ import { Mock, MockInstance, describe, expect, it, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { EventEmitter, Input, Output, Signal, signal, Component } from '@angular/core';
+import { EventEmitter, Injector, Input, Output, Signal, signal, Component } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
@@ -2035,24 +2035,12 @@ describe('EditEmaEditorComponent', () => {
                             return editPanel();
                         };
 
-                        it('should load the new URL when the saved content maps to another one', () => {
-                            const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
-                            const panel = openEdit();
-
-                            panel.options.saved?.(
-                                createFakeContentlet({
-                                    identifier: 'contentlet-identifier-123',
-                                    URL_MAP_FOR_CONTENT: '/blog/a-new-slug'
-                                })
-                            );
-
-                            expect(pageLoadSpy).toHaveBeenCalledWith({ url: '/blog/a-new-slug' });
-                        });
-
-                        it.each([
-                            ['maps to no URL', undefined],
-                            ['maps to the same URL', 'index']
-                        ])('should reload the page when the saved content %s', (_label, urlMap) => {
+                        /**
+                         * A URL-mapped contentlet placed on another page (a Blog on `/blog/index`)
+                         * keeps the author on that page: only the URL-map edit follows the content
+                         * to its own URL.
+                         */
+                        it('should reload the page, not load the URL the saved content maps to', () => {
                             const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
                             const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
                             const panel = openEdit();
@@ -2060,7 +2048,7 @@ describe('EditEmaEditorComponent', () => {
                             panel.options.saved?.(
                                 createFakeContentlet({
                                     identifier: 'contentlet-identifier-123',
-                                    URL_MAP_FOR_CONTENT: urlMap
+                                    URL_MAP_FOR_CONTENT: '/blog/a-new-slug'
                                 })
                             );
 
@@ -2112,6 +2100,65 @@ describe('EditEmaEditorComponent', () => {
                     });
 
                     /**
+                     * The toolbar's "edit URL-mapped content" banner edits the content the page
+                     * shows, so a save that moves its URL loads the page at the new one.
+                     */
+                    describe('after the URL-mapped content is edited', () => {
+                        const openUrlMapEdit = () => {
+                            spectator.detectChanges();
+                            spectator.triggerEventHandler(
+                                DotUveToolbarStubComponent,
+                                'editUrlContentMap',
+                                {
+                                    identifier: 'url-map-identifier',
+                                    inode: 'url-map-inode',
+                                    title: 'My post',
+                                    contentType: 'Blog'
+                                } as unknown as DotCMSURLContentMap
+                            );
+                            spectator.detectChanges();
+
+                            return editPanel();
+                        };
+
+                        it('should load the new URL when the saved content maps to another one', () => {
+                            const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
+                            const panel = openUrlMapEdit();
+
+                            panel.options.saved?.(
+                                createFakeContentlet({
+                                    identifier: 'url-map-identifier',
+                                    URL_MAP_FOR_CONTENT: '/blog/a-new-slug'
+                                })
+                            );
+
+                            expect(pageLoadSpy).toHaveBeenCalledWith({ url: '/blog/a-new-slug' });
+                        });
+
+                        // The REST contentlet carries `URL_MAP_FOR_CONTENT: null` for a type with
+                        // no detail page, so `null` is no destination either.
+                        it.each([
+                            ['maps to no URL', undefined],
+                            ['maps to a null URL', null],
+                            ['maps to the same URL', 'index']
+                        ])('should reload the page when the saved content %s', (_label, urlMap) => {
+                            const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
+                            const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+                            const panel = openUrlMapEdit();
+
+                            panel.options.saved?.(
+                                createFakeContentlet({
+                                    identifier: 'url-map-identifier',
+                                    URL_MAP_FOR_CONTENT: urlMap
+                                })
+                            );
+
+                            expect(pageReloadSpy).toHaveBeenCalledTimes(1);
+                            expect(pageLoadSpy).not.toHaveBeenCalled();
+                        });
+                    });
+
+                    /**
                      * The SDK's `editContentlet()` reaches the editor through the actions handler's
                      * `openContent` callback. A headless page renders itself, so a save also asks
                      * the client to reload.
@@ -2148,6 +2195,34 @@ describe('EditEmaEditorComponent', () => {
                             openFromSdk();
 
                             expect(editRequest()).toEqual(expect.objectContaining(SDK_REQUEST));
+                        });
+
+                        /**
+                         * The mask covers the page while a panel is open, but a headless page's SDK
+                         * can still ask. The open panel already chose its editor, so a second
+                         * request is dropped rather than re-rendering it with another identity.
+                         */
+                        it('should ignore a request that arrives while a panel is open', () => {
+                            spectator.component['handleEditWithCopyDecision'](
+                                EDIT_ACTION_PAYLOAD_MOCK
+                            );
+                            spectator.detectChanges();
+                            const postMessageSpy = vi
+                                .spyOn(iframeWindow(), 'postMessage')
+                                .mockImplementation(() => undefined);
+
+                            openFromSdk();
+                            editPanel().options.saved?.(
+                                createFakeContentlet({ identifier: 'contentlet-identifier-123' })
+                            );
+
+                            expect(editRequest()).toEqual(pencilRequest());
+                            expect(opener.opened.length).toBe(1);
+                            // The open panel's saves are still the pencil's, not an SDK edit's.
+                            expect(postMessageSpy).not.toHaveBeenCalledWith(
+                                { name: __DOTCMS_UVE_EVENT__.UVE_RELOAD_PAGE },
+                                '*'
+                            );
                         });
 
                         it('should reload the page and ask the client to reload itself after a save', () => {
@@ -2621,6 +2696,32 @@ describe('EditEmaEditorComponent', () => {
 
                         expect(pageReloadSpy).not.toHaveBeenCalled();
                         expect(pageLoadSpy).not.toHaveBeenCalled();
+                    });
+
+                    /**
+                     * A block editor inside the translate form asks to edit embedded content the
+                     * way it does in any legacy editor panel: the content stacks over the
+                     * translate panel, under that panel's own injector, so it closes with it.
+                     */
+                    it('should stack content the translate form asks for over the translate panel', () => {
+                        translate();
+                        const panelInjector = Injector.create({
+                            providers: [],
+                            parent: spectator.inject(Injector)
+                        });
+                        const request: DotEditContentRequest = {
+                            mode: 'edit',
+                            inode: 'embedded-inode',
+                            contentType: 'Blog',
+                            title: 'Embedded'
+                        };
+
+                        emit('openContent', { request, injector: panelInjector });
+
+                        const stacked = opener.opened.at(-1);
+                        expect(stacked?.request).toEqual(request);
+                        // Compared by identity: printing an injector runs the worker out of memory.
+                        expect(stacked?.options.injector === panelInjector).toBe(true);
                     });
                 });
 
