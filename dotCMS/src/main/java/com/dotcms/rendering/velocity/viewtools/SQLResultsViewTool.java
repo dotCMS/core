@@ -6,6 +6,7 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -49,7 +50,8 @@ public class SQLResultsViewTool implements ViewTool {
     private static final boolean RESPECT_FRONT_END_ROLES = Boolean.TRUE;
     private static final String HAS_DOT_CONNECT_SQL_ERROR = "hasDotConnectSQLError";
     private static final String DOT_CONNECT_SQL_ERROR = "dotConnectSQLError";
-    private static final String DEFAULT_DATASOURCE = "default";
+    static final String DEFAULT_DATASOURCE = "default";
+    static final String ALLOW_DOTCMS_DB_ACCESS = "ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB";
 
     /**
      * Default ViewTool constructor.
@@ -102,6 +104,10 @@ public class SQLResultsViewTool implements ViewTool {
 
     /**
      * Executes the specified SQL query, based on the information specified by the user/developer.
+     * <p>
+     * The data source must be {@code "default"} or a name in the local naming context. Whatever name is used, a query
+     * against the dotCMS database runs only when {@code ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB} is enabled, and then
+     * always through the internal connection pool.
      *
      * @param dataSource    The database that the SQL query will run against.
      * @param sql           The SQL query.
@@ -109,24 +115,18 @@ public class SQLResultsViewTool implements ViewTool {
      * @param startRow      The initial paginated record included in the result set.
      * @param maxRow        The final paginated record included in the result set.
      *
-     * @return The results returned by the SQL query.
+     * @return The results returned by the SQL query, or a single error row.
      */
     @CloseDBIfOpened
     private ArrayList<HashMap<String, String>> getResults(final String dataSource, final String sql, final
     ArrayList<Object> parameterList, int startRow, int maxRow) {
-        if (dataSource.equals(DEFAULT_DATASOURCE) && !Config.getBooleanProperty
-                ("ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB", false)) {
-            return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "SQLResultsViewTool failed to execute " +
-                    "query on default connection pool because ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false" +
-                    ".")), "ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false.");
+        if (!DbConnectionFactory.isLocalJndiName(dataSource)) {
+            return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "Failed to call the SQLResultsViewTool. " +
+                    "Invalid Data Source.")));
         }
         if (!UtilMethods.isSet(sql)) {
             // SQL Query is not Set. So, return an empty list
             return new ArrayList<>();
-        }
-        if (!UtilMethods.isSet(dataSource)) {
-            return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "Failed to call the SQLResultsViewTool. " +
-                    "Invalid Data Source.")));
         }
         if (startRow < 0) {
             startRow = 0;
@@ -139,6 +139,19 @@ public class SQLResultsViewTool implements ViewTool {
             if (null == contentlet || !UtilMethods.isSet(contentlet.getIdentifier())) {
                 return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "Failed to call the SQLResultsViewTool" +
                         ". User failed to execute SQL queries.")));
+            }
+            final boolean dotcmsDatabase;
+            try {
+                dotcmsDatabase = isDotcmsDatabase(dataSource);
+            } catch (final Exception e) {
+                return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "Failed to call the " +
+                        "SQLResultsViewTool. Invalid Data Source.")), "The data source could not be resolved: " +
+                        e.getClass().getSimpleName());
+            }
+            if (dotcmsDatabase && !Config.getBooleanProperty(ALLOW_DOTCMS_DB_ACCESS, false)) {
+                return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "SQLResultsViewTool failed to " +
+                        "execute query on default connection pool because ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB " +
+                        "is set to false.")), "ALLOW_VELOCITY_SQL_ACCESS_TO_DOTCMS_DB is set to false.");
             }
             if (!isSQLValid(sql, contentlet)) {
                 return this.errorResults;
@@ -159,7 +172,7 @@ public class SQLResultsViewTool implements ViewTool {
                     }
                 }
             }
-            if (dataSource.equals(DEFAULT_DATASOURCE)) {
+            if (dotcmsDatabase) {
                 return dc.loadResults();
             }
             return dc.getResults(dataSource);
@@ -167,6 +180,21 @@ public class SQLResultsViewTool implements ViewTool {
             return reportError(new HashMap<>(Map.of(DOT_CONNECT_SQL_ERROR, "An error occurred when executing the SQL " +
                     "query: " + e.getMessage())));
         }
+    }
+
+    /**
+     * Tells whether a data source name points to the dotCMS database: either the {@code "default"} name, or any name
+     * that {@link DbConnectionFactory#isDefaultDatabase(String)} recognises as leading to it.
+     *
+     * @param dataSource A data source name already accepted by {@link DbConnectionFactory#isLocalJndiName(String)}.
+     *
+     * @return {@code true} if a query on this name would run against the dotCMS database.
+     *
+     * @throws com.dotmarketing.exception.DotRuntimeException If the name cannot be resolved.
+     */
+    static boolean isDotcmsDatabase(final String dataSource) {
+        return DEFAULT_DATASOURCE.equals(dataSource)
+                || DbConnectionFactory.isDefaultDatabase(dataSource);
     }
 
     /**
