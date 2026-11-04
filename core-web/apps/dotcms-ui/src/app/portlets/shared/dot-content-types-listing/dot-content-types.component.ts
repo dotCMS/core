@@ -13,10 +13,11 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { map, take } from 'rxjs/operators';
+import { finalize, map, take } from 'rxjs/operators';
 
 import {
     DotAlertConfirmService,
+    DotContainersByContentType,
     DotContainersService,
     DotContentTypeService,
     DotContentTypesInfoService,
@@ -30,7 +31,6 @@ import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     DotActionMenuItem,
     DotCMSBaseTypesContentTypes,
-    DotContainer,
     DotCMSContentType,
     DotCopyContentTypeDialogFormFields,
     DotEnvironment,
@@ -120,6 +120,8 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private dialogDestroy$: Subject<boolean> = new Subject<boolean>();
+    /** Whether the containers lookup that precedes a delete is still in flight. */
+    #removalInFlight = false;
 
     ngOnInit() {
         forkJoin(
@@ -365,18 +367,27 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
 
     /**
      * Looks up the containers that use the content type before deleting it: when none use it the
-     * delete confirmation is shown, otherwise a dialog lists the containers.
+     * delete confirmation is shown, otherwise a dialog lists the containers. A click that lands
+     * while a lookup is still in flight is ignored, so one content type never gets two dialogs.
      */
     private removeConfirmation(item: DotCMSContentType): void {
+        if (this.#removalInFlight) {
+            return;
+        }
+
+        this.#removalInFlight = true;
         this.dotContainersService
             .getByContentType(item.id)
-            .pipe(take(1))
+            .pipe(
+                take(1),
+                finalize(() => (this.#removalInFlight = false))
+            )
             .subscribe({
-                next: (containers) => {
-                    if (containers.length === 0) {
+                next: (usage) => {
+                    if (usage.containers.length === 0) {
                         this.confirmRemoval(item);
                     } else {
-                        this.showContainersInUseDialog(item, containers);
+                        this.showContainersInUseDialog(item, usage);
                     }
                 },
                 error: (error) =>
@@ -406,16 +417,20 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
 
     /**
      * Lists the containers that use the content type and deletes it only when the user picks Delete.
+     * The header names the content type, since this is the only confirmation the user sees.
      */
-    private showContainersInUseDialog(item: DotCMSContentType, containers: DotContainer[]): void {
+    private showContainersInUseDialog(
+        item: DotCMSContentType,
+        usage: DotContainersByContentType
+    ): void {
         const ref = this.dialogService.open(DotContentTypeInUseDialogComponent, {
-            header: this.dotMessageService.get('message.structure.cantdelete'),
+            header: this.dotMessageService.get('message.contenttypes.in_use.header', item.name),
             closable: true,
             closeOnEscape: true,
             width: '40rem',
             contentStyle: { 'max-height': '500px', overflow: 'auto' },
             baseZIndex: 10000,
-            data: containers
+            data: usage
         });
 
         ref?.onClose.pipe(take(1)).subscribe((confirmed: boolean | undefined) => {

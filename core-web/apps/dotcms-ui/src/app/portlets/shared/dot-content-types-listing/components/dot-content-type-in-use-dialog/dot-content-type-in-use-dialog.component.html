@@ -9,21 +9,35 @@
             <li
                 class="flex items-baseline justify-between gap-4 px-4 py-3"
                 data-testid="in-use-container">
-                <span
-                    class="min-w-0 font-medium wrap-break-word"
-                    data-testid="in-use-container-title">
-                    {{ container.title }}
+                <span class="flex min-w-0 items-baseline gap-2">
+                    <span
+                        class="min-w-0 font-medium wrap-break-word"
+                        data-testid="in-use-container-title">
+                        {{ container.title }}
+                    </span>
+                    @if (container.archived) {
+                        <p-tag
+                            severity="secondary"
+                            [value]="'Archived' | dm"
+                            data-testid="in-use-container-archived" />
+                    }
                 </span>
-                @if (container.path) {
+                @if (container.path || container.hostName) {
                     <span
                         class="min-w-0 text-sm wrap-break-word text-gray-500"
                         data-testid="in-use-container-path">
-                        {{ container.path }}
+                        {{ container.path || container.hostName }}
                     </span>
                 }
             </li>
         }
     </ul>
+
+    @if (truncated) {
+        <p class="m-0 text-sm text-gray-500" data-testid="in-use-truncated">
+            {{ 'message.contenttypes.in_use.truncated' | dm: countArgs }}
+        </p>
+    }
 
     <div class="flex justify-end gap-2">
         <p-button

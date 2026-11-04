@@ -4,7 +4,7 @@ import { vi } from 'vitest';
 
 import { DotContainer, DotConfigurationVariables, CONTAINER_SOURCE } from '@dotcms/dotcms-models';
 
-import { DotContainersService } from './dot-containers.service';
+import { DotContainersByContentType, DotContainersService } from './dot-containers.service';
 
 import { DotPropertiesService } from '../dot-properties/dot-properties.service';
 
@@ -273,34 +273,56 @@ describe('DotContainersService', () => {
     });
 
     describe('getByContentType', () => {
-        it('requests the containers that use the content type', () => {
-            // Given: a content type id with characters that need URL encoding
-            // When: getByContentType(id) is called
-            // Then: one GET to /api/v1/containers/?content_type=<encoded id>&per_page=100&archive=true and the
-            // entity array is returned
-            let result: DotContainer[] | undefined;
+        const TOTAL_HEADER = 'X-Pagination-Total-Entries';
 
-            spectator.service.getByContentType('a b/c').subscribe((containers) => {
-                result = containers;
+        it('requests the containers that use the content type and reads the total', () => {
+            // Given: a content type id with characters that need URL encoding and a response whose
+            // total header is larger than the page
+            // When: getByContentType(id) is called
+            // Then: one GET to /api/v1/containers/?content_type=<encoded id>&per_page=100&archive=true,
+            // the entity array is returned and the total comes from the header
+            let result: DotContainersByContentType | undefined;
+
+            spectator.service.getByContentType('a b/c').subscribe((response) => {
+                result = response;
             });
 
             const req = spectator.expectOne(
                 `${EXPECTED_CONTAINER_API_URL}?content_type=a%20b%2Fc&per_page=100&archive=true`,
                 HttpMethod.GET
             );
-            req.flush({ entity: mockContainers });
+            req.flush({ entity: mockContainers }, { headers: { [TOTAL_HEADER]: '250' } });
 
-            expect(result).toEqual(mockContainers);
+            expect(result).toEqual({ containers: mockContainers, total: 250 });
         });
 
-        it('answers an empty list when the response has no entity', () => {
+        it('falls back to the number of containers when the total header is missing', () => {
+            // Given: a response without the total header
+            // When: getByContentType(id) is called
+            // Then: the total is the length of the entity array
+            let result: DotContainersByContentType | undefined;
+
+            spectator.service.getByContentType('content-type-id').subscribe((response) => {
+                result = response;
+            });
+
+            const req = spectator.expectOne(
+                `${EXPECTED_CONTAINER_API_URL}?content_type=content-type-id&per_page=100&archive=true`,
+                HttpMethod.GET
+            );
+            req.flush({ entity: mockContainers });
+
+            expect(result).toEqual({ containers: mockContainers, total: 1 });
+        });
+
+        it('answers an empty list and a zero total when the response has no entity', () => {
             // Given: a response without an entity
             // When: getByContentType(id) is called
-            // Then: it resolves to []
-            let result: DotContainer[] | undefined;
+            // Then: it resolves to no containers and a zero total
+            let result: DotContainersByContentType | undefined;
 
-            spectator.service.getByContentType('content-type-id').subscribe((containers) => {
-                result = containers;
+            spectator.service.getByContentType('content-type-id').subscribe((response) => {
+                result = response;
             });
 
             const req = spectator.expectOne(
@@ -309,7 +331,7 @@ describe('DotContainersService', () => {
             );
             req.flush({});
 
-            expect(result).toEqual([]);
+            expect(result).toEqual({ containers: [], total: 0 });
         });
     });
 });

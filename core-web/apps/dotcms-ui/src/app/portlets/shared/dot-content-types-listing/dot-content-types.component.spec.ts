@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Observable, throwError as observableThrowError, of } from 'rxjs';
+import { Observable, Subject, throwError as observableThrowError, of } from 'rxjs';
 import { vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -174,6 +174,7 @@ describe('DotContentTypesPortletComponent', () => {
             'contenttypes.action.delete': 'Delete',
             'contenttypes.action.cancel': 'Cancel',
             'message.structure.cantdelete': 'Delete Content Type',
+            'message.contenttypes.in_use.header': 'Delete {0}',
             'contenttypes.content.push_publish': 'Push Publish',
             'contenttypes.content.add_to_bundle': 'Add to bundle',
             'contenttypes.content.add_to_menu': 'Add to Menu',
@@ -312,7 +313,7 @@ describe('DotContentTypesPortletComponent', () => {
         fixture.detectChanges();
 
         const getByContentType = vi.mocked(TestBed.inject(DotContainersService).getByContentType);
-        getByContentType.mockReturnValue(of([]));
+        getByContentType.mockReturnValue(of({ containers: [], total: 0 }));
         const dialogService = fixture.debugElement.injector.get(DialogService);
         vi.spyOn(dialogService, 'open');
 
@@ -501,7 +502,9 @@ describe('DotContentTypesPortletComponent', () => {
 
         vi.spyOn(dotHttpErrorManagerService, 'handle');
         vi.spyOn(crudService, 'delete').mockReturnValue(observableThrowError(forbiddenError));
-        vi.mocked(TestBed.inject(DotContainersService).getByContentType).mockReturnValue(of([]));
+        vi.mocked(TestBed.inject(DotContainersService).getByContentType).mockReturnValue(
+            of({ containers: [], total: 0 })
+        );
         comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
 
         fixture.detectChanges();
@@ -616,7 +619,7 @@ describe('DotContentTypesPortletComponent', () => {
 
         it('should warn about the containers using the content type and delete it on Delete', () => {
             // Given: the containers lookup answers two containers and the dialog answers Delete
-            getByContentType.mockReturnValue(of(containers));
+            getByContentType.mockReturnValue(of({ containers, total: 2 }));
             answerDialogWith(true);
 
             // When: the Delete row action runs
@@ -628,9 +631,10 @@ describe('DotContentTypesPortletComponent', () => {
             expect(dialogService.open).toHaveBeenCalledWith(
                 DotContentTypeInUseDialogComponent,
                 expect.objectContaining({
+                    header: 'Delete Nuevo',
                     closable: true,
                     closeOnEscape: true,
-                    data: containers
+                    data: { containers, total: 2 }
                 })
             );
             expect(crudService.delete).toHaveBeenCalledTimes(1);
@@ -640,7 +644,7 @@ describe('DotContentTypesPortletComponent', () => {
 
         it('should not delete the content type when the in-use dialog is cancelled', () => {
             // Given: the containers lookup answers two containers and the dialog answers Cancel
-            getByContentType.mockReturnValue(of(containers));
+            getByContentType.mockReturnValue(of({ containers, total: 2 }));
             answerDialogWith(false);
 
             // When: the Delete row action runs
@@ -653,7 +657,7 @@ describe('DotContentTypesPortletComponent', () => {
 
         it('should not delete the content type when the in-use dialog is dismissed', () => {
             // Given: the containers lookup answers two containers and the dialog closes without an answer
-            getByContentType.mockReturnValue(of(containers));
+            getByContentType.mockReturnValue(of({ containers, total: 2 }));
             answerDialogWith(undefined);
 
             // When: the Delete row action runs
@@ -688,6 +692,38 @@ describe('DotContentTypesPortletComponent', () => {
             expect(dotDialogService.confirm).not.toHaveBeenCalled();
             expect(dialogService.open).not.toHaveBeenCalled();
             expect(crudService.delete).not.toHaveBeenCalled();
+
+            // And: a later Delete looks the containers up again
+            comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
+
+            expect(getByContentType).toHaveBeenCalledTimes(2);
+        });
+
+        it('should ignore a second Delete while the containers lookup is in flight', () => {
+            // Given: a containers lookup that has not answered yet
+            const lookup = new Subject<{ containers: DotContainer[]; total: number }>();
+            getByContentType.mockReturnValue(lookup);
+            answerDialogWith(true);
+
+            // When: the Delete row action runs twice before the lookup answers
+            comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
+            comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
+
+            // Then: only one lookup is sent
+            expect(getByContentType).toHaveBeenCalledTimes(1);
+
+            // When: the lookup answers two containers
+            lookup.next({ containers, total: 2 });
+            lookup.complete();
+
+            // Then: one dialog opens and one delete is sent
+            expect(dialogService.open).toHaveBeenCalledTimes(1);
+            expect(crudService.delete).toHaveBeenCalledTimes(1);
+
+            // And: once the lookup is over, a later Delete looks the containers up again
+            comp.rowActions[DELETE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
+
+            expect(getByContentType).toHaveBeenCalledTimes(2);
         });
     });
 });
