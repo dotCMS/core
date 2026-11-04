@@ -19,6 +19,7 @@ import {
     IMAGE_EDITOR_LAUNCHER
 } from '../../fields/shared/image-editor-launcher';
 import { DotEditContentRequest } from '../../models/dot-edit-content-request.model';
+import { DotOpenContentEvent } from '../../models/dot-open-content-event.model';
 import { DotEditContentOpenerService } from '../../opener/dot-edit-content-opener.service';
 import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
 import { DotRelatedContentNavigationStore } from '../../store/dot-related-content-navigation.store';
@@ -73,6 +74,7 @@ describe('DotEditContentSidePanelComponent', () => {
     let saved$: Subject<DotCMSContentlet>;
     let left$: Subject<void>;
     let languageChanged$: Subject<number>;
+    let openContent$: Subject<DotOpenContentEvent>;
     let panel: { close: Mock; closed: Subject<void> };
 
     const EDIT_REQUEST: DotEditContentRequest = {
@@ -105,6 +107,7 @@ describe('DotEditContentSidePanelComponent', () => {
         saved$ = new Subject<DotCMSContentlet>();
         left$ = new Subject<void>();
         languageChanged$ = new Subject<number>();
+        openContent$ = new Subject<DotOpenContentEvent>();
         panel = panelRef();
 
         spectator = createComponent({
@@ -114,7 +117,8 @@ describe('DotEditContentSidePanelComponent', () => {
                     useValue: {
                         saved$: saved$.asObservable(),
                         left$: left$.asObservable(),
-                        languageChanged$: languageChanged$.asObservable()
+                        languageChanged$: languageChanged$.asObservable(),
+                        openContent$: openContent$.asObservable()
                     }
                 },
                 { provide: DotSidePanelRef, useValue: panel }
@@ -178,6 +182,29 @@ describe('DotEditContentSidePanelComponent', () => {
         languageChanged$.next(2);
 
         expect(languageSpy).toHaveBeenCalledWith(2);
+    });
+
+    /**
+     * A field asks to stack content (a block editor's "Edit contentlet", a relationship's "New"):
+     * the panel hands it to the opener on its `openContent` output, with its own injector, the way
+     * the legacy editor panel does. The opener then stacks it under this panel, written to the URL
+     * when this panel is (#38303, FR-044).
+     */
+    it("should hand the content its fields stack to `openContent`, with the panel's own injector", async () => {
+        await openRequest();
+        const openSpy = vi.fn();
+        spectator.output('openContent').subscribe(openSpy);
+        const onSaved = vi.fn();
+        const request: DotEditContentRequest = { mode: 'edit', inode: 'inode-9', contentType: 'Blog' };
+
+        openContent$.next({ request, onSaved, source: 'block-editor' });
+
+        expect(openSpy).toHaveBeenCalledTimes(1);
+        const event = openSpy.mock.calls[0][0] as DotOpenContentEvent;
+        expect(event.request).toEqual(request);
+        expect(event.onSaved === onSaved).toBe(true);
+        // The panel's own injector: it resolves the panel's ref.
+        expect(event.injector?.get(DotSidePanelRef) === panel).toBe(true);
     });
 
     /**

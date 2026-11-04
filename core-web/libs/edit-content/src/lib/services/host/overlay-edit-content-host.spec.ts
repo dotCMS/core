@@ -1,8 +1,6 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/vitest';
 import { Mock, vi } from 'vitest';
 
-import { Injector } from '@angular/core';
-
 import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
@@ -14,10 +12,7 @@ import { OverlayEditContentHost } from './overlay-edit-content-host';
 
 import { DotEditContentRequest } from '../../models/dot-edit-content-request.model';
 import { DotOpenContentEvent } from '../../models/dot-open-content-event.model';
-import {
-    DotEditContentOpenerService,
-    DotEditContentOpenOptions
-} from '../../opener/dot-edit-content-opener.service';
+import { DotEditContentOpenerService } from '../../opener/dot-edit-content-opener.service';
 import { DotRelatedContentNavigationStore } from '../../store/dot-related-content-navigation.store';
 
 /**
@@ -294,17 +289,35 @@ describe('OverlayEditContentHost', () => {
      * anything else stacks a panel over this one. The discriminator is the event's `source`:
      * `'relationship' | 'block-editor'`.
      */
+    /**
+     * Content stacked over this panel goes to the panel, which emits it on its `openContent`
+     * output with its own injector; the opener wires that output for every panel it opens, so the
+     * stacked panel is written to the URL exactly when this one is (#38303, FR-044). The host never
+     * opens it through the opener itself.
+     */
     describe('openContent', () => {
         /** The opener's `open`, as the mock records it. */
         const opened = () => spectator.inject(DotEditContentOpenerService).open as Mock;
 
-        /** The options the host handed the opener on its only `open`. */
-        const openOptions = (): DotEditContentOpenOptions => {
-            expect(opened().mock.calls.length, 'the host stacks a panel through the opener').toBe(
-                1
-            );
+        /** The requests the host handed its panel to stack, from now on. */
+        const stacked = (): DotOpenContentEvent[] => {
+            const events: DotOpenContentEvent[] = [];
+            const withStream = host as unknown as {
+                openContent$?: { subscribe: (next: (event: DotOpenContentEvent) => void) => void };
+            };
 
-            return opened().mock.calls[0][1] as DotEditContentOpenOptions;
+            expect(withStream.openContent$, 'the host hands stacked content to its panel').toBeDefined();
+            withStream.openContent$?.subscribe((event) => events.push(event));
+
+            return events;
+        };
+
+        /** The one request the host handed its panel, and that the opener was not called. */
+        const stackedOnce = (events: DotOpenContentEvent[]): DotOpenContentEvent => {
+            expect(events.length, 'the host stacks one panel').toBe(1);
+            expect(opened().mock.calls.length, 'the host never opens it itself').toBe(0);
+
+            return events[0];
         };
 
         describe('an existing item a Relationship field names', () => {
@@ -359,20 +372,21 @@ describe('OverlayEditContentHost', () => {
                 }
             };
 
-            it('stacks a panel through the opener with the host injector', () => {
+            it('hands it to the panel to stack', () => {
+                const events = stacked();
+
                 openContent(host, { request: REQUEST, source: 'relationship', onSaved: vi.fn() });
 
-                expect(opened().mock.calls[0][0]).toEqual(REQUEST);
-                // Compared by identity: printing an injector runs the worker out of memory.
-                expect(openOptions().injector === spectator.inject(Injector)).toBe(true);
+                expect(stackedOnce(events).request).toEqual(REQUEST);
             });
 
-            it('hands every save of the stacked panel to the field', () => {
+            it("hands every save of the stacked panel to the field, through the event's reply", () => {
+                const events = stacked();
                 const onSaved = vi.fn();
                 const contentlet = createFakeContentlet({ identifier: 'created-id' });
                 openContent(host, { request: REQUEST, source: 'relationship', onSaved });
 
-                openOptions().saved?.(contentlet);
+                stackedOnce(events).onSaved?.(contentlet);
 
                 expect(onSaved).toHaveBeenCalledWith(contentlet);
             });
@@ -387,7 +401,8 @@ describe('OverlayEditContentHost', () => {
         });
 
         describe('content a block editor names', () => {
-            it('stacks a panel through the opener and never replaces the panel content', () => {
+            it('hands it to the panel to stack and never replaces the panel content', () => {
+                const events = stacked();
                 const goToRelatedContent = vi.spyOn(host, 'goToRelatedContent');
                 const request: DotEditContentRequest = {
                     mode: 'edit',
@@ -397,8 +412,7 @@ describe('OverlayEditContentHost', () => {
 
                 openContent(host, { request, source: 'block-editor' });
 
-                expect(opened().mock.calls[0][0]).toEqual(request);
-                expect(openOptions().injector === spectator.inject(Injector)).toBe(true);
+                expect(stackedOnce(events).request).toEqual(request);
                 expect(goToRelatedContent).not.toHaveBeenCalled();
             });
         });
@@ -406,13 +420,14 @@ describe('OverlayEditContentHost', () => {
         // Only an explicit Relationship edit replaces in place; anything unnamed stacks, which
         // never discards the panel's own content.
         describe('an edit that names no source', () => {
-            it('stacks a panel through the opener', () => {
+            it('hands it to the panel to stack', () => {
+                const events = stacked();
                 const goToRelatedContent = vi.spyOn(host, 'goToRelatedContent');
                 const request: DotEditContentRequest = { mode: 'edit', inode: 'inode-d' };
 
                 openContent(host, { request });
 
-                expect(opened().mock.calls[0][0]).toEqual(request);
+                expect(stackedOnce(events).request).toEqual(request);
                 expect(goToRelatedContent).not.toHaveBeenCalled();
             });
         });

@@ -976,6 +976,35 @@ describe('DotEditContentOpenerService', () => {
             expect(registered(1).ref === open.mock.results[1].value).toBe(true);
             expect(registered(1).params).toEqual({ editContent: 'rel-id', editContentLang: '2' });
         });
+
+        // A relationship's "New" from either editor stacks a create (#38303, QA item 1).
+        it('writes a create stacked on a written panel to the URL at once', async () => {
+            spectator.service.open(EDIT_REQUEST, { injector, url: {} });
+            const { config: first } = await lastOpen();
+            resolveEditor.mockReturnValue(NEVER);
+
+            first.outputs?.['openContent']({ request: { mode: 'new', contentType: 'Blog' } } as never);
+
+            expect(register).toHaveBeenCalledTimes(2);
+            expect(registered(1).params).toEqual({ createContent: 'Blog' });
+        });
+
+        // UVE opens its panels unwritten: what they stack stays out of the URL too.
+        it('leaves out of the URL what is stacked on a panel opened without the option', async () => {
+            getContentletByInode.mockReturnValue(
+                of(createFakeContentlet({ inode: 'rel-1', identifier: 'rel-id', languageId: 2 }))
+            );
+            spectator.service.open(EDIT_REQUEST, { injector });
+            const { config: first } = await lastOpen();
+
+            first.outputs?.['openContent']({ request: { mode: 'edit', inode: 'rel-1' } } as never);
+            await lastOpen();
+            first.outputs?.['openContent']({ request: { mode: 'new', contentType: 'Blog' } } as never);
+            await lastOpen();
+
+            expect(open).toHaveBeenCalledTimes(3);
+            expect(register).not.toHaveBeenCalled();
+        });
     });
 });
 
