@@ -160,7 +160,8 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 closeEditPanel: vi.fn(),
                 openEditByIdentifier,
                 $editPanelRequest: signal(null),
-                $legacyPanelRequest: signal(null),
+                $forceLegacyEditor: signal(false),
+                $reopeningPanel: signal(false),
                 $panelLocation: signal(null)
             }),
             LoggerService,

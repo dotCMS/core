@@ -40,7 +40,7 @@ import {
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import { DotCMSContentTypeField, DotContentDriveItem } from '@dotcms/dotcms-models';
-import { EditContentDialogData } from '@dotcms/edit-content';
+import { DotEditContentRequest } from '@dotcms/edit-content';
 import { GlobalStore } from '@dotcms/store';
 import { DotFolderListViewComponent } from '@dotcms/ui';
 import { DOT_SYSTEM_CONFIG_SERVICE_MOCK, mockLocales } from '@dotcms/utils-testing';
@@ -49,7 +49,6 @@ import { DotContentDriveShellComponent } from './dot-content-drive-shell.compone
 
 import { DotContentDriveGridCardComponent } from '../components/dot-content-drive-grid-card/dot-content-drive-grid-card.component';
 import { DEFAULT_PAGE, DEFAULT_PAGINATION } from '../shared/constants';
-import { DotLegacyEditorRequest } from '../shared/legacy-editor.models';
 import {
     MOCK_ITEMS,
     MOCK_ROUTE,
@@ -73,7 +72,7 @@ import { DotContentDriveStore } from '../store/dot-content-drive.store';
 
 // Backs the navigation service mock's readonly `$editPanelRequest`. Typed (not cast) so tests get
 // a compile-checked payload; reset in the shared beforeEach for isolation.
-const editPanelRequestSignal: WritableSignal<EditContentDialogData | null> = signal(null);
+const editPanelRequestSignal: WritableSignal<DotEditContentRequest | null> = signal(null);
 // Backs the mock's `$panelLocation`: what the URL must say about the open panel. The shell's URL
 // sync and its Back guard read this, not the request (#37759).
 const panelLocationSignal: WritableSignal<DotContentDrivePanelLocation | null> = signal(null);
@@ -90,8 +89,6 @@ const permissionsDialogRef = {
 };
 const dialogServiceOpen = vi.fn(() => permissionsDialogRef);
 
-// Backs the mock's `$legacyPanelRequest`: the legacy-editor panel the shell must render (#37759).
-const legacyPanelRequestSignal: WritableSignal<DotLegacyEditorRequest | null> = signal(null);
 // Module scope: both store mocks in this file read it, and they live in describes that do not
 // share a `beforeEach`. Reset per test rather than re-created, so neither mock captures a stale one.
 /** Nothing refused by default; the refusal tests set it. Module-scoped like its siblings,
@@ -196,7 +193,8 @@ describe('DotContentDriveShellComponent — grid view', () => {
                 panelSaved: vi.fn(),
                 panelLanguageChanged: vi.fn(),
                 $editPanelRequest: editPanelRequestSignal,
-                $legacyPanelRequest: legacyPanelRequestSignal,
+                $forceLegacyEditor: signal(false),
+                $reopeningPanel: signal(false),
                 $panelLocation: panelLocationSignal
             }),
             LoggerService,
@@ -250,7 +248,6 @@ describe('DotContentDriveShellComponent — grid view', () => {
         showInListFieldsSignal = signal<DotCMSContentTypeField[]>([]);
         editPanelRequestSignal.set(null);
         panelLocationSignal.set(null);
-        legacyPanelRequestSignal.set(null);
         permissionsDialogClose$ = new Subject<unknown>();
         dialogServiceOpen.mockClear();
         permissionsDialogRef.close.mockClear();

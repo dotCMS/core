@@ -1,0 +1,8 @@
+<dot-legacy-screen-side-panel
+    [request]="$screen()"
+    (legacyEvent)="onLegacyEvent($event)"
+    (loaded)="onLoaded($event)" />
+
+<!-- The unsaved-changes prompt, on this panel's own ConfirmationService (see requestClose). On the
+     body, so the drawer it sits in never positions or clips it. -->
+<p-confirmDialog appendTo="body" />

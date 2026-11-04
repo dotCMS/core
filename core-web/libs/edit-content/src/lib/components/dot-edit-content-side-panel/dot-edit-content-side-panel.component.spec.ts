@@ -10,6 +10,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { DotSidePanelRef } from '@dotcms/ui';
+import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotEditContentSidePanelComponent } from './dot-edit-content-side-panel.component';
 
@@ -18,24 +19,38 @@ import {
     IMAGE_EDITOR_LAUNCHER
 } from '../../fields/shared/image-editor-launcher';
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
+import { DotEditContentRequest } from '../../models/dot-edit-content-request.model';
 import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
 import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-edit-content.layout.component';
 
 /** The panel's ref, reduced to what the content uses. */
-const panelRef = () => ({ close: vi.fn(), contentStyleClass: signal('p-0!') });
+const panelRef = () => ({
+    close: vi.fn(),
+    contentStyleClass: signal('p-0!'),
+    closed: new Subject<void>()
+});
 
 describe('DotEditContentSidePanelComponent', () => {
     let spectator: Spectator<DotEditContentSidePanelComponent>;
     let saved$: Subject<DotCMSContentlet>;
     let left$: Subject<void>;
     let languageChanged$: Subject<number>;
-    let panel: { close: Mock };
+    let panel: { close: Mock; closed: Subject<void> };
 
     const EDIT_DATA: EditContentDialogData = {
         mode: 'edit',
         contentletInode: 'inode-1',
         identifier: 'id-1',
         title: 'My Content'
+    };
+
+    const EDIT_REQUEST: DotEditContentRequest = {
+        mode: 'edit',
+        inode: 'inode-1',
+        identifier: 'id-1',
+        contentType: 'Blog',
+        title: 'My Content',
+        variantName: 'variant-a'
     };
 
     const createComponent = createComponentFactory({
@@ -80,6 +95,13 @@ describe('DotEditContentSidePanelComponent', () => {
     /** Opens the panel on `data` and lets the host subscriptions (afterNextRender) run. */
     const open = async (data: EditContentDialogData = EDIT_DATA) => {
         spectator.setInput('data', data);
+        spectator.detectChanges();
+        await spectator.fixture.whenStable();
+    };
+
+    /** Opens the panel on a request (the new contract) and lets the host subscriptions run. */
+    const openRequest = async (request: DotEditContentRequest = EDIT_REQUEST) => {
+        spectator.setInput('request', request);
         spectator.detectChanges();
         await spectator.fixture.whenStable();
     };
@@ -189,6 +211,106 @@ describe('DotEditContentSidePanelComponent', () => {
         expect(confirmClose).not.toHaveBeenCalled();
         expect(onContentSaved).not.toHaveBeenCalled();
         expect(onCancel).toHaveBeenCalledTimes(1);
+    });
+
+    /**
+     * The one-request contract (#38303). The panel takes a `DotEditContentRequest`, reports a
+     * delete and a close as events, and hands the overlay host an identity built from the request.
+     */
+    describe('with a request', () => {
+        it('renders the editor once the request is set', async () => {
+            spectator.setInput('request', null);
+            spectator.detectChanges();
+            expect(spectator.query(DotEditContentLayoutComponent)).toBeNull();
+
+            await openRequest();
+
+            expect(spectator.query(DotEditContentLayoutComponent)).not.toBeNull();
+        });
+
+        it('gives the overlay host the identity the request names, variant included', async () => {
+            await openRequest();
+
+            // What the panel's DynamicDialogConfig hands the host; this suite replaces the
+            // component's providers, so the config itself is not injectable here.
+            expect(spectator.component.$dialogData()).toEqual(
+                expect.objectContaining({
+                    contentletInode: 'inode-1',
+                    contentTypeId: 'Blog',
+                    languageId: undefined,
+                    variantName: 'variant-a'
+                })
+            );
+        });
+
+        it('maps a create request to the content type the editor starts from', async () => {
+            await openRequest({
+                mode: 'new',
+                contentType: 'Blog',
+                folderPath: '/news/',
+                languageId: 2
+            });
+
+            // What the panel's DynamicDialogConfig hands the host; this suite replaces the
+            // component's providers, so the config itself is not injectable here.
+            expect(spectator.component.$dialogData()).toEqual(
+                expect.objectContaining({
+                    contentletInode: undefined,
+                    contentTypeId: 'Blog',
+                    folderPath: '/news/',
+                    languageId: 2
+                })
+            );
+        });
+
+        it('reports deleted and then closes, without the guard, when the host says the content left', async () => {
+            await openRequest();
+            const deleted = vi.fn();
+            const saved = vi.fn();
+            spectator.output('deleted').subscribe(deleted);
+            spectator.output('saved').subscribe(saved);
+            const confirmClose = vi.spyOn(
+                spectator.query(DotEditContentLayoutComponent)!,
+                'confirmClose'
+            );
+
+            left$.next();
+
+            expect(deleted).toHaveBeenCalledTimes(1);
+            expect(saved).not.toHaveBeenCalled();
+            expect(confirmClose).not.toHaveBeenCalled();
+            expect(panel.close).toHaveBeenCalledTimes(1);
+        });
+
+        it('reports closed once when the panel closes, for any reason', async () => {
+            await openRequest();
+            const closed = vi.fn();
+            spectator.output('closed').subscribe(closed);
+
+            panel.closed.next();
+            panel.closed.complete();
+
+            expect(closed).toHaveBeenCalledTimes(1);
+        });
+
+        it('reports every save, so the opener refreshes while the panel stays open', async () => {
+            await openRequest();
+            const saved = vi.fn();
+            spectator.output('saved').subscribe(saved);
+
+            saved$.next(createFakeContentlet({ inode: 'inode-2' }));
+            saved$.next(createFakeContentlet({ inode: 'inode-3' }));
+
+            expect(saved).toHaveBeenCalledTimes(2);
+        });
+
+        it('keeps the panel open after a save', async () => {
+            await openRequest();
+
+            saved$.next(createFakeContentlet({ inode: 'inode-2' }));
+
+            expect(panel.close).not.toHaveBeenCalled();
+        });
     });
 });
 
