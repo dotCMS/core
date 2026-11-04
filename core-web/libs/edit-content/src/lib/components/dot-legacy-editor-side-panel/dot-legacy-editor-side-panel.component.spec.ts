@@ -7,7 +7,7 @@ import {
 import { of, Subject, throwError } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
-import { NgZone, signal } from '@angular/core';
+import { NgZone, WritableSignal, signal } from '@angular/core';
 
 import { ConfirmationService, ConfirmEventType, Confirmation } from 'primeng/api';
 
@@ -22,7 +22,7 @@ import {
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import { DotCMSContentlet, DotFunctionInfo } from '@dotcms/dotcms-models';
-import { DotSidePanelRef } from '@dotcms/ui';
+import { DotSidePanelEntry, DotSidePanelRef, DotSidePanelService } from '@dotcms/ui';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotLegacyEditorSidePanelComponent } from './dot-legacy-editor-side-panel.component';
@@ -99,6 +99,11 @@ describe('DotLegacyEditorSidePanelComponent', () => {
         contentStyleClass: ReturnType<typeof signal<string>>;
         closed: Subject<void>;
     };
+    /** The open side panels, in open order, as the side-panel service lists them. */
+    let openPanels: WritableSignal<readonly DotSidePanelEntry[]>;
+
+    /** The service's entry for a panel ref, reduced to what the content reads. */
+    const entry = (ref: unknown): DotSidePanelEntry => ({ ref }) as unknown as DotSidePanelEntry;
 
     const createComponent = createComponentFactory({
         component: DotLegacyEditorSidePanelComponent,
@@ -123,9 +128,14 @@ describe('DotLegacyEditorSidePanelComponent', () => {
         localStorage.clear();
         ran$ = new Subject<DotFunctionInfo>();
         panel = { close: vi.fn(), contentStyleClass: signal('p-0!'), closed: new Subject<void>() };
+        // This panel is the only one open, so it is the one in front.
+        openPanels = signal([entry(panel)]);
 
         spectator = createComponent({
-            providers: [{ provide: DotSidePanelRef, useValue: panel }]
+            providers: [
+                { provide: DotSidePanelRef, useValue: panel },
+                { provide: DotSidePanelService, useValue: { panels: openPanels } }
+            ]
         });
 
         vi.clearAllMocks();
@@ -318,6 +328,30 @@ describe('DotLegacyEditorSidePanelComponent', () => {
 
             expect(() => ran$.next({ name: 'notAFunction', args: [] })).not.toThrow();
             expect(() => ran$.next({ name: 'missing', args: [] })).not.toThrow();
+        });
+
+        /**
+         * Every legacy editor defines the same functions, so with two stacked a call meant for the
+         * one the author is using would also run in the one behind it.
+         */
+        it('runs a call only while this panel is the one in front', () => {
+            open();
+            const { win } = loadFrame();
+            const saveAssignCallBackAngular = vi.fn();
+            Object.assign(win, { saveAssignCallBackAngular });
+            // Another legacy editor stacked on top of this one.
+            openPanels.set([entry(panel), entry({})]);
+
+            ran$.next({ name: 'saveAssignCallBackAngular', args: ['action-1'] });
+
+            expect(saveAssignCallBackAngular).not.toHaveBeenCalled();
+
+            // The one on top closed: this panel is in front again.
+            openPanels.set([entry(panel)]);
+            ran$.next({ name: 'saveAssignCallBackAngular', args: ['action-2'] });
+
+            expect(saveAssignCallBackAngular).toHaveBeenCalledTimes(1);
+            expect(saveAssignCallBackAngular).toHaveBeenCalledWith('action-2');
         });
 
         it('stops listening for calls once the panel is gone', () => {
@@ -544,6 +578,22 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             expect(saved).toHaveBeenCalledWith(restored);
         });
 
+        it('leaves a Bring Back meant for the editor in front alone, reporting nothing', () => {
+            open();
+            const { win } = loadFrame();
+            const getVersionBack = vi.fn();
+            Object.assign(win, { getVersionBack });
+            const saved = vi.fn();
+            spectator.output('saved').subscribe(saved);
+            openPanels.set([entry(panel), entry({})]);
+
+            ran$.next({ name: 'getVersionBack', args: ['v1'] });
+            loadFrame('?p_p_id=content&inode=abc&lang=1');
+
+            expect(getVersionBack).not.toHaveBeenCalled();
+            expect(saved).not.toHaveBeenCalled();
+        });
+
         it('reports no save for a reload with no Bring Back', () => {
             open();
             loadFrame();
@@ -593,6 +643,29 @@ describe('DotLegacyEditorSidePanelComponent', () => {
 
             expect(deleted).toHaveBeenCalledTimes(1);
             expect(panel.close).toHaveBeenCalledTimes(1);
+        });
+
+        /**
+         * `edit_contentlet_js_inc.jsp` calls the hook for every removed contentlet, then sends
+         * `deleted-page` instead of `close` for a page: one delete, reported once.
+         */
+        it('reports deleted once, then closes, when a page was deleted (the hook, then deleted-page)', () => {
+            open();
+            const { win, doc } = loadFrame();
+            const deleted = vi.fn();
+            const saved = vi.fn();
+            spectator.output('deleted').subscribe(deleted);
+            spectator.output('saved').subscribe(saved);
+
+            win.ngEditContentletEvents?.next({ name: 'deleted-contenlet', data: {} });
+            sendLegacyEvent(doc, { name: 'deleted-page', payload: {} });
+
+            expect(deleted).toHaveBeenCalledTimes(1);
+            expect(saved).not.toHaveBeenCalled();
+            expect(panel.close).toHaveBeenCalledTimes(1);
+            expect(deleted.mock.invocationCallOrder[0]).toBeLessThan(
+                panel.close.mock.invocationCallOrder[0]
+            );
         });
 
         it('ignores other calls through the hook', () => {
@@ -665,8 +738,13 @@ describe('DotLegacyEditorSidePanelComponent', () => {
         });
     });
 
+    /**
+     * The JSP has finished with the editor when it names the page to open, so the panel closes
+     * after asking, whether or not the surface opens the page editor (FR-017: every surface
+     * refreshes on `closed`).
+     */
     describe('first save of a new page', () => {
-        it('asks the opener to open the page editor, in the language the close names', () => {
+        it('asks the opener to open the page editor, in the language the close names, then closes', () => {
             open(CREATE_REQUEST);
             const { doc } = loadFrame();
             const pageEditor = vi.fn();
@@ -678,7 +756,10 @@ describe('DotLegacyEditorSidePanelComponent', () => {
             });
 
             expect(pageEditor).toHaveBeenCalledWith({ url: '/blog/new-page', languageId: 2 });
-            expect(panel.close).not.toHaveBeenCalled();
+            expect(panel.close).toHaveBeenCalledTimes(1);
+            expect(pageEditor.mock.invocationCallOrder[0]).toBeLessThan(
+                panel.close.mock.invocationCallOrder[0]
+            );
         });
     });
 
@@ -701,9 +782,33 @@ describe('DotLegacyEditorSidePanelComponent', () => {
 
             expect(openContent).toHaveBeenCalledWith({
                 request: { mode: 'edit', inode: 'rel-1', contentType: 'Blog' },
-                source: 'block-editor'
+                source: 'block-editor',
+                injector: expect.anything()
             });
             expect(panel.close).not.toHaveBeenCalled();
+        });
+
+        /**
+         * The stacked panel belongs to this one (open-content-from-fields.md): the opener opens it
+         * under this panel's own injector, so it closes when this panel does.
+         */
+        it("hands the opener this panel's own injector, so what it stacks belongs to this panel", () => {
+            open();
+            const { doc } = loadFrame();
+            const openContent = vi.fn();
+            spectator.output('openContent').subscribe(openContent);
+
+            sendLegacyEvent(doc, {
+                name: 'edit-contentlet',
+                data: { inode: 'rel-1', contentType: 'Blog' }
+            });
+
+            const { injector } = openContent.mock.calls[0][0];
+            // Resolves what only this panel provides: its ref and its own confirmation service.
+            expect(injector?.get(DotSidePanelRef)).toBe(panel);
+            expect(injector?.get(ConfirmationService)).toBe(
+                spectator.inject(ConfirmationService, true)
+            );
         });
 
         it('asks the opener to create content a legacy screen named', () => {
@@ -719,7 +824,8 @@ describe('DotLegacyEditorSidePanelComponent', () => {
 
             expect(openContent).toHaveBeenCalledWith({
                 request: { mode: 'new', contentType: 'Blog', folderPath: '/news/' },
-                source: 'block-editor'
+                source: 'block-editor',
+                injector: expect.anything()
             });
         });
     });

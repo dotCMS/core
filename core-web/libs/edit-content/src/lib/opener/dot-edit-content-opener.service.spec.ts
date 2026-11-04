@@ -2,17 +2,34 @@ import { createServiceFactory, mockProvider, SpectatorService } from '@openng/sp
 import { of, throwError } from 'rxjs';
 import { Mock, vi } from 'vitest';
 
-import { Injector, Type, runInInjectionContext, signal } from '@angular/core';
-import { TestBed } from '@angular/core/testing';
+import {
+    Component,
+    InjectionToken,
+    Injector,
+    Type,
+    inject,
+    input,
+    output,
+    runInInjectionContext,
+    signal
+} from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 
 import {
     DotActionUrlService,
     DotContentletEditUrlService,
     DotContentletService,
-    DotHttpErrorManagerService
+    DotHttpErrorManagerService,
+    DotMessageService
 } from '@dotcms/data-access';
 import { DotCMSContentlet, FeaturedFlags } from '@dotcms/dotcms-models';
-import { DotSidePanelConfig, DotSidePanelRef, DotSidePanelService } from '@dotcms/ui';
+import { GlobalStore } from '@dotcms/store';
+import {
+    DotSidePanelConfig,
+    DotSidePanelOutletComponent,
+    DotSidePanelRef,
+    DotSidePanelService
+} from '@dotcms/ui';
 import { createFakeContentlet, createFakeContentType } from '@dotcms/utils-testing';
 
 import { DotEditContentOpenerService } from './dot-edit-content-opener.service';
@@ -24,17 +41,23 @@ import { DotOpenContentEvent } from '../models/dot-open-content-event.model';
  * The two panel components, as the loaders hand them to the opener. Stubs with a name each, so a
  * test can tell which editor the opener picked without loading either editor's chunk.
  */
-const { NewEditorStub, LegacyEditorStub } = vi.hoisted(() => ({
-    NewEditorStub: class NewEditorStub {},
-    LegacyEditorStub: class LegacyEditorStub {}
-}));
+const { NewEditorStub, LegacyEditorStub, loaded } = vi.hoisted(() => {
+    const LegacyEditorStub = class LegacyEditorStub {};
+
+    return {
+        NewEditorStub: class NewEditorStub {},
+        LegacyEditorStub,
+        /** What the legacy loader hands over; a test that renders the panels swaps in a component. */
+        loaded: { legacy: LegacyEditorStub as unknown }
+    };
+});
 
 vi.mock('../components/dot-edit-content-side-panel/load-dot-edit-content-side-panel', () => ({
     loadDotEditContentSidePanel: () => Promise.resolve(NewEditorStub)
 }));
 
 vi.mock('../components/dot-legacy-editor-side-panel/load-dot-legacy-editor-side-panel', () => ({
-    loadDotLegacyEditorSidePanel: () => Promise.resolve(LegacyEditorStub)
+    loadDotLegacyEditorSidePanel: () => Promise.resolve(loaded.legacy)
 }));
 
 const NEW_TYPE = createFakeContentType({
@@ -52,6 +75,9 @@ const LEGACY_TYPE = createFakeContentType({
 });
 
 const CREATE_URL = '/c/portal/layout?p_p_id=content&_content_cmd=new&selectedStructure=banner-id';
+
+/** Provided only by the injector a test hands over as the asking panel's. */
+const ASKING_PANEL = new InjectionToken<string>('ASKING_PANEL');
 
 const EDIT_REQUEST: DotEditContentRequest = {
     mode: 'edit',
@@ -202,7 +228,7 @@ describe('DotEditContentOpenerService', () => {
         });
     });
 
-    describe('an edit without a content type', () => {
+    describe('an edit without a content type or a title', () => {
         const contentlet: DotCMSContentlet = createFakeContentlet({
             inode: 'host-inode',
             identifier: 'host-id',
@@ -233,11 +259,29 @@ describe('DotEditContentOpenerService', () => {
             expect(heading(config)).toBe('Fetched title');
         });
 
-        it('does not fetch when the request already names the content type', async () => {
+        it('does not fetch when the request already names the content type and the title', async () => {
             spectator.service.open(EDIT_REQUEST, { injector });
             await lastOpen();
 
             expect(getContentletByInode).not.toHaveBeenCalled();
+        });
+
+        /**
+         * The heading falls back to the contentlet's title for an edit (edit-request.md), not to the
+         * type's name: the legacy JSP events and the Publishing Queue name the type and no title.
+         */
+        it("heads an edit that names its content type but no title with the contentlet's title", async () => {
+            spectator.service.open(
+                { mode: 'edit', inode: 'host-inode', contentType: 'Banner' },
+                { injector }
+            );
+
+            const { config } = await lastOpen();
+
+            expect(getContentletByInode).toHaveBeenCalledWith('host-inode');
+            expect(resolveEditor).toHaveBeenCalledWith('Banner');
+            expect(heading(config)).toBe('Fetched title');
+            expect(input<DotEditContentRequest>(config, 'request').title).toBe('Fetched title');
         });
 
         it('reports the error and closes the panel when the fetch fails', async () => {
@@ -378,20 +422,27 @@ describe('DotEditContentOpenerService', () => {
     });
 
     describe('content that opens other content', () => {
-        it('stacks a second panel for an openContent request, with the same opener injector', async () => {
+        it('stacks a second panel for an openContent request, under the panel that asked', async () => {
             spectator.service.open(EDIT_REQUEST, { injector });
             const { config: first } = await lastOpen();
-            const event: DotOpenContentEvent = {
-                request: { mode: 'edit', inode: 'rel-1', contentType: 'Banner' },
-                onSaved: vi.fn()
-            };
+            // The asking panel's own injector, which the panel puts on the event.
+            const panelInjector = Injector.create({
+                providers: [{ provide: ASKING_PANEL, useValue: 'the asking panel' }],
+                parent: injector
+            });
+            const event = {
+                request: { mode: 'edit', inode: 'rel-1', contentType: 'Banner', title: 'Related' },
+                onSaved: vi.fn(),
+                injector: panelInjector
+            } as DotOpenContentEvent;
 
             first.outputs?.['openContent'](event as never);
             const { config: second, component } = await lastOpen();
 
             expect(open).toHaveBeenCalledTimes(2);
             expect(component).toBe(LegacyEditorStub);
-            expect(second.injector).toBe(injector);
+            // Compared through a token: a failing `toBe` on two injectors prints both graphs.
+            expect(second.injector.get(ASKING_PANEL, null)).toBe('the asking panel');
             expect(input<DotEditContentRequest>(second, 'request')).toEqual(event.request);
         });
 
@@ -423,5 +474,99 @@ describe('DotEditContentOpenerService', () => {
             expect(heading(config)).toBe('Renamed');
             expect(input<DotEditContentRequest>(config, 'request').title).toBe('Renamed');
         });
+    });
+});
+
+/** Every {@link AskingPanelComponent} the outlet created, in order. */
+const askingPanels: AskingPanelComponent[] = [];
+
+/**
+ * Panel content that asks to open other content the way both editor panels do: an `openContent`
+ * event carrying its own injector.
+ */
+@Component({ selector: 'dot-test-asking-panel', template: '' })
+class AskingPanelComponent {
+    readonly request = input<DotEditContentRequest | null>(null);
+    readonly createUrl = input<string | null>(null);
+    readonly openContent = output<DotOpenContentEvent>();
+    readonly #injector = inject(Injector);
+
+    constructor() {
+        askingPanels.push(this);
+    }
+
+    ask(request: DotEditContentRequest): void {
+        this.openContent.emit({ request, injector: this.#injector } as DotOpenContentEvent);
+    }
+}
+
+/**
+ * A stacked panel belongs to the panel that asked for it (open-content-from-fields.md), so it
+ * closes with that panel, whatever closes it: the X, a delete, or the surface clearing its request
+ * on browser Back. Through the real side-panel service and outlet.
+ */
+describe('DotEditContentOpenerService, panels stacked through the outlet', () => {
+    let outlet: ComponentFixture<DotSidePanelOutletComponent>;
+    let sidePanels: DotSidePanelService;
+    let opener: DotEditContentOpenerService;
+
+    const createService = createServiceFactory({
+        service: DotEditContentOpenerService,
+        providers: [
+            mockProvider(DotContentletEditUrlService, {
+                resolveEditor: vi.fn(() => of({ editor: 'legacy', contentType: LEGACY_TYPE }))
+            }),
+            mockProvider(DotActionUrlService),
+            mockProvider(DotContentletService),
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotMessageService, { get: (key: string) => key }),
+            // Opening a panel collapses the main navigation.
+            mockProvider(GlobalStore, {
+                isNavigationCollapsed: vi.fn().mockReturnValue(false),
+                collapseNavigation: vi.fn(),
+                expandNavigation: vi.fn()
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        askingPanels.length = 0;
+        loaded.legacy = AskingPanelComponent;
+
+        const spectator = createService();
+        opener = spectator.service;
+        sidePanels = spectator.inject(DotSidePanelService);
+        outlet = TestBed.createComponent(DotSidePanelOutletComponent);
+        outlet.detectChanges();
+    });
+
+    afterEach(() => {
+        loaded.legacy = LegacyEditorStub;
+    });
+
+    /** Lets the editor choice resolve and the content load, then renders it. */
+    const render = async (): Promise<void> => {
+        await new Promise((resolve) => setTimeout(resolve));
+        outlet.detectChanges();
+    };
+
+    it('closes the stacked panel when the panel that asked for it closes', async () => {
+        const host = opener.open(
+            { ...EDIT_REQUEST, contentType: 'Banner' },
+            { injector: TestBed.inject(Injector) }
+        );
+        await render();
+
+        askingPanels[0].ask({ mode: 'edit', inode: 'rel-1', contentType: 'Banner', title: 'Rel' });
+        await render();
+
+        // Lengths, not the arrays: a failure would print every panel's injector.
+        expect(askingPanels.length).toBe(2);
+        expect(sidePanels.panels().length).toBe(2);
+
+        host.close();
+        outlet.detectChanges();
+
+        expect(sidePanels.panels().length).toBe(0);
     });
 });
