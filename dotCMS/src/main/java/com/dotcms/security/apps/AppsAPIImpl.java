@@ -505,9 +505,8 @@ public class AppsAPIImpl implements AppsAPI {
                         String.format("Error getting secret from `%s` ", key), e);
             } catch (DotRuntimeException e) {
                 // Since issue #36724 an unreadable store raises instead of silently wiping itself.
-                // That must degrade here: EMAWebInterceptor reaches this method on every /api/*
-                // request and the interceptor chain does not guard it, so raising returns a 500 for
-                // the whole API.
+                // That must degrade here: request paths reach this method (the Apps listing, the SAML
+                // configuration check), so raising turns an unreadable store into a 500 for them.
                 //
                 // Matched on the CAUSE CHAIN rather than the thrown type. SecretsStoreUnreadableException
                 // does not survive the journey: there are nine `catch (Exception e) { throw new
@@ -531,8 +530,7 @@ public class AppsAPIImpl implements AppsAPI {
                 // here, because appKeysByHost() raises while being evaluated as this method's own
                 // argument -- before this catch is ever reached.
                 // debug, not error, and deliberately so. This fires once per site per call, and
-                // EMAWebInterceptor.existsConfiguration reaches this method on every /api/* request
-                // -- measured at 32 ERROR lines from 16 requests on a two-site instance. Because the
+                // request paths call this method repeatedly. Because the
                 // condition persists until an operator fixes it, logging at ERROR here reproduces
                 // exactly the flood this PR throttles inside the helper: an actionable message
                 // repeated thousands of times stops being actionable.

@@ -883,6 +883,25 @@ public class AppsAPIImplTest {
 
     }
 
+    /**
+     * Given scenario: the Apps catalog is loaded as shipped.
+     * Expected Results: the Edit Mode Anywhere app ({@code dotema-config}) is no longer offered,
+     * while the Universal Visual Editor app ({@code dotema-config-v2}), which shares the prefix,
+     * still is.
+     */
+    @Test
+    public void Test_Edit_Mode_Anywhere_App_Is_Not_Offered_But_UVE_App_Is()
+            throws DotDataException, DotSecurityException {
+
+        final User admin = TestUserUtils.getAdminUser();
+        final AppsAPI api = APILocator.getAppsAPI();
+
+        assertFalse("the Edit Mode Anywhere app should not be offered",
+                api.getAppDescriptor("dotema-config", admin).isPresent());
+        assertTrue("the Universal Visual Editor app should still be offered",
+                api.getAppDescriptor("dotema-config-v2", admin).isPresent());
+    }
+
     private final AppsAPI nonValidLicenseAppsAPI = new AppsAPIImpl(
             APILocator.getLayoutAPI(),
             APILocator.getHostAPI(), SecretsStore.INSTANCE.get(),
