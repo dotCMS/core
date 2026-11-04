@@ -7,9 +7,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.TagField;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -21,6 +24,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.tag.model.Tag;
 import com.dotmarketing.quartz.ScheduledTask;
 import com.liferay.portal.model.User;
 import java.io.File;
@@ -30,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.quartz.JobDataMap;
@@ -158,11 +163,120 @@ public class ContentImportThreadTest extends IntegrationTestBase {
         assertTrue("The file should be left for the next run", csv.exists());
     }
 
+    /**
+     * Method to test: {@link ContentImportThread#execute(JobExecutionContext)}
+     * Given: a job saved by a user who can write and publish, importing a line with a tag
+     * Expected: the content is created with the tag related to it
+     */
+    @Test
+    public void test_execute_withTags_shouldRelateTheTags() throws Exception {
+        final ContentType contentType = newContentType();
+        final User user = newUserWithPermissions(contentType,
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH);
+        final String title = "imported-" + UUID.randomUUID();
+        final String tag = "tag-" + UUID.randomUUID();
+
+        runImport(contentType, "title,tags\n" + title + "," + tag + "\n", null, user.getUserId());
+
+        final List<Contentlet> imported = findByTitle(contentType, title);
+        assertEquals(1, imported.size());
+        assertEquals(List.of(tag), tagNames(imported.get(0)));
+    }
+
+    /**
+     * Method to test: {@link ContentImportThread#execute(JobExecutionContext)}
+     * Given: a job saved by a user who can only read content of the content type, importing a line with a tag
+     * Expected: neither the content nor the tag is created
+     */
+    @Test
+    public void test_execute_withTags_userCannotWrite_shouldNotCreateTheTag() throws Exception {
+        final ContentType contentType = newContentType();
+        final User user = newUserWithPermissions(contentType, PermissionAPI.PERMISSION_READ);
+        final String title = "imported-" + UUID.randomUUID();
+        final String tag = "tag-" + UUID.randomUUID();
+
+        runImport(contentType, "title,tags\n" + title + "," + tag + "\n", null, user.getUserId());
+
+        assertTrue(findByTitle(contentType, title).isEmpty());
+        assertTrue(APILocator.getTagAPI().getTagsByName(tag).isEmpty());
+    }
+
+    /**
+     * Method to test: {@link ContentImportThread#execute(JobExecutionContext)}
+     * Given: a job updating content by a key field, run twice with different tags
+     * Expected: the content is updated once and keeps only the tags of the last run
+     */
+    @Test
+    public void test_execute_updateByKeyField_shouldReplaceTheTags() throws Exception {
+        final ContentType contentType = newContentType();
+        final User user = newUserWithPermissions(contentType,
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE | PermissionAPI.PERMISSION_PUBLISH);
+        final String title = "imported-" + UUID.randomUUID();
+        final Host site = APILocator.getHostAPI().find(contentType.host(), systemUser, false);
+        new ContentletDataGen(contentType).host(site).setProperty("title", title).nextPersisted();
+        final String keyFieldId = fieldId(contentType, "title");
+
+        runImport(contentType, "title,tags\n" + title + ",first\n", keyFieldId, user.getUserId());
+        runImport(contentType, "title,tags\n" + title + ",second\n", keyFieldId, user.getUserId());
+
+        final List<Contentlet> imported = findByTitle(contentType, title);
+        assertEquals(1, imported.size());
+        assertEquals(user.getUserId(), imported.get(0).getModUser());
+        assertEquals(List.of("second"), tagNames(imported.get(0)));
+    }
+
+    /**
+     * Method to test: {@link ContentImportThread#execute(JobExecutionContext)}
+     * Given: a job updating content by a key field with a line that fails validation, then saved by another
+     * user and run again with a valid line
+     * Expected: the failed line leaves the content unlocked, so the other user's run updates it
+     */
+    @Test
+    public void test_execute_updateByKeyField_lineWithErrors_shouldReleaseTheLock() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen()
+                .host(new SiteDataGen().nextPersisted())
+                .field(new FieldDataGen().type(TextField.class).name("title").velocityVarName("title").indexed(true).next())
+                .field(new FieldDataGen().type(TextField.class).name("summary").velocityVarName("summary").required(true).next())
+                .nextPersisted();
+        final int permissions = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE
+                | PermissionAPI.PERMISSION_PUBLISH;
+        final User firstUser = newUserWithPermissions(contentType, permissions);
+        final User secondUser = newUserWithPermissions(contentType, permissions);
+        final String title = "imported-" + UUID.randomUUID();
+        final Host site = APILocator.getHostAPI().find(contentType.host(), systemUser, false);
+        new ContentletDataGen(contentType).host(site).setProperty("title", title).setProperty("summary", "original")
+                .nextPersisted();
+        final String keyFieldId = fieldId(contentType, "title");
+
+        runImport(contentType, "title,summary\n" + title + ",\n", keyFieldId, firstUser.getUserId());
+        final List<Contentlet> afterFailedLine = findByTitle(contentType, title);
+        assertEquals(1, afterFailedLine.size());
+        assertFalse(APILocator.getVersionableAPI().isLocked(afterFailedLine.get(0)));
+
+        runImport(contentType, "title,summary\n" + title + ",updated\n", keyFieldId, secondUser.getUserId());
+
+        final List<Contentlet> imported = findByTitle(contentType, title);
+        assertEquals(1, imported.size());
+        assertEquals(secondUser.getUserId(), imported.get(0).getModUser());
+        assertEquals("updated", imported.get(0).getStringProperty("summary"));
+    }
+
     private static ContentType newContentType() {
         return new ContentTypeDataGen()
                 .host(new SiteDataGen().nextPersisted())
                 .field(new FieldDataGen().type(TextField.class).name("title").velocityVarName("title").indexed(true).next())
+                .field(new FieldDataGen().type(TagField.class).name("tags").velocityVarName("tags").indexed(true).next())
                 .nextPersisted();
+    }
+
+    private static String fieldId(final ContentType contentType, final String variable) {
+        return contentType.fields().stream().filter(field -> variable.equals(field.variable()))
+                .map(Field::id).findFirst().orElseThrow();
+    }
+
+    private static List<String> tagNames(final Contentlet contentlet) throws Exception {
+        return APILocator.getTagAPI().getTagsByInodeAndFieldVarName(contentlet.getInode(), "tags")
+                .stream().map(Tag::getTagName).collect(Collectors.toList());
     }
 
     private static User newUserWithPermissions(final ContentType contentType, final int permissions) throws Exception {
@@ -187,9 +301,20 @@ public class ContentImportThreadTest extends IntegrationTestBase {
      */
     private static File runImport(final ContentType contentType, final String title, final String userId)
             throws Exception {
+        return runImport(contentType, "title\n" + title + "\n", null, userId);
+    }
+
+    /**
+     * Runs the job on the given CSV.
+     *
+     * @param keyFieldId the id of the field to update content by, or {@code null} to only create content
+     * @return the CSV file the job was given
+     */
+    private static File runImport(final ContentType contentType, final String csvContent, final String keyFieldId,
+            final String userId) throws Exception {
         final File folder = Files.createTempDirectory("content-import").toFile();
         final File csv = new File(folder, "import.csv");
-        Files.writeString(csv.toPath(), "title\n" + title + "\n", StandardCharsets.UTF_8);
+        Files.writeString(csv.toPath(), csvContent, StandardCharsets.UTF_8);
 
         final Map<String, Object> properties = new HashMap<>();
         properties.put("structure", contentType.name());
@@ -197,6 +322,9 @@ public class ContentImportThreadTest extends IntegrationTestBase {
         properties.put("logpath", new File(folder, "log").getAbsolutePath());
         if (userId != null) {
             properties.put(ScheduledTask.SCHEDULED_BY_USER_ID, userId);
+        }
+        if (keyFieldId != null) {
+            properties.put("updatebykeyfield", keyFieldId);
         }
         final JobExecutionContext context = mock(JobExecutionContext.class);
         final JobDetail jobDetail = mock(JobDetail.class);

@@ -744,69 +744,66 @@ public class ContentImportThread implements Job{
 
 			for (Contentlet cont : contentlets)
 			{
-				//Fill the new contentlet with the data
-				for (Integer column : headers.keySet()) {
-					Field field = headers.get(column);
-					Object value = values.get(column);
-					conAPI.setContentletProperty(cont, field, value);
-					if (field.getFieldType().equals(Field.FieldType.TAG.toString()) && value instanceof String) {
-
-						String[] tags = ((String)value).split(",");
-						for (String tag : tags) {
-							APILocator.getTagAPI().addContentletTagInode(tag.trim(), cont.getInode(), "", field.getVelocityVarName());
-						}
-
-						//We should not store the tags inside the field, the relation must only exist on the tag_inode table
-						conAPI.setContentletProperty(cont, field, "");
+				try {
+					//Fill the new contentlet with the data
+					for (Integer column : headers.keySet()) {
+						Field field = headers.get(column);
+						Object value = values.get(column);
+						// Tag values are related to the content by checkin, once the content is saved
+						conAPI.setContentletProperty(cont, field, value);
 					}
-				}
 
-				//Check the new contentlet with the validator
-				try
-				{
-					conAPI.validateContentlet(cont,new ArrayList<>(categories));
-				}
-				catch(DotContentletValidationException ex)
-				{
-					StringBuffer sb = new StringBuffer("Line #" + lineNumber + " contains errors\n");
-					HashMap<String,List<Field>> errors = (HashMap<String,List<Field>>) ex.getNotValidFields();
-					Set<String> keys = errors.keySet();
-					for(String key : keys)
+					//Check the new contentlet with the validator
+					try
 					{
-						sb.append(key + ": ");
-						List<Field> fields = errors.get(key);
-						for(Field field : fields)
+						conAPI.validateContentlet(cont,new ArrayList<>(categories));
+					}
+					catch(DotContentletValidationException ex)
+					{
+						StringBuffer sb = new StringBuffer("Line #" + lineNumber + " contains errors\n");
+						HashMap<String,List<Field>> errors = (HashMap<String,List<Field>>) ex.getNotValidFields();
+						Set<String> keys = errors.keySet();
+						for(String key : keys)
 						{
-							sb.append(field.getFieldName() + ",");
+							sb.append(key + ": ");
+							List<Field> fields = errors.get(key);
+							for(Field field : fields)
+							{
+								sb.append(field.getFieldName() + ",");
+							}
+							sb.append("\n");
 						}
-						sb.append("\n");
+						throw new DotRuntimeException(sb.toString());
 					}
-					throw new DotRuntimeException(sb.toString());
-				}
 
-				//If not preview save the contentlet
-				if (!preview)
-				{
-					conAPI.checkin(cont, new ArrayList<>(categories), new ArrayList<>(), user, false);
-					APILocator.getVersionableAPI().setWorking(cont);
-					// The content is published only for a user who can publish it; otherwise it stays as a working version
-					if (APILocator.getPermissionAPI().doesUserHavePermission(cont, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
-						APILocator.getVersionableAPI().setLive(cont);
-					} else {
-						myOutput.println("Line #" + lineNumber + ": saved as a working version, the user cannot publish it.");
+					//If not preview save the contentlet
+					if (!preview)
+					{
+						conAPI.checkin(cont, new ArrayList<>(categories), new ArrayList<>(), user, false);
+						APILocator.getVersionableAPI().setWorking(cont);
+						// The content is published only for a user who can publish it; otherwise it stays as a working version
+						if (APILocator.getPermissionAPI().doesUserHavePermission(cont, PermissionAPI.PERMISSION_PUBLISH, user, false)) {
+							APILocator.getVersionableAPI().setLive(cont);
+						} else {
+							myOutput.println("Line #" + lineNumber + ": saved as a working version, the user cannot publish it.");
+						}
+					}
+
+					if (isNew)
+						contentCreated++;
+					else
+						if (conditionValues.equals("") || !keyContentUpdated.contains(conditionValues)) {
+							contentUpdated++;
+							contentUpdatedDuplicated++;
+							keyContentUpdated.add(conditionValues);
+						}else{
+							contentUpdatedDuplicated++;
+						}
+				} finally {
+					if (!isNew && !preview) {
+						releaseLock(cont, user);
 					}
 				}
-
-				if (isNew)
-					contentCreated++;
-				else
-					if (conditionValues.equals("") || !keyContentUpdated.contains(conditionValues)) {
-						contentUpdated++;
-						contentUpdatedDuplicated++;
-						keyContentUpdated.add(conditionValues);
-					}else{
-						contentUpdatedDuplicated++;
-					}
 			}
 
 		} catch (Exception e) {
@@ -814,6 +811,23 @@ public class ContentImportThread implements Job{
 			throw new DotRuntimeException(e.getMessage(),e);
 		}
 
+	}
+
+	/**
+	 * Releases the lock the key field lookup took on an existing content, so the next run, or a
+	 * different user saving the job later, can update it again. A failure is only logged, so it
+	 * does not hide the result of the line.
+	 *
+	 * @param contentlet the content the import checked out
+	 * @param user       the user the import runs as
+	 */
+	private void releaseLock(final Contentlet contentlet, final User user) {
+		try {
+			conAPI.unlock(contentlet, user, Constants.DONT_RESPECT_FRONT_END_ROLES);
+		} catch (final Exception e) {
+			Logger.warn(this, "Could not release the lock on content '" + contentlet.getIdentifier()
+					+ "': " + e.getMessage());
+		}
 	}
 
 	public static final String[] IMP_DATE_FORMATS = new String[] { "d-MMM-yy", "MMM-yy", "MMMM-yy", "d-MMM", "dd-MMM-yyyy", "MM/dd/yyyy hh:mm aa", "MM/dd/yyyy HH:mm",
