@@ -310,7 +310,6 @@ ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
 |------------|---------------|--------------|---------|------------|
 | **Integration Tests** | `./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false` | `just test-integration` | JUnit integration tests (auto-starts DB/ES) | **Full suite: 60+ min** ⚠️ |
 | **Postman Tests** | `./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false` | `just test-postman` | API testing with Postman/Newman (auto-starts services) | ~1-3 min |
-| **Karate Tests** | `./mvnw verify -pl :dotcms-test-karate -Dkarate.test.skip=false` | `just test-karate` | BDD API testing (auto-starts services) | ~1-2 min |
 | **E2E Tests (Playwright)** | `./mvnw verify -pl :dotcms-ui-e2e -De2e.test.skip=false -De2e.test.env=ci` | `just test-e2e` | Nx Playwright admin UI E2E (full Docker environment) | ~2-5 min |
 
 ⚠️ **PERFORMANCE WARNING**: The **FULL** integration test suite takes 30+ minutes to complete. Always target specific test classes during development!
@@ -318,7 +317,6 @@ ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
 ⚠️ **CRITICAL**: All test modules require explicit skip flags to run:
 - **Integration tests**: `-Dcoreit.test.skip=false`
 - **Postman tests**: `-Dpostman.test.skip=false` 
-- **Karate tests**: `-Dkarate.test.skip=false`
 - **E2E tests**: `-De2e.test.skip=false`
 - **Without these flags, tests will be silently skipped!**
 
@@ -327,14 +325,12 @@ ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
 ./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=MyTest
 ./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=all     # Run ALL postman tests
 ./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=ai      # Run specific collection group
-./mvnw verify -pl :dotcms-test-karate -Dkarate.test.skip=false -Dit.test=ContentAPITest
 ```
 
 **❌ INCORRECT (tests will be silently skipped):**
 ```bash
 ./mvnw verify -pl :dotcms-integration -Dit.test=MyTest          # NO tests run!
 ./mvnw verify -pl :dotcms-postman -Dpostman.collections=ai     # NO tests run!
-./mvnw verify -pl :dotcms-test-karate -Dit.test=ContentAPITest # NO tests run!
 ```
 
 💡 **For IDE debugging**: Use `just test-integration-ide` to start services manually, then run tests in your IDE.
@@ -415,9 +411,6 @@ just test-integration-ide  # Start services once
 # Run specific Postman collection
 ./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=ai
 
-# Run specific Karate test
-./mvnw verify -pl :dotcms-test-karate -Dkarate.test.skip=false -Dit.test=ContentAPITest
-
 # Run E2E test with specific spec (from core-web, or via Maven module)
 cd core-web && pnpm nx e2e dotcms-ui-e2e src/tests/login/login.spec.ts
 # Or full Maven lifecycle:
@@ -433,10 +426,6 @@ just test-integration-ide  # Same as above, shorter command
 # Start Postman test services
 ./mvnw -pl :dotcms-postman pre-integration-test -Dpostman.test.skip=false -Dtomcat.port=8080
 just test-postman-ide  # Same as above, shorter command
-
-# Start Karate test services  
-./mvnw -pl :dotcms-test-karate pre-integration-test -Dkarate.test.skip=false -Dtomcat.port=8080
-just test-karate-ide  # Same as above, shorter command
 
 # Then run individual tests in your IDE (IntelliJ, Eclipse, VS Code)
 # Services will remain running until you stop them

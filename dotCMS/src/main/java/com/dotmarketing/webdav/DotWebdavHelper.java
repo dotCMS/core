@@ -4,6 +4,7 @@ import static com.dotmarketing.business.PermissionAPI.PERMISSION_CAN_ADD_CHILDRE
 import static com.dotmarketing.business.PermissionAPI.PERMISSION_READ;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.LoginLockout;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
 import com.dotcms.rendering.velocity.services.DotResourceCache;
 import com.bradmcevoy.http.CollectionResource;
@@ -16,6 +17,7 @@ import com.bradmcevoy.http.Request;
 import com.bradmcevoy.http.Request.Method;
 import com.bradmcevoy.http.Resource;
 import com.bradmcevoy.http.exceptions.BadRequestException;
+import com.dotcms.security.multipart.IllegalFileExtensionsValidator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.beans.Permission;
@@ -29,7 +31,6 @@ import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.cache.FolderCache;
-import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -103,6 +104,7 @@ public class DotWebdavHelper {
 		}
 	};
 	private  org.apache.oro.text.regex.Pattern tempResourcePattern;
+	private static final IllegalFileExtensionsValidator FILE_EXTENSION_VALIDATOR = new IllegalFileExtensionsValidator();
 	/** Sub-folder of the asset temp path that holds WebDAV temp storage, apart from other features. */
 	private static final String TEMP_FOLDER_NAME = "dotwebdav";
 
@@ -192,6 +194,7 @@ public class DotWebdavHelper {
 		} catch (AuthException ae) {
 
 			Logger.debug(this, "Username : " + username + " failed to login", ae);
+			this.countPreAuthenticatorFailure(username, useEmailAsLogin);
 			throw new DotSecurityException(ae.getMessage(),ae);
 		} catch (Exception e) {
 
@@ -209,14 +212,38 @@ public class DotWebdavHelper {
 			throw new DotSecurityException("The user was returned NULL");
 		}
 
-		// Validate password and rehash when is needed
-		if (!LoginFactory.passwordMatch(passwd, user) && !this.tryMatchJsonWebToken(passwd, user)) {
+		// Validate password and rehash when is needed. Refused while locked out; WebDAV attempts are
+		// counted apart from other logins from this address, so a client retrying a stale password does
+		// not lock its user out of the backend.
+		if (!LoginLockout.getInstance().passwordMatch(passwd, user, LoginLockout.webdavSource(),
+				this::tryMatchJsonWebToken)) {
 
 			Logger.debug(this, ()-> "The user's passwords didn't match");
 			throw new DotSecurityException("The user's passwords didn't match");
 		}
 
 		return user;
+	}
+
+	/**
+	 * Counts a password that a pre-authenticator such as LDAP refused before dotCMS checked it, as a failed
+	 * WebDAV login, so the login lockout applies to those failures too.
+	 *
+	 * @param username        The login name sent by the WebDAV client.
+	 * @param useEmailAsLogin Whether the login name is an email address rather than a user ID.
+	 */
+	private void countPreAuthenticatorFailure(final String username, final boolean useEmailAsLogin) {
+		try {
+			final UserAPI userAPI = APILocator.getUserAPI();
+			final User user = useEmailAsLogin
+					? userAPI.loadByUserByEmail(username, userAPI.getSystemUser(), false)
+					: userAPI.loadUserById(username, userAPI.getSystemUser(), false);
+			if (null != user) {
+				LoginLockout.getInstance().countFailure(user.getUserId(), LoginLockout.webdavSource());
+			}
+		} catch (final Exception e) {
+			Logger.debug(this, () -> "No login lockout count for WebDAV user " + username + ": " + e.getMessage());
+		}
 	}
 
 	private boolean tryMatchJsonWebToken (final String jsonWebToken, final User user) {
@@ -897,6 +924,8 @@ public class DotWebdavHelper {
 		String folderName = getFolderName(path);
 		String fileName = getFileName(path);
 		fileName = deleteSpecialCharacter(fileName);
+		// Same extension block list as every other upload path; a WebDAV write is an upload too
+		FILE_EXTENSION_VALIDATOR.validate(fileName);
 		final boolean disableWorkflow = Config.getBooleanProperty("dotcms.webdav.disableworkflow", false);
 
 		Host host;
@@ -2029,9 +2058,16 @@ public class DotWebdavHelper {
 		}
 		return returnValue;
 	}
+	/**
+	 * Writes a resource with the current date and no auto-publish, wrapping any failure as a
+	 * {@link DotRuntimeException}. A refused file name is passed through unchanged, so the
+	 * resource layer can answer it as a client error rather than a server one.
+	 */
 	private void setResourceContent(String resourceUri, InputStream content, String contentType, String characterEncoding, User user) throws Exception {
 		try {
 			setResourceContent(resourceUri, content, contentType, characterEncoding, Calendar.getInstance().getTime(), user, false);
+		} catch (final IllegalArgumentException e) {
+			throw e;
 		} catch (Exception e) {
 			Logger.error(this,e.getMessage(), e);
 			throw new DotRuntimeException(e.getMessage(),e);

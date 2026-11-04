@@ -426,12 +426,30 @@ public class VariantWebAPIImpl implements VariantWebAPI{
             throw new ResourceNotFoundException("cannnot find contentlet id " + identifier + " lang:" + tryingLang, e);
         }
     }
+    /**
+     * Tells whether a contentlet can be served in the default language when it has no version in the
+     * requested one. A version that cannot be served in the given mode, such as an unpublished one
+     * in live mode, is never a fallback.
+     *
+     * @param contentletVersionInfo the default-language version info of the contentlet
+     * @param pageMode              the {@link PageMode} the contentlet is rendered in
+     * @param user                  the {@link User} the contentlet is loaded for
+     * @return {@code true} when the default-language version can be served instead
+     * @throws DotDataException     if the contentlet cannot be loaded
+     * @throws DotSecurityException if the user cannot read the contentlet
+     */
     private boolean shouldFallbackByLang(final ContentletVersionInfo contentletVersionInfo, PageMode pageMode, User user)
             throws DotDataException, DotSecurityException {
         final String inode = pageMode.showLive ? contentletVersionInfo.getLiveInode() :
                 contentletVersionInfo.getWorkingInode();
+        if (!UtilMethods.isSet(inode)) {
+            return false;
+        }
 
         final Contentlet contentlet = APILocator.getContentletAPI().find(inode, user, pageMode.respectAnonPerms);
+        if (null == contentlet) {
+            return false;
+        }
         final ContentType type = contentlet.getContentType();
 
         return Boolean.TRUE.equals(contentlet.isHTMLPage()) ||
