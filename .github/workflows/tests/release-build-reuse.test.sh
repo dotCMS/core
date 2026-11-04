@@ -801,9 +801,10 @@ block_has_if "$BUILD_PHASE" "Verify release coordinates were installed" 'release
 block_has "$BUILD_PHASE" "Verify release coordinates were installed" 'dotcms-core-\$version\.jar' \
   "the tripwire asserts the exact expected primary artifact"
 # Trunk reuses the merge queue's maven-repo for the CLI native build and deploy, so only
-# pull requests may leave modules out of the build.
-block_has "$BUILD_PHASE" maven-build "github.event_name == 'pull_request' && '-pl !:" \
-  "only pull request builds exclude modules from the reactor"
+# pull requests may leave modules out of the build. Stacked PRs (base not main/master) skip the
+# long test jobs, so their build is the only compile of those modules and must keep them.
+block_has "$BUILD_PHASE" maven-build "github.event_name == 'pull_request' && \(github.event.pull_request.base.ref == 'main' \|\| github.event.pull_request.base.ref == 'master'\) && '-pl !:" \
+  "only pull requests based on main/master exclude modules from the reactor"
 INIT_PHASE="$REPO_ROOT/.github/workflows/cicd_comp_initialize-phase.yml"
 block_has "$INIT_PHASE" data-download 'workflow: cicd_2-merge-queue\.yml' \
   "trunk and nightly reuse only merge-queue builds, never a slimmed PR build"
