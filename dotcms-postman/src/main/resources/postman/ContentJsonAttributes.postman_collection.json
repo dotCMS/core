@@ -15,6 +15,46 @@
       }
     ]
   },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.environment.get('jwt')) {",
+          "    const serverURL = pm.environment.get('serverURL');",
+          "    const username = pm.environment.get('user');",
+          "    const password = pm.environment.get('password');",
+          "    const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+          "    pm.sendRequest({",
+          "        url: `${serverURL}/api/v1/apitoken`,",
+          "        method: 'POST',",
+          "        header: {",
+          "            'accept': '*/*',",
+          "            'content-type': 'application/json',",
+          "            'Authorization': `Basic ${basicAuth}`",
+          "        },",
+          "        body: {",
+          "            mode: 'raw',",
+          "            raw: JSON.stringify({",
+          "                'expirationSeconds': 7200,",
+          "                'userId': 'dotcms.org.1',",
+          "                'network': '0.0.0.0/0',",
+          "                'claims': {'label': 'postman-tests'}",
+          "            })",
+          "        }",
+          "    }, function (err, response) {",
+          "        if (err) {",
+          "            console.log('Error generating JWT:', err);",
+          "        } else {",
+          "            pm.environment.set('jwt', response.json().entity.jwt);",
+          "        }",
+          "    });",
+          "}"
+        ]
+      }
+    }
+  ],
   "item": [
     {
       "name": "Checking JSON Attributes",

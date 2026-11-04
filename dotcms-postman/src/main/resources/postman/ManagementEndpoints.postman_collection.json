@@ -644,6 +644,11 @@
 	],
 	"variable": [
 		{
+			"key": "managementURL",
+			"value": "http://localhost:8090",
+			"type": "string"
+		},
+		{
 			"key": "managementPort",
 			"value": "8090",
 			"type": "string"
