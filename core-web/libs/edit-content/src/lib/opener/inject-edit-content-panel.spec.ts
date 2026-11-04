@@ -107,6 +107,22 @@ describe('injectEditContentPanel', () => {
         expect(spectator.component.panel.isOpen()).toBe(false);
     });
 
+    /** The real opener closes a refused request's ref, and reports it, before `open` returns. */
+    it('reports a request the opener refused as closed, once, and shows nothing', () => {
+        open.mockImplementationOnce((_request, options) => {
+            const ref = new DotSidePanelRef(() => undefined);
+            ref.closed.subscribe(() => options.closed?.());
+            ref.close();
+
+            return ref;
+        });
+
+        request({ mode: 'edit' });
+
+        expect(spectator.component.closed).toHaveBeenCalledTimes(1);
+        expect(spectator.component.panel.isOpen()).toBe(false);
+    });
+
     it('opens a fresh panel when a request is set again after a self-close', () => {
         request(EDIT_REQUEST);
         refs[0].close();
