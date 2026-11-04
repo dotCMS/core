@@ -858,8 +858,10 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	}
 
 	/**
-	 * Gets the folder container based on the host and sub folders.
-	 * @param host {@link Host}
+	 * Gets the folder container based on the host and sub folders. The folders are expected to hold a
+	 * {@code container.vtl} the user can read; a folder the user cannot read the Container from is skipped.
+	 * @param host {@link Host} the Site of every folder, or {@code null} to use each folder's own Site, which is
+	 *             loaded whether or not the user can read it, since it only qualifies the Container's path
 	 * @param user {@link User}
 	 * @param subFolders {@link List}
 	 * @param includeHostOnPath {@link Boolean} true if you want to  include the host on the container path
@@ -875,8 +877,9 @@ public class ContainerFactoryImpl implements ContainerFactory {
 			try {
 
 			    final User      userFinal = null != user? user: APILocator.systemUser();
-				final Container container = this.getContainerByFolder(null != host? host:APILocator.getHostAPI().find(subFolder.getHostId(), user, includeHostOnPath),
-						subFolder, userFinal, false, includeHostOnPath);
+				// The Site only qualifies the Container's path; READ on the Container was checked when its folder was found
+				final Host      folderSite = null != host? host: APILocator.getHostAPI().find(subFolder.getHostId(), APILocator.systemUser(), false);
+				final Container container = this.getContainerByFolder(folderSite, subFolder, userFinal, false, includeHostOnPath);
 				containers.add(container);
 			} catch (DotSecurityException e) {
 

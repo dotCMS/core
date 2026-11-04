@@ -9,12 +9,14 @@ import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotmarketing.beans.ContainerStructure;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
@@ -30,6 +32,7 @@ import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerView;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
+import com.dotmarketing.portlets.fileassets.business.FileAsset;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.templates.model.Template;
@@ -366,6 +369,42 @@ public class ContainerPaginatorTest extends ContentletBaseTest {
         } finally {
             if (null != containerFolder) {
                 APILocator.getFolderAPI().delete(containerFolder, APILocator.systemUser(), false);
+            }
+            usage.cleanUp();
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: A file-based Container on a Site the back-end user cannot read uses a Content Type, and
+     * the user can read the Container's folder and files.
+     * Expected Result: Filtering by that Content Type, with no Site given, returns the Container to that user.
+     */
+    @Test
+    public void getItems_byContentType_returnsReadableFileContainerOnSiteTheUserCannotRead() throws Exception {
+        final ContentTypeUsage usage = new ContentTypeUsage();
+        Host otherSite = null;
+        try {
+            usage.create();
+            otherSite = new SiteDataGen().nextPersisted();
+            final ContainerAsFileDataGen fileContainerGen = new ContainerAsFileDataGen().host(otherSite)
+                    .ignoreDefaultContentTypes().contentType(usage.contentType, "$!{body}");
+            final FileAssetContainer fileContainer = fileContainerGen.nextPersisted();
+            final Folder containerFolder = APILocator.getFolderAPI().find(
+                    fileContainerGen.getMetaData().getFolder(), APILocator.systemUser(), false);
+            ContentTypeUsage.savePermission(containerFolder, usage.readerRole);
+            for (final FileAsset file : APILocator.getFileAssetAPI().findFileAssetsByFolder(
+                    containerFolder, APILocator.systemUser(), false)) {
+                ContentTypeUsage.savePermission(file, usage.readerRole);
+            }
+            assertFalse(permissionAPI.doesUserHavePermission(otherSite, PermissionAPI.PERMISSION_READ,
+                    usage.reader, false));
+
+            assertTrue(usage.identifiersFound().contains(fileContainer.getIdentifier()));
+        } finally {
+            if (null != otherSite) {
+                APILocator.getHostAPI().archive(otherSite, APILocator.systemUser(), false);
+                APILocator.getHostAPI().delete(otherSite, APILocator.systemUser(), false);
             }
             usage.cleanUp();
         }
