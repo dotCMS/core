@@ -100,6 +100,7 @@ permissions:
 **Purpose**: Orchestrates various test suites
 
 **Key Features**:
+- Takes the matrix from [`cicd_comp_test-matrix.yml`](.github/workflows/cicd_comp_test-matrix.yml), which callers run beside the build so it is off the critical path
 - JVM unit tests with Java 21
 - Integration tests with `-Pcoreit` profile
 - Frontend tests using Nx and pnpm
@@ -202,7 +203,7 @@ Downstream jobs gate on the JSON object. Real examples from `cicd_1-pr.yml`:
   if: fromJSON(needs.initialize.outputs.filters).build == 'true'
       && needs.initialize.outputs.found_artifacts == 'false'
 
-  # Test phase inputs — note several suites gate on the same backend filter
+  # Test matrix inputs (the `test-matrix` job, cicd_comp_test-matrix.yml) — note several suites gate on the same backend filter
   with:
     jvm_unit_test: ${{ fromJSON(needs.initialize.outputs.filters).jvm_unit_test == 'true' }}
     integration:   ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
@@ -422,7 +423,7 @@ build:
 ## Development Patterns
 
 ### Adding New Tests
-1. **Update Test Phase**: Modify `cicd_comp_test-phase.yml`
+1. **Update Test Phase**: Modify `cicd_comp_test-phase.yml` (or `.github/test-matrix.yml` for which suites run)
 2. **Add Change Detection**: Update `.github/filters.yaml`
 3. **Test Locally**: Validate changes work as expected
 

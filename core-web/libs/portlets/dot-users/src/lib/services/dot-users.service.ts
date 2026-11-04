@@ -176,10 +176,8 @@ export interface DotApiTokenCreatePayload {
 
 /**
  * Response envelope for POST /api/v1/apitoken. The `jwt` field is the
- * initial signed value returned alongside the created token record;
- * the caller can re-mint an equivalent JWT later via `getApiTokenJwt`,
- * so this is not a one-shot secret — it's just the convenient first
- * one so the UI doesn't need a second round-trip.
+ * signed value returned alongside the created token record. This is
+ * the only time it is available: it can't be retrieved again later.
  */
 export interface DotApiTokenCreateResult {
     jwt: string;
@@ -329,41 +327,14 @@ export class DotUsersService {
     }
 
     /**
-     * Mints a new API token for the target user. The JWT string in the
-     * response is a convenience — the tab surfaces it inline so the
-     * admin doesn't need a second call — but any later reveal minted
-     * via `getApiTokenJwt` signs an equivalent JWT over the same
-     * record. Listings only return metadata.
+     * Mints a new API token for the target user. The response carries
+     * the token's JWT, which the tab shows once; it can't be retrieved
+     * again later. Listings only return metadata.
      */
     createApiToken(payload: DotApiTokenCreatePayload): Observable<DotApiTokenCreateResult> {
         return this.#http
             .post<DotApiTokenCreateResponse>('/api/v1/apitoken', payload)
             .pipe(map((response) => response.entity));
-    }
-
-    /**
-     * Mints a fresh JWT for an existing token id. Stateless: the token
-     * record itself is unchanged and previously-issued JWTs stay valid
-     * until the token is revoked or expires — revoke is the only
-     * mechanism that kills a leaked JWT. Backend refuses this on
-     * revoked/expired tokens (400).
-     */
-    getApiTokenJwt(tokenId: string): Observable<string> {
-        return this.#http
-            .get<{ entity: { jwt: string } }>(`/api/v1/apitoken/${encodeURIComponent(tokenId)}/jwt`)
-            .pipe(
-                map((response) => {
-                    const jwt = response.entity?.jwt;
-                    // Throwing here surfaces a malformed response
-                    // through the tab's httpErrorManager instead of
-                    // leaving the reveal dialog spinning on `''`.
-                    if (typeof jwt !== 'string' || jwt.length === 0) {
-                        throw new Error('Malformed JWT response');
-                    }
-
-                    return jwt;
-                })
-            );
     }
 
     /**

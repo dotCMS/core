@@ -17,6 +17,7 @@ import static org.mockito.Mockito.when;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.UserDataGen;
 import com.dotcms.rendering.velocity.viewtools.secrets.DotVelocitySecretAppConfigThreadLocal;
@@ -45,6 +46,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.nio.file.Files;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
+import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
@@ -83,6 +85,8 @@ public class VTLResourceIntegrationTest {
     private static final String ANONYMOUS_USER_ID = "anonymous";
     private static final String SECRET_VALUE = "vtl-secret-value";
     private static final String SECRET_REFERENCE = "$dotsecrets.get(\"mySecret\")";
+    private static final String SAVED_FILE_CODE = "#set($word = \"ready\")$word";
+    private static final String SAVED_FILE_OUTPUT = "ready";
 
     @BeforeClass
     public static void prepare() throws Exception{
@@ -308,7 +312,141 @@ public class VTLResourceIntegrationTest {
             final Folder vtlFolder, final String hostName, final User fileEditor)
             throws IOException, DotSecurityException, DotDataException {
         createVTLFile(testCase.getVtlFile(), vtlFolder, fileEditor);
+        return requestFolder(testCase, hostName);
+    }
 
+    /**
+     * Method to test: {@link VTLResource#get(HttpServletRequest, HttpServletResponse, UriInfo, String, String, Map)}
+     * Given: a get.vtl last saved by a back-end user without the Scripting Developer role
+     * When: the folder is requested
+     * Should: answer 403 without running the file
+     */
+    @Test
+    public void testGet_fileLastSavedByUserWithoutScriptingRole_returns403() throws Exception {
+        final User editor = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+
+        assertEquals(Response.Status.FORBIDDEN.getStatusCode(),
+                getFileSavedBy(editor).getStatus());
+    }
+
+    /**
+     * Method to test: {@link VTLResource#get(HttpServletRequest, HttpServletResponse, UriInfo, String, String, Map)}
+     * Given: a get.vtl last saved by a back-end user holding the Scripting Developer role
+     * When: the folder is requested
+     * Should: run the file and return its output
+     */
+    @Test
+    public void testGet_fileLastSavedByScriptingDeveloper_runs() throws Exception {
+        final User editor = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole(), getScriptingDeveloperRole())
+                .nextPersisted();
+
+        final Response response = getFileSavedBy(editor);
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(SAVED_FILE_OUTPUT, response.getEntity().toString().trim());
+    }
+
+    /**
+     * Method to test: {@link VTLResource#get(HttpServletRequest, HttpServletResponse, UriInfo, String, String, Map)}
+     * Given: a get.vtl last saved by a CMS Administrator who does not hold the Scripting Developer role
+     * When: the folder is requested
+     * Should: run the file and return its output, since an administrator can grant themselves the role
+     */
+    @Test
+    public void testGet_fileLastSavedByAdmin_runs() throws Exception {
+        final User editor = new UserDataGen()
+                .roles(APILocator.getRoleAPI().loadCMSAdminRole()).nextPersisted();
+
+        final Response response = getFileSavedBy(editor);
+
+        assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
+        assertEquals(SAVED_FILE_OUTPUT, response.getEntity().toString().trim());
+    }
+
+    /**
+     * Creates a get.vtl in a new folder of a new site, saves and publishes a new version of it as the
+     * given user, and requests the folder.
+     *
+     * @param editor the user recorded as the last one to modify the file
+     * @return the endpoint's response
+     * @throws Exception if the site, folder or file cannot be created or saved
+     */
+    private Response getFileSavedBy(final User editor) throws Exception {
+        final Host site = new SiteDataGen().nextPersisted();
+        final String folderName = System.currentTimeMillis() + "saved";
+        final Folder vtlFolder = createVTLFolder(folderName, site);
+        try {
+            final File source = new File(Files.createTempDirectory("dotcms-test").toFile(), "source.vtl");
+            FileUtil.write(source, SAVED_FILE_CODE);
+            final Contentlet file = createVTLFile(source, vtlFolder, systemUser);
+            saveAndPublishAs(file, editor);
+
+            final VTLResourceTestCase testCase = new VTLResourceTestCase.Builder()
+                    .setFolderName(folderName)
+                    .setQueryParameters(new MultivaluedHashMap<>())
+                    .setPathParameter(StringPool.BLANK)
+                    .setUser(ANONYMOUS_USER_ID)
+                    .setResourceMethod(ResourceMethod.GET)
+                    .build();
+            return requestFolder(testCase, site.getHostname());
+        } finally {
+            APILocator.getFolderAPI().delete(vtlFolder, APILocator.systemUser(), false);
+        }
+    }
+
+    /**
+     * Gives the user write and publish permission on the file, then checks out, checks in and
+     * publishes a new version of it as that user, so the user becomes its last modifier.
+     *
+     * @param file   the file asset to save again
+     * @param editor the user who saves it
+     * @throws Exception if the permission or the new version cannot be saved
+     */
+    private void saveAndPublishAs(final Contentlet file, final User editor) throws Exception {
+        APILocator.getPermissionAPI().save(
+                new Permission(file.getPermissionId(),
+                        APILocator.getRoleAPI().getUserRole(editor).getId(),
+                        PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_WRITE
+                                | PermissionAPI.PERMISSION_PUBLISH),
+                file, systemUser, false);
+
+        final Contentlet checkout = APILocator.getContentletAPI()
+                .checkout(file.getInode(), editor, false);
+        checkout.setIndexPolicy(IndexPolicy.FORCE);
+        checkout.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+        final Contentlet saved = APILocator.getContentletAPI().checkin(checkout, editor, false);
+        APILocator.getContentletAPI().publish(saved, editor, false);
+
+        assertEquals("the file should have been saved as the editor",
+                editor.getUserId(), saved.getModUser());
+    }
+
+    /**
+     * Loads the Scripting Developer role, creating it when the test database does not have it yet.
+     *
+     * @return the role
+     * @throws DotDataException if the role cannot be read or created
+     */
+    private static Role getScriptingDeveloperRole() throws DotDataException {
+        final Role role = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);
+        return null != role ? role : new RoleDataGen().key(Role.SCRIPTING_DEVELOPER)
+                .name(Role.SCRIPTING_DEVELOPER).nextPersisted();
+    }
+
+
+    /**
+     * Calls the endpoint the test case names for its folder, as the test case's user.
+     *
+     * @param testCase the folder, parameters, user and method to call
+     * @param hostName the site the request is sent to
+     * @return the endpoint's response
+     * @throws DotSecurityException if the requesting user cannot be loaded
+     * @throws DotDataException     if the requesting user cannot be loaded
+     */
+    private Response requestFolder(final VTLResourceTestCase testCase, final String hostName)
+            throws DotSecurityException, DotDataException {
         final HttpServletRequest request = getMockedRequest();
         when(request.getServerName()).thenReturn(hostName);
 
@@ -400,11 +538,12 @@ public class VTLResourceIntegrationTest {
      * @param vtlFile    file whose contents become get.vtl
      * @param vtlFolder  folder under /application/apivtl that holds the endpoint
      * @param editor     user who checks in and publishes the file
+     * @return the published file asset
      * @throws IOException          if the temporary copy of the file cannot be written
      * @throws DotSecurityException if the editor cannot save or publish the file
      * @throws DotDataException     if the file or its permissions cannot be saved
      */
-    private void createVTLFile(final File vtlFile, final Folder vtlFolder, final User editor)
+    private Contentlet createVTLFile(final File vtlFile, final Folder vtlFolder, final User editor)
             throws IOException, DotSecurityException, DotDataException {
         final File getVTLFile = new File(Files.createTempDirectory("dotcms-test").toFile(), "get.vtl");
         FileUtil.copyFile(vtlFile, getVTLFile);
@@ -431,6 +570,7 @@ public class VTLResourceIntegrationTest {
         folderPermissions.setRoleId(APILocator.getRoleAPI().loadCMSAnonymousRole().getId());
         folderPermissions.setPermission(PermissionAPI.PERMISSION_READ);
         APILocator.getPermissionAPI().save(folderPermissions, vtlFolder, systemUser, true);
+        return getVTLFileAsset;
     }
 
     private Folder createVTLFolder(final String folderName, final Host site)

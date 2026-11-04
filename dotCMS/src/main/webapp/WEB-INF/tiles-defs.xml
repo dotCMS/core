@@ -379,41 +379,6 @@
 	<!-- File Management -->
 
 
-	<!-- Category Admin -->
-	<definition name="portlet.ext.categories.view" extends="portal">
-		<put name="content" value="/portlet/ext/categories/view.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.categories" extends="portal">
-		<put name="portlet_sub_nav"
-			value="/portlet/ext/categories/sub_nav.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.categories.view_categories"
-		extends="portlet.ext.categories">
-		<put name="content"
-			value="/portlet/ext/categories/view_categories.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.categories.view_category"
-		extends="portlet.ext.categories">
-		<put name="content"
-			value="/portlet/ext/categories/view_category.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.categories.edit_category"
-		extends="portlet.ext.categories">
-		<put name="content"
-			value="/portlet/ext/categories/edit_category.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.categories.view_category"
-		extends="portlet.ext.categories">
-		<put name="content"
-			value="/portlet/ext/categories/view_category.jsp" />
-	</definition>
-	<!-- Category Admin -->
-
 	<!-- Entities -->
 	<definition name="portlet.ext.entities.view" extends="portal">
 		<put name="content" value="/portlet/ext/entities/view.jsp" />
@@ -559,46 +524,6 @@
 			value="/portlet/ext/contentlet/order_contentlets.jsp" />
 	</definition>
 	<!-- Contentlet -->
-
-	<!-- container -->
-	<definition name="portlet.ext.containers.view" extends="portal">
-		<put name="content" value="/portlet/ext/containers/view.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.containers" extends="portal">
-		<put name="portlet_sub_nav"
-			value="/portlet/ext/containers/sub_nav.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.containers.view_containers"
-		extends="portlet.ext.containers">
-		<put name="content"
-			value="/portlet/ext/containers/view_containers.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.containers.view_containers_popup"
-		extends="portlet.ext.containers">
-		<put name="content"
-			value="/portlet/ext/containers/view_containers_popup.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.containers.edit_container"
-		extends="portlet.ext.containers">
-		<put name="content"
-			value="/portlet/ext/containers/edit_container.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.containers.publish_containers"
-		extends="portlet.ext.containers">
-		<put name="content"
-			value="/portlet/ext/containers/publish_containers.jsp" />
-	</definition>
-
-	<definition name="portlet.ext.containers.add_variables"
-		extends="portlet.ext.containers">
-		<put name="content"
-			value="/portlet/ext/containers/add_variables.jsp" />
-	</definition>
 
 	<!-- Layout -->
 
@@ -893,11 +818,6 @@
 		extends="portlet.ext.director">
 		<put name="content"
 			value="/portlet/ext/director/unlock_htmlpage.jsp" />
-	</definition>
-	<definition name="portlet.ext.director.unlock_container"
-		extends="portlet.ext.director">
-		<put name="content"
-			value="/portlet/ext/director/unlock_container.jsp" />
 	</definition>
 	<definition name="portlet.ext.director.unlock_template"
 		extends="portlet.ext.director">

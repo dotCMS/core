@@ -24,6 +24,13 @@ public interface AbstractJobStateQueryParameters {
     Optional<String> queueName();
 
     /**
+     * Gets the id of the user whose jobs to include. Applies to listings without a date range.
+     *
+     * @return an Optional containing the user id, or an empty Optional for every user's jobs.
+     */
+    Optional<String> ownerId();
+
+    /**
      * Gets the start date for the query.
      *
      * @return an Optional containing the start date, or an empty Optional if not specified.

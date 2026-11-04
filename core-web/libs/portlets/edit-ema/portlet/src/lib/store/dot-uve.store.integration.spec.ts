@@ -31,6 +31,7 @@ import {
 } from '@dotcms/utils-testing';
 
 import { UVEStore } from './dot-uve.store';
+import { UVE_EDIT_PANEL_TABS } from './features/editor/models';
 import { Orientation } from './models';
 
 import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
@@ -156,6 +157,10 @@ describe('UVEStore - Integration Tests ', () => {
             it('should initialize panels with default values', () => {
                 expect(store.editorPaletteOpen()).toBe(true); // Default: palette open
                 expect(store.editorEditPanelOpen()).toBe(false); // Default: sidebar closed
+            });
+
+            it('should open the edit panel on the quick-edit tab by default', () => {
+                expect(store.editorEditPanelTab()).toBe(UVE_EDIT_PANEL_TABS.QUICK_EDIT);
             });
 
             it('should update palette.open via setPaletteOpen', () => {
@@ -311,6 +316,40 @@ describe('UVEStore - Integration Tests ', () => {
             // Panel state should be preserved (user preferences)
             expect(store.editorPaletteOpen()).toBe(paletteWasOpen);
             expect(store.editorEditPanelOpen()).toBe(sidebarWasOpen);
+        });
+
+        it('should save through the page API when a contentlet is inserted into a container', () => {
+            // Inserting saves through withPageApi's editorSave, so this only holds when the root
+            // store composes the two in the right order.
+            const save = spectator.inject(DotPageApiService).save as ReturnType<typeof vi.fn>;
+            save.mockReturnValue(of({}));
+
+            store.editorInsertContentlet(
+                {
+                    ...ACTION_PAYLOAD_MOCK,
+                    position: undefined,
+                    pageContainers: [{ identifier: 'container-1', uuid: '1', contentletsId: [] }],
+                    container: {
+                        identifier: 'container-1',
+                        uuid: '1',
+                        acceptTypes: '*',
+                        maxContentlets: 5,
+                        contentletsId: []
+                    }
+                },
+                'new-1'
+            );
+
+            expect(save).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    pageContainers: [
+                        expect.objectContaining({
+                            identifier: 'container-1',
+                            contentletsId: ['new-1']
+                        })
+                    ]
+                })
+            );
         });
     });
 

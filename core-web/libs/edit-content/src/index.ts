@@ -4,6 +4,7 @@ export * from './lib/fields/dot-edit-content-file-field/components/dot-binary-fi
 export * from './lib/fields/dot-edit-content-file-field/components/dot-file-field/dot-file-field.component';
 export * from './lib/fields/dot-edit-content-tag-field/components/tag-field/tag-field.component';
 export * from './lib/models/dot-edit-content-dialog.interface';
+export * from './lib/models/dot-edit-content-dialog.constant';
 export * from './lib/services/dot-edit-content.service';
 // The Edit Content side panel's content, loaded on demand: open it with DotSidePanelService.
 export { loadDotEditContentSidePanel } from './lib/components/dot-edit-content-side-panel/load-dot-edit-content-side-panel';

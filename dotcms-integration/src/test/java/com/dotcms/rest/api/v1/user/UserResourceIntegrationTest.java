@@ -880,7 +880,7 @@ public class UserResourceIntegrationTest {
                 .firstName("RoleIds")
                 .lastName("Create" + uniq())
                 .email("roleids-" + uniq() + "@dotcms.com")
-                .password("Passw0rd!".toCharArray())
+                .password("Passw0rd!-Neutral26".toCharArray())
                 .active(true);
     }
 

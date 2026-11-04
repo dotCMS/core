@@ -192,6 +192,26 @@ test('representative protected requests keep effective nonempty runner Bearer, n
   }
 });
 
+test('API token access checks retain the limited actor using its newly issued JWT', () => {
+  const collection = JSON.parse(readFileSync(path.join(root, 'ApiToken_Resource.postman_collection.json'), 'utf8'));
+  const items = collection.item.find((item) => item.name === 'Token access by user').item;
+  assert.equal(items.length, 9, 'Keep all token creation, disclosure, listing and revocation checks');
+  const vars = new Map();
+  for (const event of items[0].event) vm.runInNewContext(eventCode(event), { pm: {
+    test() {}, response: { json: () => ({ entity: { jwt: 'synthetic.limited.jwt', token: { id: 'limited-token' } } }) },
+    collectionVariables: { set: (key, val) => vars.set(key, val) },
+  } });
+  assert.equal(vars.get('limitedTokenId'), 'limited-token');
+  assert.equal(vars.get('limitedUserJwt'), 'synthetic.limited.jwt');
+  const limited = items.filter((item) => item.name.startsWith('non-admin'));
+  assert.equal(limited.length, 3);
+  for (const item of items) {
+    assert.equal(item.request.auth.type, 'bearer', item.name);
+    assert.equal(value(item.request.auth, 'token'), limited.includes(item) ? '{{limitedUserJwt}}' : '{{jwt}}', item.name);
+    if (limited.includes(item)) assert.equal(item.protocolProfileBehavior.disableCookies, true, item.name);
+  }
+});
+
 test('collection/folder/request scripts do not silently bootstrap or send Basic', () => {
   const violations = scripts.filter(({ event }) =>
     /["'`]Basic\s|["']?\btype["']?\s*:\s*["']basic["']/i.test(eventCode(event)));

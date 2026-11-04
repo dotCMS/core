@@ -37,11 +37,14 @@ jobs:
     permissions:
       contents: read
       packages: write
-  test:
-    name: Merge Group Test
-    needs: [ initialize,build ]
-    if: always() && !failure() && !cancelled()
-    uses: ./.github/workflows/cicd_comp_test-phase.yml
+  # Test matrix - decides which test jobs run. It needs no build output, so it runs in
+  # parallel with the build instead of sitting between the build and the tests.
+  test-matrix:
+    name: Merge Group Test Matrix
+    needs: [ initialize ]
+    uses: ./.github/workflows/cicd_comp_test-matrix.yml
+    permissions:
+      contents: read
     with:
       skip-runner-cleanup: true
       jvm_unit_test: ${{ fromJSON(needs.initialize.outputs.filters).jvm_unit_test == 'true' }}
@@ -51,12 +54,21 @@ jobs:
       frontend: ${{ fromJSON(needs.initialize.outputs.filters).frontend == 'true' }}
       cli: ${{ fromJSON(needs.initialize.outputs.filters).cli == 'true' || fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
       e2e: false
+  test:
+    name: Merge Group Test
+    needs: [ initialize, build, test-matrix ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_test-phase.yml
+    with:
+      matrix: ${{ needs.test-matrix.outputs.matrix }}
+      has-tests: ${{ needs.test-matrix.outputs.has-tests }}
+      opensearch_phase: ${{ needs.test-matrix.outputs.opensearch_phase }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
   finalize:
     name: Finalize
     if: always()
-    needs: [ test ]
+    needs: [ test-matrix, test ]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       needsData: ${{ toJson(needs) }}

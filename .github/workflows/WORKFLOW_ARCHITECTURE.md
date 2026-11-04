@@ -407,7 +407,7 @@ flowchart TD
 
 ```mermaid
 flowchart LR
-    Start[Test Phase] --> Matrix[setup-matrix Job<br/>Parse test-matrix.yml]
+    Start[Test Matrix workflow<br/>runs alongside the build] --> Matrix[setup-matrix Job<br/>Parse test-matrix.yml]
     
     Matrix --> Generate{Generate<br/>Test<br/>Combinations}
     
@@ -572,6 +572,7 @@ if: needs.initialize.outputs.found_artifacts == 'false'
 ```yaml
 # Tests are conditionally run based on file changes detected in initialize
 # The filters output is a JSON object - use fromJSON() to access individual values
+# These inputs go to the caller's test-matrix job (cicd_comp_test-matrix.yml), not to the test phase
 with:
   jvm_unit_test: ${{ fromJSON(needs.initialize.outputs.filters).jvm_unit_test == 'true' }}
   integration: ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
@@ -590,10 +591,14 @@ on:
 
 ### 5. Matrix Generation Pattern
 ```yaml
-# Dynamic test matrix from external YAML config
-- uses: mikefarah/yq@v4.47.1
+# Dynamic test matrix from external YAML config, built by cicd_comp_test-matrix.yml.
+# Each caller runs it as a `test-matrix` job beside the build; the caller's `test` job
+# needs both and passes the matrix to cicd_comp_test-phase.yml.
+- uses: actions/checkout@<sha> # sparse checkout of .github/test-matrix.yml only
   with:
-    cmd: yq -o=json .github/test-matrix.yml
+    sparse-checkout: .github/test-matrix.yml
+    sparse-checkout-cone-mode: false
+- run: yq -o=json .github/test-matrix.yml > config.json   # yq preinstalled on the runner
 ```
 
 ## Key Actions
@@ -692,7 +697,7 @@ Slack channel and user mappings for notifications
    - Verify path filters matched correctly
 
 2. **Verify Test Matrix Generation**
-   - Check setup-matrix job logs
+   - Check the `<Caller> Test Matrix / Setup Test Matrix` job logs (`cicd_comp_test-matrix.yml`)
    - Ensure test-matrix.yml is valid YAML
    - Verify condition inputs are correct
 
