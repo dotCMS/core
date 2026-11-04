@@ -90,6 +90,8 @@ services:
             - 8080:8080
             - 8443:8443
             - 8000:8000
+            # Management connector (CMS_MANAGEMENT_PORT); ManagementEndpoints uses it as {{managementURL}}.
+            - 8090:8090
         depends_on:
             - db-test
             - elasticsearch-test
