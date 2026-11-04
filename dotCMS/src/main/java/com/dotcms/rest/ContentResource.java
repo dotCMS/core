@@ -1,6 +1,7 @@
 package com.dotcms.rest;
 
 import com.dotcms.content.filter.ContentFieldFilter;
+import com.dotcms.content.filter.PropertyTreeFilter;
 import com.dotcms.contenttype.model.field.RelationshipField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -1121,8 +1122,10 @@ public class ContentResource {
         m.put("__icon__", UtilHTML.getIconClass(contentlet));
         m.put("contentTypeIcon", type.icon());
 
-        // Filter last, once every property has been added, so none of them can bypass the masking
-        return ContentFieldFilter.forUser(user).apply(m);
+        // Filter last, once every property has been added, so none of them can bypass the masking, and with the
+        // content type, so the contentlets embedded in a Story Block are filtered as in the JSON response
+        return PropertyTreeFilter.filterContentletProperties(type.id(), m, ContentFieldFilter.forUser(user),
+                PropertyTreeFilter.storedContentTypes());
     }
 
     /**

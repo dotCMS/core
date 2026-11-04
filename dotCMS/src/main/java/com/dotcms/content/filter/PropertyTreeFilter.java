@@ -79,6 +79,44 @@ public final class PropertyTreeFilter {
     }
 
     /**
+     * Returns a filtered copy of some properties of one contentlet of the given content type, such as the single
+     * property a GraphQL {@code _map(key:)} asks for, or the map written for the XML of the legacy Content API.
+     *
+     * @param contentType the variable name or identifier of the contentlet's content type
+     * @param properties the contentlet's properties; may be {@code null}
+     * @param filter the {@link ContentFieldFilter} built for the caller
+     * @param fieldTypes resolves field types of the contentlets found in the properties
+     * @return the filtered copy, without the properties removed for the caller; the properties themselves when
+     * the filter changes nothing
+     */
+    @SuppressWarnings("unchecked")
+    public static Map<String, Object> filterContentletProperties(final String contentType,
+            final Map<String, Object> properties, final ContentFieldFilter filter, final FieldTypes fieldTypes) {
+        if (null == filter || !filter.isActive() || null == properties) {
+            return properties;
+        }
+        // Filter them as a contentlet of that type, so Story Block text is read and customer fields are kept,
+        // then take off the identifier and content type added for that
+        final Map<String, Object> contentlet = new HashMap<>(properties);
+        final boolean addIdentifier = !contentlet.containsKey(Contentlet.IDENTIFIER_KEY)
+                && !contentlet.containsKey(Contentlet.INODE_KEY);
+        if (addIdentifier) {
+            contentlet.put(Contentlet.IDENTIFIER_KEY, null);
+        }
+        contentlet.put(Contentlet.CONTENT_TYPE_KEY, contentType);
+        final Map<String, Object> filtered = (Map<String, Object>) copyObject(contentlet, filter, fieldTypes);
+        if (addIdentifier) {
+            filtered.remove(Contentlet.IDENTIFIER_KEY);
+        }
+        if (properties.containsKey(Contentlet.CONTENT_TYPE_KEY)) {
+            filtered.put(Contentlet.CONTENT_TYPE_KEY, properties.get(Contentlet.CONTENT_TYPE_KEY));
+        } else {
+            filtered.remove(Contentlet.CONTENT_TYPE_KEY);
+        }
+        return filtered;
+    }
+
+    /**
      * Returns the field types of the content types stored in dotCMS, read as the system user. Each content
      * type is looked up once per returned instance, so one instance should serve one response.
      *

@@ -13,6 +13,7 @@ import com.liferay.portal.model.User;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -74,6 +75,43 @@ class ContentFieldFilterSearchBodyTest {
                 "{\"query\":{\"script_score\":{\"query\":{\"match_all\":{}},\"script\":{\"source\":\"1\"}}}}"));
         assertFalse(filter.allowsJsonSearch("{\"runtime_mappings\":{\"x\":{\"type\":\"keyword\"}}}"));
         assertFalse(filter.allowsJsonSearch("{aggs:{u:{terms:{field:'owner_dotraw'}}}}"));
+    }
+
+    /**
+     * Given an anonymous caller, when a search body names a user property in a list of fields with a boost,
+     * then it is refused; the same boost on a content property is allowed.
+     */
+    @Test
+    void refusesBoostedUserPropertyFields() {
+        final ContentFieldFilter filter = ContentFieldFilter.forUser(anonymous());
+
+        assertFalse(filter.allowsJsonSearch(
+                "{\"query\":{\"query_string\":{\"query\":\"dotcms.org.1\",\"fields\":[\"moduser^1\"]}}}"));
+        assertFalse(filter.allowsJsonSearch(
+                "{\"query\":{\"multi_match\":{\"query\":\"dotcms.org.1\",\"fields\":[\"title\",\"owner^2.5\"]}}}"));
+        assertFalse(filter.allowsJsonSearch(
+                "{\"query\":{\"simple_query_string\":{\"query\":\"dotcms\",\"fields\":[\"*user^2\"]}}}"));
+        assertTrue(filter.allowsJsonSearch(
+                "{\"query\":{\"query_string\":{\"query\":\"helmet\",\"fields\":[\"title^2\"]}}}"));
+    }
+
+    /**
+     * Given the default configuration, when content is indexed, then the user properties are left out of
+     * {@code catchall}; when the setting is turned off, they are kept in it.
+     */
+    @Test
+    void leavesUserPropertiesOutOfCatchallByDefault() {
+        Config.setProperty(ContentFieldFilter.HIDE_USER_PROPERTIES_PROPERTY, null);
+
+        final Predicate<String> excluded = ContentFieldFilter.catchallExclusion();
+        assertTrue(excluded.test("owner"));
+        assertTrue(excluded.test("moduser"));
+        assertTrue(excluded.test("syspublishuser"));
+        assertTrue(excluded.test("wfcreatedby"));
+        assertFalse(excluded.test("title"));
+
+        Config.setProperty(ContentFieldFilter.HIDE_USER_PROPERTIES_PROPERTY, "false");
+        assertFalse(ContentFieldFilter.catchallExclusion().test("moduser"));
     }
 
     /**

@@ -121,6 +121,44 @@ class PropertyTreeFilterTest {
         assertSame(html, filtered.get("body"));
     }
 
+    /**
+     * Given one Story Block property of a contentlet, asked for on its own as GraphQL {@code _map(key:)} does,
+     * when it is filtered for its content type, then the contentlets embedded in it get the placeholder, in the
+     * field and in its {@code _raw} copy, and no other property is added.
+     */
+    @Test
+    void replacesUserPropertiesInOneStoryBlockPropertyOfAContentlet() {
+        final String storyBlock = "{\"type\":\"doc\",\"content\":[{\"type\":\"dotContent\",\"attrs\":{\"data\":"
+                + "{\"identifier\":\"emb-1\",\"contentType\":\"Product\",\"title\":\"Helmet\","
+                + "\"modUser\":\"dotcms.org.1\",\"modUserName\":\"Admin User\"}}}]}";
+
+        for (final String key : List.of("body", "body_raw")) {
+            final Map<String, Object> filtered = PropertyTreeFilter.filterContentletProperties(
+                    "Product", Map.of(key, storyBlock), anonymousFilter(), FIELD_TYPES);
+
+            assertEquals(List.of(key), List.copyOf(filtered.keySet()));
+            final String text = (String) filtered.get(key);
+            assertFalse(text.contains("dotcms.org.1") || text.contains("Admin User"), key + ": " + text);
+            assertTrue(text.contains(ContentFieldFilter.USER_PROPERTY_PLACEHOLDER), key + ": " + text);
+        }
+    }
+
+    /**
+     * Given single properties of a contentlet, when each is filtered for its content type, then a user property
+     * gets the placeholder, a Key/Value value is kept as stored, and a property listed to hide is left out.
+     */
+    @Test
+    void filtersSinglePropertiesOfAContentletLikeTheWholeContentlet() {
+        Config.setProperty(ContentFieldFilter.FIELDS_TO_HIDE_PROPERTY, "title");
+        final ContentFieldFilter filter = anonymousFilter();
+
+        assertEquals(Map.of("modUser", ContentFieldFilter.USER_PROPERTY_PLACEHOLDER),
+                PropertyTreeFilter.filterContentletProperties("Product", Map.of("modUser", "dotcms.org.1"), filter, FIELD_TYPES));
+        assertEquals(Map.of("meta", Map.of("owner", "customer-value")), PropertyTreeFilter.filterContentletProperties(
+                "Product", Map.of("meta", Map.of("owner", "customer-value")), filter, FIELD_TYPES));
+        assertEquals(Map.of(), PropertyTreeFilter.filterContentletProperties("Product", Map.of("title", "Hello"), filter, FIELD_TYPES));
+    }
+
     /** Returns a contentlet map of the test content type with the usual user properties. */
     private static Map<String, Object> content(final String identifier) {
         final Map<String, Object> content = new LinkedHashMap<>();

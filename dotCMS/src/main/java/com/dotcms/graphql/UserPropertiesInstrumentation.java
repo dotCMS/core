@@ -3,6 +3,7 @@ package com.dotcms.graphql;
 import com.dotcms.content.filter.ContentFieldFilter;
 import com.dotcms.content.filter.PropertyTreeFilter;
 import com.dotcms.graphql.business.PageAPIGraphQLTypesProvider;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.liferay.portal.model.User;
 import graphql.GraphqlErrorBuilder;
 import graphql.execution.DataFetcherResult;
@@ -104,12 +105,13 @@ public class UserPropertiesInstrumentation extends SimpleInstrumentation {
         if (null == key) {
             return PropertyTreeFilter.filter(result, filter, PropertyTreeFilter.storedContentTypes());
         }
+        // Filtered with the contentlet's type, so a Story Block value asked for on its own is read like in the whole map
+        final Object source = environment.getSource();
+        final String contentType = source instanceof Contentlet ? ((Contentlet) source).getContentTypeId() : null;
         final Map<String, Object> single = new HashMap<>();
         single.put(key, result);
-        final Map<String, Object> filtered = filter.apply(single);
-        return filtered.containsKey(key)
-                ? PropertyTreeFilter.filter(filtered.get(key), filter, PropertyTreeFilter.storedContentTypes())
-                : null;
+        return PropertyTreeFilter.filterContentletProperties(contentType, single, filter,
+                PropertyTreeFilter.storedContentTypes()).get(key);
     }
 
     /**

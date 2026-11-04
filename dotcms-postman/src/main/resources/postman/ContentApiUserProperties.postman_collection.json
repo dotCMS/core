@@ -932,6 +932,63 @@
       "response": []
     },
     {
+      "name": "Anonymous - legacy XML Story Block with embedded content - no user ids or names",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Anonymous request: clear any session cookie left by an earlier request of this run.",
+              "pm.sendRequest({ url: pm.environment.get('serverURL') + '/api/v1/logout', method: 'GET' }, function () {});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const text = pm.response.text();",
+              "const userId = pm.collectionVariables.get('publisherId');",
+              "const userName = pm.collectionVariables.get('publisherName');",
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "pm.test('Story Block returned', () => pm.expect(text).to.include('user-properties-embedded'));",
+              "pm.test('no user id', () => pm.expect(text).to.not.include(userId));",
+              "pm.test('no user name', () => pm.expect(text).to.not.include(userName));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/content/id/{{storyId}}/type/xml",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "content",
+            "id",
+            "{{storyId}}",
+            "type",
+            "xml"
+          ]
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
       "name": "Anonymous - GraphQL Story Block json - no user ids or names",
       "event": [
         {
@@ -990,6 +1047,75 @@
         "body": {
           "mode": "raw",
           "raw": "{\n  \"query\": \"{ search(query: \\\"+identifier:{{storyId}}\\\") { ... on UserPropertiesCheck{{runId}} { body { json } } } }\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "auth": {
+          "type": "noauth"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Anonymous - GraphQL Story Block by key - no user ids or names",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "// Anonymous request: clear any session cookie left by an earlier request of this run.",
+              "pm.sendRequest({ url: pm.environment.get('serverURL') + '/api/v1/logout', method: 'GET' }, function () {});"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const text = pm.response.text();",
+              "const userId = pm.collectionVariables.get('publisherId');",
+              "const userName = pm.collectionVariables.get('publisherName');",
+              "pm.test('200', () => pm.response.to.have.status(200));",
+              "pm.test('Story Block returned', () => pm.expect(text).to.include('user-properties-embedded'));",
+              "pm.test('no user id', () => pm.expect(text).to.not.include(userId));",
+              "pm.test('no user name', () => pm.expect(text).to.not.include(userName));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{serverURL}}/api/v1/graphql?dotcachettl=0",
+          "host": [
+            "{{serverURL}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "graphql"
+          ],
+          "query": [
+            {
+              "key": "dotcachettl",
+              "value": "0"
+            }
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"query\": \"{ search(query: \\\"+identifier:{{storyId}}\\\") { body: _map(key: \\\"body\\\") raw: _map(key: \\\"body_raw\\\") } }\"\n}",
           "options": {
             "raw": {
               "language": "json"

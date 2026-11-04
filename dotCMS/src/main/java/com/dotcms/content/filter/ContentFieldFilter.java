@@ -70,16 +70,16 @@ import java.util.stream.Collectors;
  * {@link #allowsSearch(String, String)}. A value can also be searched without naming its field, because
  * every indexed value is copied into the {@code catchall} field, which is also the field searched by a
  * query term without a field name. Wildcard queries on it would let a caller rebuild a value one
- * character at a time, so the configured properties are left out of {@code catchall} when content is
+ * character at a time, so the configured properties, and the {@link #USER_PROPERTIES} while the
+ * {@link #HIDE_USER_PROPERTIES_PROPERTY} setting is on, are left out of {@code catchall} when content is
  * indexed; see {@link #catchallExclusion()}. Two consequences follow:
  * <ul>
- *     <li>It only applies to content indexed after the properties are set, so content must be
- *     reindexed after setting or changing them.</li>
+ *     <li>It only applies to content indexed after the properties or the setting are set, so content
+ *     must be reindexed after setting or changing them.</li>
  *     <li>It applies to every user: CMS administrators and back-end users can still search these
  *     properties by naming them, e.g. {@code +modUser:dotcms.org.1}, but not without a field name.</li>
  * </ul>
- * Other index fields may hold the same values, such as the user IDs in the workflow fields
- * {@code wfCreatedBy} and {@code wfAssign}; list them too to keep them out of searches.
+ * Other index fields may hold the same values; list them too to keep them out of searches.
  */
 public final class ContentFieldFilter {
 
@@ -150,6 +150,8 @@ public final class ContentFieldFilter {
     private static final Set<String> SORT_DIRECTIONS = Set.of("asc", "desc");
     /** Prefix of index fields that mirror a contentlet property, e.g. {@code publishUser} is indexed as {@code sysPublishUser}. */
     private static final String SEARCH_FIELD_PREFIX = "sys";
+    /** Separates a field name from its boost in a search body, e.g. {@code moduser^2}. */
+    private static final char BOOST_SEPARATOR = '^';
     /** Suffixes of index fields derived from a contentlet property, e.g. {@code moduser_dotraw}. */
     private static final List<String> SEARCH_FIELD_SUFFIXES = List.of("_dotraw", "_text", "_sha256");
 
@@ -421,15 +423,19 @@ public final class ContentFieldFilter {
 
     /**
      * Returns a test telling which index fields must be left out of the {@code catchall} field: the ones
-     * that stand for a masked or hidden property, including their {@code Type.field}, {@code sys} prefix,
-     * {@code _dotraw}, {@code _text} and {@code _sha256} variants. Used when content is indexed, whoever
-     * will search it.
+     * that stand for a masked or hidden property, or for one of the {@link #USER_PROPERTIES} while the
+     * {@link #HIDE_USER_PROPERTIES_PROPERTY} setting is on, including their {@code Type.field}, {@code sys}
+     * prefix, {@code _dotraw}, {@code _text} and {@code _sha256} variants. Used when content is indexed,
+     * whoever will search it.
      *
      * @return a test on lower-cased index field names; always {@code false} when nothing is configured
      */
     public static Predicate<String> catchallExclusion() {
-        final Set<String> restricted = new LinkedHashSet<>(readFields(FIELDS_TO_MASK_PROPERTY));
+        final Set<String> restricted = new HashSet<>(readFields(FIELDS_TO_MASK_PROPERTY));
         restricted.addAll(readFields(FIELDS_TO_HIDE_PROPERTY));
+        if (Config.getBooleanProperty(HIDE_USER_PROPERTIES_PROPERTY, true)) {
+            restricted.addAll(USER_PROPERTIES);
+        }
         return catchallExclusion(restricted);
     }
 
@@ -565,14 +571,17 @@ public final class ContentFieldFilter {
     }
 
     /**
-     * Tells whether one search or index field name stands for one of the given properties.
+     * Tells whether one search or index field name stands for one of the given properties. A boost written
+     * after the name, as in {@code moduser^2}, is ignored.
      *
      * @param searchField a field name taken from a query, a sort or an index document
      * @param fields lower-cased property names
      * @return {@code true} when it does
      */
     private static boolean refersTo(final String searchField, final Set<String> fields) {
-        String name = searchField.replace("\\", "").toLowerCase(Locale.ROOT);
+        final int boost = searchField.indexOf(BOOST_SEPARATOR);
+        String name = (boost < 0 ? searchField : searchField.substring(0, boost))
+                .replace("\\", "").trim().toLowerCase(Locale.ROOT);
         name = name.substring(name.lastIndexOf('.') + 1);
         for (final String suffix : SEARCH_FIELD_SUFFIXES) {
             if (name.endsWith(suffix)) {
