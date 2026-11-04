@@ -7,7 +7,8 @@ const asset = (over: Partial<BundleAssetView> = {}): BundleAssetView => ({
     title: 'Title',
     type: 'contentlet',
     inode: 'inode-1',
-    content_type_name: 'Blog',
+    content_type_name: 'Blog Post',
+    content_type_variable: 'Blog',
     ...over
 });
 
@@ -24,8 +25,9 @@ describe('isEditableContentlet', () => {
         expect(isEditableContentlet(asset({ inode: undefined }))).toBe(false);
     });
 
-    // The opener needs the type to pick the editor without another request.
-    it('rejects a contentlet without a content type', () => {
-        expect(isEditableContentlet(asset({ content_type_name: undefined }))).toBe(false);
+    // The opener needs the type to pick the editor without another request, by its variable: a
+    // lookup by display name finds nothing.
+    it('rejects a contentlet without its content type variable', () => {
+        expect(isEditableContentlet(asset({ content_type_variable: undefined }))).toBe(false);
     });
 });
