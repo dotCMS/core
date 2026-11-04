@@ -1,5 +1,6 @@
 import { mockProvider } from '@openng/spectator/vitest';
 import { MockComponent } from 'ng-mocks';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -7,7 +8,7 @@ import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Params } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
@@ -114,17 +115,16 @@ describe('DotPortletDetailComponent', () => {
         router = de.injector.get(ActivatedRoute);
     });
 
-    it('should not have dot-workflow-task when parent route id is empty', () => {
+    /** Puts the route under a portlet route whose `id` param is `id`, then follows `params$`. */
+    const underPortlet = (id: string, params$: Observable<Params> = of({ id })): void => {
         Object.defineProperty(router, 'parent', {
-            value: {
-                snapshot: {
-                    params: {
-                        id: ''
-                    }
-                }
-            },
+            value: { snapshot: { params: { id } }, params: params$ },
             writable: true
         });
+    };
+
+    it('should not have dot-workflow-task when parent route id is empty', () => {
+        underPortlet('');
 
         fixture.detectChanges();
         expect(de.query(By.css('dot-workflow-task')) === null).toBe(true);
@@ -132,16 +132,7 @@ describe('DotPortletDetailComponent', () => {
     });
 
     it('should have dot-workflow-task when parent route id is workflow', () => {
-        Object.defineProperty(router, 'parent', {
-            value: {
-                snapshot: {
-                    params: {
-                        id: 'workflow'
-                    }
-                }
-            },
-            writable: true
-        });
+        underPortlet('workflow');
 
         fixture.detectChanges();
         expect(de.query(By.css('dot-workflow-task'))).toBeTruthy();
@@ -149,18 +140,25 @@ describe('DotPortletDetailComponent', () => {
     });
 
     it('should open the content deep link when parent route id is content', () => {
-        Object.defineProperty(router, 'parent', {
-            value: {
-                snapshot: {
-                    params: {
-                        id: 'content'
-                    }
-                }
-            },
-            writable: true
-        });
+        underPortlet('content');
 
         fixture.detectChanges();
+        expect(de.query(By.css('dot-edit-content-deep-link'))).toBeTruthy();
+        expect(de.query(By.css('dot-workflow-task')) === null).toBe(true);
+    });
+
+    /**
+     * The `/c/:id/:asset` route is reused (no `reuseRoute: false`), so a hash change from
+     * `/c/workflow/<task>` to `/c/content/<inode>` keeps this component: it follows the portlet.
+     */
+    it('should follow the portlet when a navigation changes it', () => {
+        const params$ = new BehaviorSubject<Params>({ id: 'workflow' });
+        underPortlet('workflow', params$);
+        fixture.detectChanges();
+
+        params$.next({ id: 'content' });
+        fixture.detectChanges();
+
         expect(de.query(By.css('dot-edit-content-deep-link'))).toBeTruthy();
         expect(de.query(By.css('dot-workflow-task')) === null).toBe(true);
     });

@@ -6,6 +6,7 @@ import { Location, PopStateEvent } from '@angular/common';
 import {
     Event as RouterEvent,
     NavigationCancel,
+    NavigationCancellationCode,
     NavigationEnd,
     NavigationError,
     NavigationSkipped,
@@ -402,6 +403,41 @@ describe('DotPanelUrlStateService', () => {
                 routerAnswersBack(SURFACE_URL, end);
 
                 expect(requestClose).toHaveBeenCalledTimes(1);
+                expect(lastWrite(location.replaceState).params).toEqual({
+                    ...SURFACE_PARAMS,
+                    editContent: ID_1,
+                    editContentLang: '1'
+                });
+            });
+
+            /**
+             * A second Back before the first navigation ends cancels it as superseded while the
+             * second navigation still runs, and that navigation's own `replaceState` would undo a
+             * restore written now. So the restore waits for the navigation that replaced it.
+             */
+            it('keeps waiting through a navigation a newer one superseded', () => {
+                start();
+                const { ref, requestClose } = guardedRef();
+                spectator.service.register(ref, { editContent: ID_1, editContentLang: '1' });
+
+                location.pop(SURFACE_URL);
+                router.events.next(new NavigationStart(2, SURFACE_URL, 'popstate'));
+                router.events.next(
+                    new NavigationCancel(
+                        2,
+                        SURFACE_URL,
+                        'superseded',
+                        NavigationCancellationCode.SupersededByNewNavigation
+                    )
+                );
+
+                expect(requestClose).not.toHaveBeenCalled();
+                expect(location.replaceState).not.toHaveBeenCalled();
+
+                routerAnswersBack(SURFACE_URL, new NavigationEnd(3, SURFACE_URL, SURFACE_URL));
+
+                expect(requestClose).toHaveBeenCalledTimes(1);
+                expect(serviceReplaces(1)).toBe(1);
                 expect(lastWrite(location.replaceState).params).toEqual({
                     ...SURFACE_PARAMS,
                     editContent: ID_1,
