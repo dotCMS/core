@@ -11,8 +11,16 @@ import com.dotmarketing.util.Logger;
  * Removes the legacy Containers portlet ({@code containers-legacy}) from every layout. The portlet
  * is no longer registered, so a layout that still lists it would keep a menu entry that cannot be
  * opened. The Angular Containers portlet ({@code containers}) is not touched.
+ * <p>
+ * This task first shipped as {@code Task261023RemoveContainersLegacyPortletFromLayouts}, numbered
+ * below {@code Task261028RemoveSearchLegacyPortletsFromLayouts}, which had already been released.
+ * Startup tasks only run when their number is higher than the {@code db_version} stored in the
+ * database, so installs upgraded past 261028 never ran it. It was renumbered so it runs after every
+ * task that had shipped before it. Environments that already ran it under the old number run it
+ * again: {@link #forceRun()} answers from the real state of {@code cms_layouts_portlets} and
+ * {@link #executeUpgrade()} is a plain delete, so a second run is a no-op.
  */
-public class Task261023RemoveContainersLegacyPortletFromLayouts implements StartupTask {
+public class Task261103RemoveContainersLegacyPortletFromLayouts implements StartupTask {
 
     private static final String LEGACY_PORTLET_ID = "containers-legacy";
 
