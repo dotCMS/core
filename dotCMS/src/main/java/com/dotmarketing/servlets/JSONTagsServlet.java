@@ -36,6 +36,11 @@ public class JSONTagsServlet extends HttpServlet implements Servlet {
 
 	private static final long serialVersionUID = 1L;
 
+	/**
+	 * Lists, filters or exports tags for the tag manager. Requests without a logged-in user get a
+	 * 401 and no data.
+	 */
+	@Override
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
 		UtilMethods.removeBrowserCache(response);
@@ -45,6 +50,10 @@ public class JSONTagsServlet extends HttpServlet implements Servlet {
 
 		try {
 			user = uWebAPI.getLoggedInUser(request);
+			if (user == null) {
+				response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+				return;
+			}
 
 			ObjectMapper mapper = new ObjectMapper();
 			mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
