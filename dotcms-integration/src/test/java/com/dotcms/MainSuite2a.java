@@ -112,6 +112,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.workflows.model.WorkflowSearcherTest.class,
         com.dotmarketing.sitesearch.ajax.SiteSearchAjaxActionIntegrationTest.class,
         com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMappingTest.class,
+        com.dotcms.rest.api.v1.authentication.ForgotPasswordResourceIntegrationTest.class,
         com.dotmarketing.portlets.workflows.actionlet.FourEyeApproverActionletTest.class,
         com.dotmarketing.portlets.workflows.actionlet.SaveContentActionletTest.class,
         com.dotmarketing.portlets.workflows.actionlet.SaveContentActionletWithTagsTest.class,
