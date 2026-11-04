@@ -140,6 +140,20 @@ public class LoginFactoryTest extends IntegrationTestBase {
     }
 
     /**
+     * Given: a password stored as a secure hash.
+     * When:  the stored hash itself is typed as the password.
+     * Then:  it does not match, while the real password still does.
+     */
+    @Test
+    public void test_passwordMatch_secureHash_storedValueIsNotAPassword() throws Exception {
+        final String stored = PasswordFactoryProxy.generateHash(PASSWORD);
+        final User user = userWithStoredPassword(stored);
+
+        assertFalse(LoginFactory.passwordMatch(stored, user));
+        assertTrue(LoginFactory.passwordMatch(PASSWORD, user));
+    }
+
+    /**
      * Given: a directory user, with directory passwords not copied into dotCMS.
      * When:  the directory rejects the login.
      * Then:  the stored password is left untouched.
