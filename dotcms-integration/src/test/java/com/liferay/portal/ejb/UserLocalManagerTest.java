@@ -126,7 +126,7 @@ public class UserLocalManagerTest {
             testUser = new UserDataGen().roles(backendRole).nextPersisted();
             final String userId = testUser.getUserId();
 
-            final String testPassword = "p4ss!word";
+            final String testPassword = "p4ss!Word-Valid-26";
             UserLocalManager userManager = UserLocalManagerFactory.getManager();
             userManager.validate(userId, testPassword, testPassword);
 
@@ -147,7 +147,7 @@ public class UserLocalManagerTest {
             testUser = new UserDataGen().roles(backendRole).nextPersisted();
             final String userId = testUser.getUserId();
 
-            final String testPassword = "p4ss|word";
+            final String testPassword = "p4ss!Word-Valid-é";
             UserLocalManager userManager = UserLocalManagerFactory.getManager();
             userManager.validate(userId, testPassword, testPassword);
 
