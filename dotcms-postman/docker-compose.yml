@@ -91,7 +91,9 @@ services:
             - 8443:8443
             - 8000:8000
             # Management connector (CMS_MANAGEMENT_PORT); ManagementEndpoints uses it as {{managementURL}}.
-            - 8090:8090
+            # Its health and metrics endpoints need no credentials, so publish it on loopback only;
+            # the runner reaches it at http://localhost:8090.
+            - 127.0.0.1:8090:8090
         depends_on:
             - db-test
             - elasticsearch-test
