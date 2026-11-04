@@ -16,6 +16,16 @@ const fixture = [
   { name: 'CLI', stage_name: 'CLI Tests', test_type: 'cli', maven_args: 'verify -pl :dotcms-cli' },
 ];
 
+test('sparse checkout includes every guardrail fixture', () => {
+  const sparse = workflow.match(/sparse-checkout: \|\n([\s\S]*?)\s*sparse-checkout-cone-mode:/)[1]
+    .split('\n').map(line => line.trim());
+  for (const fixture of ['.github/workflows/cicd_comp_test-matrix.yml',
+    '.github/workflows/cicd_comp_test-phase.yml', '.github/scripts/tiered-jit-experiment',
+    'dotcms-postman/pom.xml']) {
+    assert.ok(sparse.includes(fixture), `Missing sparse checkout fixture: ${fixture}`);
+  }
+});
+
 test('normal callers retain the exact matrix', () => {
   const matrix = structuredClone(fixture);
   fanout(matrix, { 'tiered-jit-experiment': false });

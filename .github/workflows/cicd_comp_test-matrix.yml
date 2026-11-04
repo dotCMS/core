@@ -105,6 +105,7 @@ jobs:
           sparse-checkout: |
             .github/test-matrix.yml
             .github/workflows/cicd_comp_test-matrix.yml
+            .github/workflows/cicd_comp_test-phase.yml
             .github/scripts/tiered-jit-experiment
             dotcms-postman/pom.xml
           sparse-checkout-cone-mode: false
