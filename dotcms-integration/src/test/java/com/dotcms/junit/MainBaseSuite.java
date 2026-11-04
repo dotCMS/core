@@ -3,7 +3,6 @@ package com.dotcms.junit;
 import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.StdOutErrLog;
-import com.dotcms.util.UnloggedTestDatabase;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import java.util.LinkedList;
@@ -20,9 +19,8 @@ import org.junit.runners.model.RunnerBuilder;
 
 public class MainBaseSuite extends Suite {
 
-    /** Initializes the application and prepares the selected suite before constructing its runners. */
     public MainBaseSuite(Class<?> klass, RunnerBuilder builder) throws InitializationError {
-        super(klass, getRunners(klass, getAnnotatedClasses(klass)));
+        super(klass, getRunners(getAnnotatedClasses(klass)));
     }
 
     // copied from Suite
@@ -36,14 +34,12 @@ public class MainBaseSuite extends Suite {
         return annotation.value();
     }
 
-    /** Prepares the database once for this suite, then builds its per-class runners. */
-    private static List<Runner> getRunners(Class<?> suite, Class<?>[] classes) throws InitializationError {
+    private static List<Runner> getRunners(Class<?>[] classes) throws InitializationError {
         StdOutErrLog.tieSystemOutAndErrToLog();
         ByteBuddyFactory.init();
         try {
             Logger.info(MainBaseSuite.class, "START IntegrationTestInit *****************************");
             IntegrationTestInitService.getInstance().init();
-            UnloggedTestDatabase.prepare(suite.getName());
             Logger.info(MainBaseSuite.class, "EMD  IntegrationTestInit *****************************");
 
         } catch (Exception e) {

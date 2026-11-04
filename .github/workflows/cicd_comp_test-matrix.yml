@@ -48,8 +48,8 @@ on:
         required: false
         type: boolean
         default: false
-      unlogged-experiment:
-        description: 'Run matched logged/unlogged integration and Postman jobs (disposable databases only)'
+      tiered-jit-experiment:
+        description: 'Compare default JIT with TieredStopAtLevel=1 for unit, integration and Postman jobs'
         type: boolean
         default: false
       opensearch_phase:
@@ -96,7 +96,7 @@ jobs:
       opensearch_phase: ${{ inputs.opensearch_phase }}
     steps:
       # Fetch the matrix and the small opt-in experiment guardrails:
-      # depth 1, no blobs up front (the filter), and only the one path materialized.
+      # depth 1, no blobs up front (the filter), and only the required paths materialized.
       - name: Checkout test matrix config
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -105,17 +105,15 @@ jobs:
           sparse-checkout: |
             .github/test-matrix.yml
             .github/workflows/cicd_comp_test-matrix.yml
-            environments/test-unlogged
-            dotcms-postman/prepare-unlogged.js
-            dotcms-postman/prepare-unlogged.test.js
+            .github/scripts/tiered-jit-experiment
+            dotcms-postman/pom.xml
           sparse-checkout-cone-mode: false
 
-      - name: Check UNLOGGED experiment guardrails
-        if: inputs.unlogged-experiment
+      - name: Check tiered JIT experiment guardrails
+        if: inputs.tiered-jit-experiment
         run: |
-          bash environments/test-unlogged/self-test.sh
-          node --test dotcms-postman/prepare-unlogged.test.js environments/test-unlogged/matrix.test.cjs
-          python3 -m unittest discover -s environments/test-unlogged -p 'test_*.py'
+          node --test .github/scripts/tiered-jit-experiment/matrix.test.cjs
+          python3 -m unittest discover -s .github/scripts/tiered-jit-experiment -p 'test_*.py'
 
       # yq (mikefarah, v4) is preinstalled on the ubuntu runner images, so this needs no
       # Docker image pull.
@@ -149,7 +147,7 @@ jobs:
               'integration': ${{ inputs.integration }},
               'e2e': ${{ inputs.e2e }},
               'skip-runner-cleanup': ${{ inputs.skip-runner-cleanup }},
-              'unlogged-experiment': ${{ inputs.unlogged-experiment }}
+              'tiered-jit-experiment': ${{ inputs.tiered-jit-experiment }}
             };
 
             // ES->OS migration phases to sweep. The input accepts a single phase ('2'),
@@ -243,13 +241,14 @@ jobs:
             }
             
             // Experiment only: same checkout, suites, runners and retries; no cached test execution.
-            if (inputs['unlogged-experiment']) {
+            if (inputs['tiered-jit-experiment']) {
               const paired = matrix.flatMap(entry => {
-                if (!['integration', 'postman'].includes(entry.test_type)) return [entry];
-                return ['logged', 'unlogged'].map(mode => ({
+                if (!['jvm', 'integration', 'postman'].includes(entry.test_type)) return [entry];
+                return ['default', 'tier1'].map(mode => ({
                   ...entry,
-                  database_mode: mode,
-                  maven_args: `${entry.maven_args} -Dmaven.build.cache.enabled=false${mode === 'unlogged' ? ' -Ptest-unlogged' : ''}`,
+                  jit_mode: mode,
+                  java_tool_options: `-XX:+PrintCommandLineFlags${mode === 'tier1' ? ' -XX:TieredStopAtLevel=1' : ''}`,
+                  maven_args: `${entry.maven_args} -Dmaven.build.cache.enabled=false${mode === 'tier1' && entry.test_type === 'postman' ? ' -Ptest-tier1' : ''}`,
                   name: `${entry.name} [${mode}]`,
                   stage_name: `${entry.stage_name} - ${mode}`,
                 }));

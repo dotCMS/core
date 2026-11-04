@@ -206,9 +206,9 @@
     </build>
 
     <profiles>
-        <!-- Disposable test databases only: the marker is written only on first container init. -->
+        <!-- JAVA_TOOL_OPTIONS on the runner is not automatically passed into Docker. -->
         <profile>
-            <id>test-unlogged</id>
+            <id>test-tier1</id>
             <build>
                 <plugins>
                     <plugin>
@@ -216,26 +216,14 @@
                         <artifactId>docker-maven-plugin</artifactId>
                         <configuration>
                             <imagesMap>
-                                <database>
+                                <dotcms>
                                     <run>
-                                        <volumes>
-                                            <bind combine.children="append">
-                                                <volume>${project.basedir}/../environments/test-unlogged/zz-allow-disposable.sh:/docker-entrypoint-initdb.d/zz-allow-disposable.sh:ro</volume>
-                                            </bind>
-                                        </volumes>
+                                        <env>
+                                            <JAVA_TOOL_OPTIONS>-XX:TieredStopAtLevel=1</JAVA_TOOL_OPTIONS>
+                                        </env>
                                     </run>
-                                </database>
+                                </dotcms>
                             </imagesMap>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <configuration>
-                            <environmentVariables>
-                                <TEST_UNLOGGED_CONTAINER>${docker.run.context}_database</TEST_UNLOGGED_CONTAINER>
-                                <TEST_UNLOGGED_SQL>${project.basedir}/../environments/test-unlogged/convert.sql</TEST_UNLOGGED_SQL>
-                            </environmentVariables>
                         </configuration>
                     </plugin>
                 </plugins>

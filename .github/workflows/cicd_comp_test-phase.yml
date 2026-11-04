@@ -156,7 +156,7 @@ jobs:
       # Bounded so a wedged registry or mirror can't burn the job timeout (#37118).
       - name: Install native libvips (image engine parity tests)
         if: >-
-          (matrix.test_type == 'jvm' && matrix.name == 'JVM Unit Tests')
+          (matrix.test_type == 'jvm' && startsWith(matrix.name, 'JVM Unit Tests'))
           || (matrix.test_type == 'integration' && contains(matrix.maven_args, '-Dit.test=MainSuite2a'))
         timeout-minutes: 15
         env:
@@ -207,8 +207,14 @@ jobs:
           # Make the parity tests assert native capability instead of skipping it.
           echo "DOT_TEST_REQUIRE_LIBVIPS=true" >> "$GITHUB_ENV"
 
-      - name: Start database experiment sample
-        if: matrix.database_mode != ''
+      - name: Configure tiered JIT experiment
+        if: matrix.jit_mode != ''
+        env:
+          EXPERIMENT_JAVA_TOOL_OPTIONS: ${{ matrix.java_tool_options }}
+        run: echo "JAVA_TOOL_OPTIONS=${JAVA_TOOL_OPTIONS:+$JAVA_TOOL_OPTIONS }$EXPERIMENT_JAVA_TOOL_OPTIONS" >> "$GITHUB_ENV"
+
+      - name: Start tiered JIT experiment sample
+        if: matrix.jit_mode != ''
         run: echo "BENCHMARK_STARTED=$(date +%s)" >> "$GITHUB_ENV"
 
       - name: Run ${{ matrix.name }}
@@ -231,18 +237,28 @@ jobs:
           docker-io-token: ${{ secrets.DOCKER_TOKEN }}
           pre-pull-images: ${{ matrix.docker_images }}
 
-      - name: Verify executed counts and record database experiment sample
-        if: always() && matrix.database_mode != ''
+      - name: Verify effective JVM compilation level
+        if: always() && matrix.jit_mode != ''
         env:
-          DATABASE_MODE: ${{ matrix.database_mode }}
+          EXPECTED_LEVEL: ${{ matrix.jit_mode == 'tier1' && '1' || '4' }}
+        run: |
+          set -euo pipefail
+          java -XX:+PrintFlagsFinal -version 2>&1 | awk '
+            $2 == "TieredStopAtLevel" { print; found=1; if ($4 != ENVIRON["EXPECTED_LEVEL"]) exit 1 }
+            END { if (!found) exit 1 }'
+
+      - name: Verify executed counts and record tiered JIT experiment sample
+        if: always() && matrix.jit_mode != ''
+        env:
+          JIT_MODE: ${{ matrix.jit_mode }}
           BENCHMARK_STAGE: ${{ matrix.stage_name }}
           BENCHMARK_STATUS: ${{ job.status }}
-          TEST_MODULE: ${{ matrix.test_type == 'integration' && 'dotcms-integration' || 'dotcms-postman' }}
-        run: python3 environments/test-unlogged/report.py "$TEST_MODULE/target/failsafe-reports"
+          REPORT_DIRECTORY: ${{ matrix.test_type == 'integration' && 'dotcms-integration/target/failsafe-reports' || matrix.test_type == 'postman' && 'dotcms-postman/target/failsafe-reports' || contains(matrix.maven_args, '-pl :dotcms-core') && 'dotCMS/target/surefire-reports' || 'independent-projects/core-plugins/saml-plugin/target/surefire-reports' }}
+        run: python3 .github/scripts/tiered-jit-experiment/report.py "$REPORT_DIRECTORY"
 
-      - name: Upload database experiment sample
-        if: always() && matrix.database_mode != ''
+      - name: Upload tiered JIT experiment sample
+        if: always() && matrix.jit_mode != ''
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: unlogged-benchmark-${{ matrix.stage_name }}
-          path: unlogged-benchmark.json
+          name: jit-benchmark-${{ matrix.stage_name }}
+          path: jit-benchmark.json

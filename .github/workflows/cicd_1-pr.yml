@@ -114,8 +114,8 @@ jobs:
       contents: read
     with:
       skip-runner-cleanup: true
-      # Draft-only A/B experiment for #38427; other workflow callers remain unchanged.
-      unlogged-experiment: true
+      # Draft-only tiered JIT A/B experiment for #38427; other workflow callers remain unchanged.
+      tiered-jit-experiment: true
       jvm_unit_test: ${{ fromJSON(needs.initialize.outputs.filters).jvm_unit_test == 'true' }}
       # The long suites (integration, postman, karate, cli, e2e) only run when the PR's own base is
       # main/master. A PR in a GitHub native stack passes the trigger's branches filter because

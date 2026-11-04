@@ -762,7 +762,8 @@ fi
 # ...and the positive case still works, so the tighter match is not simply
 # rejecting everything.
 printf -- '-Dprod=true\n-Drevision=25.02.16-01\n-Dchangelist=\n' > "$WORKDIR/mvnrun/.mvn/maven.config"
-if mvn_args_run true "-java-${SDKMAN_MAJOR}" | grep -qxF -- "-Dchangelist=-java-${SDKMAN_MAJOR}"; then
+if out="$(mvn_args_run true "-java-${SDKMAN_MAJOR}")" \
+    && grep -qxF -- "-Dchangelist=-java-${SDKMAN_MAJOR}" <<<"$out"; then
   ok "a non-empty -Drevision= still passes the guard and sets the changelist"
 else
   bad "a non-empty -Drevision= still passes the guard and sets the changelist" \
@@ -1052,7 +1053,7 @@ else
   bad "release validation body is extractable" "step not found in $(rel "$RELEASE_PHASE")"
 fi
 
-block_has_if "$TEST_PHASE" "Install native libvips (image engine parity tests)" "matrix.name == 'JVM Unit Tests'" \
+block_has_if "$TEST_PHASE" "Install native libvips (image engine parity tests)" "startsWith\\(matrix.name, 'JVM Unit Tests'\\)" \
   "native libvips setup stays with core tests, not the SAML suite"
 block_has_if "$TEST_PHASE" "Install native libvips (image engine parity tests)" "matrix.test_type == 'integration'.*-Dit.test=MainSuite2a" \
   "native libvips setup includes the resize integration-test shard"
