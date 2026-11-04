@@ -23,11 +23,22 @@ import com.dotmarketing.util.UtilMethods;
 @Provider
 public class UnrecognizedPropertyExceptionMapper implements ExceptionMapper<UnrecognizedPropertyException> {
 
+    /**
+     * Answers a request whose body has a field the target form does not declare. The response
+     * names the field and lists the valid ones; the log line names the form only.
+     *
+     * @param exception the unknown-field failure raised by Jackson
+     * @return a 400 response naming the field and the valid field names
+     */
     @Override
     public Response toResponse(final UnrecognizedPropertyException exception) {
 
-        //Log into our logs first (full detail, including the original Jackson message).
-        Logger.warn(this.getClass(), exception.getMessage(), exception);
+        //Log into our logs first, without the field name the client sent.
+        Logger.warn(this.getClass(), "Rejected request: the body has a field that "
+                + (exception.getReferringClass() != null
+                        ? exception.getReferringClass().getSimpleName()
+                        : "the target form")
+                + " does not declare");
 
         final String message = buildMessage(exception);
 

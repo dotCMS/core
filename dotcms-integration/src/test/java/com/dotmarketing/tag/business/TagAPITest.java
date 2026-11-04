@@ -15,6 +15,7 @@ import com.dotmarketing.business.FactoryLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -38,6 +39,7 @@ import org.junit.Test;
 import java.util.Date;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.assertEquals;
@@ -1619,7 +1621,51 @@ public class TagAPITest extends IntegrationTestBase {
 				.getTagsInText(personaTag.getTagName()+":persona", defaultHostId);
 
 		assertEquals(personaTag.getTagName(), fetchedTags.get(0).getTagName());
+		if (!personaTag.getTagId().equals(fetchedTags.get(0).getTagId())) {
+			fail(describeDuplicateTags(personaTag, fetchedTags.get(0)));
+		}
 		assertEquals(personaTag.getTagId(), fetchedTags.get(0).getTagId());
+	}
+
+	/**
+	 * Builds the failure message for
+	 * {@link #getTagsInText_givenTagWithPersonaSuffix_shouldNotCreateDup()}: every database row
+	 * with the tag's name (id, host, persona flag, modification date), the default Site as the test
+	 * class and as the API see it now, the Site the tag was saved under, the Site the tag storage
+	 * resolves to, and the by-name lookup read from the cache and from the database. It only
+	 * reads state, so it can be called after the failing comparison without changing what is asserted.
+	 *
+	 * @param expected the tag the test saved
+	 * @param actual   the tag {@link TagAPI#getTagsInText(String, String)} returned
+	 * @return a multi-line description of the tag rows and Sites involved
+	 */
+	private String describeDuplicateTags(final Tag expected, final Tag actual) {
+		final StringBuilder message = new StringBuilder("getTagsInText returned tag ")
+				.append(actual.getTagId()).append(" (host ").append(actual.getHostId())
+				.append(") instead of the saved tag ").append(expected.getTagId())
+				.append(" (host ").append(expected.getHostId()).append(", persona ")
+				.append(expected.isPersona()).append(")");
+		final String name = expected.getTagName().toLowerCase();
+		try {
+			message.append("\nstatic defaultHostId=").append(defaultHostId)
+					.append(", findDefaultHost now=")
+					.append(hostAPI.findDefaultHost(systemUser, false).getIdentifier())
+					.append(", tag storage resolved for defaultHostId=")
+					.append(tagAPI.resolveTagStorage(defaultHostId, expected.getHostId()));
+			message.append("\ntag rows named '").append(name).append("':");
+			new DotConnect().setSQL("SELECT tag_id, tagname, host_id, persona, mod_date FROM tag WHERE tagname = ?")
+					.addParam(name).loadObjectResults()
+					.forEach(row -> message.append("\n  ").append(row));
+			final String cacheGroup = CacheLocator.getTagCache().getTagsByNameGroup();
+			final Object cached = CacheLocator.getCacheAdministrator().getNoThrow(cacheGroup + name, cacheGroup);
+			message.append("\nby-name cache entry: ").append(cached == null ? "none" : ((List<?>) cached).stream()
+					.map(tag -> ((Tag) tag).getTagId() + "@" + ((Tag) tag).getHostId()).collect(Collectors.toList()));
+			message.append("\nby-name lookup (cache or database): ").append(tagAPI.getTagsByName(name).stream()
+					.map(tag -> tag.getTagId() + "@" + tag.getHostId()).collect(Collectors.toList()));
+		} catch (final Exception e) {
+			message.append("\ncould not collect all details: ").append(e);
+		}
+		return message.toString();
 	}
 
 	/**

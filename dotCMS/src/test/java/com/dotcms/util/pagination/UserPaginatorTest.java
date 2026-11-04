@@ -2,21 +2,27 @@ package com.dotcms.util.pagination;
 
 import com.dotcms.UnitTestBase;
 import com.dotcms.rest.api.v1.system.role.SmallRoleView;
+import com.dotcms.rest.api.v1.user.UserResourceHelper;
+import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.PaginatedArrayList;
+import com.dotmarketing.util.PortletID;
 import com.liferay.portal.model.User;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static com.dotcms.util.CollectionsUtils.list;
 import static org.junit.Assert.assertEquals;
@@ -41,6 +47,7 @@ import static org.mockito.Mockito.when;
 public class UserPaginatorTest extends UnitTestBase {
     UserAPI userAPI;
     RoleAPI roleAPI;
+    LayoutAPI layoutAPI;
     UserPaginator userPaginator;
 
     String loadCMSAdminRoleId = "2";
@@ -72,7 +79,13 @@ public class UserPaginatorTest extends UnitTestBase {
         when(roleAPI.loadBackEndUserRole()).thenReturn(roleBackend);
 
         roles.add(roleBackend);
-        userPaginator = new UserPaginator( userAPI, roleAPI );
+        // every existing scenario lists as a caller who may read the full profile
+        layoutAPI = mock(LayoutAPI.class);
+        when(layoutAPI.doesUserHaveAccessToPortlet(eq(PortletID.USERS.toString()), any())).thenReturn(true);
+        // doesUserHaveAccessToUsersPortlet is a default method on the interface: run the real one so it
+        // delegates to the per-portlet stubs below (USERS / USERS_BETA) rather than the mock's default false.
+        when(layoutAPI.doesUserHaveAccessToUsersPortlet(any())).thenCallRealMethod();
+        userPaginator = new UserPaginator(userAPI, roleAPI, () -> layoutAPI);
     }
 
     /**
@@ -270,6 +283,237 @@ public class UserPaginatorTest extends UnitTestBase {
         assertNull(roles.get(1).getRoleKey());
         assertEquals("a root role merely NAMED 'User...' must be kept", "r-user-managers", roles.get(2).getId());
         verify(roleAPI, never()).loadRolesForUser("u1", true);
+    }
+
+    /** A user data map carrying directory keys and account-state keys alike. */
+    private Map<String, Object> fullUserMap() {
+        final Map<String, Object> map = new HashMap<>();
+        map.put("userId", "u1");
+        map.put("id", "u1");
+        map.put("firstName", "First");
+        map.put("lastName", "Last");
+        map.put("fullName", "First Last");
+        map.put("name", "First Last");
+        map.put("emailAddress", "u1@dotcms.com");
+        map.put("emailaddress", "u1@dotcms.com");
+        map.put("gravitar", "hash");
+        map.put("type", "user");
+        map.put("lastLoginIP", "10.0.0.1");
+        map.put("lastLoginDate", 1L);
+        map.put("failedLoginAttempts", 0);
+        map.put("admin", true);
+        map.put("active", true);
+        map.put("passwordExpired", false);
+        return map;
+    }
+
+    /** A listed user, returned by the name-filter branch, whose data map carries the full set of keys. */
+    private User listedUserWithFullMap() throws Exception {
+        final User listed = mock(User.class);
+        when(listed.getUserId()).thenReturn("u1");
+        when(listed.toMap()).thenReturn(fullUserMap());
+        when(userAPI.getUsersByName(anyString(), eq(null), anyInt(), anyInt(), any(UserAPI.FilteringParams.class)))
+                .thenReturn(list(listed));
+        return listed;
+    }
+
+    /** Replaces the paginator's {@link UserResourceHelper} singleton with a mock, to drive the asset/permission branch. */
+    private static void injectHelper(final UserPaginator paginator, final UserResourceHelper helper) throws Exception {
+        final Field field = UserPaginator.class.getDeclaredField("helper");
+        field.setAccessible(true);
+        field.set(paginator, helper);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}</li>
+     *     <li><b>Given Scenario:</b> The caller is not a CMS Administrator and has no access to the Users
+     *     portlet.</li>
+     *     <li><b>Expected Result:</b> Each item keeps exactly the {@link UserPaginator#DIRECTORY_KEYS}; the
+     *     account-state keys of the user's data map are left out.</li>
+     * </ul>
+     */
+    @Test
+    public void testGetItemsWithoutUsersPortletKeepsDirectoryKeysOnly() throws Exception {
+        listedUserWithFullMap();
+        final User caller = mock(User.class);
+        when(caller.isAdmin()).thenReturn(false);
+        when(layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller)).thenReturn(false);
+
+        final PaginatedArrayList<Map<String, Object>> items = userPaginator.getItems(caller, "filter", 5, 0,
+                null, null, Map.of());
+
+        assertEquals(UserPaginator.DIRECTORY_KEYS, items.get(0).keySet());
+        assertEquals("u1@dotcms.com", items.get(0).get("emailAddress"));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}</li>
+     *     <li><b>Given Scenario:</b> The caller is not a CMS Administrator and has no access to the Users
+     *     portlet; {@link UserPaginator#REQUEST_PASSWORD_PARAM} is requested.</li>
+     *     <li><b>Expected Result:</b> The computed {@code requestPassword} flag survives next to the directory
+     *     keys, so the login-as list keeps working for such a caller.</li>
+     * </ul>
+     */
+    @Test
+    public void testGetItemsWithoutUsersPortletKeepsRequestPasswordFlag() throws Exception {
+        listedUserWithFullMap();
+        when(roleAPI.doesUserHaveRoles(eq("u1"), any())).thenReturn(true);
+        final User caller = mock(User.class);
+        when(layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller)).thenReturn(false);
+
+        final PaginatedArrayList<Map<String, Object>> items = userPaginator.getItems(caller, "filter", 5, 0,
+                null, null, Map.of(UserPaginator.REQUEST_PASSWORD_PARAM, true));
+
+        assertEquals(Boolean.TRUE, items.get(0).get(UserPaginator.REQUEST_PASSWORD_PARAM));
+        assertFalse(items.get(0).containsKey("lastLoginIP"));
+        assertTrue(items.get(0).keySet().containsAll(UserPaginator.DIRECTORY_KEYS));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}</li>
+     *     <li><b>Given Scenario:</b> The caller is a CMS Administrator; the portlet lookup would say no.</li>
+     *     <li><b>Expected Result:</b> Each item carries the complete data map and the portlet lookup is never
+     *     consulted.</li>
+     * </ul>
+     */
+    @Test
+    public void testGetItemsAsAdminKeepsFullMapWithoutPortletLookup() throws Exception {
+        final User listed = listedUserWithFullMap();
+        final User caller = mock(User.class);
+        when(caller.isAdmin()).thenReturn(true);
+        when(layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller)).thenReturn(false);
+
+        final PaginatedArrayList<Map<String, Object>> items = userPaginator.getItems(caller, "filter", 5, 0,
+                null, null, Map.of());
+
+        assertEquals(listed.toMap().keySet(), items.get(0).keySet());
+        assertEquals("10.0.0.1", items.get(0).get("lastLoginIP"));
+        verify(layoutAPI, never()).doesUserHaveAccessToPortlet(anyString(), any());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}</li>
+     *     <li><b>Given Scenario:</b> The caller is not a CMS Administrator but has access to the Users portlet.</li>
+     *     <li><b>Expected Result:</b> Each item carries the complete data map.</li>
+     * </ul>
+     */
+    @Test
+    public void testGetItemsWithUsersPortletKeepsFullMap() throws Exception {
+        final User listed = listedUserWithFullMap();
+        final User caller = mock(User.class);
+        when(caller.isAdmin()).thenReturn(false);
+        when(layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller)).thenReturn(true);
+
+        final PaginatedArrayList<Map<String, Object>> items = userPaginator.getItems(caller, "filter", 5, 0,
+                null, null, Map.of());
+
+        assertEquals(listed.toMap().keySet(), items.get(0).keySet());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}</li>
+     *     <li><b>Given Scenario:</b> The caller is not a CMS Administrator and lacks the legacy Users portlet, but
+     *     holds the Angular {@code users-beta} portlet — the list the Users portlet UI actually renders.</li>
+     *     <li><b>Expected Result:</b> Each item carries the complete data map, so the portlet's own columns
+     *     ({@code active}, {@code lastLoginDate}) keep rendering.</li>
+     * </ul>
+     */
+    @Test
+    public void testGetItemsWithUsersBetaPortletKeepsFullMap() throws Exception {
+        final User listed = listedUserWithFullMap();
+        final User caller = mock(User.class);
+        when(caller.isAdmin()).thenReturn(false);
+        when(layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller)).thenReturn(false);
+        when(layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS_BETA.toString(), caller)).thenReturn(true);
+
+        final PaginatedArrayList<Map<String, Object>> items = userPaginator.getItems(caller, "filter", 5, 0,
+                null, null, Map.of());
+
+        assertEquals(listed.toMap().keySet(), items.get(0).keySet());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}</li>
+     *     <li><b>Given Scenario:</b> The asset/permission branch is taken ({@link UserPaginator#ASSET_INODE_PARAM} and
+     *     {@link UserPaginator#PERMISSION_PARAM} are set) and the caller is neither a CMS Administrator nor a Users
+     *     portlet holder.</li>
+     *     <li><b>Expected Result:</b> The items built at that second call site are trimmed to the
+     *     {@link UserPaginator#DIRECTORY_KEYS} too, so the branch honors {@code fullProfile} rather than passing a
+     *     hard-coded {@code true}.</li>
+     * </ul>
+     */
+    @Test
+    public void testGetItemsByAssetAndPermissionWithoutUsersPortletKeepsDirectoryKeysOnly() throws Exception {
+        final User listed = mock(User.class);
+        when(listed.getUserId()).thenReturn("u1");
+        when(listed.toMap()).thenReturn(fullUserMap());
+        final UserResourceHelper helperMock = mock(UserResourceHelper.class);
+        when(helperMock.getUsersByAssetAndPermissionType(anyString(), anyInt(), anyInt(), anyString(), anyString()))
+                .thenReturn(list(listed));
+        injectHelper(userPaginator, helperMock);
+
+        final User caller = mock(User.class);
+        when(caller.isAdmin()).thenReturn(false);
+        when(layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller)).thenReturn(false);
+
+        final PaginatedArrayList<Map<String, Object>> items = userPaginator.getItems(caller, "filter", 5, 0, null,
+                null, Map.of(UserPaginator.ASSET_INODE_PARAM, "asset-1", UserPaginator.PERMISSION_PARAM, "1"));
+
+        assertEquals(UserPaginator.DIRECTORY_KEYS, items.get(0).keySet());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}</li>
+     *     <li><b>Given Scenario:</b> The caller gets only the directory fields (not a CMS Administrator, no Users
+     *     portlet) and {@link UserPaginator#INCLUDE_ROLES_PARAM} is {@code true}.</li>
+     *     <li><b>Expected Result:</b> The {@link UserPaginator#ROLES_PARAM} key is added after the trim, so a
+     *     directory-only caller still receives the roles list alongside the directory keys.</li>
+     * </ul>
+     */
+    @Test
+    public void testGetItemsWithoutUsersPortletIncludeRolesStillAddsRolesKey() throws Exception {
+        listedUserWithFullMap();
+        final User caller = mock(User.class);
+        when(caller.isAdmin()).thenReturn(false);
+        when(layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), caller)).thenReturn(false);
+        final Role direct = mock(Role.class);
+        when(direct.getId()).thenReturn("r-direct");
+        when(direct.getName()).thenReturn("Direct");
+        when(direct.getDBFQN()).thenReturn("r-direct");
+        when(roleAPI.loadRolesForUser("u1", false)).thenReturn(list(direct));
+
+        final PaginatedArrayList<Map<String, Object>> items = userPaginator.getItems(caller, "filter", 5, 0, null,
+                null, Map.of(UserPaginator.INCLUDE_ROLES_PARAM, true));
+
+        final Set<String> expected = new HashSet<>(UserPaginator.DIRECTORY_KEYS);
+        expected.add(UserPaginator.ROLES_PARAM);
+        assertEquals(expected, items.get(0).keySet());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link UserPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}</li>
+     *     <li><b>Given Scenario:</b> The caller is {@code null}.</li>
+     *     <li><b>Expected Result:</b> Each item keeps only the {@link UserPaginator#DIRECTORY_KEYS}, and no portlet
+     *     lookup is attempted for a missing caller.</li>
+     * </ul>
+     */
+    @Test
+    public void testGetItemsWithNullCallerKeepsDirectoryKeysOnly() throws Exception {
+        listedUserWithFullMap();
+
+        final PaginatedArrayList<Map<String, Object>> items = userPaginator.getItems(null, "filter", 5, 0,
+                null, null, Map.of());
+
+        assertEquals(UserPaginator.DIRECTORY_KEYS, items.get(0).keySet());
+        verify(layoutAPI, never()).doesUserHaveAccessToPortlet(anyString(), any());
     }
 
 }

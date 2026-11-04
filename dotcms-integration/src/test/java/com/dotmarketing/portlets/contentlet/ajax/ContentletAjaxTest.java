@@ -5,9 +5,11 @@ import static com.dotcms.integrationtestutil.content.ContentUtils.deleteContentl
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
+import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.model.field.*;
@@ -15,20 +17,25 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.contenttype.model.type.SimpleContentType;
+import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LanguageDataGen;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
+import com.dotcms.rest.api.v1.temp.DotTempFile;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.RelationshipAPI;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -40,7 +47,10 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
+import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
+import com.dotmarketing.portlets.workflows.model.WorkflowAction;
 import com.dotmarketing.util.DateUtil;
+import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.ImmutableList;
@@ -62,7 +72,9 @@ import org.mockito.Mockito;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -465,12 +477,24 @@ public class ContentletAjaxTest {
 	}
 
 	private static void setUpContext() {
+		setUpContext(APILocator.systemUser());
+	}
+
+	/**
+	 * Attaches a mocked DWR web context whose request belongs to the given user.
+	 *
+	 * @param user the user the request is made by
+	 * @return the mocked request
+	 */
+	private static HttpServletRequest setUpContext(final User user) {
 		final HttpSession session = mock(HttpSession.class);
 		Mockito.when(session.getAttribute(SessionMessages.KEY)).thenReturn(new LinkedHashMap());
+		Mockito.when(session.getId()).thenReturn(UUIDGenerator.generateUuid());
 
 		final HttpServletRequest httpServletRequest = mock(HttpServletRequest.class);
 		Mockito.when(httpServletRequest.getSession()).thenReturn(session);
-		Mockito.when(httpServletRequest.getAttribute(WebKeys.USER)).thenReturn(APILocator.systemUser());
+		Mockito.when(httpServletRequest.getSession(false)).thenReturn(session);
+		Mockito.when(httpServletRequest.getAttribute(WebKeys.USER)).thenReturn(user);
 
 		final WebContext webContext = mock(WebContext.class);
 		Mockito.when(webContext.getHttpServletRequest()).thenReturn(httpServletRequest);
@@ -484,6 +508,7 @@ public class ContentletAjaxTest {
 		Mockito.when(containerMock.getBean(WebContextFactory.WebContextBuilder.class)).thenReturn(webContextBuilderMock);
 
 		WebContextFactory.attach(containerMock);
+		return httpServletRequest;
 	}
 
 
@@ -634,6 +659,203 @@ public class ContentletAjaxTest {
 		} finally {
 			contentletAPI.destroy(fileAsset, systemUser, false);
 			FileUtil.deltree(tempDir);
+		}
+	}
+
+	/**
+	 * <b>Method to Test:</b> {@link ContentletAjax#saveContent(List, boolean, boolean, boolean)}<p>
+	 * <b>When:</b> new content is saved and the binary field value is a content inode instead of a
+	 * temp file id<p>
+	 * <b>Should:</b> save the content with an empty binary field, as the REST API does
+	 */
+	@Test
+	public void test_saveContent_binaryValueThatIsNotATempFile_leavesBinaryEmpty()
+			throws Exception {
+
+		final User user = new UserDataGen().nextPersisted();
+		final ContentType contentType = createEditableTypeWithBinaryField(user);
+		final Folder folder = new FolderDataGen().nextPersisted();
+		final Contentlet fileAsset = new FileAssetDataGen(folder, "file asset body " + System.currentTimeMillis())
+				.nextPersisted();
+
+		try {
+			final Map<String, Object> callbackData = saveThroughLegacyForm(setUpContext(user),
+					contentType, fileAsset.getInode());
+
+			final Contentlet saved = contentletAPI.find((String) callbackData.get("contentletInode"),
+					systemUser, false);
+			assertNotNull("The content should be saved: " + callbackData, saved);
+			assertNull("Only temp file ids or uploaded file names set the binary",
+					saved.getBinary("doc"));
+		} finally {
+			setUpContext();
+			ContentTypeDataGen.remove(contentType);
+			FolderDataGen.remove(folder);
+			removeUserAndPermissions(user);
+		}
+	}
+
+	/**
+	 * <b>Method to Test:</b> {@link ContentletAjax#saveContent(List, boolean, boolean, boolean)}<p>
+	 * <b>When:</b> new content is saved and the binary field value is the id of a temp file the
+	 * user uploaded<p>
+	 * <b>Should:</b> store the uploaded file as the binary of the new content
+	 */
+	@Test
+	public void test_saveContent_binaryValueFromTempFile_isStoredAsTheBinary() throws Exception {
+
+		final User user = new UserDataGen().nextPersisted();
+		final ContentType contentType = createEditableTypeWithBinaryField(user);
+		final String body = "uploaded body " + System.currentTimeMillis();
+
+		try {
+			final HttpServletRequest request = setUpContext(user);
+			final DotTempFile tempFile = APILocator.getTempFileAPI().createTempFile("upload.txt",
+					request, new ByteArrayInputStream(body.getBytes(StandardCharsets.UTF_8)));
+
+			final Map<String, Object> callbackData = saveThroughLegacyForm(request, contentType,
+					tempFile.id);
+
+			final Contentlet saved = contentletAPI.find((String) callbackData.get("contentletInode"),
+					systemUser, false);
+			assertNotNull("The content should be saved: " + callbackData, saved);
+			final File binary = saved.getBinary("doc");
+			assertNotNull("The uploaded file should be stored as the binary", binary);
+			assertEquals(body, new String(Files.readAllBytes(binary.toPath()), StandardCharsets.UTF_8));
+		} finally {
+			setUpContext();
+			ContentTypeDataGen.remove(contentType);
+			removeUserAndPermissions(user);
+		}
+	}
+
+	/**
+	 * <b>Method to Test:</b> {@link ContentletAjax#saveContent(List, boolean, boolean, boolean)}<p>
+	 * <b>When:</b> new content is saved and the binary field value is the name of a file in the
+	 * user's {@code tmp_binary/<userId>/<binary field column>} folder, where the edit screen leaves
+	 * the binary of the language version it starts from<p>
+	 * <b>Should:</b> store that file as the binary of the new content
+	 */
+	@Test
+	public void test_saveContent_binaryValueNamingAFileInTheUserTmpFolder_isStoredAsTheBinary()
+			throws Exception {
+
+		final User user = new UserDataGen().nextPersisted();
+		final ContentType contentType = createEditableTypeWithBinaryField(user);
+		final String body = "language version body " + System.currentTimeMillis();
+		final File userTmpFolder = new File(APILocator.getFileAssetAPI().getRealAssetPathTmpBinary(),
+				user.getUserId());
+
+		try {
+			final File fieldFolder = new File(userTmpFolder, legacyFormName(contentType, "doc"));
+			assertTrue(fieldFolder.mkdirs());
+			Files.write(new File(fieldFolder, "version.txt").toPath(),
+					body.getBytes(StandardCharsets.UTF_8));
+
+			final Map<String, Object> callbackData = saveThroughLegacyForm(setUpContext(user),
+					contentType, "version.txt");
+
+			final Contentlet saved = contentletAPI.find((String) callbackData.get("contentletInode"),
+					systemUser, false);
+			assertNotNull("The content should be saved: " + callbackData, saved);
+			final File binary = saved.getBinary("doc");
+			assertNotNull("The file in the user's tmp folder should be stored as the binary", binary);
+			assertEquals(body, new String(Files.readAllBytes(binary.toPath()), StandardCharsets.UTF_8));
+		} finally {
+			setUpContext();
+			FileUtil.deltree(userTmpFolder);
+			ContentTypeDataGen.remove(contentType);
+			removeUserAndPermissions(user);
+		}
+	}
+
+	/**
+	 * Returns the name the legacy edit form uses for the field with the given variable.
+	 */
+	private static String legacyFormName(final ContentType contentType, final String variable) {
+		return contentType.fields().stream()
+				.filter(field -> variable.equals(field.variable()))
+				.map(field -> new LegacyFieldTransformer(field).asOldField().getFieldContentlet())
+				.findFirst()
+				.orElseThrow();
+	}
+
+	/**
+	 * Creates a Content Type with a title and a binary field ({@code doc}) on the System Host,
+	 * using the System Workflow, that the given user can create and edit content of with the
+	 * System Workflow Save action.
+	 */
+	private static ContentType createEditableTypeWithBinaryField(final User user)
+			throws DotDataException, DotSecurityException {
+
+		final ContentType contentType = new ContentTypeDataGen()
+				.host(APILocator.systemHost())
+				.workflowId(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
+				.nextPersisted();
+		ContentTypeDataGen.addField(new FieldDataGen()
+				.velocityVarName("title")
+				.contentTypeId(contentType.id())
+				.type(TextField.class)
+				.nextPersisted());
+		ContentTypeDataGen.addField(new FieldDataGen()
+				.velocityVarName("doc")
+				.contentTypeId(contentType.id())
+				.type(BinaryField.class)
+				.nextPersisted());
+
+		final int permissions = PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT
+				| PermissionAPI.PERMISSION_PUBLISH;
+		final String roleId = APILocator.getRoleAPI().getUserRole(user).getId();
+		final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+		permissionAPI.save(new Permission(contentType.getPermissionId(), roleId, permissions, true),
+				contentType, systemUser, false);
+		permissionAPI.save(new Permission(Contentlet.class.getCanonicalName(),
+				contentType.getPermissionId(), roleId, permissions, true), contentType, systemUser, false);
+		final WorkflowAction saveAction = APILocator.getWorkflowAPI()
+				.findAction(SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID, systemUser);
+		permissionAPI.save(new Permission(saveAction.getId(), roleId, PermissionAPI.PERMISSION_USE),
+				saveAction, systemUser, false);
+
+		return contentTypeAPI.find(contentType.id());
+	}
+
+	/**
+	 * Removes the given user and the permissions granted to its personal role.
+	 */
+	private static void removeUserAndPermissions(final User user) throws DotDataException {
+		APILocator.getPermissionAPI().removePermissionsByRole(
+				APILocator.getRoleAPI().getUserRole(user).getId());
+		UserDataGen.remove(user, true);
+	}
+
+	/**
+	 * Calls {@link ContentletAjax#saveContent(List, boolean, boolean, boolean)} the way the legacy
+	 * edit screen does for a new content of the given type, with the given binary field value.
+	 */
+	private static Map<String, Object> saveThroughLegacyForm(final HttpServletRequest request,
+			final ContentType contentType, final String binaryValue) throws Exception {
+
+		final String separator = com.dotmarketing.util.WebKeys.CONTENTLET_FORM_NAME_VALUE_SEPARATOR;
+		final List<String> formData = new ArrayList<>();
+		formData.add("contentletInode" + separator);
+		formData.add("selectedStructure" + separator + contentType.inode());
+		formData.add("languageId" + separator + defaultLang.getId());
+		formData.add("wfActionId" + separator + SystemWorkflowConstants.WORKFLOW_SAVE_ACTION_ID);
+		for (final Field field : contentType.fields()) {
+			final String formName = new LegacyFieldTransformer(field).asOldField().getFieldContentlet();
+			if ("title".equals(field.variable())) {
+				formData.add(formName + separator + "title " + System.currentTimeMillis());
+			} else if ("doc".equals(field.variable())) {
+				formData.add(formName + separator + binaryValue);
+			}
+		}
+
+		final HttpServletRequest previousRequest = HttpServletRequestThreadLocal.INSTANCE.getRequest();
+		HttpServletRequestThreadLocal.INSTANCE.setRequest(request);
+		try {
+			return new ContentletAjax().saveContent(formData, false, true, false);
+		} finally {
+			HttpServletRequestThreadLocal.INSTANCE.setRequest(previousRequest);
 		}
 	}
 

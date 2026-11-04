@@ -192,6 +192,26 @@ public class WidgetRendererTest {
 
     /**
      * Method to test: {@link WidgetRenderer#renderWithDetails(HttpServletRequest, HttpServletResponse, Contentlet)}
+     * Given scenario: no contentlet at all, which is what the widget endpoint hands over when the
+     * requested id has no version the caller may read
+     * Expected result: empty text and no field-scripting note, instead of a failure
+     */
+    @Test
+    public void nullContentletRendersEmpty() {
+        final HttpServletRequest request = new MockSessionRequest(
+                new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
+                .request();
+        final HttpServletResponse response = new MockHttpResponse().response();
+
+        final WidgetRenderer.Rendering rendering = WidgetRenderer.getInstance()
+                .renderWithDetails(request, response, null);
+
+        assertTrue(rendering.text().isEmpty());
+        assertFalse(rendering.fieldScriptingSkipped());
+    }
+
+    /**
+     * Method to test: {@link WidgetRenderer#renderWithDetails(HttpServletRequest, HttpServletResponse, Contentlet)}
      * Given scenario: flag off, a widget whose field value holds Velocity
      * Expected result: the rendering says the field scripting was skipped
      */
