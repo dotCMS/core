@@ -6,8 +6,10 @@ import com.dotcms.datagen.ContainerAsFileDataGen;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.RoleDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.datagen.UserDataGen;
@@ -30,6 +32,7 @@ import com.dotmarketing.portlets.containers.model.ContainerView;
 import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
+import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
@@ -306,6 +309,36 @@ public class ContainerPaginatorTest extends ContentletBaseTest {
             APILocator.getFolderAPI().delete(containerFolder, APILocator.systemUser(), false);
             ContentTypeDataGen.remove(usedType);
             ContentTypeDataGen.remove(postLoopType);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: A file-based Container folder holds an HTML Page, not a file, named after another
+     * Content Type's variable with the {@code .vtl} extension.
+     * Expected Result: Filtering by that Content Type does not return the Container, which only reads files.
+     */
+    @Test
+    public void getItems_byContentTypeNamedLikeAPageInAContainerFolder_skipsThatContainer() throws Exception {
+        final ContentType pageNamedType = new ContentTypeDataGen().host(defaultHost).nextPersisted();
+        final ContentType usedType = new ContentTypeDataGen().host(defaultHost).nextPersisted();
+        final ContainerAsFileDataGen fileContainerGen = new ContainerAsFileDataGen().host(defaultHost)
+                .ignoreDefaultContentTypes().contentType(usedType, "$!{body}");
+        final FileAssetContainer fileContainer = fileContainerGen.nextPersisted();
+        final Folder containerFolder = APILocator.getFolderAPI().find(
+                fileContainerGen.getMetaData().getFolder(), APILocator.systemUser(), false);
+        final Template template = new TemplateDataGen().host(defaultHost).nextPersisted();
+        try {
+            new HTMLPageDataGen(containerFolder, template)
+                    .pageURL(pageNamedType.variable() + ".vtl").nextPersisted();
+
+            assertTrue(identifiersFoundBySystem(usedType).contains(fileContainer.getIdentifier()));
+            assertFalse(identifiersFoundBySystem(pageNamedType).contains(fileContainer.getIdentifier()));
+        } finally {
+            APILocator.getFolderAPI().delete(containerFolder, APILocator.systemUser(), false);
+            TemplateDataGen.remove(template);
+            ContentTypeDataGen.remove(usedType);
+            ContentTypeDataGen.remove(pageNamedType);
         }
     }
 

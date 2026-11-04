@@ -1153,7 +1153,8 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	 * (reference to the content type for the file asset containers)
 	 * Will include working content type but not archived. A variable whose file name is one of the Container's
 	 * own files ({@code container.vtl}, {@code container_code.vtl}, {@code preloop.vtl}, {@code postloop.vtl}) matches
-	 * no folder, since those files are never read as Content Types.
+	 * no folder, since those files are never read as Content Types. Only files count: a Page or any other asset with
+	 * that name does not.
 	 * @param contentTypeVarNameFileName {@link String}
 	 * @return List of Folder
 	 */
@@ -1193,7 +1194,10 @@ public class ContainerFactoryImpl implements ContainerFactory {
 
 			for(final Contentlet container : containers) {
 
-				folders.add(this.folderAPI.find(container.getFolder(), user, false));
+				// A Container only reads files, so another asset with the same name, such as a Page, is not a use
+				if (container.isFileAsset()) {
+					folders.add(this.folderAPI.find(container.getFolder(), user, false));
+				}
 			}
 		} catch (Exception e) {
 			Logger.error(this.getClass(), e.getMessage(), e);
