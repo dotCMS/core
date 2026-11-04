@@ -70,7 +70,7 @@ run_script() {
   local script="$1" config="$2" pairs="$3" phase="$4" body="$WORKDIR/body.js" name value
   cp "$script" "$body"
   # Every input the script reads; one the case does not name keeps its workflow default, false.
-  for name in run-all-tests jvm_unit_test cli frontend postman karate integration e2e skip-runner-cleanup; do
+  for name in run-all-tests jvm_unit_test cli frontend postman karate integration e2e skip-runner-cleanup unlogged-experiment; do
     value=false
     case " $pairs " in *" $name=true "*) value=true ;; esac
     sed -i.bak "s/\${{ inputs\.$name }}/$value/" "$body"
