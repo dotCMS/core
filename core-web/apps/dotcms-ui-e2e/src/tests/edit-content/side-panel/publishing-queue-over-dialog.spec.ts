@@ -86,7 +86,7 @@ test.describe('Publishing Queue opens bundle content in the side panel over its 
 
         await assetListDialog.getByTestId('pq-asset-list-row').filter({ hasText: title }).click();
         await sidePanel.expectOpen();
-        expect(await sidePanel.isOnTop(), 'the side panel is not above the dialog').toBe(true);
+        await sidePanel.expectOnTop('the side panel is not above the dialog');
 
         // Keystrokes, not `fill()`: a focus trap left on the dialog would swallow them.
         const titleField = sidePanel.front.getByTestId('title');

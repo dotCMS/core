@@ -1,6 +1,6 @@
 import { Subject } from 'rxjs';
 
-import { Injectable, Injector, OnDestroy, computed, inject, signal } from '@angular/core';
+import { Injectable, OnDestroy, computed, inject, signal } from '@angular/core';
 
 import { DynamicDialogConfig } from 'primeng/dynamicdialog';
 
@@ -14,7 +14,6 @@ import {
 
 import { DotEditContentRequest } from '../../models/dot-edit-content-request.model';
 import { DotOpenContentEvent } from '../../models/dot-open-content-event.model';
-import { DotEditContentOpenerService } from '../../opener/dot-edit-content-opener.service';
 import {
     DotRelatedContentCrumb,
     DotRelatedContentNavigationStore,
@@ -36,6 +35,8 @@ import {
  * - **The trail** is a per-instance signal (not the shared root store), so an open
  *   overlay never blanks the breadcrumb of a full-screen editor behind it.
  * - **The save result** is forwarded to the opener via {@link saved$}.
+ * - **Content a field stacks** goes to the panel via {@link openContent$}, which hands it to the
+ *   opener.
  *
  * Provided by `DotEditContentSidePanelComponent`, the only overlay that mounts the editor since
  * the centered dialog was removed (#38303).
@@ -43,14 +44,12 @@ import {
 @Injectable()
 export class OverlayEditContentHost implements EditContentHost, OnDestroy {
     readonly #relatedNav = inject(DotRelatedContentNavigationStore);
-    readonly #opener = inject(DotEditContentOpenerService);
-    /** The panel's injector: whatever this host stacks closes with the panel, not with a field. */
-    readonly #injector = inject(Injector);
     /** Carries the request the side panel shows (see {@link resolveIdentity}). */
     readonly #config = inject(DynamicDialogConfig, { optional: true });
     readonly #navigation$ = new Subject<InPlaceNavigationRequest>();
     readonly #saved$ = new Subject<DotCMSContentlet>();
     readonly #left$ = new Subject<void>();
+    readonly #openContent$ = new Subject<DotOpenContentEvent>();
 
     /** Set once the edited content is deleted; later save reports would point at content that is gone. */
     #contentDeleted = false;
@@ -68,6 +67,12 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
 
     /** Emits when the edited content was deleted and the side panel must close. */
     readonly left$ = this.#left$.asObservable();
+
+    /**
+     * Content a field asked to stack over this panel, with the field's `onSaved`. The panel hands
+     * it to the opener (see {@link openContent}).
+     */
+    readonly openContent$ = this.#openContent$.asObservable();
 
     readonly trail = computed<DotRelatedContentCrumb[]>(() =>
         toRelatedContentCrumbs(this.#trailInodes(), this.#relatedNav.titleCache())
@@ -183,8 +188,10 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
      * so `onSaved` is not called for it.
      *
      * Everything else (any create, a block editor's edit, an edit naming no source) stacks a panel
-     * over this one, opened with this panel's injector rather than the field's: a re-render of the
-     * form underneath must not close the panel on top.
+     * over this one: it goes out on {@link openContent$}, and the panel hands it to the opener with
+     * its own injector, as the legacy editor panel does. The host never opens it itself: only the
+     * opener knows whether this panel is written to the URL, and the stacked one is written exactly
+     * when this one is (#38303, FR-044).
      */
     openContent({ request, source, from, onSaved }: DotOpenContentEvent): void {
         if (source === 'relationship' && request.mode === 'edit' && request.inode) {
@@ -199,15 +206,13 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
             return;
         }
 
-        this.#opener.open(request, {
-            injector: this.#injector,
-            saved: (contentlet) => onSaved?.(contentlet)
-        });
+        this.#openContent$.next({ request, onSaved });
     }
 
     ngOnDestroy(): void {
         this.#navigation$.complete();
         this.#saved$.complete();
         this.#left$.complete();
+        this.#openContent$.complete();
     }
 }

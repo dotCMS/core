@@ -118,8 +118,9 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
     readonly pageEditorRequested = output<DotPageEditorRequest>();
 
     /**
-     * Content a field in this editor asked to open, for the opener to stack. Part of the shared
-     * event set; the fields start asking through it in a later layer of #38303.
+     * Content a field in this editor asked to stack, handed on from the overlay host with this
+     * panel's injector, for the opener to stack under it. Part of the event set both editor panels
+     * share; the opener writes the stacked panel to the URL when it wrote this one.
      */
     readonly openContent = output<DotOpenContentEvent>();
 
@@ -167,6 +168,14 @@ export class DotEditContentSidePanelComponent implements DotSidePanelContent, On
             host.languageChanged$
                 .pipe(takeUntilDestroyed(this.#destroyRef))
                 .subscribe((languageId) => this.languageChanged.emit(languageId));
+
+            // Stacked under this panel's injector, not the field's: a re-render of the form
+            // underneath must not close the panel on top, and it closes when this one does.
+            host.openContent$
+                .pipe(takeUntilDestroyed(this.#destroyRef))
+                .subscribe((event) =>
+                    this.openContent.emit({ ...event, injector: this.#injector })
+                );
         });
     }
 
