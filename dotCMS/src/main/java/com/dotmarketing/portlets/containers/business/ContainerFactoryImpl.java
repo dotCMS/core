@@ -50,6 +50,7 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -1158,7 +1159,7 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	 */
 	private List<Folder> findContainersAssetsByContentType(final String contentTypeVarNameFileName) {
 
-		final String contentTypeFileName = (contentTypeVarNameFileName + StringPool.PERIOD + "vtl").toLowerCase();
+		final String contentTypeFileName = (contentTypeVarNameFileName + StringPool.PERIOD + "vtl").toLowerCase(Locale.ROOT);
 		if (CONTAINER_OWN_FILE_NAMES.contains(contentTypeFileName)) {
 			return new ArrayList<>();
 		}

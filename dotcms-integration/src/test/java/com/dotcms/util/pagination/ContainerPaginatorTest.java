@@ -38,6 +38,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -334,6 +335,33 @@ public class ContainerPaginatorTest extends ContentletBaseTest {
                 APILocator.getFolderAPI().delete(containerFolder, APILocator.systemUser(), false);
             }
             usage.cleanUp();
+        }
+    }
+
+    /**
+     * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
+     * Given Scenario: The default locale is Turkish, where an upper-case {@code I} does not lower-case to
+     * {@code i}, and a file-based Container uses a Content Type whose variable starts with {@code I}.
+     * Expected Result: Filtering by that Content Type still returns the Container.
+     */
+    @Test
+    public void getItems_byContentTypeUnderTurkishLocale_returnsFileContainerUsingIt() throws Exception {
+        final ContentType contentType = new ContentTypeDataGen().host(defaultHost)
+                .velocityVarName("Item" + System.currentTimeMillis()).nextPersisted();
+        final ContainerAsFileDataGen fileContainerGen = new ContainerAsFileDataGen().host(defaultHost)
+                .ignoreDefaultContentTypes().contentType(contentType, "$!{body}");
+        final FileAssetContainer fileContainer = fileContainerGen.nextPersisted();
+        final Locale defaultLocale = Locale.getDefault();
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr-TR"));
+
+            assertTrue(identifiersFoundBySystem(contentType).contains(fileContainer.getIdentifier()));
+        } finally {
+            Locale.setDefault(defaultLocale);
+            APILocator.getFolderAPI().delete(APILocator.getFolderAPI().find(
+                            fileContainerGen.getMetaData().getFolder(), APILocator.systemUser(), false),
+                    APILocator.systemUser(), false);
+            ContentTypeDataGen.remove(contentType);
         }
     }
 
