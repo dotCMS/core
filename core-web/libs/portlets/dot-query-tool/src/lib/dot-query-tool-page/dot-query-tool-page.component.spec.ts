@@ -8,7 +8,7 @@ import { NEVER, of } from 'rxjs';
 import { Mock, MockInstance, vi } from 'vitest';
 
 import { Location, PopStateEvent } from '@angular/common';
-import { Signal } from '@angular/core';
+import { Signal, WritableSignal, signal } from '@angular/core';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
@@ -549,6 +549,7 @@ describe('DotQueryToolPageComponent', () => {
 
             it('reruns the search on every save', () => {
                 const store = spectator.inject(DotQueryToolStore, true);
+                stubbed(store)['query'] = vi.fn().mockReturnValue('+live:true');
                 clickResult(SAMPLE_CONTENTLET);
 
                 opener.opened[0].options.saved?.(SAMPLE_CONTENTLET as never);
@@ -559,12 +560,31 @@ describe('DotQueryToolPageComponent', () => {
 
             it('reruns the search and clears the request when it closes', () => {
                 const store = spectator.inject(DotQueryToolStore, true);
+                stubbed(store)['query'] = vi.fn().mockReturnValue('+live:true');
                 clickResult(SAMPLE_CONTENTLET);
 
                 opener.opened[0].ref.close();
                 spectator.flushEffects();
 
                 expect(store.runSearch).toHaveBeenCalledTimes(1);
+                expect(spectator.component.$editRequest()).toBeNull();
+            });
+
+            /**
+             * A link with no `q` opens a panel over a page that ran no search. A save or a close
+             * reruns what is shown (FR-017), and nothing is, so it runs nothing, as Run does with an
+             * empty query.
+             */
+            it('runs no search on a save or a close when there is no query', () => {
+                const store = spectator.inject(DotQueryToolStore, true);
+                stubbed(store)['query'] = vi.fn().mockReturnValue('  ');
+                clickResult(SAMPLE_CONTENTLET);
+
+                opener.opened[0].options.saved?.(SAMPLE_CONTENTLET as never);
+                opener.opened[0].ref.close();
+                spectator.flushEffects();
+
+                expect(store.runSearch).not.toHaveBeenCalled();
                 expect(spectator.component.$editRequest()).toBeNull();
             });
 
@@ -686,6 +706,8 @@ describe('DotQueryToolPageComponent (panel URL and Back)', () => {
     let location: ReturnType<typeof createLocationDouble>;
     /** The panels the opener put on screen, in order. */
     let panels: DotSidePanelRef[];
+    /** The search's status, a signal, so the page's URL effect follows it as it does the store's. */
+    let status: WritableSignal<ComponentStatus>;
 
     /** The page's URL after a search: no panel write may change its params (FR-044). */
     const SEARCHED_URL = queryToolUrl({ q: '+live:true' });
@@ -723,7 +745,14 @@ describe('DotQueryToolPageComponent (panel URL and Back)', () => {
             })
         ],
         componentProviders: [
-            { provide: DotQueryToolStore, useFactory: () => buildStoreMock() },
+            {
+                provide: DotQueryToolStore,
+                useFactory: () =>
+                    buildStoreMock({
+                        status: status as unknown as Mock,
+                        query: vi.fn().mockReturnValue('+live:true')
+                    })
+            },
             DotClipboardUtil
         ]
     });
@@ -735,6 +764,7 @@ describe('DotQueryToolPageComponent (panel URL and Back)', () => {
     };
 
     beforeEach(() => {
+        status = signal(ComponentStatus.INIT);
         panels = [];
         location = createLocationDouble(SEARCHED_URL);
         windowOpenSpy = vi.spyOn(window, 'open').mockReturnValue(null);
@@ -778,6 +808,27 @@ describe('DotQueryToolPageComponent (panel URL and Back)', () => {
         expect(panels[0].requestClose).toHaveBeenCalledTimes(1);
         expect(lastWrittenParams(location.replaceState)).toEqual({
             q: '+live:true',
+            editContent: 'id-1',
+            editContentLang: '1'
+        });
+    });
+
+    /**
+     * The page writes its own search params once a search settles, as a save reruns it. It changes
+     * only those: the panel the URL names stays named (FR-044), as with Content Drive's filters.
+     */
+    it('keeps the open panel in the URL when a search settles while it is open', () => {
+        const store = spectator.inject(DotQueryToolStore, true);
+        clickResult(SAMPLE_CONTENTLET);
+        stubbed(store)['query'] = vi.fn().mockReturnValue('+live:true +contentType:Blog');
+
+        status.set(ComponentStatus.LOADED);
+        spectator.flushEffects();
+
+        expect(
+            Object.fromEntries(new URL(location.path(), 'http://dotcms.test').searchParams)
+        ).toEqual({
+            q: '+live:true +contentType:Blog',
             editContent: 'id-1',
             editContentLang: '1'
         });
@@ -840,19 +891,20 @@ describe('DotQueryToolPageComponent (panel deep link)', () => {
         spectator.flushEffects();
     };
 
-    // No flag to wait for any more (#38303): the link resolves and opens on load.
-    it('resolves and opens the panel from a shared link', () => {
+    /**
+     * The opener finds the working version by identifier, with its language fallback and the
+     * standard error for content that cannot be opened (FR-050): the page runs no search of its
+     * own.
+     */
+    it('hands the opener the identifier a shared link names, and searches nothing itself', () => {
         mount({ editContent: LINKED_IDENTIFIER });
 
         expect(opener.open.mock.calls.length, 'the page opens one panel').toBe(1);
         expect(requestOf(opener.opened[0].request)).toEqual({
             mode: 'edit',
-            inode: 'inode-1',
-            identifier: LINKED_IDENTIFIER,
-            contentType: 'Blog',
-            languageId: 1,
-            title: 'Home'
+            identifier: LINKED_IDENTIFIER
         });
+        expect(search).not.toHaveBeenCalled();
     });
 
     // The opener keeps the panel in the URL, and Back closes it, as for a panel opened by a click.
@@ -863,12 +915,15 @@ describe('DotQueryToolPageComponent (panel deep link)', () => {
     });
 
     // An identifier has one version per language; the link names the one that was open.
-    it('reopens the version in the language the link names', () => {
+    it('asks for the version in the language the link names', () => {
         mount({ editContent: LINKED_IDENTIFIER, editContentLang: '2' });
 
-        const { query } = search.mock.calls[0][0] as { query: string };
-        expect(query).toContain(`+identifier:${LINKED_IDENTIFIER}`);
-        expect(query).toContain('+languageId:2');
+        expect(requestOf(opener.opened[0].request)).toEqual({
+            mode: 'edit',
+            identifier: LINKED_IDENTIFIER,
+            languageId: 2
+        });
+        expect(search).not.toHaveBeenCalled();
     });
 
     // The value reaches a Lucene query, so only an identifier's shape is looked up (FR-049).

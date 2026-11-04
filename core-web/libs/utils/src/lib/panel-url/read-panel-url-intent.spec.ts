@@ -1,4 +1,8 @@
-import { DOT_PANEL_URL_PARAM, readPanelUrlIntent } from './read-panel-url-intent';
+import {
+    DOT_PANEL_URL_PARAM,
+    panelUrlIntentKey,
+    readPanelUrlIntent
+} from './read-panel-url-intent';
 
 /** An identifier, in the shape `isDotIdentifier` accepts. */
 const IDENTIFIER = '3f0c8e5a-7b2d-4c1e-9a6f-0d4b8e2c1a57';
@@ -55,6 +59,14 @@ describe('readPanelUrlIntent', () => {
                 expect(readPanelUrlIntent({ editContent })).toEqual({ kind: 'none' });
             }
         );
+
+        // The identifier reaches a Lucene query: a stray space would make the lookup miss.
+        it('reads an identifier with spaces around it as the identifier alone', () => {
+            expect(readPanelUrlIntent({ editContent: ` ${IDENTIFIER} ` })).toEqual({
+                kind: 'edit',
+                identifier: IDENTIFIER
+            });
+        });
 
         it('reads a language alone as nothing', () => {
             expect(readPanelUrlIntent({ editContentLang: '1' })).toEqual({ kind: 'none' });
@@ -130,5 +142,34 @@ describe('readPanelUrlIntent', () => {
                 kind: 'none'
             });
         });
+    });
+});
+
+/**
+ * The same for the same panel, so a surface that follows its URL opens a panel once, whatever else
+ * a navigation changes in the URL (#38303, FR-049).
+ */
+describe('panelUrlIntentKey', () => {
+    it('is the same for the same panel', () => {
+        expect(
+            panelUrlIntentKey(readPanelUrlIntent({ editContent: IDENTIFIER, editContentLang: '2' }))
+        ).toBe(
+            panelUrlIntentKey(
+                readPanelUrlIntent({ editContent: IDENTIFIER, editContentLang: '2', q: 'x' })
+            )
+        );
+    });
+
+    it.each([
+        ['another language', { editContent: IDENTIFIER, editContentLang: '3' }],
+        ['no language', { editContent: IDENTIFIER }],
+        ['a create', { createContent: 'Blog' }],
+        ['Edit Source', { editCode: INODE }],
+        ['no panel', {}],
+        ['two panels', { editContent: IDENTIFIER, createContent: 'Blog' }]
+    ])('differs for %s', (_label, params) => {
+        expect(panelUrlIntentKey(readPanelUrlIntent(params))).not.toBe(
+            panelUrlIntentKey(readPanelUrlIntent({ editContent: IDENTIFIER, editContentLang: '2' }))
+        );
     });
 });

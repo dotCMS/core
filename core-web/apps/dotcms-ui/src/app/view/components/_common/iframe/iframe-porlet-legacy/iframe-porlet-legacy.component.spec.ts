@@ -3,7 +3,7 @@ import { BehaviorSubject, NEVER, of } from 'rxjs';
 import { Mock, describe, expect, it, vi } from 'vitest';
 
 import { signal } from '@angular/core';
-import { ActivatedRoute, Params } from '@angular/router';
+import { ActivatedRoute, Navigation, Params, Router } from '@angular/router';
 
 import {
     DotContentTypeService,
@@ -142,6 +142,29 @@ describe('IframePortletLegacyComponent — the panel in the URL', () => {
         await settle();
 
         queryParams$.next({ editContent: IDENTIFIER, editContentLang: '2', mId: 'a1b2' });
+        await settle();
+
+        expect(openContent).toHaveBeenCalledTimes(1);
+    });
+
+    /**
+     * Back and Forward are the panel URL service's (FR-048): the router replays a history entry
+     * that may name a panel still open, which opening again would duplicate. A later navigation of
+     * the app's own still opens what it names.
+     */
+    it("opens nothing for a navigation the browser's Back or Forward started", async () => {
+        mount({});
+        await settle();
+        const currentNavigation = vi.spyOn(spectator.inject(Router), 'currentNavigation');
+
+        currentNavigation.mockReturnValue({ trigger: 'popstate' } as Navigation);
+        queryParams$.next({ editContent: IDENTIFIER, editContentLang: '1' });
+        await settle();
+
+        expect(openContent).not.toHaveBeenCalled();
+
+        currentNavigation.mockReturnValue({ trigger: 'imperative' } as Navigation);
+        queryParams$.next({ editContent: IDENTIFIER, editContentLang: '1', mId: 'a1b2' });
         await settle();
 
         expect(openContent).toHaveBeenCalledTimes(1);

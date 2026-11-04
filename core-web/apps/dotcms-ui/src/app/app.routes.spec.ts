@@ -141,6 +141,18 @@ describe('appRoutes', () => {
             }
         );
 
+        /**
+         * `/c/workflow/<task>` is a surface with a panel in its URL (FR-025a). Back with that panel
+         * open is a query-only navigation, which `reuseRoute: false` would answer by rebuilding the
+         * task dialog under the panel's prompt; the task follows its route's params instead.
+         */
+        it('should not force `reuseRoute: false` on the `/c/:id/:asset` child', () => {
+            const asset = legacyPortlet?.children?.find((child) => child.path === ':asset');
+
+            expect(asset).toBeDefined();
+            expect(asset?.data?.['reuseRoute']).toBeUndefined();
+        });
+
         it.each([':asset', 'new/:contentType'])(
             'should keep the `/pages/%s` child, redirecting through the deep-link component',
             async (path) => {
