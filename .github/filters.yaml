@@ -28,7 +28,6 @@ backend: &backend
   - 'core-web/pom.xml'
   - 'dotCMS/src/main/webapp/html/**/!(*.{css,js})'
   - 'dotcms-postman/**'
-  - 'test-karate/**'
   - 'e2e/**'
   - 'dotCMS/src/main/webapp/WEB-INF/messages/**/!(Language*.properties)'
   # Exclude html/ and WEB-INF/messages/ from backend triggering via per-segment
@@ -101,7 +100,6 @@ area_backend:
   - 'dotCMS/src/main/webapp/WEB-INF/!(messages)/**'
   - 'dotcms-integration/**'
   - 'dotcms-postman/**'
-  - 'test-karate/**'
   - 'bom/**'
   - 'build-parent/**'
   - 'parent/**'

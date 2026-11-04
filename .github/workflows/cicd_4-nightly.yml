@@ -171,7 +171,6 @@ jobs:
       cli: true
       frontend: true
       postman: true
-      karate: true
       integration: true
       e2e: false
       # On-demand ES->OS phased run: 'none'/empty (or scheduled) -> off; 1/2/3 -> single phase;

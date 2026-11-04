@@ -77,7 +77,7 @@ Descriptions say **when to load** the doc, not what it contains.
 | [INTEGRATION_TESTS.md](testing/INTEGRATION_TESTS.md) | Writing or running an integration test — **includes the MainSuite registration rule: an unregistered test is silently never run in CI** |
 | [BACKEND_UNIT_TESTS.md](testing/BACKEND_UNIT_TESTS.md) | Writing a unit test in `:dotcms-core` — Surefire, Mockito setup, naming (there is no category/tag mechanism) |
 | [E2E_TESTS.md](testing/E2E_TESTS.md) | Working on the Playwright suite in `core-web/apps/dotcms-ui-e2e` |
-| [API_TESTING.md](testing/API_TESTING.md) | Writing API tests — Postman (`dotcms-postman/`) and Karate (`test-karate/`) |
+| [API_TESTING.md](testing/API_TESTING.md) | Writing API tests — Postman (`dotcms-postman/`) |
 | [PERFORMANCE_TESTS.md](testing/PERFORMANCE_TESTS.md) | Load testing with JMeter (`test-jmeter/`) or the Kubernetes analytics suite |
 | [test-cases/README.md](test-cases/README.md) | Looking for the manual/feature test-suite index |
 
