@@ -11,7 +11,9 @@ import com.dotcms.repackage.javax.portlet.ActionResponse;
 import com.dotcms.repackage.javax.portlet.PortletConfig;
 import com.dotcms.repackage.org.apache.struts.action.ActionForm;
 import com.dotcms.repackage.org.apache.struts.action.ActionMapping;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.cache.FieldsCache;
 import com.dotmarketing.db.HibernateUtil;
@@ -24,6 +26,7 @@ import com.dotmarketing.portlets.contentlet.struts.ImportContentletsForm;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.*;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.Constants;
 import com.liferay.portal.util.PortalUtil;
@@ -110,10 +113,9 @@ public class ImportContentletsAction extends DotPortletAction {
 				UploadPortletRequest uploadReq = PortalUtil.getUploadPortletRequest(req);
 
 				
+				// The upload is only copied into the shared asset store once the request is known
+				// to be one we are going to act on: a rejected request leaves nothing behind.
 				File file = uploadReq.getFile("file");
-				Files.copy(file.toPath(), new File(ConfigUtils.getAssetTempPath()+java.io.File.separator+file.getName()).toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
-				file = Paths.get(ConfigUtils.getAssetTempPath()+java.io.File.separator+file.getName()).toFile();
-
 
 				final ImportContentletsForm importContentletsForm = (ImportContentletsForm) form;
 				if(importContentletsForm.getStructure().isEmpty()){
@@ -127,8 +129,10 @@ public class ImportContentletsAction extends DotPortletAction {
 				else if (file == null || file.length() < 100) {
 					SessionMessages.add(req, ERROR, "message.contentlet.file.required");
 					setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
+				}
+				else if (!_checkImportAccess(req, importContentletsForm.getStructure(), user)) {
+					setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
 				} else {
-
 					final Structure hostStrucuture = CacheLocator.getContentTypeCache().getStructureByVelocityVarName(Host.HOST_VELOCITY_VAR_NAME);
 					final boolean isHost = (hostStrucuture.getInode().equals( importContentletsForm.getStructure()));
 					if(isHost){
@@ -137,6 +141,8 @@ public class ImportContentletsAction extends DotPortletAction {
 						setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
 						return;
 					}
+
+					file = _copyToAssetTempPath(file);
 
 					Charset charset = importContentletsForm.getLanguage() == -1 ? Charset.defaultCharset() : FileUtil.detectEncodeType(file);
 					try(Reader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), charset))){
@@ -204,6 +210,8 @@ public class ImportContentletsAction extends DotPortletAction {
 				HashMap<String, List<String>>results=ImportAuditUtil.loadImportResults(importIdComplete);
 				req.setAttribute("importResults", results);
 				setForward(req, "portlet.ext.contentlet.import_contentlets_results");
+			} else if (!_checkImportAccess(req, ((ImportContentletsForm) form).getStructure(), user)) {
+				setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
 			} else {
 				final ActionRequestImpl reqImpl = (ActionRequestImpl) req;
 				final HttpServletRequest httpReq = reqImpl.getHttpServletRequest();
@@ -477,6 +485,82 @@ public class ImportContentletsAction extends DotPortletAction {
 	 * @throws Exception
 	 *             An error occurred when analyzing the CSV file.
 	 */
+	/**
+	 * Checks that the user may create content of the Content Type the import was asked for, and
+	 * puts a message on the request naming that type when they may not.
+	 *
+	 * <p>The type is named in the message on purpose: the user picked it from the screen, so
+	 * telling them which one they are missing access to is the difference between a message they
+	 * can act on and one that only says no. The same bar is applied before the preview and before
+	 * the import itself, so a user cannot pass the first screen and be refused on the second.</p>
+	 *
+	 * @param req               the Struts wrapper for the HTTP request, where the message is left
+	 * @param contentTypeInode  the inode of the Content Type chosen on the screen
+	 * @param user              the {@link User} making the request
+	 * @return {@code true} when the import may go ahead
+	 */
+	private boolean _checkImportAccess(final ActionRequest req, final String contentTypeInode,
+			final User user) {
+		ContentType contentType = null;
+		try {
+			contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+					.find(contentTypeInode);
+		} catch (final Exception e) {
+			Logger.warn(this, String.format("Content Type '%s' could not be read for an import",
+					contentTypeInode), e);
+		}
+		if (ContentImportAccess.canImportInto(contentType, user)) {
+			return true;
+		}
+		SessionMessages.add(req, ERROR, _importAccessMessage(contentType, contentTypeInode, user));
+		return false;
+	}
+
+	/**
+	 * Builds the message shown when an import is refused, naming the Content Type involved.
+	 *
+	 * <p>The message is resolved here rather than left as a key because it carries the type's
+	 * name. {@code messages_inc.jsp} runs whatever it is given through the message resources and
+	 * returns it unchanged when there is no matching key, so an already-translated sentence
+	 * reaches the screen as it is.</p>
+	 *
+	 * @param contentType      the {@link ContentType} the import was for, or {@code null} when it
+	 *                         could not be read
+	 * @param contentTypeInode the inode that was asked for, used when the type cannot be named
+	 * @param user             the {@link User} whose locale the message is built in
+	 * @return the message to show
+	 */
+	private String _importAccessMessage(final ContentType contentType,
+			final String contentTypeInode, final User user) {
+		final String typeName = null != contentType ? contentType.name() : contentTypeInode;
+		try {
+			return LanguageUtil.get(user, "message.import.contentlet.no-permission-on-type",
+					typeName);
+		} catch (final Exception e) {
+			Logger.warn(this, "Could not build the import permission message", e);
+			return "You do not have permission to import content of type \"" + typeName + "\".";
+		}
+	}
+
+	/**
+	 * Copies the uploaded file into the shared asset temp path and returns the copy, which is what
+	 * the rest of the import reads from.
+	 *
+	 * <p>Called only once the request has passed every check, so a request that is going to be
+	 * rejected never writes to shared storage.</p>
+	 *
+	 * @param uploaded the file as the upload request parsed it
+	 * @return the copy inside the asset temp path
+	 * @throws Exception if the file cannot be copied
+	 */
+	private File _copyToAssetTempPath(final File uploaded) throws Exception {
+		final java.nio.file.Path destination = Paths.get(ConfigUtils.getAssetTempPath()
+				+ java.io.File.separator + uploaded.getName());
+		Files.copy(uploaded.toPath(), destination,
+				java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+		return destination.toFile();
+	}
+
 	private void _generatePreview(long importId, ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user, File file, String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn, int countryCodeHeaderColumn, Reader reader) throws Exception {
 		// wraps request to get session object
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
