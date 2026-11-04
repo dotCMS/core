@@ -54,6 +54,7 @@ import javax.servlet.http.PushBuilder;
 
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 
 /**
  * <p>Prevent "dangerous" classloader/reflection related calls.  Use this
@@ -114,7 +115,9 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
      * Blocks getRequest() on servlet request wrappers and getResponse() on servlet response
      * wrappers, write() and delete() on uploaded parts, setLocked() on the container's parameter
      * map, and every method on the container's own request, response, session, context,
-     * dispatcher, async, push and principal objects.
+     * dispatcher, async, push and principal objects. On any request or session object, including
+     * the dotCMS wrappers, blocks getServletContext(), getSessionContext(), getAsyncContext(),
+     * startAsync(), upgrade() and authenticate(), and records the attempt in the security log.
      * Prohibits method calls on classes related to reflection and system operations.
      * For the complete list, see the properties <code>introspector.restrict.classes</code>
      * and <code>introspector.restrict.packages</code>.
@@ -212,6 +215,17 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
          */
         if (isContainerObject(clazz))
         {
+            return false;
+        }
+
+        /**
+         * No request or session object, including the dotCMS wrappers, may hand a template the
+         * servlet context or an async context, or hand the connection or authentication over to
+         * the container.
+         */
+        if (isRestrictedRequestOrSessionMethod(clazz, methodName))
+        {
+            logToSecurityLog(clazz, methodName);
             return false;
         }
 
@@ -382,28 +396,39 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
     }
 
     /**
-     * Package prefixes of servlet-container internals, embedded script interpreters and the
-     * alternate reflection and naming APIs. Matched against the class itself.
+     * Package prefixes of servlet-container internals (Tomcat, the JSP runtime and its expression
+     * language), the CDI container (Weld), the expression-language APIs, embedded script
+     * interpreters and the alternate reflection and naming APIs. Matched against the class itself.
      */
     private static final String[] RESTRICTED_RUNTIME_PREFIXES = {
             "org.apache.tomcat.",
             "bsh.", "com.dotcms.repackage.bsh.",
             "groovy.lang.", "org.codehaus.groovy.", "org.mozilla.javascript.",
             "jdk.nashorn.", "org.openjdk.nashorn.", "org.graalvm.polyglot.",
-            "javax.naming.", "java.lang.invoke."
+            "javax.naming.", "java.lang.invoke.",
+            "javax.el.", "jakarta.el.", "org.apache.el.", "org.apache.jasper.", "org.jboss.weld."
     };
 
     /**
-     * Types whose implementations live in other packages (for example a CDI container's
-     * InstanceManager, or the JDK's ProcessHandle implementation). Matched anywhere in the
-     * class hierarchy.
+     * Types whose implementations may live in other packages: Tomcat's InstanceManager, JNDI
+     * contexts, script engine factories, the JDK's ProcessHandle, the servlet and async contexts,
+     * the CDI BeanManager, and the expression-language context and expression factory (both the
+     * javax and jakarta namespaces). Matched anywhere in the class hierarchy, so an implementation
+     * is caught whatever package it is in.
      */
     private static final Set<String> RESTRICTED_RUNTIME_TYPES = Set.of(
             "org.apache.tomcat.InstanceManager",
             "javax.naming.Context",
             "javax.script.ScriptEngineFactory",
             "java.lang.ProcessHandle",
-            "java.lang.ProcessHandle$Info"
+            "java.lang.ProcessHandle$Info",
+            "javax.servlet.ServletContext",
+            "javax.servlet.AsyncContext",
+            "javax.enterprise.inject.spi.BeanManager",
+            "javax.el.ELContext",
+            "javax.el.ExpressionFactory",
+            "jakarta.el.ELContext",
+            "jakarta.el.ExpressionFactory"
     );
 
     /** Package of the servlet container's classes. */
@@ -532,5 +557,58 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
         }
 
         return false;
+    }
+
+    /**
+     * Methods on request and session objects that a template may not call: the ones that hand back
+     * the servlet context or an async context (which exposes the original request and response),
+     * {@code upgrade}, which has the container construct a handler class and switch the
+     * connection, and {@code authenticate}, which drives the container's authentication and writes
+     * to the response.
+     */
+    private static final Set<String> RESTRICTED_REQUEST_SESSION_METHODS = Set.of(
+            "getServletContext", "getSessionContext", "getAsyncContext", "startAsync",
+            "upgrade", "authenticate"
+    );
+
+    /**
+     * Determines whether the call is one of {@link #RESTRICTED_REQUEST_SESSION_METHODS} on a
+     * request or session object. This covers the dotCMS wrappers as well as any other request or
+     * session implementation, so it does not depend on which object a template was handed.
+     *
+     * @param clazz class a method is about to be resolved on
+     * @param methodName name of the method to be called
+     * @return {@code true} if the call is restricted (deny), {@code false} otherwise
+     */
+    static boolean isRestrictedRequestOrSessionMethod(final Class<?> clazz, final String methodName)
+    {
+        if (clazz == null || methodName == null)
+        {
+            return false;
+        }
+
+        return (ServletRequest.class.isAssignableFrom(clazz) || HttpSession.class.isAssignableFrom(clazz))
+                && RESTRICTED_REQUEST_SESSION_METHODS.contains(methodName);
+    }
+
+    /**
+     * Records a refused request or session call in the security log, as the request wrapper does
+     * for servlet-context access. Logging must never change the permission decision, so a logger
+     * that is unavailable (for example in plain unit tests) is ignored.
+     *
+     * @param clazz class the method was to be called on
+     * @param methodName name of the refused method
+     */
+    private static void logToSecurityLog(final Class<?> clazz, final String methodName)
+    {
+        try
+        {
+            SecurityLogger.logInfo(SecureIntrospectorImpl.class,
+                    "Template tried to call " + methodName + "() on " + clazz.getName());
+        }
+        catch (final Throwable t)
+        {
+            // never let logging affect the decision
+        }
     }
 }

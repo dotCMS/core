@@ -5,17 +5,21 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.bradmcevoy.http.Request;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.auth.LoginLockout;
 import com.dotcms.auth.providers.jwt.beans.ApiToken;
 import com.dotcms.auth.providers.jwt.beans.TokenType;
 import com.dotcms.auth.providers.jwt.beans.UserToken;
@@ -36,6 +40,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
 import java.util.Timer;
+import java.util.function.BiPredicate;
 import javax.servlet.http.HttpServletRequest;
 import org.junit.After;
 import org.junit.Before;
@@ -56,6 +61,8 @@ public class DotWebdavAuthenticationTest {
     private MockedStatic<PublicCompanyFactory> companies;
     private MockedStatic<CompanyUtils> companyUtils;
     private MockedStatic<LoginFactory> passwords;
+    private MockedStatic<LoginLockout> lockouts;
+    private LoginLockout lockout;
     private MockedConstruction<Timer> timers;
     private MockedConstruction<Interpreter> preAuthenticators;
     private UserAPI userAPI;
@@ -73,6 +80,17 @@ public class DotWebdavAuthenticationTest {
         companies = mockStatic(PublicCompanyFactory.class);
         companyUtils = mockStatic(CompanyUtils.class);
         passwords = mockStatic(LoginFactory.class);
+        lockouts = mockStatic(LoginLockout.class, CALLS_REAL_METHODS);
+        lockout = mock(LoginLockout.class);
+        lockouts.when(LoginLockout::getInstance).thenReturn(lockout);
+        when(lockout.passwordMatch(anyString(), any(User.class), anyString(), any()))
+                .thenAnswer(invocation -> {
+                    final String credential = invocation.getArgument(0);
+                    final User owner = invocation.getArgument(1);
+                    final BiPredicate<String, User> tokenFallback = invocation.getArgument(3);
+                    return LoginFactory.passwordMatch(credential, owner)
+                            || tokenFallback.test(credential, owner);
+                });
         // Loading the helper must not leave its unrelated non-daemon cache-cleaner timer running.
         timers = mockConstruction(Timer.class);
         preAuthenticators = mockConstruction(Interpreter.class,
@@ -112,6 +130,9 @@ public class DotWebdavAuthenticationTest {
         if (timers != null) {
             timers.close();
         }
+        if (lockouts != null) {
+            lockouts.close();
+        }
         if (passwords != null) {
             passwords.close();
         }
@@ -140,6 +161,7 @@ public class DotWebdavAuthenticationTest {
         passwords.verifyNoInteractions();
         companies.verifyNoInteractions();
         companyUtils.verifyNoInteractions();
+        verifyNoInteractions(lockout);
         verify(tokens, never()).fromJwt(CREDENTIAL, IP);
     }
 
@@ -153,6 +175,7 @@ public class DotWebdavAuthenticationTest {
                 () -> helper.authorizePrincipal(USERNAME, CREDENTIAL));
 
         passwords.verifyNoInteractions();
+        verifyNoInteractions(lockout);
         verify(tokens).fromJwt(CREDENTIAL, IP);
     }
 
@@ -167,6 +190,7 @@ public class DotWebdavAuthenticationTest {
         verify(tokens).fromJwt(CREDENTIAL, IP);
         passwords.verifyNoInteractions();
         companies.verifyNoInteractions();
+        verifyNoInteractions(lockout);
         assertTrue("Token-only authentication must not enter the pre-authentication pipeline",
                 preAuthenticators.constructed().isEmpty());
     }
@@ -233,6 +257,23 @@ public class DotWebdavAuthenticationTest {
         assertSame(user, helper.authorizePrincipal(USERNAME, CREDENTIAL));
 
         passwords.verify(() -> LoginFactory.passwordMatch(CREDENTIAL, user));
+        verify(tokens, never()).fromJwt(CREDENTIAL, IP);
+    }
+
+    /** ALL must honor the separate WebDAV lockout before accepting even a correct password. */
+    @Test
+    public void allHonorsTheWebdavLockout() throws Exception {
+        Config.setProperty("ALLOW_BASIC_AUTH", "ALL");
+        passwords.when(() -> LoginFactory.passwordMatch(CREDENTIAL, user)).thenReturn(true);
+        when(lockout.passwordMatch(eq(CREDENTIAL), eq(user),
+                eq(LoginLockout.WEBDAV_SOURCE_PREFIX + IP), any())).thenReturn(false);
+
+        assertThrows(DotSecurityException.class,
+                () -> helper.authorizePrincipal(USERNAME, CREDENTIAL));
+
+        verify(lockout).passwordMatch(eq(CREDENTIAL), eq(user),
+                eq(LoginLockout.WEBDAV_SOURCE_PREFIX + IP), any());
+        passwords.verifyNoInteractions();
         verify(tokens, never()).fromJwt(CREDENTIAL, IP);
     }
 

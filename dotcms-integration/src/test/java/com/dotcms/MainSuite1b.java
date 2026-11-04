@@ -113,6 +113,7 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ContentletIndexPartialFailurePhaseTest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexProviderSkipTest.class,
         com.dotcms.rendering.velocity.viewtools.ScriptingFileForgeryIntegrationTest.class,
+        com.dotcms.auth.LoginLockoutTest.class,
         com.dotcms.graphql.GraphqlCacheWebInterceptorIntegrationTest.class,
 })
 
