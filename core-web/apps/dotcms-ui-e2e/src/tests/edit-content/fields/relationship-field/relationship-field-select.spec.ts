@@ -385,10 +385,11 @@ test.describe('Create New Inline', () => {
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.clickCreateNew();
 
-        // With the side-panel feature flag on, "New content" opens the editor in a slide-in
-        // panel (p-drawer, teleported to body), not the centered create dialog.
-        const sidePanel = adminPage.locator('.p-drawer');
-        await expect(sidePanel).toBeVisible({ timeout: 10000 });
+        // The listing opens the blog form in a side panel, and "New Content" stacks a second one
+        // over it (#38303). The front panel is the last; closing it leaves the blog's.
+        const sidePanels = adminPage.getByTestId('side-panel');
+        await expect(sidePanels).toHaveCount(2, { timeout: 10000 });
+        const sidePanel = sidePanels.last();
 
         const titleInput = sidePanel.getByTestId('title').first();
         await titleInput.waitFor({ state: 'visible', timeout: 10000 });
@@ -402,12 +403,12 @@ test.describe('Create New Inline', () => {
         await saveButton.click();
         await responsePromise;
 
-        // Panel stays open after save — close via the header X. Closing fires onContentSaved,
-        // which adds the newly created content to the relationship.
+        // Panel stays open after save — close via the header X. The save already added the new
+        // content to the relationship; closing only removes the front panel.
         const closeButton = sidePanel.getByTestId('side-panel-close');
         await closeButton.waitFor({ state: 'visible', timeout: 5000 });
         await closeButton.click();
-        await expect(sidePanel).toBeHidden({ timeout: 10000 });
+        await expect(sidePanels).toHaveCount(1, { timeout: 10000 });
 
         await relationshipField.expectRowCount(1);
     });
@@ -425,11 +426,12 @@ test.describe('Create New Inline', () => {
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.clickCreateNew();
 
-        const sidePanel = adminPage.locator('.p-drawer');
-        await expect(sidePanel).toBeVisible({ timeout: 10000 });
+        // Stacked over the blog form's own panel; Escape closes only the front one.
+        const sidePanels = adminPage.getByTestId('side-panel');
+        await expect(sidePanels).toHaveCount(2, { timeout: 10000 });
 
         await adminPage.keyboard.press('Escape');
-        await expect(sidePanel).toBeHidden({ timeout: 5000 });
+        await expect(sidePanels).toHaveCount(1, { timeout: 5000 });
 
         const textField = adminPage.getByTestId('title');
         await expect(textField).toHaveValue(outerTitle);
@@ -443,14 +445,15 @@ test.describe('Create New Inline', () => {
         const relationshipField = new RelationshipField(adminPage);
         await relationshipField.clickCreateNew();
 
-        const sidePanel = adminPage.locator('.p-drawer');
-        await expect(sidePanel).toBeVisible({ timeout: 10000 });
+        // Stacked over the blog form's own panel; the front one is the last.
+        const sidePanels = adminPage.getByTestId('side-panel');
+        await expect(sidePanels).toHaveCount(2, { timeout: 10000 });
 
-        const closeButton = sidePanel.getByTestId('side-panel-close');
+        const closeButton = sidePanels.last().getByTestId('side-panel-close');
         await expect(closeButton).toBeVisible({ timeout: 5000 });
         await closeButton.click();
 
-        await expect(sidePanel).toBeHidden({ timeout: 5000 });
+        await expect(sidePanels).toHaveCount(1, { timeout: 5000 });
         await relationshipField.expectEmpty();
     });
 });

@@ -17,19 +17,11 @@ const CUSTOM_FIELD_VARIABLE = 'customField';
 async function saveAndReload(page: import('@playwright/test').Page, title: string) {
     const formPage = new NewEditContentFormPage(page);
     await formPage.fillTextField(title);
-    await formPage.save();
+    const saved = await formPage.save();
 
-    await page.waitForURL(/\/content\/([a-f0-9-]+)/);
-    const [, savedContentIdentifier] = page
-        .url()
-        .match(/\/content\/([a-f0-9-]+)/) as RegExpMatchArray;
-    expect(savedContentIdentifier).toBeTruthy();
+    await formPage.reopen(saved.inode);
 
-    await page.goto(`/dotAdmin/#/content/${savedContentIdentifier}`);
-    await page.waitForLoadState('domcontentloaded');
-    await page.getByTestId('title').waitFor({ state: 'visible', timeout: 15000 });
-
-    return savedContentIdentifier;
+    return saved.identifier;
 }
 
 test.describe('Key Value Field', () => {
