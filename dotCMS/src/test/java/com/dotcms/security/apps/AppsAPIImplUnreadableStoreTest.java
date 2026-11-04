@@ -22,9 +22,8 @@ import org.junit.Test;
  * Guards how {@link AppsAPIImpl#filterSitesForAppKey} behaves when the App secrets store cannot be
  * read (issue #36724).
  *
- * This is the highest-consequence path of that change: {@code EMAWebInterceptor.existsConfiguration}
- * reaches this method on every {@code /api/*} request and the interceptor chain does not guard it, so
- * raising here returns a 500 for the entire API.
+ * This is the highest-consequence path of that change: request paths reach this method (the Apps
+ * listing, the SAML configuration check), so raising here returns a 500 to them.
  *
  * The reason this class exists is that the fix regressed once already. The store raises
  * {@link SecretsStoreUnreadableException} deep inside itself, but
@@ -84,8 +83,8 @@ public class AppsAPIImplUnreadableStoreTest {
      * Method to test: {@link AppsAPIImpl#filterSitesForAppKey(String, java.util.Collection, User)}
      * Given Scenario: the store cannot be read, and the failure arrives wrapped in a bare
      * DotRuntimeException by the intermediate cache layer — exactly as it does in production.
-     * Expected Result: the site reports no secrets. It must not raise: EMAWebInterceptor calls this
-     * on every /api/* request, so raising returns a 500 for the whole API.
+     * Expected Result: the site reports no secrets. It must not raise: request paths call this,
+     * so raising returns a 500 to them.
      */
     @Test
     public void test_unreadableStoreWrapped_degradesInsteadOfRaising() {

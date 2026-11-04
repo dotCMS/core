@@ -1,4 +1,4 @@
-package com.dotcms.ema.proxy;
+package com.dotcms.mock.response;
 
 import com.dotmarketing.util.Logger;
 import java.io.IOException;
