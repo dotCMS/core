@@ -497,8 +497,11 @@ describe('DotPanelUrlStateService', () => {
         });
 
         /**
-         * Back that lands on another route has left the surface: the panel goes with the surface's
-         * injector, and the URL Back landed on belongs to another screen (T155).
+         * Back that lands on another route has left the surface, and the URL Back landed on belongs
+         * to another screen (T155). A panel a legacy (JSP) portlet opened lives under the side
+         * panel host, not the surface, so nothing else would close it: the service closes it,
+         * without the guard (the surface is gone, as it is for an Angular surface), and writes
+         * nothing.
          */
         describe('when Back leaves the surface', () => {
             /** A page on another route, which happens to name a panel of its own. */
@@ -510,7 +513,7 @@ describe('DotPanelUrlStateService', () => {
                     'a panel a link opened, which has no entry of its own',
                     surfaceUrlWith({ editContent: ID_1, editContentLang: '1' })
                 ]
-            ])('restores nothing and asks nothing to close, for %s', (_label, url) => {
+            ])('closes it without its guard and restores nothing, for %s', (_label, url) => {
                 start(url);
                 const { ref, requestClose } = guardedRef();
                 spectator.service.register(ref, { editContent: ID_1, editContentLang: '1' });
@@ -518,10 +521,71 @@ describe('DotPanelUrlStateService', () => {
 
                 back(OTHER_ROUTE_URL);
 
+                expect(ref.isClosed).toBe(true);
                 expect(requestClose).not.toHaveBeenCalled();
                 expect(serviceReplaces(1)).toBe(0);
                 expect(location.go).not.toHaveBeenCalled();
             });
+
+        });
+
+        /**
+         * Any navigation of the router that ends on another path has left the surface, a link in a
+         * legacy portlet's frame as much as Back: every panel registered there closes, without its
+         * guard, and nothing is written to the URL. A navigation that stays on the surface's path
+         * (a Back that pops a param, a deep link's redirect) closes nothing.
+         */
+        describe('when a navigation ends on another path', () => {
+            it('closes every panel registered on the surface, front first, and writes nothing', () => {
+                start();
+                const underneath = guardedRef();
+                const front = guardedRef();
+                spectator.service.register(underneath.ref, {
+                    editContent: ID_1,
+                    editContentLang: '1'
+                });
+                spectator.service.register(front.ref, { createContent: 'Blog' });
+                const closedOrder: string[] = [];
+                underneath.ref.closed.subscribe(() => closedOrder.push('underneath'));
+                front.ref.closed.subscribe(() => closedOrder.push('front'));
+                location.go.mockClear();
+                location.replaceState.mockClear();
+                // The router's own write for an imperative navigation, before it ends.
+                location.go('/starter');
+
+                router.events.next(new NavigationEnd(3, '/starter', '/starter'));
+
+                expect(closedOrder).toEqual(['front', 'underneath']);
+                expect(underneath.requestClose).not.toHaveBeenCalled();
+                expect(front.requestClose).not.toHaveBeenCalled();
+                // Only the router's write: the service wrote nothing.
+                expect(location.go).toHaveBeenCalledTimes(1);
+                expect(location.replaceState).not.toHaveBeenCalled();
+            });
+
+            it('closes nothing for a navigation that stays on the surface, whatever its params', () => {
+                start();
+                const { ref } = guardedRef();
+                spectator.service.register(ref, { editContent: ID_1, editContentLang: '1' });
+
+                router.events.next(
+                    new NavigationEnd(3, `${SURFACE_URL}&offset=20`, `${SURFACE_URL}&offset=20`)
+                );
+
+                expect(ref.isClosed).toBe(false);
+            });
+
+            it('closes nothing before any panel is registered', () => {
+                start();
+
+                expect(() =>
+                    router.events.next(new NavigationEnd(3, '/starter', '/starter'))
+                ).not.toThrow();
+            });
+        });
+
+        describe('after the surface is gone', () => {
+            const OTHER_ROUTE_URL = `/c/content-drive?path=%2Fblog&editContent=${ID_2}`;
 
             it("leaves the other route's URL alone when the panel then closes with its surface", () => {
                 start();
