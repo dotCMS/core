@@ -46,8 +46,6 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.categories.business.CategoryAPI;
 import com.dotmarketing.portlets.categories.model.Category;
-import com.dotmarketing.portlets.containers.business.ContainerAPI;
-import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.structure.factories.FieldFactory;
 import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
@@ -102,7 +100,6 @@ class StructureAjaxTest {
     private final PermissionAPI permissionAPI = mock(PermissionAPI.class);
     private final ContentTypeAPI contentTypeAPI = mock(ContentTypeAPI.class);
     private final FieldAPI fieldAPI = mock(FieldAPI.class);
-    private final ContainerAPI containerAPI = mock(ContainerAPI.class);
     private final ContentTypeCache contentTypeCache = mock(ContentTypeCache.class);
     private final CategoryAPI categoryAPI = mock(CategoryAPI.class);
     private final User user = mock(User.class);
@@ -147,7 +144,6 @@ class StructureAjaxTest {
         apiLocator.when(() -> APILocator.getContentTypeAPI(any(User.class))).thenReturn(contentTypeAPI);
         apiLocator.when(() -> APILocator.getContentTypeAPI(any(User.class), anyBoolean())).thenReturn(contentTypeAPI);
         apiLocator.when(APILocator::getContentTypeFieldAPI).thenReturn(fieldAPI);
-        apiLocator.when(APILocator::getContainerAPI).thenReturn(containerAPI);
         apiLocator.when(APILocator::systemUser).thenReturn(systemUser);
         apiLocator.when(APILocator::getCategoryAPI).thenReturn(categoryAPI);
 
@@ -213,13 +209,6 @@ class StructureAjaxTest {
         when(contentTypeA.fields()).thenReturn(fieldsOfTypeA);
         when(fieldAPI.byContentTypeId(TYPE_A)).thenReturn(fieldsOfTypeA);
         givenField(FIELD_B1, TYPE_B, 1);
-
-        final Container container = mock(Container.class);
-        when(container.getIdentifier()).thenReturn("container-id");
-        when(container.getInode()).thenReturn("container-inode");
-        when(container.getTitle()).thenReturn("Container using type A");
-        when(containerAPI.findContainersForStructure(TYPE_A, true)).thenReturn(List.of(container));
-        when(containerAPI.findContainersForStructure(TYPE_A)).thenReturn(List.of(container));
     }
 
     /** An inode that is no content type: the lookups answer as they do for a missing type. */
@@ -617,23 +606,6 @@ class StructureAjaxTest {
 
     /**
      * Given: an inode that resolves to no content type
-     * When: checkDependencies is called
-     * Then: size is 0, containers is empty, the containers are not looked up and nothing is
-     * written to the security log
-     */
-    @Test
-    void checkDependencies_unknownTypeListsNoContainers() throws Exception {
-        final Map<Object, Object> result = new StructureAjax().checkDependencies(UNKNOWN_TYPE);
-
-        assertEquals(0, result.get("size"));
-        assertEquals(List.of(), result.get("containers"));
-        verify(containerAPI, never()).findContainersForStructure(anyString(), anyBoolean());
-        verify(containerAPI, never()).findContainersForStructure(anyString());
-        assertTrue(securityLoggerCalls.isEmpty(), "got " + securityLoggerCalls);
-    }
-
-    /**
-     * Given: an inode that resolves to no content type
      * When: getStructureFields is called
      * Then: the text of a type without fields, {@code "[  ]"}, is returned
      */
@@ -684,50 +656,9 @@ class StructureAjaxTest {
     }
 
     /**
-     * Given: a user without READ on the content type
-     * When: checkDependencies is called
-     * Then: size is 0, containers is empty and the containers are not looked up
-     */
-    @Test
-    void checkDependencies_requiresReadOnType() throws Exception {
-        givenPermissionOnTypeA(PERMISSION_READ, false);
-
-        final Map<Object, Object> result = new StructureAjax().checkDependencies(TYPE_A);
-
-        assertEquals(0, result.get("size"));
-        assertEquals(List.of(), result.get("containers"));
-        verify(containerAPI, never()).findContainersForStructure(anyString(), anyBoolean());
-        verify(containerAPI, never()).findContainersForStructure(anyString());
-    }
-
-    /**
-     * Given: a user with READ on the content type, and a content type lookup that fails with a
-     * data error (not a missing type)
-     * When: checkDependencies is called
-     * Then: the data error reaches the caller instead of a size of zero, which the delete dialog
-     * would read as "no container uses this type", with a fixed message instead of the database
-     * text; the containers are not looked up and nothing is written to the security log
-     */
-    @Test
-    void checkDependencies_typeLookupDataErrorIsReportedToTheCaller() throws Exception {
-        givenPermissionOnTypeA(PERMISSION_READ, true);
-        final String databaseText = "org.postgresql.util.PSQLException: ERROR: relation \"structure\" does not exist";
-        when(contentTypeAPI.find(TYPE_A)).thenThrow(new DotDataException(databaseText));
-
-        final DotDataException thrown = assertThrows(DotDataException.class,
-                () -> new StructureAjax().checkDependencies(TYPE_A));
-        assertFalse(thrown.getMessage().contains(databaseText),
-                "the database text must not reach the caller, got: " + thrown.getMessage());
-
-        verify(containerAPI, never()).findContainersForStructure(anyString(), anyBoolean());
-        verify(containerAPI, never()).findContainersForStructure(anyString());
-        assertTrue(securityLoggerCalls.isEmpty(), "got " + securityLoggerCalls);
-    }
-
-    /**
      * Given: nobody is logged in
-     * When: fetchByIdentity, checkDependencies, getStructureFields and getSearchableStructureFields
-     * are called for a content type
+     * When: fetchByIdentity, getStructureFields and getSearchableStructureFields are called for a
+     * content type
      * Then: each answers like a type the caller cannot read, the content type is not loaded and
      * nothing is written to the security log
      */
@@ -737,7 +668,6 @@ class StructureAjaxTest {
         final StructureAjax structureAjax = new StructureAjax();
 
         assertNull(structureAjax.fetchByIdentity(TYPE_A));
-        assertEquals(0, structureAjax.checkDependencies(TYPE_A).get("size"));
         assertEquals(NO_FIELDS, structureAjax.getStructureFields(TYPE_A));
         final List<Map> searchable = structureAjax.getSearchableStructureFields(TYPE_A);
         assertNotNull(searchable);
@@ -749,8 +679,7 @@ class StructureAjaxTest {
 
     /**
      * Given: a logged-in user and no content type inode
-     * When: fetchByIdentity, checkDependencies, getStructureFields and getSearchableStructureFields
-     * are called
+     * When: fetchByIdentity, getStructureFields and getSearchableStructureFields are called
      * Then: each answers like an unknown type and the content type is not loaded
      */
     @ParameterizedTest(name = "inode: [{0}]")
@@ -759,7 +688,6 @@ class StructureAjaxTest {
         final StructureAjax structureAjax = new StructureAjax();
 
         assertNull(structureAjax.fetchByIdentity(inode));
-        assertEquals(0, structureAjax.checkDependencies(inode).get("size"));
         assertEquals(NO_FIELDS, structureAjax.getStructureFields(inode));
         final List<Map> searchable = structureAjax.getSearchableStructureFields(inode);
         assertNotNull(searchable);
@@ -817,7 +745,7 @@ class StructureAjaxTest {
 
     /**
      * Given: a user with READ on the content type
-     * When: fetchByIdentity, checkDependencies, getStructureFields and getSearchableStructureFields are called
+     * When: fetchByIdentity, getStructureFields and getSearchableStructureFields are called
      * Then: each returns the type's data
      */
     @Test
@@ -828,9 +756,6 @@ class StructureAjaxTest {
         final Map<String, Object> type = structureAjax.fetchByIdentity(TYPE_A);
         assertNotNull(type);
         assertEquals(TYPE_A, type.get("inode"));
-
-        final Map<Object, Object> dependencies = structureAjax.checkDependencies(TYPE_A);
-        assertEquals(1, dependencies.get("size"));
 
         assertTrue(structureAjax.getStructureFields(TYPE_A).contains(FIELD_A1));
 
