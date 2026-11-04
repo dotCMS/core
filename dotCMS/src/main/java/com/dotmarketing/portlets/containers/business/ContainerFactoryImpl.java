@@ -32,7 +32,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.containers.model.ContainerVersionInfo;
-import com.dotmarketing.portlets.containers.model.FileAssetContainer;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
@@ -53,6 +52,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -617,26 +617,29 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		}
 	}
 
-	private boolean containsContentType (final FileAssetContainer fileAssetContainer, final String velocityVarName) {
+	/**
+	 * Keeps the Container folders that hold a {@code .vtl} file named after the Content Type's variable, which
+	 * is how a File-based Container declares the Content Types it uses. Matching on the file name means the
+	 * Containers that do not use the type are never loaded, and the result does not depend on loading the
+	 * {@code .vtl} files themselves.
+	 *
+	 * @param folders            Container folders to narrow down.
+	 * @param contentTypeIdOrVar Id or variable of the Content Type.
+	 * @param user               The {@link User} performing this action.
+	 *
+	 * @return The folders whose Container uses the Content Type.
+	 *
+	 * @throws DotSecurityException The user cannot read the Content Type.
+	 * @throws DotDataException     The Content Type does not exist or could not be read.
+	 */
+	private List<Folder> foldersUsingContentType(final List<Folder> folders, final String contentTypeIdOrVar,
+												 final User user) throws DotDataException, DotSecurityException {
 
-		return UtilMethods.isSet(fileAssetContainer.getContainerStructuresAssets())
-				&& fileAssetContainer.getContainerStructuresAssets().stream()
-				.filter(fileAsset -> null != fileAsset.getFileName())
-				.anyMatch(fileAsset -> fileAsset.getFileName().equalsIgnoreCase(velocityVarName));
-	}
-
-	private List<Container> filterFileAssetContainersByContentType (final List<Container> containers, final String contentTypeId, final User user) throws DotDataException, DotSecurityException {
-
-		final ContentType contentType       =  APILocator.getContentTypeAPI(user).find(contentTypeId);
-
-		if (null == contentType) {
-			return containers;
-		}
-
-		final String contentTypeVelocityVar = contentType.variable() + ".vtl";
-		return containers.stream().map(container ->  FileAssetContainer.class.cast(container) ).
-				filter(container -> containsContentType(container, contentTypeVelocityVar)).
-				collect(Collectors.toList());
+		final ContentType contentType = APILocator.getContentTypeAPI(user).find(contentTypeIdOrVar);
+		final Set<String> folderInodesUsingType = this.findContainersAssetsByContentType(contentType.variable())
+				.stream().map(Folder::getInode).collect(Collectors.toSet());
+		return folders.stream().filter(folder -> folderInodesUsingType.contains(folder.getInode()))
+				.collect(Collectors.toList());
 	}
 
 	/**
@@ -647,23 +650,21 @@ public class ContainerFactoryImpl implements ContainerFactory {
 	 *
 	 * @return The sorted list of {@link Container} objects based on the search parameters.
 	 *
-	 * @throws DotRuntimeException When a Content Type filter is set and the File-based Containers cannot be
-	 *                             loaded. Without that filter, a loading error is logged and an empty list is
-	 *                             returned.
+	 * @throws DotRuntimeException When a Content Type filter is set and a File-based Container that uses it
+	 *                             cannot be loaded. Without that filter, a loading error is logged and an empty
+	 *                             list is returned.
 	 **/
 	private Collection<? extends Permissionable> findFolderAssetContainers(final User user, final ContainerAPI.SearchParams searchParams) {
 
 		try {
 
 			final Host site     			 = this.hostAPI.find(searchParams.siteId(), user, false);
-			final List<Folder> subFolders    = this.findContainersAssetsByHost(site, user, searchParams.includeArchived());
-			List<Container> containers = this.getFolderContainers(site, user, subFolders, false);
-
+			List<Folder> subFolders          = this.findContainersAssetsByHost(site, user, searchParams.includeArchived());
 			if (UtilMethods.isSet(searchParams.contentTypeIdOrVar())) {
 
-				containers = this.filterFileAssetContainersByContentType(containers, searchParams.contentTypeIdOrVar(), user);
-
+				subFolders = this.foldersUsingContentType(subFolders, searchParams.contentTypeIdOrVar(), user);
 			}
+			List<Container> containers = this.getFolderContainers(site, user, subFolders, false);
 
 			if (UtilMethods.isSet(searchParams.filteringCriteria())) {
 
@@ -1156,10 +1157,11 @@ public class ContainerFactoryImpl implements ContainerFactory {
 		final User 				   user       = APILocator.systemUser();
 
 		final StringBuilder sqlQuery = new StringBuilder("select cvi.working_inode as inode from contentlet_version_info cvi, identifier id where"
-				+ " id.parent_path like ? and id.asset_name = ? and cvi.identifier = id.id");
+				+ " id.parent_path like ? and lower(id.asset_name) = ? and cvi.identifier = id.id");
 		final List<Object> parameters = new ArrayList<>();
 		parameters.add(Constants.CONTAINER_FOLDER_PATH + StringPool.FORWARD_SLASH + StringPool.PERCENT);
-		parameters.add(contentTypeVarNameFileName + StringPool.PERIOD + "vtl");
+		// The file name is matched regardless of case, as the Content Type variable may differ in case
+		parameters.add((contentTypeVarNameFileName + StringPool.PERIOD + "vtl").toLowerCase());
 
 		sqlQuery.append(" and cvi.deleted = " + DbConnectionFactory.getDBFalse());
 

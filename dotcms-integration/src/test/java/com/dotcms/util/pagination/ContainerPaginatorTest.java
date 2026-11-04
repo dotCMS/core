@@ -235,25 +235,28 @@ public class ContainerPaginatorTest extends ContentletBaseTest {
 
     /**
      * Method to test: {@link ContainerPaginator#getItems(User, String, int, int, String, OrderDirection, Map)}
-     * Given Scenario: A file-based Container that uses a Content Type cannot be loaded, because its
+     * Given Scenario: A file-based Container uses a Content Type, and later cannot be loaded because its
      * {@code container.vtl} exists only in a language other than the default one.
-     * Expected Result: Filtering by that Content Type fails instead of returning a list without that
-     * Container, and listing Containers without a Content Type still works.
+     * Expected Result: While it loads, filtering by that Content Type returns it. Once it cannot be loaded,
+     * filtering by that Content Type fails instead of returning a list without it, while filtering by a
+     * Content Type it does not use, or not filtering at all, still works.
      */
     @Test
-    public void getItems_byContentTypeWhenAFileContainerCannotBeLoaded_fails() throws Exception {
+    public void getItems_byContentTypeWhenAFileContainerUsingItCannotBeLoaded_fails() throws Exception {
         final ContentType contentType = new ContentTypeDataGen().host(defaultHost).nextPersisted();
+        final ContentType unusedType = new ContentTypeDataGen().host(defaultHost).nextPersisted();
         final Language otherLanguage = new LanguageDataGen().nextPersisted();
         final ContainerAsFileDataGen fileContainerGen = new ContainerAsFileDataGen().host(defaultHost)
                 .ignoreDefaultContentTypes().contentType(contentType, "$!{body}");
         final FileAssetContainer fileContainer = fileContainerGen.nextPersisted();
         final long defaultLanguageId = APILocator.getLanguageAPI().getDefaultLanguage().getId();
         try {
+            assertTrue(identifiersFoundBySystem(contentType).contains(fileContainer.getIdentifier()));
+
             moveToLanguage(fileContainer.getIdentifier(), otherLanguage.getId());
 
-            assertThrows(DotRuntimeException.class, () -> new ContainerPaginator().getItems(
-                    APILocator.systemUser(), "", 40, 0, "title", OrderDirection.ASC,
-                    Map.of(ContainerPaginator.CONTENT_TYPE, contentType.id())));
+            assertThrows(DotRuntimeException.class, () -> identifiersFoundBySystem(contentType));
+            assertTrue(identifiersFoundBySystem(unusedType).isEmpty());
             new ContainerPaginator().getItems(APILocator.systemUser(), "", 40, 0, "title", OrderDirection.ASC,
                     Map.of());
         } finally {
@@ -261,9 +264,17 @@ public class ContainerPaginatorTest extends ContentletBaseTest {
             APILocator.getFolderAPI().delete(APILocator.getFolderAPI().find(
                             fileContainerGen.getMetaData().getFolder(), APILocator.systemUser(), false),
                     APILocator.systemUser(), false);
+            ContentTypeDataGen.remove(unusedType);
             ContentTypeDataGen.remove(contentType);
             LanguageDataGen.remove(otherLanguage);
         }
+    }
+
+    private static Set<String> identifiersFoundBySystem(final ContentType contentType) {
+        return new ContainerPaginator().getItems(APILocator.systemUser(), "", 40, 0, "title", OrderDirection.ASC,
+                        Map.of(ContainerPaginator.CONTENT_TYPE, contentType.id())).stream()
+                .map(containerView -> containerView.getContainer().getIdentifier())
+                .collect(Collectors.toSet());
     }
 
     /** Moves every version of a Contentlet to the given language, and flushes the caches that hold it. */
