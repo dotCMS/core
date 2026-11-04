@@ -190,9 +190,10 @@ public class ContentTypeInitializer implements DotInitializer {
                             APILocator.getPermissionAPI().resetPermissionsUnder(savedContentType);
                         }
                     });
-                    // the repair drops the cached rows but not the cached read decisions, which
-                    // other nodes of a cluster may hold; flushing the group reaches them
-                    CacheLocator.getPermissionCache().flushShortTermCache();
+                    // the repair evicts cached rows before it commits, so a read on this or another
+                    // node can cache the old rows again until then; flush both permission cache
+                    // groups, the rows and the read decisions, now that the new rows are committed
+                    CacheLocator.getPermissionCache().clearCache();
                     Logger.info(this, resetFavorites
                             ? "Favorite pages: reset the content type permissions to CMS Owner only and removed the own permissions of "
                                     + favoritesWithOwnRows + " favorite(s)"
