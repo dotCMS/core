@@ -1044,11 +1044,11 @@ export function resolveContentDriveUrlIntent(
     };
 
     // Values from the URL reach REST paths, so only identifier-shaped values are accepted; anything
-    // else reads as absent (Constitution III).
+    // else reads as absent (Constitution III). Trimmed, as `isDotIdentifier` tests it.
     const readIdentifier = (key: string): string | undefined => {
         const value = read(key);
 
-        return isDotIdentifier(value) ? value : undefined;
+        return isDotIdentifier(value) ? value?.trim() : undefined;
     };
 
     const createFolder = read(CONTENT_DRIVE_URL_PARAM.CREATE_FOLDER) === 'true';

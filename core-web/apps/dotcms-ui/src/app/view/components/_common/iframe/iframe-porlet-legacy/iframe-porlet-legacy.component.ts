@@ -11,7 +11,7 @@ import {
     ChangeDetectionStrategy
 } from '@angular/core';
 import { toObservable } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, Params, RouterModule, UrlSegment } from '@angular/router';
+import { ActivatedRoute, Params, Router, RouterModule, UrlSegment } from '@angular/router';
 
 import {
     distinctUntilChanged,
@@ -34,7 +34,12 @@ import { UI_STORAGE_KEY } from '@dotcms/dotcms-models';
 import type { DotEditContentRequest } from '@dotcms/edit-content';
 import { GlobalStore } from '@dotcms/store';
 import { DotNotLicenseComponent } from '@dotcms/ui';
-import { DotLoadingIndicatorService, isDotIdentifier, readPanelUrlIntent } from '@dotcms/utils';
+import {
+    DotLoadingIndicatorService,
+    isDotIdentifier,
+    panelUrlIntentKey,
+    readPanelUrlIntent
+} from '@dotcms/utils';
 
 import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
@@ -66,12 +71,13 @@ interface DotUrlPanel {
  */
 function panelFromUrl(params: Params): DotUrlPanel {
     const intent = readPanelUrlIntent(params);
+    const key = panelUrlIntentKey(intent);
 
     if (intent.kind === 'edit') {
         const { identifier, languageId } = intent;
 
         return {
-            key: `edit:${identifier}:${languageId ?? ''}`,
+            key,
             request: { mode: 'edit', identifier, ...(languageId ? { languageId } : {}) }
         };
     }
@@ -79,10 +85,12 @@ function panelFromUrl(params: Params): DotUrlPanel {
     if (intent.kind === 'create') {
         const folder = params[FOLDER_PARAM];
         // It reaches the legacy create screen's URL, so only an inode-shaped value is used.
-        const folderInode = typeof folder === 'string' && isDotIdentifier(folder) ? folder : null;
+        const folderInode =
+            typeof folder === 'string' && isDotIdentifier(folder) ? folder.trim() : null;
 
         return {
-            key: `create:${intent.contentType}:${folderInode ?? ''}`,
+            // The folder is this portlet's own, beside the shared key.
+            key: `${key}:${folderInode ?? ''}`,
             request: {
                 mode: 'new',
                 contentType: intent.contentType,
@@ -91,7 +99,7 @@ function panelFromUrl(params: Params): DotUrlPanel {
         };
     }
 
-    return intent.kind === 'conflict' ? { key: 'conflict', conflict: true } : { key: 'none' };
+    return intent.kind === 'conflict' ? { key, conflict: true } : { key };
 }
 
 @Component({
@@ -107,6 +115,7 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
     private dotMenuService = inject(DotMenuService);
     private dotRouterService = inject(DotRouterService);
     private route = inject(ActivatedRoute);
+    readonly #router = inject(Router);
     private dotCustomEventHandlerService = inject(DotCustomEventHandlerService);
     loggerService = inject(LoggerService);
     readonly #globalStore = inject(GlobalStore);
@@ -198,12 +207,15 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
 
     /**
      * Opens what the portlet's URL names in the side panel (#38303, FR-049), on load and on every
-     * router navigation that changes it: a deep link redirected here, a pasted link, Forward to an
-     * entry that names a panel. The panel opens through the same path as the portlet's own events,
-     * so it is written to the URL and reloads the portlet the same way. `Location` writes, which
-     * is how the panel URL service writes, never arrive here.
+     * navigation of the app's own that changes it: a deep link redirected here, a pasted link. The
+     * panel opens through the same path as the portlet's own events, so it is written to the URL and
+     * reloads the portlet the same way. `Location` writes, which is how the panel URL service
+     * writes, never arrive here.
      *
-     * A URL whose panel did not change opens nothing again. A URL naming two panels opens neither,
+     * A navigation the browser's Back or Forward started opens nothing: those belong to the panel
+     * URL service (FR-048), and the router replays an entry that may name a panel still open. A URL
+     * whose panel did not change opens nothing again, since an app navigation that changes other
+     * params carries the panel params the router last saw. A URL naming two panels opens neither,
      * and loses both with the create's folder.
      */
     #followPanelUrl(): void {
@@ -214,6 +226,8 @@ export class IframePortletLegacyComponent implements OnInit, OnDestroy {
         this.#followingPanelUrl = true;
         this.route.queryParams
             .pipe(
+                // Before the dedup, so a skipped entry is never the one the next URL is compared to.
+                filter(() => this.#router.currentNavigation()?.trigger !== 'popstate'),
                 map(panelFromUrl),
                 distinctUntilChanged((previous, next) => previous.key === next.key),
                 takeUntil(this.destroy$)
