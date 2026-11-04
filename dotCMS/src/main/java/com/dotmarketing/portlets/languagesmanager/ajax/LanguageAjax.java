@@ -1,11 +1,14 @@
 package com.dotmarketing.portlets.languagesmanager.ajax;
 
+import com.dotcms.languagevariable.business.LanguageKeysAccess;
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.ajax.DwrUtil;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
+import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.languagesmanager.business.LanguageAPI;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.languagesmanager.model.LanguageKey;
@@ -34,15 +37,59 @@ public class LanguageAjax {
 
 	public LanguageAPI langAPI = APILocator.getLanguageAPI();
 
-	public List<LanguageKey> getLanguageKeys(String languageCode) {
+	/**
+	 * Returns the general language keys of a language. Same access rule as
+	 * {@link #getLanguageKeys(String, String)}.
+	 *
+	 * @param languageCode the language code, for example {@code en}
+	 * @return the language keys
+	 * @throws DotSecurityException if nobody is logged in, or the logged-in user has access to
+	 *                              neither the Languages nor the Locales portlet
+	 * @throws DotDataException     if the user's portlets cannot be loaded
+	 * @throws PortalException      if the logged-in user cannot be resolved
+	 * @throws SystemException      if the logged-in user cannot be resolved
+	 */
+	public List<LanguageKey> getLanguageKeys(String languageCode)
+			throws DotSecurityException, DotDataException, PortalException, SystemException {
 		return getLanguageKeys(languageCode, null);
 	}
 
-	public List<LanguageKey> getLanguageKeys(String languageCode, String countryCode) {
+	/**
+	 * Returns the language keys of a language and country. Only a user with access to the
+	 * Languages or the Locales portlet can read them, checked by
+	 * {@link LanguageKeysAccess#requireLanguagesOrLocalesPortlet} as for {@link #saveKeys}.
+	 *
+	 * @param languageCode the language code, for example {@code en}
+	 * @param countryCode  the country code, for example {@code US}, or {@code null} for the
+	 *                     general keys
+	 * @return the language keys
+	 * @throws DotSecurityException if nobody is logged in, or the logged-in user has access to
+	 *                              neither the Languages nor the Locales portlet
+	 * @throws DotDataException     if the user's portlets cannot be loaded
+	 * @throws PortalException      if the logged-in user cannot be resolved
+	 * @throws SystemException      if the logged-in user cannot be resolved
+	 */
+	public List<LanguageKey> getLanguageKeys(String languageCode, String countryCode)
+			throws DotSecurityException, DotDataException, PortalException, SystemException {
+		LanguageKeysAccess.requireLanguagesOrLocalesPortlet(DwrUtil.getLoggedInUser());
 		return langAPI.getLanguageKeys(languageCode, countryCode);
 	}
 
-	public List<Map<String,Object>> getPaginatedLanguageKeys(String languageCode,int page) {
+	/**
+	 * Returns one page of the general language keys of a language. Same access rule as
+	 * {@link #getPaginatedLanguageKeys(String, String, int, String)}.
+	 *
+	 * @param languageCode the language code, for example {@code en}
+	 * @param page         the page number, starting at 1
+	 * @return the counters row followed by the keys of the page
+	 * @throws DotSecurityException if nobody is logged in, or the logged-in user has access to
+	 *                              neither the Languages nor the Locales portlet
+	 * @throws DotDataException     if the user's portlets cannot be loaded
+	 * @throws PortalException      if the logged-in user cannot be resolved
+	 * @throws SystemException      if the logged-in user cannot be resolved
+	 */
+	public List<Map<String,Object>> getPaginatedLanguageKeys(String languageCode,int page)
+			throws DotSecurityException, DotDataException, PortalException, SystemException {
 		return getPaginatedLanguageKeys(languageCode, null,page,"");
 	}
 
@@ -56,7 +103,28 @@ public class LanguageAjax {
 	    return filtered;
  	}
 
-	public List<Map<String,Object>> getPaginatedLanguageKeys(String languageCode, String countryCode,int page,String filter) {
+	/**
+	 * Returns one page of the language keys of a language and country, as shown by the language
+	 * keys page: the first row holds the counters, the others one key each with its general and
+	 * country values. Only a user with access to the Languages or the Locales portlet can read
+	 * them, checked by {@link LanguageKeysAccess#requireLanguagesOrLocalesPortlet} as for
+	 * {@link #saveKeys}.
+	 *
+	 * @param languageCode the language code, for example {@code en}
+	 * @param countryCode  the country code, for example {@code US}
+	 * @param page         the page number, starting at 1
+	 * @param filter       text the key or one of its values must contain, or empty for all keys
+	 * @return the counters row followed by the keys of the page
+	 * @throws DotSecurityException if nobody is logged in, or the logged-in user has access to
+	 *                              neither the Languages nor the Locales portlet
+	 * @throws DotDataException     if the user's portlets cannot be loaded
+	 * @throws PortalException      if the logged-in user cannot be resolved
+	 * @throws SystemException      if the logged-in user cannot be resolved
+	 */
+	public List<Map<String,Object>> getPaginatedLanguageKeys(String languageCode, String countryCode,int page,String filter)
+			throws DotSecurityException, DotDataException, PortalException, SystemException {
+
+		LanguageKeysAccess.requireLanguagesOrLocalesPortlet(DwrUtil.getLoggedInUser());
 
 		int keysPerPage = 50;
 		int keyIndex = 1;
@@ -133,7 +201,29 @@ public class LanguageAjax {
 		return result;
 	}
 
-	public String saveKeys(String languageCode,String countryCode,List<String> keysToAdd,List<String> keysToUpdate,List<String> keysToDelete){
+	/**
+	 * Adds, updates and deletes language keys of one language, as sent by the language keys
+	 * page. Only a user with access to the Languages or the Locales portlet can save keys, checked
+	 * by {@link LanguageKeysAccess#requireLanguagesOrLocalesPortlet} before anything is read
+	 * or saved.
+	 *
+	 * @param languageCode the language code, for example {@code en}
+	 * @param countryCode  the country code, for example {@code US}
+	 * @param keysToAdd    new keys, each as key, general value and specific value joined by the
+	 *                     form separator
+	 * @param keysToUpdate changed keys, in the same format as {@code keysToAdd}
+	 * @param keysToDelete names of the keys to delete
+	 * @return the confirmation message shown on the page
+	 * @throws DotSecurityException if nobody is logged in, or the logged-in user has access to
+	 *                              neither the Languages nor the Locales portlet
+	 * @throws DotDataException     if the user's portlets cannot be loaded
+	 * @throws PortalException      if the logged-in user cannot be resolved
+	 * @throws SystemException      if the logged-in user cannot be resolved
+	 */
+	public String saveKeys(String languageCode,String countryCode,List<String> keysToAdd,List<String> keysToUpdate,List<String> keysToDelete)
+			throws DotSecurityException, DotDataException, PortalException, SystemException {
+
+		LanguageKeysAccess.requireLanguagesOrLocalesPortlet(DwrUtil.getLoggedInUser());
 
 		Map<String, String> generalKeysToAdd = new HashMap<>();
 		Map<String, String> specificKeysToAdd  = new HashMap<>();

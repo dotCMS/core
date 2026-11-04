@@ -34,16 +34,23 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.spi.FileSystemProvider;
+import java.security.Principal;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.servlet.AsyncContext;
+import javax.servlet.RequestDispatcher;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletRequestWrapper;
+import javax.servlet.ServletResponse;
 import javax.servlet.ServletResponseWrapper;
 import javax.servlet.http.HttpSession;
+import javax.servlet.http.Part;
+import javax.servlet.http.PushBuilder;
 
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
@@ -104,6 +111,10 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
     /**
      * Determine which methods and classes to prevent from executing.  Always blocks
      * methods wait() and notify().  Always allows methods on Number, Boolean, and String.
+     * Blocks getRequest() on servlet request wrappers and getResponse() on servlet response
+     * wrappers, write() and delete() on uploaded parts, setLocked() on the container's parameter
+     * map, and every method on the container's own request, response, session, context,
+     * dispatcher, async, push and principal objects.
      * Prohibits method calls on classes related to reflection and system operations.
      * For the complete list, see the properties <code>introspector.restrict.classes</code>
      * and <code>introspector.restrict.packages</code>.
@@ -163,6 +174,16 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
             return false;
         }
 
+        if (isWrapperUnwrap(clazz, methodName))
+        {
+            return false;
+        }
+
+        if (isRequestValueMutator(clazz, methodName))
+        {
+            return false;
+        }
+
         /**
          * Extend restricted-class coverage to the file, IO and network-resource type families.
          * These are matched by type hierarchy so that concrete platform implementations (for
@@ -186,10 +207,19 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
         }
 
         /**
-         * Templates work with the request, response and session handed to them; they may not
-         * unwrap those to the underlying container objects or reach the servlet context.
+         * The servlet container's own request, response, session, context, dispatcher, async,
+         * push and principal objects. Templates only ever work with these through dotCMS wrappers.
          */
-        if (isRestrictedContainerAccessor(clazz, methodName))
+        if (isContainerObject(clazz))
+        {
+            return false;
+        }
+
+        /**
+         * No request or session object, including the dotCMS wrappers, may hand a template the
+         * servlet context or an async context.
+         */
+        if (isRestrictedContextAccessor(clazz, methodName))
         {
             return false;
         }
@@ -391,6 +421,86 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
             "javax.el.ExpressionFactory"
     );
 
+    /** Package of the servlet container's classes. */
+    private static final String CONTAINER_PACKAGE_PREFIX = "org.apache.catalina.";
+
+    /** The container's request parameter map; matched by name so Tomcat stays optional at runtime. */
+    private static final String CONTAINER_PARAMETER_MAP = "org.apache.catalina.util.ParameterMap";
+
+    /**
+     * Servlet API types whose container implementations hold or hand back the container's own
+     * request, response, session or dispatch state. {@link Principal} covers the container's
+     * principal, which can carry credentials.
+     */
+    private static final Class<?>[] CONTAINER_OBJECT_TYPES = {
+            ServletRequest.class, ServletResponse.class, HttpSession.class, ServletContext.class,
+            AsyncContext.class, RequestDispatcher.class, PushBuilder.class, Principal.class
+    };
+
+    /**
+     * Determines whether the given class is one of the servlet container's own request, response,
+     * session, context, dispatcher, async, push or principal implementations. Other container
+     * classes a template reaches through the wrapped request, such as the parameter map or an
+     * uploaded part, are value objects and are not matched here.
+     *
+     * @param clazz class a method is about to be resolved on
+     * @return {@code true} if the class is a container class implementing one of
+     *         {@link #CONTAINER_OBJECT_TYPES} (deny), {@code false} otherwise
+     */
+    static boolean isContainerObject(final Class<?> clazz)
+    {
+        if (clazz == null || !clazz.getName().startsWith(CONTAINER_PACKAGE_PREFIX))
+        {
+            return false;
+        }
+
+        for (final Class<?> type : CONTAINER_OBJECT_TYPES)
+        {
+            if (type.isAssignableFrom(clazz))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Determines whether the call is a servlet API unwrap accessor. Templates receive the request
+     * and response through dotCMS wrappers, which decide what a template may read or change.
+     * Unwrapping one would hand the template the object underneath (the container's own request,
+     * or another wrapper that writes straight through to it), so these accessors are refused. Java
+     * code is unaffected and keeps unwrapping normally, for example when a RequestDispatcher
+     * includes or forwards.
+     *
+     * @param clazz      class the method is about to be resolved on
+     * @param methodName name of the method
+     * @return {@code true} for {@code getRequest} on a {@link ServletRequestWrapper} or
+     *         {@code getResponse} on a {@link ServletResponseWrapper} (deny), {@code false} otherwise
+     */
+    static boolean isWrapperUnwrap(final Class<?> clazz, final String methodName)
+    {
+        return ("getRequest".equals(methodName) && ServletRequestWrapper.class.isAssignableFrom(clazz))
+                || ("getResponse".equals(methodName) && ServletResponseWrapper.class.isAssignableFrom(clazz));
+    }
+
+    /**
+     * Determines whether the call would change an object a template can read through the wrapped
+     * request but must not change: an uploaded part may not be written to a file or deleted, and
+     * the container's parameter map stays locked against changes. Their read methods stay
+     * available.
+     *
+     * @param clazz      class the method is about to be resolved on
+     * @param methodName name of the method
+     * @return {@code true} for {@code write} or {@code delete} on a {@link Part}, or
+     *         {@code setLocked} on the container's parameter map (deny), {@code false} otherwise
+     */
+    static boolean isRequestValueMutator(final Class<?> clazz, final String methodName)
+    {
+        return (("write".equals(methodName) || "delete".equals(methodName)) && Part.class.isAssignableFrom(clazz))
+                || ("setLocked".equals(methodName) && CONTAINER_PARAMETER_MAP.equals(clazz.getName()));
+    }
+
     /**
      * Determines whether method execution on the given class is restricted because it is a
      * servlet-container internal, an embedded script interpreter, or an alternate reflection,
@@ -440,40 +550,30 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
     }
 
     /**
-     * Methods on request and session objects that hand back the underlying container objects:
-     * the wrapped request or response, the servlet context, and the async context (which
-     * exposes the original request).
+     * Methods on request and session objects that hand back the servlet context or an async
+     * context (which exposes the original request and response).
      */
-    private static final Set<String> RESTRICTED_CONTAINER_ACCESSORS = Set.of(
+    private static final Set<String> RESTRICTED_CONTEXT_ACCESSORS = Set.of(
             "getServletContext", "getSessionContext", "getAsyncContext", "startAsync"
     );
 
     /**
-     * Determines whether the call would unwrap a request, response or session to the
-     * underlying container object, or reach the servlet context through it.
+     * Determines whether the call would reach the servlet context or an async context through a
+     * request or session object. This covers the dotCMS wrappers as well as any other request or
+     * session implementation, so it does not depend on which object a template was handed.
      *
      * @param clazz class a method is about to be resolved on
      * @param methodName name of the method to be called
      * @return {@code true} if the call is restricted (deny), {@code false} otherwise
      */
-    private static boolean isRestrictedContainerAccessor(final Class<?> clazz, final String methodName)
+    private static boolean isRestrictedContextAccessor(final Class<?> clazz, final String methodName)
     {
         if (clazz == null || methodName == null)
         {
             return false;
         }
 
-        if (ServletRequestWrapper.class.isAssignableFrom(clazz) && "getRequest".equals(methodName))
-        {
-            return true;
-        }
-
-        if (ServletResponseWrapper.class.isAssignableFrom(clazz) && "getResponse".equals(methodName))
-        {
-            return true;
-        }
-
         return (ServletRequest.class.isAssignableFrom(clazz) || HttpSession.class.isAssignableFrom(clazz))
-                && RESTRICTED_CONTAINER_ACCESSORS.contains(methodName);
+                && RESTRICTED_CONTEXT_ACCESSORS.contains(methodName);
     }
 }

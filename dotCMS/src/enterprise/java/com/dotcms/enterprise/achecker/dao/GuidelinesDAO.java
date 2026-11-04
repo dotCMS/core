@@ -12,8 +12,7 @@ package com.dotcms.enterprise.achecker.dao;
 
 import java.sql.SQLException;
 import java.util.List;
-
-import org.apache.commons.logging.Log;
+import java.util.Locale;
 
 import com.dotcms.enterprise.achecker.model.GuideLineBean;
 import com.dotcms.enterprise.achecker.utility.Constants;
@@ -30,10 +29,18 @@ import com.dotcms.enterprise.achecker.dao.BaseDAO;
 
 public class GuidelinesDAO extends BaseDAO {
 
-	private static final Log LOG = org.apache.commons.logging.LogFactory.getLog( GuidelinesDAO.class);
-
 	public GuidelinesDAO() throws InstantiationException, IllegalAccessException, ClassNotFoundException, SQLException {
 		super();
+	}
+
+	/**
+	 * Creates a DAO that runs its queries through the given {@link DAO}. Mainly for tests, where
+	 * the {@link DAO} can point at a throw-away database.
+	 *
+	 * @param dao the {@link DAO} that runs the queries
+	 */
+	public GuidelinesDAO(final DAO dao) {
+		super(dao);
 	}
 
 
@@ -53,16 +60,16 @@ public class GuidelinesDAO extends BaseDAO {
 	}
 
 	/**
-	* Return guideline info by given guideline abbreviation
-	* @access  public
-	* @param   $abbr : guideline abbreviation
-	* @return  table rows
-	* @author  Cindy Qi Li
-	 * @throws SQLException 
-	*/
+	 * Finds the guideline whose abbreviation is exactly the given one (letter case included).
+	 *
+	 * @param abbr the guideline abbreviation, for example {@code WCAG2-AA}; sent to the database
+	 *             as a bound value
+	 * @return the matching guideline, or {@code null} when there is none
+	 * @throws Exception if the query fails
+	 */
 	public  GuideLineBean  getGuidelineByAbbr(String abbr) throws  Exception {
-		String sql = "select * from " + tablePrefix + "guidelines where abbr = '" + abbr + "'";
-		return executeOne(GuideLineBean.class, sql);
+		String sql = "select * from " + tablePrefix + "guidelines where abbr = ?";
+		return executeOne(GuideLineBean.class, sql, abbr);
   	}
 
   	/**
@@ -131,28 +138,32 @@ public class GuidelinesDAO extends BaseDAO {
 	    return execute(GuideLineBean.class, sql);
   	}
 
-  	/**
-	* Return rows by guideline title
-	* @access  public
-	* @param   $title
-	*          $ignoreCase: 1: ignore case; 0: don't ignore; set to 1 by default
-	* @return  table rows
-	* @author  Cindy Qi Li
-  	 * @throws SQLException 
-	*/
+	/**
+	 * Finds the guideline with the given abbreviation. When several rows match, the first one in
+	 * abbreviation order is returned.
+	 *
+	 * @param abbr the guideline abbreviation, for example {@code WCAG2-AA}; sent to the database
+	 *             as a bound value
+	 * @param ignoreCase {@code true} to match regardless of letter case (both sides are compared
+	 *                   in lower case), {@code false} to require an exact match
+	 * @return the matching guideline, or {@code null} when there is none
+	 * @throws Exception if the query fails
+	 */
 	public   GuideLineBean  getEnabledGuidelinesByAbbr(String abbr, boolean ignoreCase) throws  Exception {
-		
-		String sqlAbbr = "abbr = '" + abbr + "'";
+
+		String sqlAbbr = "abbr = ?";
+		String boundAbbr = abbr;
 		if (ignoreCase) {
-			sqlAbbr = "lower(abbr) = '" + abbr.toLowerCase() + "'";
+			sqlAbbr = "lower(abbr) = ?";
+			boundAbbr = abbr.toLowerCase(Locale.ROOT);
 		}
 		String sql = "select *";
 		sql += "		from " + tablePrefix + "guidelines";
 		sql += "		where " + sqlAbbr;
 		sql += "		order by abbr";
 
-	    return executeOne(GuideLineBean.class, sql);
-	    
+	    return executeOne(GuideLineBean.class, sql, boundAbbr);
+
   	}
 
   	/**
@@ -208,8 +219,16 @@ public class GuidelinesDAO extends BaseDAO {
 
     	return execute(GuideLineBean.class, sql);
   	}
-	// Simo: aggiunto per vedere quali check hanno il tag img, per il controllo visivo delle immagini
-	// Restituisce una stringa con tutti gli id dei check, separati da virgola, che riguardano la guideline e l'elemento specificato
+	/**
+	 * Lists the checks of a guideline that apply to a given HTML element, for example the checks
+	 * that look at {@code img} elements.
+	 *
+	 * @param tag the HTML element name, for example {@code img}; sent to the database as a bound
+	 *            value
+	 * @param guideline the guideline id
+	 * @return one entry per matching check, holding only the check id and its HTML element
+	 * @throws Exception if the query fails
+	 */
 	public List<GuideLineBean> getCheckByTagAndGuideline(String tag, Long guideline) throws Exception
 	{
 		String sql = "select distinct c.check_id,c.html_tag";
@@ -218,17 +237,17 @@ public class GuidelinesDAO extends BaseDAO {
 		sql += "			     " + tablePrefix + "guideline_subgroups gs, ";
 		sql += "			     " + tablePrefix + "subgroup_checks gc,";
 		sql += "			     " + tablePrefix + "checks c";
-		sql += "			where g.guideline_id = '" + guideline + "'";
+		sql += "			where g.guideline_id = ?";
 		sql += "			  and g.guideline_id = gg.guideline_id";
 		sql += "			  and gg.group_id = gs.group_id";
 		sql += "			  and gs.subgroup_id = gc.subgroup_id";
 		sql += "			  and gc.check_id = c.check_id";
-		sql += "			  and c.html_tag = '" + tag  + "'";
+		sql += "			  and c.html_tag = ?";
 		sql += "			order by c.html_tag";
 					
 		// $check = ",";
 		
-		return execute(GuideLineBean.class, sql);
+		return execute(GuideLineBean.class, sql, guideline, tag);
 	}
 
   	/**

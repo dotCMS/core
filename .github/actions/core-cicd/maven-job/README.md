@@ -23,9 +23,9 @@ This GitHub Action sets up and runs a Maven job with extensive configuration opt
 | `needs-history` | Runner needs the full git history | Yes | `false` |
 | `requires-node` | Job requires Node.js | Yes | `true` |
 | `cache-sonar` | Cache the SonarQube files | No | `false` |
-| `require-main` | Require the main tag to run this action | Yes | `false` |
 | `dotcms-license` | The license key for dotCMS | No | `''` |
 | `artifacts-from` | Download artifacts from a previous job | No | `''` |
+| `needs-maven-repo` | Restore the dependency cache and download the `maven-repo` artifact (the dotCMS build). Turn off for suites that depend on none of it (Postman, Karate, E2E); they get a small plugin cache instead | No | `true` |
 | `github-token` | GitHub token for authentication | Yes | - |
 | `restore-classes` | Restore build classes | No | `false` |
 | `stage-name` | Stage name for the build | Yes | - |
@@ -36,6 +36,7 @@ This GitHub Action sets up and runs a Maven job with extensive configuration opt
 | `java-version` | The version of Java to install | No | - |
 | `graalvm-version` | Override the sdkman version of GraalVM to install | No | - |
 | `require-graalvm` | Require GraalVM to be installed | Yes | `false` |
+| `pre-pull-images` | Space-separated `docker.image.*` names from `environments/environment.properties` to pull, with retries and fallbacks (Docker Hub, then Amazon's public gallery for OpenSearch) for `mirror.gcr.io` images, before Maven runs | No | `''` |
 
 ## Usage
 

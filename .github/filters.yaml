@@ -4,9 +4,25 @@ full_build_test: &full_build_test
   - '.nvmrc'
 
 backend: &backend
-  - '.github/workflows/cicd_comp_*.yml'
+  # CI files that run or configure the PR / merge-queue test suites, listed one by one.
+  # Release, deploy, labeling and notification workflows are left out on purpose: changing
+  # them must not trigger the full test suite. If a workflow or action is added to the test
+  # pipeline (called from the initialize/build/test/finalize phases), list it here, or
+  # changes to it will run no tests.
   - '.github/workflows/cicd_1-pr.yml'
-  - '.github/actions/core-cicd/**/action.yml'
+  - '.github/workflows/cicd_2-merge-queue.yml'
+  - '.github/workflows/cicd_comp_initialize-phase.yml'
+  - '.github/workflows/cicd_comp_build-phase.yml'
+  - '.github/workflows/cicd_comp_test-phase.yml'
+  - '.github/workflows/cicd_comp_finalize-phase.yml'
+  - '.github/actions/core-cicd/maven-job/**'
+  - '.github/actions/core-cicd/build-cache-remote/**'
+  - '.github/actions/core-cicd/prepare-runner/**'
+  - '.github/actions/core-cicd/setup-java/**'
+  - '.github/actions/core-cicd/setup-pnpm/**'
+  - '.github/actions/core-cicd/cleanup-runner/**'
+  - '.github/test-matrix.yml'
+  - '.github/filters.yaml'
   - 'bom/**'
   - 'build-parent/**'
   - 'core-web/pom.xml'

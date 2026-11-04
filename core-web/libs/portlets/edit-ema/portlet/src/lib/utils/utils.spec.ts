@@ -1,8 +1,15 @@
 import { CurrentUser } from '@dotcms/dotcms-js';
-import { DotContainer, DotDevice, DotExperiment, DotExperimentStatus } from '@dotcms/dotcms-models';
+import {
+    DotContainer,
+    DotDevice,
+    DotExperiment,
+    DotExperimentStatus,
+    EXPERIMENT_RETURN_PARAM
+} from '@dotcms/dotcms-models';
 import {
     DotCMSPage,
     DotCMSPageAssetContainers,
+    DotCMSURLContentMap,
     DotCMSViewAsPersona,
     UVE_MODE
 } from '@dotcms/types';
@@ -25,6 +32,7 @@ import {
     compareUrlPaths,
     createFullURL,
     getDragItemData,
+    getLanguageChangePageParams,
     createReorderMenuURL,
     getRequestHostName,
     getOrientation,
@@ -34,13 +42,19 @@ import {
     isSamePageNavigation,
     isAssetPath,
     isNavigableHref,
+    isPageSiteHost,
+    getPageOwnedParamKeys,
     resolveClickedAnchor,
     scrollIframeToFragment
 } from '.';
 
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { dotPageContainerStructureMock } from '../shared/mocks';
-import { ContentletDragPayload, ContentTypeDragPayload } from '../shared/models';
+import {
+    ContentletDragPayload,
+    ContentTypeDragPayload,
+    DotPageAssetParams
+} from '../shared/models';
 import { Orientation } from '../store/models';
 
 const generatePageAndUser = ({ locked, lockedBy, userId }) => ({
@@ -1182,6 +1196,62 @@ describe('utils functions', () => {
         });
     });
 
+    describe('getLanguageChangePageParams', () => {
+        const origin = 'http://localhost:8080';
+
+        it('should return the new URL and language when the referer points at another page', () => {
+            expect(
+                getLanguageChangePageParams('/new-url-here?com.dotmarketing.htmlpage.language=1', {
+                    origin,
+                    urlContentMap: undefined,
+                    currentUrl: 'index'
+                })
+            ).toEqual({ url: '/new-url-here', language_id: '1' });
+        });
+
+        it('should return only the language when the referer points at the current page', () => {
+            expect(
+                getLanguageChangePageParams('/test-url?com.dotmarketing.htmlpage.language=2', {
+                    origin,
+                    urlContentMap: undefined,
+                    currentUrl: 'test-url'
+                })
+            ).toEqual({ language_id: '2' });
+        });
+
+        it("should compare against a URL-mapped page's own URL instead of the referer path", () => {
+            // The referer of a URL-mapped page is its detail page, not the URL the editor shows.
+            const urlContentMap = { URL_MAP_FOR_CONTENT: '/blog/post-1' } as DotCMSURLContentMap;
+
+            expect(
+                getLanguageChangePageParams('/blog/detail?com.dotmarketing.htmlpage.language=2', {
+                    origin,
+                    urlContentMap,
+                    currentUrl: '/blog/post-1'
+                })
+            ).toEqual({ language_id: '2' });
+        });
+
+        it('should read the path of an absolute referer', () => {
+            expect(
+                getLanguageChangePageParams(
+                    'http://another-host/new-url?com.dotmarketing.htmlpage.language=3',
+                    { origin, urlContentMap: undefined, currentUrl: 'index' }
+                )
+            ).toEqual({ url: '/new-url', language_id: '3' });
+        });
+
+        it('should leave the language unset when the referer carries none', () => {
+            expect(
+                getLanguageChangePageParams('/test-url', {
+                    origin,
+                    urlContentMap: undefined,
+                    currentUrl: 'test-url'
+                }).language_id
+            ).toBeUndefined();
+        });
+    });
+
     describe('scrollIframeToFragment', () => {
         let doc: Document;
         let win: Window;
@@ -1434,6 +1504,87 @@ describe('utils functions', () => {
                     false
                 );
             });
+        });
+    });
+
+    describe('isPageSiteHost', () => {
+        const ADMIN_HOSTNAME = 'localhost';
+        const site = { hostname: 'www.site.com', aliases: 'site.com\nalias.site.com' };
+
+        it('should accept the admin host', () => {
+            expect(isPageSiteHost('localhost', site, ADMIN_HOSTNAME)).toBe(true);
+        });
+
+        it('should accept the site hostname', () => {
+            expect(isPageSiteHost('www.site.com', site, ADMIN_HOSTNAME)).toBe(true);
+        });
+
+        it.each(['site.com', 'alias.site.com'])('should accept the site alias %s', (hostname) => {
+            expect(isPageSiteHost(hostname, site, ADMIN_HOSTNAME)).toBe(true);
+        });
+
+        it('should accept aliases separated by commas', () => {
+            const commaSite = { hostname: 'www.site.com', aliases: 'site.com, alias.site.com' };
+
+            expect(isPageSiteHost('alias.site.com', commaSite, ADMIN_HOSTNAME)).toBe(true);
+        });
+
+        it('should ignore the case of the hostname', () => {
+            expect(isPageSiteHost('WWW.Site.COM', site, ADMIN_HOSTNAME)).toBe(true);
+        });
+
+        it('should reject another site', () => {
+            expect(isPageSiteHost('other-site.com', site, ADMIN_HOSTNAME)).toBe(false);
+        });
+
+        // An empty alias list splits into blanks, and a link with no hostname must not match them.
+        it('should reject an empty hostname when the site has no aliases', () => {
+            const siteWithoutAliases = { hostname: 'www.site.com', aliases: '' };
+
+            expect(isPageSiteHost('', siteWithoutAliases, ADMIN_HOSTNAME)).toBe(false);
+        });
+
+        it('should accept only the admin host when the page has no site', () => {
+            expect(isPageSiteHost('localhost', undefined, ADMIN_HOSTNAME)).toBe(true);
+            expect(isPageSiteHost('www.site.com', undefined, ADMIN_HOSTNAME)).toBe(false);
+        });
+    });
+
+    describe('getPageOwnedParamKeys', () => {
+        it('should return the params a page link added', () => {
+            const pageParams: DotPageAssetParams = {
+                url: '/news',
+                language_id: '1',
+                [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
+                anno_pubblicazione: '2025',
+                category: 'sports'
+            };
+
+            expect(getPageOwnedParamKeys(pageParams)).toEqual(['anno_pubblicazione', 'category']);
+        });
+
+        it('should leave out the params the editor owns', () => {
+            const pageParams: DotPageAssetParams = {
+                url: '/news',
+                mode: UVE_MODE.EDIT,
+                depth: '1',
+                clientHost: 'http://localhost:3000',
+                variantName: 'DEFAULT',
+                language_id: '1',
+                experimentId: 'experiment-1',
+                [PERSONA_KEY]: DEFAULT_PERSONA.identifier,
+                publishDate: '2025-01-01',
+                [EXPERIMENT_RETURN_PARAM]: 'true',
+                device: 'mobile',
+                orientation: Orientation.PORTRAIT,
+                seo: 'facebook'
+            };
+
+            expect(getPageOwnedParamKeys(pageParams)).toEqual([]);
+        });
+
+        it('should return no keys before the page has params', () => {
+            expect(getPageOwnedParamKeys(null)).toEqual([]);
         });
     });
 

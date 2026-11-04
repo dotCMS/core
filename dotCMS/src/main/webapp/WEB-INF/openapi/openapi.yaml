@@ -724,10 +724,12 @@ paths:
     put:
       deprecated: true
       description: "Checks whether the current user can lock a contentlet identified\
-        \ by inode or identifier. Returns lock capability information including current\
-        \ lock status and lock owner details. Parameters are passed as semicolon-delimited\
-        \ path segments (e.g., id:abc123/language:1). This endpoint is deprecated\
-        \ - use the v1 ContentResource canLockContent endpoint instead."
+        \ by inode or identifier. Returns whether it can be locked and whether it\
+        \ is locked; when locked, the lock date, and for back-end users also the lock\
+        \ owner's user id (lockedBy) and full name (lockedByName). Parameters are\
+        \ passed as semicolon-delimited path segments (e.g., id:abc123/language:1).\
+        \ This endpoint is deprecated - use the v1 ContentResource canLockContent\
+        \ endpoint instead."
       operationId: canLockContentLegacy
       parameters:
       - description: "Semicolon-delimited parameters (e.g., inode:abc123/language:1/live:true)"
@@ -762,8 +764,9 @@ paths:
       - Content Delivery
   /content/indexcount/{query}:
     get:
-      description: Performs an index count using the specified Lucene query and returns
-        the total number of matching contentlets as a plain text string.
+      description: "Performs an index count using the specified Lucene query and returns,\
+        \ as a plain text string, the total number of matching contentlets that the\
+        \ calling user is allowed to read."
       operationId: indexCountContent
       parameters:
       - description: Lucene query string to count matching content
@@ -788,7 +791,8 @@ paths:
             text/plain:
               schema:
                 type: string
-                description: The count of contentlets matching the query
+                description: The count of contentlets matching the query that the
+                  calling user is allowed to read
           description: Count of matching contentlets returned successfully
         "400":
           content:
@@ -3503,9 +3507,11 @@ paths:
   /v1/analytics/content/event:
     post:
       description: "Validates the site_auth field in the JSON body via SiteAuthValidator,\
-        \ resolves the active site, injects site_id into context, and asynchronously\
-        \ forwards the body to {DOT_ANALYTICS_BASE_URL}/v1/event/ingest. The dotCMS-side\
-        \ path is a fixed match; the upstream sub-path is not caller-controllable."
+        \ resolves the active site, adds site_id to context, cleans each event's page\
+        \ and link URL fields (allowlisted query parameters only, no user info or\
+        \ session ids; events with a malformed data or page object are dropped), and\
+        \ asynchronously forwards the body to {DOT_ANALYTICS_BASE_URL}/v1/event/ingest.\
+        \ The dotCMS-side path is a fixed match; the upstream sub-path is not caller-controllable."
       operationId: proxyAnalyticsEventRequest
       requestBody:
         content:
@@ -3923,46 +3929,6 @@ paths:
         "500":
           description: Unexpected server error
       summary: Deletes an API token
-      tags:
-      - API Token
-  /v1/apitoken/{tokenId}/jwt:
-    get:
-      description: Returns a JSON web token. This overwrites the JWT value associated
-        with the specified token object.
-      operationId: getJwtFromApiTokenV1
-      parameters:
-      - description: Identifier of API token to receive a new JWT.
-        in: path
-        name: tokenId
-        required: true
-        schema:
-          type: string
-      responses:
-        "200":
-          content:
-            application/json:
-              example:
-                entity:
-                  jwt: string
-                errors: []
-                i18nMessagesMap: {}
-                messages: []
-                pagination: null
-                permissions: []
-              schema:
-                $ref: "#/components/schemas/ResponseEntityJwtView"
-          description: JSON web token successfully created
-        "400":
-          description: Bad request
-        "401":
-          description: Invalid user
-        "403":
-          description: Forbidden
-        "404":
-          description: Token not found
-        "500":
-          description: Unexpected server error
-      summary: Generates a new JWT for an existing token
       tags:
       - API Token
   /v1/apitoken/{tokenId}/revoke:
@@ -4935,9 +4901,7 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityListStringView"
           description: Cache regions retrieved successfully
         "401":
-          description: Unauthorized - authentication required
-        "403":
-          description: Forbidden - requires maintenance portlet access
+          description: Unauthorized - requires a logged-in CMS Administrator
       summary: List cache region names
       tags:
       - Cache Management
@@ -4952,6 +4916,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityStringView"
           description: Action(s) returned successfully
+        "401":
+          description: Unauthorized - requires a logged-in CMS Administrator
         "500":
           description: General Error
       summary: Deletes the menu cache
@@ -4974,9 +4940,7 @@ paths:
         "200":
           description: All caches flushed successfully
         "401":
-          description: Unauthorized - authentication required
-        "403":
-          description: Forbidden - requires maintenance portlet access
+          description: Unauthorized - requires a logged-in CMS Administrator
       summary: Flush all caches
       tags:
       - Cache Management
@@ -5180,9 +5144,7 @@ paths:
         "400":
           description: Bad request - unknown cache region name
         "401":
-          description: Unauthorized - authentication required
-        "403":
-          description: Forbidden - requires maintenance portlet access
+          description: Unauthorized - requires a logged-in CMS Administrator
       summary: Flush a cache region
       tags:
       - Cache Management
@@ -5199,9 +5161,7 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityCacheStatsView"
           description: Cache statistics retrieved successfully
         "401":
-          description: Unauthorized - authentication required
-        "403":
-          description: Forbidden - requires maintenance portlet access
+          description: Unauthorized - requires a logged-in CMS Administrator
       summary: Get cache statistics
       tags:
       - Cache Management
@@ -5608,6 +5568,37 @@ paths:
       summary: Reset user password
       tags:
       - Authentication
+  /v1/cluster/nodes:
+    get:
+      description: "Lists the servers with a recent heartbeat, in database order,\
+        \ and asks every server for a status report with one cluster request. Each\
+        \ server has a status computed on the backend: UP when it answered and its\
+        \ heartbeat is fresh, LAGGING when only one of the two holds, DOWN when neither\
+        \ does or when it answered with a failed assets check (the legacy red). Servers\
+        \ that don't answer within the wait window are listed with responded=false\
+        \ and null sections. Requires a back-end user with the configuration or network-beta\
+        \ portlet, or a CMS Administrator. There is no license check."
+      operationId: getClusterNodes
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityClusterNodesView"
+          description: Servers listed
+        "401":
+          content:
+            application/json: {}
+          description: "No authenticated back-end user, or the caller holds neither\
+            \ the configuration nor the network-beta portlet and is not a CMS Administrator"
+        "500":
+          content:
+            application/json: {}
+          description: The cluster's servers could not be read from the database
+      summary: "List the cluster's servers with their status and cache, search and\
+        \ assets details"
+      tags:
+      - Cluster Management
   /v1/configuration:
     get:
       operationId: list_6
@@ -5879,7 +5870,8 @@ paths:
   /v1/containers:
     delete:
       description: Permanently deletes the specified container. The user must have
-        Edit permissions on the container.
+        Edit permissions on the container. A container that any template still uses
+        is not deleted (409).
       operationId: deleteContainer
       parameters:
       - description: Container identifier to delete
@@ -5902,6 +5894,8 @@ paths:
           description: Forbidden - User lacks edit permissions
         "404":
           description: Container not found
+        "409":
+          description: Conflict - The container is used by one or more templates
       summary: Deletes a container
       tags:
       - Containers
@@ -6104,7 +6098,8 @@ paths:
     delete:
       description: Deletes a list of containers by their identifiers. Returns a summary
         of successful and failed deletions. The user must have Edit permissions on
-        each container.
+        each container. A container that any template still uses is not deleted and
+        is reported as a failure.
       operationId: bulkDeleteContainers
       requestBody:
         content:
@@ -6407,11 +6402,59 @@ paths:
       summary: Removes content from a container
       tags:
       - Containers
+  /v1/containers/dependencies:
+    get:
+      description: "Returns, for each requested container, its data (inode, identifier,\
+        \ title; the working version when looked up by identifier or folder path)\
+        \ and the templates, readable by the requesting user, that use it. Repeat\
+        \ the containerId parameter to ask about several containers in one call (up\
+        \ to 100); the templates are searched once for all of them. A container's\
+        \ list is empty when no template uses it. Intended to be checked before deleting\
+        \ containers. Requires a back-end user. A template uses a container when it\
+        \ references it: a drawn template in its layout, an advanced template with\
+        \ a #parseContainer call, whether or not the container holds content. Archived\
+        \ templates and the hidden layouts that pages save for themselves count too."
+      operationId: getContainerDependencies
+      parameters:
+      - description: "Container identifier, inode or folder path; repeat the parameter\
+          \ for several containers"
+        in: query
+        name: containerId
+        required: true
+        schema:
+          type: array
+          items:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContainerDependenciesListView"
+          description: One entry per requested container with its data and the templates
+            that use it
+        "400":
+          description: "Bad request - A container ID is required, and no more than\
+            \ 100 are accepted"
+        "401":
+          description: Unauthorized - User not authenticated or not a back-end user
+        "403":
+          description: Forbidden - User lacks read permission on one of the containers
+        "404":
+          description: One of the containers was not found
+        "500":
+          description: Internal server error
+      summary: Lists the templates that use each of the given containers
+      tags:
+      - Containers
   /v1/containers/form/{formId}:
     get:
-      description: "Returns HTML content for a form rendered within the specified\
-        \ container. The container ID is passed as a query parameter, which is useful\
-        \ for file-asset containers where the container ID is a path."
+      description: "Returns the HTML of a form's widget rendered within the specified\
+        \ container, and the widget itself. The container ID is passed as a query\
+        \ parameter, which is useful for file-asset containers where the container\
+        \ ID is a path. Answers 404 when the form has no widget the user can read\
+        \ yet; the POST on the same path creates it. Requires a back-end user who\
+        \ can read the form."
       operationId: getContainerFormByQueryParam
       parameters:
       - description: Container identifier (UUID or file-asset path)
@@ -6433,14 +6476,56 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityContainerObjectMapView"
           description: Form rendered successfully
         "400":
-          description: Bad request - Invalid parameters
+          description: Bad request - The content type is not a form
+        "401":
+          description: Unauthorized - User not authenticated
+        "403":
+          description: Forbidden - User lacks required permissions
+        "404":
+          description: "Container, form or the form's widget not found"
+      summary: Renders a form with container ID as query param
+      tags:
+      - Containers
+    post:
+      description: "Returns the HTML of a form's widget rendered within the specified\
+        \ container, and the widget itself, creating and publishing the widget as\
+        \ the user when the form has none the user can read. The container ID is passed\
+        \ as a query parameter, which is useful for file-asset containers where the\
+        \ container ID is a path. Requires a back-end user who can read the form and,\
+        \ to create the widget, create and publish widget content."
+      operationId: createContainerFormByQueryParam
+      parameters:
+      - description: Container identifier (UUID or file-asset path)
+        in: query
+        name: containerId
+        schema:
+          type: string
+      - description: Form identifier
+        in: path
+        name: formId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContainerObjectMapView"
+          description: Form rendered successfully
+        "400":
+          description: Bad request - The content type is not a form
         "401":
           description: Unauthorized - User not authenticated
         "403":
           description: Forbidden - User lacks required permissions
         "404":
           description: Container or form not found
-      summary: Renders a form with container ID as query param
+        "409":
+          description: Conflict - The form's widget is being created by another request;
+            try again
+      summary: "Creates a form's widget and renders it, with container ID as query\
+        \ param"
       tags:
       - Containers
   /v1/containers/live:
@@ -6560,8 +6645,11 @@ paths:
       - Containers
   /v1/containers/{containerId}/form/{formId}:
     get:
-      description: Returns HTML content for a form rendered within the specified container.
-        This is used to display forms with container styling and layout.
+      description: "Returns the HTML of a form's widget rendered within the specified\
+        \ container, and the widget itself. This is used to display forms with container\
+        \ styling and layout. Answers 404 when the form has no widget the user can\
+        \ read yet; the POST on the same path creates it. Requires a back-end user\
+        \ who can read the form."
       operationId: containerForm
       parameters:
       - description: Container identifier (UUID or path)
@@ -6584,16 +6672,59 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityContainerObjectMapView"
           description: Form rendered successfully
         "400":
-          description: Bad request - Invalid container or form ID
+          description: Bad request - The content type is not a form
+        "401":
+          description: Unauthorized - User not authenticated
+        "403":
+          description: Forbidden - User lacks required permissions
+        "404":
+          description: "Container, form or the form's widget not found"
+        "500":
+          description: Internal server error
+      summary: Renders a form within a container
+      tags:
+      - Containers
+    post:
+      description: "Returns the HTML of a form's widget rendered within the specified\
+        \ container, and the widget itself, creating and publishing the widget as\
+        \ the user when the form has none the user can read. Requires a back-end user\
+        \ who can read the form and, to create the widget, create and publish widget\
+        \ content."
+      operationId: createContainerForm
+      parameters:
+      - description: Container identifier (UUID or path)
+        in: path
+        name: containerId
+        required: true
+        schema:
+          type: string
+      - description: Form identifier
+        in: path
+        name: formId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityContainerObjectMapView"
+          description: Form rendered successfully
+        "400":
+          description: Bad request - The content type is not a form
         "401":
           description: Unauthorized - User not authenticated
         "403":
           description: Forbidden - User lacks required permissions
         "404":
           description: Container or form not found
+        "409":
+          description: Conflict - The form's widget is being created by another request;
+            try again
         "500":
           description: Internal server error
-      summary: Renders a form within a container
+      summary: Creates a form's widget and renders it within a container
       tags:
       - Containers
   /v1/containers/{id}/_copy:
@@ -6660,8 +6791,10 @@ paths:
       - Content
   /v1/content/_canlock/{inodeOrIdentifier}:
     get:
-      description: Checks if the contentlet specified by its inode or identifier can
-        be locked by the current user.
+      description: "Checks if the contentlet specified by its inode or identifier\
+        \ can be locked by the current user, and whether it is locked. When locked,\
+        \ the response includes lockedOn; lockedBy (user id) and lockedByName (full\
+        \ name) are included for back-end users only."
       operationId: canLockContent
       parameters:
       - description: Contentlet inode or identifier
@@ -6772,8 +6905,10 @@ paths:
       - Content
   /v1/content/_import:
     get:
-      description: Fetches a paginated list of all content import jobs regardless
-        of state. Results can be paginated using query parameters.
+      description: "Fetches a paginated list of all content import jobs regardless\
+        \ of state. Returns only the jobs the caller created, or every job for CMS\
+        \ Administrators; the pagination total counts the same jobs. Results can be\
+        \ paginated using query parameters."
       operationId: getContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -6955,8 +7090,10 @@ paths:
       - Content
   /v1/content/_import/abandoned:
     get:
-      description: Fetches a paginated list of abandoned content import jobs (jobs
-        with state ABANDONED). Results can be paginated using query parameters.
+      description: "Fetches a paginated list of abandoned content import jobs (jobs\
+        \ with state ABANDONED). Returns only the jobs the caller created, or every\
+        \ job for CMS Administrators; the pagination total counts the same jobs. Results\
+        \ can be paginated using query parameters."
       operationId: getAbandonedContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -6996,8 +7133,9 @@ paths:
   /v1/content/_import/active:
     get:
       description: "Fetches a paginated list of active content import jobs (jobs with\
-        \ state NEW, PROCESSING, or WAITING). Results can be paginated using query\
-        \ parameters."
+        \ state NEW, PROCESSING, or WAITING). Returns only the jobs the caller created,\
+        \ or every job for CMS Administrators; the pagination total counts the same\
+        \ jobs. Results can be paginated using query parameters."
       operationId: getActiveContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -7036,8 +7174,10 @@ paths:
       - Content
   /v1/content/_import/canceled:
     get:
-      description: Fetches a paginated list of canceled content import jobs (jobs
-        with state CANCELED). Results can be paginated using query parameters.
+      description: "Fetches a paginated list of canceled content import jobs (jobs\
+        \ with state CANCELED). Returns only the jobs the caller created, or every\
+        \ job for CMS Administrators; the pagination total counts the same jobs. Results\
+        \ can be paginated using query parameters."
       operationId: getCanceledContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -7076,8 +7216,10 @@ paths:
       - Content
   /v1/content/_import/completed:
     get:
-      description: Fetches a paginated list of completed content import jobs (jobs
-        with state COMPLETED). Results can be paginated using query parameters.
+      description: "Fetches a paginated list of completed content import jobs (jobs\
+        \ with state COMPLETED). Returns only the jobs the caller created, or every\
+        \ job for CMS Administrators; the pagination total counts the same jobs. Results\
+        \ can be paginated using query parameters."
       operationId: getCompletedContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -7116,8 +7258,10 @@ paths:
       - Content
   /v1/content/_import/failed:
     get:
-      description: Fetches a paginated list of failed content import jobs (jobs with
-        state FAILED). Results can be paginated using query parameters.
+      description: "Fetches a paginated list of failed content import jobs (jobs with\
+        \ state FAILED). Returns only the jobs the caller created, or every job for\
+        \ CMS Administrators; the pagination total counts the same jobs. Results can\
+        \ be paginated using query parameters."
       operationId: getFailedContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -7156,9 +7300,10 @@ paths:
       - Content
   /v1/content/_import/successful:
     get:
-      description: Fetches a paginated list of successful content import jobs (jobs
-        with state COMPLETED and successful result). Results can be paginated using
-        query parameters.
+      description: "Fetches a paginated list of successful content import jobs (jobs\
+        \ with state COMPLETED and successful result). Returns only the jobs the caller\
+        \ created, or every job for CMS Administrators; the pagination total counts\
+        \ the same jobs. Results can be paginated using query parameters."
       operationId: getSuccessfulContentImportJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -7197,8 +7342,10 @@ paths:
       - Content
   /v1/content/_import/{jobId}:
     get:
-      description: Fetches the detailed current status of a specific content import
-        job identified by its ID.
+      description: "Fetches the detailed current status of a specific content import\
+        \ job identified by its ID. Only the user who created the job and CMS Administrators\
+        \ can read it. Parameters the server sets for uploaded files (tempFileId,\
+        \ requestFingerPrint) are not included."
       operationId: getJobStatus
       parameters:
       - description: The unique identifier (UUID) of the job whose status is to be
@@ -7224,7 +7371,8 @@ paths:
           description: "Forbidden: User does not have permissions to view the specified\
             \ job."
         "404":
-          description: "Not Found: Job with the specified ID could not be found."
+          description: "Not Found: No job with the specified ID exists, or the job\
+            \ was not created by the caller (CMS Administrators can read any job)."
         "500":
           description: "Internal Server Error: An unexpected error occurred while\
             \ retrieving the job status."
@@ -7236,6 +7384,7 @@ paths:
     post:
       description: Requests cancellation of a specific content import job identified
         by its ID. Note that cancellation is asynchronous and may not be immediate.
+        Only the user who created the job and CMS Administrators can cancel it.
       operationId: cancelContentImportJob
       parameters:
       - description: The unique identifier (UUID) of the job to be cancelled.
@@ -7266,8 +7415,8 @@ paths:
           description: "Forbidden: User does not have permissions to cancel the specified\
             \ job."
         "404":
-          description: "Not Found: Job with the specified ID could not be found or\
-            \ is already completed/cancelled."
+          description: "Not Found: No job with the specified ID exists, or the job\
+            \ was not created by the caller (CMS Administrators can cancel any job)."
         "500":
           description: "Internal Server Error: An unexpected error occurred while\
             \ attempting to cancel the job."
@@ -7280,11 +7429,11 @@ paths:
       description: "Establishes a Server-Sent Events (SSE) connection to monitor the\
         \ progress of a specific content import job in real-time. This endpoint will\
         \ continuously send updates as the job progresses, including status changes\
-        \ and completion information."
+        \ and completion information. Only the user who created the job and CMS Administrators\
+        \ can monitor it."
       operationId: monitorContentImportJobs
       parameters:
-      - description: The unique identifier (UUID) of the job whose status is to be
-          retrieved.
+      - description: The unique identifier (UUID) of the job to monitor.
         in: path
         name: jobId
         required: true
@@ -7298,15 +7447,15 @@ paths:
             text/event-stream:
               schema:
                 $ref: "#/components/schemas/EventOutput"
-          description: Server-Sent Events stream established successfully. Events
-            will be sent as the job progresses.
+          description: "Server-Sent Events stream established successfully. Events\
+            \ will be sent as the job progresses. If no job with the specified ID\
+            \ exists, or the caller may not monitor it, the stream sends a single\
+            \ job-not-found event with data 404 and closes."
         "401":
           description: "Unauthorized: Invalid or missing user authentication."
         "403":
           description: "Forbidden: User does not have permissions to monitor the specified\
             \ job."
-        "404":
-          description: "Not Found: Job with the specified ID could not be found."
         "500":
           description: "Internal Server Error: An unexpected error occurred while\
             \ establishing the monitoring connection."
@@ -8092,7 +8241,14 @@ paths:
                 type: object
                 description: Content with relationships in JSON format including contentlets
                   and their related content
-          description: Content with relationships retrieved successfully
+          description: "Content with relationships retrieved successfully. Related\
+            \ content the caller cannot read is not included, and an identifier or\
+            \ inode that matches no content returns an empty array"
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - the content or its related content could not
+            be loaded
         "401":
           content:
             application/json: {}
@@ -10476,6 +10632,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityEndpointsView"
           description: Collection of environments.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenException"
+          description: If the user is not an admin and has no access to the Configuration
+            portlet.
       summary: Returns the endpoints
       tags:
       - Environment
@@ -10525,6 +10688,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityEndpointsView"
           description: Collection of environments.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenException"
+          description: If the user is not an admin and has no access to the Configuration
+            portlet.
       summary: Returns the endpoints
       tags:
       - Environment
@@ -10544,6 +10714,13 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityEndpointView"
           description: Collection of environments.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ForbiddenException"
+          description: If the user is not an admin and has no access to the Configuration
+            portlet.
       summary: Returns the endpoint by id
       tags:
       - Environment
@@ -11687,8 +11864,8 @@ paths:
       - Folders
   /v1/forgotpassword:
     post:
-      description: Sends a password reset email to the specified user. Returns the
-        email address where the reset link was sent.
+      description: Sends a password reset email to the account matching the submitted
+        user ID or email address. Returns the submitted value.
       operationId: forgotPassword
       requestBody:
         content:
@@ -11703,12 +11880,13 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ResponseEntityForgotPasswordView"
-          description: Password reset email sent successfully
+          description: Request accepted. The entity is the submitted user ID or email
+            address
         "400":
           content:
             application/json: {}
-          description: Bad request - invalid email address or user not found (if configured
-            to show)
+          description: "Bad request - with login by email address, the submitted value\
+            \ is not a valid email address; or user not found (if configured to show)"
         "500":
           content:
             application/json: {}
@@ -11909,8 +12087,10 @@ paths:
       - Health
   /v1/jobs:
     get:
-      description: Fetches a paginated list of all jobs regardless of state. Results
-        can be paginated using query parameters.
+      description: "Fetches a paginated list of jobs regardless of state. Returns\
+        \ only the jobs the caller created, or every job for CMS Administrators; the\
+        \ pagination total counts the same jobs. Results can be paginated using query\
+        \ parameters."
       operationId: listJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -11947,8 +12127,9 @@ paths:
       - Job Queue
   /v1/jobs/abandoned:
     get:
-      description: Fetches a paginated list of abandoned jobs. Results can be paginated
-        using query parameters.
+      description: "Fetches a paginated list of abandoned jobs. Returns only the jobs\
+        \ the caller created, or every job for CMS Administrators; the pagination\
+        \ total counts the same jobs. Results can be paginated using query parameters."
       operationId: getAbandonedJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -11985,8 +12166,9 @@ paths:
       - Job Queue
   /v1/jobs/active:
     get:
-      description: Fetches a paginated list of active jobs. Results can be paginated
-        using query parameters.
+      description: "Fetches a paginated list of active jobs. Returns only the jobs\
+        \ the caller created, or every job for CMS Administrators; the pagination\
+        \ total counts the same jobs. Results can be paginated using query parameters."
       operationId: getActiveJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -12023,8 +12205,9 @@ paths:
       - Job Queue
   /v1/jobs/canceled:
     get:
-      description: Fetches a paginated list of canceled jobs. Results can be paginated
-        using query parameters.
+      description: "Fetches a paginated list of canceled jobs. Returns only the jobs\
+        \ the caller created, or every job for CMS Administrators; the pagination\
+        \ total counts the same jobs. Results can be paginated using query parameters."
       operationId: getCanceledJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -12060,8 +12243,9 @@ paths:
       - Job Queue
   /v1/jobs/completed:
     get:
-      description: Fetches a paginated list of completed jobs. Results can be paginated
-        using query parameters.
+      description: "Fetches a paginated list of completed jobs. Returns only the jobs\
+        \ the caller created, or every job for CMS Administrators; the pagination\
+        \ total counts the same jobs. Results can be paginated using query parameters."
       operationId: getCompletedJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -12098,8 +12282,9 @@ paths:
       - Job Queue
   /v1/jobs/failed:
     get:
-      description: Fetches a paginated list of failed jobs. Results can be paginated
-        using query parameters.
+      description: "Fetches a paginated list of failed jobs. Returns only the jobs\
+        \ the caller created, or every job for CMS Administrators; the pagination\
+        \ total counts the same jobs. Results can be paginated using query parameters."
       operationId: getFailedJobs
       parameters:
       - description: Page number to retrieve (1-based indexing).
@@ -12157,8 +12342,9 @@ paths:
       - Job Queue
   /v1/jobs/successful:
     get:
-      description: Fetches a paginated list of successful jobs. Results can be paginated
-        using query parameters.
+      description: "Fetches a paginated list of successful jobs. Returns only the\
+        \ jobs the caller created, or every job for CMS Administrators; the pagination\
+        \ total counts the same jobs. Results can be paginated using query parameters."
       operationId: getSuccessfulJobs
       parameters:
       - description: Page number to retrieve (1-based).
@@ -12197,6 +12383,7 @@ paths:
     post:
       description: Sends an asynchronous cancellation request for the specified job.
         The job may still complete if it has already finished or cannot be interrupted.
+        Only the user who created the job and CMS Administrators can cancel it.
       operationId: cancelJobQueueJob
       parameters:
       - description: Unique identifier (UUID) of the job to cancel.
@@ -12221,8 +12408,8 @@ paths:
         "403":
           description: "Forbidden: User does not have permission to cancel this job."
         "404":
-          description: "Not Found: Job with the specified ID does not exist or is\
-            \ already completed/cancelled."
+          description: "Not Found: No job with the specified ID exists, or the job\
+            \ was not created by the caller (CMS Administrators can cancel any job)."
         "500":
           description: "Internal Server Error: An unexpected error occurred while\
             \ attempting to cancel the job."
@@ -12232,13 +12419,13 @@ paths:
   /v1/jobs/{jobId}/monitor:
     get:
       description: "Establishes a Server-Sent Events (SSE) connection to monitor the\
-        \ progress of a specific  job in real-time. This endpoint will continuously\
+        \ progress of a specific job in real-time. This endpoint will continuously\
         \ send updates as the job progresses, including status changes and completion\
-        \ information."
+        \ information. Only the user who created the job and CMS Administrators can\
+        \ monitor it."
       operationId: monitorJob
       parameters:
-      - description: The unique identifier (UUID) of the job whose status is to be
-          retrieved.
+      - description: The unique identifier (UUID) of the job to monitor.
         in: path
         name: jobId
         required: true
@@ -12252,15 +12439,15 @@ paths:
             text/event-stream:
               schema:
                 $ref: "#/components/schemas/EventOutput"
-          description: Server-Sent Events stream established successfully. Events
-            will be sent as the job progresses.
+          description: "Server-Sent Events stream established successfully. Events\
+            \ will be sent as the job progresses. If no job with the specified ID\
+            \ exists, or the caller may not monitor it, the stream sends a single\
+            \ job-not-found event with data 404 and closes."
         "401":
           description: "Unauthorized: Invalid or missing user authentication."
         "403":
           description: "Forbidden: User does not have permissions to monitor the specified\
             \ job."
-        "404":
-          description: "Not Found: Job with the specified ID could not be found."
         "500":
           description: "Internal Server Error: An unexpected error occurred while\
             \ establishing the monitoring connection."
@@ -12270,7 +12457,9 @@ paths:
   /v1/jobs/{jobId}/status:
     get:
       description: "Returns detailed status information for a specific job including\
-        \ progress, state, and results."
+        \ progress, state, and results. Only the user who created the job and CMS\
+        \ Administrators can read it. Parameters the server sets for uploaded files\
+        \ (tempFileId, requestFingerPrint) are not included."
       operationId: getJobStatus_1
       parameters:
       - description: Unique identifier (UUID) of the job.
@@ -12295,7 +12484,8 @@ paths:
         "403":
           description: Forbidden - User lacks required permissions
         "404":
-          description: Job not found
+          description: "Not Found: No job with the specified ID exists, or the job\
+            \ was not created by the caller (CMS Administrators can read any job)."
         "500":
           description: Internal server error
       summary: Retrieves job status information
@@ -12339,7 +12529,8 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityJobStatusView"
           description: Job created successfully
         "400":
-          description: "Bad Request: Invalid parameters or malformed JSON."
+          description: "Bad Request: Invalid parameters or malformed JSON. The job\
+            \ parameters may not include tempFileId or requestFingerPrint."
         "401":
           description: "Unauthorized: Invalid or missing user authentication."
         "403":
@@ -12356,8 +12547,10 @@ paths:
       - Job Queue
   /v1/jobs/{queueName}/active:
     get:
-      description: Fetches a paginated list of active jobs. Results can be paginated
-        using query parameters.for the specified queue.
+      description: "Fetches a paginated list of active jobs for the specified queue.\
+        \ Returns only the jobs the caller created, or every job for CMS Administrators;\
+        \ the pagination total counts the same jobs. Results can be paginated using\
+        \ query parameters."
       operationId: getActiveJobsByQueue
       parameters:
       - description: Logical name of the queue.
@@ -12452,7 +12645,8 @@ paths:
           description: Job created successfully
         "400":
           description: "Bad Request: Invalid parameters, malformed multipart payload,\
-            \ or file issues."
+            \ or file issues. The job parameters may not include tempFileId or requestFingerPrint;\
+            \ the server sets these when a file is uploaded with the request."
         "401":
           description: "Unauthorized: Invalid or missing user authentication."
         "403":
@@ -14498,11 +14692,9 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityMulitreeView"
           description: Content tree retrieved successfully
         "401":
-          description: Authentication required
-        "403":
-          description: User does not have required permissions
+          description: "Authentication required, or the user is not a back-end user"
         "404":
-          description: Page not found
+          description: "Page not found, or the user cannot read it"
       summary: Get the multi-tree content structure of a page
       tags:
       - Page
@@ -14642,11 +14834,9 @@ paths:
                 $ref: "#/components/schemas/ResponseEntityListPersonalizationPersonaPageView"
           description: Personas with personalization flags retrieved successfully
         "401":
-          description: Authentication required
-        "403":
-          description: User does not have required permissions
+          description: "Authentication required, or the user is not a back-end user"
         "404":
-          description: Page not found
+          description: "Page not found, or the user cannot read it"
       summary: Get personalized personas for a page
       tags:
       - Page
@@ -16381,7 +16571,9 @@ paths:
       - Roles
   /v1/roles/checkuserroles/userid/{userId}/roleids/{roleIds}:
     get:
-      description: Verifies that a user is assigned to one of the specified role IDs
+      description: Verifies that a user is assigned to one of the specified role IDs.
+        Any back-end user can check their own roles; checking another user's roles
+        requires an administrator or access to both the Roles and the Users portlets.
       operationId: checkUserRoles
       parameters:
       - description: User ID to check
@@ -16410,7 +16602,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions
+          description: "Forbidden - checking another user's roles requires an administrator,\
+            \ or Roles and Users portlet access"
         "500":
           content:
             application/json: {}
@@ -16715,8 +16908,10 @@ paths:
       - Roles
   /v1/roles/{roleid}/rolehierarchyanduserroles:
     get:
-      description: Load the user and roles by role id with optional hierarchy and
-        filtering
+      description: "Load the user and roles by role id with optional hierarchy and\
+        \ filtering. The caller must be an administrator, have access to both the\
+        \ Roles and the Users portlets, or hold a workflow action that assigns to\
+        \ the role."
       operationId: loadUsersAndRolesByRoleId
       parameters:
       - description: Role ID
@@ -16754,7 +16949,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - backend user required
+          description: Forbidden - membership privilege or an assigning workflow action
+            required
         "404":
           content:
             application/json: {}
@@ -16823,7 +17019,8 @@ paths:
     get:
       description: "Returns the paginated list of users directly granted the given\
         \ role, using the standard user serialization (email address included). Grants\
-        \ inherited through the role hierarchy are not included."
+        \ inherited through the role hierarchy are not included. The caller must be\
+        \ an administrator or have access to both the Roles and the Users portlets."
       operationId: loadUsersByRoleId
       parameters:
       - description: Id of the role to list users for
@@ -16881,7 +17078,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - roles portlet access required
+          description: "Forbidden - administrator, or Roles and Users portlet access,\
+            \ required"
         "404":
           content:
             application/json: {}
@@ -18285,50 +18483,6 @@ paths:
           description: default response
       tags:
       - Internationalization
-  /v1/system/request-draining-test/long-request:
-    get:
-      operationId: longRunningRequest
-      parameters:
-      - in: query
-        name: duration
-        schema:
-          type: integer
-          format: int64
-          default: 5000
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringObject"
-          description: default response
-  /v1/system/request-draining-test/simulate-active-requests:
-    get:
-      operationId: simulateActiveRequests
-      parameters:
-      - in: query
-        name: count
-        schema:
-          type: integer
-          format: int32
-          default: 1
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringObject"
-          description: default response
-  /v1/system/request-draining-test/status:
-    get:
-      operationId: getShutdownStatus
-      responses:
-        default:
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ResponseEntityViewMapStringObject"
-          description: default response
   /v1/system/ruleengine/actionlets:
     get:
       operationId: list_8
@@ -19512,8 +19666,8 @@ paths:
       - Usage
   /v1/users:
     post:
-      description: "Creates a new user. Requires admin privileges or access to Users\
-        \ and Roles portlets. FirstName, LastName, Email and Password are required"
+      description: "Creates a new user. Requires a CMS Administrator. FirstName, LastName,\
+        \ Email and Password are required"
       operationId: createUser
       requestBody:
         content:
@@ -19540,7 +19694,7 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions to create users
+          description: Forbidden - only a CMS Administrator can create users
         "409":
           content:
             application/json: {}
@@ -19594,7 +19748,9 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseSiteVariablesEntityView"
           description: "If the user is not an admin or access to the role + user layouts\
-            \ or does have permission, it will return a 403."
+            \ or does have permission, it will return a 403. Changing the user's roles\
+            \ also requires a CMS Administrator; otherwise nothing is changed and\
+            \ a 403 is returned."
         "404":
           content:
             application/json:
@@ -19741,13 +19897,21 @@ paths:
   /v1/users/filter:
     get:
       description: "Returns a list of dotCMS users based on specified search criteria\
-        \ with pagination support. Each item is the user's data map. When `includeRoles=true`\
-        \ is passed, each item additionally carries a `roles` array listing the user's\
-        \ directly assigned roles as `{id, name, roleKey}` objects (`roleKey` may\
-        \ be null for roles created without a key); roles held through the role hierarchy\
-        \ and the user's personal role are not included. Requesting roles requires\
-        \ being a CMS Administrator or having access to both the Roles and Users portlets\
-        \ (403 otherwise). Without the flag the payload is unchanged."
+        \ with pagination support. Each item is the user's data map. CMS Administrators\
+        \ and users with access to the Users portlet receive the complete map; any\
+        \ other back-end user receives only the directory fields of each user (`userId`,\
+        \ `id`, `firstName`, `lastName`, `fullName`, `name`, `emailAddress`, `emailaddress`,\
+        \ `gravitar`, `type`). When `includeRoles=true` is passed, each item additionally\
+        \ carries a `roles` array listing the user's directly assigned roles as `{id,\
+        \ name, roleKey}` objects (`roleKey` may be null for roles created without\
+        \ a key); roles held through the role hierarchy and the user's personal role\
+        \ are not included. Requesting roles requires being a CMS Administrator or\
+        \ having access to both the Roles and Users portlets (403 otherwise). Without\
+        \ the flag the payload is unchanged. Results can be restricted to users directly\
+        \ holding any of the given roles through `roleKey` and/or `roleId`; filtering\
+        \ by role requires that same privilege. The `admin` flag on each item is only\
+        \ returned to callers with that same privilege; for anyone else it is left\
+        \ out."
       operationId: filterUsers
       parameters:
       - description: "Filter users by user ID, first name, last name, email address,\
@@ -19806,9 +19970,21 @@ paths:
           type: integer
           format: int32
       - description: "Role key(s) to restrict results to users holding any of them;\
-          \ repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER"
+          \ repeatable and/or comma-separated, e.g. roleKey=DOTCMS_BACK_END_USER (exact\
+          \ match). Requires CMS Administrator or Roles+Users portlet access (403\
+          \ otherwise)"
         in: query
         name: roleKey
+        schema:
+          type: array
+          items:
+            type: string
+      - description: "Role ID(s) to restrict results to users directly holding any\
+          \ of them, combined with roleKey; repeatable and/or comma-separated. Also\
+          \ matches roles created without a key. Requires CMS Administrator or Roles+Users\
+          \ portlet access (403 otherwise)"
+        in: query
+        name: roleId
         schema:
           type: array
           items:
@@ -19832,8 +20008,8 @@ paths:
         "400":
           content:
             application/json: {}
-          description: Bad request - a provided roleKey does not match any existing
-            Role
+          description: Bad request - a provided roleKey or roleId does not match any
+            existing Role
         "401":
           content:
             application/json: {}
@@ -19842,7 +20018,8 @@ paths:
           content:
             application/json: {}
           description: "Forbidden - insufficient permissions, or includeRoles=true\
-            \ requested without CMS Administrator / Roles+Users portlet access"
+            \ / a role filter requested without CMS Administrator / Roles+Users portlet\
+            \ access"
       summary: Filter users
       tags:
       - Users
@@ -26164,6 +26341,23 @@ components:
           example: false
       required:
       - assetPath
+    AssetsSectionView:
+      type: object
+      description: Shared assets folder as a server sees it
+      nullable: true
+      properties:
+        canRead:
+          type: boolean
+          description: Whether the server can read the folder
+          nullable: true
+        canWrite:
+          type: boolean
+          description: Whether the server can write to the folder
+          nullable: true
+        path:
+          type: string
+          description: Assets folder path
+          nullable: true
     AssignCommentBean:
       type: object
       description: Assignee and comment to attach to the workflow task created when
@@ -26580,6 +26774,50 @@ components:
       - columns
       - providerName
       - stats
+    CacheSectionView:
+      type: object
+      description: Cache transport details of a server; a null value means unknown
+        or not applicable
+      nullable: true
+      properties:
+        address:
+          type: string
+          description: "Transport address; null for transports without one, such as\
+            \ PubSub"
+          nullable: true
+        clusterName:
+          type: string
+          description: Cache cluster name
+          nullable: true
+        numberOfNodes:
+          type: integer
+          format: int32
+          description: Number of servers the transport sees
+          nullable: true
+        open:
+          type: boolean
+          description: Whether the transport is open
+          nullable: true
+        port:
+          type: integer
+          format: int32
+          description: "Transport port; null for transports without one, such as PubSub"
+          nullable: true
+        receivedBytes:
+          type: integer
+          format: int64
+          description: Bytes received
+          nullable: true
+        sentBytes:
+          type: integer
+          format: int64
+          description: Bytes sent
+          nullable: true
+        transport:
+          type: string
+          description: Cache transport
+          example: PubSub
+          nullable: true
     CacheStatsView:
       type: object
       properties:
@@ -27012,6 +27250,77 @@ components:
           format: int32
         message:
           $ref: "#/components/schemas/MessageView"
+    ClusterNodeView:
+      type: object
+      description: One server of the cluster
+      properties:
+        assets:
+          $ref: "#/components/schemas/AssetsSectionView"
+        cache:
+          $ref: "#/components/schemas/CacheSectionView"
+        clusterName:
+          type: string
+          description: Cluster id the server belongs to (cluster_server.cluster_id)
+          nullable: true
+        displayServerId:
+          type: string
+          description: Short id shown in the server list
+        ipAddress:
+          type: string
+          description: IP address
+          nullable: true
+        lastContactSeconds:
+          type: integer
+          format: int64
+          description: "Seconds since the server's last heartbeat; never null, never\
+            \ negative"
+        name:
+          type: string
+          description: "Friendly name, shown as the host name"
+          nullable: true
+        responded:
+          type: boolean
+          description: True when the server answered this call's status request within
+            the wait window
+        search:
+          $ref: "#/components/schemas/SearchSectionView"
+        serverId:
+          type: string
+          description: Full server id
+        status:
+          type: string
+          description: "UP: answered with a fresh heartbeat. LAGGING: only one of\
+            \ the two. DOWN: neither, or answered with a failed assets check"
+          enum:
+          - UP
+          - LAGGING
+          - DOWN
+        version:
+          type: string
+          description: dotCMS version the server runs
+          nullable: true
+      required:
+      - displayServerId
+      - lastContactSeconds
+      - responded
+      - serverId
+      - status
+    ClusterNodesView:
+      type: object
+      description: The servers of the cluster with their status
+      properties:
+        currentServerId:
+          type: string
+          description: Id of the server that handled the request
+        nodes:
+          type: array
+          description: "Every server with a recent heartbeat, ordered by startup time,\
+            \ then server id"
+          items:
+            $ref: "#/components/schemas/ClusterNodeView"
+      required:
+      - currentServerId
+      - nodes
     ColumnField:
       type: object
       allOf:
@@ -27453,6 +27762,24 @@ components:
           type: string
         working:
           type: boolean
+    ContainerDependenciesView:
+      type: object
+      description: A container and the templates that use it
+      properties:
+        identifier:
+          type: string
+          description: Container identifier
+        inode:
+          type: string
+          description: Container inode
+        templates:
+          type: array
+          description: Templates that use the container; empty when none does
+          items:
+            $ref: "#/components/schemas/TemplateDependencyView"
+        title:
+          type: string
+          description: "Container title, as saved"
     ContainerEntry:
       type: object
       properties:
@@ -33469,15 +33796,6 @@ components:
       properties:
         address:
           type: string
-        authKey:
-          type: object
-          properties:
-            empty:
-              type: boolean
-            length:
-              type: integer
-              format: int32
-              writeOnly: true
         enabled:
           type: boolean
         groupId:
@@ -34547,11 +34865,59 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityClusterNodesView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/ClusterNodesView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityCompanyConfigView:
       type: object
       properties:
         entity:
           $ref: "#/components/schemas/CompanyConfigView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityContainerDependenciesListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ContainerDependenciesView"
         errors:
           type: array
           items:
@@ -35480,31 +35846,6 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/Job"
-        errors:
-          type: array
-          items:
-            $ref: "#/components/schemas/ErrorEntity"
-        i18nMessagesMap:
-          type: object
-          additionalProperties:
-            type: string
-        messages:
-          type: array
-          items:
-            $ref: "#/components/schemas/MessageEntity"
-        pagination:
-          $ref: "#/components/schemas/Pagination"
-        permissions:
-          type: array
-          items:
-            type: string
-    ResponseEntityJwtView:
-      type: object
-      properties:
-        entity:
-          type: object
-          additionalProperties:
-            type: object
         errors:
           type: array
           items:
@@ -39223,6 +39564,77 @@ components:
           type: string
           description: Optional user id to run the search as (permissions are applied
             for this user). Defaults to the authenticated caller when omitted.
+    SearchSectionView:
+      type: object
+      description: Search engine health as a server reports it; every value is null
+        when its search check failed
+      nullable: true
+      properties:
+        activePrimaryShards:
+          type: integer
+          format: int32
+          nullable: true
+        activeShards:
+          type: integer
+          format: int32
+          nullable: true
+        activeShardsPercent:
+          type: number
+          format: double
+          description: "Percentage of active shards, 0 to 100"
+          nullable: true
+        clusterName:
+          type: string
+          description: Search cluster name
+          nullable: true
+        delayedUnassignedShards:
+          type: integer
+          format: int32
+          nullable: true
+        engine:
+          type: string
+          description: Engine that answered; null when unknown
+          enum:
+          - ELASTICSEARCH
+          - OPENSEARCH
+          nullable: true
+        initializingShards:
+          type: integer
+          format: int32
+          nullable: true
+        numberOfDataNodes:
+          type: integer
+          format: int32
+          nullable: true
+        numberOfInFlightFetch:
+          type: integer
+          format: int32
+          nullable: true
+        numberOfNodes:
+          type: integer
+          format: int32
+          nullable: true
+        numberOfPendingTasks:
+          type: integer
+          format: int32
+          nullable: true
+        relocatingShards:
+          type: integer
+          format: int32
+          nullable: true
+        taskMaxWaitingInQueueMillis:
+          type: integer
+          format: int64
+          description: "How long the oldest pending task has waited, in milliseconds"
+          nullable: true
+        timedOut:
+          type: boolean
+          description: Whether the health request timed out
+          nullable: true
+        unassignedShards:
+          type: integer
+          format: int32
+          nullable: true
     SearchSiteByNameForm:
       type: object
       properties:
@@ -39242,6 +39654,16 @@ components:
         resultsSize:
           type: integer
           format: int64
+        warnings:
+          type: array
+          description: "Notes about how the contentlets were rendered, such as widget\
+            \ field values returned as text because widget field scripting is off.\
+            \ Empty when there is nothing to report."
+          items:
+            type: string
+            description: "Notes about how the contentlets were rendered, such as widget\
+              \ field values returned as text because widget field scripting is off.\
+              \ Empty when there is nothing to report."
     SecretForm:
       type: object
     SectionForm:
@@ -40136,6 +40558,24 @@ components:
           type: string
         working:
           type: boolean
+    TemplateDependencyView:
+      type: object
+      description: A template that uses the container
+      properties:
+        identifier:
+          type: string
+          description: Template identifier
+        inode:
+          type: string
+          description: Template inode
+        siteName:
+          type: string
+          description: Host name of the template's site; null when the site is not
+            resolvable for the requesting user
+          nullable: true
+        title:
+          type: string
+          description: "Template title, as saved"
     TemplateForm:
       type: object
       description: Form used to create or update a Template in dotCMS. A Template

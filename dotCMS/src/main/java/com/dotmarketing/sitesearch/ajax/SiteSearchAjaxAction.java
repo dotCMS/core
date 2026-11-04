@@ -1,27 +1,24 @@
 package com.dotmarketing.sitesearch.ajax;
 
-import com.dotcms.content.elasticsearch.business.ESIndexHelper;
 import com.dotcms.content.index.IndexTimestamp;
 import java.io.IOException;
 import java.net.URLDecoder;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import com.dotcms.content.elasticsearch.business.DotIndexException;
-import com.dotcms.enterprise.LicenseUtil;
-import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchConfig;
 import com.dotcms.enterprise.publishing.sitesearch.SiteSearchPublishStatus;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.cms.factories.PublicCompanyFactory;
 import com.dotmarketing.cms.login.factories.LoginFactory;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.portlets.cmsmaintenance.ajax.IndexAjaxAction;
 import com.dotmarketing.quartz.ScheduledTask;
+import com.dotmarketing.servlets.ajax.AjaxAction;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.ActivityLogger;
 import com.dotmarketing.util.AdminLogger;
@@ -29,11 +26,32 @@ import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
+import com.google.common.collect.ImmutableSet;
+import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 
-public class SiteSearchAjaxAction extends IndexAjaxAction {
+public class SiteSearchAjaxAction extends AjaxAction {
 
-public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	/**
+	 * The commands this endpoint serves, which are the ones the Site Search portlet calls. Any
+	 * other command name is answered with a 403.
+	 */
+	static final Set<String> SUPPORTED_COMMANDS = ImmutableSet.of(
+			"createSiteSearchIndex",
+			"scheduleJob",
+			"deleteJob",
+			"getJobProgress");
+
+	/**
+	 * Checks that the caller has access to the Site Search portlet and invokes the command named in
+	 * the request, as long as it is one of {@link #SUPPORTED_COMMANDS}; any other command is
+	 * answered with a 403.
+	 *
+	 * @param request  the current request
+	 * @param response the current response
+	 */
+	@Override
+	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
 
 
@@ -44,7 +62,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 
 		String cmd = map.get("cmd");
 		java.lang.reflect.Method meth = null;
-		Class partypes[] = new Class[] { HttpServletRequest.class, HttpServletResponse.class };
+		final Class<?>[] partypes = new Class<?>[] { HttpServletRequest.class, HttpServletResponse.class };
 		Object arglist[] = new Object[] { request, response };
 		User user = getUser();
 
@@ -53,7 +71,7 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 
 
 		try {
-			// Check permissions if the user has access to the CMS Maintenance Portlet
+			// Check permissions if the user has access to the Site Search portlet
 			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("site-search", user)) {
 				String userName = map.get("u");
 				String password = map.get("p");
@@ -71,13 +89,18 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 
 
 
-			meth = this.getClass().getMethod(cmd, partypes);
+			if (cmd != null && !SUPPORTED_COMMANDS.contains(cmd)) {
+				Logger.warn(this.getClass(), "Command not supported by this endpoint: " + cmd);
+				response.sendError(HttpServletResponse.SC_FORBIDDEN);
+				return;
+			}
+			meth = SiteSearchAjaxAction.class.getMethod(cmd, partypes);
 
 		} catch (Exception e) {
 
 			try {
 				cmd = "action";
-				meth = this.getClass().getMethod(cmd, partypes);
+				meth = SiteSearchAjaxAction.class.getMethod(cmd, partypes);
 			} catch (Exception ex) {
 				Logger.error(this.getClass(), "Trying to run method:" + cmd);
 				Logger.error(this.getClass(), e.getMessage(), e.getCause());
@@ -87,13 +110,50 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 		try {
 			meth.invoke(this, arglist);
 		} catch (Exception e) {
-			Logger.error(IndexAjaxAction.class, "Trying to run method:" + cmd);
-			Logger.error(IndexAjaxAction.class, e.getMessage(), e.getCause());
+			Logger.error(SiteSearchAjaxAction.class, "Trying to run method:" + cmd);
+			Logger.error(SiteSearchAjaxAction.class, e.getMessage(), e.getCause());
 			writeError(response, e.getMessage());
 		}
 
 	}
 
+
+	/**
+	 * Default command, run when the request names no command this class declares. It does nothing.
+	 */
+	@Override
+	public void action(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		return;
+	}
+
+	/**
+	 * Writes an error message to the response, translated for the current user when possible.
+	 *
+	 * @param response the current response
+	 * @param error    the message or language key to write
+	 */
+	public void writeError(HttpServletResponse response, String error) throws IOException {
+		String ret = null;
+
+		try {
+			ret = LanguageUtil.get(getUser(), error);
+		} catch (Exception e) {
+			// fall back to the default company locale below
+		}
+		if (ret == null) {
+			try {
+				ret = LanguageUtil.get(PublicCompanyFactory.getDefaultCompanyId(),
+						PublicCompanyFactory.getDefaultCompany().getLocale(), error);
+			} catch (Exception e) {
+				// fall back to the raw message below
+			}
+		}
+		if (ret == null) {
+			ret = error;
+		}
+
+		response.getWriter().println("FAILURE: " + ret);
+	}
 
 	public void createSiteSearchIndex(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException, DotDataException {
 
@@ -175,31 +235,6 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 	}
 
 
-	public void scheduleJobNow(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException {
-		try {
-			Map<String, String[]> map = request.getParameterMap();
-
-			SiteSearchConfig config = new SiteSearchConfig();
-			for(String key : map.keySet()){
-				if(((String[]) map.get(key)).length ==1){
-					config.put(key,((String[]) map.get(key))[0]);
-				}
-				else{
-					config.put(key,map.get(key));
-				}
-			}
-
-			APILocator.getSiteSearchAPI().scheduleTask(config);
-		} catch (Exception e) {
-			Logger.error(SiteSearchAjaxAction.class,e.getMessage(),e);
-			writeError(response, e.getMessage());
-
-		}
-	}
-
-
-
-
 	public void deleteJob(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException, DotIndexException {
 		String date = DateUtil.getCurrentDate();
 
@@ -220,20 +255,6 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
 		}
 
 	}
-
-	public void getIndexName(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        Map<String, String> map = getURIParams();
-        String indexAlias = map.get("indexAlias");
-        String indexName = "";
-        if(UtilMethods.isSet(indexAlias) && LicenseUtil.getLevel() >= LicenseLevel.STANDARD.level) {
-            // Site-search .os-aware alias resolution (issue #36360): the content-index router misses
-            // site-search aliases in Phases 2/3 because it queries OpenSearch without the .os tag.
-            String indexName1=APILocator.getSiteSearchAPI().getAliasToIndexMap().get(indexAlias);
-            if(UtilMethods.isSet(indexName1))
-                indexName=indexName1;
-        }
-        response.getWriter().println(indexName);
-    }
 
 	public void getJobProgress(HttpServletRequest request, HttpServletResponse response) throws Exception {
         Map<String, String> map = getURIParams();
@@ -257,49 +278,4 @@ public void service(HttpServletRequest request, HttpServletResponse response) th
         response.getWriter().println(json.toString());
 	}
 
-	@Override
-    public void getIndexStatus(HttpServletRequest request, HttpServletResponse response) throws IOException {
-	    try {
-    	    Map<String, String> map = getURIParams();
-    	    String indexName = ESIndexHelper.getInstance().getIndexNameOrAlias(map,"indexName",
-					"indexAlias", APILocator.getESIndexAPI());
-    	    response.setContentType("text/plain");
-            // Phase-aware default (issue #36983): the legacy IndiciesInfo pointer freezes at the
-            // Elasticsearch-era default from Phase 3 on, where activateIndex fans out to OpenSearch
-            // alone — and dereferencing it NPE'd when no default had ever been set.
-            response.getWriter().println(
-                    APILocator.getSiteSearchAPI().isDefaultIndex(indexName) ? "default" : "inactive");
-	    }
-	    catch(Exception ex) {
-	        throw new RuntimeException(ex);
-	    }
-    }
-
-	@Override
-    public void getNotActiveIndexNames(HttpServletRequest request, HttpServletResponse response) throws IOException {
-	    try {
-            // Phase-aware default (issue #36983) — see getIndexStatus above.
-            final String defaultIndex = APILocator.getSiteSearchAPI().defaultIndexName().orElse(null);
-            List<String> ret=new ArrayList<>();
-            for(String ii : APILocator.getSiteSearchAPI().listIndices())
-                if(defaultIndex==null || !defaultIndex.equals(ii))
-                    ret.add(ii);
-            response.setContentType("text/plain");
-            response.getWriter().println(ret);
-	    }
-	    catch(Exception ex) {
-	        throw new RuntimeException(ex);
-	    }
-    }
-
-	@Override
-    public void indexList(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        try {
-            response.setContentType("text/plain");
-            response.getWriter().println(APILocator.getSiteSearchAPI().listIndices());
-        }
-        catch(Exception ex) {
-            throw new RuntimeException(ex);
-        }
-    }
 }

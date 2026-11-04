@@ -1,4 +1,4 @@
-<%@page import="com.dotmarketing.business.APILocator"%>
+<%@ page import="com.liferay.util.Xss" %><%@page import="com.dotmarketing.business.APILocator"%>
 <%@page import="com.dotmarketing.portlets.workflows.business.WorkflowAPI"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowScheme"%>
 <%@page import="com.dotmarketing.portlets.workflows.model.WorkflowStep"%>
@@ -71,7 +71,7 @@
 			<dd>
 				<input type="text" name="schemeName" id="schemeName"
 					   dojoType="dijit.form.ValidationTextBox"  required="true"
-					   value="<%=UtilMethods.webifyString(scheme.getName())%>" <%if(scheme.isArchived()){%>readonly="true"<%} %>
+					   value="<%=UtilMethods.webifyString(Xss.encodeForHTML(scheme.getName()))%>" <%if(scheme.isArchived()){%>readonly="true"<%} %>
 					   maxlength="255" style="width:250px;<%if(scheme.isArchived()){%>;text-decoration:line-through;<%}%>">
 			</dd>
 		</dl>
@@ -83,7 +83,7 @@
 			<dd>
 				<input type="textarea" name="schemeDescription"
 					   id="schemeDescription" dojoType="dijit.form.Textarea" <%if(scheme.isArchived()){%>readonly="true"<%} %>
-					   value="<%=UtilMethods.webifyString(scheme.getDescription())%>" style="width:250px; height:100px;min-height:100px;max-height:100px;">
+					   value="<%=UtilMethods.webifyString(Xss.encodeForHTML(scheme.getDescription()))%>" style="width:250px; height:100px;min-height:100px;max-height:100px;">
 			</dd>
 		</dl>
 
@@ -118,7 +118,7 @@
 	<div class="buttonRow scheme">
         <div>
 		<%if(!scheme.isNew()){%>
-			<button dojoType="dijit.form.Button" onClick='schemeAdmin.copyScheme("<%=UtilMethods.webifyString(scheme.getId())%>", "<%=UtilMethods.webifyString(scheme.getName())%>")' iconClass="saveIcon" type="button">
+			<button dojoType="dijit.form.Button" onClick='schemeAdmin.copyScheme("<%=UtilMethods.webifyString(scheme.getId())%>", "<%=Xss.encodeForJavaScript(scheme.getName())%>")' iconClass="saveIcon" type="button">
 				<%=UtilMethods.escapeSingleQuotes(LanguageUtil.get(pageContext, "Copy"))%>
 			</button>
 			

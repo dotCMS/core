@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -53,6 +54,22 @@ public class ContentletIndexAPIImplMappingTimeoutIT extends IntegrationTestBase 
         // markAsFailed from unpausing it mid-test.
         Config.setProperty("ALLOW_MANUAL_REINDEX_UNPAUSE", true);
         ReindexThread.pause();
+    }
+
+    /**
+     * Removes the journal rows this test claimed through {@code findContentToReindex}. Nothing
+     * acknowledges them (the listener is a no-op and the entries never reach the real worker), so
+     * left in place they keep the queue non-empty. The real reindex thread cannot pick them up
+     * either, because the queue loader already moved past their ids, so the per-test indexer check
+     * in {@code RuleWatcher} would wait its full 60 s for a queue that can never drain.
+     *
+     * @throws Exception if the journal rows cannot be deleted
+     */
+    @After
+    public void deleteClaimedJournalRows() throws Exception {
+        // Plain SQL on purpose: deleteReindexAndFailedRecords() only removes rows at REINDEX
+        // priority or lower urgency, and these rows are NORMAL priority.
+        new DotConnect().setSQL("delete from dist_reindex_journal").loadResult();
     }
 
     @AfterClass

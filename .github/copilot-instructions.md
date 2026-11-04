@@ -78,6 +78,15 @@ just build-no-docker            # Same as: ./mvnw clean install -DskipTests -Ddo
 
 ### Backend Testing Strategy
 
+**CI suite placement (required):** compatibility decides first — a JUnit 5 class goes to
+`Junit5Suite1` and a test needing a live OpenSearch cluster to `OpenSearchUpgradeSuite`; neither
+competes on runtime. Every other **new test class** goes in the `MainSuite*` that
+`just suite-timings` currently names as fastest, and a **new method on an existing class stays
+with its class**. The suite name is a result of that measurement, never an input — never take it
+from an example, a nearby class or memory, and if the command finds no timings, report it and ask
+instead of picking a default. Follow [Integration Tests → Registering Tests in a MainSuite](../docs/testing/INTEGRATION_TESTS.md#registering-tests-in-a-mainsuite-ci-gate)
+and paste the command's output into the PR.
+
 **Common Test Error - Tests Silently Skipped:**
 ```bash
 # ❌ WRONG - Tests are skipped by default!

@@ -1,4 +1,4 @@
-<%@page import="com.dotmarketing.business.RoleAPI"%>
+<%@ page import="com.liferay.util.Xss" %><%@page import="com.dotmarketing.business.RoleAPI"%>
 <%@ include file="/html/portlet/ext/workflows/init.jsp"%>
 
 <%@page import="java.util.List"%>
@@ -598,7 +598,7 @@ bottom="/html/common/box_bottom.jsp">
 						<select name="schemeId" id="schemeId" dojoType="dijit.form.FilteringSelect" value="<%=UtilMethods.webifyString(searcher.getSchemeId())%>" onChange="updateSteps();doFilter();">
 							<option value=""></option>
 							<%for(WorkflowScheme scheme : schemes) {%>
-								<option value="<%=scheme.getId()%>"  <%=(scheme.getId().equals(searcher.getSchemeId())) ? "selected": ""%>><%=scheme.getName()%></option>
+								<option value="<%=scheme.getId()%>"  <%=(scheme.getId().equals(searcher.getSchemeId())) ? "selected": ""%>><%=Xss.encodeForHTML(scheme.getName())%></option>
 							<%} %>
 						</select>
 					</dd>

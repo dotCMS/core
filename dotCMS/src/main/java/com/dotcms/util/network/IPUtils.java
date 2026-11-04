@@ -187,6 +187,26 @@ public class IPUtils {
      *                   unset. When present it is the whole policy and replaces the built-in
      *                   checks, which is what keeps a narrowed list able to permit internal ranges.
      */
+    /**
+     * Whether a single already-resolved address belongs to a range that must not be reachable
+     * from a user-supplied URL, under the same policy as {@link #isIpPrivateSubnet(String)}.
+     * Meant for callers that resolve the host themselves, such as the HTTP client's resolver,
+     * so the address that is connected to is the address that was checked.
+     *
+     * @param address the resolved address
+     * @return {@code true} when the address is internal, or when the address is missing
+     */
+    public static boolean isInternalAddress(final InetAddress address) {
+
+        if (disabledIpPrivateSubnet.get()) {
+            return false;
+        }
+        if (null == address) {
+            return true;
+        }
+        return isInternalAddress(address, configuredSubnets.get());
+    }
+
     static boolean isInternalAddress(final InetAddress address, final String[] configured) {
 
         final String hostAddress = stripScopeId(address.getHostAddress());

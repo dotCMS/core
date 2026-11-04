@@ -97,7 +97,7 @@
 									"    //Last but not least ",
 									"    //Chcek the sensitive stuff is getting obfuscated",
 									"    //This var is declared in docker/setup/build-src/forkDotcms.sh",
-									"    pm.expect(jsonData.environment.JVM_ENDPOINT_TEST_PASS).to.be.eql(\"o*********e\");",
+									"    pm.expect(jsonData.environment.JVM_ENDPOINT_TEST_PASS).to.be.eql(\"*****\");",
 									"",
 									"});"
 								],

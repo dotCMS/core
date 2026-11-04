@@ -252,6 +252,19 @@ describe('dot-auth-config.mappers', () => {
             expect(config.oidc.groupFilterPattern).toBe('');
         });
 
+        it('maps trustEmailWithoutVerifiedClaim', () => {
+            const view: DotAuthConfigView = {
+                ...OIDC_VIEW,
+                values: { ...OIDC_VIEW.values, trustEmailWithoutVerifiedClaim: true }
+            };
+            expect(fromView(view).oidc.trustEmailWithoutVerifiedClaim).toBe(true);
+        });
+
+        it('defaults trustEmailWithoutVerifiedClaim to false (verified-email linking only)', () => {
+            // OIDC_VIEW carries no such key — the backend treats an absent value as off.
+            expect(fromView(OIDC_VIEW).oidc.trustEmailWithoutVerifiedClaim).toBe(false);
+        });
+
         it('maps top-level login behavior fields', () => {
             const config = fromView(OIDC_VIEW);
             expect(config.enableBackend).toBe(true);
@@ -487,6 +500,19 @@ describe('dot-auth-config.mappers', () => {
             const payload = toPayload(config, 'test-site-id');
             expect(payload.values.allowUnmappedGroups).toBe(true);
             expect(payload.values.groupFilterPattern).toBe('^(dotcms|CMS) ');
+        });
+
+        it('serializes trustEmailWithoutVerifiedClaim, false by default', () => {
+            const config = clone(DEFAULT_CONFIG);
+            config.protocol = 'oidc';
+            expect(toPayload(config, 'test-site-id').values).toMatchObject({
+                trustEmailWithoutVerifiedClaim: false
+            });
+
+            config.oidc.trustEmailWithoutVerifiedClaim = true;
+            expect(toPayload(config, 'test-site-id').values).toMatchObject({
+                trustEmailWithoutVerifiedClaim: true
+            });
         });
 
         it('defaults allowUnmappedGroups to false and omits an empty filter pattern', () => {

@@ -3,17 +3,30 @@ package com.dotcms.ai;
 import com.dotcms.ai.app.AppKeys;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.viewtool.AIViewToolErrorHandler;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentTypeDataGen;
+import com.dotcms.datagen.ContentletDataGen;
+import com.dotcms.datagen.EmbeddingsDTODataGen;
+import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.PermissionUtilTest;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.Secret;
 import com.dotcms.util.WireMockTestHelper;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.json.JSONArray;
 import com.dotmarketing.util.json.JSONObject;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import org.owasp.encoder.Encode;
 
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -141,6 +154,62 @@ public interface AiTest {
         APILocator.getAppsAPI().saveSecrets(appSecrets, host, APILocator.systemUser());
         await().atMost(5, SECONDS).until(() -> ConfigService.INSTANCE.config(host).isEnabled());
         return appSecrets.getSecrets();
+    }
+
+    /**
+     * Publishes a contentlet holding {@code text} and stores one embedding row for it in
+     * {@code indexName}, so dotAI retrieval, which only returns chunks of contentlets the caller can
+     * READ (#37151), has real content behind the row. The row's text is the query, so a search for
+     * {@code text} reuses the row's stored vector and matches it.
+     *
+     * @param anonymousReadable {@code true} grants CMS Anonymous READ (also readable by any
+     *                          logged-in user); {@code false} grants READ only to a new role no
+     *                          test user holds
+     * @return the published contentlet
+     */
+    static Contentlet persistEmbeddedContentlet(final String text, final String indexName,
+                                                final boolean anonymousReadable) throws Exception {
+        return persistEmbeddedContentlet(text, indexName, anonymousReadable, null);
+    }
+
+    /**
+     * Same as {@link #persistEmbeddedContentlet(String, String, boolean)}, and when {@code title} is
+     * set, the contentlet's {@code title} field and the embedding row's title both carry it, so
+     * payload assertions on the returned title see exactly that value.
+     */
+    static Contentlet persistEmbeddedContentlet(final String text, final String indexName,
+                                                final boolean anonymousReadable, final String title) throws Exception {
+        final Field titleField = new FieldDataGen().type(TextField.class).velocityVarName("title").next();
+        final Field field = new FieldDataGen().type(TextField.class).next();
+        final ContentType contentType = new ContentTypeDataGen().field(titleField).field(field).nextPersisted();
+        final Contentlet contentlet = new ContentletDataGen(contentType)
+                .setProperty(titleField.variable(), title != null ? title : text)
+                .setProperty(field.variable(), text)
+                .nextPersisted();
+        ContentletDataGen.publish(contentlet);
+        if (anonymousReadable) {
+            PermissionUtilTest.addAnonymousUser(contentlet);
+        } else {
+            APILocator.getPermissionAPI().save(
+                    new Permission(contentlet.getPermissionId(), new RoleDataGen().nextPersisted().getId(),
+                            PermissionAPI.PERMISSION_READ, true),
+                    contentlet, APILocator.systemUser(), false);
+        }
+
+        // seeded by the text: the same text always gets the same vector, and different texts are
+        // spread like the random vectors other fixtures use, so these rows never match unrelated queries
+        final Random random = new Random(text.hashCode());
+        final float[] vector = new float[1536];
+        for (int i = 0; i < vector.length; i++) {
+            vector[i] = random.nextFloat();
+        }
+        new EmbeddingsDTODataGen().generate(contentlet.getInode(), indexName, text)
+                .withTitle(title != null ? title : text)
+                .withIdentifier(contentlet.getIdentifier())
+                .withContentType(contentType.variable())
+                .withEmbeddings(vector)
+                .nextPersisted();
+        return contentlet;
     }
 
     // ------------------------------------------------------------------------------------------

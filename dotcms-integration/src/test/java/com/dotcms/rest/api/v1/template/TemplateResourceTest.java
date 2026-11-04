@@ -52,6 +52,7 @@ import com.liferay.util.Base64;
 import com.liferay.util.StringPool;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -1294,5 +1295,73 @@ public class TemplateResourceTest {
         final String pageHtml_2 = APILocator.getHTMLPageAssetRenderedAPI()
                 .getPageHtml(pageContext, request, response);
         assertTrue(pageHtml_2.contains("<div>Testing</div>"));
+    }
+
+    /**
+     * Method to test: saveNew and list in the TemplateResource
+     * Given Scenario: Create a template whose title holds markup and an ampersand, then read it
+     *                 back through the listing the template picker uses.
+     * ExpectedResult: Both responses keep the title and fullTitle as plain text and return an
+     *                 htmlTitle where the title is HTML-encoded, so the picker shows it literally.
+     */
+    @Test
+    public void test_saveNewAndListTemplate_titleWithMarkup_htmlTitleIsEncoded()
+            throws DotSecurityException, DotDataException {
+        final Host newHost = new SiteDataGen().nextPersisted();
+        final String title = "Launch <b>page</b> & promo " + System.currentTimeMillis();
+        final TemplateForm templateForm = new TemplateForm.Builder()
+                .siteId(newHost.getIdentifier())
+                .title(title)
+                .friendlyName("label test")
+                .body("<p>body</p>")
+                .build();
+
+        final Response saveResponse = resource.saveNew(
+                getHttpRequest(adminUser.getEmailAddress(), "admin"), response, templateForm);
+
+        Assert.assertEquals(Status.OK.getStatusCode(), saveResponse.getStatus());
+        final TemplateView saved = TemplateView.class.cast(
+                ResponseEntityView.class.cast(saveResponse.getEntity()).getEntity());
+        try {
+            assertEncodedLabel(saved, title, newHost.getHostname());
+
+            final Response listResponse = resource.list(
+                    getHttpRequest(adminUser.getEmailAddress(), "admin"), response, "", 0, 40,
+                    "mod_date", "DESC", newHost.getIdentifier(), false);
+
+            Assert.assertEquals(Status.OK.getStatusCode(), listResponse.getStatus());
+            final PaginatedArrayList<?> listed = PaginatedArrayList.class.cast(
+                    ResponseEntityView.class.cast(listResponse.getEntity()).getEntity());
+            TemplateView fromList = null;
+            for (final Object item : listed) {
+                if (item instanceof TemplateView
+                        && saved.getIdentifier().equals(((TemplateView) item).getIdentifier())) {
+                    fromList = (TemplateView) item;
+                    break;
+                }
+            }
+            Assert.assertNotNull("saved template missing from the listing", fromList);
+            assertEncodedLabel(fromList, title, newHost.getHostname());
+        } finally {
+            // Remove the template created through the endpoint (archive first, then delete)
+            final List<String> ids = Arrays.asList(saved.getIdentifier());
+            resource.archive(getHttpRequest(adminUser.getEmailAddress(), "admin"), response, ids);
+            resource.delete(getHttpRequest(adminUser.getEmailAddress(), "admin"), response, ids);
+        }
+    }
+
+    /**
+     * Asserts the three labels of a template view for a title that holds markup: plain text in
+     * title and fullTitle, HTML-encoded title inside the htmlTitle fragment.
+     */
+    private static void assertEncodedLabel(final TemplateView view, final String title,
+            final String hostName) {
+        Assert.assertEquals(title, view.getTitle());
+        Assert.assertEquals(title + " (" + hostName + ")", view.getFullTitle());
+        Assert.assertFalse("htmlTitle must not carry the title's markup",
+                view.getHtmlTitle().contains("<b>"));
+        assertTrue(view.getHtmlTitle().contains("&lt;b&gt;page&lt;/b&gt;"));
+        assertTrue(view.getHtmlTitle().contains("&amp;"));
+        assertTrue(view.getHtmlTitle().contains("<small>" + hostName));
     }
 }

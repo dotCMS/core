@@ -20,6 +20,7 @@ import com.dotcms.cluster.business.ServerAPI;
 import com.dotcms.enterprise.ClusterUtilProxy;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.cluster.ClusterFactory;
+import com.dotcms.rest.api.v1.cluster.ClusterNodesHelper;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
@@ -28,7 +29,6 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotHibernateException;
 import com.dotmarketing.exception.DotSecurityException;
-import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
@@ -44,7 +44,10 @@ public class ClusterResource {
     private final WebResource webResource = new WebResource();
 
     /**
-     * Returns a Map of the Cache Cluster Nodes Status
+     * Returns the status of every alive server in the cluster, for the old Configuration → Network
+     * tab. Servers that didn't answer the cluster status request within the wait window are listed
+     * with a "not responding" placeholder. A cache transport that returns no replies at all
+     * ({@code null}, as {@code NullTransport} does) is treated as "no server answered".
      *
      * @param request
      * @param params
@@ -74,10 +77,11 @@ public class ClusterResource {
         final List<Server> pendingServers = new ArrayList<>(APILocator.getServerAPI().getAliveServers());
         final String myServerId = APILocator.getServerAPI().readServerId();
         
-        final int maxWaitTime =  Config.getIntProperty("CLUSTER_SERVER_THREAD_SLEEP", Math.max(2000, pendingServers.size()*1000)) ;
+        final int maxWaitTime = ClusterNodesHelper.statusWaitMillis(pendingServers.size());
         final Map<String, Serializable> info = new HashMap<>();
         info.put("myServerId", myServerId);
-        final Map<String, Serializable> members = CacheLocator.getCacheAdministrator().getTransport().validateCacheInCluster(maxWaitTime);
+        final Map<String, Serializable> replies = CacheLocator.getCacheAdministrator().getTransport().validateCacheInCluster(maxWaitTime);
+        final Map<String, Serializable> members = replies != null ? replies : Map.of();
         final ArrayList<Serializable> arrayOfServerResponses = new ArrayList<>();
         
         // if we got a response, remove from pending servers

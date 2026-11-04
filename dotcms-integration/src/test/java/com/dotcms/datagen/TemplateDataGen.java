@@ -59,6 +59,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
     private String bodyHead;
 
     private boolean drawed;
+    private boolean showOnMenu = true;
 
     /**
      * Sets body property to the TemplateDataGen instance. This will be used when a new {@link
@@ -272,7 +273,7 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
         template.setModDate(new Date());
         template.setModUser(user.getUserId());
         template.setOwner(user.getUserId());
-        template.setShowOnMenu(true);
+        template.setShowOnMenu(showOnMenu);
         template.setSortOrder(2);
         template.setTitle(this.title);
         template.setType(type);
@@ -407,6 +408,18 @@ public class TemplateDataGen extends AbstractDataGen<Template> {
 
     public TemplateDataGen drawed(boolean drawed) {
         this.drawed = drawed;
+        return this;
+    }
+
+    /**
+     * Sets whether the {@link Template} is shown on the menu. It is by default; the layouts a page
+     * saves for itself ({@code anonymous_layout_} templates) are not.
+     *
+     * @param showOnMenu {@code false} to create a hidden template
+     * @return TemplateDataGen with the property set
+     */
+    public TemplateDataGen showOnMenu(final boolean showOnMenu) {
+        this.showOnMenu = showOnMenu;
         return this;
     }
 }

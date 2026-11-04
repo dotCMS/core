@@ -4,9 +4,12 @@ import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService, mockDotDevices } from '@dotcms/utils-testing';
 
 import { DotUveDeviceSelectorComponent } from './dot-uve-device-selector.component';
-import { DeviceSelectorChange, DeviceSelectorState } from './dot-uve-device-selector.models';
 
 import { DEFAULT_DEVICE, DEFAULT_DEVICES } from '../../../../../shared/consts';
+import {
+    DeviceSelectorChange,
+    DeviceSelectorState
+} from '../../../../../store/features/editor/models';
 
 describe('DotUveDeviceSelectorComponent - Presentational', () => {
     let spectator: Spectator<DotUveDeviceSelectorComponent>;

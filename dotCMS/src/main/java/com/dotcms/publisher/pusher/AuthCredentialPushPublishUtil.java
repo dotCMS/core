@@ -2,6 +2,7 @@ package com.dotcms.publisher.pusher;
 
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.beans.JWToken;
+import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.publisher.endpoint.bean.PublishingEndPoint;
 import com.dotmarketing.business.APILocator;
@@ -10,11 +11,14 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.liferay.portal.model.User;
 import io.jsonwebtoken.*;
+import io.vavr.control.Try;
 import org.apache.commons.lang.StringUtils;
 import org.glassfish.jersey.server.ContainerRequest;
 
 import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Optional;
 
 /**
@@ -72,8 +76,6 @@ public enum AuthCredentialPushPublishUtil {
     public PushPublishAuthenticationToken processAuthHeader(final HttpServletRequest request) {
         final boolean useJWTToken = isJWTAvailable();
 
-        Logger.info(AuthCredentialPushPublishUtil.class, String.format("Is JWT in Push publish avaible?: %s", useJWTToken));
-
         try{
             if (useJWTToken) {
                 final PushPublishAuthenticationToken pushPublishAuthenticationToken = getFromJWTToken(request);
@@ -104,26 +106,55 @@ public enum AuthCredentialPushPublishUtil {
             final Optional<JWToken> jwTokenOptional =
                     JsonWebTokenAuthCredentialProcessorImpl.getInstance().processJWTAuthHeader(request);
 
-            Logger.info(AuthCredentialPushPublishUtil.class, String.format("Token from request?: %s", jwTokenOptional));
-
             if (jwTokenOptional.isEmpty()){
-                return PushPublishAuthenticationToken.INVALID_TOKEN;
+                return isExpiredJWT(getTokenFromRequest(request), request.getRemoteAddr()) ?
+                        PushPublishAuthenticationToken.EXPIRE_TOKEN :
+                        PushPublishAuthenticationToken.INVALID_TOKEN;
             }
 
             final Optional<User> optionalUser = jwTokenOptional.get().getActiveUser();
-            Logger.info(AuthCredentialPushPublishUtil.class, String.format("User from token?: %s", optionalUser));
             if (optionalUser.isEmpty()){
                 return PushPublishAuthenticationToken.INVALID_TOKEN;
             }
 
             return new PushPublishAuthenticationToken(jwTokenOptional.get());
         } catch(IncorrectClaimException e){
-            Logger.info(AuthCredentialPushPublishUtil.class, String.format("IncorrectClaimException?: %s", e));
             final String claimName = e.getClaimName();
 
             return Claims.EXPIRATION.equals(claimName) ? PushPublishAuthenticationToken.EXPIRE_TOKEN :
                     PushPublishAuthenticationToken.INVALID_TOKEN;
         }
+    }
+
+    /**
+     * Tells an expired token apart from one that is malformed, revoked, signed with another key or
+     * issued to a user that no longer exists.
+     *
+     * <p>{@link JsonWebTokenAuthCredentialProcessorImpl#processJWTAuthHeader(HttpServletRequest)}
+     * reports all of those the same way, an empty {@link Optional}, because
+     * {@link com.dotcms.auth.providers.jwt.factories.ApiTokenAPI#fromJwt(String, String)} turns the
+     * parse failure into one. Without this check the receiver answers "invalid token" for a token
+     * that merely ran out, and the sender cannot tell the user to request a new one.</p>
+     *
+     * @param jwt       the bearer token taken from the request, may be empty
+     * @param ipAddress the address the request came from, used by the IP restriction check
+     * @return {@code true} when the token failed to parse because its expiration date has passed
+     */
+    private boolean isExpiredJWT(final String jwt, final String ipAddress) {
+
+        if (StringUtils.isEmpty(jwt)) {
+            return false;
+        }
+
+        final Throwable cause = Try.of(() -> JsonWebTokenFactory.getInstance()
+                .getJsonWebTokenService().parseToken(jwt, ipAddress)).failed().getOrNull();
+
+        // jjwt rejects the expiration itself while parsing the claims, so that is the case that
+        // actually happens; the IncorrectClaimException below is dotCMS's own check in
+        // JsonWebTokenFactory.validateToken, which only runs for a token jjwt let through.
+        return cause instanceof ExpiredJwtException
+                || (cause instanceof IncorrectClaimException
+                    && Claims.EXPIRATION.equals(((IncorrectClaimException) cause).getClaimName()));
     }
 
     private Optional<PublishingEndPoint> getPublishingEndPointDotCMSToken(final HttpServletRequest request)
@@ -132,19 +163,37 @@ public enum AuthCredentialPushPublishUtil {
         final PublishingEndPoint publishingEndPoint =
                 APILocator.getPublisherEndPointAPI().findEnabledSendingEndPointByAddress(remoteIP);
 
-        Logger.info(AuthCredentialPushPublishUtil.class, String.format("PublishingEndPoint: %s", publishingEndPoint != null ? publishingEndPoint.getServerName() : "null"));
-
         Optional<String> key = PushPublisher.retriveEndpointKeyDigest(publishingEndPoint);
-
-        Logger.info(AuthCredentialPushPublishUtil.class, String.format("PublishingEndPoint key: %s", key));
 
         if(key.isEmpty()) {
             return Optional.empty();
         }
 
         final String token = getTokenFromRequest(request);
-        Logger.info(AuthCredentialPushPublishUtil.class, String.format("Token from request: %s", token));
-        return token.equals( key.get() ) ? Optional.of(publishingEndPoint) : Optional.empty();
+        final boolean matches = keyMatches(token, key.get());
+        if (!matches) {
+            Logger.debug(AuthCredentialPushPublishUtil.class, () -> String.format(
+                    "Push publish key does not match the one set for endpoint: %s",
+                    publishingEndPoint.getServerName()));
+        }
+        return matches ? Optional.of(publishingEndPoint) : Optional.empty();
+    }
+
+    /**
+     * Checks whether the key sent by a remote server in a push publish request is the same as
+     * the key configured for its endpoint. Both values are compared as UTF-8 bytes with
+     * {@link MessageDigest#isEqual(byte[], byte[])}.
+     *
+     * @param requestKey  the key read from the request's {@code Authorization} header
+     * @param endpointKey the key configured for the endpoint
+     * @return {@code true} if both keys are set and identical, {@code false} otherwise
+     */
+    static boolean keyMatches(final String requestKey, final String endpointKey) {
+        if (requestKey == null || endpointKey == null) {
+            return false;
+        }
+        return MessageDigest.isEqual(requestKey.getBytes(StandardCharsets.UTF_8),
+                endpointKey.getBytes(StandardCharsets.UTF_8));
     }
 
     private String getTokenFromRequest(final HttpServletRequest request) {
