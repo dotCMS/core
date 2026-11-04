@@ -101,7 +101,8 @@ credential-equivalent to Bearer, and a Basic-only client such as WebDAV works ou
 with username + API JWT as its password. Administrators can change it at runtime through
 `POST /api/v1/system-table`, for example with `{"key":"ALLOW_BASIC_AUTH","value":"NONE"}`.
 System-table changes require no restart and apply to subsequent authentication attempts;
-existing sessions are not revoked.
+existing sessions are not revoked. GraphQL authenticates before cache lookup, so cached responses
+cannot bypass a changed authentication or anonymous-access policy.
 
 Normal configuration precedence still applies: an explicit `DOT_ALLOW_BASIC_AUTH` environment
 override wins over the system table. Changing the process environment requires restarting the

@@ -112,6 +112,15 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
         return new String[] {API_CALL + "*"};
     }
 
+    /**
+     * Authenticates before looking up cached GraphQL data, so current credential and anonymous
+     * access policies also apply to cache hits and background refresh requests.
+     *
+     * @param requestIn the incoming GraphQL request
+     * @param response the response receiving cached data or an authentication error
+     * @return the cached response, or a wrapped request for normal GraphQL execution
+     * @throws IOException if the request body or response cannot be read or written
+     */
     @Override
     public Result intercept(final HttpServletRequest requestIn, final HttpServletResponse response) throws IOException {
 
@@ -124,6 +133,8 @@ public class GraphqlCacheWebInterceptor implements WebInterceptor {
         if (query.isEmpty() ) {
             return Result.NEXT;
         }
+
+        new DotGraphQLContextBuilder().build(requestIn, response);
 
         final GraphqlCacheKey cacheKey = GraphqlCacheKey.from(requestIn, query.get(),
                 getParamOrHeader(requestIn, GRAPHQL_CACHE_KEY_PARAM));
