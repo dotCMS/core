@@ -1,6 +1,5 @@
 package com.dotcms.contenttype.business;
 
-import com.dotcms.concurrent.DotConcurrentFactory;
 import com.dotcms.config.DotInitializer;
 import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
@@ -9,7 +8,6 @@ import com.dotcms.contenttype.model.field.ImmutableTextField;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ImmutableSimpleContentType;
 import com.dotcms.contenttype.model.type.SimpleContentType;
-import com.dotcms.util.VoidDelegate;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -154,9 +152,10 @@ public class ContentTypeInitializer implements DotInitializer {
      * favorites' own rows are also reset so they inherit them, in the same transaction; later
      * repairs leave rows added to individual favorites alone. Each repair is logged. Runs on every
      * start, so it also repairs an existing install. Turned off with
-     * {@code DO_DEFAULT_PAGE_PERMISSIONS=false}. The check and the repair run under a cluster lock,
-     * so nodes starting together do not both reset the favorites: a node that finds the lock held
-     * skips, and one that takes it later checks the rows the first node committed.
+     * {@code DO_DEFAULT_PAGE_PERMISSIONS=false}. The check and the repair run in one transaction
+     * that first takes a database lock, so nodes starting together take turns: a node that finds
+     * another node repairing waits for it to commit or roll back, then checks the rows it left and
+     * repairs them itself if they are still wrong.
      *
      * @param savedContentType the favorite page content type
      */
@@ -166,8 +165,15 @@ public class ContentTypeInitializer implements DotInitializer {
 
             try {
 
-                DotConcurrentFactory.getInstance().getClusterLockManager(FAVORITE_PAGE_PERMISSIONS_LOCK)
-                        .tryClusterLock((VoidDelegate) () -> this.repairDefaultPermissions(savedContentType));
+                final String repair = LocalTransaction.wrapReturn(() -> this.repairDefaultPermissions(savedContentType));
+                if (null != repair) {
+                    // the repair evicts cached rows before it commits, so a read on this or
+                    // another node can cache the old rows again until then; flush both
+                    // permission cache groups, the rows and the read decisions, now that the
+                    // new rows are committed
+                    CacheLocator.getPermissionCache().clearCache();
+                    Logger.info(this, repair);
+                }
             } catch (final Throwable e) {
 
                 Logger.error(this, "Favorite pages: " + e.getMessage(), e);
@@ -177,54 +183,60 @@ public class ContentTypeInitializer implements DotInitializer {
 
     /**
      * Checks the favorite page content type permissions and repairs them when needed, as described
-     * on {@link #checkDefaultPermissions(ContentType)}. Called under the cluster lock.
+     * on {@link #checkDefaultPermissions(ContentType)}. Must run inside a transaction: it takes a
+     * database lock held until that transaction ends, and reads the type's rows from the database
+     * rather than from the cache, so it sees what another node's repair committed.
      *
      * @param savedContentType the favorite page content type
+     * @return the message to log once the repair commits, or {@code null} if nothing was repaired
      * @throws DotDataException     if the permissions cannot be read or saved
      * @throws DotSecurityException if the permissions cannot be saved
      */
-    private void repairDefaultPermissions(final ContentType savedContentType)
+    private String repairDefaultPermissions(final ContentType savedContentType)
             throws DotDataException, DotSecurityException {
+
+        // nosemgrep: gitlab.find_sec_bugs.CUSTOM_INJECTION-2 -- static SQL, the only runtime
+        // value is bound via addParam
+        new DotConnect().setSQL("SELECT pg_advisory_xact_lock(hashtext(?))")
+                .addParam(FAVORITE_PAGE_PERMISSIONS_LOCK)
+                .loadObjectResults();
+        APILocator.getPermissionAPI().removePermissionableFromCache(savedContentType.getPermissionId());
 
         // Add CMS Owner Permissions
         final int permissionType = PermissionAPI.PERMISSION_USE | PermissionAPI.PERMISSION_EDIT |
                 PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS;
         final Role backendRole = APILocator.getRoleAPI().loadCMSOwnerRole();
         final boolean contentletsInherit = this.contentletsInheritPermission(savedContentType, permissionType, backendRole);
-        if (!APILocator.getPermissionAPI().doesRoleHavePermission(savedContentType, permissionType, backendRole)
-                || !contentletsInherit
-                || !this.onlyRoleHasRows(savedContentType, backendRole)) {
+        if (APILocator.getPermissionAPI().doesRoleHavePermission(savedContentType, permissionType, backendRole)
+                && contentletsInherit
+                && this.onlyRoleHasRows(savedContentType, backendRole)) {
 
-            // Only a type this repair has not run on yet lacks the row favorites inherit;
-            // its favorites may carry the old grants. Once it has run, a favorite's own
-            // rows were added on purpose, so later repairs fix the type only.
-            final boolean resetFavorites = !contentletsInherit;
-            final int favoritesWithOwnRows = resetFavorites ? this.countFavoritesWithOwnRows(savedContentType) : 0;
-            final List<Permission> newSetOfPermissions = new ArrayList<>();
-            // this is the individual permission
-            newSetOfPermissions.add(new Permission(savedContentType.getPermissionId(), backendRole.getId(), permissionType, true));
-            // this is the inheritance permission
-            newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), savedContentType.getPermissionId(),  backendRole.getId(), permissionType, true));
-            // one transaction, so a failed reset leaves the type rows unchanged and the
-            // next start repairs it again
-            LocalTransaction.wrap(() -> {
-                APILocator.getPermissionAPI().removePermissions(savedContentType);
-                APILocator.getPermissionAPI().assignPermissions(newSetOfPermissions, savedContentType, APILocator.systemUser(), false);
-                // reset here rather than through ResetPermissionsJob, which needs a logged-in
-                // request user and has none at startup
-                if (resetFavorites) {
-                    APILocator.getPermissionAPI().resetPermissionsUnder(savedContentType);
-                }
-            });
-            // the repair evicts cached rows before it commits, so a read on this or another
-            // node can cache the old rows again until then; flush both permission cache
-            // groups, the rows and the read decisions, now that the new rows are committed
-            CacheLocator.getPermissionCache().clearCache();
-            Logger.info(this, resetFavorites
-                    ? "Favorite pages: reset the content type permissions to CMS Owner only and removed the own permissions of "
-                            + favoritesWithOwnRows + " favorite(s)"
-                    : "Favorite pages: reset the content type permissions to CMS Owner only; favorites kept their own permissions");
+            return null;
         }
+
+        // Only a type this repair has not run on yet lacks the row favorites inherit;
+        // its favorites may carry the old grants. Once it has run, a favorite's own
+        // rows were added on purpose, so later repairs fix the type only.
+        final boolean resetFavorites = !contentletsInherit;
+        final int favoritesWithOwnRows = resetFavorites ? this.countFavoritesWithOwnRows(savedContentType) : 0;
+        final List<Permission> newSetOfPermissions = new ArrayList<>();
+        // this is the individual permission
+        newSetOfPermissions.add(new Permission(savedContentType.getPermissionId(), backendRole.getId(), permissionType, true));
+        // this is the inheritance permission
+        newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), savedContentType.getPermissionId(),  backendRole.getId(), permissionType, true));
+        // same transaction as the check, so a failed reset leaves the type rows unchanged
+        // and the next start repairs it again
+        APILocator.getPermissionAPI().removePermissions(savedContentType);
+        APILocator.getPermissionAPI().assignPermissions(newSetOfPermissions, savedContentType, APILocator.systemUser(), false);
+        // reset here rather than through ResetPermissionsJob, which needs a logged-in
+        // request user and has none at startup
+        if (resetFavorites) {
+            APILocator.getPermissionAPI().resetPermissionsUnder(savedContentType);
+        }
+        return resetFavorites
+                ? "Favorite pages: reset the content type permissions to CMS Owner only and removed the own permissions of "
+                        + favoritesWithOwnRows + " favorite(s)"
+                : "Favorite pages: reset the content type permissions to CMS Owner only; favorites kept their own permissions";
     }
 
     /**
