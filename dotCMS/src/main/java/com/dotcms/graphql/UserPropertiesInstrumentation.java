@@ -13,7 +13,7 @@ import graphql.schema.DataFetchingEnvironment;
 import graphql.schema.GraphQLNamedType;
 import graphql.schema.GraphQLType;
 import graphql.schema.GraphQLTypeUtil;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -104,7 +104,7 @@ public class UserPropertiesInstrumentation extends SimpleInstrumentation {
         if (null == key) {
             return PropertyTreeFilter.filter(result, filter, PropertyTreeFilter.storedContentTypes());
         }
-        final Map<String, Object> single = new LinkedHashMap<>();
+        final Map<String, Object> single = new HashMap<>();
         single.put(key, result);
         final Map<String, Object> filtered = filter.apply(single);
         return filtered.containsKey(key)
