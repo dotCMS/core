@@ -33,8 +33,10 @@ export class DotContentletEditUrlService {
 ```ts
 export interface DotEditContentOpenOptions extends DotEditContentPanelHandlers {
     /**
-     * The opener's injector. The panel resolves its dependencies through it (MessageService for toasts,
-     * route-level providers) and closes when it is destroyed. Required.
+     * The opener's injector. The panel resolves its dependencies through it, never through where the
+     * outlet sits: route-level providers, and PrimeNG MessageService for toasts, so it must sit under
+     * a component that provides one and renders a <p-toast /> (the root Injector reaches none). The
+     * panel closes when it is destroyed. Required.
      */
     injector: Injector;
 }
@@ -54,11 +56,11 @@ export class DotEditContentOpenerService {
 Behaviour of `open()`:
 
 1. Validate the request (edit-request.md). Invalid → standard error, return a ref that is already closed.
-2. `mode: 'edit'` without `contentType` → fetch the contentlet by inode, fill `contentType`, `identifier`, `title`, `languageId` from it.
+2. `mode: 'edit'` without `contentType` or without `title` → fetch the contentlet by inode, fill `contentType`, `identifier`, `title`, `languageId` from it where the request left them out.
 3. `resolveEditor(request.contentType)`.
 4. `editor === 'legacy'` and `mode === 'new'` → `DotActionUrlService.getCreateContentletUrl(contentType, languageId)`. A failure → standard error, close the pending panel.
 5. Call `DotSidePanelService.open(componentPromise, { heading, inputs: { request, createUrl? }, outputs, injector })`, where `componentPromise` resolves to `loadDotEditContentSidePanel()` or `loadDotLegacyEditorSidePanel()` only after steps 2 to 4 complete. The panel's spinner shows meanwhile.
-6. Wire outputs: the five events to the caller's handlers; `openContent` (from either panel, see open-content-from-fields.md) to a nested `open()` with the hosting panel's injector, routing that panel's `saved` to the event's `onSaved`.
+6. Wire outputs: the five events to the caller's handlers; `openContent` (from either panel, see open-content-from-fields.md) to a nested `open()` with the hosting panel's injector, which the panel puts on the event (`DotOpenContentEvent.injector`), so the stacked panel closes when its host does; routing that panel's `saved` to the event's `onSaved`.
 7. `closed` is taken from the ref, so it fires even when the content component never loaded.
 
 ## The signal helper
@@ -97,6 +99,6 @@ Behaviour notes carried over from `injectSidePanel`: a request that changes whil
 | Query Tool | `injectEditContentPanel` |
 | Pages portlet | `open()` from the actions service with the component's injector |
 | Publishing Queue dialogs | `open()` with the dialog component's injector |
-| Custom-event handler (legacy JSP portlets) | `open()` with the root injector |
+| Custom-event handler (legacy JSP portlets) | `open()` with the injector of `DotSidePanelHostComponent` (layer 5), never the root injector, which reaches no `MessageService` |
 | Deep-link component | `open()` with the component's injector |
 | `RouterEditContentHost`, `OverlayEditContentHost` | `open()` with the shell's or the panel's injector |

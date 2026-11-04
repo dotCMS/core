@@ -2,6 +2,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import {
     Component,
     DestroyRef,
+    Injector,
     NgZone,
     computed,
     inject,
@@ -32,7 +33,7 @@ import {
     DotFunctionInfo,
     DotPushPublishDialogData
 } from '@dotcms/dotcms-models';
-import { DotSidePanelContent, DotSidePanelRef } from '@dotcms/ui';
+import { DotSidePanelContent, DotSidePanelRef, DotSidePanelService } from '@dotcms/ui';
 
 import { DotPageEditorRequest } from '../../models/dot-edit-content-panel-events.model';
 import { DotEditContentRequest } from '../../models/dot-edit-content-request.model';
@@ -79,6 +80,8 @@ interface DotLegacyEditorHook {
 })
 export class DotLegacyEditorSidePanelComponent implements DotSidePanelContent {
     readonly #panel = inject(DotSidePanelRef);
+    readonly #injector = inject(Injector);
+    readonly #sidePanels = inject(DotSidePanelService);
     readonly #zone = inject(NgZone);
     readonly #destroyRef = inject(DestroyRef);
     // Root (admin app) instances, on purpose: the workflow wizard and push publish dialogs are
@@ -112,11 +115,11 @@ export class DotLegacyEditorSidePanelComponent implements DotSidePanelContent {
 
     /**
      * The legacy editor asked to open a page in the page editor: the first save of a new page. The
-     * opener closes the panel and opens it.
+     * editor is finished with by then, so the panel closes right after; the surface opens the page.
      */
     readonly pageEditorRequested = output<DotPageEditorRequest>();
 
-    /** The content was removed from inside the editor. The editor's own close follows. */
+    /** The content was removed from inside the editor. Reported once; the panel then closes. */
     readonly deleted = output<void>();
 
     /** The panel closed, for any reason. Emitted once. */
@@ -157,15 +160,26 @@ export class DotLegacyEditorSidePanelComponent implements DotSidePanelContent {
     /** The window of the document the editor loaded last. */
     #editorWindow: Window | null = null;
 
+    /**
+     * The document the editor loaded last reported its content removed. The editor announces one
+     * delete twice for a page (the hook, then `deleted-page`), so it is reported once.
+     */
+    #deletedReported = false;
+
     constructor() {
         // Other admin code asks the legacy editor to run one of its functions through this service:
         // the workflow wizard hands its answer back with `saveAssignCallBackAngular`, and the compare
         // dialog's Bring Back calls `getVersionBack`. The full-page editor's iframe answers them the
-        // same way (`IframeComponent`).
+        // same way (`IframeComponent`). Every legacy editor defines those functions, so with two
+        // stacked only the one in front, the one the author is using, answers.
         this.#iframeService
             .ran()
             .pipe(takeUntilDestroyed())
-            .subscribe((call) => this.#runInEditor(call));
+            .subscribe((call) => {
+                if (this.#isInFront()) {
+                    this.#runInEditor(call);
+                }
+            });
 
         this.#panel.closed.pipe(take(1), takeUntilDestroyed()).subscribe(() => this.closed.emit());
     }
@@ -212,6 +226,7 @@ export class DotLegacyEditorSidePanelComponent implements DotSidePanelContent {
     protected onLoaded(editorWindow: Window): void {
         this.#editorWindow = editorWindow;
         this.#dirty.set(false);
+        this.#deletedReported = false;
 
         const search = new URLSearchParams(editorWindow.location?.search ?? '');
 
@@ -223,7 +238,7 @@ export class DotLegacyEditorSidePanelComponent implements DotSidePanelContent {
         }
 
         // The editor calls this hook, not an `ng-event`, when the content it saved no longer
-        // exists (`deleted-contenlet`, sic), right before its generic `close`.
+        // exists (`deleted-contenlet`, sic), right before its `close` (`deleted-page` for a page).
         const hook: DotLegacyEditorHook = {
             next: (detail) => this.#zone.run(() => this.#handleHook(detail))
         };
@@ -248,15 +263,16 @@ export class DotLegacyEditorSidePanelComponent implements DotSidePanelContent {
                         url: redirectUrl,
                         languageId: Number(detail.data?.['languageId'])
                     });
-                } else {
-                    this.#panel.close();
                 }
 
+                // Either way the editor is done. A surface that opens no page editor still gets its
+                // `closed`, and refreshes on it (FR-017).
+                this.#panel.close();
                 break;
             }
 
             case 'deleted-page':
-                this.deleted.emit();
+                this.#reportDeleted();
                 this.#panel.close();
                 break;
 
@@ -294,7 +310,8 @@ export class DotLegacyEditorSidePanelComponent implements DotSidePanelContent {
                         inode: stringOrUndefined(detail.data?.['inode']),
                         contentType: stringOrUndefined(detail.data?.['contentType'])
                     }),
-                    source: 'block-editor'
+                    source: 'block-editor',
+                    injector: this.#injector
                 });
                 break;
 
@@ -306,7 +323,8 @@ export class DotLegacyEditorSidePanelComponent implements DotSidePanelContent {
                         contentType: stringOrUndefined(detail.data?.['contentType']),
                         folderPath: stringOrUndefined(detail.data?.['folderPath'])
                     }),
-                    source: 'block-editor'
+                    source: 'block-editor',
+                    injector: this.#injector
                 });
                 break;
         }
@@ -314,14 +332,30 @@ export class DotLegacyEditorSidePanelComponent implements DotSidePanelContent {
 
     /**
      * Handles a call through the window hook. Only a removed contentlet matters; it is reported
-     * as `deleted`, never as a save, and the `close` the editor sends next closes the panel.
+     * as `deleted`, never as a save, and the `close` or `deleted-page` the editor sends next closes
+     * the panel.
      *
      * @param detail What the editor passed to the hook.
      */
     #handleHook(detail: DotLegacyScreenEvent | undefined): void {
         if (detail?.name === 'deleted-contenlet') {
-            this.deleted.emit();
+            this.#reportDeleted();
         }
+    }
+
+    /** Reports `deleted` once per document the editor loads, whichever announcement came first. */
+    #reportDeleted(): void {
+        if (this.#deletedReported) {
+            return;
+        }
+
+        this.#deletedReported = true;
+        this.deleted.emit();
+    }
+
+    /** Whether this panel is the one in front, the last one the side-panel service opened. */
+    #isInFront(): boolean {
+        return this.#sidePanels.panels().at(-1)?.ref === this.#panel;
     }
 
     /**

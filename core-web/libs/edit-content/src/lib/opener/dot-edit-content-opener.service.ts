@@ -170,8 +170,8 @@ export class DotEditContentOpenerService {
 
     /**
      * Asks the server what the request needs before an editor shows: the contentlet, when an edit
-     * names no content type; which editor the type uses, unless the caller forced the legacy one;
-     * and the create screen for a legacy create.
+     * names no content type or no title for the heading; which editor the type uses, unless the
+     * caller forced the legacy one; and the create screen for a legacy create.
      *
      * @param request A request that passed {@link isOpenable}.
      * @param forced The editor the caller forced, if any.
@@ -181,13 +181,15 @@ export class DotEditContentOpenerService {
         request: DotEditContentRequest,
         forced: 'legacy' | undefined
     ): Observable<DotResolvedRequest> {
-        const contentlet$: Observable<DotCMSContentlet | null> = request.contentType
-            ? of(null)
-            : this.#contentlets.getContentletByInode(request.inode as string);
+        // The legacy JSP events and the Publishing Queue name the type and no title (#38303).
+        const fetch = request.mode === 'edit' && (!request.contentType || !request.title);
+        const contentlet$: Observable<DotCMSContentlet | null> = fetch
+            ? this.#contentlets.getContentletByInode(request.inode as string)
+            : of(null);
 
         return contentlet$.pipe(
             switchMap((contentlet) => {
-                const variable = (request.contentType ?? contentlet?.contentType) as string;
+                const variable = (request.contentType || contentlet?.contentType) as string;
                 const choice$: Observable<DotContentEditorChoice> =
                     forced === 'legacy'
                         ? of({ editor: 'legacy', contentType: null })
@@ -214,9 +216,11 @@ export class DotEditContentOpenerService {
 
     /**
      * The panel's output handlers: the caller's, by the output name of each event, and
-     * `openContent`, which stacks a panel for the content a panel asked for, with the same opener
-     * injector, routing that panel's saves to the asker's reply. `closed` is not an output here: it
-     * is taken from the panel ref, so it fires even when no editor loaded.
+     * `openContent`, which stacks a panel for the content a panel asked for, routing that panel's
+     * saves to the asker's reply. The stacked panel opens under the asking panel's own injector,
+     * which the panel puts on the event, so it belongs to that panel and closes with it
+     * (open-content-from-fields.md); an event without one stacks under the caller's. `closed` is
+     * not an output here: it is taken from the panel ref, so it fires even when no editor loaded.
      *
      * @param options The caller's injector and handlers.
      * @returns The handlers, by output name.
@@ -224,7 +228,10 @@ export class DotEditContentOpenerService {
     #outputs(options: DotEditContentOpenOptions): Record<string, (value: never) => void> {
         const outputs: Record<string, (value: never) => void> = {
             openContent: (event: DotOpenContentEvent) =>
-                this.open(event.request, { injector: options.injector, saved: event.onSaved })
+                this.open(event.request, {
+                    injector: event.injector ?? options.injector,
+                    saved: event.onSaved
+                })
         };
 
         for (const name of HANDLED_OUTPUTS) {
@@ -268,7 +275,8 @@ function withContentlet(
         ...request,
         contentType: request.contentType ?? contentlet.contentType,
         identifier: request.identifier ?? contentlet.identifier,
-        title: request.title ?? contentlet.title,
+        // `||`, as the fetch rule reads it: an empty title is no heading.
+        title: request.title || contentlet.title,
         languageId: request.languageId ?? contentlet.languageId
     };
 }

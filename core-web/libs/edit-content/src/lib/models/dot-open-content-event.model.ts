@@ -1,3 +1,5 @@
+import { Injector } from '@angular/core';
+
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotEditContentRequest } from './dot-edit-content-request.model';
@@ -15,4 +17,11 @@ export interface DotOpenContentEvent {
 
     /** Who asked, when it matters to the host: a Relationship field or a block editor. */
     source?: 'relationship' | 'block-editor';
+
+    /**
+     * The asking panel's own injector, set by a panel when it hands the event to the opener. The
+     * stacked panel opens under it, so it belongs to that panel and closes with it. A field leaves it
+     * unset: its host opens with its own.
+     */
+    injector?: Injector;
 }

@@ -61,12 +61,3 @@ export interface DotEditContentRequest {
         isParent: boolean;
     };
 }
-
-/** An edit request once the opener validated it: it always names the inode to edit. */
-export type DotEditContentEditRequest = DotEditContentRequest & { mode: 'edit'; inode: string };
-
-/** A create request once the opener validated it: it always names the content type to create. */
-export type DotEditContentCreateRequest = DotEditContentRequest & {
-    mode: 'new';
-    contentType: string;
-};

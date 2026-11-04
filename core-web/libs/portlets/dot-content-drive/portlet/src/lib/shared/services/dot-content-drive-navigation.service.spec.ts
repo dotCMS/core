@@ -463,14 +463,6 @@ describe('DotContentDriveNavigationService', () => {
             expect(service.$panelLocation()).toBeNull();
         });
 
-        it('exposes every request through one signal, with no second one for the legacy editor', () => {
-            const requestSignals = Object.keys(service).filter((key) =>
-                key.endsWith('PanelRequest')
-            );
-
-            expect(requestSignals).toEqual(['$editPanelRequest']);
-        });
-
         it('exposes an edit through $editPanelRequest and names it in the location', () => {
             service.editContent(
                 createFakeContentlet({

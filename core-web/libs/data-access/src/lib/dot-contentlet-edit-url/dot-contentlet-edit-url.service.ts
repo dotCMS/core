@@ -78,19 +78,6 @@ export interface DotContentEditorChoice {
  * reads transiently fail. The error is intentionally swallowed — callers that need to
  * react to the failure should query `DotContentTypeService.getContentType()` directly.
  *
- * ## Existing duplicates (TODO migrations)
- *
- * Three older implementations of this pattern still exist and should migrate to this
- * service when their owners next touch the surrounding code:
- *
- * - `libs/new-block-editor/src/lib/editor/services/contentlet-edit-url.service.ts`
- *   (component-scoped, no HTMLPAGE branch)
- * - `libs/portlets/dot-content-drive/.../dot-content-drive-navigation.service.ts#editContentlet`
- *   (calls `Router.navigate` directly; would consume `resolveEditUrl(...)` and pass the
- *   result to `Router.navigateByUrl`)
- * - `libs/block-editor/src/lib/elements/dot-bubble-menu/dot-bubble-menu.component.ts`
- *   (inline, no cache, legacy editor only)
- *
  * @example
  * ```ts
  * readonly #editUrl = inject(DotContentletEditUrlService);
