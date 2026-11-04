@@ -4,11 +4,10 @@ import {
     mockProvider,
     SpyObject
 } from '@openng/spectator/vitest';
-import { of, throwError } from 'rxjs';
+import { of } from 'rxjs';
 import { Mocked, describe, expect, it, vi } from 'vitest';
 
 import { Location } from '@angular/common';
-import { HttpErrorResponse } from '@angular/common/http';
 import { signal } from '@angular/core';
 import { Router } from '@angular/router';
 
@@ -17,11 +16,7 @@ import {
     DotHttpErrorManagerService,
     DotRouterService
 } from '@dotcms/data-access';
-import {
-    DotCMSBaseTypesContentTypes,
-    DotCMSContentlet,
-    FeaturedFlags
-} from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, FeaturedFlags } from '@dotcms/dotcms-models';
 import { EDIT_CONTENT_NAVIGATION_OVERRIDE } from '@dotcms/edit-content';
 import { createFakeContentlet, createFakeContentType } from '@dotcms/utils-testing';
 
@@ -83,7 +78,6 @@ describe('DotContentDriveNavigationService', () => {
     let router: Mocked<Router>;
     let dotRouterService: Mocked<DotRouterService>;
     let location: SpyObject<Location>;
-    let httpErrorManager: SpyObject<DotHttpErrorManagerService>;
     let contentSearch: Mocked<DotContentSearchService>;
     let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
 
@@ -116,8 +110,9 @@ describe('DotContentDriveNavigationService', () => {
         router = spectator.inject(Router);
         dotRouterService = spectator.inject(DotRouterService);
         location = spectator.inject(Location);
-        httpErrorManager = spectator.inject(DotHttpErrorManagerService);
         contentSearch = spectator.inject(DotContentSearchService);
+        // Finds nothing, should anything search: the opener looks content up, not this service.
+        contentSearch.get.mockReturnValue(of({ jsonObjectView: { contentlets: [] } }));
         store = spectator.inject(DotContentDriveStore);
         // The store mock's functions are shared across tests and `clearAllMocks` keeps their
         // return values, so start every test with no language known.
@@ -480,21 +475,7 @@ describe('DotContentDriveNavigationService', () => {
             );
         });
 
-        it('names a deep-linked edit by identifier and the resolved language', () => {
-            contentSearch.get.mockReturnValue(
-                of({
-                    jsonObjectView: {
-                        contentlets: [
-                            createFakeContentlet({
-                                inode: 'es-inode',
-                                identifier: 'id-1',
-                                languageId: 3
-                            })
-                        ]
-                    }
-                })
-            );
-
+        it('names a deep-linked edit by identifier and the language the link names', () => {
             service.openEditByIdentifier('id-1', 3);
 
             expect(service.$editPanelRequest()).toEqual(
@@ -527,6 +508,30 @@ describe('DotContentDriveNavigationService', () => {
 
             it('is what the shell provides for the editor', () => {
                 expect(spectator.inject(EDIT_CONTENT_NAVIGATION_OVERRIDE)).toBe(service);
+            });
+
+            /**
+             * A panel opened from a link names its content by identifier, and the opener finds the
+             * inode the editor opens with: Content Drive knows that panel by its identifier.
+             */
+            it('answers for the panel it opened from a link, by identifier', () => {
+                service.openEditByIdentifier('id-1', 2);
+
+                expect(
+                    service.switchToLegacyEditor(
+                        { inode: 'inode-1', identifier: 'id-1' },
+                        BLOG_POST,
+                        'blog'
+                    )
+                ).toBe(true);
+            });
+
+            it('declines a panel of other content while one opened from a link is open', () => {
+                service.openEditByIdentifier('id-1', 2);
+
+                expect(service.leaveOnLoadError({ inode: 'inode-9', identifier: 'id-9' })).toBe(
+                    false
+                );
             });
 
             it('reopens its edit, in the same language, as a fresh request', () => {
@@ -707,144 +712,60 @@ describe('DotContentDriveNavigationService', () => {
         });
     });
 
+    /**
+     * A link names content by identifier. The opener finds its working version, falls back to any
+     * language when the one asked for has none, and shows the standard error for content that
+     * cannot be opened (FR-050): Content Drive asks it with the identifier and the language it
+     * prefers, and searches nothing itself.
+     */
     describe('openEditByIdentifier', () => {
-        it('should resolve the identifier to its working inode and open one edit request', () => {
-            const resolved = createFakeContentlet({
-                contentType: 'blog',
-                inode: 'working-inode-1',
-                identifier: 'shared-identifier',
-                languageId: 1,
-                title: 'Shared Content'
-            });
-            contentSearch.get.mockReturnValue(of({ jsonObjectView: { contentlets: [resolved] } }));
-
-            service.openEditByIdentifier('shared-identifier');
-
-            expect(contentSearch.get).toHaveBeenCalledWith(
-                expect.objectContaining({ query: '+identifier:shared-identifier +working:true' })
-            );
-            expect(service.$editPanelRequest()).toEqual({
-                mode: 'edit',
-                inode: 'working-inode-1',
-                identifier: 'shared-identifier',
-                contentType: 'blog',
-                languageId: 1,
-                title: 'Shared Content',
-                portletId: 'content-drive'
-            });
-            expect(router.navigate).not.toHaveBeenCalled();
-        });
-
-        /** Answers each `contentSearch.get` call in order, so a fallback lookup can be simulated. */
-        const answerWith = (...batches: DotCMSContentlet[][]) => {
-            let call = 0;
-            contentSearch.get.mockImplementation(() =>
-                of({ jsonObjectView: { contentlets: batches[call++] ?? [] } })
-            );
-        };
-
-        it('should look up the exact version the URL asked for', () => {
-            // One identifier has one inode PER LANGUAGE, so the identifier alone does not name a
-            // version. Pinning the query is exact and has no result-window ceiling.
-            answerWith([createFakeContentlet({ inode: 'es-inode', languageId: 2 })]);
-
+        it('should hand the opener an edit by identifier, in the language the URL names, without searching', () => {
             service.openEditByIdentifier('shared-identifier', 2);
 
-            expect(contentSearch.get).toHaveBeenCalledWith({
-                query: '+identifier:shared-identifier +working:true +languageId:2',
-                limit: 1
+            expect(service.$editPanelRequest()).toEqual({
+                mode: 'edit',
+                identifier: 'shared-identifier',
+                languageId: 2,
+                portletId: 'content-drive'
             });
-            expect(service.$editPanelRequest()).toEqual(
-                expect.objectContaining({ inode: 'es-inode', languageId: 2 })
-            );
+            expect(contentSearch.get).not.toHaveBeenCalled();
+            expect(router.navigate).not.toHaveBeenCalled();
         });
 
         it('should prefer the URL language over the active filter', () => {
             store.getFilterValue.mockReturnValue(['1']);
-            answerWith([createFakeContentlet({ inode: 'es-inode', languageId: 2 })]);
 
             service.openEditByIdentifier('shared-identifier', 2);
 
-            expect(contentSearch.get).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    query: '+identifier:shared-identifier +working:true +languageId:2'
-                })
-            );
+            expect(service.$editPanelRequest()?.languageId).toBe(2);
         });
 
         it('should fall back to the drive language, then the environment default', () => {
             store.getFilterValue.mockReturnValue(['3']);
-            answerWith([createFakeContentlet({ inode: 'i' })]);
 
             service.openEditByIdentifier('shared-identifier');
 
-            expect(contentSearch.get).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    query: '+identifier:shared-identifier +working:true +languageId:3'
-                })
-            );
+            expect(service.$editPanelRequest()?.languageId).toBe(3);
 
-            contentSearch.get.mockClear();
             store.getFilterValue.mockReturnValue(undefined);
             defaultLanguageId.mockReturnValue(4);
-            answerWith([createFakeContentlet({ inode: 'i' })]);
 
             service.openEditByIdentifier('shared-identifier');
 
-            expect(contentSearch.get).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    query: '+identifier:shared-identifier +working:true +languageId:4'
-                })
-            );
+            expect(service.$editPanelRequest()?.languageId).toBe(4);
         });
 
-        it('should still open another language when the preferred one has no version', () => {
-            // A pinned query returns nothing for a language the content was never translated into, and
-            // "nothing" must not be read as "do not open" — a shared link to English-only content would
-            // silently do nothing on a Spanish-default environment.
-            answerWith([], [createFakeContentlet({ inode: 'en-inode', languageId: 1 })]);
-
-            service.openEditByIdentifier('shared-identifier', 2);
-
-            expect(contentSearch.get).toHaveBeenLastCalledWith({
-                query: '+identifier:shared-identifier +working:true',
-                limit: 1
-            });
-            expect(service.$editPanelRequest()).toEqual(
-                expect.objectContaining({ inode: 'en-inode' })
-            );
-        });
-
-        it('should not run a second lookup when no language is known at all', () => {
+        it('should name no language when none is known at all, so the opener takes any', () => {
             store.getFilterValue.mockReturnValue(undefined);
             defaultLanguageId.mockReturnValue(undefined);
-            answerWith([createFakeContentlet({ inode: 'i' })]);
 
             service.openEditByIdentifier('shared-identifier');
 
-            expect(contentSearch.get).toHaveBeenCalledTimes(1);
-            expect(contentSearch.get).toHaveBeenCalledWith({
-                query: '+identifier:shared-identifier +working:true',
-                limit: 1
+            expect(service.$editPanelRequest()).toEqual({
+                mode: 'edit',
+                identifier: 'shared-identifier',
+                portletId: 'content-drive'
             });
-        });
-
-        it('should not open the panel when the identifier resolves to nothing', () => {
-            contentSearch.get.mockReturnValue(of({ jsonObjectView: { contentlets: [] } }));
-
-            service.openEditByIdentifier('missing-identifier');
-
-            expect(service.$editPanelRequest()).toBeNull();
-        });
-
-        it('should surface the error and not open the panel when the search fails', () => {
-            const error = new HttpErrorResponse({ status: 500 });
-            contentSearch.get.mockReturnValue(throwError(() => error));
-
-            service.openEditByIdentifier('shared-identifier');
-
-            expect(httpErrorManager.handle).toHaveBeenCalledWith(error);
-            expect(service.$editPanelRequest()).toBeNull();
         });
 
         /**
@@ -853,58 +774,14 @@ describe('DotContentDriveNavigationService', () => {
          * shows the new editor for a type that opted out of it (#37759, FR-021; #38303).
          */
         describe('leaving the editor to the opener', () => {
-            /** The resolved content, of the given type. */
-            const banner = (contentType: string) =>
-                createFakeContentlet({
-                    contentType,
-                    inode: 'banner-inode',
-                    identifier: 'banner-id',
-                    languageId: 2,
-                    title: 'Spring sale'
-                });
-
-            it.each([
-                ['a type that opted into the new editor', NEW_EDITOR_TYPE.variable],
-                ['a type on the legacy editor', LEGACY_TYPE.variable]
-            ])(
-                'should open the same edit request for content of %s, without looking its type up',
-                (_label, contentType) => {
-                    contentSearch.get.mockReturnValue(
-                        of({ jsonObjectView: { contentlets: [banner(contentType)] } })
-                    );
-
-                    service.openEditByIdentifier('banner-id', 2);
-
-                    expect(service.$editPanelRequest()).toEqual({
-                        mode: 'edit',
-                        inode: 'banner-inode',
-                        identifier: 'banner-id',
-                        contentType,
-                        languageId: 2,
-                        title: 'Spring sale',
-                        portletId: 'content-drive'
-                    });
-                    expect(router.navigate).not.toHaveBeenCalled();
-                }
-            );
-
-            it('should keep the language fallback for content of any type', () => {
-                answerWith(
-                    [],
-                    [
-                        createFakeContentlet({
-                            contentType: LEGACY_TYPE.variable,
-                            inode: 'en-inode',
-                            languageId: 1
-                        })
-                    ]
-                );
-
+            it('should name no content type, so the opener reads it and picks the editor', () => {
                 service.openEditByIdentifier('banner-id', 2);
 
                 expect(service.$editPanelRequest()).toEqual(
-                    expect.objectContaining({ inode: 'en-inode', languageId: 1 })
+                    expect.objectContaining({ mode: 'edit', identifier: 'banner-id' })
                 );
+                expect(service.$editPanelRequest()?.contentType).toBeUndefined();
+                expect(router.navigate).not.toHaveBeenCalled();
             });
         });
     });

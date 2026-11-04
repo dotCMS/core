@@ -2086,6 +2086,34 @@ describe('EditEmaEditorComponent', () => {
                             expect(pageReloadSpy).toHaveBeenCalledTimes(1);
                         });
 
+                        /**
+                         * A page's first save in the legacy editor names the page to open, and the
+                         * legacy panel then closes itself: that page is loaded once, and the close
+                         * does not reload it again. The next panel's close reloads as always.
+                         */
+                        it('should load the page the editor names once, with no reload when the panel then closes', () => {
+                            const pageLoadSpy = vi.spyOn(pageApi(), 'pageLoad');
+                            const pageReloadSpy = vi.spyOn(pageApi(), 'pageReload');
+                            const panel = openEdit();
+
+                            panel.options.pageEditorRequested?.({
+                                url: '/new-page',
+                                languageId: 2
+                            });
+                            panel.ref.close();
+
+                            expect(pageLoadSpy).toHaveBeenCalledTimes(1);
+                            expect(pageLoadSpy).toHaveBeenCalledWith({
+                                url: '/new-page',
+                                language_id: '2'
+                            });
+                            expect(pageReloadSpy).not.toHaveBeenCalled();
+
+                            openEdit().ref.close();
+
+                            expect(pageReloadSpy).toHaveBeenCalledTimes(1);
+                        });
+
                         // The safety net for workflow actions run in the legacy editor, which report
                         // nothing the page can use (#38303, R4).
                         it('should reload the page and clear the request when the panel closes itself', () => {

@@ -103,6 +103,20 @@ describe('OverlayEditContentHost', () => {
             });
         });
 
+        /**
+         * A panel opened from a link names its content by identifier, and the opener fills in the
+         * inode it found: a surface knows its own panel by either (#38303, FR-050).
+         */
+        it('carries the identifier of an edit, and none for a create', () => {
+            config.data = { mode: 'edit', inode: 'inode-9', identifier: 'id-9' };
+            expect(host.resolveIdentity()).toEqual(
+                expect.objectContaining({ inode: 'inode-9', identifier: 'id-9' })
+            );
+
+            config.data = { mode: 'new', identifier: 'stale-id', contentType: 'Blog' };
+            expect(host.resolveIdentity().identifier).toBeUndefined();
+        });
+
         it('names no inode for a create, even if the request carries one', () => {
             config.data = { mode: 'new', inode: 'stale-inode', contentType: 'Blog' };
             expect(host.resolveIdentity()).toEqual(

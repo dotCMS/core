@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { mockProvider } from '@openng/spectator/vitest';
-import { of } from 'rxjs';
+import { BehaviorSubject, of } from 'rxjs';
 import { type Mock, vi } from 'vitest';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -10,7 +10,7 @@ import { DebugElement, Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Params } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { ConfirmationService } from 'primeng/api';
@@ -74,7 +74,12 @@ const createFeatureFlagResponse = (enabled = 'NOT_FOUND') => ({
     [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: enabled
 });
 
+/** The task the route names. */
+const TASK_ID = '74cabf7a-0e9d-48b6-ab1c-8f76d0ad31e0';
+
 describe('DotWorkflowTaskComponent', () => {
+    /** The route's params, as the router emits them on each navigation that changes them. */
+    let params$: BehaviorSubject<Params>;
     let fixture: ComponentFixture<DotWorkflowTaskComponent>;
     let de: DebugElement;
     let component: DotWorkflowTaskComponent;
@@ -95,12 +100,10 @@ describe('DotWorkflowTaskComponent', () => {
             providers: [
                 {
                     provide: ActivatedRoute,
-                    useValue: {
-                        snapshot: {
-                            params: {
-                                asset: '74cabf7a-0e9d-48b6-ab1c-8f76d0ad31e0'
-                            }
-                        }
+                    useFactory: () => {
+                        params$ = new BehaviorSubject<Params>({ asset: TASK_ID });
+
+                        return { params: params$, snapshot: { params: { asset: TASK_ID } } };
                     }
                 },
                 {
@@ -176,11 +179,34 @@ describe('DotWorkflowTaskComponent', () => {
     it('should call workflow task modal', () => {
         const params = {
             header: 'Task Detail',
-            id: '74cabf7a-0e9d-48b6-ab1c-8f76d0ad31e0'
+            id: TASK_ID
         };
 
         expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledWith(params);
         expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledTimes(1);
+    });
+
+    /**
+     * The route is reused across tasks (no `reuseRoute: false` on `/c/:id/:asset`), so the task
+     * follows the route's params: another task shows in the dialog, and a navigation that keeps
+     * the task (Back with its Edit Content panel open) leaves the dialog as it is.
+     */
+    describe('following the route', () => {
+        it('should show the task a later navigation names', () => {
+            params$.next({ asset: 'other-task' });
+
+            expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledTimes(2);
+            expect(dotWorkflowTaskDetailService.view).toHaveBeenLastCalledWith({
+                header: 'Task Detail',
+                id: 'other-task'
+            });
+        });
+
+        it('should not load the task again for a navigation that keeps it', () => {
+            params$.next({ asset: TASK_ID });
+
+            expect(dotWorkflowTaskDetailService.view).toHaveBeenCalledTimes(1);
+        });
     });
 
     it('should redirect to /workflow and refresh data when modal closed', () => {

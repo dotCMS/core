@@ -294,6 +294,65 @@ describe('DotEditContentOpenerService', () => {
             expect(ref.isClosed).toBe(true);
         });
 
+        /**
+         * A link names content by identifier: the URL already names the panel while the lookup
+         * runs, so a lookup that finds nothing closes a panel the URL service knows, which takes
+         * its params out of the URL (the spec's "URL names content the author cannot open").
+         */
+        it('names the panel in the URL before the lookup, so a refused link leaves no params', () => {
+            const register = spectator.inject(DotPanelUrlStateService).register as Mock;
+            const lookup = new Subject<unknown>();
+            searchContent.mockReturnValue(lookup);
+
+            const ref = spectator.service.open(
+                { mode: 'edit', identifier: IDENTIFIER, languageId: 2 },
+                { injector, url: {} }
+            );
+
+            expect(register).toHaveBeenCalledTimes(1);
+            expect(register.mock.calls[0][0] === ref).toBe(true);
+            expect(register.mock.calls[0][1]).toEqual({
+                editContent: IDENTIFIER,
+                editContentLang: '2'
+            });
+
+            lookup.next({ jsonObjectView: { contentlets: [] } });
+
+            expect(handleError).toHaveBeenCalledTimes(1);
+            expect(ref.isClosed).toBe(true);
+        });
+
+        it('renames the panel in place to the version found in another language', () => {
+            const urlState = spectator.inject(DotPanelUrlStateService);
+            resolveEditor.mockReturnValue(NEVER);
+            searchContent
+                .mockReturnValueOnce(searchResult())
+                .mockReturnValueOnce(searchResult(ENGLISH));
+
+            const ref = spectator.service.open(
+                { mode: 'edit', identifier: IDENTIFIER, languageId: 2 },
+                { injector, url: {} }
+            );
+
+            expect(urlState.register).toHaveBeenCalledTimes(1);
+            expect(urlState.update).toHaveBeenCalledTimes(1);
+            const [renamed, params] = (urlState.update as Mock).mock.calls[0];
+            expect(renamed === ref).toBe(true);
+            expect(params).toEqual({ editContent: IDENTIFIER, editContentLang: '1' });
+        });
+
+        // The identifier reaches a Lucene query: a stray space would make the lookup miss.
+        it('looks an identifier up without the spaces around it', () => {
+            searchContent.mockReturnValue(searchResult(ENGLISH));
+
+            spectator.service.open({ mode: 'edit', identifier: ` ${IDENTIFIER} ` }, { injector });
+
+            expect(searchContent).toHaveBeenCalledWith({
+                query: `+identifier:${IDENTIFIER} +working:true`,
+                limit: 1
+            });
+        });
+
         // The identifier reaches a Lucene query.
         it('refuses an identifier that is not one, without searching', () => {
             const ref = spectator.service.open(
