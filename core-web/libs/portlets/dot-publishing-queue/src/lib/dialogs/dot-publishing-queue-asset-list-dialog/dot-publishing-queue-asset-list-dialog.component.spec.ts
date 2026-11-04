@@ -27,8 +27,17 @@ import { DotPublishingQueueStore } from '../../store/dot-publishing-queue.store'
 /** Whether anything resolved `DotContentletEditUrlService` while the dialog was mounted. */
 let editUrlServiceInjected: boolean;
 
+// A type whose display name is not its variable: the opener looks the type up by its variable,
+// and a lookup by name finds nothing and falls back to the legacy editor.
 const ASSETS: BundleAssetView[] = [
-    { asset: 'a1', title: 'Asset 1', type: 'contentlet', inode: 'i1', content_type_name: 'Blog' },
+    {
+        asset: 'a1',
+        title: 'Asset 1',
+        type: 'contentlet',
+        inode: 'i1',
+        content_type_name: 'Blog Post',
+        content_type_variable: 'Blog'
+    },
     { asset: 'a2', title: 'Asset 2', type: 'template' }
 ];
 
