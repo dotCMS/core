@@ -123,6 +123,32 @@ across rollback. Block password-based Basic/DOTAUTH and legacy credential access
 gateway, or use a binary that supports the policy. Call the default-change and this rollback
 limitation out in the release notes.
 
+## URL Credential Login — Upgrade Note
+
+`ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS` defaults to `false`, including when the setting is
+absent. Username/password authentication through legacy URL path or query parameters is ignored;
+this also applies to API JWTs passed as the password. Without another valid authentication source,
+protected endpoints return their existing unauthorized response. Public endpoints retain their
+existing anonymous-access rules. Authorization headers, DOTAUTH headers, existing sessions and
+designated JSON/body login endpoints are unchanged.
+
+Migrate clients to an `Authorization: Bearer` header or the designated login endpoint. For temporary
+legacy compatibility, set `ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS=true` (environment variable:
+`DOT_ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS=true`). This opt-in remains subordinate to
+`ALLOW_BASIC_AUTH`: `NONE` still rejects credentials, `JWT_TOKEN` permits API JWTs only, and `ALL`
+also permits passwords. Legacy Ajax password/session fallbacks require both this opt-in and `ALL`;
+their existing permission and lockout checks are unchanged. Their merged path/query/form parameter
+maps share the same gate; this does not disable the designated body-based login endpoints.
+
+**Secrets in URLs remain unsafe:** accepting or rejecting a request does not redact the incoming
+URL from Tomcat, reverse-proxy or other access logs. Stop sending secrets in URLs; rotate exposed
+credentials and handle affected logs according to your security procedures. This setting does not
+add URL logging or change access-log configuration.
+
+**Rollback:** an older binary without this setting ignores even an explicit `false` override and
+restores its previous URL-login behavior. Keep clients migrated and block legacy URL credentials
+at an upstream gateway if the hardened posture must survive a binary rollback.
+
 ## Configuration Documentation Pattern
 When adding new properties, include:
 ```properties

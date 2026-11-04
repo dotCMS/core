@@ -46,7 +46,7 @@ public class SiteSearchAjaxAction extends AjaxAction {
 	/**
 	 * Checks that the caller has access to the Site Search portlet and invokes the command named in
 	 * the request, as long as it is one of {@link #SUPPORTED_COMMANDS}; any other command is
-	 * answered with a 403.
+	 * answered with a 403. URL password login additionally requires an explicit compatibility opt-in.
 	 *
 	 * @param request  the current request
 	 * @param response the current response
@@ -74,8 +74,9 @@ public class SiteSearchAjaxAction extends AjaxAction {
 		try {
 			// Check permissions if the user has access to the Site Search portlet
 			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("site-search", user)) {
-				// Only the compatibility mode may exchange URI credentials for a session.
-				if (BasicAuthentication.mode() == BasicAuthentication.Mode.ALL) {
+				// URL login requires both compatibility settings; normal session checks still apply.
+				if (BasicAuthentication.allowUrlCredentials()
+						&& BasicAuthentication.mode() == BasicAuthentication.Mode.ALL) {
 					String userName = map.get("u");
 					String password = map.get("p");
 					LoginFactory.doLogin(userName, password, false, request, response);

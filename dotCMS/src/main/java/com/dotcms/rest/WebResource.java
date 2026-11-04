@@ -732,7 +732,16 @@ public  class WebResource {
     } // getAnonymousUser.
 
 
+    /**
+     * Extracts legacy URL credentials only when the security compatibility setting permits them.
+     *
+     * @param map parsed request parameters
+     * @return credentials, or empty when absent or URL login is disabled (the default)
+     */
     private static Optional<UsernamePassword> getAuthCredentialsFromMap(final Map<String, String> map) {
+        if (!BasicAuthentication.allowUrlCredentials()) {
+            return Optional.empty();
+        }
 
         Optional<UsernamePassword> result = Optional.empty();
 

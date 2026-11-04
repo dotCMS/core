@@ -40,7 +40,7 @@ import org.mockito.MockedStatic;
  * {@code ALLOW_BASIC_AUTH} at {@code NONE} or {@code JWT_TOKEN}, a missing user or a missing
  * portlet permission must never reach {@link LoginFactory#doLogin} through the {@code u/p} or
  * {@code user/passwd} URI parameters, and the existing 401 denial must remain. Only {@code ALL}
- * keeps the legacy fallback.
+ * keeps the legacy fallback, and only when URL credentials are explicitly enabled.
  *
  * <p>Limitation: {@link AjaxAction#setUser(HttpServletRequest)} is stubbed, so these tests prove
  * that the submitted credentials never reach the password login factory; they do not exercise the
@@ -49,17 +49,21 @@ import org.mockito.MockedStatic;
 public class AjaxPasswordAuthenticationTest extends UnitTestBase {
 
     private String previousMode;
+    private String previousUrlCredentials;
 
     /** Preserves the mode property so an assertion failure cannot leak configuration. */
     @Before
     public void saveMode() {
         previousMode = Config.getStringProperty("ALLOW_BASIC_AUTH", null);
+        previousUrlCredentials = Config.getStringProperty("ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS", null);
+        Config.setProperty("ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS", true);
     }
 
     /** Restores the mode property after each test. */
     @After
     public void restoreMode() {
         Config.setProperty("ALLOW_BASIC_AUTH", previousMode);
+        Config.setProperty("ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS", previousUrlCredentials);
     }
 
     /** Restrictive modes must reject u/p and user/passwd without invoking the password login. */
@@ -80,13 +84,35 @@ public class AjaxPasswordAuthenticationTest extends UnitTestBase {
         }
     }
 
-    /** {@code ALL} must keep the legacy u/p fallback for every action. */
+    /** Missing, false and invalid URL opt-ins deny both query and path aliases, even in ALL mode. */
+    @Test
+    public void urlCredentialsAreDisabledByDefaultEvenInAllMode() throws Exception {
+        Config.setProperty("ALLOW_BASIC_AUTH", "ALL");
+        for (final String enabled : new String[]{null, "false", "invalid"}) {
+            Config.setProperty("ALLOW_USERNAME_PASSWORD_AS_URL_PARAMS", enabled);
+            for (final Class<? extends AjaxAction> actionType : allActionTypes()) {
+                for (final String transport : new String[]{"query", "path"}) {
+                    assertNoPasswordFallback(actionType, parsedCredentials(transport, "u", "p"), null);
+                }
+            }
+            for (final Class<? extends AjaxAction> actionType : aliasActionTypes()) {
+                assertNoPasswordFallback(actionType, parsedCredentials("query", "user", "passwd"), null);
+                assertNoPasswordFallback(actionType, parsedCredentials("path", "user", "passwd"), null);
+            }
+            for (final Class<? extends AjaxAction> actionType : portletGatedActionTypes()) {
+                assertNoPasswordFallback(actionType, credentials("u", "p"), mockUser());
+            }
+        }
+    }
+
+    /** ALL with an explicit URL opt-in must keep both query and path aliases for every action. */
     @Test
     public void allModeRetainsLegacyPasswordFallback() throws Exception {
         Config.setProperty("ALLOW_BASIC_AUTH", "ALL");
 
         for (final Class<? extends AjaxAction> actionType : allActionTypes()) {
-            assertPasswordFallbackUsed(actionType, credentials("u", "p"), null);
+            assertPasswordFallbackUsed(actionType, parsedCredentials("query", "u", "p"), null);
+            assertPasswordFallbackUsed(actionType, parsedCredentials("path", "u", "p"), null);
         }
     }
 
@@ -153,6 +179,23 @@ public class AjaxPasswordAuthenticationTest extends UnitTestBase {
         params.put(userKey, "test-user@example.com");
         params.put(passwordKey, "a-password");
         return params;
+    }
+
+    /** Uses the real shared parser so the gate covers query strings and alternating path segments. */
+    private static Map<String, String> parsedCredentials(final String transport,
+            final String userKey, final String passwordKey) {
+        final HttpServletRequest request = mock(HttpServletRequest.class);
+        final Map<String, String> params = credentials(userKey, passwordKey);
+        when(request.getRequestURI()).thenReturn("path".equals(transport)
+                ? "/cmd/action/" + userKey + "/" + params.get(userKey)
+                        + "/" + passwordKey + "/" + params.get(passwordKey)
+                : "/cmd/action");
+        when(request.getParameterNames()).thenReturn(java.util.Collections.enumeration(
+                "query".equals(transport) ? params.keySet() : java.util.Collections.emptySet()));
+        params.forEach((key, value) -> when(request.getParameter(key)).thenReturn(value));
+        final AjaxAction parser = mock(AjaxAction.class, CALLS_REAL_METHODS);
+        parser.setURIParams(request);
+        return parser.getURIParams();
     }
 
     private static User mockUser() {

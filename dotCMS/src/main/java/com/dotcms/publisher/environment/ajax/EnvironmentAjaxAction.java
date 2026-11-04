@@ -38,6 +38,7 @@ public class EnvironmentAjaxAction extends AjaxAction {
 		return;
 	}
 
+	/** Dispatches authorized actions; URL password login requires an explicit compatibility opt-in. */
 	@Override
 	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		Map<String, String> map = getURIParams();
@@ -63,8 +64,9 @@ public class EnvironmentAjaxAction extends AjaxAction {
 
 
 
-				// Only the compatibility mode may exchange URI credentials for a session.
-				if (BasicAuthentication.mode() == BasicAuthentication.Mode.ALL) {
+				// URL login requires both compatibility settings; normal session checks still apply.
+				if (BasicAuthentication.allowUrlCredentials()
+						&& BasicAuthentication.mode() == BasicAuthentication.Mode.ALL) {
 					LoginFactory.doLogin(userName, password, false, request, response);
 				}
 				user = (User) request.getSession().getAttribute(WebKeys.CMS_USER);

@@ -53,6 +53,8 @@ public class IndexAjaxAction extends AjaxAction {
 		this.indexAPI = indexAPI;
 	}
 
+	/** Dispatches authorized actions; URL password login requires an explicit compatibility opt-in. */
+	@Override
 	public void service(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
 
@@ -75,8 +77,9 @@ public class IndexAjaxAction extends AjaxAction {
 		try {
 			// Check permissions if the user has access to the CMS Maintenance Portlet
 			if (user == null || !APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("maintenance", user)) {
-				// Only the compatibility mode may exchange URI credentials for a session.
-				if (BasicAuthentication.mode() == BasicAuthentication.Mode.ALL) {
+				// URL login requires both compatibility settings; normal session checks still apply.
+				if (BasicAuthentication.allowUrlCredentials()
+						&& BasicAuthentication.mode() == BasicAuthentication.Mode.ALL) {
 					String userName = map.get("u");
 					String password = map.get("p");
 					LoginFactory.doLogin(userName, password, false, request, response);
