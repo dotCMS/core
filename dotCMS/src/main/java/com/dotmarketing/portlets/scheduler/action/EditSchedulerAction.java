@@ -289,9 +289,14 @@ public class EditSchedulerAction extends DotPortletAction {
 	 * @param form   the {@link SchedulerForm} with the job's name, group, class and parameters
 	 * @param user   the user saving the job
 	 * @return {@code true} once the job is scheduled
+	 * @throws DotRuntimeException if there is no user saving the job, so the job is left as it was
 	 * @throws Exception if the job cannot be scheduled
 	 */
 	public static boolean _saveScheduler(ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user) throws Exception {
+		if (user == null) {
+			// Saving without a user would leave the job with nobody to run as
+			throw new DotRuntimeException("The job was not saved because the user saving it could not be identified. Log in again and save it.");
+		}
 		boolean result = false;
 		SchedulerForm schedulerForm = (SchedulerForm) form;
 		
@@ -429,11 +434,7 @@ public class EditSchedulerAction extends DotPortletAction {
 		}	
 
 		// Recorded on every save, so the job runs as whoever saved it last; a submitted value is ignored
-		if (user != null) {
-			properties.put(ScheduledTask.SCHEDULED_BY_USER_ID, user.getUserId());
-		} else {
-			properties.remove(ScheduledTask.SCHEDULED_BY_USER_ID);
-		}
+		properties.put(ScheduledTask.SCHEDULED_BY_USER_ID, user.getUserId());
 
 		CronScheduledTask job = new CronScheduledTask();
 		job.setJobName(schedulerForm.getJobName());

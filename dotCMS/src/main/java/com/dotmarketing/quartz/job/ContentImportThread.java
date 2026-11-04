@@ -23,6 +23,7 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Field;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.quartz.ScheduledTask;
+import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
@@ -711,7 +712,7 @@ public class ContentImportThread implements Job{
 						choosenKeyField.append(", "+field.getFieldName());
 					}
 				}
-				contentlets = conAPI.checkoutWithQuery(buffy.toString(), user, true);
+				contentlets = conAPI.checkoutWithQuery(buffy.toString(), user, Constants.DONT_RESPECT_FRONT_END_ROLES);
 			}
 
 
