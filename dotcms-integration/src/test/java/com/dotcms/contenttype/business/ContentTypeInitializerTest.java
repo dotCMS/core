@@ -323,7 +323,10 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
         permissionAPI.save(new Permission(contentType.getPermissionId(), cmsOwner.getId(), OWNER_BITS, true),
                 contentType, APILocator.systemUser(), false);
 
-        final Contentlet favorite = new ContentletDataGen(contentType).setPolicy(IndexPolicy.WAIT_FOR)
+        // on the System Host, where the dialog saves favorites, so it inherits from the type;
+        // on a site it would inherit from the site instead
+        final Contentlet favorite = new ContentletDataGen(contentType).host(APILocator.systemHost())
+                .setPolicy(IndexPolicy.WAIT_FOR)
                 .setProperty("title", "favorite").setProperty("url", "/favorite-" + System.nanoTime())
                 .nextPersisted();
         try {
