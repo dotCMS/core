@@ -174,26 +174,12 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
             return false;
         }
 
-        /**
-         * Templates receive the request and response through dotCMS wrappers, which decide what a
-         * template may read or change. Unwrapping one would hand the template the object underneath
-         * (the container's own request or another wrapper that writes straight through to it), so
-         * the servlet API unwrap accessors are refused. Java code is unaffected and keeps unwrapping
-         * normally, for example when a RequestDispatcher includes or forwards.
-         */
-        if (("getRequest".equals(methodName) && ServletRequestWrapper.class.isAssignableFrom(clazz))
-                || ("getResponse".equals(methodName) && ServletResponseWrapper.class.isAssignableFrom(clazz)))
+        if (isWrapperUnwrap(clazz, methodName))
         {
             return false;
         }
 
-        /**
-         * Objects a template can read through the wrapped request but must not change: an uploaded
-         * part may not be written to a file or deleted, and the container's parameter map stays
-         * locked against changes. Their read methods stay available.
-         */
-        if ((("write".equals(methodName) || "delete".equals(methodName)) && Part.class.isAssignableFrom(clazz))
-                || ("setLocked".equals(methodName) && CONTAINER_PARAMETER_MAP.equals(clazz.getName())))
+        if (isRequestValueMutator(clazz, methodName))
         {
             return false;
         }
@@ -462,6 +448,42 @@ public class SecureIntrospectorImpl extends Introspector implements SecureIntros
         }
 
         return false;
+    }
+
+    /**
+     * Determines whether the call is a servlet API unwrap accessor. Templates receive the request
+     * and response through dotCMS wrappers, which decide what a template may read or change.
+     * Unwrapping one would hand the template the object underneath (the container's own request,
+     * or another wrapper that writes straight through to it), so these accessors are refused. Java
+     * code is unaffected and keeps unwrapping normally, for example when a RequestDispatcher
+     * includes or forwards.
+     *
+     * @param clazz      class the method is about to be resolved on
+     * @param methodName name of the method
+     * @return {@code true} for {@code getRequest} on a {@link ServletRequestWrapper} or
+     *         {@code getResponse} on a {@link ServletResponseWrapper} (deny), {@code false} otherwise
+     */
+    static boolean isWrapperUnwrap(final Class<?> clazz, final String methodName)
+    {
+        return ("getRequest".equals(methodName) && ServletRequestWrapper.class.isAssignableFrom(clazz))
+                || ("getResponse".equals(methodName) && ServletResponseWrapper.class.isAssignableFrom(clazz));
+    }
+
+    /**
+     * Determines whether the call would change an object a template can read through the wrapped
+     * request but must not change: an uploaded part may not be written to a file or deleted, and
+     * the container's parameter map stays locked against changes. Their read methods stay
+     * available.
+     *
+     * @param clazz      class the method is about to be resolved on
+     * @param methodName name of the method
+     * @return {@code true} for {@code write} or {@code delete} on a {@link Part}, or
+     *         {@code setLocked} on the container's parameter map (deny), {@code false} otherwise
+     */
+    static boolean isRequestValueMutator(final Class<?> clazz, final String methodName)
+    {
+        return (("write".equals(methodName) || "delete".equals(methodName)) && Part.class.isAssignableFrom(clazz))
+                || ("setLocked".equals(methodName) && CONTAINER_PARAMETER_MAP.equals(clazz.getName()));
     }
 
     /**
