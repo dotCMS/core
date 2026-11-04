@@ -2,28 +2,36 @@ package com.dotmarketing.cms.login.factories;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.UserDataGen;
+import com.dotcms.enterprise.BaseAuthenticator;
+import com.dotcms.enterprise.LDAPImpl;
 import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.PasswordFactoryProxy.AuthenticationStatus;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portal.struts.DotCustomLoginPostAction;
 import com.dotmarketing.util.UUIDGenerator;
+import com.liferay.portal.auth.Authenticator;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
- * Integration tests for {@link LoginFactory#passwordMatch(String, User)}.
+ * Integration tests for {@link LoginFactory#passwordMatch(String, User)} and for how a directory
+ * login updates the local password ({@link LoginFactory#resetDirectoryPassword(User, int)}).
  *
  * <p>Each test writes {@code user_.password_} directly so it controls exactly which stored
  * format the comparison sees, then reloads the user through {@code UserAPI} the same way the
@@ -33,17 +41,29 @@ public class LoginFactoryTest extends IntegrationTestBase {
 
     private static final String PASSWORD = "Str0ng-Test-Passw0rd!";
 
+    private static boolean originalSyncPassword;
+    private static Role createdDirectoryRole;
+
     private final List<User> createdUsers = new ArrayList<>();
 
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        originalSyncPassword = BaseAuthenticator.SYNC_PASSWORD;
     }
 
     @After
     public void cleanup() {
+        BaseAuthenticator.SYNC_PASSWORD = originalSyncPassword;
         createdUsers.forEach(UserDataGen::remove);
         createdUsers.clear();
+    }
+
+    @AfterClass
+    public static void removeDirectoryRole() {
+        if (createdDirectoryRole != null) {
+            RoleDataGen.remove(createdDirectoryRole);
+        }
     }
 
     /**
@@ -117,6 +137,89 @@ public class LoginFactoryTest extends IntegrationTestBase {
 
         assertTrue(LoginFactory.passwordMatch(PASSWORD, user));
         assertFalse(LoginFactory.passwordMatch(PASSWORD + "-wrong", user));
+    }
+
+    /**
+     * Given: a directory user, with directory passwords not copied into dotCMS.
+     * When:  the directory rejects the login.
+     * Then:  the stored password is left untouched.
+     */
+    @Test
+    public void test_resetDirectoryPassword_directoryRejected_keepsStoredPassword() throws Exception {
+        BaseAuthenticator.SYNC_PASSWORD = false;
+        final String stored = PasswordFactoryProxy.generateHash(PASSWORD);
+        final User user = directoryUserWithStoredPassword(stored);
+
+        LoginFactory.resetDirectoryPassword(user, Authenticator.FAILURE);
+
+        assertEquals(stored, loadStoredPassword(user));
+    }
+
+    /**
+     * Given: a directory user, with directory passwords not copied into dotCMS.
+     * When:  the directory accepts the login.
+     * Then:  the stored password is replaced with a new secure hash, and the old password no
+     *        longer matches it.
+     */
+    @Test
+    public void test_resetDirectoryPassword_directoryAccepted_storesNewSecureHash() throws Exception {
+        BaseAuthenticator.SYNC_PASSWORD = false;
+        final String stored = PasswordFactoryProxy.generateHash(PASSWORD);
+        final User user = directoryUserWithStoredPassword(stored);
+
+        LoginFactory.resetDirectoryPassword(user, Authenticator.SUCCESS);
+
+        final String updated = loadStoredPassword(user);
+        assertNotEquals(stored, updated);
+        assertFalse(PasswordFactoryProxy.isUnsecurePasswordHash(updated));
+        assertEquals(AuthenticationStatus.NOT_AUTHENTICATED,
+                PasswordFactoryProxy.authPassword(PASSWORD, updated));
+    }
+
+    /**
+     * Given: a user who does not belong to the directory.
+     * When:  the login is accepted.
+     * Then:  the stored password is left untouched.
+     */
+    @Test
+    public void test_resetDirectoryPassword_localUser_keepsStoredPassword() throws Exception {
+        BaseAuthenticator.SYNC_PASSWORD = false;
+        final String stored = PasswordFactoryProxy.generateHash(PASSWORD);
+        final User user = userWithStoredPassword(stored);
+
+        LoginFactory.resetDirectoryPassword(user, Authenticator.SUCCESS);
+
+        assertEquals(stored, loadStoredPassword(user));
+    }
+
+    /**
+     * Creates a user with the given stored password and gives it the directory role.
+     *
+     * @param storedPassword the value to place in {@code user_.password_}
+     * @return the reloaded {@link User}
+     */
+    private User directoryUserWithStoredPassword(final String storedPassword) throws Exception {
+        final User user = userWithStoredPassword(storedPassword);
+        APILocator.getRoleAPI().addRoleToUser(directoryRole(), user);
+        return user;
+    }
+
+    /**
+     * Returns the role that marks directory users, creating it when the test database does not
+     * have it yet. A role created here is removed after the class runs.
+     *
+     * @return the directory {@link Role}
+     */
+    private static Role directoryRole() throws Exception {
+        final Role existing = APILocator.getRoleAPI().loadRoleByKey(LDAPImpl.LDAP_USER_ROLE);
+        if (existing != null) {
+            return existing;
+        }
+        createdDirectoryRole = new RoleDataGen()
+                .key(LDAPImpl.LDAP_USER_ROLE)
+                .name(LDAPImpl.LDAP_USER_ROLE)
+                .nextPersisted();
+        return createdDirectoryRole;
     }
 
     /**

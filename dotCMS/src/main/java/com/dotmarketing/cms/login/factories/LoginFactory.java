@@ -9,6 +9,8 @@ import com.dotcms.enterprise.PasswordFactoryProxy;
 import com.dotcms.enterprise.de.qaware.heimdall.PasswordException;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DuplicateUserException;
+import com.dotmarketing.business.Role;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.cms.factories.PublicEncryptionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -179,10 +181,10 @@ public class LoginFactory {
 	            	user = APILocator.getUserAPI().loadUserById(userName, APILocator.getUserAPI().getSystemUser(), false);
 	            }
 
-				// only a login the directory accepted updates the local password
-				if (!skipPasswordCheck && auth == Authenticator.SUCCESS) {
+				// a login that skips the directory check leaves the local password alone
+				if (!skipPasswordCheck) {
 
-					syncPassword(user);
+					resetDirectoryPassword(user, auth);
 				}
 
 				// if it is the skip password on true and the user is not null, means the user exists on our db and the login is ok (usually it is the case for cookie login)
@@ -270,29 +272,32 @@ public class LoginFactory {
 	/**
 	 * When directory passwords are not copied into dotCMS ({@code auth.impl.ldap.syncPassword}
 	 * is off), replaces the local password of a directory user with the hash of a random
-	 * secret, so the account can only sign in through the directory. Call it only after the
-	 * directory has accepted the login.
+	 * secret, so the account can only sign in through the directory. Does nothing unless the
+	 * directory accepted the login.
 	 *
-	 * @param user the {@link User} that just signed in
+	 * @param user       the {@link User} that tried to sign in
+	 * @param authResult the directory's answer, one of the {@link Authenticator} results
 	 */
-	private static void syncPassword(User user) {
+	@VisibleForTesting
+	static void resetDirectoryPassword(final User user, final int authResult) {
+
+		if (authResult != Authenticator.SUCCESS || BaseAuthenticator.SYNC_PASSWORD) {
+			return;
+		}
+
 		try {
 
-            final boolean SYNC_PASSWORD = BaseAuthenticator.SYNC_PASSWORD;
-            if (!SYNC_PASSWORD) {
+			final Role directoryRole = APILocator.getRoleAPI().loadRoleByKey(LDAPImpl.LDAP_USER_ROLE);
+			if (APILocator.getRoleAPI().doesUserHaveRole(user, directoryRole)) {
 
-                String roleName = LDAPImpl.LDAP_USER_ROLE;
+				user.setPassword(PasswordFactoryProxy.generateRandomHash());
+				user.setPasswordEncrypted(true);
+				APILocator.getUserAPI().save(user, APILocator.getUserAPI().getSystemUser(), false);
+			}
+		} catch (Exception e) {
 
-                if (APILocator.getRoleAPI().doesUserHaveRole(user, roleName)) {
-
-                    user.setPassword(PasswordFactoryProxy.generateRandomHash());
-                    APILocator.getUserAPI().save(user, APILocator.getUserAPI().getSystemUser(), false);
-                }
-            }
-        } catch (Exception e) {
-
-            Logger.debug(LoginFactory.class, "syncPassword not set or unable to load user", e);
-        }
+			Logger.debug(LoginFactory.class, "Unable to update the local password of a directory user", e);
+		}
 	}
 
 	private static int getLDAPAuth(final String userName,
@@ -363,19 +368,7 @@ public class LoginFactory {
  	            	user = APILocator.getUserAPI().loadUserById(userName, APILocator.getUserAPI().getSystemUser(), false);
  	            }
 
-    			try{
-    				boolean SYNC_PASSWORD = BaseAuthenticator.SYNC_PASSWORD;
-    				// only a login the directory accepted updates the local password
-    				if(auth == Authenticator.SUCCESS && !SYNC_PASSWORD){
-    					String roleName = LDAPImpl.LDAP_USER_ROLE;
-    					if(com.dotmarketing.business.APILocator.getRoleAPI().doesUserHaveRole(user, roleName)){
-    						user.setPassword(PasswordFactoryProxy.generateRandomHash());
-    						APILocator.getUserAPI().save(user,APILocator.getUserAPI().getSystemUser(),false);
-    					}
-    				}
-    			}catch (Exception e) {
-    				Logger.debug(LoginFactory.class, "syncPassword not set or unable to load user", e);
-    			}
+    			resetDirectoryPassword(user, auth);
 
     			match = auth == Authenticator.SUCCESS;
         	} else {
