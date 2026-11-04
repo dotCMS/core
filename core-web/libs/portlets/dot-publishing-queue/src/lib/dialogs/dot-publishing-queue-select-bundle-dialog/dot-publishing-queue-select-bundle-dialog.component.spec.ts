@@ -370,6 +370,27 @@ describe('DotPublishingQueueSelectBundleDialogComponent', () => {
 
         afterEach(() => windowOpen.mockRestore());
 
+        /** FR-039: closing the panel puts the author back on the row it opened from. */
+        it('returns focus to the row the panel opened from when it closes', () => {
+            const row = spectator.queryAll<HTMLElement>(byTestId('pq-select-bundle-asset-row'))[0];
+            clickRow(0);
+            // The panel holds focus while it is open.
+            (document.activeElement as HTMLElement | null)?.blur();
+
+            openOptions().closed?.();
+
+            expect(document.activeElement === row, 'the originating row has focus').toBe(true);
+        });
+
+        it('lets the keyboard reach a contentlet row and open it with Enter', () => {
+            const row = spectator.queryAll<HTMLElement>(byTestId('pq-select-bundle-asset-row'))[0];
+
+            spectator.dispatchKeyboardEvent(row, 'keydown', 'Enter');
+
+            expect(row.getAttribute('tabindex')).toBe('0');
+            expect(opened().mock.calls.length, 'Enter opens the row').toBe(1);
+        });
+
         it('opens a contentlet row in the side panel, naming the Publishing Queue', () => {
             clickRow(0);
 
