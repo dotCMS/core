@@ -1,10 +1,16 @@
 package com.dotcms.filters.interceptor.meta;
 
+import com.dotcms.auth.dotAuth.session.DotAuthSession;
+import com.dotcms.auth.dotAuth.session.DotAuthSessionCache;
+import com.dotcms.auth.providers.jwt.factories.JsonWebTokenFactory;
 import com.dotcms.featureflag.FeatureFlagName;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import io.vavr.control.Try;
+import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -12,7 +18,7 @@ import javax.servlet.http.HttpServletRequest;
  * ({@link SdkVersionWebInterceptor}, {@link ResponseMetaDataWebInterceptor}).
  *
  * <p>They go to requests that carry valid credentials: a logged-in session, or a bearer token
- * that resolves to an active user. Requests without credentials, or with ones that do not check
+ * (a dotAuth session reference or a dotCMS JWT) that resolves to an active user. Requests without credentials, or with ones that do not check
  * out, get no such headers unless
  * {@link FeatureFlagName#FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS} is on.
  *
@@ -26,6 +32,8 @@ final class ResponseMetaHeaderAudience {
 
     /** Request attribute holding this request's {@link #includes} answer, as a {@link Boolean}. */
     static final String DECISION_ATTRIBUTE = "dotcms.responseMetaHeaderAudience";
+
+    private static final String BEARER = "Bearer ";
 
     private ResponseMetaHeaderAudience() {
         // static helper, no instances
@@ -53,8 +61,35 @@ final class ResponseMetaHeaderAudience {
 
     private static boolean hasValidCredentials(final HttpServletRequest request) {
         return Try.of(() -> isLoggedIn(PortalUtil.getUser(request.getSession(false)))
-                        || isLoggedIn(PortalUtil.getUserFromAuthHeader(request)))
+                        || isLoggedIn(bearerUser(request)))
                 .getOrElse(false);
+    }
+
+    /**
+     * Resolves the user a bearer token belongs to, accepting the same two kinds of token
+     * {@code WebResource} does, in its order: a dotAuth session reference ({@code dsr_...}),
+     * then a dotCMS JWT checked against the request's remote address, so a token limited to a
+     * network is accepted from inside it. Unlike the credential processors, it leaves the request
+     * attributes and the session-reference cache as they were.
+     *
+     * @param request the incoming request
+     * @return the token's user, or {@code null} when there is no bearer token
+     * @throws Exception when the token does not resolve; the caller treats that as no credentials
+     */
+    private static User bearerUser(final HttpServletRequest request) throws Exception {
+        final String header = request.getHeader("Authorization");
+        if (header == null || !header.startsWith(BEARER)) {
+            return null;
+        }
+        final String token = header.substring(BEARER.length()).trim();
+        if (token.startsWith(DotAuthSessionCache.SESSION_REF_PREFIX)) {
+            final Optional<DotAuthSession> session = CacheLocator.getDotAuthSessionCache().get(token);
+            return session.isPresent()
+                    ? APILocator.getUserAPI().loadUserById(session.get().getUserId())
+                    : null;
+        }
+        return JsonWebTokenFactory.getInstance().getJsonWebTokenService()
+                .parseToken(token, request.getRemoteAddr()).getActiveUser().orElse(null);
     }
 
     private static boolean isLoggedIn(final User user) {

@@ -133,12 +133,45 @@ public class MetaWebInterceptorTest {
     }
 
     /**
-     * Sends the token through {@link SdkVersionWebInterceptor} as a bearer token on a fresh request
-     * and tells whether the version header was added to the response.
+     * Method to test: {@link SdkVersionWebInterceptor#intercept(HttpServletRequest, HttpServletResponse)}
+     * Given Scenario: a real API token limited to the 10.1.2.0/24 network is sent as a bearer token
+     * from an address inside that network and from one outside it, with the anonymous flag off
+     * ExpectedResult: the version headers are added for the request from inside the network and not
+     * for the one from outside, so the token is checked against the request's address
      */
+    @Test
+    public void testSdkVersionHeaders_whenApiTokenIsLimitedToNetwork_shouldCheckRemoteAddress() throws Exception {
+
+        Config.setProperty(FeatureFlagName.FEATURE_FLAG_RESPONSE_META_HEADERS_FOR_ANONYMOUS, false);
+        final User user = new UserDataGen().nextPersisted();
+        final ApiToken token = APILocator.getApiTokenAPI().persistApiToken(
+                ApiToken.builder().withIssuer(ClusterFactory.getClusterId())
+                        .withExpires(Date.from(Instant.now().plus(Duration.ofDays(1))))
+                        .withUserId(user.getUserId())
+                        .withRequestingUserId(APILocator.systemUser().getUserId())
+                        .withRequestingIp("127.0.0.1")
+                        .withAllowNetwork("10.1.2.0/24").build(),
+                APILocator.systemUser());
+        final String jwt = APILocator.getApiTokenAPI().getJWT(token, APILocator.systemUser());
+
+        Assert.assertTrue("A request from inside the token's network gets the version headers",
+                versionHeadersAreSent(jwt, "10.1.2.3"));
+        Assert.assertFalse("A request from outside the token's network gets no version headers",
+                versionHeadersAreSent(jwt, "192.168.7.7"));
+    }
+
     private static boolean versionHeadersAreSent(final String jwt) {
+        return versionHeadersAreSent(jwt, "127.0.0.1");
+    }
+
+    /**
+     * Sends the token through {@link SdkVersionWebInterceptor} as a bearer token on a fresh request
+     * from the given address and tells whether the version header was added to the response.
+     */
+    private static boolean versionHeadersAreSent(final String jwt, final String remoteAddress) {
         final HttpServletRequest tokenRequest = mock(HttpServletRequest.class);
         Mockito.when(tokenRequest.getHeader("Authorization")).thenReturn("Bearer " + jwt);
+        Mockito.when(tokenRequest.getRemoteAddr()).thenReturn(remoteAddress);
         final MockHeaderResponse mockHeaderResponse = new MockHeaderResponse(mock(HttpServletResponse.class));
 
         new SdkVersionWebInterceptor().intercept(tokenRequest, mockHeaderResponse);
