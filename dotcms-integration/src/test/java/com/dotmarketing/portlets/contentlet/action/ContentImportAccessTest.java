@@ -26,11 +26,20 @@ import org.junit.Test;
  * Integration tests for {@link ContentImportAccess}: a CSV import may be started only by a user who
  * is allowed to create content of the chosen Content Type.
  *
- * <p>The bar is WRITE on the Content Type because that is what
- * {@code ContentletAPI.checkin} already requires of a brand-new contentlet. Pre-checking the same
- * bar cannot refuse anyone who would have been able to finish the import anyway, and it does not
- * depend on which portlet the user reached the screen from — custom content portlets exist, so a
- * portlet-id check would lock out legitimate users.</p>
+ * <p>Two ways in, because the import has two ways to succeed. A row that creates content needs
+ * WRITE on the Content Type; a row that updates existing content needs add-children on the site,
+ * which is what {@code ImportUtil.setSiteAndFolder} enforces per row. A user holding either one
+ * can import something today and must keep being able to.</p>
+ *
+ * <p>Deliberately not keyed to a portlet id: custom content portlets exist, so that would lock
+ * out legitimate users.</p>
+ *
+ * <p><b>What these tests do not cover.</b> They exercise the decision, not the wiring: nothing
+ * here drives {@link ImportContentletsAction#processAction}, so deleting the two
+ * {@code _checkImportAccess} call sites would leave every test below passing. The same goes for
+ * the ordering fix — that the upload is copied only at the two {@code _generatePreview} call
+ * sites, after every rejection path — and for the publish branch reading the Content Type from
+ * the session form rather than the request form. Those are covered by manual QA, not here.</p>
  */
 public class ContentImportAccessTest {
 
@@ -38,13 +47,15 @@ public class ContentImportAccessTest {
     private static Host site;
     private static ContentType contentType;
     private static User importer;
+    private static User siteOnlyUser;
     private static User userWithoutAccess;
     private static User adminUser;
     private static final List<User> createdUsers = new ArrayList<>();
 
     /**
-     * Creates a Content Type, a back-end user granted WRITE on it, and a back-end user with no
-     * permission at all.
+     * Creates a Content Type and a site, a back-end user granted WRITE on the type only, a
+     * back-end user granted add-children on the site only, and a back-end user with no permission
+     * at all.
      */
     @BeforeClass
     public static void prepare() throws Exception {
@@ -59,8 +70,10 @@ public class ContentImportAccessTest {
                 .nextPersisted();
 
         importer = newBackendUser();
+        siteOnlyUser = newBackendUser();
         userWithoutAccess = newBackendUser();
         grantWrite(contentType, APILocator.getRoleAPI().getUserRole(importer).getId());
+        grantAddChildren(site, APILocator.getRoleAPI().getUserRole(siteOnlyUser).getId());
 
         assertTrue("The fixture needs a user who can create content of this type",
                 permissionAPI.doesUserHavePermission(contentType, PermissionAPI.PERMISSION_WRITE,
@@ -68,6 +81,13 @@ public class ContentImportAccessTest {
         assertFalse("The fixture needs a user who cannot create content of this type",
                 permissionAPI.doesUserHavePermission(contentType, PermissionAPI.PERMISSION_WRITE,
                         userWithoutAccess, false));
+        assertFalse("The site-only user must not have WRITE on the type, or the test proves "
+                        + "nothing",
+                permissionAPI.doesUserHavePermission(contentType, PermissionAPI.PERMISSION_WRITE,
+                        siteOnlyUser, false));
+        assertTrue("The fixture needs a user who can add content to the site",
+                permissionAPI.doesUserHavePermission(site,
+                        PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, siteOnlyUser, false));
     }
 
     /**
@@ -96,13 +116,13 @@ public class ContentImportAccessTest {
     }
 
     /**
-     * Given a back-end user with no permission on the Content Type,
-     * When an import into that type is checked,
+     * Given a back-end user with no permission on either the Content Type or the site,
+     * When an import is checked,
      * Then the user is refused.
      */
     @Test
-    public void canImportInto_userWithoutWrite_isRefused() {
-        assertFalse(ContentImportAccess.canImportInto(contentType, userWithoutAccess));
+    public void canImportInto_userWithNeitherPermission_isRefused() {
+        assertFalse(ContentImportAccess.canImportInto(contentType, site, userWithoutAccess));
     }
 
     /**
@@ -111,8 +131,32 @@ public class ContentImportAccessTest {
      * Then the user is allowed.
      */
     @Test
-    public void canImportInto_userWithWrite_isAllowed() {
-        assertTrue(ContentImportAccess.canImportInto(contentType, importer));
+    public void canImportInto_userWithWriteOnType_isAllowed() {
+        assertTrue(ContentImportAccess.canImportInto(contentType, site, importer));
+    }
+
+    /**
+     * Given a back-end user with add-children on the site but nothing on the Content Type,
+     * When an import is checked,
+     * Then the user is allowed.
+     *
+     * <p>This is the case an update-only CSV import relies on: a row that updates existing
+     * content is authorized against the contentlet, which inherits from its folder and site, not
+     * from the type. Refusing this user would take away an import that works today.</p>
+     */
+    @Test
+    public void canImportInto_userWithAddChildrenOnSiteOnly_isAllowed() {
+        assertTrue(ContentImportAccess.canImportInto(contentType, site, siteOnlyUser));
+    }
+
+    /**
+     * Given a back-end user whose only permission is add-children on the site,
+     * When an import is checked with no site resolved,
+     * Then the user is refused: there is nothing left to authorize them against.
+     */
+    @Test
+    public void canImportInto_siteOnlyUser_withoutSite_isRefused() {
+        assertFalse(ContentImportAccess.canImportInto(contentType, null, siteOnlyUser));
     }
 
     /**
@@ -122,18 +166,18 @@ public class ContentImportAccessTest {
      */
     @Test
     public void canImportInto_administrator_isAllowed() {
-        assertTrue(ContentImportAccess.canImportInto(contentType, adminUser));
+        assertTrue(ContentImportAccess.canImportInto(contentType, site, adminUser));
     }
 
     /**
-     * Given a null Content Type or a null user,
+     * Given a null user, or neither a Content Type nor a site,
      * When an import is checked,
      * Then it is refused rather than throwing.
      */
     @Test
     public void canImportInto_nullArguments_areRefused() {
-        assertFalse(ContentImportAccess.canImportInto(null, importer));
-        assertFalse(ContentImportAccess.canImportInto(contentType, null));
+        assertFalse(ContentImportAccess.canImportInto(contentType, site, null));
+        assertFalse(ContentImportAccess.canImportInto(null, null, importer));
     }
 
     /**
@@ -145,6 +189,18 @@ public class ContentImportAccessTest {
     private static void grantWrite(final ContentType type, final String roleId) throws Exception {
         permissionAPI.save(new Permission(type.getPermissionId(), roleId,
                 PermissionAPI.PERMISSION_WRITE, true), type, APILocator.systemUser(), false);
+    }
+
+    /**
+     * Grants add-children on the given site to the given role.
+     *
+     * @param host   the {@link Host} to grant on
+     * @param roleId the id of the role receiving the grant
+     */
+    private static void grantAddChildren(final Host host, final String roleId) throws Exception {
+        permissionAPI.save(new Permission(host.getPermissionId(), roleId,
+                PermissionAPI.PERMISSION_CAN_ADD_CHILDREN, true), host, APILocator.systemUser(),
+                false);
     }
 
     /**

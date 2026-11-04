@@ -34,6 +34,15 @@ import org.junit.Test;
  * {@code POST /api/v1/workflow/{contentletId}/comments} already requires, and so that a user who
  * can only read a contentlet keeps the ability to comment on its task, which is what the legacy
  * screen offers them today.</p>
+ *
+ * <p><b>What these tests do not cover.</b> They exercise the decision, not the wiring: nothing
+ * here drives {@link EditWorkflowTaskAction#processAction}, so deleting the guard from that method
+ * would leave every test below passing. Driving it means building a Liferay portlet
+ * {@code ActionRequest} with a session, a bound form and the {@code WebKeys} attributes, which is
+ * not worth the fragility here. The guard's placement — above the {@code add_comment},
+ * {@code add_file} and {@code remove_file} branches and below {@code view} — and the command set
+ * in {@code isTaskWriteCommand} are therefore covered by manual QA, not by this class. Anyone
+ * moving that guard should not expect these tests to catch them.</p>
  */
 public class WorkflowTaskAccessTest {
 

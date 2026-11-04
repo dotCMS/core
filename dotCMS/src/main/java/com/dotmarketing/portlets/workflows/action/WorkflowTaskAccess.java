@@ -4,6 +4,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.workflows.model.WorkflowTask;
+import com.dotmarketing.util.Constants;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -53,7 +54,7 @@ public final class WorkflowTaskAccess {
         try {
             final Contentlet contentlet = APILocator.getContentletAPI()
                     .findContentletByIdentifier(task.getWebasset(), false, task.getLanguageId(),
-                            user, false);
+                            user, Constants.DONT_RESPECT_FRONT_END_ROLES);
             if (null != contentlet && InodeUtils.isSet(contentlet.getInode())) {
                 return true;
             }

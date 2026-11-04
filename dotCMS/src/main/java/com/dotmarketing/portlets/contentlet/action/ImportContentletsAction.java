@@ -37,6 +37,7 @@ import com.liferay.util.servlet.UploadPortletRequest;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.Charset;
@@ -142,8 +143,6 @@ public class ImportContentletsAction extends DotPortletAction {
 						return;
 					}
 
-					file = _copyToAssetTempPath(file);
-
 					Charset charset = importContentletsForm.getLanguage() == -1 ? Charset.defaultCharset() : FileUtil.detectEncodeType(file);
 					try(Reader reader = new BufferedReader(new InputStreamReader(new FileInputStream(file), charset))){
 
@@ -173,7 +172,7 @@ public class ImportContentletsAction extends DotPortletAction {
 										SessionMessages.add(req, ERROR, "message.import.contentlet.csv_headers.required");
 										setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
 									} else {
-										_generatePreview(0,req, res, config, form, user, file, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
+										_generatePreview(0,req, res, config, form, user, _copyToAssetTempPath(file), csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
 										setForward(req, "portlet.ext.contentlet.import_contentlets_preview");
 									}
 								} else {
@@ -190,7 +189,7 @@ public class ImportContentletsAction extends DotPortletAction {
 							setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
 							break;
 						default:
-							_generatePreview(0, req, res, config, form, user, file, csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
+							_generatePreview(0, req, res, config, form, user, _copyToAssetTempPath(file), csvHeaders, csvreader, languageCodeHeaderColumn, countryCodeHeaderColumn, reader);
 							setForward(req, "portlet.ext.contentlet.import_contentlets_preview");
 							break;
 						}
@@ -210,7 +209,7 @@ public class ImportContentletsAction extends DotPortletAction {
 				HashMap<String, List<String>>results=ImportAuditUtil.loadImportResults(importIdComplete);
 				req.setAttribute("importResults", results);
 				setForward(req, "portlet.ext.contentlet.import_contentlets_results");
-			} else if (!_checkImportAccess(req, ((ImportContentletsForm) form).getStructure(), user)) {
+			} else if (!_checkImportAccess(req, _structureToImport(session, form), user)) {
 				setForward(req, PORTLET_EXT_CONTENTLET_IMPORT_CONTENTLETS);
 			} else {
 				final ActionRequestImpl reqImpl = (ActionRequestImpl) req;
@@ -452,42 +451,10 @@ public class ImportContentletsAction extends DotPortletAction {
 		HibernateUtil.closeSession();
 	}
 
+
 	/**
-	 * Reads and analyzes the content of the CSV import file in order to
-	 * determine potential errors, inconsistencies or warnings, and provide the
-	 * user with useful information regarding the contents of the file.
-	 * 
-	 * @param importId
-	 *            - The ID of this data import.
-	 * @param req
-	 *            - The Struts wrapper for the HTTP Request object.
-	 * @param res
-	 *            - The Struts wrapper for the HTTP Response object.
-	 * @param config
-	 *            - The configuration parameters for this portlet.
-	 * @param form
-	 *            - The form containing the information selected by the user in
-	 *            the UI.
-	 * @param user
-	 *            - The {@link User} performing this action.
-	 * @param file
-	 *            - The file representation of the CSV file.
-	 * @param csvHeaders
-	 *            - The headers that make up the CSV file.
-	 * @param csvreader
-	 *            - The actual data contained in the CSV file.
-	 * @param languageCodeHeaderColumn
-	 *            - The column name containing the language code.
-	 * @param countryCodeHeaderColumn
-	 *            - The column name containing the country code.
-	 * @param reader
-	 *            - The character streams reader.
-	 * @throws Exception
-	 *             An error occurred when analyzing the CSV file.
-	 */
-	/**
-	 * Checks that the user may create content of the Content Type the import was asked for, and
-	 * puts a message on the request naming that type when they may not.
+	 * Checks that the user may run the import, and puts a message on the request naming the
+	 * Content Type when they may not.
 	 *
 	 * <p>The type is named in the message on purpose: the user picked it from the screen, so
 	 * telling them which one they are missing access to is the difference between a message they
@@ -495,25 +462,89 @@ public class ImportContentletsAction extends DotPortletAction {
 	 * the import itself, so a user cannot pass the first screen and be refused on the second.</p>
 	 *
 	 * @param req               the Struts wrapper for the HTTP request, where the message is left
-	 * @param contentTypeInode  the inode of the Content Type chosen on the screen
+	 * @param contentTypeInode  the inode of the Content Type the import will run against
 	 * @param user              the {@link User} making the request
 	 * @return {@code true} when the import may go ahead
 	 */
 	private boolean _checkImportAccess(final ActionRequest req, final String contentTypeInode,
 			final User user) {
-		ContentType contentType = null;
-		try {
-			contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
-					.find(contentTypeInode);
-		} catch (final Exception e) {
-			Logger.warn(this, String.format("Content Type '%s' could not be read for an import",
-					contentTypeInode), e);
-		}
-		if (ContentImportAccess.canImportInto(contentType, user)) {
+		final ContentType contentType = _findContentType(contentTypeInode);
+		final Host site = _selectedSite(req, user);
+		if (ContentImportAccess.canImportInto(contentType, site, user)) {
 			return true;
+		}
+		if (null == contentType) {
+			SecurityLogger.logInfo(ImportContentletsAction.class, String.format(
+					"Refusing an import for user '%s': Content Type '%s' could not be read",
+					user.getUserId(), contentTypeInode));
 		}
 		SessionMessages.add(req, ERROR, _importAccessMessage(contentType, contentTypeInode, user));
 		return false;
+	}
+
+	/**
+	 * Reads the Content Type the import will run against, returning {@code null} rather than
+	 * throwing when it cannot be read, so the caller refuses instead of failing.
+	 *
+	 * @param contentTypeInode the inode to look up
+	 * @return the {@link ContentType}, or {@code null}
+	 */
+	private ContentType _findContentType(final String contentTypeInode) {
+		try {
+			return APILocator.getContentTypeAPI(APILocator.systemUser()).find(contentTypeInode);
+		} catch (final Exception e) {
+			Logger.warn(this, String.format("Content Type '%s' could not be read for an import",
+					contentTypeInode), e);
+			return null;
+		}
+	}
+
+	/**
+	 * Reads the site the import is running against, the one the user has selected in the back end.
+	 *
+	 * @param req  the Struts wrapper for the HTTP request
+	 * @param user the {@link User} making the request
+	 * @return the selected {@link Host}, or {@code null} when none is selected or it cannot be
+	 *         read
+	 */
+	private Host _selectedSite(final ActionRequest req, final User user) {
+		final HttpSession httpSession = ((ActionRequestImpl) req).getHttpServletRequest()
+				.getSession();
+		final String siteId = (String) httpSession
+				.getAttribute(com.dotmarketing.util.WebKeys.CMS_SELECTED_HOST_ID);
+		if (!UtilMethods.isSet(siteId)) {
+			return null;
+		}
+		try {
+			return APILocator.getHostAPI().find(siteId, APILocator.systemUser(), false);
+		} catch (final Exception e) {
+			Logger.warn(this, String.format("Site '%s' could not be read for an import", siteId),
+					e);
+			return null;
+		}
+	}
+
+	/**
+	 * Returns the inode of the Content Type the import is actually going to run against.
+	 *
+	 * <p>The background import thread reads the form stored in the session by the preview step,
+	 * not the form bound to this request, so that is the value the permission check has to be made
+	 * against. Falling back to the request form only matters when the session has no stored form,
+	 * in which case the import has nothing to run and the check refuses on an unresolvable type.
+	 * </p>
+	 *
+	 * @param session the HTTP session holding the form the preview step stored
+	 * @param form    the form bound to this request, used only as a fallback
+	 * @return the Content Type inode the import will use, possibly {@code null}
+	 */
+	private String _structureToImport(final HttpSession session, final ActionForm form) {
+		final ImportContentletsForm storedForm = (ImportContentletsForm) session
+				.getAttribute("form_to_import");
+		if (null != storedForm) {
+			return storedForm.getStructure();
+		}
+		return form instanceof ImportContentletsForm
+				? ((ImportContentletsForm) form).getStructure() : null;
 	}
 
 	/**
@@ -551,16 +582,49 @@ public class ImportContentletsAction extends DotPortletAction {
 	 *
 	 * @param uploaded the file as the upload request parsed it
 	 * @return the copy inside the asset temp path
-	 * @throws Exception if the file cannot be copied
+	 * @throws IOException if the file cannot be copied
 	 */
-	private File _copyToAssetTempPath(final File uploaded) throws Exception {
+	private File _copyToAssetTempPath(final File uploaded) throws IOException {
 		final java.nio.file.Path destination = Paths.get(ConfigUtils.getAssetTempPath()
-				+ java.io.File.separator + uploaded.getName());
+				+ java.io.File.separator + FileUtil.sanitizeFileName(uploaded.getName()));
 		Files.copy(uploaded.toPath(), destination,
 				java.nio.file.StandardCopyOption.REPLACE_EXISTING);
 		return destination.toFile();
 	}
 
+	/**
+	 * Reads and analyzes the content of the CSV import file in order to
+	 * determine potential errors, inconsistencies or warnings, and provide the
+	 * user with useful information regarding the contents of the file.
+	 * 
+	 * @param importId
+	 *            - The ID of this data import.
+	 * @param req
+	 *            - The Struts wrapper for the HTTP Request object.
+	 * @param res
+	 *            - The Struts wrapper for the HTTP Response object.
+	 * @param config
+	 *            - The configuration parameters for this portlet.
+	 * @param form
+	 *            - The form containing the information selected by the user in
+	 *            the UI.
+	 * @param user
+	 *            - The {@link User} performing this action.
+	 * @param file
+	 *            - The file representation of the CSV file.
+	 * @param csvHeaders
+	 *            - The headers that make up the CSV file.
+	 * @param csvreader
+	 *            - The actual data contained in the CSV file.
+	 * @param languageCodeHeaderColumn
+	 *            - The column name containing the language code.
+	 * @param countryCodeHeaderColumn
+	 *            - The column name containing the country code.
+	 * @param reader
+	 *            - The character streams reader.
+	 * @throws Exception
+	 *             An error occurred when analyzing the CSV file.
+	 */
 	private void _generatePreview(long importId, ActionRequest req, ActionResponse res, PortletConfig config, ActionForm form, User user, File file, String[] csvHeaders, CsvReader csvreader, int languageCodeHeaderColumn, int countryCodeHeaderColumn, Reader reader) throws Exception {
 		// wraps request to get session object
 		ActionRequestImpl reqImpl = (ActionRequestImpl) req;
