@@ -18,6 +18,7 @@ import com.dotcms.mock.response.MockHttpResponse;
 import com.dotcms.rest.ErrorResponseHelper;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.DotRestInstanceProvider;
+import com.dotcms.test.util.ApiTokenTestUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.util.PaginationUtil;
 import com.dotcms.util.pagination.UserPaginator;
@@ -34,7 +35,6 @@ import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.PropsUtil;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
@@ -48,6 +48,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.function.ThrowingRunnable;
 
@@ -58,6 +59,9 @@ import org.junit.function.ThrowingRunnable;
  * resource.
  */
 public class PasswordPolicyIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static final String PATTERN_KEY = "passwords.regexptoolkit.pattern";
     private static final String ERROR_KEY = "User-Info-Save-Password-Failed";
@@ -468,7 +472,7 @@ public class PasswordPolicyIntegrationTest {
                                 .request())
                         .request());
         request.setHeader("Authorization",
-                "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+                TOKEN_UTILS.adminBearerHeader());
         request.getSession().setAttribute(WebKeys.CURRENT_HOST, host);
         request.getSession().setAttribute(WebKeys.CMS_SELECTED_HOST_ID, host.getIdentifier());
         HttpServletRequestThreadLocal.INSTANCE.setRequest(request);

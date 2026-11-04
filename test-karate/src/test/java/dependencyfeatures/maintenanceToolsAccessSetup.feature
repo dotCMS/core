@@ -62,3 +62,24 @@ Feature: Users, role and layout for the Maintenance tool access tests
     When method post
     Then status 200
     * def frontendUserId = response.entity.userID
+
+    Given url baseUrl + '/api/v1/apitoken'
+    And headers commonHeaders
+    And request { userId: '#(maintenanceUserId)', expirationSeconds: 3600 }
+    When method post
+    Then status 200
+    * def maintenanceJwt = response.entity.jwt
+
+    Given url baseUrl + '/api/v1/apitoken'
+    And headers commonHeaders
+    And request { userId: '#(backendUserId)', expirationSeconds: 3600 }
+    When method post
+    Then status 200
+    * def backendJwt = response.entity.jwt
+
+    Given url baseUrl + '/api/v1/apitoken'
+    And headers commonHeaders
+    And request { userId: '#(frontendUserId)', expirationSeconds: 3600 }
+    When method post
+    Then status 200
+    * def frontendJwt = response.entity.jwt

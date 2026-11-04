@@ -9,11 +9,9 @@ Feature: Workflow fire with a permission list
     * def suffix = java.util.UUID.randomUUID().toString().replace('-', '').substring(0, 12)
     * def saveActionId = 'ceca71a0-deee-4999-bd47-b01baa1bcfc8'
     * def systemWorkflowId = 'd61a59e1-a49c-46f2-a929-db2b4bfa88b2'
-    * def encodedAuth = function(s) { return java.util.Base64.getEncoder().encodeToString(s.getBytes('UTF-8')); }
     * def asRows = function(rows) { return karate.sort(karate.map(rows, function(row) { return { roleId: row.roleId, permission: row.permission, type: row.type } }), function(row) { return row.roleId + ':' + row.permission + ':' + row.type }) }
     * def editorEmail = 'editor' + suffix + '@dotcms.com'
     * def editorPassword = 'Editor-Pw-' + suffix + '-Aa1!'
-    * def editorHeaders = { 'Content-Type': 'application/json', 'Authorization': '#("Basic " + encodedAuth(editorEmail + ":" + editorPassword))' }
 
   @permissions
   Scenario: A changed permission list from a user who may not edit permissions answers 403 and leaves the rows unchanged
@@ -40,6 +38,13 @@ Feature: Workflow fire with a permission list
     Then status 200
     * def editorUserId = response.entity.userID
     * def editorRoleId = response.entity.roleId
+
+    Given url baseUrl + '/api/v1/apitoken'
+    And headers commonHeaders
+    And request { userId: '#(editorUserId)', expirationSeconds: 3600 }
+    When method post
+    Then status 200
+    * def editorHeaders = { 'Content-Type': 'application/json', 'Authorization': '#("Bearer " + response.entity.jwt)' }
 
     # The editor may read the site and the content types created on it
     Given url baseUrl + '/api/v1/permissions/' + siteId

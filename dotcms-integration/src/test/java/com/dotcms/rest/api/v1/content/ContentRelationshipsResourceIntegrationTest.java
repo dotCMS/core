@@ -16,6 +16,7 @@ import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
 import com.dotcms.mock.request.MockSessionRequest;
+import com.dotcms.test.util.ApiTokenTestUtils;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
@@ -26,7 +27,6 @@ import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.util.json.JSONArray;
 import com.liferay.portal.model.User;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +36,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Test;
 
 /**
@@ -43,6 +44,9 @@ import org.junit.Test;
  * to anonymous visitors and to back-end users, depending on what each one can read.
  */
 public class ContentRelationshipsResourceIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static final String PASSWORD = "Rel" + System.currentTimeMillis() + "!";
 
@@ -399,8 +403,7 @@ public class ContentRelationshipsResourceIntegrationTest {
                         ).request()
                 ).request()
         );
-        request.setHeader("Authorization", "Basic " + Base64.getEncoder()
-                .encodeToString((user.getEmailAddress() + ":" + PASSWORD).getBytes()));
+        request.setHeader("Authorization", TOKEN_UTILS.bearerHeader(user));
         return request;
     }
 }

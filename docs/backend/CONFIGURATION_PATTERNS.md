@@ -116,11 +116,12 @@ public feed do not need to enable anonymous access themselves.
 back to a previous release silently restores the older, more permissive behavior (implicit
 anonymous `READ` on content APIs, and re-enabled Basic/DOTAUTH **password** credentials) without
 any operator action. An installation that must keep the hardened posture across a rollback
-should pin it with environment overrides — `DOT_CONTENT_APIS_ALLOW_ANONYMOUS=NONE` and
-`DOT_ALLOW_BASIC_AUTH=NONE` — which outlive the binary, instead of relying on the in-binary
-defaults. Note the default `JWT_TOKEN` posture needs no pinning on rollback: it validates the
-same persisted token a Bearer header would and never verifies a password. Call the
-default-change out in the release notes.
+should pin `DOT_CONTENT_APIS_ALLOW_ANONYMOUS=NONE` in the deployment environment instead of
+relying on the in-binary default. A previous binary without the `ALLOW_BASIC_AUTH` policy
+ignores `DOT_ALLOW_BASIC_AUTH`, so that override cannot preserve either `NONE` or `JWT_TOKEN`
+across rollback. Block password-based Basic/DOTAUTH and legacy credential access at an upstream
+gateway, or use a binary that supports the policy. Call the default-change and this rollback
+limitation out in the release notes.
 
 ## Configuration Documentation Pattern
 When adding new properties, include:

@@ -11,9 +11,7 @@ Feature: Maintenance tool routes, scripts and tabs
     # Removes the users, the role and the layout once the feature ends (parallel runner); the last scenario does it too
     * configure afterFeature = function() { karate.call('classpath:dependencyfeatures/maintenanceToolsAccessCleanup.feature@fixture', fixture) }
     * configure cookies = null
-    * def encodedAuth = function(s) { return java.util.Base64.getEncoder().encodeToString(s.getBytes('UTF-8')); }
-    * def basicHeaders = function(email) { return { 'Content-Type': 'application/json', 'Authorization': 'Basic ' + encodedAuth(email + ':' + fixture.password) } }
-    * def callerHeaders = { anonymous: { 'Content-Type': 'application/json' }, frontend: '#(basicHeaders(fixture.frontendEmail))', backend: '#(basicHeaders(fixture.backendEmail))', maintenance: '#(basicHeaders(fixture.maintenanceEmail))' }
+    * def callerHeaders = { anonymous: { 'Content-Type': 'application/json' }, frontend: { 'Content-Type': 'application/json', 'Authorization': '#("Bearer " + fixture.frontendJwt)' }, backend: { 'Content-Type': 'application/json', 'Authorization': '#("Bearer " + fixture.backendJwt)' }, maintenance: { 'Content-Type': 'application/json', 'Authorization': '#("Bearer " + fixture.maintenanceJwt)' }
     * def routes =
       """
       [
