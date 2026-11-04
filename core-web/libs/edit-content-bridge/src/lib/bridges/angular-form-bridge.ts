@@ -29,6 +29,20 @@ import {
     FormFieldValue
 } from '../interfaces/form-bridge.interface';
 
+declare const formBridgeFrame: unique symbol;
+
+/**
+ * A nested context's place on the bridge stack: what `pushFormBridge()` returns and
+ * `popFormBridge()` takes back. Opaque on purpose; only its identity matters.
+ */
+export type FormBridgeFrame = { readonly [formBridgeFrame]: true };
+
+/** One stack frame: the bridge (and its ref count) the context underneath had when it was pushed. */
+interface BridgeStackEntry {
+    instance: AngularFormBridge | null;
+    refCount: number;
+}
+
 /**
  * Bridge class that enables form editing interoperability in Angular environments.
  * Provides a unified API for getting/setting field values and handling field changes.
@@ -42,7 +56,7 @@ import {
 export class AngularFormBridge implements FormBridge {
     private static instance: AngularFormBridge | null = null;
     private static refCount = 0;
-    private static instanceStack: { instance: AngularFormBridge | null; refCount: number }[] = [];
+    private static instanceStack: BridgeStackEntry[] = [];
     #fieldSubscriptions: Map<string, FieldSubscription> = new Map();
     #validationSubscriptions: Set<() => void> = new Set();
     #form: FormGroup;
@@ -184,21 +198,52 @@ export class AngularFormBridge implements FormBridge {
      *
      * Always records a stack frame (even when `instance` is null) so {@link popInstance}
      * restores symmetrically and cannot pop an unrelated prior push.
+     *
+     * @returns The frame the nested context now owns. Hand it back to {@link popInstance} so a
+     * context closed out of order removes its own frame, not the one on top (#38303).
      */
-    static pushInstance(): void {
-        AngularFormBridge.instanceStack.push({
+    static pushInstance(): FormBridgeFrame {
+        const frame: BridgeStackEntry = {
             instance: AngularFormBridge.instance,
             refCount: AngularFormBridge.refCount
-        });
+        };
+
+        AngularFormBridge.instanceStack.push(frame);
         AngularFormBridge.instance = null;
         AngularFormBridge.refCount = 0;
+
+        return frame as unknown as FormBridgeFrame;
     }
 
     /**
-     * Destroys the current singleton instance and restores the previous one
-     * from the stack. Call this when a nested context (e.g. a dialog) is closed.
+     * Closes a nested context's frame: destroys the bridge that context created and gives the
+     * context underneath its bridge back. Call this when a nested context (e.g. a dialog or a side
+     * panel) is closed.
+     *
+     * With no frame, or with the frame on top of the stack, the current singleton is the one
+     * destroyed and the previous one is restored. With a frame lower down, a context closed while
+     * another one is still stacked over it (a side panel closed under the panel it opened, #38303),
+     * only that context's bridge goes: the one on top stays current, and will restore what the
+     * closed context had saved when it closes in turn. A frame already removed is ignored.
+     *
+     * @param frame The frame {@link pushInstance} returned to the closing context.
      */
-    static popInstance(): void {
+    static popInstance(frame?: FormBridgeFrame): void {
+        const stack = AngularFormBridge.instanceStack;
+        const index = frame
+            ? stack.indexOf(frame as unknown as BridgeStackEntry)
+            : stack.length - 1;
+
+        if (frame && index === -1) {
+            return;
+        }
+
+        if (index >= 0 && index < stack.length - 1) {
+            AngularFormBridge.#removeBuriedFrame(index);
+
+            return;
+        }
+
         const popped = AngularFormBridge.instance;
 
         if (popped) {
@@ -207,12 +252,43 @@ export class AngularFormBridge implements FormBridge {
             AngularFormBridge.refCount = 0;
         }
 
-        const previous = AngularFormBridge.instanceStack.pop();
+        const previous = stack.pop();
         if (previous) {
             AngularFormBridge.instance = previous.instance;
             AngularFormBridge.refCount = previous.refCount;
         }
 
+        AngularFormBridge.#releaseGlobal(popped);
+    }
+
+    /**
+     * Removes a frame that is not on top. The bridge of the context that pushed it is saved in the
+     * frame right above (pushed by the context stacked over it): that bridge is destroyed, and the
+     * frame above inherits what this one had saved, so the stacked context restores the right
+     * bridge when it closes.
+     *
+     * @param index The frame's position on the stack, below the top.
+     */
+    static #removeBuriedFrame(index: number): void {
+        const stack = AngularFormBridge.instanceStack;
+        const frame = stack[index];
+        const above = stack[index + 1];
+        const closed = above.instance;
+
+        closed?.forceDestroy();
+        above.instance = frame.instance;
+        above.refCount = frame.refCount;
+        stack.splice(index, 1);
+
+        AngularFormBridge.#releaseGlobal(closed);
+    }
+
+    /**
+     * Points `DotCustomFieldApi` away from a bridge that was just destroyed.
+     *
+     * @param popped The bridge the closed context created, if it still had one.
+     */
+    static #releaseGlobal(popped: AngularFormBridge | null): void {
         // The nested context's custom fields pointed the global at its own bridge, which is now
         // destroyed. Templates behind the dialog that look `DotCustomFieldApi` up lazily (in an
         // event handler) would otherwise reach the dead instance. That bridge is usually already

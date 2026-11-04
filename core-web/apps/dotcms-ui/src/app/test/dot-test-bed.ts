@@ -39,7 +39,6 @@ import { MockDotRouterService } from '@dotcms/utils-testing';
 import { DotCustomEventHandlerService } from '../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { NGFACES_MODULES } from '../modules';
-import { DotContentletEditorService } from '../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 
 export class MockDotUiColorsService {
     setColors() {
@@ -108,7 +107,6 @@ export class DOTTestBed {
             ApiRoot,
             BrowserUtil,
             ConfirmationService,
-            DotContentletEditorService,
             DotAlertConfirmService,
             DotEventsService,
             DotGlobalMessageService,

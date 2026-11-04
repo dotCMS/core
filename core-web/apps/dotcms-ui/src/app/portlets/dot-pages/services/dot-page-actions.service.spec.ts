@@ -1,10 +1,11 @@
 import { createServiceFactory, SpectatorService } from '@openng/spectator/vitest';
-import { of, throwError } from 'rxjs';
+import { firstValueFrom, Observable, of, throwError } from 'rxjs';
 import { Mock, Mocked, vi } from 'vitest';
 
+import { Injector } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 
-import { MenuItemCommandEvent } from 'primeng/api';
+import { MenuItem, MenuItemCommandEvent } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import {
@@ -28,6 +29,10 @@ import {
     PermissionsType,
     UserPermissions
 } from '@dotcms/dotcms-models';
+// The opener is the service's dependency; the app also lazy-loads the library's routes (#38303).
+// eslint-disable-next-line @nx/enforce-module-boundaries
+import { DotEditContentOpenerService, DotEditContentOpenOptions } from '@dotcms/edit-content';
+import { DotSidePanelRef } from '@dotcms/ui';
 
 import { DotPageActionsService } from './dot-page-actions.service';
 import { DotPageListService } from './dot-page-list.service';
@@ -37,6 +42,9 @@ import { DotCMSPagesStore } from '../store/store';
 type PagesStoreMock = {
     getFavoritePages: Mock;
 };
+
+/** `getItems` once it takes the Pages component's list refresh (#38303). */
+type GetItemsWithRefresh = (item: DotCMSContentlet, refresh: () => void) => Observable<MenuItem[]>;
 
 const MOCK_USER = {
     userId: 'test-user-123',
@@ -151,6 +159,7 @@ describe('DotPageActionsService', () => {
     let mockCurrentUserService: Mocked<DotCurrentUserService>;
     let mockPushPublishService: Mocked<PushPublishService>;
     let mockPagesStore: PagesStoreMock;
+    let mockOpener: { open: Mock };
     let mockDotPageListService: Mocked<Pick<DotPageListService, 'getFavoritePageByURL'>>;
 
     const createService = createServiceFactory({
@@ -210,6 +219,10 @@ describe('DotPageActionsService', () => {
             getFavoritePages: vi.fn()
         };
 
+        mockOpener = {
+            open: vi.fn(() => new DotSidePanelRef(() => undefined))
+        };
+
         mockDotPageListService = {
             // For non-favorite pages the service queries by URL; returning `undefined` means "not found".
             getFavoritePageByURL: vi
@@ -237,7 +250,8 @@ describe('DotPageActionsService', () => {
                 { provide: DotCurrentUserService, useValue: mockCurrentUserService },
                 { provide: PushPublishService, useValue: mockPushPublishService },
                 { provide: DotCMSPagesStore, useValue: mockPagesStore },
-                { provide: DotPageListService, useValue: mockDotPageListService }
+                { provide: DotPageListService, useValue: mockDotPageListService },
+                { provide: DotEditContentOpenerService, useValue: mockOpener }
             ]
         });
     });
@@ -484,20 +498,84 @@ describe('DotPageActionsService', () => {
         }));
     });
 
+    /**
+     * #38303 (R11) — Edit opens the page in the side panel, over the Pages listing, in whichever
+     * editor its type uses. The listing refreshes on every save and when the panel closes, through
+     * the refresh the Pages component hands `getItems`.
+     */
     describe('Edit Action', () => {
-        it('should navigate to edit contentlet when edit is clicked', () =>
-            new Promise<void>((done) => {
-                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                    const editAction = items.find((item) => item.label === 'Edit');
+        /** The Pages component's refresh, as it hands it to `getItems`. */
+        let refresh: Mock;
 
-                    editAction?.command?.({} as MenuItemCommandEvent);
+        /** The opener's `open`, as the mock records it. */
+        const opened = () => mockOpener.open;
 
-                    expect(mockRouterService.goToEditContentlet).toHaveBeenCalledWith(
-                        MOCK_HTMLPAGE_CONTENTLET.inode
-                    );
-                    done();
-                });
-            }));
+        /** Builds the menu for the page, with the refresh, and clicks Edit. */
+        const clickEdit = async (): Promise<void> => {
+            const getItems = (spectator.service.getItems as unknown as GetItemsWithRefresh).bind(
+                spectator.service
+            );
+            const items = await firstValueFrom(getItems(MOCK_HTMLPAGE_CONTENTLET, refresh));
+
+            items.find((item) => item.label === 'Edit')?.command?.({} as MenuItemCommandEvent);
+            // Edit loads the opener on demand: wait for it to open.
+            await vi.dynamicImportSettled();
+        };
+
+        /** The options the service handed the opener, on its only `open`. */
+        const openOptions = (): DotEditContentOpenOptions => {
+            expect(opened().mock.calls.length, 'Edit opens one panel').toBe(1);
+
+            return opened().mock.calls[0][1] as DotEditContentOpenOptions;
+        };
+
+        beforeEach(() => {
+            refresh = vi.fn();
+        });
+
+        it('should open the page in the side panel, naming the Pages portlet', async () => {
+            await clickEdit();
+
+            expect(opened().mock.calls.length, 'Edit opens one panel').toBe(1);
+            expect(opened().mock.calls[0][0]).toEqual({
+                mode: 'edit',
+                inode: 'inode-123',
+                identifier: 'page-123',
+                contentType: 'htmlpage',
+                languageId: 1,
+                title: 'Home Page',
+                portletId: 'pages'
+            });
+        });
+
+        it("should open it with the Pages portlet's injector", async () => {
+            await clickEdit();
+
+            // Compared by identity: printing an injector runs the worker out of memory.
+            expect(openOptions().injector === spectator.inject(Injector)).toBe(true);
+        });
+
+        it('should refresh the listing on every save', async () => {
+            await clickEdit();
+
+            openOptions().saved?.(MOCK_HTMLPAGE_CONTENTLET);
+
+            expect(refresh).toHaveBeenCalledTimes(1);
+        });
+
+        it('should refresh the listing when the panel closes', async () => {
+            await clickEdit();
+
+            openOptions().closed?.();
+
+            expect(refresh).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not route to the legacy edit screen', async () => {
+            await clickEdit();
+
+            expect(mockRouterService.goToEditContentlet.mock.calls.length).toBe(0);
+        });
     });
 
     describe('Push Publish Action', () => {
@@ -745,22 +823,23 @@ describe('DotPageActionsService', () => {
             });
         }));
 
-        it('should handle complete edit workflow', () =>
-            new Promise<void>((done) => {
-                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET).subscribe((items) => {
-                    // Step 1: User clicks edit
-                    const editAction = items.find((item) => item.label === 'Edit');
-                    expect(editAction).toBeTruthy();
+        it('should handle complete edit workflow', async () => {
+            const items = await firstValueFrom(
+                spectator.service.getItems(MOCK_HTMLPAGE_CONTENTLET, vi.fn())
+            );
 
-                    // Step 2: Router navigates to edit page
-                    editAction?.command?.({} as MenuItemCommandEvent);
+            // Step 1: User clicks edit
+            const editAction = items.find((item) => item.label === 'Edit');
+            expect(editAction).toBeTruthy();
 
-                    expect(mockRouterService.goToEditContentlet).toHaveBeenCalledWith(
-                        MOCK_HTMLPAGE_CONTENTLET.inode
-                    );
-                    done();
-                });
-            }));
+            // Step 2: The page opens in the side panel (#38303)
+            editAction?.command?.({} as MenuItemCommandEvent);
+            await vi.dynamicImportSettled();
+
+            expect(mockOpener.open.mock.calls[0][0]).toEqual(
+                expect.objectContaining({ mode: 'edit', inode: MOCK_HTMLPAGE_CONTENTLET.inode })
+            );
+        });
 
         it('should handle complete push publish workflow', () =>
             new Promise<void>((done) => {

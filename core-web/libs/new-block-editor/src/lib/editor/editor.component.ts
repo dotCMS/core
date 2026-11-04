@@ -19,8 +19,6 @@ import {
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
-import { ConfirmationService } from 'primeng/api';
-import { ConfirmDialog } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { type AnyExtension, Editor, type JSONContent } from '@tiptap/core';
@@ -48,7 +46,6 @@ import { type MediaUploaders } from './extensions/asset-uploader/asset-uploader.
 import { createEditorExtensions } from './extensions/editor-extensions';
 import { type ContentletEditEvent } from './extensions/nodes/contentlet/contentlet.extension';
 import { SELECTION_PRESERVE_KEY } from './extensions/selection-preserve.extension';
-import { ContentletEditUrlService } from './services/contentlet-edit-url.service';
 import { DotUploadService } from './services/dot-upload.service';
 import { EditorModalService } from './services/editor-modal.service';
 import { EditorPopoverService } from './services/editor-popover.service';
@@ -180,9 +177,7 @@ function normalizeEditorContent(
         EditorPopoverService,
         EditorModalService,
         EditorToolbarStore,
-        ContentletEditUrlService,
         DialogService,
-        ConfirmationService,
         {
             provide: NG_VALUE_ACCESSOR,
             useExisting: forwardRef(() => DotCMSEditorComponent),
@@ -200,7 +195,6 @@ function normalizeEditorContent(
         LinkPopoverComponent,
         AssetByUrlPopoverComponent,
         ToolbarComponent,
-        ConfirmDialog,
         DotMessagePipe
     ],
     template: `
@@ -269,7 +263,6 @@ function normalizeEditorContent(
                     <dot-image-popover [editor]="ed" />
                     <dot-link-popover [editor]="ed" />
                     <dot-asset-by-url-popover [editor]="ed" />
-                    <p-confirmdialog [style]="{ width: '32rem', maxWidth: '90vw' }" />
                 }
             </div>
         </div>

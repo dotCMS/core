@@ -26,6 +26,8 @@ import {
     createFullURL,
     getDragItemData,
     createReorderMenuURL,
+    createAddContentletUrl,
+    createTranslatePageUrl,
     getRequestHostName,
     getOrientation,
     normalizeQueryParams,
@@ -35,10 +37,11 @@ import {
     isAssetPath,
     isNavigableHref,
     resolveClickedAnchor,
-    scrollIframeToFragment
+    scrollIframeToFragment,
+    shouldNavigate
 } from '.';
 
-import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
+import { DEFAULT_PERSONA, LAYOUT_URL, PERSONA_KEY } from '../shared/consts';
 import { dotPageContainerStructureMock } from '../shared/mocks';
 import { ContentletDragPayload, ContentTypeDragPayload } from '../shared/models';
 import { Orientation } from '../store/models';
@@ -1182,6 +1185,28 @@ describe('utils functions', () => {
         });
     });
 
+    /**
+     * Whether a saved contentlet's URL map is somewhere else to go. The REST contentlet carries
+     * `URL_MAP_FOR_CONTENT: null` for a type with no detail page (#38303).
+     */
+    describe('shouldNavigate', () => {
+        it('should navigate to a URL other than the current one', () => {
+            expect(shouldNavigate('/blog/a-new-slug', '/blog/index')).toBe(true);
+        });
+
+        it('should not navigate to the current URL', () => {
+            expect(shouldNavigate('/blog/index', 'blog/index')).toBe(false);
+        });
+
+        it.each([
+            ['undefined', undefined],
+            ['null', null],
+            ['an empty string', '']
+        ])('should not navigate to %s', (_label, url) => {
+            expect(shouldNavigate(url, '/blog/index')).toBe(false);
+        });
+    });
+
     describe('scrollIframeToFragment', () => {
         let doc: Document;
         let win: Window;
@@ -1897,5 +1922,86 @@ describe('utils functions', () => {
                 expect(isAssetPath(pathname)).toBe(true);
             }
         );
+    });
+});
+
+/**
+ * The legacy screens the page editor opens in a side panel (#38303): the URL builders moved out of
+ * the page editor's dialog store as pure functions, with the exact query strings it built.
+ */
+describe('legacy screen URLs', () => {
+    const TEST_VARIANT = 'my-test-variant';
+    const TEST_SITE_ID = 'test-site-identifier';
+
+    describe('createAddContentletUrl', () => {
+        it('should build the content selector URL for a container, its accepted types, language and variant', () => {
+            expect(createAddContentletUrl('1234', 'test', '1', TEST_VARIANT)).toBe(
+                '/html/ng-contentlet-selector.jsp?ng=true&container_id=1234&add=test&language_id=1&' +
+                    new URLSearchParams({ variantName: TEST_VARIANT }).toString()
+            );
+        });
+    });
+
+    describe('createTranslatePageUrl', () => {
+        /** The translate screen's params for a page inode, in the order the dialog store set them. */
+        const translateParams = (pageInode: string) =>
+            new URLSearchParams({
+                p_p_id: 'content',
+                p_p_action: '1',
+                p_p_state: 'maximized',
+                angularCurrentPortlet: 'edit-page',
+                _content_sibbling: pageInode,
+                _content_cmd: 'edit',
+                p_p_mode: 'view',
+                _content_sibblingStructure: pageInode,
+                _content_struts_action: '/ext/contentlet/edit_contentlet',
+                inode: '',
+                lang: '2',
+                populateaccept: 'true',
+                reuseLastLang: 'true',
+                variantName: TEST_VARIANT
+            });
+
+        it('should build the translate screen URL from the page inode, the new language, the variant and the site', () => {
+            const page = {
+                inode: '123',
+                liveInode: '1234',
+                stInode: '12345',
+                live: true,
+                title: 'test'
+            } as DotCMSPage;
+            const queryParams = translateParams('123');
+            queryParams.set('host_id', TEST_SITE_ID);
+
+            expect(createTranslatePageUrl(page, 2, TEST_VARIANT, TEST_SITE_ID)).toBe(
+                LAYOUT_URL + '?' + queryParams.toString()
+            );
+        });
+
+        it('should use the working inode when the page is a working version', () => {
+            const page = {
+                inode: '123',
+                liveInode: '1234',
+                stInode: '12345',
+                live: true,
+                title: 'test',
+                working: true,
+                workingInode: '56789'
+            } as DotCMSPage;
+            const queryParams = translateParams('56789');
+            queryParams.set('host_id', TEST_SITE_ID);
+
+            expect(createTranslatePageUrl(page, 2, TEST_VARIANT, TEST_SITE_ID)).toBe(
+                LAYOUT_URL + '?' + queryParams.toString()
+            );
+        });
+
+        it('should leave the site out when the page names none', () => {
+            const page = { inode: '123', title: 'test' } as DotCMSPage;
+
+            expect(createTranslatePageUrl(page, 2, TEST_VARIANT, undefined)).toBe(
+                LAYOUT_URL + '?' + translateParams('123').toString()
+            );
+        });
     });
 });

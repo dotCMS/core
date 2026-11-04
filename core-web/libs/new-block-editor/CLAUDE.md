@@ -72,7 +72,7 @@ The lib follows a strict split: **data fetching** delegates to `@dotcms/data-acc
 
 | Service | Used for |
 |---|---|
-| `DotContentTypeService` | Content type filtering for the slash-menu's content-type sub-picker (`filterContentTypes`) and per-type metadata reads (`getContentType`, used by `ContentletEditUrlService`). |
+| `DotContentTypeService` | Content type filtering for the slash-menu's content-type sub-picker (`filterContentTypes`). |
 | `DotContentSearchService` | Lucene search behind the slash-menu's contentlet drill-down (`/api/content/_search`). The editor-flavoured query string (`+contentType:X +languageId:Y +deleted:false +working:true +catchall:** title:''^15`) is built inline at the call site (`buildContentletByTypeQuery` in `slash-menu-catalog.ts`); the service itself stays generic. |
 | `DotLanguagesService` | Language metadata for the editor store (`getById`). |
 | `DotSiteService` | `getCurrentSite()` for the **new** asset picker — `DotAssetPickerComponent` needs a `DotSite` to browse and the editor holds none of its own. The legacy `DotBrowserSelectorComponent` path never calls it. |
@@ -90,7 +90,6 @@ Do **not** create custom HTTP services in this lib for any of the above. If you 
 | `EditorModalService` | Lifecycle for centered `DialogService.open()` modals (AI content, AI image, and the image / video / audio asset pickers). Editor-only concern. |
 | `EditorToolbarStore` | Signal mirror of TipTap mark/block/alignment state for the toolbar. Editor-only concern. |
 | `SlashMenuService` | Slash-menu catalog, filtering, sub-menu loading. Editor-only concern. |
-| `ContentletEditUrlService` | Resolves the legacy-vs-new content editor URL via per-content-type feature-flag cache. Caches the metadata read so repeated contentlet edits within one session don't re-hit the network. The wrapper exists *for* the cache; without it, every "Edit contentlet" click would re-fetch. |
 | `DotUploadService` (adapter) | Promise/async-await adapter around `DotUploadFileService.publishContent()`. Two responsibilities: bridge the async model for the `assetUploader` extension (`extensions/asset-uploader/`, whose `uploadAsset` is linear `async` code) and unwrap the workflow PUBLISH endpoint's `Record<contentTypeKey, contentlet>` shape into the editor's narrower `UploadedImage` / `UploadedVideo` types. |
 
 When in doubt: **state & orchestration → local. HTTP → data-access.**

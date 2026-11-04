@@ -18,6 +18,7 @@ import { UpdatedContentlet } from '../../edit-ema-editor/components/ema-page-dro
 import { EDITOR_STATE, UVE_STATUS } from '../../shared/enums';
 import { UVEStore } from '../../store/dot-uve.store';
 import { PageType } from '../../store/models';
+import { createReorderMenuURL } from '../../utils';
 import { InlineEditService } from '../inline-edit/inline-edit.service';
 
 const MOCK_UPDATED_CONTENTLET: UpdatedContentlet = {
@@ -79,7 +80,8 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
+                openContent: vi.fn(),
+                openLegacyScreen: vi.fn(),
                 inlineEditingService: null,
                 contentWindow: null,
                 host: 'http://localhost',
@@ -102,7 +104,8 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
+                openContent: vi.fn(),
+                openLegacyScreen: vi.fn(),
                 inlineEditingService: null,
                 contentWindow: null,
                 host: 'http://localhost',
@@ -125,7 +128,8 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
+                openContent: vi.fn(),
+                openLegacyScreen: vi.fn(),
                 inlineEditingService: null,
                 contentWindow: null,
                 host: 'http://localhost',
@@ -144,7 +148,8 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
             { action: DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING, payload: null },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
+                openContent: vi.fn(),
+                openLegacyScreen: vi.fn(),
                 inlineEditingService: null,
                 contentWindow: null,
                 host: 'http://localhost',
@@ -170,7 +175,8 @@ describe('DotUveActionsHandlerService – UPDATE_CONTENTLET_INLINE_EDITING', () 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
+                openContent: vi.fn(),
+                openLegacyScreen: vi.fn(),
                 inlineEditingService: null,
                 contentWindow: null,
                 host: 'http://localhost',
@@ -212,7 +218,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
             { action: DotCMSUVEAction.SECTION_OFFSET, payload },
             {
                 uveStore: buildMockStore() as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
+                openContent: vi.fn(),
+                openLegacyScreen: vi.fn(),
                 inlineEditingService: null,
                 contentWindow: null,
                 host: 'http://localhost',
@@ -233,7 +240,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                 },
                 {
                     uveStore: buildMockStore() as unknown as InstanceType<typeof UVEStore>,
-                    dialog: null,
+                    openContent: vi.fn(),
+                    openLegacyScreen: vi.fn(),
                     inlineEditingService: null,
                     contentWindow: null,
                     host: 'http://localhost',
@@ -241,32 +249,6 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                 }
             );
         }).not.toThrow();
-    });
-
-    it('should call dialog.createContentletFromPalette when action is CREATE_CONTENTLET', () => {
-        const createContentletFromPalette = vi.fn();
-        const mockStore = {
-            ...buildMockStore(),
-            pageLanguageId: signal(1)
-        };
-
-        service.handleAction(
-            { action: DotCMSUVEAction.CREATE_CONTENTLET, payload: { contentType: 'Event' } },
-            {
-                uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: { createContentletFromPalette } as never,
-                inlineEditingService: null,
-                contentWindow: null,
-                host: 'http://localhost',
-                onCopyContent: vi.fn()
-            }
-        );
-
-        expect(createContentletFromPalette).toHaveBeenCalledWith({
-            variable: 'Event',
-            name: 'Event',
-            language_id: 1
-        });
     });
 
     describe('NAVIGATION_UPDATE', () => {
@@ -285,7 +267,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                 },
                 {
                     uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                    dialog: null,
+                    openContent: vi.fn(),
+                    openLegacyScreen: vi.fn(),
                     inlineEditingService: null,
                     contentWindow: null,
                     host: 'http://localhost',
@@ -314,7 +297,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                 },
                 {
                     uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                    dialog: null,
+                    openContent: vi.fn(),
+                    openLegacyScreen: vi.fn(),
                     inlineEditingService: null,
                     contentWindow: null,
                     host: 'http://localhost',
@@ -345,7 +329,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
+                        openContent: vi.fn(),
+                        openLegacyScreen: vi.fn(),
                         inlineEditingService: null,
                         contentWindow: null,
                         host: 'http://localhost',
@@ -372,7 +357,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
+                        openContent: vi.fn(),
+                        openLegacyScreen: vi.fn(),
                         inlineEditingService: null,
                         contentWindow: null,
                         host: 'http://localhost',
@@ -398,7 +384,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
+                        openContent: vi.fn(),
+                        openLegacyScreen: vi.fn(),
                         inlineEditingService: null,
                         contentWindow: null,
                         host: 'http://localhost',
@@ -424,7 +411,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
+                        openContent: vi.fn(),
+                        openLegacyScreen: vi.fn(),
                         inlineEditingService: null,
                         contentWindow: null,
                         host: 'http://localhost',
@@ -452,7 +440,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
+                        openContent: vi.fn(),
+                        openLegacyScreen: vi.fn(),
                         inlineEditingService: null,
                         contentWindow: null,
                         host: 'http://localhost',
@@ -479,7 +468,8 @@ describe('DotUveActionsHandlerService – SECTION_OFFSET', () => {
                     },
                     {
                         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                        dialog: null,
+                        openContent: vi.fn(),
+                        openLegacyScreen: vi.fn(),
                         inlineEditingService: null,
                         contentWindow: null,
                         host: 'http://localhost',
@@ -529,7 +519,8 @@ describe('DotUveActionsHandlerService – REGISTER_STYLE_SCHEMAS', () => {
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
+                openContent: vi.fn(),
+                openLegacyScreen: vi.fn(),
                 inlineEditingService: null,
                 contentWindow: null,
                 host: 'http://localhost',
@@ -575,7 +566,8 @@ describe('DotUveActionsHandlerService – CLIENT_READY', () => {
 
     const buildDeps = (mockStore: ReturnType<typeof buildClientReadyStore>) => ({
         uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-        dialog: null,
+        openContent: vi.fn(),
+        openLegacyScreen: vi.fn(),
         inlineEditingService: null,
         contentWindow: null,
         host: 'http://localhost',
@@ -691,7 +683,8 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
+                openContent: vi.fn(),
+                openLegacyScreen: vi.fn(),
                 inlineEditingService: null,
                 contentWindow,
                 host: HOST,
@@ -730,7 +723,8 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
+                openContent: vi.fn(),
+                openLegacyScreen: vi.fn(),
                 inlineEditingService,
                 contentWindow: null,
                 host: HOST,
@@ -761,7 +755,8 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
             },
             {
                 uveStore: mockStore as unknown as InstanceType<typeof UVEStore>,
-                dialog: null,
+                openContent: vi.fn(),
+                openLegacyScreen: vi.fn(),
                 inlineEditingService: null,
                 contentWindow,
                 host: HOST,
@@ -842,7 +837,8 @@ describe('DotUveActionsHandlerService – INIT_INLINE_EDITING permission gate (#
             } as never,
             {
                 uveStore: buildMockStore() as never,
-                dialog: {} as never,
+                openContent: vi.fn(),
+                openLegacyScreen: vi.fn(),
                 blockSidebar: blockSidebar as never,
                 inlineEditingService: inlineEditingService as never,
                 contentWindow,
@@ -900,5 +896,148 @@ describe('DotUveActionsHandlerService – INIT_INLINE_EDITING permission gate (#
 
         expect(blockSidebar.open).toHaveBeenCalled();
         expect(messageService.add).not.toHaveBeenCalled();
+    });
+});
+
+/**
+ * The SDK's `editContentlet()`, `createContentlet()` and `reorderMenu()` open the side panel through
+ * the editor's callbacks, not a dialog (#38303). An edit or create is a `DotEditContentRequest`
+ * built from what the SDK sent, so the opener picks the editor from the content type.
+ */
+describe('DotUveActionsHandlerService – opening content and legacy screens', () => {
+    let spectator: SpectatorService<DotUveActionsHandlerService>;
+    let service: DotUveActionsHandlerService;
+
+    const createService = createServiceFactory({
+        service: DotUveActionsHandlerService,
+        providers: [
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotMessageService, { get: vi.fn((key: string) => key) }),
+            mockProvider(MessageService),
+            mockProvider(DotCopyContentModalService),
+            { provide: UVEStore, useValue: buildMockStore() }
+        ]
+    });
+
+    /** A page store on `variantId`, in language 2, on site `site-1`, at `/about-us`. */
+    const buildPageStore = (variantId = DEFAULT_VARIANT_ID) => ({
+        ...buildMockStore(variantId),
+        pageLanguageId: signal(2),
+        pageParams: signal({ url: '/about-us' }),
+        pageAsset: signal({ site: { identifier: 'site-1' } })
+    });
+
+    const buildDeps = (store: ReturnType<typeof buildPageStore>) => ({
+        uveStore: store as unknown as InstanceType<typeof UVEStore>,
+        openContent: vi.fn(),
+        openLegacyScreen: vi.fn(),
+        inlineEditingService: null as unknown as InlineEditService,
+        contentWindow: null,
+        host: 'http://localhost',
+        onCopyContent: vi.fn()
+    });
+
+    /** What the SDK sends with `editContentlet(contentlet)`. */
+    const SDK_CONTENTLET = {
+        inode: 'blog-inode',
+        identifier: 'blog-identifier',
+        contentType: 'Blog',
+        languageId: 1,
+        title: 'A blog post',
+        baseType: 'CONTENT'
+    };
+
+    beforeEach(() => {
+        vi.clearAllMocks();
+        spectator = createService();
+        service = spectator.service;
+    });
+
+    describe('EDIT_CONTENTLET', () => {
+        it('should open an edit request built from the contentlet the SDK sent', () => {
+            const deps = buildDeps(buildPageStore());
+
+            service.handleAction(
+                { action: DotCMSUVEAction.EDIT_CONTENTLET, payload: SDK_CONTENTLET },
+                deps
+            );
+
+            expect(deps.openContent).toHaveBeenCalledWith({
+                mode: 'edit',
+                inode: 'blog-inode',
+                identifier: 'blog-identifier',
+                contentType: 'Blog',
+                languageId: 1,
+                title: 'A blog post',
+                siteId: 'site-1',
+                portletId: 'edit-page'
+            });
+        });
+
+        it('should name the experiment variant the page is on', () => {
+            const deps = buildDeps(buildPageStore('variant-a'));
+
+            service.handleAction(
+                { action: DotCMSUVEAction.EDIT_CONTENTLET, payload: SDK_CONTENTLET },
+                deps
+            );
+
+            expect(deps.openContent).toHaveBeenCalledWith(
+                expect.objectContaining({ mode: 'edit', variantName: 'variant-a' })
+            );
+        });
+    });
+
+    describe('CREATE_CONTENTLET', () => {
+        it('should open a create request for the type, in the page language', () => {
+            const deps = buildDeps(buildPageStore());
+
+            service.handleAction(
+                { action: DotCMSUVEAction.CREATE_CONTENTLET, payload: { contentType: 'Event' } },
+                deps
+            );
+
+            expect(deps.openContent).toHaveBeenCalledWith({
+                mode: 'new',
+                contentType: 'Event',
+                languageId: 2,
+                siteId: 'site-1',
+                portletId: 'edit-page'
+            });
+        });
+
+        it('should name the experiment variant the page is on', () => {
+            const deps = buildDeps(buildPageStore('variant-a'));
+
+            service.handleAction(
+                { action: DotCMSUVEAction.CREATE_CONTENTLET, payload: { contentType: 'Event' } },
+                deps
+            );
+
+            expect(deps.openContent).toHaveBeenCalledWith(
+                expect.objectContaining({ mode: 'new', variantName: 'variant-a' })
+            );
+        });
+    });
+
+    describe('REORDER_MENU', () => {
+        it('should open the reorder screen for the page in a legacy-screen panel', () => {
+            const deps = buildDeps(buildPageStore());
+
+            service.handleAction(
+                { action: DotCMSUVEAction.REORDER_MENU, payload: { startLevel: 1, depth: 2 } },
+                deps
+            );
+
+            expect(deps.openLegacyScreen).toHaveBeenCalledWith(
+                createReorderMenuURL({
+                    startLevel: 1,
+                    depth: 2,
+                    pagePath: '/about-us',
+                    hostId: 'site-1'
+                }),
+                'editpage.content.contentlet.menu.reorder.title'
+            );
+        });
     });
 });

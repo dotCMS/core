@@ -84,7 +84,7 @@ export const withFavorites = () => {
             const globalStore = inject(GlobalStore);
             return {
                 onInit: () => {
-                    const handleSwitchSite = signalMethod<DotSite>((site: DotSite) => {
+                    const handleSwitchSite = signalMethod<DotSite | null>((site) => {
                         if (!site) return;
                         const host = site.identifier;
                         store.getFavoritePages({ host });

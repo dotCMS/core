@@ -300,10 +300,19 @@
                                         <td></td>
                                     </tr>
                                 } @else {
+                                    <!-- A contentlet row opens with a click or Enter, and takes
+                                         focus back when its panel closes (FR-039), so it is
+                                         focusable. Enter on the row's own buttons is theirs. -->
                                     <tr
                                         class="group"
-                                        [class.cursor-pointer]="!!editUrlFor(asset)"
+                                        [class.cursor-pointer]="isEditableContentlet(asset)"
+                                        [attr.tabindex]="isEditableContentlet(asset) ? 0 : null"
+                                        [attr.data-pq-asset-row]="asset.asset"
                                         (click)="onSelectAssetRow(asset)"
+                                        (keydown.enter)="
+                                            $event.target === $event.currentTarget &&
+                                                onSelectAssetRow(asset)
+                                        "
                                         data-testid="pq-select-bundle-asset-row">
                                         <td>
                                             <div class="flex min-w-0 items-center gap-2">
@@ -550,4 +559,6 @@
     }
 
     <p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '500px' }" />
+    <!-- Toasts from the side panel an asset row opens, on this dialog's MessageService. -->
+    <p-toast />
 </div>

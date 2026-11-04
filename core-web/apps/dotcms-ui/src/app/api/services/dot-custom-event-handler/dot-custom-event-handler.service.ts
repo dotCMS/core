@@ -1,29 +1,34 @@
-import { Injectable, inject } from '@angular/core';
-import { Params, Router } from '@angular/router';
-
-import { take } from 'rxjs/operators';
+import { Injectable, Injector, inject } from '@angular/core';
 
 import {
-    DotContentTypeService,
     DotEventsService,
     DotGenerateSecurePasswordService,
     DotIframeService,
     DotLicenseService,
     DotNavLogoService,
-    DotPropertiesService,
     DotRouterService,
     DotUiColorsService,
     DotWorkflowEventHandlerService
 } from '@dotcms/data-access';
 import { DotPushPublishDialogService, DotUiColors } from '@dotcms/dotcms-js';
-import { DotCMSContentType, DotContentCompareEvent, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotContentCompareEvent } from '@dotcms/dotcms-models';
+import type { DotEditContentRequest } from '@dotcms/edit-content';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 
-import { DotCMSEditPageEvent } from '../../../view/components/dot-contentlet-editor/components/dot-contentlet-wrapper/dot-contentlet-wrapper.component';
-import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
+import { openEditContentPanel } from '../../util/open-edit-content-panel';
 import { DotDownloadBundleDialogService } from '../dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 
 export const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
+
+/** The legacy page editor's `edit-page` event. */
+export interface DotCMSEditPageEvent {
+    name: string;
+    data: {
+        url: string;
+        languageId: string;
+        hostId: string;
+    };
+}
 
 /**
  * Handle Custom events
@@ -39,7 +44,6 @@ export class DotCustomEventHandlerService {
     private dotRouterService = inject(DotRouterService);
     private dotUiColorsService = inject(DotUiColorsService);
     private dotNavLogoService = inject(DotNavLogoService);
-    private dotContentletEditorService = inject(DotContentletEditorService);
     private dotIframeService = inject(DotIframeService);
     private dotPushPublishDialogService = inject(DotPushPublishDialogService);
     private dotDownloadBundleDialogService = inject(DotDownloadBundleDialogService);
@@ -47,46 +51,29 @@ export class DotCustomEventHandlerService {
     private dotGenerateSecurePasswordService = inject(DotGenerateSecurePasswordService);
     private dotEventsService = inject(DotEventsService);
     private dotLicenseService = inject(DotLicenseService);
-    private router = inject(Router);
-    private dotPropertiesService = inject(DotPropertiesService);
-    private dotContentTypeService = inject(DotContentTypeService);
 
-    private handlers: Record<string, ($event: CustomEvent) => void>;
+    /**
+     * `DotSidePanelHostComponent`'s injector: the side panels this service opens live under it.
+     * There is no fallback: the root injector has no `MessageService`, so a panel opened under it
+     * would fail inside.
+     */
+    #panelInjector: Injector | null = null;
 
-    constructor() {
-        // Register handlers synchronously so iframe events (e.g. push-publish) are never
-        // dropped while waiting for feature-flag resolution.
-        this.handlers = {
-            'edit-page': this.goToEditPage.bind(this),
-            'edit-contentlet': this.editContentletLegacy.bind(this),
-            'edit-task': this.editTaskLegacy.bind(this),
-            'create-contentlet': this.createContentletLegacy.bind(this),
-            'create-contentlet-from-edit-page': this.createContentletLegacy.bind(this),
-            'company-info-updated': this.setPersonalization.bind(this),
-            'push-publish': this.pushPublishDialog.bind(this),
-            'download-bundle': this.downloadBundleDialog.bind(this),
-            'workflow-wizard': this.executeWorkflowWizard.bind(this),
-            'generate-secure-password': this.generateSecurePassword.bind(this),
-            'compare-contentlet': this.openCompareDialog.bind(this),
-            'license-changed': this.updateLicense.bind(this),
-            'edit-host': this.editContentletLegacy.bind(this),
-            'create-host': this.createContentletLegacy.bind(this)
-        };
-
-        this.dotPropertiesService
-            .getKeys([FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED])
-            .subscribe((response) => {
-                // Accept native boolean true (current backend) or the legacy string 'true'
-                // (N-1 backend during a rollback window).
-                const val = response[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
-                const contentEditorFeatureFlag = val === true || val === 'true';
-
-                if (contentEditorFeatureFlag) {
-                    this.handlers['edit-contentlet'] = this.editContentlet.bind(this);
-                    this.handlers['create-contentlet'] = this.createContentlet.bind(this);
-                }
-            });
-    }
+    private handlers: Record<string, ($event: CustomEvent) => void> = {
+        'edit-page': this.goToEditPage.bind(this),
+        'edit-contentlet': this.editContentlet.bind(this),
+        'edit-task': this.editTaskLegacy.bind(this),
+        'create-contentlet': this.createContentlet.bind(this),
+        'company-info-updated': this.setPersonalization.bind(this),
+        'push-publish': this.pushPublishDialog.bind(this),
+        'download-bundle': this.downloadBundleDialog.bind(this),
+        'workflow-wizard': this.executeWorkflowWizard.bind(this),
+        'generate-secure-password': this.generateSecurePassword.bind(this),
+        'compare-contentlet': this.openCompareDialog.bind(this),
+        'license-changed': this.updateLicense.bind(this),
+        'edit-host': this.editHost.bind(this),
+        'create-host': this.createHost.bind(this)
+    };
 
     /**
      * Handle custom events from the iframe portlets
@@ -100,36 +87,19 @@ export class DotCustomEventHandlerService {
         }
     }
 
+    /**
+     * Sets the injector the side panels this service opens live under (#38303).
+     * `DotSidePanelHostComponent` registers its own, so a panel finds the `MessageService` and the
+     * `<p-toast>` that component provides; the root injector has neither.
+     *
+     * @param injector `DotSidePanelHostComponent`'s injector.
+     */
+    setInjector(injector: Injector): void {
+        this.#panelInjector = injector;
+    }
+
     private generateSecurePassword($event: CustomEvent): void {
         this.dotGenerateSecurePasswordService.open($event.detail.data);
-    }
-
-    private createContentletLegacy($event: CustomEvent): void {
-        this.dotContentletEditorService.create({
-            data: $event.detail.data
-        });
-        // TODO: Enabled this and remove previous 3 lines of code when endpoint gets updated
-        // this.dotRouterService.goToCreateContent($event.detail.data);
-    }
-
-    private createContentlet($event: CustomEvent): void {
-        this.dotContentTypeService
-            .getContentType($event.detail.data.contentType)
-            .pipe(take(1))
-            .subscribe((contentType) => {
-                if (this.shouldRedirectToOldContentEditor(contentType)) {
-                    return this.createContentletLegacy($event);
-                }
-
-                const queryParams: Params = {};
-                if ($event.detail.data.folderPath) {
-                    queryParams['folderPath'] = $event.detail.data.folderPath;
-                }
-
-                this.router.navigate([`content/new/${$event.detail.data.contentType}`], {
-                    queryParams
-                });
-            });
     }
 
     private goToEditPage($event: CustomEvent<DotCMSEditPageEvent>): void {
@@ -141,21 +111,82 @@ export class DotCustomEventHandlerService {
         });
     }
 
-    private editContentletLegacy($event: CustomEvent): void {
-        this.dotRouterService.goToEditContentlet($event.detail.data.inode);
+    /**
+     * A legacy portlet asked to edit a contentlet: it opens in the side panel, in whichever editor
+     * its content type uses.
+     */
+    private editContentlet($event: CustomEvent): void {
+        const { inode, contentType } = $event.detail.data;
+
+        this.#openInSidePanel({ mode: 'edit', inode, contentType });
     }
 
-    private editContentlet($event: CustomEvent): void {
-        this.dotContentTypeService
-            .getContentType($event.detail.data.contentType)
-            .pipe(take(1))
-            .subscribe((contentType) => {
-                if (this.shouldRedirectToOldContentEditor(contentType)) {
-                    return this.editContentletLegacy($event);
-                }
+    /**
+     * The Sites portlet asked to edit a site. The event names only the inode; the opener fetches
+     * the contentlet to learn its type.
+     */
+    private editHost($event: CustomEvent): void {
+        this.#openInSidePanel({ mode: 'edit', inode: $event.detail.data.inode });
+    }
 
-                this.router.navigate([`content/${$event.detail.data.inode}`]);
-            });
+    /**
+     * A legacy portlet asked to create content of a type, maybe in a folder. The JSP's `url` is
+     * read for its `lang` only, the language the content search or the Site Browser shows; the
+     * opener resolves the create screen itself.
+     */
+    private createContentlet($event: CustomEvent): void {
+        const { url, contentType, folderPath } = $event.detail.data;
+        const languageId = languageOf(url);
+
+        this.#openInSidePanel({
+            mode: 'new',
+            contentType,
+            folderPath,
+            ...(languageId ? { languageId } : {})
+        });
+    }
+
+    /** The Sites portlet asked to create a site. The JSP's `url` is ignored. */
+    private createHost(): void {
+        this.#openInSidePanel({ mode: 'new', contentType: 'Host' });
+    }
+
+    /**
+     * Opens a request in the side panel for the portlet that asked (#38303, R11). The portlet is
+     * the one current when the event arrived: the request names it, and every save and the close
+     * reload its list.
+     *
+     * Nothing opens until `DotSidePanelHostComponent` has registered its injector, which it does
+     * before any portlet can send an event; a request before then is logged as an error.
+     *
+     * @param request What to open, without the portlet.
+     */
+    #openInSidePanel(request: DotEditContentRequest): void {
+        const injector = this.#panelInjector;
+
+        if (!injector) {
+            console.error(
+                'DotCustomEventHandlerService: no side panel host has registered its injector, so the panel did not open (#38303)'
+            );
+
+            return;
+        }
+
+        const portletId = this.dotRouterService.currentPortlet.id;
+        const reload = () => {
+            if (portletId) {
+                this.dotIframeService.reloadData(portletId);
+            }
+        };
+
+        void openEditContentPanel(
+            { ...request, portletId },
+            {
+                injector,
+                saved: reload,
+                closed: reload
+            }
+        );
     }
 
     private editTaskLegacy($event: CustomEvent): void {
@@ -200,16 +231,26 @@ export class DotCustomEventHandlerService {
     private updateLicense(): void {
         this.dotLicenseService.updateLicense();
     }
+}
 
-    /**
-     * Check if the content type have the feature flag in the metadata.
-     *
-     * @private
-     * @param {DotCMSContentType} contentType
-     * @return {*}  {boolean}
-     * @memberof DotCustomEventHandlerService
-     */
-    private shouldRedirectToOldContentEditor(contentType: DotCMSContentType): boolean {
-        return !contentType?.metadata?.[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
+/**
+ * The language a legacy create URL names: the content search and the Site Browser append
+ * `&lang=<id>` for the language the portlet shows (`view_contentlets_js_inc.jsp`,
+ * `view_browser_js_inc.jsp`).
+ *
+ * @param url The `url` of a `create-contentlet` event, if it has one.
+ * @returns The language id, or `undefined` when the URL names none.
+ */
+function languageOf(url: unknown): number | undefined {
+    if (typeof url !== 'string' || !url) {
+        return undefined;
+    }
+
+    try {
+        const languageId = Number(new URL(url, window.location.origin).searchParams.get('lang'));
+
+        return Number.isInteger(languageId) && languageId > 0 ? languageId : undefined;
+    } catch {
+        return undefined;
     }
 }

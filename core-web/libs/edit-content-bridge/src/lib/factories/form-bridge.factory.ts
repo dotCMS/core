@@ -7,7 +7,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 
 import { DotSite } from '@dotcms/dotcms-models';
 
-import { AngularFormBridge } from '../bridges/angular-form-bridge';
+import { AngularFormBridge, FormBridgeFrame } from '../bridges/angular-form-bridge';
 import { DojoFormBridge } from '../bridges/dojo-form-bridge';
 import { FormBridge } from '../interfaces/form-bridge.interface';
 
@@ -77,16 +77,21 @@ export function createFormBridge(config: BridgeConfig): FormBridge {
 /**
  * Saves the current form bridge singleton onto an internal stack
  * so a nested context (e.g. a dialog) can create its own bridge.
- * Call `popFormBridge()` when the nested context is destroyed.
+ * Call `popFormBridge(frame)` with the returned frame when the nested context is destroyed.
+ *
+ * @returns The frame the nested context owns.
  */
-export function pushFormBridge(): void {
-    AngularFormBridge.pushInstance();
+export function pushFormBridge(): FormBridgeFrame {
+    return AngularFormBridge.pushInstance();
 }
 
 /**
- * Destroys the current form bridge singleton and restores the
- * previous one from the stack (saved by `pushFormBridge()`).
+ * Destroys the nested context's form bridge and restores the one underneath (saved by
+ * `pushFormBridge()`). Passing the frame `pushFormBridge()` returned removes exactly that frame,
+ * even when another context is still stacked over it (#38303); with no frame, the top one goes.
+ *
+ * @param frame The frame `pushFormBridge()` returned to the closing context.
  */
-export function popFormBridge(): void {
-    AngularFormBridge.popInstance();
+export function popFormBridge(frame?: FormBridgeFrame): void {
+    AngularFormBridge.popInstance(frame);
 }

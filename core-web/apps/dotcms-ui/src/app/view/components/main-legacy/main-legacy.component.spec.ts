@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { mockProvider } from '@openng/spectator/vitest';
 import { of } from 'rxjs';
 import { vi } from 'vitest';
@@ -11,7 +9,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MessageService } from 'primeng/api';
 
 import {
     DotAlertConfirmService,
@@ -57,7 +55,6 @@ import { DotDownloadBundleDialogComponent } from '../_common/dot-download-bundle
 import { DotWizardComponent } from '../_common/dot-wizard/dot-wizard.component';
 import { IframeOverlayService } from '../_common/iframe/service/iframe-overlay.service';
 import { DotNavigationService } from '../dot-navigation/services/dot-navigation.service';
-// import { DotContentletEditorModule } from '../dot-contentlet-editor/dot-contentlet-editor.module';
 
 @Component({
     selector: 'dot-alert-confirm',
@@ -119,13 +116,11 @@ const createFeatureFlagResponse = (enabled = 'NOT_FOUND') => ({
 describe('MainLegacyComponent', () => {
     let fixture: ComponentFixture<MainComponentLegacyComponent>;
     let de: DebugElement;
-    let dotCustomEventHandlerService: DotCustomEventHandlerService;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             imports: [
                 RouterTestingModule,
-                // DotContentletEditorModule,
                 DotDownloadBundleDialogComponent,
                 DotWizardComponent,
                 MainComponentLegacyComponent
@@ -143,6 +138,8 @@ describe('MainLegacyComponent', () => {
                 DotFormatDateService,
                 DotAlertConfirmService,
                 ConfirmationService,
+                // Stands in for a MessageService a route provides, as UVE's does.
+                MessageService,
                 DotcmsConfigService,
                 LoggerService,
                 StringUtils,
@@ -197,7 +194,6 @@ describe('MainLegacyComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(MainComponentLegacyComponent);
         de = fixture.debugElement;
-        dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
         fixture.detectChanges();
     });
     it('should have basic layout elements', () => {
@@ -218,23 +214,28 @@ describe('MainLegacyComponent', () => {
         expect(de.query(By.css('dot-large-message-display')) !== null).toBe(true);
     });
 
-    describe('Create Contentlet', () => {
-        let createContentlet: DebugElement;
-        beforeEach(() => {
-            createContentlet = de.query(By.css('dot-create-contentlet'));
+    /**
+     * The admin root is an element ancestor of every routed portlet, and Angular resolves element
+     * injectors before a route's providers. A MessageService provided here shadowed the one UVE
+     * provides on its route, so UVE's toast and the admin root's both rendered every UVE message
+     * (#38303). The side panels and their toast live in `dot-side-panel-host`, a sibling of the
+     * router outlet, instead.
+     */
+    describe('side panel toasts', () => {
+        it('should not provide a MessageService of its own', () => {
+            // Compared by identity: printing a MessageService on failure floods the output.
+            expect(de.injector.get(MessageService) === TestBed.inject(MessageService)).toBe(true);
         });
 
-        it('should call dotCustomEventHandlerService on customEvent', () => {
-            vi.spyOn(dotCustomEventHandlerService, 'handle');
-            const mockEvent = {
-                detail: {
-                    name: 'create-contentlet',
-                    data: 'test'
-                }
-            };
-            createContentlet.triggerEventHandler('custom', mockEvent);
+        it('should render the side panel host', () => {
+            expect(de.query(By.css('dot-side-panel-host'))).not.toBeNull();
+        });
 
-            expect<any>(dotCustomEventHandlerService.handle).toHaveBeenCalledWith(mockEvent);
+        it('should render no toast or side panel outlet of its own', () => {
+            const host: HTMLElement = fixture.nativeElement;
+
+            expect(host.querySelector(':scope > p-toast')).toBeNull();
+            expect(host.querySelector(':scope > dot-side-panel-outlet')).toBeNull();
         });
     });
 });
