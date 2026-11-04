@@ -1330,6 +1330,72 @@ public class AppsAPIImplTest {
         }
     }
 
+    /**
+     * Method to test: {@link AppsAPIImpl#importSecretsAndSave(Path, Key, User)}
+     * Given scenario: an export taken before the Edit Mode Anywhere app was removed holds that
+     * app's settings ({@code dotema-config}) next to another app's settings, and the instance no
+     * longer has the Edit Mode Anywhere app.
+     * Expected Results: the import does not stop on the retired app. Its settings are skipped and
+     * the other app's settings are imported.
+     */
+    @Test
+    public void Test_Import_Skips_Edit_Mode_Anywhere_Settings_From_An_Old_Export()
+            throws DotDataException, DotSecurityException, IOException, EncryptorException,
+            AlreadyExistException {
+        final User admin = TestUserUtils.getAdminUser();
+        final AppsAPI api = APILocator.getAppsAPI();
+        final Host site = new SiteDataGen().nextPersisted();
+
+        final AppDescriptorDataGen retiredDataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false, true)
+                .withFileName("dotema-config.yml")
+                .withName("Edit Mode Anywhere")
+                .withDescription("retired app")
+                .withExtraParameters(false);
+        final AppDescriptorDataGen otherDataGen = new AppDescriptorDataGen()
+                .stringParam("p1", false, true)
+                .withName("other-app")
+                .withDescription("other app")
+                .withExtraParameters(false);
+        final File retiredFile = retiredDataGen.nextPersistedDescriptor();
+        final File otherFile = otherDataGen.nextPersistedDescriptor();
+        final String retiredKey = retiredDataGen.getKey();
+        final String otherKey = otherDataGen.getKey();
+        try {
+            // An instance from before the removal, with settings for both apps
+            api.createAppDescriptor(retiredFile, admin);
+            api.createAppDescriptor(otherFile, admin);
+            api.saveSecrets(new AppSecrets.Builder().withKey(retiredKey)
+                    .withHiddenSecret("p1", "retired-value").build(), site, admin);
+            api.saveSecrets(new AppSecrets.Builder().withKey(otherKey)
+                    .withHiddenSecret("p1", "other-value").build(), site, admin);
+
+            final Key securityKey = AppsUtil.generateKey(RandomStringUtils.randomAlphanumeric(32));
+            final Path exportFile = api.exportSecrets(securityKey, false,
+                    ImmutableMap.of(site.getIdentifier(), ImmutableSet.of(retiredKey, otherKey)), admin);
+
+            // The upgraded instance: the Edit Mode Anywhere app is gone, the other app is empty
+            api.removeApp(retiredKey, admin, true);
+            api.deleteSecrets(otherKey, site, admin);
+
+            final int imported = api.importSecretsAndSave(exportFile, securityKey, admin);
+
+            assertEquals("only the other app's settings should be imported", 1, imported);
+            final Optional<AppSecrets> otherSecrets = api.getSecrets(otherKey, site, admin);
+            assertTrue("the other app's settings should be imported", otherSecrets.isPresent());
+            assertEquals("other-value", otherSecrets.get().getSecrets().get("p1").getString());
+            final Set<String> siteAppKeys = api.appKeysByHost()
+                    .getOrDefault(site.getIdentifier().toLowerCase(), Set.of());
+            assertFalse("the Edit Mode Anywhere settings should not be imported",
+                    siteAppKeys.contains(retiredKey.toLowerCase()));
+        } finally {
+            Try.run(() -> api.removeApp(retiredKey, admin, true));
+            Try.run(() -> api.removeApp(otherKey, admin, true));
+            retiredFile.delete();
+            otherFile.delete();
+        }
+    }
+
     @DataProvider
     public static Object[] getTargetSitesTestCases() throws Exception {
         Try.run(() -> IntegrationTestInitService.getInstance().init());

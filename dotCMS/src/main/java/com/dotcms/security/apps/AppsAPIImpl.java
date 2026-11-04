@@ -67,6 +67,13 @@ import java.util.stream.Stream;
  */
 public class AppsAPIImpl implements AppsAPI {
 
+    /**
+     * Keys of apps that dotCMS no longer ships. An export taken before an app was removed can
+     * still hold its settings; importing such an export skips them with a warning instead of
+     * stopping on the missing descriptor. {@code dotema-config} is Edit Mode Anywhere.
+     */
+    private static final Set<String> RETIRED_APP_KEYS = Set.of("dotema-config");
+
     private final LayoutAPI layoutAPI;
     private final HostAPI hostAPI;
     private final SecretsStore secretsStore;
@@ -1163,13 +1170,18 @@ public class AppsAPIImpl implements AppsAPI {
 
     /**
      * {@inheritDoc}
-     * @param incomingFile encrypted file
-     * @param key security key
-     * @param user
-     * @return
-     * @throws DotDataException
-     * @throws DotSecurityException
-     * @throws IOException
+     * <p>Settings for an app dotCMS no longer ships (see {@link #RETIRED_APP_KEYS}) are skipped with
+     * a warning. Any other entry that cannot be imported (an unknown site, an app with no local
+     * descriptor, empty or invalid settings) stops the import, unless
+     * {@code APPS_IMPORT_FAIL_SILENTLY} is on, in which case it is skipped too.</p>
+     *
+     * @param incomingFile the encrypted export file
+     * @param key          the key the file was encrypted with
+     * @param user         the importing user, who must be an administrator
+     * @return the number of app settings saved
+     * @throws DotDataException     if the settings cannot be read or saved
+     * @throws DotSecurityException if the user is not an administrator
+     * @throws IOException          if the file cannot be read
      */
     public int importSecretsAndSave(final Path incomingFile, final Key key, final User user)
             throws DotDataException, DotSecurityException, IOException {
@@ -1204,6 +1216,12 @@ public class AppsAPIImpl implements AppsAPI {
             }
 
             for (final AppSecrets appSecrets : importEntry.getValue()) {
+                if (RETIRED_APP_KEYS.contains(appSecrets.getKey().toLowerCase())) {
+                    Logger.warn(AppsAPIImpl.class, () -> String.format(
+                            "Skipping settings for `%s` on site `%s`: dotCMS no longer ships this app.",
+                            appSecrets.getKey(), siteId));
+                    continue;
+                }
                 final Optional<AppDescriptor> appDescriptor = getAppDescriptor(appSecrets.getKey(),
                         user);
                 if (appDescriptor.isEmpty()) {
