@@ -51,8 +51,8 @@
     "zone.js": "~0.15.0"
   },
   "devDependencies": {
-    "@angular/build": "22.2.1",
-    "@angular/cli": "22.2.1",
+    "@angular/build": "22.2.5",
+    "@angular/cli": "22.2.5",
     "@angular/compiler-cli": "22.2.1",
     "@tailwindcss/typography": "^0.5.19",
     "@types/express": "^5.0.1",
