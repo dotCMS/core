@@ -1,6 +1,6 @@
 # dotcms-ui — Agent Guide
 
-Main admin UI application for dotCMS (`/dotAdmin`). **Angular 21.2.1** with standalone components, `dot-` prefix, built and served through the Nx workspace. Agents working in this directory should read this file first, then refer to the parent guide for shared standards.
+Main admin UI application for dotCMS (`/dotAdmin`). **Angular 22.1.0** with standalone components, `dot-` prefix, built and served through the Nx workspace. Agents working in this directory should read this file first, then refer to the parent guide for shared standards.
 
 ## UI Stack
 
