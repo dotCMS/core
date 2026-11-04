@@ -20,7 +20,6 @@ import com.dotcms.workflow.form.FireActionForm;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.ApiProvider;
-import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.db.DotConnect;
@@ -162,10 +161,8 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
                             + " which is the state the initializer has to repair",
                     permissionAPI.doesUserHavePermission(savedBefore, PermissionAPI.PERMISSION_READ, anonymous, true));
 
+            // The check above cached its answer; the initializer must drop it when it repairs.
             new ContentTypeInitializer().init();
-            // The check above cached its answer. On a real start the initializer runs before any
-            // permission check, so there is no cached answer to drop.
-            CacheLocator.getPermissionCache().flushShortTermCache();
 
             final Contentlet savedAfter = saveFavoriteAs(owner, password);
             favorites.add(savedAfter);
@@ -207,6 +204,56 @@ public class ContentTypeInitializerTest extends IntegrationTestBase {
             UserDataGen.remove(owner);
             UserDataGen.remove(otherBackEndUser);
             UserDataGen.remove(frontEndUser);
+        }
+    }
+
+    /**
+     * Method to test: {@link ContentTypeInitializer#init()}
+     * Given Scenario: The favorite page content type already has both CMS Owner rows, plus a READ
+     * row for CMS Anonymous that its contentlets inherit.
+     * ExpectedResult: The initializer replaces the type's rows, so the anonymous row is gone and a
+     * favorite saved afterwards cannot be read anonymously.
+     */
+    @Test
+    public void test_init_removes_rows_of_other_roles_from_favorite_page_type() throws Exception {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final Role cmsOwner = APILocator.getRoleAPI().loadCMSOwnerRole();
+        final Role anonymousRole = APILocator.getRoleAPI().loadCMSAnonymousRole();
+        final ContentType contentType = APILocator.getContentTypeAPI(APILocator.systemUser())
+                .find(ContentTypeInitializer.FAVORITE_PAGE_VAR_NAME);
+        permissionAPI.removePermissions(contentType);
+        permissionAPI.assignPermissions(List.of(
+                new Permission(contentType.getPermissionId(), cmsOwner.getId(), OWNER_BITS, true),
+                new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(),
+                        cmsOwner.getId(), OWNER_BITS, true),
+                new Permission(Contentlet.class.getCanonicalName(), contentType.getPermissionId(),
+                        anonymousRole.getId(), PermissionAPI.PERMISSION_READ, true)),
+                contentType, APILocator.systemUser(), false);
+
+        new ContentTypeInitializer().init();
+
+        final String anonymousRoleId = anonymousRole.getId();
+        Assert.assertTrue("The favorite page content type must not pass CMS Anonymous to its contentlets",
+                permissionAPI.getInheritablePermissions(contentType, true).stream()
+                        .noneMatch(permission -> anonymousRoleId.equals(permission.getRoleId())));
+
+        final String password = "favorite-" + System.currentTimeMillis();
+        final User owner = new UserDataGen().active(true).password(password)
+                .roles(APILocator.getRoleAPI().loadBackEndUserRole()).nextPersisted();
+        Contentlet favorite = null;
+        try {
+
+            favorite = saveFavoriteAs(owner, password);
+            Assert.assertFalse("A favorite must not be readable anonymously",
+                    permissionAPI.doesUserHavePermission(favorite, PermissionAPI.PERMISSION_READ,
+                            APILocator.getUserAPI().getAnonymousUser(), true));
+        } finally {
+
+            if (null != favorite) {
+                ContentletDataGen.destroy(favorite);
+            }
+            UserDataGen.remove(owner);
         }
     }
 

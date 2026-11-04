@@ -11,8 +11,10 @@ import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
+import com.dotmarketing.db.LocalTransaction;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -141,9 +143,10 @@ public class ContentTypeInitializer implements DotInitializer {
     /**
      * Makes favorite pages readable and editable only by their owner. The content type gets CMS
      * Owner permissions for itself and a row its contentlets inherit, since favorites are saved on
-     * the System Host and inherit from their content type. When either row is missing, the type's
-     * permissions are replaced with those two rows and the favorites' own rows are reset so they
-     * inherit them. Runs on every start, so it also repairs an existing install. Turned off with
+     * the System Host and inherit from their content type. When either row is missing, or another
+     * role has a row on the type, the type's permissions are replaced with those two rows and the
+     * favorites' own rows are reset so they inherit them, in one transaction. Runs on every start,
+     * so it also repairs an existing install. Turned off with
      * {@code DO_DEFAULT_PAGE_PERMISSIONS=false}.
      *
      * @param savedContentType the favorite page content type
@@ -159,10 +162,8 @@ public class ContentTypeInitializer implements DotInitializer {
                         PermissionAPI.PERMISSION_PUBLISH | PermissionAPI.PERMISSION_EDIT_PERMISSIONS;
                 final Role backendRole = APILocator.getRoleAPI().loadCMSOwnerRole();
                 if (!APILocator.getPermissionAPI().doesRoleHavePermission(savedContentType, permissionType, backendRole)
-                        || !this.contentletsInheritPermission(savedContentType, permissionType, backendRole)) {
-
-                    // remove all current permissions
-                    APILocator.getPermissionAPI().removePermissions(savedContentType);
+                        || !this.contentletsInheritPermission(savedContentType, permissionType, backendRole)
+                        || !this.onlyRoleHasRows(savedContentType, backendRole)) {
 
                     Logger.info(this, "Adding default permissions to the Favorite Page Content Type...");
                     final List<Permission> newSetOfPermissions = new ArrayList<>();
@@ -170,10 +171,18 @@ public class ContentTypeInitializer implements DotInitializer {
                     newSetOfPermissions.add(new Permission(savedContentType.getPermissionId(), backendRole.getId(), permissionType, true));
                     // this is the inheritance permission
                     newSetOfPermissions.add(new Permission(Contentlet.class.getCanonicalName(), savedContentType.getPermissionId(),  backendRole.getId(), permissionType, true));
-                    APILocator.getPermissionAPI().assignPermissions(newSetOfPermissions, savedContentType, APILocator.systemUser(), false);
-                    // reset here rather than through ResetPermissionsJob, which needs a logged-in
-                    // request user and has none at startup
-                    APILocator.getPermissionAPI().resetPermissionsUnder(savedContentType);
+                    // one transaction, so a failed reset leaves the type rows unchanged and the
+                    // next start repairs it again
+                    LocalTransaction.wrap(() -> {
+                        APILocator.getPermissionAPI().removePermissions(savedContentType);
+                        APILocator.getPermissionAPI().assignPermissions(newSetOfPermissions, savedContentType, APILocator.systemUser(), false);
+                        // reset here rather than through ResetPermissionsJob, which needs a logged-in
+                        // request user and has none at startup
+                        APILocator.getPermissionAPI().resetPermissionsUnder(savedContentType);
+                    });
+                    // the reset drops the favorites' cached rows but not the cached read decisions,
+                    // which other nodes of a cluster may hold; flushing the group reaches them
+                    CacheLocator.getPermissionCache().flushShortTermCache();
                 }
             } catch (DotDataException | DotSecurityException e) {
 
@@ -202,5 +211,26 @@ public class ContentTypeInitializer implements DotInitializer {
                 Contentlet.class.getCanonicalName().equals(permission.getType())
                         && role.getId().equals(permission.getRoleId())
                         && (permission.getPermission() & permissionType) == permissionType);
+    }
+
+    /**
+     * Tells whether every permission row on a content type, its own and the ones its contentlets
+     * inherit, belongs to the given role. A row for any other role would let favorites be read by
+     * someone other than their owner.
+     *
+     * @param contentType the content type whose rows are checked
+     * @param role        the only role the rows may belong to
+     * @return {@code true} if no row on the type belongs to another role
+     * @throws DotDataException if the permissions cannot be read
+     */
+    private boolean onlyRoleHasRows(final ContentType contentType, final Role role) throws DotDataException {
+
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        final List<Permission> rows = new ArrayList<>(permissionAPI.getPermissions(contentType, true, true));
+        final List<Permission> inheritable = permissionAPI.getInheritablePermissions(contentType, true);
+        if (null != inheritable) {
+            rows.addAll(inheritable);
+        }
+        return rows.stream().allMatch(permission -> role.getId().equals(permission.getRoleId()));
     }
 }
