@@ -166,7 +166,7 @@ patterns move as the module layout does. The ones that gate work:
 | Filter | Gates |
 |---|---|
 | `build` | whether a build runs at all |
-| `backend` | integration, Postman and Karate suites |
+| `backend` | integration and Postman suites |
 | `jvm_unit_test` | the JVM unit-test job |
 | `frontend` | frontend build and tests |
 | `cli` | CLI build and tests |
@@ -179,7 +179,7 @@ Two things about these are easy to get wrong:
 
 - **`backend` is not "Java source changed".** It matches CI's own definition of what needs backend
   verification — `bom/**`, `build-parent/**`, `core-web/pom.xml`, `dotcms-postman/**`,
-  `test-karate/**`, `e2e/**`, the component workflows themselves, and non-CSS/JS webapp resources.
+  `e2e/**`, the component workflows themselves, and non-CSS/JS webapp resources.
 - **`full_build_test` is small and anchored, not a trigger list.** It is `.sdkmanrc` and the two
   `.nvmrc` files, pulled into **both** `backend` (`filters.yaml:40`) and `frontend`
   (`filters.yaml:45`) via a YAML anchor. So changing a toolchain pin matches `backend` directly —
@@ -208,7 +208,6 @@ Downstream jobs gate on the JSON object. Real examples from `cicd_1-pr.yml`:
     jvm_unit_test: ${{ fromJSON(needs.initialize.outputs.filters).jvm_unit_test == 'true' }}
     integration:   ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
     postman:       ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
-    karate:        ${{ fromJSON(needs.initialize.outputs.filters).backend == 'true' }}
 ```
 
 Change detection can be switched off per-run: `initialize-phase` takes a `change-detection` input,
@@ -219,7 +218,7 @@ Which suites run inside the test phase is a separate question, answered by
 [Backend Unit Tests](../testing/BACKEND_UNIT_TESTS.md).
 
 A test type runs only when the caller passes its selector (`jvm_unit_test`, `cli`, `frontend`,
-`postman`, `karate`, `integration`, `e2e`, the `condition_input` of each type in
+`postman`, `integration`, `e2e`, the `condition_input` of each type in
 `test-matrix.yml`) as `true` to `cicd_comp_test-matrix.yml`. `run-all-tests` does **not** switch
 on a selector the caller leaves out: a `workflow_call` boolean that is not passed arrives as
 `false`, which cannot be told apart from an explicit `false`, and a `false` selector turns its

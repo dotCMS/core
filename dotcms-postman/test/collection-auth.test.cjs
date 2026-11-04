@@ -763,3 +763,53 @@ test('protected page APIs carry an effective resolved Bearer except explicit ano
   assert.equal(violations.length, 0,
     `Protected page API requests need an effective Bearer:\n${violations.map(label).join('\n')}`);
 });
+
+// Main's Karate-to-Postman migration must retain the fixture users, not silently use admin.
+for (const [file, actor, creation, count] of [
+  ['MaintenanceToolsAccess', 'maintenance', 'Create the user who holds the Maintenance portlet', 9],
+  ['MaintenanceToolsAccess', 'backend', 'Create a back-end user without the role', 9],
+  ['MaintenanceToolsAccess', 'frontend', 'Create a front-end user', 9],
+  ['WorkflowFirePermissionList', 'editor', 'Create the editor back-end user', 2],
+]) test(`${file} provisions and uses the ${actor}'s API JWT without elevating the caller`, () => {
+  const collectionFile = `${file}.postman_collection.json`;
+  const fixture = requests.find((r) => r.file === collectionFile && r.node.name === creation);
+  assert.ok(fixture, 'Keep actor creation');
+  const code = fixture.node.event.filter((e) => e.listen === 'test').map(eventCode).join('\n');
+  for (const [error, status, entity, fails] of [
+    [null, 200, { jwt: 'synthetic.actor.jwt' }, false],
+    [new Error('connection failed'), 200, {}, true],
+    [null, 403, {}, true],
+    [null, 200, { token: 'legacy-login-token' }, true],
+    [null, 200, { jwt: '  ' }, true],
+  ]) {
+    const values = new Map();
+    let calls = 0;
+    const run = () => vm.runInNewContext(code, { pm: {
+      test() {}, response: { json: () => ({ entity: { userID: 'fixture-user', roleId: 'fixture-role' } }) },
+      collectionVariables: { get: (key) => values.get(key), set: (key, value) => values.set(key, value) },
+      environment: { get: (key) => ({ serverURL: 'http://dotcms.invalid', jwt: 'synthetic.admin.jwt' })[key] },
+      sendRequest(request, callback) {
+        calls++;
+        assert.equal(request.url, 'http://dotcms.invalid/api/v1/apitoken');
+        assert.equal(request.method, 'POST');
+        assert.equal(request.header.Authorization, 'Bearer synthetic.admin.jwt');
+        assert.equal(JSON.parse(request.body.raw).userId, 'fixture-user');
+        assert.equal(JSON.parse(request.body.raw).expirationSeconds, 3600);
+        callback(error, { code: status, json: () => ({ entity }) });
+      },
+    } });
+    if (fails) {
+      assert.throws(run, /Fixture API token issuance failed|Missing fixture API token/);
+      assert.equal(values.get(`${actor}Jwt`), undefined, 'Never fall back to the admin token');
+    } else {
+      run();
+      assert.equal(values.get(`${actor}Jwt`), 'synthetic.actor.jwt');
+    }
+    assert.equal(calls, 1);
+  }
+  const authenticated = requests.filter((r) => r.file === collectionFile &&
+    value(r.auth, 'token') === `{{${actor}Jwt}}`);
+  assert.equal(authenticated.length, count, 'Preserve every actor-specific request');
+  if (actor === 'editor') assert.ok(authenticated.some((r) =>
+    r.node.event.some((e) => /status\(403\)/.test(eventCode(e)))), 'Keep the permission denial assertion');
+});
