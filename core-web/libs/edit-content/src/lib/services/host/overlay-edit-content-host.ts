@@ -83,6 +83,7 @@ export class OverlayEditContentHost implements EditContentHost, OnDestroy {
 
         return {
             inode: request?.mode === 'edit' ? request.inode : undefined,
+            identifier: request?.mode === 'edit' ? request.identifier : undefined,
             contentTypeId: request?.contentType,
             folderPath: request?.folderPath,
             languageId: request?.languageId,

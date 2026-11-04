@@ -21,8 +21,7 @@ store/
     ├── editor/
     │   ├── toolbar/withView.ts            # View modes, device and SEO preview, zoom
     │   ├── withEditor.ts                  # Editor UI state and methods
-    │   ├── withSelectionAnchor.ts         # Selection anchor (needs withEditor)
-    │   └── save/withSave.ts               # Not composed: superseded by withPageApi
+    │   └── withSelectionAnchor.ts         # Selection anchor (needs withEditor)
     ├── content-type-cache/withContentTypeCache.ts
     └── page-api/withPageApi.ts            # Load, reload and save; composed last through withFeature
 ```
@@ -221,7 +220,7 @@ Inside `withWorkflow`, the method that re-fetches the page after a lock/unlock u
 `withWorkflow` manages two unrelated things: workflow action fetching (`DotWorkflowsActionsService`) and page lock toggling (`DotContentletLockerService`). The feature's own comments flag this. Lock state and behavior belong in a dedicated feature that focuses only on lock ownership and transitions.
 
 ### 12. `withTimeMachine` is unused
-**Resolved.** `withTimeMachine` was deleted; `withHistory`, composed in `withPage`, is the only undo implementation. The uncomposed `features/editor/save/withSave.ts` is the same kind of leftover.
+**Resolved.** `withTimeMachine` was deleted; `withHistory`, composed in `withPage`, is the only undo implementation. The uncomposed `features/editor/save/withSave.ts`, the same kind of leftover, was deleted too (#38303).
 
 ### 13. Commented-out permission logic in `withEditor`
 A block of style-editor permission logic in `withEditor` is commented out with no explanation of whether it is WIP or abandoned. It adds noise and creates ambiguity about the intended permission model. Delete it if it is dead code, or activate and document it if it is needed.
@@ -248,4 +247,4 @@ These are ordered by impact-to-effort ratio:
 
 8. **Convert `reloadPageAfterLockChange()` to `rxMethod`.** The raw `.subscribe()` inside `withWorkflow` has no cancellation. It should use `rxMethod` like every other async operation in the store.
 
-9. ~~**Delete `withTimeMachine` or replace `withHistory` with it.**~~ Done: `withTimeMachine` was deleted. The uncomposed `features/editor/save/withSave.ts` (it still imports the removed `withLoad`) can go the same way.
+9. ~~**Delete `withTimeMachine` or replace `withHistory` with it.**~~ Done: `withTimeMachine` was deleted, and so was the uncomposed `features/editor/save/withSave.ts`, which imported the removed `withLoad`.

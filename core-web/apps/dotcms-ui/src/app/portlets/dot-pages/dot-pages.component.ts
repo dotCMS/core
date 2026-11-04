@@ -11,7 +11,7 @@ import {
     ChangeDetectionStrategy
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterOutlet } from '@angular/router';
+import { ActivatedRoute, Router, RouterOutlet } from '@angular/router';
 
 import { LazyLoadEvent, MenuItem, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -20,7 +20,7 @@ import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TieredMenu } from 'primeng/tieredmenu';
 import { ToastModule } from 'primeng/toast';
 
-import { distinctUntilChanged, map, take } from 'rxjs/operators';
+import { distinctUntilChanged, filter, map, take } from 'rxjs/operators';
 
 import {
     DotESContentService,
@@ -45,7 +45,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotAddToBundleComponent } from '@dotcms/ui';
-import { DotPanelUrlIntent, readPanelUrlIntent } from '@dotcms/utils';
+import { panelUrlIntentKey, readPanelUrlIntent } from '@dotcms/utils';
 
 import { DotCreatePageDialogComponent } from './dot-create-page-dialog/dot-create-page-dialog.component';
 import { DotPageFavoritesPanelComponent } from './dot-page-favorites-panel/dot-page-favorites-panel.component';
@@ -55,25 +55,6 @@ import { DotPageListService } from './services/dot-page-list.service';
 import { DotCMSPagesStore } from './store/store';
 
 import { clearPanelUrl } from '../../api/util/open-edit-content-panel';
-
-/**
- * The same for the same panel, whatever else the URL carries, so a navigation that leaves the
- * panel params as they were opens nothing again.
- *
- * @param intent What a URL asks to open.
- */
-function intentKey(intent: DotPanelUrlIntent): string {
-    switch (intent.kind) {
-        case 'edit':
-            return `edit:${intent.identifier}:${intent.languageId ?? ''}`;
-        case 'create':
-            return `create:${intent.contentType}`;
-        case 'conflict':
-            return 'conflict';
-        default:
-            return 'none';
-    }
-}
 
 export interface DotActionsMenuEventParams {
     originalEvent: MouseEvent;
@@ -137,6 +118,7 @@ export class DotPagesComponent {
     readonly #element = inject(ElementRef);
     readonly #destroyRef = inject(DestroyRef);
     readonly #route = inject(ActivatedRoute);
+    readonly #router = inject(Router);
     readonly #injector = inject(Injector);
 
     readonly #dotCMSPagesStore = inject(DotCMSPagesStore);
@@ -164,19 +146,27 @@ export class DotPagesComponent {
 
     /**
      * Opens what the URL names (#38303, FR-026, FR-049), through the same path as the Edit action:
-     * on load, so a shared link or a refresh reopens the panel that was open, and on every router
-     * navigation that changes it, since a `/pages/<inode>` or `/pages/new/<type>` link builds this
-     * portlet first and its deep-link child then redirects here with the params. The same params
-     * arriving again open nothing. A URL naming two panels opens neither, and loses both. Like the
-     * legacy portlets, Forward to an entry that still names a panel reopens it (accepted, T151).
+     * on load, so a shared link or a refresh reopens the panel that was open, and on every
+     * navigation of the app's own that changes it, since a `/pages/<inode>` or `/pages/new/<type>`
+     * link builds this portlet first and its deep-link child then redirects here with the params.
+     *
+     * A navigation the browser's Back or Forward started opens nothing: those belong to the panel
+     * URL service (FR-048), and the router replays an entry that may name a panel still open. The
+     * same panel arriving again opens nothing, since an app navigation that changes other params
+     * carries the panel params the router last saw. A URL naming two panels opens neither, and
+     * loses both.
      */
     #openFromUrl(): void {
         const refresh = () => this.#refreshPages();
 
         this.#route.queryParams
             .pipe(
+                // Before the dedup, so a skipped entry is never the one the next URL is compared to.
+                filter(() => this.#router.currentNavigation()?.trigger !== 'popstate'),
                 map((params) => readPanelUrlIntent(params)),
-                distinctUntilChanged((previous, next) => intentKey(previous) === intentKey(next)),
+                distinctUntilChanged(
+                    (previous, next) => panelUrlIntentKey(previous) === panelUrlIntentKey(next)
+                ),
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((intent) => {

@@ -348,6 +348,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     #urlMapEdit = false;
 
     /**
+     * The open panel asked for the page editor and that page is loading: the close the legacy
+     * panel sends right after must not reload it again. Reset by the close and by the next open.
+     */
+    #pageEditorLoaded = false;
+
+    /**
      * The legacy (JSP) screen open in the generic legacy-screen side panel, or `null` while it is
      * closed (#38303): the content selector or the menu reorder screen. Bound
      * with `injectSidePanel` in the constructor; its events arrive through {@link #onLegacyEvent}.
@@ -1611,6 +1617,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         this.#insertion = actionPayload ? { actionPayload, inserted: false } : null;
         this.#fromSdkEdit = fromSdk && request.mode === 'edit';
         this.#urlMapEdit = urlMap && request.mode === 'edit';
+        this.#pageEditorLoaded = false;
         this.$editRequest.set(request);
     }
 
@@ -1693,27 +1700,36 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     /**
      * The legacy editor asked to open a page in the page editor (the first save of a new page):
-     * close the panel and load that page.
+     * close the panel and load that page. The legacy panel closes itself right after, and that
+     * close must not reload the page just loaded.
      *
      * @param page The page's URL and language.
      */
     #onPageEditorRequested({ url, languageId }: DotPageEditorRequest): void {
         this.$editRequest.set(null);
         this.#insertion = null;
+        this.#pageEditorLoaded = true;
         this.#pageApi.pageLoad({ url, language_id: String(languageId) });
     }
 
     /**
      * The Edit Content panel closed itself: forget the request, then reload the page. The reload
      * is the safety net for workflow actions run in the legacy editor, which report nothing the
-     * page can use (#38303, R4).
+     * page can use (#38303, R4). Not after the panel asked for the page editor: that page is
+     * loading already.
      */
     #onPanelClosed(): void {
+        const pageLoading = this.#pageEditorLoaded;
+
         this.$editRequest.set(null);
         this.#insertion = null;
         this.#fromSdkEdit = false;
         this.#urlMapEdit = false;
-        this.#pageApi.pageReload();
+        this.#pageEditorLoaded = false;
+
+        if (!pageLoading) {
+            this.#pageApi.pageReload();
+        }
     }
 
     /**

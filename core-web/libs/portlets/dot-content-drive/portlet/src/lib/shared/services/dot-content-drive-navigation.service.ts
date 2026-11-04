@@ -1,15 +1,6 @@
-import { EMPTY, Observable, of } from 'rxjs';
-
-import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, Provider, inject, signal } from '@angular/core';
 
-import { catchError, map, switchMap, take } from 'rxjs/operators';
-
-import {
-    DotContentSearchService,
-    DotHttpErrorManagerService,
-    DotRouterService
-} from '@dotcms/data-access';
+import { DotRouterService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
 import {
     DotEditContentRequest,
@@ -22,11 +13,6 @@ import { DotFolderTreeNodeContentData } from '@dotcms/portlets/content-drive/ui'
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { SYSTEM_HOST } from '../constants';
 
-/** Shape of the `/api/content/_search` entity we read the resolved contentlet from. */
-interface ContentSearchEntity {
-    jsonObjectView: { contentlets: DotCMSContentlet[] };
-}
-
 /** Sent to the legacy editor as `angularCurrentPortlet`, so it knows which portlet hosts it. */
 const CONTENT_DRIVE_PORTLET_ID = 'content-drive';
 
@@ -36,8 +22,6 @@ const CONTENT_DRIVE_PORTLET_ID = 'content-drive';
 @Injectable()
 export class DotContentDriveNavigationService implements EditContentNavigationOverride {
     readonly #dotRouterService = inject(DotRouterService);
-    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
-    readonly #contentSearch = inject(DotContentSearchService);
     readonly #store = inject(DotContentDriveStore);
 
     readonly #panelRequest = signal<DotEditContentRequest | null>(null);
@@ -275,6 +259,10 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
      * from the request Content Drive sent, and stays the same across the editor's in-place reloads
      * (a language switch). Remove with the legacy editor.
      *
+     * An edit Content Drive asked for by inode is known by its inode. One asked for by identifier
+     * alone (a link) is known by its identifier: the opener found the inode the editor opened
+     * with, and Content Drive never saw it.
+     *
      * @param opened What the editor was opened with.
      * @returns The open request, or `null` for any other editor.
      */
@@ -285,10 +273,15 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
             return null;
         }
 
-        const isOwn =
-            request.mode === 'edit'
-                ? !!opened.inode && opened.inode === request.inode
-                : !opened.inode && opened.contentTypeId === request.contentType;
+        let isOwn: boolean;
+
+        if (request.mode !== 'edit') {
+            isOwn = !opened.inode && opened.contentTypeId === request.contentType;
+        } else if (request.inode) {
+            isOwn = opened.inode === request.inode;
+        } else {
+            isOwn = !!request.identifier && opened.identifier === request.identifier;
+        }
 
         return isOwn ? request : null;
     }
@@ -323,54 +316,24 @@ export class DotContentDriveNavigationService implements EditContentNavigationOv
 
     /**
      * Opens the editor for a content addressed by its stable `identifier` (e.g. from a shared
-     * `?editContent=<identifier>` URL, or Part 1's redirect from `c/content/<inode>`). Resolves the
-     * identifier to its current working inode (the editor loads by inode), then opens it in the
-     * side panel; the opener picks the editor from its type. No-op when the content can't be
-     * resolved (deleted, no permission, bad id).
+     * `?editContent=<identifier>` URL, or a `c/content/<inode>` link redirected here). The request
+     * names the identifier and the language Content Drive prefers; the opener finds the working
+     * version, falls back to any language when that one has none, picks the editor from its type,
+     * and shows the standard error for content that cannot be opened, whose close clears the
+     * request (#38303, FR-050).
      *
      * @param identifier The content's identifier.
      * @param languageId The language the URL asked for, when it carried one.
      */
     openEditByIdentifier(identifier: string, languageId?: number): void {
-        const anyVersion = `+identifier:${identifier} +working:true`;
-        const preferred = this.#preferredLanguageId(languageId);
-
-        this.#resolveWorkingVersion(
-            preferred ? `${anyVersion} +languageId:${preferred}` : anyVersion
-        )
-            .pipe(
-                // A link to content with no version in the preferred language must still open, so
-                // "nothing" falls back to any version rather than being read as "do not open". Only
-                // reached when that language is genuinely missing: the link carries the language that
-                // was open, so the first lookup normally hits.
-                switchMap((version) =>
-                    version || !preferred ? of(version) : this.#resolveWorkingVersion(anyVersion)
-                ),
-                take(1),
-                catchError((error: HttpErrorResponse) => {
-                    this.#httpErrorManager.handle(error);
-
-                    return EMPTY;
-                })
-            )
-            .subscribe((contentlet) => {
-                if (contentlet?.inode) {
-                    this.#openEdit(contentlet, identifier);
-                }
-            });
-    }
-
-    /**
-     * Resolves an identifier query to the single working contentlet it matches, or `undefined`.
-     *
-     * @param query The Lucene query to run.
-     *
-     * @return {*} {Observable<DotCMSContentlet | undefined>} The matched contentlet, if any.
-     */
-    #resolveWorkingVersion(query: string): Observable<DotCMSContentlet | undefined> {
-        return this.#contentSearch
-            .get<ContentSearchEntity>({ query, limit: 1 })
-            .pipe(map((entity) => entity?.jsonObjectView?.contentlets?.[0]));
+        this.#openPanel(
+            withoutUnset({
+                mode: 'edit',
+                identifier,
+                languageId: this.#preferredLanguageId(languageId),
+                portletId: CONTENT_DRIVE_PORTLET_ID
+            })
+        );
     }
 
     /**

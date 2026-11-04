@@ -61,7 +61,6 @@ import {
     DotContentDriveActionExecution,
     DotContentDriveActionExecutionResult,
     DotContentDriveDialogDrillDown,
-    DotContentDrivePanelLocation,
     DotContentDriveSortOrder,
     DotContentDriveStatus
 } from '../shared/models';
@@ -73,9 +72,6 @@ import { DotContentDriveStore } from '../store/dot-content-drive.store';
 // Backs the navigation service mock's readonly `$editPanelRequest`. Typed (not cast) so tests get
 // a compile-checked payload; reset in the shared beforeEach for isolation.
 const editPanelRequestSignal: WritableSignal<DotEditContentRequest | null> = signal(null);
-// Backs the mock's `$panelLocation`: what the URL must say about the open panel. The shell's URL
-// sync and its Back guard read this, not the request (#37759).
-const panelLocationSignal: WritableSignal<DotContentDrivePanelLocation | null> = signal(null);
 /**
  * The Edit Permissions dialog the shell opens through `DialogService` (#37759, FR-030). `onClose`
  * is a subject so a test can close it the way PrimeNG does.
@@ -189,12 +185,9 @@ describe('DotContentDriveShellComponent — grid view', () => {
                 createContent: vi.fn(),
                 closeEditPanel: vi.fn(),
                 openEditByIdentifier: vi.fn(),
-                panelSaved: vi.fn(),
-                panelLanguageChanged: vi.fn(),
                 $editPanelRequest: editPanelRequestSignal,
                 $forceLegacyEditor: signal(false),
-                $reopeningPanel: signal(false),
-                $panelLocation: panelLocationSignal
+                $reopeningPanel: signal(false)
             }),
             LoggerService,
             StringUtils,
@@ -246,7 +239,6 @@ describe('DotContentDriveShellComponent — grid view', () => {
         );
         showInListFieldsSignal = signal<DotCMSContentTypeField[]>([]);
         editPanelRequestSignal.set(null);
-        panelLocationSignal.set(null);
         permissionsDialogClose$ = new Subject<unknown>();
         dialogServiceOpen.mockClear();
         permissionsDialogRef.close.mockClear();
