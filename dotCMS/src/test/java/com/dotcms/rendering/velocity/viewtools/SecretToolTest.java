@@ -1,6 +1,8 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -11,6 +13,8 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.dotcms.rendering.velocity.viewtools.secrets.DotVelocitySecretAppConfig;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
@@ -18,9 +22,11 @@ import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.business.web.UserWebAPI;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
+import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Config;
 import com.liferay.portal.model.User;
+import java.util.Optional;
 import java.util.stream.Stream;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.velocity.VelocityContext;
@@ -304,6 +310,66 @@ public class SecretToolTest {
         verify(userAPI, never()).loadUserById(eq("scripter"), any(), any(Boolean.class));
     }
 
+    /** Caller-supplied host parameters and later file mutations cannot change a script's secret site. */
+    @Test
+    public void secretReads_ScriptingFileSiteCannotBeOverridden() throws Exception {
+        final Role scriptingRole = anonymousRequestWithScriptingFileEditedBy("scripter");
+        final User scripter = mock(User.class);
+        when(userAPI.loadUserById(eq("scripter"), any(), eq(true))).thenReturn(scripter);
+        when(roleAPI.doesUserHaveRole(scripter, scriptingRole)).thenReturn(true);
+        when(request.getParameter("host_id")).thenReturn("other-site");
+        when(request.getParameter("host")).thenReturn("other-site");
+        when(scriptingFile.getHost()).thenReturn("other-site");
+
+        final Host scriptSite = mock(Host.class);
+        final HostAPI hostAPI = mock(HostAPI.class);
+        mockedApiLocator.when(APILocator::getHostAPI).thenReturn(hostAPI);
+        when(hostAPI.find(eq("script-site"), any(), eq(false))).thenReturn(scriptSite);
+        final DotVelocitySecretAppConfig scriptConfig = mock(DotVelocitySecretAppConfig.class);
+        final DotVelocitySecretAppConfig callerConfig = mock(DotVelocitySecretAppConfig.class);
+        when(scriptConfig.getStringOrNull("key")).thenReturn("script-secret");
+        when(scriptConfig.getCharArrayOrNull("key")).thenReturn("script-secret".toCharArray());
+        when(callerConfig.getStringOrNull("key")).thenReturn("other-site-secret");
+        try (MockedStatic<DotVelocitySecretAppConfig> configs = mockStatic(DotVelocitySecretAppConfig.class)) {
+            configs.when(() -> DotVelocitySecretAppConfig.config(request)).thenReturn(Optional.of(callerConfig));
+            configs.when(() -> DotVelocitySecretAppConfig.config(scriptSite)).thenReturn(Optional.of(scriptConfig));
+
+            assertEquals("script-secret", secretTool.get("key"));
+            assertArrayEquals("script-secret".toCharArray(), secretTool.getCharArray("key"));
+            when(hostAPI.find(eq("script-site"), any(), eq(false))).thenReturn(null);
+            assertThrows(SecurityException.class, () -> secretTool.get("key"));
+            configs.verify(() -> DotVelocitySecretAppConfig.config(request), never());
+        }
+    }
+
+    /** Missing file-site provenance must fail closed, not fall back to a caller-selected site. */
+    @Test
+    public void scriptingFileWithoutSiteCannotSelectRequestSite() {
+        final Contentlet file = mock(Contentlet.class);
+        ScriptingFileAttribute.set(request, file);
+        final ArgumentCaptor<Object> attribute = ArgumentCaptor.forClass(Object.class);
+        verify(request).setAttribute(eq(ScriptingFileAttribute.ATTRIBUTE), attribute.capture());
+        when(request.getAttribute(ScriptingFileAttribute.ATTRIBUTE)).thenReturn(attribute.getValue());
+
+        assertThrows(SecurityException.class, () -> ScriptingFileAttribute.getSiteId(request));
+    }
+
+    /** Ordinary page and workflow contexts retain their existing request-scoped site lookup. */
+    @Test
+    public void secretReads_WithoutScriptingFileStillUseRequestSite() throws Exception {
+        final User user = mock(User.class);
+        final Role scriptingRole = mock(Role.class);
+        when(userWebAPI.getUser(request)).thenReturn(user);
+        when(roleAPI.loadRoleByKey(Role.SCRIPTING_DEVELOPER)).thenReturn(scriptingRole);
+        when(roleAPI.doesUserHaveRole(user, scriptingRole)).thenReturn(true);
+        final DotVelocitySecretAppConfig config = mock(DotVelocitySecretAppConfig.class);
+        when(config.getStringOrNull("key")).thenReturn("request-secret");
+        try (MockedStatic<DotVelocitySecretAppConfig> configs = mockStatic(DotVelocitySecretAppConfig.class)) {
+            configs.when(() -> DotVelocitySecretAppConfig.config(request)).thenReturn(Optional.of(config));
+            assertEquals("request-secret", secretTool.get("key"));
+        }
+    }
+
     /**
      * Re-initialises the tool with a real Velocity context whose current template name is the
      * given one, as Velocity sets it while rendering.
@@ -334,6 +400,7 @@ public class SecretToolTest {
         final Contentlet file = mock(Contentlet.class);
         scriptingFile = file;
         when(file.getModUser()).thenReturn(modUserId);
+        when(file.getHost()).thenReturn("script-site");
         ScriptingFileAttribute.set(request, file);
         final ArgumentCaptor<Object> attribute = ArgumentCaptor.forClass(Object.class);
         verify(request).setAttribute(eq(ScriptingFileAttribute.ATTRIBUTE), attribute.capture());

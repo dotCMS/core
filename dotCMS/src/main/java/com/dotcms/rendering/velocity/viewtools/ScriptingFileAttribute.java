@@ -1,12 +1,14 @@
 package com.dotcms.rendering.velocity.viewtools;
 
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.util.UtilMethods;
 import javax.servlet.http.HttpServletRequest;
 
 /**
  * Binds the file asset that a file-based scripting endpoint ({@code /api/vtl} / {@code /api/js})
  * is executing to the current request, so checks that need "who wrote this code" (see
- * {@link SecretTool}) use that file's last editor instead of the calling user.
+ * {@link SecretTool}) use that file's last editor instead of the calling user, and site-scoped
+ * secret reads use the file's site instead of a caller-selected site.
  *
  * <p>The binding is trustworthy only if a template evaluated by those endpoints cannot re-bind
  * it: otherwise any published script file could borrow a developer-edited content as its
@@ -21,16 +23,16 @@ public final class ScriptingFileAttribute {
     /** Request attribute holding the scripting file. Created only by {@link #set}. */
     public static final String ATTRIBUTE = ScriptingFileAttribute.class.getName() + ".scriptingFile";
 
-    private record ScriptingFile(String modUserId) { }
+    private record ScriptingFile(String modUserId, String siteId) { }
 
     private ScriptingFileAttribute() {
         // static utility
     }
 
     /**
-     * Captures the last editor of the file asset whose code the current request is about to run,
-     * so later mutations of the loaded content cannot change the secrets authorization. Only callers running a stored file asset should use
-     * this; the {@code /dynamic} endpoints run caller-supplied code and must not.
+     * Captures the editor and site of the file asset whose code the request is about to run,
+     * so later content mutations cannot change the secrets authorization or site. Only callers
+     * running a stored file asset should use this; the {@code /dynamic} endpoints must not.
      * <p>
      * Code evaluated on the fly inside the file, such as Velocity {@code #evaluate} or JavaScript
      * {@code eval}, has no template name of its own and so also runs with this file's editor.
@@ -41,7 +43,24 @@ public final class ScriptingFileAttribute {
      * @param file    The file asset {@link Contentlet} holding the script.
      */
     public static void set(final HttpServletRequest request, final Contentlet file) {
-        request.setAttribute(ATTRIBUTE, new ScriptingFile(file.getModUser()));
+        request.setAttribute(ATTRIBUTE, new ScriptingFile(file.getModUser(), file.getHost()));
+    }
+
+    /**
+     * Returns the captured file site, never a caller-supplied host selection.
+     *
+     * @param request the current request, possibly {@code null}
+     * @return the captured site ID, or {@code null} without a Java-bound scripting file
+     * @throws SecurityException if a bound scripting file has no site
+     */
+    public static String getSiteId(final HttpServletRequest request) {
+        if (request == null || !(request.getAttribute(ATTRIBUTE) instanceof ScriptingFile file)) {
+            return null;
+        }
+        if (!UtilMethods.isSet(file.siteId())) {
+            throw new SecurityException("Scripting file has no site");
+        }
+        return file.siteId();
     }
 
     /**
