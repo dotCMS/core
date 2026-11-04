@@ -1,0 +1,340 @@
+{
+	"info": {
+		"_postman_id": "0d6c3c55-6a51-4f7e-9d43-5b2a3c8e1f21",
+		"name": "ResponseMetaHeaders",
+		"description": "X-DotCMS-Version and X-DotCMS-Min-SDK (SdkVersionWebInterceptor) and x-dot-server (ResponseMetaDataWebInterceptor) are sent only to requests with valid credentials. The unit and integration tests call the interceptors directly; these requests run them through InterceptorFilter over HTTP.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "No credentials gets none of the headers",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"No X-DotCMS-Version header\", function () {",
+							"    pm.expect(pm.response.headers.has(\"X-DotCMS-Version\")).to.be.false;",
+							"});",
+							"pm.test(\"No X-DotCMS-Min-SDK header\", function () {",
+							"    pm.expect(pm.response.headers.has(\"X-DotCMS-Min-SDK\")).to.be.false;",
+							"});",
+							"pm.test(\"No x-dot-server header\", function () {",
+							"    pm.expect(pm.response.headers.has(\"x-dot-server\")).to.be.false;",
+							"});"
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableCookies": true
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/appconfiguration",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"appconfiguration"
+					]
+				},
+				"description": "A request with no session and no Authorization header. Cookies are disabled so a session from another request in the run cannot make it a logged-in request."
+			},
+			"response": []
+		},
+		{
+			"name": "Bearer token dotCMS did not issue gets none of the headers",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"No X-DotCMS-Version header\", function () {",
+							"    pm.expect(pm.response.headers.has(\"X-DotCMS-Version\")).to.be.false;",
+							"});",
+							"pm.test(\"No X-DotCMS-Min-SDK header\", function () {",
+							"    pm.expect(pm.response.headers.has(\"X-DotCMS-Min-SDK\")).to.be.false;",
+							"});",
+							"pm.test(\"No x-dot-server header\", function () {",
+							"    pm.expect(pm.response.headers.has(\"x-dot-server\")).to.be.false;",
+							"});"
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableCookies": true
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer not-a-token",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/appconfiguration",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"appconfiguration"
+					]
+				},
+				"description": "Presenting an Authorization header is not enough: the token has to resolve to an active user."
+			},
+			"response": []
+		},
+		{
+			"name": "Create an API token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"const jwt = pm.response.json().entity.token;",
+							"pm.collectionVariables.set(\"responseMetaHeadersJwt\", jwt);",
+							"// The JWT subject is the API token id, used by the cleanup request",
+							"const payload = jwt.split(\".\")[1].replace(/-/g, \"+\").replace(/_/g, \"/\");",
+							"pm.collectionVariables.set(\"responseMetaHeadersTokenId\",",
+							"        JSON.parse(Buffer.from(payload, \"base64\").toString()).sub);"
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableCookies": true
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"user\": \"admin@dotcms.com\",\n    \"password\": \"admin\",\n    \"expirationDays\": 1,\n    \"label\": \"response-meta-headers\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{serverURL}}/api/v1/authentication/api-token",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"authentication",
+						"api-token"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Valid API token gets both version headers",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"X-DotCMS-Version header is sent\", function () {",
+							"    pm.expect(pm.response.headers.has(\"X-DotCMS-Version\")).to.be.true;",
+							"});",
+							"pm.test(\"X-DotCMS-Min-SDK header is sent\", function () {",
+							"    pm.expect(pm.response.headers.has(\"X-DotCMS-Min-SDK\")).to.be.true;",
+							"});"
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableCookies": true
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{responseMetaHeadersJwt}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/appconfiguration",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"appconfiguration"
+					]
+				},
+				"description": "The bearer token created above resolves to an active user, so both version headers are sent."
+			},
+			"response": []
+		},
+		{
+			"name": "Delete the API token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableCookies": true
+			},
+			"request": {
+				"auth": {
+					"type": "basic",
+					"basic": [
+						{
+							"key": "username",
+							"value": "admin@dotcms.com",
+							"type": "string"
+						},
+						{
+							"key": "password",
+							"value": "admin",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/apitoken/{{responseMetaHeadersTokenId}}",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"apitoken",
+						"{{responseMetaHeadersTokenId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Deleted API token gets none of the version headers",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							"pm.test(\"Status code should be 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"pm.test(\"No X-DotCMS-Version header\", function () {",
+							"    pm.expect(pm.response.headers.has(\"X-DotCMS-Version\")).to.be.false;",
+							"});",
+							"pm.test(\"No X-DotCMS-Min-SDK header\", function () {",
+							"    pm.expect(pm.response.headers.has(\"X-DotCMS-Min-SDK\")).to.be.false;",
+							"});"
+						]
+					}
+				}
+			],
+			"protocolProfileBehavior": {
+				"disableCookies": true
+			},
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer {{responseMetaHeadersJwt}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{serverURL}}/api/v1/appconfiguration",
+					"host": [
+						"{{serverURL}}"
+					],
+					"path": [
+						"api",
+						"v1",
+						"appconfiguration"
+					]
+				},
+				"description": "The same JWT after its API token is deleted: the token is validated on every request, not only checked for presence."
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "responseMetaHeadersJwt",
+			"value": ""
+		},
+		{
+			"key": "responseMetaHeadersTokenId",
+			"value": ""
+		}
+	]
+}

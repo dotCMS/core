@@ -12,7 +12,7 @@ Feature: Workflow fire with a permission list
     * def encodedAuth = function(s) { return java.util.Base64.getEncoder().encodeToString(s.getBytes('UTF-8')); }
     * def asRows = function(rows) { return karate.sort(karate.map(rows, function(row) { return { roleId: row.roleId, permission: row.permission, type: row.type } }), function(row) { return row.roleId + ':' + row.permission + ':' + row.type }) }
     * def editorEmail = 'editor' + suffix + '@dotcms.com'
-    * def editorPassword = 'Pw' + suffix
+    * def editorPassword = 'Editor-Pw-' + suffix + '-Aa1!'
     * def editorHeaders = { 'Content-Type': 'application/json', 'Authorization': '#("Basic " + encodedAuth(editorEmail + ":" + editorPassword))' }
 
   @permissions
@@ -149,12 +149,9 @@ Feature: Workflow fire with a permission list
     Then status 200
     And match asRows(response.entity) == rowsBefore
 
-    # Cleanup, as admin
-    Given url baseUrl + '/api/v1/contenttype/id/' + contentTypeId
-    And headers commonHeaders
-    When method delete
-    Then status 200
-
+    # Cleanup, as admin. The content type is left for the site delete, which removes the site's
+    # types synchronously. Deleting the type first finishes in the background, and the site delete
+    # then fails on the fk_structure_host foreign key while the type's rows still reference the site.
     Given url baseUrl + '/api/v1/users/' + editorUserId
     And headers commonHeaders
     When method delete
@@ -174,3 +171,8 @@ Feature: Workflow fire with a permission list
     And headers commonHeaders
     When method delete
     Then status 200
+
+    Given url baseUrl + '/api/v1/contenttype/id/' + contentTypeId
+    And headers commonHeaders
+    When method get
+    Then status 404
