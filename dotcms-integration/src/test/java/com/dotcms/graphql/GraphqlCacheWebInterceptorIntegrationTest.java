@@ -322,7 +322,8 @@ public class GraphqlCacheWebInterceptorIntegrationTest {
         final String previousMode = Config.getStringProperty("ALLOW_BASIC_AUTH", null);
         final String password = "CachePolicy-9!valid";
         final User user = new UserDataGen().password(password)
-                .roles(TestUserUtils.getBackendRole()).nextPersisted();
+                .roles(APILocator.getRoleAPI().loadCMSAdminRole(), TestUserUtils.getBackendRole())
+                .nextPersisted();
         final String login = Company.AUTH_TYPE_ID.equals(CompanyUtils.getDefaultCompany().getAuthType())
                 ? user.getUserId() : user.getEmailAddress();
         final String basic = "Basic " + Base64.getEncoder().encodeToString(
@@ -330,12 +331,12 @@ public class GraphqlCacheWebInterceptorIntegrationTest {
         final String body = uniqueBody();
         try {
             Config.setProperty("ALLOW_BASIC_AUTH", "ALL");
-            assertFalse(serve(anonymousRequest(body).withHeader("Authorization", basic)).hit);
-            assertTrue(serve(anonymousRequest(body).withHeader("Authorization", basic)).hit);
+            assertFalse(serve(passwordRequest(body, basic, user.getCompanyId())).hit);
+            assertTrue(serve(passwordRequest(body, basic, user.getCompanyId())).hit);
             for (final String mode : new String[] {"NONE", "JWT_TOKEN"}) {
                 Config.setProperty("ALLOW_BASIC_AUTH", mode);
                 final SecurityException denial = assertThrows(SecurityException.class,
-                        () -> serve(anonymousRequest(body).withHeader("Authorization", basic)));
+                        () -> serve(passwordRequest(body, basic, user.getCompanyId())));
                 assertEquals(401, denial.getResponse().getStatus());
             }
         } finally {
@@ -355,6 +356,14 @@ public class GraphqlCacheWebInterceptorIntegrationTest {
         final SecurityException denial = assertThrows(SecurityException.class,
                 () -> serve(anonymousRequest(body)));
         assertEquals(401, denial.getResponse().getStatus());
+    }
+
+    /** Builds a fresh, unauthenticated browser session for each legacy password login attempt. */
+    private static RequestBuilder passwordRequest(final String body, final String authorization,
+            final String companyId) {
+        final MockSession session = new MockSession(UUID.randomUUID().toString());
+        session.setAttribute(WebKeys.COMPANY_ID, companyId);
+        return new RequestBuilder(body, session).withHeader("Authorization", authorization);
     }
 
     private static String uniqueBody() {
