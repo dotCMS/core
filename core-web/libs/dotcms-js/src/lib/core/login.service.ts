@@ -119,7 +119,7 @@ export class LoginService {
      */
     loadAuth(): Observable<Auth> {
         return this.http
-            .get<DotCMSResponse<Auth> & { sessionLanguageId?: string }>(this.urls.getAuth)
+            .get<DotCMSResponse<Auth> & { sessionLanguageId?: string }>(this.urls['getAuth'])
             .pipe(
                 map((response) => ({
                     ...response.entity,

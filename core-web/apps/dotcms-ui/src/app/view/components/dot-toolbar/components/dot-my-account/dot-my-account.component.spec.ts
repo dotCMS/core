@@ -105,6 +105,9 @@ describe('DotMyAccountComponent', () => {
 
         it('should install email validation when configuration arrives after an initial failure', () => {
             const emailControl = component.form.get('email');
+            if (!emailControl) {
+                throw new Error('Email control must exist');
+            }
             emailControl.setValue('invalid-email');
             expect(emailControl.valid).toBe(true);
             expect(getConfigUpdates).toHaveBeenCalledOnce();
