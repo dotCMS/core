@@ -1,3 +1,6 @@
+import { enUS, es } from 'date-fns/locale';
+
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { fakeAsync, TestBed, tick } from '@angular/core/testing';
 
 import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
@@ -5,6 +8,15 @@ import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotcmsConfigServiceMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotRelativeDatePipe } from './dot-relative-date.pipe';
+
+@Component({
+    imports: [DotRelativeDatePipe],
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    template: '<span data-testid="timestamp">{{ date | dotRelativeDate }}</span>'
+})
+class RelativeDateHostComponent {
+    readonly date = Date.now();
+}
 
 const ONE_DAY = 86400000;
 
@@ -55,6 +67,74 @@ describe('DotRelativeDatePipe', () => {
 
         formatDateService = TestBed.inject(DotFormatDateService);
         pipe = TestBed.inject(DotRelativeDatePipe);
+    });
+
+    describe('bundle recovery in an OnPush view', () => {
+        const version = signal<string | null>(null);
+        const language = signal<string | null>(null);
+        let messages: Record<string, string>;
+
+        beforeEach(() => {
+            version.set(null);
+            language.set(null);
+            messages = {};
+            Object.assign(TestBed.inject(DotMessageService), {
+                loadedBundleVersion: version.asReadonly(),
+                loadedBundleLanguage: language.asReadonly(),
+                get: (key: string) => messages[key] ?? key
+            });
+        });
+
+        it('should recover unchanged timestamps after a late bundle install and retain tracking on cache hits', () => {
+            const fixture = TestBed.createComponent(RelativeDateHostComponent);
+            fixture.detectChanges();
+            const text = () =>
+                fixture.nativeElement.querySelector('[data-testid="timestamp"]').textContent;
+            expect(text()).toBe('relative.date.now');
+
+            messages = { 'relative.date.now': 'Now' };
+            language.set('en');
+            version.set('build-1');
+            fixture.detectChanges();
+            expect(text()).toBe('Now');
+
+            fixture.changeDetectorRef.markForCheck();
+            fixture.detectChanges();
+            messages = { 'relative.date.now': 'Recovered now' };
+            version.set('build-2');
+            fixture.detectChanges();
+            expect(text()).toBe('Recovered now');
+        });
+
+        it('should update for a language change with the same bundle version', () => {
+            version.set('same-build');
+            language.set('en');
+            messages = { 'relative.date.now': 'Now' };
+            const fixture = TestBed.createComponent(RelativeDateHostComponent);
+            fixture.detectChanges();
+
+            messages = { 'relative.date.now': 'Ahora' };
+            language.set('es');
+            fixture.detectChanges();
+            expect(
+                fixture.nativeElement.querySelector('[data-testid="timestamp"]').textContent
+            ).toBe('Ahora');
+        });
+    });
+
+    it('should cache date calculations until inputs, bundle identity or date locale change', () => {
+        const calculate = vi.spyOn(formatDateService, 'differenceInCalendarDays');
+        const date = Date.now() - ONE_DAY * 2;
+        formatDateService.localeOptions = { locale: enUS };
+        expect(pipe.transform(date)).toBe('2 days ago');
+        pipe.transform(date);
+        expect(calculate).toHaveBeenCalledTimes(1);
+
+        formatDateService.localeOptions = { locale: es };
+        expect(pipe.transform(date)).toBe('hace 2 días');
+        expect(calculate).toHaveBeenCalledTimes(2);
+        pipe.transform(date, 'yyyy', 0);
+        expect(calculate).toHaveBeenCalledTimes(3);
     });
 
     describe('relative', () => {

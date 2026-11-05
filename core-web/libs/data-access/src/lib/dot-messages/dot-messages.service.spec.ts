@@ -67,6 +67,121 @@ describe('DotMessageService', () => {
     });
 
     describe('init', () => {
+        it.each(['locale', 'version'])(
+            'should reject an older %s response without installing or caching it',
+            (identity) => {
+                const failed = vi.fn();
+                const next = vi.fn();
+                const complete = vi.fn();
+                const older$ = service.init({ languageBundleVersion: VERSION });
+                older$.subscribe({ next, complete, error: failed });
+                const older = http.expectOne(DEFAULT_URL);
+                const language = identity === 'locale' ? 'es' : DEFAULT_LANG;
+                service.init({ language, languageBundleVersion: NEXT_VERSION });
+                http.expectOne(`/api/v2/languages/${language}/keys`).flush({
+                    entity: { ...messages, 'dot.common.cancel': 'Newest' },
+                    languageBundleVersion: NEXT_VERSION
+                });
+                const persist = vi.spyOn(storage, 'setItem');
+
+                older.flush({ entity: messages, languageBundleVersion: VERSION });
+
+                expect(failed).toHaveBeenCalledExactlyOnceWith(
+                    expect.objectContaining({ message: expect.stringContaining('superseded') })
+                );
+                expect(next).not.toHaveBeenCalled();
+                expect(complete).not.toHaveBeenCalled();
+                expect(service.get('dot.common.cancel')).toBe('Newest');
+                expect(service.loadedBundleLanguage()).toBe(language);
+                expect(service.loadedBundleVersion()).toBe(NEXT_VERSION);
+                expect(service.bundleVersionMismatch()).toBeNull();
+                expect(persist).not.toHaveBeenCalled();
+                const lateError = vi.fn();
+                older$.subscribe({ error: lateError });
+                expect(lateError).toHaveBeenCalledOnce();
+                http.expectNone(DEFAULT_URL);
+            }
+        );
+
+        it.each(['older-first', 'newer-first'])(
+            'should honor A -> B -> A pending selection (%s)',
+            (order) => {
+                const params = { languageBundleVersion: VERSION };
+                const a$ = service.init(params);
+                const a = http.expectOne(DEFAULT_URL);
+                const bError = vi.fn();
+                service
+                    .init({ language: 'es', languageBundleVersion: NEXT_VERSION })
+                    .subscribe({ error: bError });
+                const b = http.expectOne('/api/v2/languages/es/keys');
+                const selected$ = service.init(params);
+                expect(selected$).toBe(a$);
+                const next = vi.fn();
+                const complete = vi.fn();
+                selected$.subscribe({ next, complete });
+                const finishA = () => a.flush({ entity: messages, languageBundleVersion: VERSION });
+                const finishB = () =>
+                    b.flush({
+                        entity: { ...messages, 'dot.common.cancel': 'Old B' },
+                        languageBundleVersion: NEXT_VERSION
+                    });
+                if (order === 'older-first') {
+                    finishA();
+                    finishB();
+                } else {
+                    finishB();
+                    finishA();
+                }
+                expect(next).toHaveBeenCalledExactlyOnceWith(undefined);
+                expect(complete).toHaveBeenCalledOnce();
+                expect(bError).toHaveBeenCalledOnce();
+                expect(service.loadedBundleLanguage()).toBe(DEFAULT_LANG);
+                expect(service.loadedBundleVersion()).toBe(VERSION);
+                expect(service.get('dot.common.cancel')).toBe('Cancel');
+                expect(storage.getItem(LANGUAGE_LOCALSTORAGE_KEY)).toBe(DEFAULT_LANG);
+                expect(storage.getItem(VERSION_LOCALSTORAGE_KEY)).toBe(VERSION);
+            }
+        );
+
+        it.each(['memory', 'cache'])(
+            'should let a %s selection supersede pending success and fallback',
+            (source) => {
+                seedCache(messages, 'es');
+                const successError = vi.fn();
+                service
+                    .init({ language: 'es', languageBundleVersion: NEXT_VERSION })
+                    .subscribe({ error: successError });
+                const pendingSuccess = http.expectOne('/api/v2/languages/es/keys');
+                const failureError = vi.fn();
+                service
+                    .init({ language: 'es', languageBundleVersion: 'third-version' })
+                    .subscribe({ error: failureError });
+                const pendingFailure = http.expectOne('/api/v2/languages/es/keys');
+                seedCache();
+                if (source === 'memory') {
+                    service.init({ languageBundleVersion: VERSION });
+                    seedCache(messages, 'es');
+                }
+                service.init({ languageBundleVersion: VERSION });
+                const persist = vi.spyOn(storage, 'setItem');
+                pendingSuccess.flush({
+                    entity: { ...messages, 'dot.common.cancel': 'Old' },
+                    languageBundleVersion: NEXT_VERSION
+                });
+                pendingFailure.flush('failed', { status: 500, statusText: 'Server Error' });
+
+                expect(successError).toHaveBeenCalledOnce();
+                expect(failureError).toHaveBeenCalledExactlyOnceWith(
+                    expect.objectContaining({ status: 500 })
+                );
+                expect(service.loadedBundleLanguage()).toBe(DEFAULT_LANG);
+                expect(service.loadedBundleVersion()).toBe(VERSION);
+                expect(service.get('dot.common.cancel')).toBe('Cancel');
+                expect(service.bundleVersionMismatch()).toBeNull();
+                expect(persist).not.toHaveBeenCalled();
+                http.expectNone(DEFAULT_URL);
+            }
+        );
         it('should eagerly fetch default messages for callers that do not subscribe', () => {
             service.init();
 
@@ -371,7 +486,9 @@ describe('DotMessageService', () => {
                 entity: messages,
                 languageBundleVersion: VERSION
             });
-            await Promise.all([first$, second$, third$].map((load$) => firstValueFrom(load$)));
+            await expect(firstValueFrom(first$)).rejects.toThrow('superseded');
+            await expect(firstValueFrom(second$)).rejects.toThrow('superseded');
+            await expect(firstValueFrom(third$)).resolves.toBeUndefined();
         });
 
         it('should replay success to late subscribers without another GET', async () => {

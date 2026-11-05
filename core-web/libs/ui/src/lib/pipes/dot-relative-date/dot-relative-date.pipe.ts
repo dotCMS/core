@@ -5,12 +5,46 @@ import { DotFormatDateService, DotMessageService } from '@dotcms/data-access';
 /*
  * Custom Pipe that returns the relative date.
  */
-@Pipe({ name: 'dotRelativeDate' })
+@Pipe({ name: 'dotRelativeDate', pure: false })
 export class DotRelativeDatePipe implements PipeTransform {
     private readonly dotFormatDateService = inject(DotFormatDateService);
     private readonly dotMessageService = inject(DotMessageService);
 
+    private cached: {
+        date: string | number;
+        format: string;
+        timeStampAfter: number;
+        version: string | null;
+        language: string | null;
+        locale: DotFormatDateService['localeOptions'];
+        value: string;
+    };
+
     transform(date: string | number, format = 'MM/dd/yyyy', timeStampAfter = 7): string {
+        // Read on every check so OnPush views retain their signal dependencies on cache hits.
+        const version = this.dotMessageService.loadedBundleVersion?.();
+        const language = this.dotMessageService.loadedBundleLanguage?.();
+        const locale = this.dotFormatDateService.localeOptions;
+        const cached = this.cached;
+        if (
+            cached &&
+            Object.is(cached.date, date) &&
+            cached.format === format &&
+            Object.is(cached.timeStampAfter, timeStampAfter) &&
+            cached.version === version &&
+            cached.language === language &&
+            cached.locale === locale
+        ) {
+            return cached.value;
+        }
+
+        const value = this.formatDate(date, format, timeStampAfter);
+        this.cached = { date, format, timeStampAfter, version, language, locale, value };
+
+        return value;
+    }
+
+    private formatDate(date: string | number, format: string, timeStampAfter: number): string {
         const time = date || new Date().getTime();
         const isMilliseconds = !isNaN(Number(time));
 

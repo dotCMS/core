@@ -39,6 +39,7 @@ export class DotMessageService {
     private messageMap: Record<string, string> = {};
     private readonly installedLanguage = signal<string | null>(null);
     private readonly inFlight = new Map<string, Observable<void>>();
+    private latestRequestedIdentity: string | null = null;
     private readonly versionMismatch = signal<LanguageBundleVersionMismatch | null>(null);
     private readonly installedVersion = signal<string | null>(null);
 
@@ -54,6 +55,7 @@ export class DotMessageService {
      * @param {DotMessageServiceParams} params - The parameters for initialization.
      * Without an expected bundle version, always fetch: legacy build dates cannot prove freshness.
      * @return {Observable<void>} Emits and completes when valid messages are available; errors on failure.
+     * Superseded requests settle with an error rather than reporting an installation that did not occur.
      */
     init(params?: DotMessageServiceParams): Observable<void> {
         const lang = params?.language || DEFAULT_LANG;
@@ -89,6 +91,9 @@ export class DotMessageService {
     }
 
     private getAll(lang: string, expectedVersion: string | null): Observable<void> {
+        const requestKey = JSON.stringify([lang, expectedVersion]);
+        // Every selection counts, including memory/cache hits and deduplicated pending requests.
+        this.latestRequestedIdentity = requestKey;
         const hasInstalledMessages =
             this.installedLanguage() === lang && this.isMessageMap(this.messageMap);
         if (
@@ -101,7 +106,6 @@ export class DotMessageService {
             return of(void 0);
         }
 
-        const requestKey = JSON.stringify([lang, expectedVersion]);
         const pending = this.inFlight.get(requestKey);
         if (pending) {
             return pending;
@@ -157,6 +161,10 @@ export class DotMessageService {
             .pipe(
                 take(1),
                 tap((response) => {
+                    if (this.latestRequestedIdentity !== requestKey) {
+                        throw new Error('Language bundle request superseded by a newer selection.');
+                    }
+
                     if (
                         !this.isMessageMap(response?.entity) ||
                         !this.isVersion(response?.languageBundleVersion)
@@ -176,6 +184,7 @@ export class DotMessageService {
                 catchError((error) => {
                     // A stale, complete bundle is a fallback, not proof the requested version loaded.
                     if (
+                        this.latestRequestedIdentity === requestKey &&
                         (this.installedLanguage() !== lang ||
                             !this.isMessageMap(this.messageMap)) &&
                         lang === cachedLang &&
