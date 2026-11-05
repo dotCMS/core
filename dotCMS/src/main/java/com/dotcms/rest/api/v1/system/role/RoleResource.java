@@ -113,6 +113,11 @@ public class RoleResource implements Serializable {
 	 * not guaranteed that this method will traverse the full list of roles.
 	 * Once it finds a role that is associated to the user, it will return.
 	 * <p>
+	 * Any back-end user can check their own roles. Checking another user's roles
+	 * takes the role membership privilege: an administrator, or a user with access
+	 * to both the Roles and the Users portlets. The rule is applied by
+	 * {@link RoleAPI#doesUserHaveRoles(String, List, User)}.
+	 * <p>
 	 * Example:
 	 *
 	 * <pre>
@@ -121,6 +126,8 @@ public class RoleResource implements Serializable {
 	 *
 	 * @param request
 	 *            - The {@link HttpServletRequest} object.
+	 * @param response
+	 *            - The {@link HttpServletResponse} object.
 	 * @param userId
 	 *            - The ID of the user going through role verification.
 	 * @param roleIds
@@ -147,7 +154,9 @@ public class RoleResource implements Serializable {
 		boolean hasUserRole = false;
 		try {
 			String[] roles = roleIds.split(ROLE_ID_SEPARATOR);
-			hasUserRole = this.roleAPI.doesUserHaveRoles(userId, list(roles));
+			hasUserRole = this.roleAPI.doesUserHaveRoles(userId, list(roles), init.getUser());
+		} catch (DotSecurityException e) {
+			throw new ForbiddenException(e.getMessage());
 		} catch (Exception e) {
 			// In case of unknown error, so we report it as a 500
 			Logger.error(this, "An error occurred when processing the request.", e);

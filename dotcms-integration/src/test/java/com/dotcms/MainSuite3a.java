@@ -40,6 +40,7 @@ import org.junit.runners.Suite;
         TimeMachineUtilTest.class,
         ImportContentletsActionSmokeTest.class,
         TreeFactoryTest.class,
+    com.dotmarketing.portlets.user.ajax.UserAjaxHasUserRolesIntegrationTest.class,
         com.dotmarketing.webdav.DotWebdavTempPathContainmentTest.class,
     com.dotcms.rendering.js.FileJavascriptReaderTest.class,
     com.dotcms.rest.api.v1.container.ContainerResourceContentReadAccessTest.class

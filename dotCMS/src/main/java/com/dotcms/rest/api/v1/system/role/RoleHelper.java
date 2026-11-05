@@ -10,7 +10,6 @@ import com.dotmarketing.business.LayoutAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DotDataException;
-import com.dotmarketing.util.PortletID;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
 
@@ -29,7 +28,9 @@ public class RoleHelper {
     /**
      * Whether a user may see which users hold a role and which roles a user holds. Role
      * membership carries user details, so it takes an administrator, or a user with access to
-     * both the Roles and the Users portlets. The REST and the legacy DWR listings share this rule.
+     * both the Roles and the Users portlets. The rule lives in
+     * {@link RoleAPI#canReadRoleMembership(User)}, shared by the REST and the legacy DWR entry
+     * points.
      *
      * @param user the user making the request
      * @return {@code true} when the user may read role membership
@@ -37,10 +38,7 @@ public class RoleHelper {
      */
     public boolean canReadRoleMembership(final User user) throws DotDataException {
 
-        final LayoutAPI layoutAPI = APILocator.getLayoutAPI();
-        return user.isAdmin() ||
-                (layoutAPI.doesUserHaveAccessToPortlet(PortletID.ROLES.toString(), user) &&
-                        layoutAPI.doesUserHaveAccessToPortlet(PortletID.USERS.toString(), user));
+        return APILocator.getRoleAPI().canReadRoleMembership(user);
     }
 
     /**
