@@ -110,7 +110,7 @@ describe('AppComponent', () => {
 
             fixture.detectChanges();
 
-            expect(dotMessageService.init).toHaveBeenCalledWith({ buildDate: 'Jan 1, 2022' });
+            expect(dotMessageService.init).not.toHaveBeenCalled();
             expect(dotUiColorsService.setColors).toHaveBeenCalledWith(expect.any(HTMLElement), {
                 primary: '#123',
                 secondary: '#456',
@@ -137,7 +137,7 @@ describe('AppComponent', () => {
 
             fixture.detectChanges();
 
-            // Should not call init if buildDate is null
+            // Public app initialization must not request the authenticated language bundle.
             expect(dotMessageService.init).not.toHaveBeenCalled();
 
             // Should still set colors
@@ -242,10 +242,9 @@ describe('AppComponent', () => {
             );
         });
 
-        it('should init message service with buildDate', () => {
+        it('should defer message loading to authenticated route activation', () => {
             fixture.detectChanges();
-            expect(dotMessageService.init).toHaveBeenCalledWith({ buildDate: 'Jan 1, 2022' });
-            expect(dotMessageService.init).toHaveBeenCalledTimes(1);
+            expect(dotMessageService.init).not.toHaveBeenCalled();
         });
 
         it('should set ui colors from configuration', () => {

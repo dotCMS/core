@@ -1,23 +1,31 @@
-import { Observable, of } from 'rxjs';
+import { Observable, of, ReplaySubject } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 
-import { map, shareReplay, take, tap } from 'rxjs/operators';
+import { finalize, map, share, take, tap } from 'rxjs/operators';
 
 import { formatMessage } from '@dotcms/utils';
 
 import { DotLocalstorageService } from '../dot-localstorage/dot-localstorage.service';
 
 export interface DotMessageServiceParams {
+    /** @deprecated Cache freshness requires languageBundleVersion, not a build date. */
     buildDate?: string;
     language?: string;
+    languageBundleVersion?: string;
+}
+
+export interface LanguageBundleVersionMismatch {
+    language: string;
+    cachedVersion: string;
+    serverVersion: string;
 }
 
 const DEFAULT_LANG = 'default';
 const LANGUAGE_LOCALSTORAGE_KEY = 'dotMessagesKeys-lang';
 const MESSAGES_LOCALSTORAGE_KEY = 'dotMessagesKeys';
-const BUILDATE_LOCALSTORAGE_KEY = 'buildDate';
+const VERSION_LOCALSTORAGE_KEY = 'dotMessagesKeys-version';
 
 @Injectable({
     providedIn: 'root'
@@ -26,21 +34,31 @@ export class DotMessageService {
     private readonly http = inject(HttpClient);
     private readonly dotLocalstorageService = inject(DotLocalstorageService);
 
-    private messageMap: { [key: string]: string } = {};
+    private messageMap: Record<string, string> = {};
+    private readonly inFlight = new Map<string, Observable<void>>();
+    private readonly versionMismatch = signal<LanguageBundleVersionMismatch | null>(null);
+    private readonly installedVersion = signal<string | null>(null);
+
+    /** Last detected mismatch; cleared by a subsequent check that finds no version mismatch. */
+    readonly bundleVersionMismatch = this.versionMismatch.asReadonly();
+    /** Changes only after a validated bundle is installed, from cache or a successful request. */
+    readonly loadedBundleVersion = this.installedVersion.asReadonly();
 
     /**
      * Initializes the DotMessageService.
      * @param {DotMessageServiceParams} params - The parameters for initialization.
-     * @return {Observable<void>} Emits when messages are available (HTTP or localStorage).
+     * Without an expected bundle version, always fetch: legacy build dates cannot prove freshness.
+     * @return {Observable<void>} Emits and completes when valid messages are available; errors on failure.
      */
     init(params?: DotMessageServiceParams): Observable<void> {
         const lang = params?.language || DEFAULT_LANG;
-        const buildDate = params?.buildDate || null;
+        const version = this.isVersion(params?.languageBundleVersion)
+            ? params.languageBundleVersion
+            : null;
+        const load$ = this.getAll(lang, version);
 
-        const load$ = this.getAll(lang, buildDate);
-
-        // Backward compatibility for callers that ignore the returned observable.
-        load$.pipe(take(1)).subscribe();
+        // Keep eager loading for legacy callers, but let awaiting callers handle errors.
+        load$.subscribe({ error: () => undefined });
 
         return load$;
     }
@@ -61,38 +79,100 @@ export class DotMessageService {
             : key;
     }
 
-    /**
-     * Retrieves all the messages for a specific language.
-     *
-     * @param {string} lang - The language code for the messages.
-     * @param newBuildDate
-     * @private
-     * @returns {Observable<void>} Emits when messages are available.
-     */
-    private getAll(
-        lang: string = DEFAULT_LANG,
-        newBuildDate: string | null = null
-    ): Observable<void> {
-        if (this.shouldReloadMessages(lang, newBuildDate)) {
-            return this.http.get<{ entity: Record<string, string> }>(this.geti18nURL(lang)).pipe(
-                take(1),
-                map((x) => x?.entity),
-                tap((messages) => {
-                    this.messageMap = messages as { [key: string]: string };
-                    this.dotLocalstorageService.setItem(MESSAGES_LOCALSTORAGE_KEY, this.messageMap);
-                    this.dotLocalstorageService.setItem(LANGUAGE_LOCALSTORAGE_KEY, lang);
-                    this.dotLocalstorageService.setItem(BUILDATE_LOCALSTORAGE_KEY, newBuildDate);
-                }),
-                map(() => void 0),
-                shareReplay({ bufferSize: 1, refCount: false })
-            );
+    private getAll(lang: string, expectedVersion: string | null): Observable<void> {
+        const requestKey = JSON.stringify([lang, expectedVersion]);
+        const pending = this.inFlight.get(requestKey);
+        if (pending) {
+            return pending;
         }
 
-        this.messageMap = this.dotLocalstorageService.getItem(MESSAGES_LOCALSTORAGE_KEY) as {
-            [key: string]: string;
-        };
+        let messages: unknown = null;
+        let cachedLang: unknown = null;
+        let cachedVersion: unknown = null;
+        try {
+            messages = this.dotLocalstorageService.getItem<unknown>(MESSAGES_LOCALSTORAGE_KEY);
+            cachedLang = this.dotLocalstorageService.getItem<unknown>(LANGUAGE_LOCALSTORAGE_KEY);
+            cachedVersion = this.dotLocalstorageService.getItem<unknown>(VERSION_LOCALSTORAGE_KEY);
+        } catch {
+            // Blocked storage must not prevent an authenticated, uncached load.
+            messages = null;
+            cachedLang = null;
+            cachedVersion = null;
+        }
+        const mismatch =
+            expectedVersion && this.isVersion(cachedVersion) && expectedVersion !== cachedVersion
+                ? { language: lang, cachedVersion, serverVersion: expectedVersion }
+                : null;
+        const previousMismatch = this.versionMismatch();
+        if (
+            previousMismatch?.language !== mismatch?.language ||
+            previousMismatch?.cachedVersion !== mismatch?.cachedVersion ||
+            previousMismatch?.serverVersion !== mismatch?.serverVersion
+        ) {
+            this.versionMismatch.set(mismatch);
+        }
+        if (
+            expectedVersion &&
+            expectedVersion === cachedVersion &&
+            lang === cachedLang &&
+            this.isMessageMap(messages)
+        ) {
+            this.messageMap = messages;
+            this.installedVersion.set(expectedVersion);
 
-        return of(void 0);
+            return of(void 0);
+        }
+
+        const load$ = this.http
+            .get<{ entity: unknown; languageBundleVersion: unknown }>(this.geti18nURL(lang))
+            .pipe(
+                take(1),
+                tap((response) => {
+                    if (
+                        !this.isMessageMap(response?.entity) ||
+                        !this.isVersion(response?.languageBundleVersion)
+                    ) {
+                        throw new Error(
+                            'Invalid language bundle: messages and version are required.'
+                        );
+                    }
+
+                    this.messageMap = response.entity;
+                    this.cacheMessages(lang, response.entity, response.languageBundleVersion);
+                    this.installedVersion.set(response.languageBundleVersion);
+                }),
+                map(() => void 0),
+                finalize(() => this.inFlight.delete(requestKey)),
+                // Retain errors as well as success for late subscribers to the eager request.
+                // A new init() retries; subscribing to the old result must not start another GET.
+                share({
+                    connector: () => new ReplaySubject<void>(1),
+                    resetOnError: false,
+                    resetOnComplete: false,
+                    resetOnRefCountZero: false
+                })
+            );
+        this.inFlight.set(requestKey, load$);
+
+        return load$;
+    }
+
+    private cacheMessages(lang: string, messages: Record<string, string>, version: string): void {
+        try {
+            // Invalidate first: a partial write must never retain a previously valid version.
+            this.dotLocalstorageService.removeItem(VERSION_LOCALSTORAGE_KEY);
+            this.dotLocalstorageService.setItem(MESSAGES_LOCALSTORAGE_KEY, messages);
+            this.dotLocalstorageService.setItem(LANGUAGE_LOCALSTORAGE_KEY, lang);
+            // Quote the hash to avoid DotLocalstorageService coercing digit-leading hashes to numbers.
+            this.dotLocalstorageService.setItem(VERSION_LOCALSTORAGE_KEY, JSON.stringify(version));
+        } catch {
+            // Persistence is optional; a valid in-memory bundle still allows route activation.
+            try {
+                this.dotLocalstorageService.removeItem(VERSION_LOCALSTORAGE_KEY);
+            } catch {
+                // Storage can be entirely unavailable in restricted browser contexts.
+            }
+        }
     }
 
     /**
@@ -107,15 +187,20 @@ export class DotMessageService {
         return `/api/v2/languages/${lang ? lang : 'default'}/keys`;
     }
 
-    private shouldReloadMessages(lang: string, newBuildDate: string | null): boolean {
-        const currentBuildDate = this.dotLocalstorageService.getItem(BUILDATE_LOCALSTORAGE_KEY);
-        const currentLang = this.dotLocalstorageService.getItem(LANGUAGE_LOCALSTORAGE_KEY);
-        const storedMessages = this.dotLocalstorageService.getItem(MESSAGES_LOCALSTORAGE_KEY);
+    private isVersion(value: unknown): value is string {
+        return typeof value === 'string' && value.trim().length > 0;
+    }
 
-        return <boolean>(
-            (!storedMessages ||
-                lang !== currentLang ||
-                (newBuildDate && newBuildDate !== currentBuildDate))
+    private isMessageMap(value: unknown): value is Record<string, string> {
+        if (!value || typeof value !== 'object' || Array.isArray(value)) {
+            return false;
+        }
+
+        const entries = Object.entries(value);
+
+        return (
+            entries.some(([key]) => key !== 'version' && key !== 'languageBundleVersion') &&
+            entries.every(([, translation]) => typeof translation === 'string')
         );
     }
 }

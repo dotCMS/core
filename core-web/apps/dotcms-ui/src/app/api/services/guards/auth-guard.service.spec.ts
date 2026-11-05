@@ -1,65 +1,93 @@
-import { Observable, of as observableOf } from 'rxjs';
+import { firstValueFrom, Observable, of, Subject, throwError } from 'rxjs';
+import { vi } from 'vitest';
 
-import { Injectable } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 
-import { DotRouterService } from '@dotcms/data-access';
-import { LoginService } from '@dotcms/dotcms-js';
+import { DotMessageService, DotRouterService } from '@dotcms/data-access';
+import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 
 import { AuthGuardService } from './auth-guard.service';
 
-import { DOTTestBed } from '../../../test/dot-test-bed';
-
-@Injectable()
-class MockLoginService {
-    private _isLogin$: Observable<boolean>;
-    get isLogin$() {
-        return this._isLogin$;
-    }
-}
-
-describe('ValidAuthGuardService', () => {
-    let authGuardService: AuthGuardService;
-    let dotRouterService: DotRouterService;
-    let loginService: LoginService;
-    let mockRouterStateSnapshot: RouterStateSnapshot;
-    let mockActivatedRouteSnapshot: ActivatedRouteSnapshot;
+describe('AuthGuardService', () => {
+    let guard: AuthGuardService;
+    let router: { goToLogin: ReturnType<typeof vi.fn>; storedRedirectUrl: string };
+    let login: { isLogin$: Observable<boolean>; currentUserLanguageId: string };
+    let config: { getConfig: ReturnType<typeof vi.fn> };
+    let messages: { init: ReturnType<typeof vi.fn> };
+    const route = {} as ActivatedRouteSnapshot;
+    const state = { url: '/test' } as RouterStateSnapshot;
 
     beforeEach(() => {
-        DOTTestBed.configureTestingModule({
-            providers: [AuthGuardService, { provide: LoginService, useClass: MockLoginService }]
+        router = { goToLogin: vi.fn(), storedRedirectUrl: '' };
+        login = { isLogin$: of(true), currentUserLanguageId: 'en_US' };
+        config = {
+            getConfig: vi.fn().mockReturnValue(of({ languageBundleVersion: 'build-hash' }))
+        };
+        messages = { init: vi.fn().mockReturnValue(of(void 0)) };
+        TestBed.configureTestingModule({
+            providers: [
+                AuthGuardService,
+                { provide: DotRouterService, useValue: router },
+                { provide: LoginService, useValue: login },
+                { provide: DotcmsConfigService, useValue: config },
+                { provide: DotMessageService, useValue: messages }
+            ]
         });
-
-        authGuardService = TestBed.inject(AuthGuardService);
-        dotRouterService = TestBed.inject(DotRouterService);
-        loginService = TestBed.inject(LoginService);
-        mockRouterStateSnapshot = { url: '/test' } as RouterStateSnapshot;
-        mockActivatedRouteSnapshot = {} as ActivatedRouteSnapshot;
+        guard = TestBed.inject(AuthGuardService);
     });
 
-    it('should allow access to the requested route, User is logged in', () => {
-        let result: boolean;
-        Object.defineProperty(loginService, 'isLogin$', {
-            value: observableOf(true),
-            writable: true
+    it('should validate the cache with the server build hash after authentication', async () => {
+        expect(await firstValueFrom(guard.canActivate(route, state))).toBe(true);
+        expect(messages.init).toHaveBeenCalledWith({
+            language: 'en_US',
+            languageBundleVersion: 'build-hash'
         });
-        authGuardService
-            .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
-            .subscribe((res) => (result = res));
-        expect(result).toBe(true);
     });
 
-    it('should denied access to the requested route, User is NOT logged in', () => {
-        let result: boolean;
-        Object.defineProperty(loginService, 'isLogin$', {
-            value: observableOf(false),
-            writable: true
+    it('should not load configuration or messages for an unauthenticated user', async () => {
+        login.isLogin$ = of(false);
+        expect(await firstValueFrom(guard.canActivate(route, state))).toBe(false);
+        expect(router.goToLogin).toHaveBeenCalledOnce();
+        expect(router.storedRedirectUrl).toBe('/test');
+        expect(config.getConfig).not.toHaveBeenCalled();
+        expect(messages.init).not.toHaveBeenCalled();
+    });
+
+    it('should wait for messages before activating backend components', () => {
+        const loaded = new Subject<void>();
+        messages.init.mockReturnValue(loaded);
+        const activated = vi.fn();
+        guard.canActivate(route, state).subscribe(activated);
+        expect(activated).not.toHaveBeenCalled();
+        loaded.next();
+        loaded.complete();
+        expect(activated).toHaveBeenCalledWith(true);
+    });
+
+    it('should use the default locale when the authenticated user has none', async () => {
+        login.currentUserLanguageId = '';
+        await firstValueFrom(guard.canActivate(route, state));
+        expect(messages.init).toHaveBeenCalledWith({
+            language: 'default',
+            languageBundleVersion: 'build-hash'
         });
-        authGuardService
-            .canActivate(mockActivatedRouteSnapshot, mockRouterStateSnapshot)
-            .subscribe((res) => (result = res));
-        expect(dotRouterService.goToLogin).toHaveBeenCalled();
-        expect(result).toBe(false);
+    });
+
+    it('should await a fresh load when build metadata is missing rather than accept null versions', async () => {
+        config.getConfig.mockReturnValue(of({}));
+        await firstValueFrom(guard.canActivate(route, state));
+        expect(messages.init).toHaveBeenCalledWith({
+            language: 'en_US',
+            languageBundleVersion: undefined
+        });
+    });
+
+    it('should propagate a failed load without activating and allow a later attempt to retry', async () => {
+        const failure = new Error('Language request failed');
+        messages.init.mockReturnValueOnce(throwError(() => failure));
+        await expect(firstValueFrom(guard.canActivate(route, state))).rejects.toBe(failure);
+        expect(await firstValueFrom(guard.canActivate(route, state))).toBe(true);
+        expect(messages.init).toHaveBeenCalledTimes(2);
     });
 });

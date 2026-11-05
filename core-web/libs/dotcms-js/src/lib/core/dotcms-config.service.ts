@@ -1,9 +1,9 @@
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, of } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { filter, map, take } from 'rxjs/operators';
+import { map, shareReplay, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-models';
 
@@ -40,6 +40,7 @@ export interface SystemTimezone {
 export interface ConfigParams {
     colors: DotUiColors;
     emailRegex: string;
+    languageBundleVersion?: string;
     license: {
         displayServerId: string;
         isCommunity: boolean;
@@ -76,6 +77,7 @@ interface DotAppConfigResponse {
     config: {
         colors: DotUiColors;
         [EMAIL_REGEX]: string;
+        languageBundleVersion?: string;
         license: {
             displayServerId: string;
             isCommunity: boolean;
@@ -123,6 +125,7 @@ export class DotcmsConfigService {
     private loggerService = inject(LoggerService);
 
     private configParamsSubject: BehaviorSubject<ConfigParams> = new BehaviorSubject(null);
+    private configRequest$: Observable<ConfigParams> | undefined;
     private configUrl: string;
 
     /**
@@ -136,46 +139,69 @@ export class DotcmsConfigService {
     }
 
     getConfig(): Observable<ConfigParams> {
-        return this.configParamsSubject
-            .asObservable()
-            .pipe(filter((config: ConfigParams) => !!config));
+        return this.configParamsSubject.pipe(
+            switchMap((config) => (config ? of(config) : this.requestConfig()))
+        );
     }
 
     loadConfig(): void {
+        // Preserve eager loading without leaving constructor/refresh errors unhandled.
+        this.requestConfig().subscribe({
+            error: (error) => this.loggerService.error('Failed to load configuration', error)
+        });
+    }
+
+    private requestConfig(): Observable<ConfigParams> {
+        if (this.configRequest$) {
+            return this.configRequest$;
+        }
+
         this.loggerService.debug('Loading configuration on: ', this.configUrl);
 
-        this.http
+        this.configRequest$ = this.http
             .get<DotCMSResponse<DotAppConfigResponse>>(this.configUrl)
-            .pipe(map((response) => response.entity))
-            .subscribe((res: DotAppConfigResponse) => {
-                this.loggerService.debug('Configuration Loaded!', res);
+            .pipe(
+                map((response) => response.entity),
+                map((res: DotAppConfigResponse) => {
+                    this.loggerService.debug('Configuration Loaded!', res);
 
-                const configParams: ConfigParams = {
-                    colors: res.config.colors,
-                    emailRegex: res.config[EMAIL_REGEX],
-                    license: res.config.license,
-                    logos: res.config.logos,
-                    menu: res.menu,
-                    paginatorLinks: res.config[DOTCMS_PAGINATOR_LINKS],
-                    paginatorRows: res.config[DOTCMS_PAGINATOR_ROWS],
-                    releaseInfo: {
-                        buildDate: res.config.releaseInfo?.buildDate,
-                        version: res.config.releaseInfo?.version
+                    const configParams: ConfigParams = {
+                        colors: res.config.colors,
+                        emailRegex: res.config[EMAIL_REGEX],
+                        languageBundleVersion: res.config.languageBundleVersion,
+                        license: res.config.license,
+                        logos: res.config.logos,
+                        menu: res.menu,
+                        paginatorLinks: res.config[DOTCMS_PAGINATOR_LINKS],
+                        paginatorRows: res.config[DOTCMS_PAGINATOR_ROWS],
+                        releaseInfo: {
+                            buildDate: res.config.releaseInfo?.buildDate,
+                            version: res.config.releaseInfo?.version
+                        },
+                        websocket: {
+                            websocketReconnectTime:
+                                res.config.websocket[DOTCMS_WEBSOCKET_RECONNECT_TIME],
+                            disabledWebsockets:
+                                res.config.websocket[DOTCMS_DISABLE_WEBSOCKET_PROTOCOL]
+                        },
+                        systemTimezone: res.config.systemTimezone
+                    };
+
+                    return configParams;
+                }),
+                tap({
+                    next: (configParams) => {
+                        this.configParamsSubject.next(configParams);
+                        this.loggerService.debug('this.configParams', configParams);
                     },
-                    websocket: {
-                        websocketReconnectTime:
-                            res.config.websocket[DOTCMS_WEBSOCKET_RECONNECT_TIME],
-                        disabledWebsockets: res.config.websocket[DOTCMS_DISABLE_WEBSOCKET_PROTOCOL]
-                    },
-                    systemTimezone: res.config.systemTimezone
-                };
+                    // Clear before notifying subscribers so even an immediate retry gets a new request.
+                    error: () => (this.configRequest$ = undefined),
+                    complete: () => (this.configRequest$ = undefined)
+                }),
+                shareReplay({ bufferSize: 1, refCount: false })
+            );
 
-                this.configParamsSubject.next(configParams);
-
-                this.loggerService.debug('this.configParams', configParams);
-
-                return res;
-            });
+        return this.configRequest$;
     }
 
     /**

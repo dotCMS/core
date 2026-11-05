@@ -8,7 +8,6 @@ import { catchError, map, take } from 'rxjs/operators';
 import {
     DEFAULT_COLORS,
     DotLicenseService,
-    DotMessageService,
     DotNavLogoService,
     DotUiColorsService
 } from '@dotcms/data-access';
@@ -27,7 +26,7 @@ import { DotAlertConfirmComponent } from './view/components/_common/dot-alert-co
 export class AppComponent implements OnInit {
     private dotCmsConfigService = inject(DotcmsConfigService);
     private dotUiColors = inject(DotUiColorsService);
-    private dotMessageService = inject(DotMessageService);
+
     private dotNavLogoService = inject(DotNavLogoService);
     private dotLicense = inject(DotLicenseService);
 
@@ -38,7 +37,6 @@ export class AppComponent implements OnInit {
                 take(1),
                 map((config: ConfigParams) => {
                     return {
-                        buildDate: config.releaseInfo?.buildDate,
                         colors: config.colors,
                         navBar: config.logos?.navBar,
                         license: config.license
@@ -50,7 +48,6 @@ export class AppComponent implements OnInit {
                     console.warn('Failed to load configuration, using defaults:', error);
                     // Return default values that allow the app to continue functioning
                     return of({
-                        buildDate: null,
                         colors: DEFAULT_COLORS,
                         navBar: null,
                         license: null
@@ -59,21 +56,15 @@ export class AppComponent implements OnInit {
             )
             .subscribe(
                 ({
-                    buildDate,
                     colors,
                     navBar,
                     license
                 }: {
-                    buildDate: string | null;
                     colors: DotUiColors;
                     navBar: string | null;
                     license: DotLicense | null;
                 }) => {
-                    // Initialize services with loaded or default values
-                    if (buildDate) {
-                        this.dotMessageService.init({ buildDate });
-                    }
-
+                    // AuthGuardService loads messages after authentication, before activating backend routes.
                     if (navBar) {
                         this.dotNavLogoService.setLogo(navBar);
                     }
