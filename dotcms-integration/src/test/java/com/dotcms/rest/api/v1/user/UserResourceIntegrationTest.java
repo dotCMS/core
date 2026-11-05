@@ -1,6 +1,7 @@
 package com.dotcms.rest.api.v1.user;
 
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.api.web.WebSessionContext;
 import com.dotcms.datagen.TestUserUtils;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
@@ -97,6 +98,28 @@ public class UserResourceIntegrationTest {
         assertEquals(adminUser.getUserId(),request.getSession().getAttribute(WebKeys.USER_ID));
         assertNull(request.getSession().getAttribute(WebKeys.USER));
         assertNull(request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
+    }
+
+    /**
+     * Method to test: {@link UserResource#logoutAs}
+     * Given Scenario: An administrator logs in as another user, and the session reports an active
+     * Login As. The administrator then logs out as that user.
+     * ExpectedResult: The administrator is the session user again and the session no longer
+     * reports an active Login As.
+     */
+    @Test
+    public void test_logoutAs_afterLoginAs_restoresTheAdministrator() throws Exception {
+        loginAs();
+        final WebSessionContext sessionContext = WebSessionContext.getInstance(request);
+        assertTrue(APILocator.getLoginAsAPI().isLoginAsUser(sessionContext));
+        assertEquals(adminUser.getUserId(),
+                APILocator.getLoginAsAPI().getPrincipalUser(sessionContext).getUserId());
+
+        final Response resourceResponse = resource.logoutAs(request, response);
+
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        assertEquals(adminUser.getUserId(), request.getSession().getAttribute(WebKeys.USER_ID));
+        assertFalse(APILocator.getLoginAsAPI().isLoginAsUser(sessionContext));
     }
 
 

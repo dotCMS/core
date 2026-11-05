@@ -119,3 +119,4 @@ Release-25.07.10 LTS
 113. https://github.com/dotCMS/private-issues/issues/758 : [GLM AI Scanner] File extension case bypass: 'shell.JSP' passes blocklist on JSON/WebDAV paths → stored webshell publicl #38247 #758
 114. https://github.com/dotCMS/core/issues/35422 : dot-wizard fires workflow action from a previously cancelled wizard #35423 #35422
 115. https://github.com/dotCMS/private-issues/issues/906 : REST caches, Redis and JVM info: gated by the Maintenance portlet only, while sibling maintenance endpoints require CMS  #38316 #906
+116. https://github.com/dotCMS/private-issues/issues/876 : Velocity $session.setAttribute + REST /api/v1/users/logoutas: any back-end Velocity author becomes CMS Administrator (8. #38110 #876
