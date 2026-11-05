@@ -297,7 +297,6 @@ function createUVEStoreMock() {
         pageType: signal(PageType.HEADLESS),
         $pageRender: signal(''),
         editorEnableInlineEdit: signal(false),
-        $isEmaLegacyScriptInjectionEnabled: signal(false),
         setSeoData: vi.fn(),
         // The page in the iframe
         $reloadEditorContent: signal<ReloadEditorContent>({

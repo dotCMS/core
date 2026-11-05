@@ -1,14 +1,15 @@
-import { Locator, Page } from '@playwright/test';
+import { expect, Locator, Page } from '@playwright/test';
 
 /** No persona — the default the editor itself applies when the address does not name one. */
 const NO_PERSONA_ID = 'modes.persona.no.persona';
 
 /**
- * The Universal Visual Editor, as far as the Experiments entry points need it (#37478).
+ * The Universal Visual Editor, as far as the Experiments entry points (#37478) and adding a form
+ * to a page need it.
  *
- * Deliberately small: this covers the navigation bar, the toolbar's running-experiment badge and
- * the Experiments panel, which is what the two experiments suites assert against. It is not an
- * attempt to model the editor.
+ * Deliberately small: this covers the navigation bar, the toolbar's running-experiment badge, the
+ * Experiments panel, and the containers and contentlets on the canvas, which is what those suites
+ * assert against. It is not an attempt to model the editor.
  */
 export class UveEditorPage {
     constructor(private page: Page) {}
@@ -59,5 +60,44 @@ export class UveEditorPage {
     /** The iframe holding the rendered page. Its `src` is how a reload is detected. */
     get canvas(): Locator {
         return this.page.locator('iframe[data-testid="iframe"]');
+    }
+
+    /** A container on the rendered page, by its position among the page's containers. */
+    container(index: number): Locator {
+        return this.page
+            .frameLocator('iframe[data-testid="iframe"]')
+            .locator('[data-dot-object="container"]')
+            .nth(index);
+    }
+
+    /** Every place a contentlet is rendered on the page. */
+    contentlet(identifier: string): Locator {
+        return this.page
+            .frameLocator('iframe[data-testid="iframe"]')
+            .locator(`[data-dot-object="contentlet"][data-dot-identifier="${identifier}"]`);
+    }
+
+    /**
+     * Adds a form to a container the way an editor does: the container's add menu, then the form
+     * in the form selector.
+     *
+     * The add button appears when the editor sees the pointer enter the container. Right after the
+     * canvas re-renders (a first form was just placed) that hover can arrive before the editor
+     * reacts to it, and hovering again with a pointer that has not moved sends nothing. The pointer
+     * is therefore moved off the canvas and back until the button shows.
+     */
+    async addForm(containerIndex: number, formName: string) {
+        const addContent = this.page.getByRole('button', { name: 'Add content' });
+        await expect(async () => {
+            await this.page.mouse.move(0, 0);
+            await this.container(containerIndex).hover();
+            await expect(addContent).toBeVisible({ timeout: 2000 });
+        }).toPass({ timeout: 20000 });
+        await addContent.click();
+        await this.page.getByRole('menuitem', { name: 'Form' }).click();
+        await this.page
+            .getByRole('row', { name: formName })
+            .getByTestId('form-select-button')
+            .click();
     }
 }

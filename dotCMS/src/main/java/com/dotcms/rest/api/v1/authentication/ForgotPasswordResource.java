@@ -5,6 +5,10 @@ import static com.dotmarketing.util.Constants.CONFIG_DISPLAY_NOT_EXISTING_USER_A
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.api.system.user.UserServiceFactory;
 import com.dotcms.company.CompanyAPI;
+import com.dotcms.concurrent.DotConcurrentException;
+import com.dotcms.concurrent.DotConcurrentFactory;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import com.google.common.annotations.VisibleForTesting;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -19,6 +23,7 @@ import com.dotcms.rest.annotation.NoCache;
 import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.SecurityLogger;
@@ -32,7 +37,14 @@ import com.liferay.portal.model.Company;
 import com.liferay.util.LocaleUtil;
 import com.liferay.util.Validator;
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.Locale;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicLong;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import io.swagger.v3.oas.annotations.Operation;
@@ -55,11 +67,52 @@ import javax.ws.rs.Consumes;
 @Tag(name = "Authentication")
 public class ForgotPasswordResource implements Serializable {
 
+    /** Name of the thread pool that creates the reset token and sends the reset email. */
+    static final String FORGOT_PASSWORD_POOL = "forgotPasswordPool";
+
+    /** Shortest time between two warnings about reset requests dropped because the pool is full. */
+    private static final int DROPPED_WARNING_INTERVAL_MILLIS = 60_000;
+
+    /**
+     * Submitted values (normalized) with a reset queued or running. A second request for a value
+     * that is already pending is not queued again. Static because Jersey may create a resource
+     * instance per request.
+     */
+    private static final Set<String> PENDING_RESETS = ConcurrentHashMap.newKeySet();
+
+    /** Reset requests dropped since startup because the pool could not take them. */
+    private static final AtomicLong DROPPED_RESETS = new AtomicLong();
+
+    /**
+     * Length of the window in which one client address may send
+     * {@code forgot-password.client.max.requests} requests: {@code forgot-password.client.window.seconds}
+     * (default 60, environment variable {@code DOT_FORGOT_PASSWORD_CLIENT_WINDOW_SECONDS}).
+     */
+    private static final Duration CLIENT_WINDOW =
+            Duration.ofSeconds(Config.getIntProperty("forgot-password.client.window.seconds", 60));
+
+    /**
+     * The current window of each client address. An entry expires one window after the client's
+     * last request, so idle clients are forgotten.
+     */
+    // prune: capped at 100,000 addresses; a client evicted early just starts a new window
+    private static final Cache<String, ClientWindow> REQUESTS_BY_CLIENT = Caffeine.newBuilder()
+            .expireAfterWrite(CLIENT_WINDOW)
+            .maximumSize(100_000)
+            .build();
+
+    /** When a client's current window started and how many requests it has sent in it. */
+    private record ClientWindow(long startMillis, int requests) {}
+
     private final UserLocalManager userLocalManager;
     private final CompanyAPI  companyAPI;
     private final ResponseUtil responseUtil;
     private final UserService userService;
+    private final Executor resetExecutor;
 
+    /**
+     * Creates the resource with the server's managers and the shared reset pool.
+     */
     public ForgotPasswordResource() {
 
         this (UserLocalManagerFactory.getManager(),
@@ -69,16 +122,79 @@ public class ForgotPasswordResource implements Serializable {
                 );
     }
 
+    /**
+     * Creates the resource with the given collaborators and the shared reset pool.
+     *
+     * @param userLocalManager finds the account when the company logs in by user id
+     * @param userService      creates the reset token and sends the reset email
+     * @param companyAPI       resolves the company the request is for
+     * @param responseUtil     builds the error responses
+     */
     @VisibleForTesting
     public ForgotPasswordResource(final UserLocalManager userLocalManager,
                                   final UserService userService,
                                   final CompanyAPI  companyAPI,
                                   final ResponseUtil responseUtil) {
 
+        this(userLocalManager, userService, companyAPI, responseUtil, ResetPoolHolder.POOL);
+    }
+
+    /**
+     * Holds the shared reset pool. The JVM initializes the holder class once, on first use, so
+     * concurrent first requests cannot each build a pool of their own.
+     */
+    private static final class ResetPoolHolder {
+
+        private static final Executor POOL = resetPool();
+    }
+
+    /**
+     * Creates the resource with the given collaborators and the executor that runs the
+     * account-dependent part of each reset.
+     *
+     * @param userLocalManager finds the account when the company logs in by user id
+     * @param userService      creates the reset token and sends the reset email
+     * @param companyAPI       resolves the company the request is for
+     * @param responseUtil     builds the error responses
+     * @param resetExecutor    runs the account lookup, token and email after the response is built
+     */
+    @VisibleForTesting
+    public ForgotPasswordResource(final UserLocalManager userLocalManager,
+                                  final UserService userService,
+                                  final CompanyAPI  companyAPI,
+                                  final ResponseUtil responseUtil,
+                                  final Executor resetExecutor) {
+
         this.userLocalManager = userLocalManager;
         this.userService      = userService;
         this.companyAPI       = companyAPI;
         this.responseUtil = responseUtil;
+        this.resetExecutor = resetExecutor;
+    }
+
+    /**
+     * Builds the pool that runs the account-dependent part of a reset request; called once, through
+     * {@link ResetPoolHolder}. It is bounded: when
+     * its queue is full the request is dropped (and a warning logged) instead of doing the work on
+     * the request thread; the response is the same 200 either way.
+     * Size and queue are set with {@code forgot-password.pool.size} (default 4) and
+     * {@code forgot-password.queue.size} (default 100); the environment variables are
+     * {@code DOT_FORGOT_PASSWORD_POOL_SIZE} and {@code DOT_FORGOT_PASSWORD_QUEUE_SIZE}.
+     *
+     * @return the pool used to process reset requests
+     */
+    private static Executor resetPool() {
+
+        final int poolSize = Config.getIntProperty("forgot-password.pool.size", 4);
+
+        return DotConcurrentFactory.getInstance().getSubmitter(FORGOT_PASSWORD_POOL,
+                new DotConcurrentFactory.SubmitterConfigBuilder()
+                        .poolSize(poolSize)
+                        .maxPoolSize(poolSize)
+                        .queueCapacity(Config.getIntProperty("forgot-password.queue.size", 100))
+                        .allowCoreThreadTimeOut(true)
+                        .rejectedExecutionHandler(new ThreadPoolExecutor.AbortPolicy())
+                        .build());
     }
 
     /**
@@ -86,11 +202,17 @@ public class ForgotPasswordResource implements Serializable {
      * when the company logs in by user id, otherwise the email address.
      * <p>
      * Every request whose value is accepted gets the same 200 response carrying the submitted
-     * value, whether or not an account matches and whether or not the reset could be completed. With
-     * login by email address, a value that is not an email address is rejected with 400, as is a
-     * request with no body. When
-     * {@code CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD} is enabled, an unknown account
-     * is reported with 400.
+     * value, whether or not an account matches and whether or not the reset could be completed.
+     * The work that depends on the account (looking it up, creating the reset token, sending the
+     * email) runs on a separate thread pool after the response is built, so the request takes the
+     * same time either way; a failure there is logged. With login by email address, a value that
+     * is not an email address is rejected with 400, as is a request with no body. A request from a
+     * client address that has used up its requests for the current window, for a value that
+     * already has a reset pending, or that arrives while the pool's queue is full, gets the same
+     * 200 and is not queued.
+     * <p>
+     * When {@code CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD} is enabled, the account is
+     * looked up on the request thread and an unknown account is reported with 400.
      *
      * @param request            the HTTP request
      * @param response           the HTTP response
@@ -109,7 +231,7 @@ public class ForgotPasswordResource implements Serializable {
         @ApiResponse(responseCode = "400", 
                     description = "Bad request - with login by email address, the submitted value is not a valid email address; or user not found (if configured to show)",
                     content = @Content(mediaType = "application/json")),
-        @ApiResponse(responseCode = "500", 
+        @ApiResponse(responseCode = "500",
                     description = "Internal server error",
                     content = @Content(mediaType = "application/json"))
     })
@@ -147,45 +269,30 @@ public class ForgotPasswordResource implements Serializable {
                         "please-enter-a-valid-email-address");
             }
 
-            final String emailAddress = loginByUserId?
-                        this.userLocalManager.getUserById(submittedValue).getEmailAddress():
-                        submittedValue;
+            final String companyId = this.companyAPI.getCompanyId(request);
+            final String remoteAddr = request.getRemoteAddr();
 
-            SecurityLogger.logInfo(this.getClass(),
-                    String.format(
-                            "Email address [%s] has requested to reset his password from IP [%s].",
-                            emailAddress, request.getRemoteAddr()));
+            if (Config.getBooleanProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD, false)) {
 
-            this.userService.sendResetPassword(
-                    this.companyAPI.getCompanyId(request), emailAddress, locale);
+                this.sendReset(companyId, submittedValue, loginByUserId, remoteAddr, locale);
+            } else {
+
+                this.queueReset(companyId, submittedValue, loginByUserId, remoteAddr, locale);
+            }
 
             res = Response.ok(new ResponseEntityView<>(submittedValue)).build(); // 200
 
         } catch (NoSuchUserException e) {
 
-            boolean displayNotSuchUserError =
-                    Config.getBooleanProperty(CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD,
-                            false);
+            // only reached when CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD is enabled
+            SecurityLogger.logInfo(this.getClass(),
+                    String.format(
+                            "User [%s] does NOT exist in the Database. IP [%s]. %s property is TRUE",
+                            SecurityUtils.sanitizeForLogging(submittedValue), request.getRemoteAddr(),
+                            CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD));
 
-            if (displayNotSuchUserError) {
-
-                SecurityLogger.logInfo(this.getClass(),
-                        String.format(
-                                "User [%s] does NOT exist in the Database. IP [%s]. %s property is TRUE",
-                                SecurityUtils.sanitizeForLogging(submittedValue), request.getRemoteAddr(),
-                                CONFIG_DISPLAY_NOT_EXISTING_USER_AT_RECOVER_PASSWORD));
-
-                res = this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
-                        "the-email-address-you-requested-is-not-registered-in-our-database");
-            } else {
-
-                SecurityLogger.logInfo(this.getClass(),
-                        String.format(
-                                "User [%s] does NOT exist in the Database, returning OK message for security reasons. IP [%s]",
-                                SecurityUtils.sanitizeForLogging(submittedValue), request.getRemoteAddr()));
-
-                res = Response.ok(new ResponseEntityView<>(submittedValue)).build(); // 200
-            }
+            res = this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
+                    "the-email-address-you-requested-is-not-registered-in-our-database");
         } catch (SendPasswordException e) {
 
             res = this.responseUtil.getErrorResponse(request, Response.Status.BAD_REQUEST, locale, null,
@@ -205,5 +312,176 @@ public class ForgotPasswordResource implements Serializable {
 
         return res;
     } // authentication.
+
+    /**
+     * Finds the account, creates its reset token and sends the reset email.
+     *
+     * @param companyId      the id of the company the request is for
+     * @param submittedValue the user id or email address submitted with the request
+     * @param loginByUserId  whether the company logs in by user id instead of email address
+     * @param remoteAddr     the address the request came from, for the security log
+     * @param locale         the locale of the reset email
+     * @throws Exception if there is no such account or the reset could not be sent
+     */
+    private void sendReset(final String companyId, final String submittedValue,
+                           final boolean loginByUserId, final String remoteAddr,
+                           final Locale locale) throws Exception {
+
+        final String emailAddress = loginByUserId?
+                    this.userLocalManager.getUserById(submittedValue).getEmailAddress():
+                    submittedValue;
+
+        SecurityLogger.logInfo(this.getClass(),
+                String.format(
+                        "Email address [%s] has requested to reset his password from IP [%s].",
+                        SecurityUtils.sanitizeForLogging(emailAddress), remoteAddr));
+
+        this.userService.sendResetPassword(companyId, emailAddress, locale);
+    }
+
+    /**
+     * Hands the reset to the reset pool, unless the client address has already sent
+     * {@code forgot-password.client.max.requests} requests (default 10, environment variable
+     * {@code DOT_FORGOT_PASSWORD_CLIENT_MAX_REQUESTS}) in the current window, or a reset is
+     * already pending for the same value. The per-client limit keeps one client sending many
+     * different values from filling the pool's queue and crowding out everyone else. It counts
+     * requests in a fixed window that starts with the client's first request, and it is checked
+     * before anything else, so whether a request is admitted never depends on whether an account
+     * matches or on how long earlier resets took to run. The address is the one the servlet
+     * container reports; behind a proxy that does not pass the client address on, all requests
+     * share one limit. When the reset is not queued a rate-limited warning is logged; the caller
+     * answers the same way in every case.
+     *
+     * @param companyId      the id of the company the request is for
+     * @param submittedValue the user id or email address submitted with the request
+     * @param loginByUserId  whether the company logs in by user id instead of email address
+     * @param remoteAddr     the address the request came from, for the security log
+     * @param locale         the locale of the reset email
+     */
+    private void queueReset(final String companyId, final String submittedValue,
+                            final boolean loginByUserId, final String remoteAddr,
+                            final Locale locale) {
+
+        final String clientKey = String.valueOf(remoteAddr);
+        if (!admitClient(clientKey, Config.getIntProperty("forgot-password.client.max.requests", 10),
+                System.currentTimeMillis())) {
+
+            Logger.warnEvery(this.getClass(), "forgot-password-client-limit",
+                    String.format("Client [%s] has used up its password reset requests for now; "
+                                    + "%d reset requests dropped since startup",
+                            SecurityUtils.sanitizeForLogging(clientKey), DROPPED_RESETS.incrementAndGet()),
+                    DROPPED_WARNING_INTERVAL_MILLIS);
+            return;
+        }
+
+        final String pendingKey = pendingKey(companyId, submittedValue);
+        if (!PENDING_RESETS.add(pendingKey)) {
+
+            return; // a reset for this value is already queued or running
+        }
+
+        try {
+
+            this.resetExecutor.execute(() -> this.sendResetInBackground(
+                    pendingKey, companyId, submittedValue, loginByUserId, remoteAddr, locale));
+        } catch (DotConcurrentException | RejectedExecutionException e) {
+
+            PENDING_RESETS.remove(pendingKey);
+            Logger.warnEvery(this.getClass(), "forgot-password-reset-dropped",
+                    String.format("The password reset pool is full; %d reset requests dropped since startup",
+                            DROPPED_RESETS.incrementAndGet()),
+                    DROPPED_WARNING_INTERVAL_MILLIS);
+        }
+    }
+
+    /**
+     * Counts a request from the client and says whether it is within the client's limit. A window
+     * starts with the client's first request and lasts {@link #CLIENT_WINDOW}; the count depends
+     * only on when the client's requests arrived, never on what happened to them.
+     *
+     * @param clientKey   the client address
+     * @param maxRequests the most requests one client may send in a window
+     * @param nowMillis   the current time, in milliseconds
+     * @return true if the request is within the limit and may be queued
+     */
+    @VisibleForTesting
+    static boolean admitClient(final String clientKey, final int maxRequests, final long nowMillis) {
+
+        final ClientWindow window = REQUESTS_BY_CLIENT.asMap().compute(clientKey, (key, current) ->
+                null == current || nowMillis - current.startMillis() >= CLIENT_WINDOW.toMillis()
+                        ? new ClientWindow(nowMillis, 1)
+                        : new ClientWindow(current.startMillis(), current.requests() + 1));
+        return window.requests() <= maxRequests;
+    }
+
+    /**
+     * Returns the key under which a pending reset for the submitted value is tracked. Values are
+     * compared without case or surrounding blanks, since both email addresses and user ids are
+     * looked up that way.
+     *
+     * @param companyId      the id of the company the request is for
+     * @param submittedValue the user id or email address submitted with the request
+     * @return the key for {@link #PENDING_RESETS}
+     */
+    @VisibleForTesting
+    static String pendingKey(final String companyId, final String submittedValue) {
+
+        return companyId + ':' + submittedValue.trim().toLowerCase();
+    }
+
+    /**
+     * Returns whether a reset is queued or running for the given key.
+     *
+     * @param pendingKey a key from {@link #pendingKey}
+     * @return true while the reset for that key has not finished
+     */
+    @VisibleForTesting
+    static boolean isResetPending(final String pendingKey) {
+
+        return PENDING_RESETS.contains(pendingKey);
+    }
+
+    /**
+     * Runs {@link #sendReset} on the reset pool, where nobody is waiting for an answer: whatever
+     * happens is written to the log, never thrown or returned. Afterwards the thread's database
+     * connection and Hibernate session are closed, so the next task on the same pool thread starts
+     * with a fresh session instead of one holding this task's cached entities, and the value's
+     * pending entry is released.
+     *
+     * @param pendingKey     the key of this reset in {@link #PENDING_RESETS}
+     * @param companyId      the id of the company the request is for
+     * @param submittedValue the user id or email address submitted with the request
+     * @param loginByUserId  whether the company logs in by user id instead of email address
+     * @param remoteAddr     the address the request came from, for the security log
+     * @param locale         the locale of the reset email
+     */
+    private void sendResetInBackground(final String pendingKey,
+                                       final String companyId, final String submittedValue,
+                                       final boolean loginByUserId, final String remoteAddr,
+                                       final Locale locale) {
+
+        try {
+
+            this.sendReset(companyId, submittedValue, loginByUserId, remoteAddr, locale);
+        } catch (NoSuchUserException e) {
+
+            SecurityLogger.logInfo(this.getClass(),
+                    String.format(
+                            "User [%s] does NOT exist in the Database, no reset email sent. IP [%s]",
+                            SecurityUtils.sanitizeForLogging(submittedValue), remoteAddr));
+        } catch (UserEmailAddressException e) {
+
+            SecurityLogger.logInfo(this.getClass(),
+                    String.format("The password reset for [%s] could not be completed. IP [%s]",
+                            SecurityUtils.sanitizeForLogging(submittedValue), remoteAddr));
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(), "Error processing forgot password request", e);
+        } finally {
+
+            DbConnectionFactory.closeSilently();
+            PENDING_RESETS.remove(pendingKey);
+        }
+    }
 
 } // E:O:F:ForgotPasswordResource.

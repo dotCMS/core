@@ -68,7 +68,9 @@ import org.junit.runners.Suite;
 @RunWith(MainBaseSuite.class)
 @Suite.SuiteClasses({
     RuleAPITest.class,
+    com.dotcms.variant.business.web.CurrentVariantWebInterceptorTest.class,
         DeterministicIdentifierAPITest.class,
+    com.dotcms.graphql.datafetcher.ContentletDataFetcherTest.class,
         CountPagesWithAllEndedExperimentsMetricTypeTest.class,
         CountPagesWithArchivedExperimentsMetricTypeTest.class,
         CountPagesWithDraftExperimentsMetricTypeTest.class,
@@ -91,6 +93,8 @@ import org.junit.runners.Suite;
         SecondaryCategoryPermissionTest.class,
         RequestCostReportTest.class,
         OpenAIVisionAPIImplTest.class,
+        com.dotcms.rest.api.v1.container.ContainerResourceCallerPermissionTest.class,
+        com.dotcms.rest.api.v1.container.ContainerResourceContentReadAccessTest.class,
         ContentDriveBrowseScopeTest.class,
         ContentDriveFieldFilterTest.class,
         ContentDriveHelperContentletAPIComparisonTest.class,

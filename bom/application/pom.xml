@@ -35,7 +35,7 @@
         <grpc.version>1.75.0</grpc.version>
         <netty.version>4.1.138.Final</netty.version>
         <commonmark.version>0.22.0</commonmark.version>
-        <jsoup.version>1.21.1</jsoup.version>
+        <jsoup.version>1.23.2</jsoup.version>
     </properties>
     <dependencyManagement>
 
@@ -769,7 +769,7 @@
             <dependency>
                 <groupId>com.graphql-java</groupId>
                 <artifactId>graphql-java</artifactId>
-                <version>17.5</version>
+                <version>19.11</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
@@ -780,12 +780,12 @@
             <dependency>
                 <groupId>com.graphql-java</groupId>
                 <artifactId>graphql-java-extended-scalars</artifactId>
-                <version>17.1</version>
+                <version>19.1</version>
             </dependency>
             <dependency>
                 <groupId>com.graphql-java-kickstart</groupId>
                 <artifactId>graphql-java-servlet</artifactId>
-                <version>13.0.1</version>
+                <version>14.0.0</version>
             </dependency>
 
 

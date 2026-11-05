@@ -1,5 +1,8 @@
 package com.dotcms.util;
 
+import com.dotcms.test.util.ApiTokenTestUtils;
+import org.junit.ClassRule;
+
 import com.dotcms.contenttype.business.ContentTypeAPIImpl;
 import com.dotcms.contenttype.business.FieldAPI;
 import com.dotcms.contenttype.business.uniquefields.extratable.UniqueFieldDataBaseUtil;
@@ -98,7 +101,6 @@ import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
 import org.apache.commons.io.FileUtils;
-import java.util.Base64;
 import org.junit.Assume;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
@@ -159,6 +161,9 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(DataProviderRunner.class)
 public class ImportUtilTest extends BaseWorkflowIntegrationTest {
+
+    @ClassRule
+    public static final ApiTokenTestUtils TOKEN_UTILS = new ApiTokenTestUtils();
 
     private static final String BINARY_FIELD_NAME = "binaryField";
     private static User user;
@@ -2429,12 +2434,17 @@ public class ImportUtilTest extends BaseWorkflowIntegrationTest {
         assertTrue(warning.contains("doesn't have permissions to execute"));
     }
 
+    /**
+     * Builds an admin request authenticated with a Bearer API token.
+     *
+     * @return the request
+     */
     private HttpServletRequest getHttpRequest() {
         MockHeaderRequest request = new MockHeaderRequest(
                 new MockSessionRequest(new MockAttributeRequest(new MockHttpRequestIntegrationTest("localhost", "/").request()).request())
                         .request());
 
-        request.setHeader("Authorization", "Basic " + Base64.getEncoder().encodeToString("admin@dotcms.com:admin".getBytes()));
+        request.setHeader("Authorization", TOKEN_UTILS.adminBearerHeader());
         request.setHeader("Origin", "localhost");
         request.setAttribute(WebKeys.USER,user);
         request.setAttribute(WebKeys.USER_ID,user.getUserId());
