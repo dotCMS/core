@@ -122,3 +122,4 @@ Release-25.07.10 LTS
 116. https://github.com/dotCMS/private-issues/issues/876 : Velocity $session.setAttribute + REST /api/v1/users/logoutas: any back-end Velocity author becomes CMS Administrator (8. #38110 #876
 117. https://github.com/dotCMS/private-issues/issues/850 : [GLM AI Scanner] Struts layer follow-up to #841: maintenance search-and-replace IDOR (instance-wide rewrite) + un gated  #38158 #850
 118. https://github.com/dotCMS/private-issues/issues/885 : Content search APIs (/api/content/_search, /api/v1/content/_search): a trailing backslash in the Lucene query makes the  #38285 #885
+119. https://github.com/dotCMS/private-issues/issues/689 : Excessive user data exposed to low-privileged back-end users #38145 #689
