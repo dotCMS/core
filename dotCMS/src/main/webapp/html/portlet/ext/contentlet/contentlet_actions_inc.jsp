@@ -265,7 +265,7 @@ function jumpToContentType(){
             <th style="vertical-align: top"><%= LanguageUtil.get(pageContext, "Content-Type") %>:</th>
             <td>
                 <%if(canEditContentType){%><a id="contentTypeLink" ><%}%>
-                <%=contentlet!=null && contentlet.getContentType()!=null ? contentlet.getContentType().name() : LanguageUtil.get(pageContext, "not-available") %>
+                <%=contentlet!=null && contentlet.getContentType()!=null ? Xss.encodeForHTML(contentlet.getContentType().name()) : LanguageUtil.get(pageContext, "not-available") %>
                 <%if(canEditContentType){%></a><%}%>
             </td>
         </tr>
