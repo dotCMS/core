@@ -46,6 +46,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 
 import static com.dotcms.content.elasticsearch.business.ContentFactoryIndexOperationsES.addBuilderSort;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
@@ -69,13 +70,14 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 			+ "FEATURE_FLAG_OPEN_SEARCH_LEGACY_ES_SEARCH_RETURNS_NULL=true makes these calls return null "
 			+ "from Velocity instead of failing the page.";
 
+    /** Loads matching content using stored identity fields or legacy keyword doc values. */
 	@Override
 	public ESSearchResults esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles)
 			throws DotSecurityException, DotDataException {
 		esQuery = (esQuery != null) ? StringUtils.lowercaseStringExceptMatchingTokens(esQuery,ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX) : esQuery;
 		StringBuilder rewrittenESQuery = new StringBuilder(esQuery);
 		SearchResponse resp = esSearchRaw(esQuery, live, user, respectFrontendRoles);
-		ESSearchResults contents = new ESSearchResults(resp, new ArrayList());
+		ESSearchResults contents = new ESSearchResults(resp, new ArrayList<>());
 		contents.setQuery(esQuery);
 		contents.setRewrittenQuery(rewrittenESQuery.toString());
 
@@ -88,7 +90,8 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 
 		for (SearchHit sh : contents.getHits()) {
 			try {
-				Map<String, Object> sourceMap = sh.getSourceAsMap();
+				Map<String, Object> sourceMap = com.dotcms.content.index.domain.SearchHit
+                        .documentValues(sh.getSourceAsMap(), sh.getFields());
 				list.add(ImmutableContentletSearch.builder()
 						.inode(sourceMap.get("inode").toString())
 						.build());
@@ -112,6 +115,7 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 		return contents;
 	}
 
+    /** Searches using stored identity fields or legacy keyword doc values, without fetching source. */
 	@Override
 	public SearchResponse esSearchRaw(String esQuery, boolean live, User user, boolean respectFrontendRoles)
 			throws DotSecurityException, DotDataException {
@@ -132,13 +136,40 @@ public class ESSearchAPIImpl implements ESSeachAPI {
         try{
             //Parsing the given ES query
             completeQueryJSON = new JSONObject(esQuery);
-            completeQueryJSON.put("_source", new JSONArray( "[identifier, inode]" ));
+            completeQueryJSON.put("_source", false);
+            completeQueryJSON.put("stored_fields", new JSONArray("[identifier, inode]"));
+            completeQueryJSON.put("docvalue_fields", new JSONArray("[identifier_dotraw, inode_dotraw]"));
         } catch (JSONException e) {
             throw new DotStateException("Unable to parse the given query.", e);
         }
 
-        return esSearchRaw(completeQueryJSON, live, user, respectFrontendRoles, -1, -1, null);
+        final SearchResponse response = esSearchRaw(completeQueryJSON, live, user,
+                respectFrontendRoles, -1, -1, null);
+        if (response != null && response.getHits() != null) {
+            restoreIdentitySource(response.getHits());
+        }
+        return response;
 	}
+
+    /**
+     * Preserves the native API's identifier-only source accessor using fetched identity fields.
+     * The engine never needs to store or fetch the original document for this response shape.
+     *
+     * @param hits the ordinary result hits; aggregation hits are left unchanged
+     */
+    static void restoreIdentitySource(final org.elasticsearch.search.SearchHits hits) {
+        for (final SearchHit hit : hits) {
+            final Map<String, Object> values = com.dotcms.content.index.domain.SearchHit
+                    .documentValues(hit.getSourceAsMap(), hit.getFields());
+            final Map<String, Object> identity = new HashMap<>();
+            for (final String field : List.of("identifier", "inode")) {
+                if (values.containsKey(field)) {
+                    identity.put(field, values.get(field));
+                }
+            }
+            hit.sourceRef(new org.elasticsearch.common.bytes.BytesArray(new JSONObject(identity).toString()));
+        }
+    }
 
     @Override
     public SearchResponse esSearchRelated(final String contentletIdentifier,

@@ -117,8 +117,11 @@ public class OSContentletScrollImpl implements IndexContentletScroll {
                     .index(indexToHit)
                     .query(createQuery(formattedQuery))
                     .size(batchSize)
+                    .storedFields(List.of("inode", "identifier"))
+                    .docvalueFields(field -> field.field("inode_dotraw"))
+                    .docvalueFields(field -> field.field("identifier_dotraw"))
                     .scroll(Time.of(t -> t.time(SCROLL_KEEP_ALIVE_MINUTES.get() + "m")))
-                    .source(src -> src.filter(f -> f.includes(List.of("inode", "identifier"))));
+                    .source(src -> src.fetch(false));
 
             // Apply sorting
             applySorting(sortBy, searchRequestBuilder);

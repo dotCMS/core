@@ -241,6 +241,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 
     }
 
+    /** Searches using source or stored result fields, preserving metadata and snippets in both modes. */
     @Override
     public SiteSearchResults search(String indexName, String query, int offset, int limit) {
         if(!UtilMethods.isSet(query)){
@@ -297,6 +298,10 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 
 
             }
+            searchSourceBuilder.storedFields(List.of("*"));
+            if (searchSourceBuilder.fetchSource() == null) {
+                searchSourceBuilder.fetchSource(true);
+            }
             searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
             request.source(searchSourceBuilder);
 
@@ -324,7 +329,8 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
             for(SearchHit hit : hits.getHits()){
 
 
-                    SiteSearchResult ssr = new SiteSearchResult(hit.getSourceAsMap());
+                    SiteSearchResult ssr = new SiteSearchResult(com.dotcms.content.index.domain.SearchHit
+                            .documentValues(hit.getSourceAsMap(), hit.getFields()));
                     ssr.setScore(hit.getScore());
                     try{
                     	ssr.setHighLight(new String[0]);
@@ -411,6 +417,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         indiciesAPI.point(builder.build());
     }
 
+    /** Creates a Site Search index with the current analyzer and source-storage settings. */
     @Override
     public synchronized boolean createSiteSearchIndex(String indexName, String alias, int shards) throws DotSearchException, IOException {
         if(indexName==null){
@@ -432,7 +439,8 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
             try {
                 Thread.sleep(100);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
+                throw new IOException("Interrupted while creating Site Search index " + indexName, e);
             }
 
             if(i++ > 300){
@@ -449,7 +457,9 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         // single fan-out point for site search (it invokes OSSiteSearchAPI separately, which owns
         // its own untagged OS index + mapping). Fanning out here too would re-issue the mapping to
         // a `.os`-tagged physical name that site-search OS indices never use → HTTP 404. Pin to ES.
-        mappingAPI.putMapping(List.of(indexName), mapping, IndexTag.ES);
+        if (!mappingAPI.putMapping(List.of(indexName), mapping, IndexTag.ES)) {
+            throw new IOException("Site Search mapping was not acknowledged for index " + indexName);
+        }
 
         return true;
     }
@@ -529,6 +539,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     }
 
 
+    /** Indexes a complete result, accepting either raw keyword text or an already-parsed list. */
     @Override
     public void putToIndex(String idx, SiteSearchResult res, String resultType){
         if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level)
@@ -560,10 +571,11 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
            }
            res.setDescription(desc);
 
-           if(res.getMap().containsKey("keywords") && res.getMap().containsKey("seokeywords")){
-               res.setKeywords((String)res.getMap().get("seokeywords"));
-           }else{
-               res.setKeywords((String)res.getMap().get("keywords"));
+           final Object keywords = res.getMap().containsKey("keywords")
+                   && res.getMap().containsKey("seokeywords")
+                   ? res.getMap().get("seokeywords") : res.getMap().get("keywords");
+           if (!(keywords instanceof List<?>)) {
+               res.setKeywords((String) keywords);
            }
 
            Logger.info(this.getClass(), "writing from : " + idx + " type: " + resultType  + " url:" + res.getUrl());
@@ -584,6 +596,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     }
 
 
+    /** Retrieves result metadata from source or individually stored fields. */
     @Override
     public SiteSearchResult getFromIndex(final String index, final String id){
         if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level)
@@ -591,9 +604,14 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
 
         try {
             GetResponse response = RestHighLevelClientProvider.getInstance()
-                    .getClient().get(new GetRequest(indexApi.getNameWithClusterIDPrefix(index), id), RequestOptions.DEFAULT);
+                    .getClient().get(new GetRequest(indexApi.getNameWithClusterIDPrefix(index), id)
+                            .storedFields(SiteSearchIndexResources.RESULT_FIELDS.toArray(String[]::new))
+                            .fetchSourceContext(
+                                    org.elasticsearch.search.fetch.subphase.FetchSourceContext.FETCH_SOURCE),
+                            RequestOptions.DEFAULT);
             if (response.isExists()) {
-                SiteSearchResult ssr = new SiteSearchResult(response.getSource());
+                SiteSearchResult ssr = new SiteSearchResult(com.dotcms.content.index.domain.SearchHit
+                        .documentValues(response.getSource(), response.getFields()));
                 ssr.setScore(1);
                 return ssr;
             }

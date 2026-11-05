@@ -22,6 +22,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONObject;
 import java.util.List;
 import java.util.Map;
@@ -103,6 +104,49 @@ public class OSSiteSearchAPIIntegrationTest extends IntegrationTestBase {
     @After
     public void tearDown() {
         cleanupTestData();
+    }
+
+    /** Source-free Site Search must retain get/search metadata and highlights without exposing source. */
+    @Test
+    public void test_sourceDisabled_preservesResultMetadataAndHighlights() throws Exception {
+        final String key = "index.sitesearch.source.enabled";
+        final String original = Config.getStringProperty(key, null);
+        try {
+            Config.setProperty(key, false);
+            osSiteSearchAPI.createSiteSearchIndex(IDX_ONE, null, 1);
+            final SiteSearchResult doc = new SiteSearchResult();
+            doc.setId(DOC_ID);
+            doc.setTitle("Source-free result");
+            doc.setUrl("/source-free/" + RUN_ID);
+            doc.setMimeType("text/html");
+            doc.setContent("A sourcefreekeyword for highlighting.");
+            doc.setContentLength(doc.getContent().length());
+            doc.setKeywords("single");
+            osSiteSearchAPI.putToIndex(IDX_ONE, doc, "content");
+
+            Config.setProperty(key, true);
+            final SiteSearchResult fetched = osSiteSearchAPI.getFromIndex(IDX_ONE, DOC_ID);
+            assertNotNull("get must work against the already-created source-disabled index", fetched);
+            assertEquals(doc.getTitle(), fetched.getTitle());
+            assertEquals(doc.getUrl(), fetched.getUrl());
+            assertEquals(List.of("single"), fetched.getKeywords());
+
+            final SiteSearchResults results = osSiteSearchAPI.search(IDX_ONE, "sourcefreekeyword", 0, 10);
+            assertEquals(1L, results.getTotalResults());
+            final SiteSearchResult result = results.getResults().get(0);
+            assertEquals(doc.getTitle(), result.getTitle());
+            assertEquals(doc.getUrl(), result.getUrl());
+            assertEquals(List.of("single"), result.getKeywords());
+            assertTrue("stored content must still support snippets", result.getHighlights().length > 0);
+            assertTrue(String.join(" ", result.getHighlights()).contains("<em>"));
+
+            final Map<String, Aggregation> aggs = osSiteSearchAPI.getAggregations(IDX_ONE,
+                    "{\"size\":0,\"aggs\":{\"sample\":{\"top_hits\":{\"size\":1}}}}");
+            assertTrue("top_hits without stored_fields must not expose source",
+                    aggs.get("sample").getHits().getHits().get(0).getSourceAsMap().isEmpty());
+        } finally {
+            Config.setProperty(key, original);
+        }
     }
 
     // =======================================================================

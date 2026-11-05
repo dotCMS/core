@@ -1,6 +1,8 @@
 package com.dotmarketing.util;
 
 import com.dotcms.IntegrationTestBase;
+import com.dotcms.business.SystemTable;
+import java.util.Optional;
 import com.dotmarketing.business.APILocator;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -87,6 +89,41 @@ public class ITConfigTest extends IntegrationTestBase {
         APILocator.getSystemAPI().getSystemTable().delete("THIRD_PROPERTY");
         value = Config.getStringProperty("THIRD_PROPERTY", "DEFAULT_VALUE");
         Assert.assertEquals("Should return default value since the property has been removed", "DEFAULT_VALUE", value);
+    }
+
+    /**
+     * Both index-source properties must resolve fresh system-table values through the normal
+     * boolean Config accessor, without a server restart. Existing values are restored afterwards.
+     */
+    @Test
+    public void test_index_source_settings_resolve_runtime_system_table_updates() {
+        final SystemTable table = APILocator.getSystemAPI().getSystemTable();
+        final String contentKey = "index.content.source.enabled";
+        final String siteSearchKey = "index.sitesearch.source.enabled";
+        final Optional<String> originalContent = table.get(contentKey);
+        final Optional<String> originalSiteSearch = table.get(siteSearchKey);
+        try {
+            table.set(contentKey, "true");
+            table.set(siteSearchKey, "false");
+            Assert.assertTrue(Config.getBooleanProperty(contentKey, false));
+            Assert.assertFalse(Config.getBooleanProperty(siteSearchKey, true));
+
+            table.set(contentKey, "false");
+            table.set(siteSearchKey, "true");
+            Assert.assertFalse(Config.getBooleanProperty(contentKey, false));
+            Assert.assertTrue(Config.getBooleanProperty(siteSearchKey, true));
+        } finally {
+            if (originalContent.isPresent()) {
+                table.set(contentKey, originalContent.get());
+            } else {
+                table.delete(contentKey);
+            }
+            if (originalSiteSearch.isPresent()) {
+                table.set(siteSearchKey, originalSiteSearch.get());
+            } else {
+                table.delete(siteSearchKey);
+            }
+        }
     }
 
     /**

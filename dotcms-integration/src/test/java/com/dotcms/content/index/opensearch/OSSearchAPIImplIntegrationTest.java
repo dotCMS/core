@@ -135,8 +135,12 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
         // so resolveIndex() (which calls loadDefaultVersionedIndices()) finds them.
         // Physical names must match across OS, the DB, and the search path — store the
         // same value here as the one resolveIndex() will look up later.
-        osIndexAPI.createIndex(physicalLive, 1);
-        osIndexAPI.createIndex(physicalWorking, 1);
+        for (final String index : List.of(physicalLive, physicalWorking)) {
+            clientProvider.getClient().indices().create(builder -> builder.index(index)
+                    .mappings(mapping -> mapping
+                            .properties("identifier", property -> property.text(text -> text.store(true)))
+                            .properties("inode", property -> property.text(text -> text.store(true)))));
+        }
 
         versionedIndicesAPI.saveIndices(
                 VersionedIndicesImpl.builder()
@@ -537,7 +541,7 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
      * Given scenario: A document with both {@code identifier} and {@code inode} fields is indexed.
      *                 A plain match-all query (no {@code _source} clause) is executed via
      *                 {@link OSSearchAPIImpl#searchRaw}.
-     * Expected: {@link OSSearchAPIImpl} rewrites the query to {@code "_source":[identifier,inode]}
+     * Expected: {@link OSSearchAPIImpl} requests stored identity fields without fetching source,
      *           and both fields are returned in the hit's {@code sourceAsMap}.
      */
     @Test
@@ -567,7 +571,7 @@ public class OSSearchAPIImplIntegrationTest extends IntegrationTestBase {
      * Given scenario: A document with both {@code identifier} and {@code inode} fields is indexed.
      *                 A query that explicitly restricts {@code _source} to only {@code ["identifier"]}
      *                 is executed via {@link OSSearchAPIImpl#searchRaw}.
-     * Expected: The impl overwrites the caller's {@code _source} with {@code [identifier, inode]},
+     * Expected: The impl requests both identity fields independently of the caller's source filter,
      *           so {@code inode} is still present in the hit's {@code sourceAsMap} despite not
      *           being requested by the caller.
      */

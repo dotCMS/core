@@ -5,6 +5,7 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 import com.dotcms.content.elasticsearch.ESQueryCache;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
 import com.dotcms.content.index.ContentFactoryIndexOperations;
+import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestPrices.Price;
@@ -44,7 +45,6 @@ import org.elasticsearch.index.IndexNotFoundException;
 import org.elasticsearch.index.query.QueryBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.index.query.functionscore.RandomScoreFunctionBuilder;
-import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.sort.SortBuilders;
@@ -53,7 +53,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOperations {
 
-    private static final SearchHits ERROR_HIT = new SearchHits(new SearchHit[] {}, new TotalHits(0, Relation.EQUAL_TO), 0);
+    private static final SearchHits ERROR_HIT = new SearchHits(new org.elasticsearch.search.SearchHit[] {}, new TotalHits(0, Relation.EQUAL_TO), 0);
     public static final int ES_TRACK_TOTAL_HITS_DEFAULT = 10000000;
     public static final String ES_TRACK_TOTAL_HITS = "ES_TRACK_TOTAL_HITS";
     private static final String[] ES_FIELDS = {"inode", "identifier"};
@@ -338,7 +338,7 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
                     limit).from(offset);
             searchRequest.source(searchSourceBuilder);
             final SearchHits hits = cachedIndexSearch(searchRequest);
-            return Stream.of(hits.getHits()).map(SearchHit::getSourceAsMap)
+            return Stream.of(hits.getHits()).map(SearchHit::from).map(SearchHit::getSourceAsMap)
                     .map(map -> map.get("inode").toString()).collect(
                             Collectors.toList());
         } catch (Exception e) {
@@ -358,10 +358,12 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
     }
 
     /**
+     * Builds a content query using stored identity and legacy keyword doc values. No source filter
+     * is requested: engines reject source filters when source storage is disabled.
      *
-     * @param query
-     * @param sortBy i.e. "random" or null object.
-     * @return
+     * @param query the Lucene query
+     * @param sortBy the requested ordering, including {@code random}, or {@code null}
+     * @return the configured search builder
      */
     SearchSourceBuilder createSearchSourceBuilder(final String query, final String sortBy) {
 
@@ -370,7 +372,10 @@ public class ContentFactoryIndexOperationsES implements ContentFactoryIndexOpera
         QueryBuilder queryBuilder;
         QueryBuilder postFilter = null;
 
-        searchSourceBuilder.fetchSource(ES_FIELDS, null);
+        searchSourceBuilder.fetchSource(false);
+        searchSourceBuilder.storedFields(List.of(ES_FIELDS));
+        searchSourceBuilder.docValueField("inode_dotraw");
+        searchSourceBuilder.docValueField("identifier_dotraw");
 
         if(Config.getBooleanProperty("ELASTICSEARCH_USE_FILTERS_FOR_SEARCHING",false)
                 && sortBy!=null && ! sortBy.toLowerCase().startsWith("score")) {

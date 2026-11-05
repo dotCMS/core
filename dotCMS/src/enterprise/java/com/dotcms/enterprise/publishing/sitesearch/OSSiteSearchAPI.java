@@ -354,6 +354,7 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         return results;
     }
 
+    /** Searches using source or stored result fields, preserving metadata and snippets in both modes. */
     @Override
     public SiteSearchResults search(String indexName, String query, final int offset, final int limit) {
         if (!UtilMethods.isSet(query)) {
@@ -444,23 +445,25 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
      */
     static JSONObject searchBody(final String query, final boolean isJson, final int offset,
             final int limit) {
-        if (isJson) {
-            final JSONObject body = new JSONObject(query);
-            if (!body.has("highlight")) {
-                body.put("highlight", highlightClause(null));
+        final JSONObject body = isJson ? new JSONObject(query) : new JSONObject();
+        if (!isJson) {
+            body.put("query", new JSONObject().put("query_string",
+                    new JSONObject().put("query", query).put("default_field", "*")));
+            if (limit > 0) {
+                body.put("size", limit);
             }
-            return body;
+            if (offset > 0) {
+                body.put("from", offset);
+            }
         }
-        final JSONObject body = new JSONObject();
-        body.put("query", new JSONObject().put("query_string",
-                new JSONObject().put("query", query).put("default_field", "*")));
-        if (limit > 0) {
-            body.put("size", limit);
+        if (!body.has("highlight")) {
+            body.put("highlight", highlightClause(isJson ? null : HIGHLIGHT_FRAGMENT_SIZE));
         }
-        if (offset > 0) {
-            body.put("from", offset);
+        // stored_fields suppresses source by default, but old indexes do not store result fields.
+        body.put("stored_fields", List.of("*"));
+        if (!body.has("_source")) {
+            body.put("_source", true);
         }
-        body.put("highlight", highlightClause(HIGHLIGHT_FRAGMENT_SIZE));
         return body;
     }
 
@@ -770,6 +773,7 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
     // Document operations
     // =========================================================================
 
+    /** Indexes a complete result, accepting either raw keyword text or an already-parsed list. */
     @Override
     public void putToIndex(final String idx, final SiteSearchResult res, final String resultType) {
         if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
@@ -797,10 +801,11 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
             }
             res.setDescription(desc);
 
-            if (res.getMap().containsKey("keywords") && res.getMap().containsKey("seokeywords")) {
-                res.setKeywords((String) res.getMap().get("seokeywords"));
-            } else {
-                res.setKeywords((String) res.getMap().get("keywords"));
+            final Object keywords = res.getMap().containsKey("keywords")
+                    && res.getMap().containsKey("seokeywords")
+                    ? res.getMap().get("seokeywords") : res.getMap().get("keywords");
+            if (!(keywords instanceof List<?>)) {
+                res.setKeywords((String) keywords);
             }
 
             Logger.debug(this.getClass(),
@@ -843,6 +848,7 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         }
     }
 
+    /** Retrieves result metadata from source or individually stored fields. */
     @Override
     @SuppressWarnings({"unchecked", "rawtypes"})
     public SiteSearchResult getFromIndex(final String index, final String id) {
@@ -852,9 +858,11 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         try {
             final String physical = physicalName(index);
             final GetResponse<Map> response = clientProvider.getClient()
-                    .get(g -> g.index(physical).id(id), Map.class);
-            if (response.found() && response.source() != null) {
-                final SiteSearchResult ssr = new SiteSearchResult(new HashMap<>(response.source()));
+                    .get(g -> g.index(physical).id(id).storedFields(SiteSearchIndexResources.RESULT_FIELDS)
+                            .source(source -> source.fetch(true)), Map.class);
+            if (response.found()) {
+                final SiteSearchResult ssr = new SiteSearchResult(new HashMap<>(
+                        SearchHit.documentValues(response.source(), response.fields())));
                 ssr.setScore(1);
                 return ssr;
             }

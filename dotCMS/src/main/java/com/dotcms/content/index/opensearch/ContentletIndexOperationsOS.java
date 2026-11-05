@@ -24,6 +24,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.json.JSONObject;
 import com.dotmarketing.util.Logger;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -256,12 +257,18 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
         return IndexTag.OS.isTagged(clustered) ? clustered : IndexTag.OS.tag(clustered);
     }
 
+    /**
+     * Creates a content index using the current source-storage setting (off by default).
+     * Existing indexes keep their mappings until rebuilt.
+     */
     @Override
     public boolean createContentIndex(final String indexName, final int shards)
             throws IOException {
         final String settings = JsonUtil.getJsonFileContentAsString(OS_SETTINGS_FILE);
 
-        final String mapping = JsonUtil.getJsonFileContentAsString(CONTENT_MAPPING_FILE);
+        final JSONObject mapping = new JSONObject(JsonUtil.getJsonFileContentAsString(CONTENT_MAPPING_FILE));
+        mapping.put("_source", new JSONObject().put("enabled",
+                Config.getBooleanProperty("index.content.source.enabled", false)));
         final CreateIndexStatus status = osIndexAPI.createIndex(indexName, settings, shards);
 
         int i = 0;
@@ -272,7 +279,9 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
             }
         }
 
-        mappingOps.putMapping(CollectionsUtils.list(indexName), mapping);
+        if (!mappingOps.putMapping(CollectionsUtils.list(indexName), mapping.toString())) {
+            throw new IOException("Content mapping was not acknowledged for index " + indexName);
+        }
         return true;
     }
 

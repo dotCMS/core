@@ -27,7 +27,9 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.contentlet.business.ContentletFactory;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.json.JSONObject;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.liferay.util.StringPool;
 import com.rainerhahnekamp.sneakythrow.Sneaky;
@@ -132,6 +134,10 @@ public class ContentletIndexOperationsES implements ContentletIndexOperations {
         return esIndexAPI;
     }
 
+    /**
+     * Creates a content index using the current source-storage setting (off by default).
+     * Existing indexes keep their mappings until rebuilt.
+     */
     @Override
     public boolean createContentIndex(final String indexName, final int shards)
             throws IOException {
@@ -142,7 +148,9 @@ public class ContentletIndexOperationsES implements ContentletIndexOperations {
             Logger.error(this, "cannot load " + ES_SETTINGS_FILE + ", skipping", e);
         }
 
-        final String mapping = JsonUtil.getJsonFileContentAsString(ES_MAPPING_FILE);
+        final JSONObject mapping = new JSONObject(JsonUtil.getJsonFileContentAsString(ES_MAPPING_FILE));
+        mapping.put("_source", new JSONObject().put("enabled",
+                Config.getBooleanProperty("index.content.source.enabled", false)));
         final CreateIndexStatus status = esIndexAPI.createIndex(indexName, settings, shards);
 
         int i = 0;
@@ -153,7 +161,9 @@ public class ContentletIndexOperationsES implements ContentletIndexOperations {
             }
         }
 
-        mappingOps.putMapping(CollectionsUtils.list(indexName), mapping);
+        if (!mappingOps.putMapping(CollectionsUtils.list(indexName), mapping.toString())) {
+            throw new IOException("Content mapping was not acknowledged for index " + indexName);
+        }
         return true;
     }
 

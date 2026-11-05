@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Map;
 import org.junit.Test;
 import org.opensearch.client.opensearch._types.FieldValue;
+import org.opensearch.client.json.JsonData;
+import org.elasticsearch.common.document.DocumentField;
 import org.opensearch.client.opensearch.core.search.Hit;
 
 /**
@@ -21,6 +23,71 @@ import org.opensearch.client.opensearch.core.search.Hit;
  * integration environment does not cover.
  */
 public class SearchHitTest {
+
+    /** Source-disabled OpenSearch hits retain requested identity fields, but no other document data. */
+    @Test
+    public void from_openSearchHit_withoutSource_usesStoredIdentityFields() {
+        final Hit<Object> osHit = Hit.of(builder -> builder.index("idx").id("doc")
+                .fields(Map.of("identifier", JsonData.of(List.of("id-1")),
+                        "inode", JsonData.of(List.of("inode-1")))));
+
+        final SearchHit hit = SearchHit.from(osHit);
+
+        assertEquals(Map.of("identifier", "id-1", "inode", "inode-1"), hit.getSourceAsMap());
+    }
+
+    /** The Elasticsearch adapter must apply the same stored-field fallback as OpenSearch. */
+    @Test
+    public void from_elasticsearchHit_withoutSource_usesStoredIdentityFields() {
+        final org.elasticsearch.search.SearchHit esHit = new org.elasticsearch.search.SearchHit(
+                1, "doc", null, Map.of(
+                        "identifier", new DocumentField("identifier", List.of("id-1")),
+                        "inode", new DocumentField("inode", List.of("inode-1"))), Map.of());
+
+        assertEquals(Map.of("identifier", "id-1", "inode", "inode-1"),
+                SearchHit.from(esHit).getSourceAsMap());
+    }
+
+    /** Real responses can carry JSON-P arrays, whose elements must become ordinary Java values. */
+    @Test
+    public void from_openSearchHit_decodesJsonpFieldValues() {
+        final Hit<Object> hit = Hit.of(builder -> builder.index("idx").id("doc")
+                .fields(Map.of(
+                        "title", JsonData.of(jakarta.json.Json.createArrayBuilder().add("A title").build()),
+                        "language", JsonData.of(jakarta.json.Json.createArrayBuilder().add(1).build()))));
+        assertEquals(Map.of("title", "A title", "language", 1),
+                SearchHit.from(hit).getSourceAsMap());
+    }
+
+    /** Older indexes expose identity through keyword doc values even without stored identity fields. */
+    @Test
+    public void from_openSearchHit_legacyIdentityDocValuesUseCanonicalNames() {
+        final Hit<Object> hit = Hit.of(builder -> builder.index("idx").id("doc")
+                .fields(Map.of("identifier_dotraw", JsonData.of(List.of("id-1")),
+                        "inode_dotraw", JsonData.of(List.of("inode-1")))));
+        assertEquals(Map.of("identifier", "id-1", "inode", "inode-1"),
+                SearchHit.from(hit).getSourceAsMap());
+    }
+
+    /** A source-enabled index still returns its original document, not stored-field array wrappers. */
+    @Test
+    public void from_openSearchHit_withSource_preservesOriginalValues() {
+        final Map<String, Object> source = Map.of("identifier", "source-id", "title", "Original");
+        final Hit<Object> osHit = Hit.of(builder -> builder.index("idx").id("doc").source(source)
+                .fields(Map.of("identifier", JsonData.of(List.of("stored-id")))));
+
+        assertEquals(source, SearchHit.from(osHit).getSourceAsMap());
+    }
+
+    /** Stored multi-valued fields must retain every value when source is unavailable. */
+    @Test
+    public void from_openSearchHit_withoutSource_preservesMultipleStoredValues() {
+        final Hit<Object> osHit = Hit.of(builder -> builder.index("idx").id("doc")
+                .fields(Map.of("keywords", JsonData.of(List.of("first", "second")))));
+
+        assertEquals(List.of("first", "second"),
+                SearchHit.from(osHit).getSourceAsMap().get("keywords"));
+    }
 
     /**
      * Method to test: {@link SearchHit#from(Hit)}

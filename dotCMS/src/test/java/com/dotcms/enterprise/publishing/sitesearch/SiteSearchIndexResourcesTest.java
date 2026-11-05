@@ -9,6 +9,7 @@ import com.dotcms.content.index.domain.DotSearchException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.json.JSONObject;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -17,9 +18,28 @@ import org.junit.Test;
  */
 public class SiteSearchIndexResourcesTest extends UnitTestBase {
 
+    private static final String CONTENT_SOURCE = "index.content.source.enabled";
+    private static final String SITESEARCH_SOURCE = "index.sitesearch.source.enabled";
+    private static final String[] MAPPINGS = {
+            "es-sitesearch-mapping.json", "os-sitesearch-mapping.json"};
+    private String originalContentSource;
+    private String originalSiteSearchSource;
+
+    /** Saves and clears source overrides so defaults do not depend on another test. */
+    @Before
+    public void saveSourceSettings() {
+        originalContentSource = Config.getStringProperty(CONTENT_SOURCE, null);
+        originalSiteSearchSource = Config.getStringProperty(SITESEARCH_SOURCE, null);
+        Config.setProperty(CONTENT_SOURCE, null);
+        Config.setProperty(SITESEARCH_SOURCE, null);
+    }
+
+    /** Removes the analyzer override and restores the source settings changed by these tests. */
     @After
     public void cleanUp() {
         Config.setProperty(SiteSearchIndexResources.ANALYZER_PROPERTY, null);
+        Config.setProperty(CONTENT_SOURCE, originalContentSource);
+        Config.setProperty(SITESEARCH_SOURCE, originalSiteSearchSource);
     }
 
     /** Unset property: the bundled mapping and settings come back byte-for-byte. */
@@ -75,6 +95,48 @@ public class SiteSearchIndexResourcesTest extends UnitTestBase {
                 "partial_content", ngram.getString("analyzer"));
         assertEquals("non-text fields must be untouched",
                 "keyword", properties.getJSONObject("host").getString("type"));
+    }
+
+    /** Site Search keeps source by default even when content indexes explicitly disable it. */
+    @Test
+    public void siteSearchSourceIsEnabledByDefault() {
+        Config.setProperty(CONTENT_SOURCE, false);
+        for (final String resource : MAPPINGS) {
+            final JSONObject source = new JSONObject(SiteSearchIndexResources.mapping(resource))
+                    .optJSONObject("_source");
+            assertTrue(resource, source == null || source.optBoolean("enabled", true));
+        }
+    }
+
+    /** Disabling Site Search source must compose with the existing analyzer override. */
+    @Test
+    public void disablingSiteSearchSourcePreservesAnalyzerOverride() {
+        Config.setProperty(SITESEARCH_SOURCE, false);
+        Config.setProperty(CONTENT_SOURCE, true);
+        Config.setProperty(SiteSearchIndexResources.ANALYZER_PROPERTY, "cjk");
+        for (final String resource : MAPPINGS) {
+            final JSONObject mapping = new JSONObject(SiteSearchIndexResources.mapping(resource));
+            final JSONObject source = mapping.optJSONObject("_source");
+            assertTrue(resource + " must explicitly disable source",
+                    source != null && !source.optBoolean("enabled", true));
+            assertEquals("cjk", mapping.getJSONObject("properties")
+                    .getJSONObject("content").getString("analyzer"));
+        }
+    }
+
+    /** Mapping creation rereads Site Search's own runtime setting, not the content setting. */
+    @Test
+    public void siteSearchSourceCanBeChangedAtRuntime() {
+        for (final boolean enabled : new boolean[]{false, true, false}) {
+            Config.setProperty(SITESEARCH_SOURCE, enabled);
+            Config.setProperty(CONTENT_SOURCE, !enabled);
+            for (final String resource : MAPPINGS) {
+                final JSONObject source = new JSONObject(SiteSearchIndexResources.mapping(resource))
+                        .optJSONObject("_source");
+                assertEquals(resource, enabled,
+                        source == null || source.optBoolean("enabled", true));
+            }
+        }
     }
 
     /** A missing bundled resource fails loudly instead of NPE-ing. */

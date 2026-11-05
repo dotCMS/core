@@ -1,5 +1,7 @@
 package com.dotcms.content.index.domain;
 
+import com.dotcms.util.JsonUtil;
+import io.vavr.control.Try;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Arrays;
@@ -79,7 +81,10 @@ public sealed interface SearchHit permits ContentSearchHit, SiteSearchHit {
     String getIndex();
 
     /**
-     * @return the source document as a map of field names to values, never {@code null}
+     * Returns source, or explicitly requested stored/doc-value fields when source is absent.
+     * Singleton arrays are unwrapped and legacy identity doc values use their canonical names.
+     *
+     * @return the available document values, never {@code null}
      */
     Map<String, Object> getSourceAsMap();
 
@@ -165,7 +170,7 @@ public sealed interface SearchHit permits ContentSearchHit, SiteSearchHit {
         final Object[] esSortValues = esSearchHit.getSortValues();
         return builder()
                 .id(esSearchHit.getId())
-                .sourceAsMap(esSearchHit.getSourceAsMap())
+                .sourceAsMap(documentValues(esSearchHit.getSourceAsMap(), esSearchHit.getFields()))
                 .fields(esSearchHit.getFields())
                 .score(esSearchHit.getScore())
                 .index(esSearchHit.getIndex())
@@ -240,7 +245,7 @@ public sealed interface SearchHit permits ContentSearchHit, SiteSearchHit {
         return builder()
                 .id(osHit.id())
                 .index(osHit.index())
-                .sourceAsMap(sourceMap)
+                .sourceAsMap(documentValues(sourceMap, osHit.fields()))
                 // Map an absent OS score (field-sorted / non-relevance-scored hits, where OS omits
                 // _score) to NaN, matching the ES client, which returns NaN for the same case. The
                 // legacy JSON adapter coerces non-finite scores to null (#36478); defaulting to 0.0f
@@ -251,6 +256,46 @@ public sealed interface SearchHit permits ContentSearchHit, SiteSearchHit {
                 // needed here (unlike ES's Text[]-bearing HighlightField).
                 .highlights(osHit.highlight())
                 .build();
+    }
+
+    /**
+     * Reads document values from source, falling back to explicitly requested field values. Shared
+     * by search and get responses so both work against source-enabled and source-disabled indexes.
+     *
+     * @param source the original source, or {@code null} when unavailable
+     * @param fields the engine's stored/doc-value fields; singleton arrays are unwrapped
+     * @return the source or stored values, never {@code null}
+     */
+    static Map<String, Object> documentValues(final Map<String, Object> source,
+                                             final Map<String, ?> fields) {
+        if (source != null && !source.isEmpty()) {
+            return source;
+        }
+        final Map<String, Object> values = new HashMap<>();
+        fields.forEach((name, field) -> {
+            Object value = field;
+            if (field instanceof org.elasticsearch.common.document.DocumentField documentField) {
+                value = documentField.getValues();
+            } else if (field instanceof org.opensearch.client.json.JsonData jsonData) {
+                value = jsonData.to(Object.class);
+                if (value instanceof jakarta.json.JsonValue jsonValue) {
+                    value = Try.of(() -> JsonUtil.getObjectFromJson(jsonValue.toString(), Object.class)).get();
+                }
+            }
+            final Object unwrapped = value instanceof List<?> list && list.size() == 1
+                    ? list.get(0) : value;
+            final String key = switch (name) {
+                case "identifier_dotraw" -> "identifier";
+                case "inode_dotraw" -> "inode";
+                default -> name;
+            };
+            if (key.equals(name)) {
+                values.put(key, unwrapped);
+            } else {
+                values.putIfAbsent(key, unwrapped);
+            }
+        });
+        return values;
     }
 
     /**

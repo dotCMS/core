@@ -20,10 +20,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 
 /**
- * Loads the bundled site-search index settings/mapping JSON and applies the optional analyzer
- * override.
+ * Loads Site Search settings and mappings, applying analyzer and source-storage configuration.
+ * Source is retained by default; disabling it stores result fields individually so metadata and
+ * highlight snippets remain available. Both settings are read again for each new index.
  *
  * <p>The {@value #ANALYZER_PROPERTY} {@link Config} property (env:
  * {@code DOT_SITE_SEARCH_ANALYZER}) names any analyzer known to the search cluster — a built-in
@@ -47,6 +49,11 @@ final class SiteSearchIndexResources {
 
     static final String ANALYZER_PROPERTY = "SITE_SEARCH_ANALYZER";
 
+    /** Get requests do not expand stored-field wildcards, so name the supported result fields. */
+    static final List<String> RESULT_FIELDS = List.of("content", "content_raw", "host", "contentLength",
+            "uri", "url", "mimeType", "title", "description", "modified", "keywords", "language",
+            "author", "id", "fileName", "seokeywords");
+
     // content_raw is not written by the publishers' mapping-visible DTO fields but IS added to every
     // text/* document (see ESSiteSearchAPI/OSSiteSearchAPI "content_raw"); it must be covered here or
     // query_string(default_field:*) matches it with default analysis, reintroducing CJK unigram
@@ -62,36 +69,50 @@ final class SiteSearchIndexResources {
         return readResource(resource);
     }
 
-    /** The bundled index mapping, with the {@value #ANALYZER_PROPERTY} override applied when set. */
+    /** Applies the current analyzer override and source-storage setting (on by default). */
     static String mapping(final String resource) {
         final String mapping = readResource(resource);
         final String configured = Config.getStringProperty(ANALYZER_PROPERTY, null);
-        if (!UtilMethods.isSet(configured)) {
+        final boolean sourceEnabled = Config.getBooleanProperty("index.sitesearch.source.enabled", true);
+        if (!UtilMethods.isSet(configured) && sourceEnabled) {
             return mapping;
         }
-        final String analyzer = configured.trim();
+        final String analyzer = configured == null ? null : configured.trim();
         try {
             final JSONObject root = new JSONObject(mapping);
             final JSONObject properties = root.getJSONObject("properties");
-            for (final String field : TEXT_FIELDS) {
-                properties.getJSONObject(field).put("analyzer", analyzer);
+            if (!sourceEnabled) {
+                root.put("_source", new JSONObject().put("enabled", false));
+                for (final Object field : properties.keySet()) {
+                    properties.getJSONObject(String.valueOf(field)).put("store", true);
+                }
+                // Keep extra crawler strings (id, fileName, SEO metadata) retrievable as well.
+                root.put("dynamic_templates", List.of(Map.of("stored_strings", Map.of(
+                        "match_mapping_type", "string", "mapping", Map.of(
+                                "type", "text", "store", true, "fields", Map.of(
+                                        "keyword", Map.of("type", "keyword", "ignore_above", 256)))))));
             }
-            // the ngram subfield still indexes with the edge-ngram analyzer, but must search with
-            // the same analyzer as the main content field to tokenize queries consistently
-            properties.getJSONObject("content").getJSONObject("fields").getJSONObject("ngram")
-                    .put("search_analyzer", analyzer);
+            if (UtilMethods.isSet(configured)) {
+                for (final String field : TEXT_FIELDS) {
+                    properties.getJSONObject(field).put("analyzer", analyzer);
+                }
+                // Edge ngrams keep their index analyzer but follow the configured search analyzer.
+                properties.getJSONObject("content").getJSONObject("fields").getJSONObject("ngram")
+                        .put("search_analyzer", analyzer);
+            }
             final String result = root.toString();
             if (result == null) {
                 // this JSONObject fork returns null instead of throwing on serialization failure
                 throw new DotSearchException("Error serializing site search mapping " + resource
-                        + " after applying " + ANALYZER_PROPERTY + "=" + analyzer);
+                        + " after applying its analyzer and source-storage settings");
             }
             Logger.info(SiteSearchIndexResources.class,
-                    ANALYZER_PROPERTY + "=" + analyzer + " applied to site search mapping " + resource);
+                    "Site search mapping " + resource + ": source=" + sourceEnabled
+                            + ", analyzer=" + analyzer);
             return result;
         } catch (final JSONException e) {
-            throw new DotSearchException("Error applying " + ANALYZER_PROPERTY + "=" + analyzer
-                    + " to site search mapping " + resource + ": " + e.getMessage(), e);
+            throw new DotSearchException("Error configuring site search mapping " + resource
+                    + ": " + e.getMessage(), e);
         }
     }
 

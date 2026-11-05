@@ -54,6 +54,44 @@ The `Config` class automatically transforms properties:
 - `experiments.enabled` → `DOT_EXPERIMENTS_ENABLED`
 - `health.detailed.authentication.required` → `DOT_HEALTH_DETAILED_AUTHENTICATION_REQUIRED`
 
+## Search Index Source Storage
+
+These permanent index-storage settings use ordinary `Config.getBooleanProperty` resolution,
+including runtime system-table overrides. They are not cached in static fields:
+
+| Property | Default | Environment override |
+|---|---|---|
+| `index.content.source.enabled` | `false` | `DOT_INDEX_CONTENT_SOURCE_ENABLED` |
+| `index.sitesearch.source.enabled` | `true` | `DOT_INDEX_SITESEARCH_SOURCE_ENABLED` |
+
+Both apply to Elasticsearch and OpenSearch. Each is read when its own kind of index is created;
+changing the system-table value requires no application restart, but **does not change an existing
+index's mapping**. Rebuild the affected indexes to apply either direction of a change.
+
+- **Content source off:** only `identifier` and `inode` are separately stored for content hydration.
+  Queries use stored identity and the existing `identifier_dotraw` / `inode_dotraw` keyword doc
+  values, so older indexes without stored identity fields remain readable without fetching source.
+  Sorting, filtering and counts still use indexed values/doc values, not source.
+- **Site Search source off:** result fields are separately stored so document retrieval, titles,
+  URLs, keywords and highlight snippets continue to work. Additional crawler string fields are also
+  stored. This is not a promise of lower disk usage: individually stored result fields still cost
+  space. Raw source and its original JSON shape are no longer available.
+- The neutral `SearchHit.getSourceAsMap()` accessor falls back to explicitly requested stored
+  values when source is unavailable. REST adapters may therefore still return an identifier/inode
+  map under `_source`; the native ES API preserves that identifier-only view too. This does not
+  mean the engine retained the original source document.
+- Source-dependent engine operations, including `_update`, `_update_by_query` and `_reindex`, are
+  unavailable on source-disabled indexes. Rebuild content indexes from the dotCMS database instead.
+  Caller-supplied Site Search `_source` include/exclude filters must also be removed when source is disabled.
+- This is **not an access-control mechanism**: indexed values can remain searchable or aggregatable.
+  Keep permission checks and public-query restrictions in place.
+
+**Rollback risk:** older application versions that read content or Site Search from source cannot
+read source-disabled indexes. Set both source settings to `true` and rebuild the affected indexes
+before rolling back, or restore compatible indexes. Merely changing the settings is not enough.
+Do not rebuild source-disabled indexes while older application nodes are still serving traffic.
+See [Rollback-Unsafe Categories](../core/ROLLBACK_UNSAFE_CATEGORIES.md#c-2--elasticsearch-mapping-change).
+
 ## Feature Flags
 
 A feature flag is a boolean property that switches a whole behavior on or off. It follows the

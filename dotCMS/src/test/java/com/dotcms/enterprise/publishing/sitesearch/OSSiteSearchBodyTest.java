@@ -1,6 +1,7 @@
 package com.dotcms.enterprise.publishing.sitesearch;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import com.dotmarketing.util.json.JSONObject;
@@ -19,6 +20,26 @@ import org.junit.Test;
 public class OSSiteSearchBodyTest {
 
     private static final String HIGHLIGHTED_FIELD = "content";
+
+    /** Asking for stored fields must not implicitly suppress source on pre-existing indexes. */
+    @Test
+    public void searchBody_requestsBothSourceAndStoredFields() {
+        for (final boolean json : new boolean[]{false, true}) {
+            final JSONObject body = new JSONObject(OSSiteSearchAPI.searchBody(
+                    json ? "{\"query\":{\"match_all\":{}}}" : "dotcms", json, 0, 10).toString());
+            assertTrue("old indexes still need source", body.optBoolean("_source", false));
+            assertEquals("*", body.getJSONArray("stored_fields").getString(0));
+        }
+    }
+
+    /** An explicitly supplied source clause must retain the caller's meaning. */
+    @Test
+    public void searchBody_preservesExplicitSourceClause() {
+        final JSONObject body = new JSONObject(OSSiteSearchAPI.searchBody(
+                "{\"query\":{\"match_all\":{}},\"_source\":false}", true, 0, 10).toString());
+        assertFalse(body.getBoolean("_source"));
+        assertEquals("*", body.getJSONArray("stored_fields").getString(0));
+    }
 
     /** The field names a body's highlight clause covers. */
     private static JSONObject highlightedFields(final JSONObject body) {

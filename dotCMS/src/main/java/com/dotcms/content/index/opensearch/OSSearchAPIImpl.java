@@ -139,6 +139,7 @@ public class OSSearchAPIImpl implements SearchAPI {
         return results;
     }
 
+    /** Searches using stored identity fields or legacy keyword doc values, without fetching source. */
     @Override
     public ContentSearchResponse searchRaw(
             final String query,
@@ -161,7 +162,9 @@ public class OSSearchAPIImpl implements SearchAPI {
         final JSONObject completeQueryJSON;
         try {
             completeQueryJSON = new JSONObject(normalizedQuery);
-            completeQueryJSON.put("_source", new JSONArray("[identifier, inode]"));
+            completeQueryJSON.put("_source", false);
+            completeQueryJSON.put("stored_fields", new JSONArray("[identifier, inode]"));
+            completeQueryJSON.put("docvalue_fields", new JSONArray("[identifier_dotraw, inode_dotraw]"));
         } catch (final JSONException e) {
             // The caller's error, not the cluster's: raised as such so Phase 2 does not retry it on
             // Elasticsearch and log it as an index outage (issue #37637).

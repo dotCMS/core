@@ -198,10 +198,19 @@ public class SiteSearchResult {
 		
 	}
 	
-	public SiteSearchResult(Map m){
-		this.map = m;
-		
-	}
+    /**
+     * Copies source or stored result fields, retaining the keyword-list contract for a single keyword.
+     *
+     * @param values the document values returned by the search engine
+     */
+    public SiteSearchResult(final Map<String, ?> values) {
+        this.map = new HashMap<>(values);
+        if (values.get("keywords") instanceof String keyword) {
+            this.map.put("keywords", List.of(keyword));
+        } else if (values.get("keywords") == null) {
+            this.map.put("keywords", List.of());
+        }
+    }
 	
 	public SiteSearchResult(){
 		this.map = new HashMap<>();

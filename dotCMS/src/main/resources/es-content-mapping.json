@@ -1,4 +1,16 @@
 {
+      "properties": {
+          "identifier": {
+              "type": "text",
+              "analyzer": "my_analyzer",
+              "store": true
+          },
+          "inode": {
+              "type": "text",
+              "analyzer": "my_analyzer",
+              "store": true
+          }
+      },
       "date_detection": true,
       "dynamic_date_formats": [
           "yyyy-MM-dd't'HH:mm:ssZ||yyyy-MM-dd't'HH:mm:ss||MMM d, yyyy h:mm:ss a||yyyy-MM-dd HH:mm:ss||yyyy-MM-dd HH:mm:ss.SSS||yyyy-MM-dd||epoch_millis"

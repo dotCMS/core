@@ -4,6 +4,7 @@ import com.dotcms.cdi.CDIUtils;
 import com.dotcms.content.index.ContentFactoryIndexOperations;
 import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.index.VersionedIndices;
+import com.dotcms.content.index.domain.SearchHit;
 import com.dotcms.content.index.domain.SearchHits;
 import com.dotcms.cost.RequestCost;
 import com.dotcms.cost.RequestPrices.Price;
@@ -39,7 +40,6 @@ import org.opensearch.client.opensearch.core.CountRequest;
 import org.opensearch.client.opensearch.core.CountResponse;
 import org.opensearch.client.opensearch.core.SearchRequest;
 import org.opensearch.client.opensearch.core.SearchResponse;
-import org.opensearch.client.opensearch.core.search.Hit;
 import org.opensearch.client.opensearch.core.search.HitsMetadata;
 import org.opensearch.client.opensearch.core.search.TotalHitsRelation;
 
@@ -290,8 +290,11 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
         // Set timeout
         searchRequestBuilder.timeout(OSIndexAPIImpl.INDEX_OPERATIONS_TIMEOUT);
 
-        // Set source fields
-        searchRequestBuilder.source(src -> src.filter(f -> f.includes(List.of(OS_FIELDS))));
+        // Legacy indexes expose identity through keyword doc values; new indexes also store it.
+        searchRequestBuilder.storedFields(List.of(OS_FIELDS))
+                .docvalueFields(field -> field.field("inode_dotraw"))
+                .docvalueFields(field -> field.field("identifier_dotraw"))
+                .source(src -> src.fetch(false));
 
         // Set track total hits
         setTrackHits(searchRequestBuilder);
@@ -329,15 +332,17 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
                     .index(indexToHit)
                     .size(limit)
                     .from(offset)
-                    .source(src -> src.filter(f -> f.includes(List.of(OS_FIELDS))));
+                    .storedFields(List.of(OS_FIELDS))
+                    .docvalueFields(field -> field.field("inode_dotraw"))
+                    .docvalueFields(field -> field.field("identifier_dotraw"))
+                    .source(src -> src.fetch(false));
 
             SearchRequest searchRequest = searchRequestBuilder.build();
             final HitsMetadata<Object> hits = cachedIndexSearch(searchRequest);
 
             return hits.hits().stream()
-                    .map(Hit::source)
-                    .filter(source -> source instanceof java.util.Map)
-                    .map(source -> (java.util.Map<String, Object>) source)
+                    .map(SearchHit::from)
+                    .map(SearchHit::getSourceAsMap)
                     .filter(map -> map.get("inode") != null)
                     .map(map -> map.get("inode").toString())
                     .collect(Collectors.toList());

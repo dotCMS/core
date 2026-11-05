@@ -4,6 +4,9 @@ import static com.dotmarketing.sitesearch.business.SiteSearchAPI.ES_SITE_SEARCH_
 import static org.junit.Assert.*;
 
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResult;
+import com.dotcms.enterprise.publishing.sitesearch.SiteSearchResults;
+import com.dotmarketing.util.Config;
 import com.dotcms.content.index.IndexAPI;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
@@ -54,6 +57,48 @@ public class ESSiteSearchAPITest {
         siteSearchAPI = APILocator.getSiteSearchAPI();
         indexAPI = APILocator.getESIndexAPI();
         contentletIndexAPI = APILocator.getContentletIndexAPI();
+    }
+
+    /** Source-disabled Site Search preserves result metadata, direct retrieval and snippets. */
+    @Test
+    public void test_sourceDisabled_preservesResultMetadataAndHighlights() throws Exception {
+        final String key = "index.sitesearch.source.enabled";
+        final String original = Config.getStringProperty(key, null);
+        final String index = ES_SITE_SEARCH_NAME + "_" + System.currentTimeMillis();
+        try {
+            Config.setProperty(key, false);
+            siteSearchAPI.createSiteSearchIndex(index, null, 1);
+            final SiteSearchResult doc = new SiteSearchResult();
+            doc.setId("source-free-doc");
+            doc.setTitle("Source-free result");
+            doc.setUrl("/source-free-test");
+            doc.setMimeType("text/html");
+            doc.setContent("A sourcefreekeyword for highlighting.");
+            doc.setContentLength(doc.getContent().length());
+            doc.setKeywords("single");
+            siteSearchAPI.putToIndex(index, doc, "content");
+
+            Config.setProperty(key, true);
+            final SiteSearchResult fetched = siteSearchAPI.getFromIndex(index, doc.getId());
+            assertNotNull(fetched);
+            assertEquals(doc.getTitle(), fetched.getTitle());
+            assertEquals(doc.getUrl(), fetched.getUrl());
+            assertEquals(List.of("single"), fetched.getKeywords());
+
+            final SiteSearchResults results = siteSearchAPI.search(index, "sourcefreekeyword", 0, 10);
+            assertEquals(1L, results.getTotalResults());
+            final SiteSearchResult result = results.getResults().get(0);
+            assertEquals(doc.getTitle(), result.getTitle());
+            assertEquals(doc.getUrl(), result.getUrl());
+            assertEquals(List.of("single"), result.getKeywords());
+            assertTrue(result.getHighlights().length > 0);
+        } finally {
+            try {
+                siteSearchAPI.deleteIndex(index);
+            } finally {
+                Config.setProperty(key, original);
+            }
+        }
     }
 
     /**

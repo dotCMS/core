@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.DataProviderWeldRunner;
@@ -19,8 +20,10 @@ import com.dotmarketing.common.model.ContentletSearch;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.UUID;
 import javax.enterprise.context.ApplicationScoped;
 import javax.inject.Inject;
@@ -155,14 +158,28 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
         }
     }
 
+    /** Gives the generic test indexes the stored identity fields used by real content indexes. */
     @Before
-    public void setUp() {
+    public void setUp() throws Exception {
         cleanupTestIndices();
+        clientProvider.getClient().indices().putIndexTemplate(builder -> builder
+                .name("ops_identity_" + RUN_ID)
+                .indexPatterns(List.of(osIndexAPI.getNameWithClusterIDPrefix(IDX_LIVE),
+                        osIndexAPI.getNameWithClusterIDPrefix(IDX_WORKING)))
+                .template(template -> template.mappings(mapping -> mapping
+                        .properties("identifier", property -> property.text(text -> text.store(true)))
+                        .properties("inode", property -> property.text(text -> text.store(true))))));
     }
 
+    /** Removes test indexes and their narrowly scoped identity template. */
     @After
-    public void tearDown() {
+    public void tearDown() throws Exception {
         cleanupTestIndices();
+        if (clientProvider.getClient().indices().existsIndexTemplate(
+                builder -> builder.name("ops_identity_" + RUN_ID)).value()) {
+            clientProvider.getClient().indices().deleteIndexTemplate(
+                    builder -> builder.name("ops_identity_" + RUN_ID));
+        }
     }
 
     // =========================================================================
@@ -275,6 +292,96 @@ public class ContentFactoryIndexOperationsOSIntegrationTest extends IntegrationT
                     built.trackTotalHits().count().intValue());
         } finally {
             Config.setProperty("OS_TRACK_TOTAL_HITS", savedValue);
+        }
+    }
+
+    /** Older source-enabled indexes remain readable through their existing keyword ID doc values. */
+    @Test
+    public void test_legacyIndex_readsIdentityWithoutStoredFields() throws Exception {
+        final String index = contentletOps.toPhysicalName(IDX_WORKING);
+        try {
+            clientProvider.getClient().indices().create(builder -> builder.index(index)
+                    .mappings(mapping -> mapping
+                            .properties("identifier", property -> property.text(text -> text.store(false)))
+                            .properties("inode", property -> property.text(text -> text.store(false)))
+                            .properties("identifier_dotraw", property -> property.keyword(keyword -> keyword))
+                            .properties("inode_dotraw", property -> property.keyword(keyword -> keyword))));
+            final IndexBulkRequest request = contentletOps.createBulkRequest();
+            final String json = TEST_DOC_JSON.substring(0, TEST_DOC_JSON.length() - 1)
+                    + ",\"identifier_dotraw\":\"legacy-id\",\"inode_dotraw\":\"" + TEST_DOC_INODE + "\"}";
+            contentletOps.addIndexOp(request, index, TEST_DOC_ID, json);
+            contentletOps.putToIndex(request);
+            refreshTestIndex(index);
+
+            final ControllableOps ops = new ControllableOps(index, index);
+            assertEquals(List.of(TEST_DOC_INODE), ops.search("+contenttype:" + CONTENT_TYPE, 10, 0));
+            try (final IndexContentletScroll scroll = ops.createScrollQuery(
+                    "+contenttype:" + CONTENT_TYPE, APILocator.systemUser(), false, 1, "moddate asc")) {
+                final ContentletSearch hit = scroll.nextBatch().get(0);
+                assertEquals(TEST_DOC_INODE, hit.getInode());
+                assertEquals("legacy-id", hit.getIdentifier());
+            }
+        } finally {
+            if (osIndexAPI.indexExists(index)) {
+                osIndexAPI.delete(index);
+            }
+        }
+    }
+
+    /**
+     * A source-disabled content index must expose no source, including in top_hits, while ordinary
+     * searches, sorting, pagination and multi-batch scrolling still recover identifiers and inodes.
+     * Changing Config after creation must not make readers assume the existing mapping changed.
+     */
+    @Test
+    public void test_sourceDisabled_preservesIdentitySortingAndScroll() throws Exception {
+        final String key = "index.content.source.enabled";
+        final String original = Config.getStringProperty(key, null);
+        final String fullWorking = contentletOps.toPhysicalName(IDX_WORKING);
+        try {
+            Config.setProperty(key, false);
+            contentletOps.createContentIndex(fullWorking, 1);
+            indexThreeDocs(fullWorking);
+
+            final var raw = clientProvider.getClient().search(builder -> builder
+                    .index(fullWorking).size(1)
+                    .aggregations("sample", aggregation -> aggregation
+                            .topHits(topHits -> topHits.size(1))), Object.class);
+            assertEquals(3L, raw.hits().total().value());
+            assertNull("ordinary hits must not expose stored source",
+                    raw.hits().hits().get(0).source());
+            assertNull("top_hits must not bypass the storage setting",
+                    raw.aggregations().get("sample").topHits().hits().hits().get(0).source());
+
+            Config.setProperty(key, true);
+            final ControllableOps ops = new ControllableOps(fullWorking, fullWorking);
+            final String query = "+contenttype:" + CONTENT_TYPE;
+            final String inodePrefix = "test-cfops-inode-" + RUN_ID + "-";
+            assertEquals(Set.of(inodePrefix + "1", inodePrefix + "2", inodePrefix + "3"),
+                    new HashSet<>(ops.search(query, 10, 0)));
+
+            final SearchHits page = ops.searchHits(query, 1, 1, "moddate desc");
+            assertEquals(3L, page.getTotalHits().value());
+            assertEquals("descending sort with offset 1 must return the middle document",
+                    inodePrefix + "2_1_default", page.getHits().get(0).getId());
+
+            try (final IndexContentletScroll scroll = ops.createScrollQuery(
+                    query, APILocator.systemUser(), false, 1, "moddate asc")) {
+                assertEquals(3L, scroll.getTotalHits());
+                for (int i = 1; i <= 3; i++) {
+                    final List<ContentletSearch> batch = scroll.nextBatch();
+                    assertEquals("each scroll batch must contain one document", 1, batch.size());
+                    assertEquals(inodePrefix + i, batch.get(0).getInode());
+                    assertEquals("test-cfops-id-" + RUN_ID + "-" + i,
+                            batch.get(0).getIdentifier());
+                }
+                assertTrue("the final scroll batch must be empty", scroll.nextBatch().isEmpty());
+            }
+        } finally {
+            Config.setProperty(key, original);
+            if (osIndexAPI.indexExists(fullWorking)) {
+                osIndexAPI.delete(fullWorking);
+            }
         }
     }
 
